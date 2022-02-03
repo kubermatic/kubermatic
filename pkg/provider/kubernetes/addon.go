@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,20 +118,18 @@ func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName st
 }
 
 func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) *kubermaticv1.Addon {
-	gv := kubermaticv1.SchemeGroupVersion
 	if labels == nil {
 		labels = map[string]string{}
 	}
 	return &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            addonName,
-			Namespace:       cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))},
-			Labels:          labels,
+			Name:      addonName,
+			Namespace: cluster.Status.NamespaceName,
+			Labels:    labels,
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name: addonName,
-			Cluster: v1.ObjectReference{
+			Cluster: corev1.ObjectReference{
 				Name:       cluster.Name,
 				Namespace:  "",
 				UID:        cluster.UID,

@@ -24,14 +24,13 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
@@ -309,9 +308,8 @@ type UserProvider interface {
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 	UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error)
 	UserByID(id string) (*kubermaticv1.User, error)
-	AddUserTokenToBlacklist(user *kubermaticv1.User, token string, expiry apiv1.Time) error
-	GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error)
-	WatchUser() (watch.Interface, error)
+	InvalidateToken(user *kubermaticv1.User, token string, expiry apiv1.Time) error
+	GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error)
 	List() ([]kubermaticv1.User, error)
 }
 
@@ -735,7 +733,6 @@ type AddonConfigProvider interface {
 type SettingsProvider interface {
 	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
 	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
-	WatchGlobalSettings() (watch.Interface, error)
 }
 
 // AdminProvider declares the set of methods for interacting with admin.

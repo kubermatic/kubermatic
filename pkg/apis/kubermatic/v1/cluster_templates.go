@@ -47,6 +47,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // ClusterTemplate is the object representing a cluster template.
 type ClusterTemplate struct {
@@ -56,7 +57,7 @@ type ClusterTemplate struct {
 	ClusterLabels          map[string]string       `json:"clusterLabels,omitempty"`
 	InheritedClusterLabels map[string]string       `json:"inheritedClusterLabels,omitempty"`
 	Credential             string                  `json:"credential"`
-	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys"`
+	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys,omitempty"`
 	Spec                   ClusterSpec             `json:"spec,omitempty"`
 }
 

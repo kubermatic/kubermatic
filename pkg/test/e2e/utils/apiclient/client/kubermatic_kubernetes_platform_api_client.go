@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metering"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metric"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mlaadminsetting"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/nutanix"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/openstack"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/operations"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/packet"
@@ -61,7 +62,7 @@ var Default = NewHTTPClient(nil)
 const (
 	// DefaultHost is the default Host
 	// found in Meta (info) section of spec file
-	DefaultHost string = "dev.kubermatic.io"
+	DefaultHost string = "localhost"
 	// DefaultBasePath is the default BasePath
 	// found in Meta (info) section of spec file
 	DefaultBasePath string = "/"
@@ -125,6 +126,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Metering = metering.New(transport, formats)
 	cli.Metric = metric.New(transport, formats)
 	cli.Mlaadminsetting = mlaadminsetting.New(transport, formats)
+	cli.Nutanix = nutanix.New(transport, formats)
 	cli.Openstack = openstack.New(transport, formats)
 	cli.Operations = operations.New(transport, formats)
 	cli.Packet = packet.New(transport, formats)
@@ -240,6 +242,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Mlaadminsetting mlaadminsetting.ClientService
 
+	Nutanix nutanix.ClientService
+
 	Openstack openstack.ClientService
 
 	Operations operations.ClientService
@@ -304,6 +308,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Metering.SetTransport(transport)
 	c.Metric.SetTransport(transport)
 	c.Mlaadminsetting.SetTransport(transport)
+	c.Nutanix.SetTransport(transport)
 	c.Openstack.SetTransport(transport)
 	c.Operations.SetTransport(transport)
 	c.Packet.SetTransport(transport)

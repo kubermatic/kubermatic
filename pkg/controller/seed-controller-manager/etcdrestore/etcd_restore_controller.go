@@ -26,14 +26,14 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -240,7 +240,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	}
 
 	// delete etcd sts
-	sts := &v1.StatefulSet{}
+	sts := &appsv1.StatefulSet{}
 	err = r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, sts)
 	if err == nil {
 		if err := r.Delete(ctx, sts); err != nil && !kerrors.IsNotFound(err) {
@@ -289,7 +289,7 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	log.Infof("rebuildEtcdStatefulset")
 
 	if cluster.Spec.Pause {
-		if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+		if err := r.updateClusterStatus(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				cluster,
 				r.versions,
@@ -298,9 +298,13 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 				"",
 				fmt.Sprintf("Etcd Cluster is being restored from backup %v", restore.Spec.BackupName),
 			)
+		}); err != nil {
+			return nil, fmt.Errorf("failed to reset etcd initialized status: %w", err)
+		}
+		if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Pause = false
 		}); err != nil {
-			return nil, fmt.Errorf("failed to reset etcd initialized status and unpause cluster: %w", err)
+			return nil, fmt.Errorf("failed to unpause cluster: %w", err)
 		}
 	}
 
@@ -331,7 +335,32 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return nil
 	}
-	return r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		return errors.New("updateCluster must not change cluster status")
+	}
+
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) updateClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+	oldCluster := cluster.DeepCopy()
+	modify(cluster)
+	if reflect.DeepEqual(oldCluster, cluster) {
+		return nil
+	}
+
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.EtcdRestore, modify func(*kubermaticv1.EtcdRestore)) error {
@@ -340,5 +369,22 @@ func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.Et
 	if reflect.DeepEqual(oldRestore, restore) {
 		return nil
 	}
-	return r.Client.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore))
+
+	// make sure the first patch doesn't override the status
+	status := restore.Status.DeepCopy()
+
+	if err := r.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
+		return err
+	}
+
+	oldRestore = restore.DeepCopy()
+	restore.Status = *status
+
+	if !reflect.DeepEqual(oldRestore, restore) {
+		if err := r.Status().Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

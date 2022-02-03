@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -36,7 +37,8 @@ import (
 // any cluster reconciliaton. It:
 // * Checks if the cluster is paused
 // * Checks if the worker-name matches
-// * Sets the ReconcileSuccess condition for the controller.
+// * Sets the ReconcileSuccess condition for the controller by fetching
+//   the current Cluster object and patching its status.
 func ClusterReconcileWrapper(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -55,18 +57,33 @@ func ClusterReconcileWrapper(
 
 	reconcilingStatus := corev1.ConditionFalse
 	result, err := reconcile()
+
 	// Only set to true if we had no error and don't want to reqeue the cluster
 	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
 		reconcilingStatus = corev1.ConditionTrue
 	}
+
 	errs := []error{err}
 	if conditionType != kubermaticv1.ClusterConditionNone {
-		oldCluster := cluster.DeepCopy()
-		SetClusterCondition(cluster, versions, conditionType, reconcilingStatus, "", "")
-		if !reflect.DeepEqual(oldCluster, cluster) {
-			errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
+		curCluster := &kubermaticv1.Cluster{}
+
+		err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, curCluster)
+		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			errs = append(errs, err)
+		} else if err == nil {
+			clusterCopy := curCluster.DeepCopy()
+			SetClusterCondition(curCluster, versions, conditionType, reconcilingStatus, "", "")
+
+			if !reflect.DeepEqual(clusterCopy, curCluster) {
+				patch := ctrlruntimeclient.MergeFrom(clusterCopy)
+
+				if err := client.Status().Patch(ctx, curCluster, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+					errs = append(errs, err)
+				}
+			}
 		}
 	}
+
 	return result, utilerrors.NewAggregate(errs)
 }
 

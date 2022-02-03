@@ -17,16 +17,14 @@ limitations under the License.
 package projectsynchronizer
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 func projectCreatorGetter(project *kubermaticv1.Project) reconciling.NamedKubermaticV1ProjectCreatorGetter {
 	return func() (string, reconciling.KubermaticV1ProjectCreator) {
 		return project.Name, func(p *kubermaticv1.Project) (*kubermaticv1.Project, error) {
-			p.Name = project.Name
 			p.Spec = project.Spec
-			p.Status = project.Status
 			return p, nil
 		}
 	}

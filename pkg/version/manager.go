@@ -23,8 +23,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
@@ -42,11 +41,11 @@ type Manager struct {
 }
 
 type ProviderIncompatibility struct {
-	Provider  kubermaticv1.ProviderType      `json:"provider"`
-	Version   string                         `json:"version"`
-	Condition operatorv1alpha1.ConditionType `json:"condition"`
-	Operation operatorv1alpha1.OperationType `json:"operation"`
-	Type      string                         `json:"type,omitempty"`
+	Provider  kubermaticv1.ProviderType  `json:"provider"`
+	Version   string                     `json:"version"`
+	Condition kubermaticv1.ConditionType `json:"condition"`
+	Operation kubermaticv1.OperationType `json:"operation"`
+	Type      string                     `json:"type,omitempty"`
 }
 
 // Version is the object representing a Kubernetes version.
@@ -76,17 +75,17 @@ func New(versions []*Version, updates []*Update, providerIncompatibilities []*Pr
 
 // NewFromConfiguration converts the configured versions/updates into the datatypes used by
 // this package and returns a version.Manager on success.
-func NewFromConfiguration(config *operatorv1alpha1.KubermaticConfiguration) *Manager {
+func NewFromConfiguration(config *kubermaticv1.KubermaticConfiguration) *Manager {
 	updates := []*Update{}
 	versions := []*Version{}
 	incompatibilities := []*ProviderIncompatibility{}
 
-	k8s := config.Spec.Versions.Kubernetes
+	k8s := config.Spec.Versions
 
-	for i := range k8s.Versions {
+	for _, k8sVersion := range k8s.Versions {
 		versions = append(versions, &Version{
-			Version: k8s.Versions[i],
-			Default: k8s.Default != nil && k8s.Versions[i].Equal(k8s.Default),
+			Version: k8sVersion.Semver(),
+			Default: k8s.Default != nil && k8sVersion.Equal(k8s.Default),
 			Type:    v1.KubernetesClusterType,
 		})
 	}
@@ -159,7 +158,7 @@ func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 }
 
 // GetVersionsV2 returns all Versions which don't result in automatic updates.
-func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...operatorv1alpha1.ConditionType) ([]*Version, error) {
+func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
 	var masterVersions []*Version
 	for _, v := range m.versions {
 		if v.Type == clusterType {
@@ -171,7 +170,7 @@ func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.Provid
 			if autoUpdate != nil {
 				continue
 			}
-			compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, operatorv1alpha1.CreateOperation, m.providerIncompatibilities, conditions...)
+			compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, kubermaticv1.CreateOperation, m.providerIncompatibilities, conditions...)
 			if err != nil {
 				return nil, err
 			}
@@ -261,7 +260,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 }
 
 // GetPossibleUpdates returns possible updates for the version passed in.
-func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...operatorv1alpha1.ConditionType) ([]*Version, error) {
+func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
@@ -290,7 +289,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
 			if c.Check(v.Version) && !from.Equal(v.Version) && v.Type == clusterType {
-				compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, operatorv1alpha1.UpdateOperation, m.providerIncompatibilities, conditions...)
+				compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, kubermaticv1.UpdateOperation, m.providerIncompatibilities, conditions...)
 				if err != nil {
 					return nil, err
 				}

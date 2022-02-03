@@ -25,7 +25,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,18 +77,6 @@ var _ stack.Stack = &MasterStack{}
 
 func (*MasterStack) Name() string {
 	return "KKP master stack"
-}
-
-func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
-	// handle the custom temporary KubermaticCRDDirectory field that is only used during
-	// CRD migration to point to the new CRD directory. Once the migration is done, this
-	// can be removed and only the line in the if-statement can stay.
-	crdDirectory := opt.KubermaticCRDDirectory
-	if crdDirectory == "" {
-		crdDirectory = filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
-	}
-
-	return util.DeployCRDs(ctx, client, logger, crdDirectory)
 }
 
 func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
@@ -268,10 +256,26 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 	return nil
 }
 
+func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
+
+	// install KKP CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io")); err != nil {
+		return err
+	}
+
+	// install VPA CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	logger.Info("📝 Applying Kubermatic Configuration…")
 
-	existingConfig := &operatorv1alpha1.KubermaticConfiguration{}
+	existingConfig := &kubermaticv1.KubermaticConfiguration{}
 	name := types.NamespacedName{
 		Name:      opt.KubermaticConfiguration.Name,
 		Namespace: opt.KubermaticConfiguration.Namespace,
@@ -342,7 +346,7 @@ func (t nginxTargetPod) prefererdTarget() string {
 func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	logger.Debugf("Listing nginx-ingress-controller pods…")
 
-	podList := v1.PodList{}
+	podList := corev1.PodList{}
 	err := kubeClient.List(ctx, &podList, &ctrlruntimeclient.ListOptions{
 		Namespace: NginxIngressControllerNamespace,
 	})
@@ -362,7 +366,7 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 		return
 	}
 
-	nodeList := v1.NodeList{}
+	nodeList := corev1.NodeList{}
 	err = kubeClient.List(ctx, &nodeList)
 	if err != nil {
 		logger.Warnf("Failed to retrieve nodes: %v", err)
@@ -381,9 +385,9 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 
 			for _, address := range node.Status.Addresses {
 				switch address.Type {
-				case v1.NodeExternalIP:
+				case corev1.NodeExternalIP:
 					externalIP = address.Address
-				case v1.NodeExternalDNS:
+				case corev1.NodeExternalDNS:
 					externalDNS = address.Address
 				}
 
@@ -449,9 +453,9 @@ func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kube
 
 	logger.Debugf("Waiting for %q to be ready…", svcName)
 
-	var ingresses []v1.LoadBalancerIngress
+	var ingresses []corev1.LoadBalancerIngress
 	err := wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
-		svc := v1.Service{}
+		svc := corev1.Service{}
 		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
 			return false, err
 		}

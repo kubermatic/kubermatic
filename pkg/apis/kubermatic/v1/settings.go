@@ -25,6 +25,7 @@ const GlobalSettingsName = "globalsettings"
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticSetting is the type representing a KubermaticSetting.
 type KubermaticSetting struct {

@@ -83,6 +83,8 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.userEmail",name="Owner",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 
 // Cluster is the object representing a cluster.
@@ -765,9 +767,9 @@ type OpenstackCloudSpec struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	// project, formally known as tenant. Tenant is depreciated in Openstack
+	// project, formally known as tenant.
 	Project string `json:"project,omitempty"`
-	// project id, formally known as tenantID. TenantID is depreciated in Openstack
+	// project id, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
 
 	Domain                      string `json:"domain,omitempty"`
@@ -978,6 +980,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Anexia != nil {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }

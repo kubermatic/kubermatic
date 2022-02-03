@@ -91,7 +91,7 @@ function finish {
     # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
     # Except for vSphere
     TMP_KUBECONFIG=$(mktemp)
-    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} | sed 's#.kubermatic.k8s.io/#-#g')
+    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} | sed 's#.kubermatic.k8c.io/#-#g')
     kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > ${TMP_KUBECONFIG}
     kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system | egrep -vi 'password|user'
   fi

@@ -22,6 +22,7 @@ import (
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // PresetList is the type representing a PresetList.
 type PresetList struct {

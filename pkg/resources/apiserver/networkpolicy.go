@@ -25,9 +25,9 @@ import (
 	"sort"
 	"time"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -111,11 +111,7 @@ func DNSAllowCreator(c *kubermaticv1.Cluster, data *resources.TemplateData) reco
 						resources.AppLabelKey: name,
 					},
 				},
-			}
-
-			if data.IsKonnectivityEnabled() {
-				// allow all egress DNS traffic
-				np.Spec.Egress = []networkingv1.NetworkPolicyEgressRule{
+				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
@@ -128,25 +124,8 @@ func DNSAllowCreator(c *kubermaticv1.Cluster, data *resources.TemplateData) reco
 							},
 						},
 					},
-				}
-			} else {
-				// allow egress traffic to the custom DNS resolver
-				np.Spec.Egress = []networkingv1.NetworkPolicyEgressRule{
-					{
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								PodSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{
-										resources.AppLabelKey: "dns-resolver",
-										"cluster":             c.ObjectMeta.Name,
-									},
-								},
-							},
-						},
-					},
-				}
+				},
 			}
-
 			return np, nil
 		}
 	}

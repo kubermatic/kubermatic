@@ -25,8 +25,8 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 )
 
@@ -52,7 +52,7 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 		return append(errs, fmt.Errorf("failed to list user clusters on Seed %q: %w", seed.Name, err))
 	}
 
-	configuredVersions := defaulted.Spec.Versions.Kubernetes
+	configuredVersions := defaulted.Spec.Versions
 	upgradeConstraints := []*semver.Constraints{}
 
 	// do not parse and check the validity of constraints for each usercluster, but just once
@@ -78,12 +78,12 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 
 	// check that each cluster still matches the configured versions
 	for _, cluster := range clusters.Items {
-		clusterVersion := cluster.Spec.Version.Semver()
+		clusterVersion := cluster.Spec.Version
 		validVersion := false
 
 		// is this version still straight up supported?
 		for _, configured := range configuredVersions.Versions {
-			if configured.Equal(clusterVersion) {
+			if configured.Equal(&clusterVersion) {
 				validVersion = true
 				break
 			}
@@ -93,9 +93,11 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 			continue
 		}
 
+		sclusterVersion := clusterVersion.Semver()
+
 		// is an upgrade path defined from the current version to something else?
 		for _, update := range upgradeConstraints {
-			if update.Check(clusterVersion) {
+			if update.Check(sclusterVersion) {
 				validVersion = true
 				break
 			}

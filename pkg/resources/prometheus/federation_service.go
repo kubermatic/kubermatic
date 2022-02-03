@@ -21,7 +21,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -30,7 +29,6 @@ func ServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreato
 	return func() (string, reconciling.ServiceCreator) {
 		return name, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = name
-			se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 			se.Labels = resources.BaseAppLabels(name, nil)
 			// We need to set cluster: user for the ServiceMonitor which federates metrics8
 			se.Labels["cluster"] = "user"

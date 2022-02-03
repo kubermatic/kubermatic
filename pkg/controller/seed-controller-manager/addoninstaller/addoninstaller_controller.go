@@ -26,9 +26,9 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -185,7 +185,7 @@ func (r *Reconciler) getAddons(ctx context.Context) (*kubermaticv1.AddonList, er
 		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
-	c := cfg.Spec.UserCluster.Addons.Kubernetes
+	c := cfg.Spec.UserCluster.Addons
 
 	if len(c.Default) > 0 && c.DefaultManifests != "" {
 		return nil, errors.New("default addons are configured both as a list and a default manifest, which are mutually exclusive; configure addons using one of the two mechanisms")
@@ -299,10 +299,7 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 }
 
 func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, addon kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	gv := kubermaticv1.SchemeGroupVersion
-
 	addon.Namespace = cluster.Status.NamespaceName
-	addon.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))}
 	if addon.Labels == nil {
 		addon.Labels = map[string]string{}
 	}

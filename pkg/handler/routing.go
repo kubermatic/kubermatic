@@ -17,15 +17,18 @@ limitations under the License.
 package handler
 
 import (
+	"context"
 	"crypto/x509"
+	"net/http"
 	"os"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -128,8 +131,16 @@ func NewRouting(routingParams RoutingParams, masterClient client.Client) Routing
 }
 
 func (r Routing) defaultServerOptions() []httptransport.ServerOption {
+	var req *http.Request
+
 	return []httptransport.ServerOption{
-		httptransport.ServerErrorLogger(r.logger),
+		httptransport.ServerBefore(func(c context.Context, r *http.Request) context.Context {
+			req = r
+			return c
+		}),
+		httptransport.ServerErrorHandler(transport.ErrorHandlerFunc(func(ctx context.Context, err error) {
+			r.log.Errorw(err.Error(), "request", req.URL.String())
+		})),
 		httptransport.ServerErrorEncoder(ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 	}

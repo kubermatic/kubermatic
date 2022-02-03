@@ -33,9 +33,9 @@ import (
 	"go.uber.org/zap"
 
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
@@ -538,7 +538,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	}
 	oldAddon := addon.DeepCopy()
 	setAddonCodition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
-	return r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
+	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
 func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
@@ -591,14 +591,18 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 		if err := userClusterClient.List(ctx, unstructuedList, listOpts); err != nil {
 			if meta.IsNoMatchError(err) {
 				// Try again later
-				log.Infow("Required resource isn't served, trying again in 10 seconds", "resource", requiredResource.String())
+				log.Infow("Required resource isn't served, trying again in 10 seconds", "resource", formatGVK(requiredResource))
 				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 			}
-			return nil, fmt.Errorf("failed to check if type %q is served: %w", requiredResource.String(), err)
+			return nil, fmt.Errorf("failed to check if type %q is served: %w", formatGVK(requiredResource), err)
 		}
 	}
 
 	return nil, nil
+}
+
+func formatGVK(gvk kubermaticv1.GroupVersionKind) string {
+	return fmt.Sprintf("%s/%s %s", gvk.Group, gvk.Version, gvk.Kind)
 }
 
 func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {

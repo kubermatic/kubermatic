@@ -18,7 +18,7 @@ import (
 type SeedMLASettings struct {
 
 	// Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
-	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled,omitempty"`
+	UserClusterMLAEnabled bool `json:"userClusterMLAEnabled,omitempty"`
 }
 
 // Validate validates this seed m l a settings

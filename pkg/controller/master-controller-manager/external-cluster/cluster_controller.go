@@ -27,7 +27,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
@@ -125,7 +125,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		r.log.Debugf("reconcile GKE cluster")
 		status, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to get GKE cluster status %v", err)
+			r.log.Debugf("failed to get GKE cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
@@ -148,7 +148,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		r.log.Debugf("reconcile EKS cluster %v", cluster.Name)
 		status, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to get EKS cluster status %v", err)
+			r.log.Debugf("failed to get EKS cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
@@ -171,7 +171,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Extern
 		r.log.Debugf("reconcile AKS cluster %v", cluster.Name)
 		status, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to get AKS cluster status %v", err)
+			r.log.Debugf("failed to get AKS cluster status %v", err)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}

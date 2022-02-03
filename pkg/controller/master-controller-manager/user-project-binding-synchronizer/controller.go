@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -147,8 +147,11 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return err
 	}
 	if kuberneteshelper.HasFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer) {
+		oldBinding := userProjectBinding.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, userProjectBinding); err != nil {
+		patch := ctrlruntimeclient.MergeFrom(oldBinding)
+		// ignore NotFound because on shared master/seed systems, the code above will already have deleted the binding
+		if err := r.masterClient.Patch(ctx, userProjectBinding, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			return fmt.Errorf("failed to remove userprojectbinding finalizer %s: %w", userProjectBinding.Name, err)
 		}
 	}

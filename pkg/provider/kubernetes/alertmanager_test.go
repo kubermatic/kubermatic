@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -70,7 +70,7 @@ func TestGetAlertmanager(t *testing.T) {
 			name:          "scenario 2, alertmanager is not found",
 			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
-			expectedError: "alertmanagers.kubermatic.k8s.io \"alertmanager\" not found",
+			expectedError: "alertmanagers.kubermatic.k8c.io \"alertmanager\" not found",
 		},
 		{
 			name: "scenario 3, alertmanager config secret is not found",
@@ -150,7 +150,7 @@ func TestUpdateAlertmanager(t *testing.T) {
 			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, "", "1"),
-			expectedError:        "failed to get alertmanager: alertmanagers.kubermatic.k8s.io \"alertmanager\" not found",
+			expectedError:        "failed to get alertmanager: alertmanagers.kubermatic.k8c.io \"alertmanager\" not found",
 		},
 		{
 			name: "scenario 3, config secret is not set in alertmanager",
@@ -232,7 +232,7 @@ func TestResetAlertmanager(t *testing.T) {
 			userInfo:             &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:              genCluster(testAlertmanagerClusterName, "kubernetes", "my-first-project-ID", "test-alertmanager", "john@acme.com"),
 			expectedAlertmanager: generateAlertmanager(testAlertmanagerNamespace, "", "1"),
-			expectedError:        "failed to get alertmanager: alertmanagers.kubermatic.k8s.io \"alertmanager\" not found",
+			expectedError:        "failed to get alertmanager: alertmanagers.kubermatic.k8c.io \"alertmanager\" not found",
 		},
 		{
 			name: "scenario 3, config secret is not set in alertmanager",

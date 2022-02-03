@@ -18,34 +18,43 @@ package crdmigration
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"reflect"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
 	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
 	// clone master cluster resources
-	if err := cloneResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient); err != nil {
+	if err := cloneResourcesInCluster(ctx, logger.WithField("master", true), opt.MasterClient, opt.KubermaticNamespace, opt.EtcdTimeout); err != nil {
 		return fmt.Errorf("processing the master cluster failed: %w", err)
 	}
 
 	// clone seed cluster resources
 	for seedName, seedClient := range opt.SeedClients {
-		if err := cloneResourcesInCluster(ctx, logger.WithField("seed", seedName), seedClient); err != nil {
+		if err := cloneResourcesInCluster(ctx, logger.WithField("seed", seedName), seedClient, opt.KubermaticNamespace, opt.EtcdTimeout); err != nil {
 			return fmt.Errorf("processing the seed cluster failed: %w", err)
 		}
 	}
@@ -53,56 +62,224 @@ func DuplicateResources(ctx context.Context, logger logrus.FieldLogger, opt *Opt
 	return nil
 }
 
-func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) error {
-	logger.Info("Duplicating resources into new API group…")
-
+func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, etcdTimeout time.Duration) error {
 	// reset our runtime UID cache
 	uidCache = map[string]types.UID{}
 
 	type cloneFn func(context.Context, logrus.FieldLogger, ctrlruntimeclient.Client) (int, error)
 
+	oldKubermaticAPIVersion := kubermaticv1.SchemeGroupVersion.String()
+	oldOperatorAPIVersion := operatorv1alpha1.SchemeGroupVersion.String()
+	newKubermaticAPIVersion := newv1.SchemeGroupVersion.String()
+
 	// the order in which resources are migrated is important, as they are interlinked via owner references
-	tasks := []struct {
-		Kind   string
-		cloner cloneFn
+	cloneTasks := []struct {
+		kind          string
+		cloner        cloneFn
+		oldAPIVersion string
 	}{
-		{Kind: "KubermaticConfiguration", cloner: cloneKubermaticConfigurationResourcesInCluster},
-		{Kind: "User", cloner: cloneUserResourcesInCluster},
-		{Kind: "Project", cloner: cloneProjectResourcesInCluster},
-		{Kind: "Cluster", cloner: cloneClusterResourcesInCluster},
-		{Kind: "Addon", cloner: cloneAddonResourcesInCluster},
-		{Kind: "AddonConfig", cloner: cloneAddonConfigResourcesInCluster},
-		{Kind: "AdmissionPlugin", cloner: cloneAdmissionPluginResourcesInCluster},
-		{Kind: "Alertmanager", cloner: cloneAlertmanagerResourcesInCluster},
-		{Kind: "AllowedRegistrie", cloner: cloneAllowedRegistryResourcesInCluster},
-		{Kind: "ClusterTemplate", cloner: cloneClusterTemplateResourcesInCluster},
-		{Kind: "ClusterTemplateInstance", cloner: cloneClusterTemplateInstanceResourcesInCluster},
-		{Kind: "ConstraintTemplate", cloner: cloneConstraintTemplateResourcesInCluster},
-		{Kind: "Constraint", cloner: cloneConstraintResourcesInCluster},
-		{Kind: "EtcdBackupConfig", cloner: cloneEtcdBackupConfigResourcesInCluster},
-		{Kind: "EtcdRestore", cloner: cloneEtcdRestoreResourcesInCluster},
-		{Kind: "ExternalCluster", cloner: cloneExternalClusterResourcesInCluster},
-		{Kind: "KubermaticSetting", cloner: cloneKubermaticSettingResourcesInCluster},
-		{Kind: "MLAAdminSetting", cloner: cloneMLAAdminSettingResourcesInCluster},
-		{Kind: "Preset", cloner: clonePresetResourcesInCluster},
-		{Kind: "RuleGroup", cloner: cloneRuleGroupResourcesInCluster},
-		{Kind: "Seed", cloner: cloneSeedResourcesInCluster},
-		{Kind: "UserProjectBinding", cloner: cloneUserProjectBindingResourcesInCluster},
-		{Kind: "UserSSHKey", cloner: cloneUserSSHKeyResourcesInCluster},
+		{kind: "KubermaticConfiguration", cloner: cloneKubermaticConfigurationResourcesInCluster, oldAPIVersion: oldOperatorAPIVersion},
+		{kind: "User", cloner: cloneUserResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "Project", cloner: cloneProjectResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "Cluster", cloner: cloneClusterResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "Addon", cloner: cloneAddonResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "AddonConfig", cloner: cloneAddonConfigResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "AdmissionPlugin", cloner: cloneAdmissionPluginResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "Alertmanager", cloner: cloneAlertmanagerResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "AllowedRegistry", cloner: cloneAllowedRegistryResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "ClusterTemplate", cloner: cloneClusterTemplateResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "ClusterTemplateInstance", cloner: cloneClusterTemplateInstanceResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "ConstraintTemplate", cloner: cloneConstraintTemplateResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "Constraint", cloner: cloneConstraintResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "EtcdBackupConfig", cloner: cloneEtcdBackupConfigResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "EtcdRestore", cloner: cloneEtcdRestoreResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "ExternalCluster", cloner: cloneExternalClusterResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "KubermaticSetting", cloner: cloneKubermaticSettingResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "MLAAdminSetting", cloner: cloneMLAAdminSettingResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "Preset", cloner: clonePresetResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "RuleGroup", cloner: cloneRuleGroupResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "Seed", cloner: cloneSeedResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "UserProjectBinding", cloner: cloneUserProjectBindingResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
+		{kind: "UserSSHKey", cloner: cloneUserSSHKeyResourcesInCluster, oldAPIVersion: oldKubermaticAPIVersion},
 	}
 
-	for _, task := range tasks {
-		logger.Debugf("Duplicating %s objects…", task.Kind)
+	// clone objects, but skip owner references; during this we will
+	// build up a cache of UIDs
+
+	logger.Info("Duplicating resources into new API group…")
+
+	for _, task := range cloneTasks {
+		logger.Debugf("Duplicating %s objects…", task.kind)
 
 		cloned, err := task.cloner(ctx, logger, client)
 		if err != nil {
-			return fmt.Errorf("failed to clone %s: %w", task.Kind, err)
+			return fmt.Errorf("failed to clone %s: %w", task.kind, err)
 		}
 
-		logger.Infof("Duplicated %d %s objects.", cloned, task.Kind)
+		logger.Infof("Duplicated %d %s objects.", cloned, task.kind)
+	}
+
+	// and now adjust the owner refs
+	type ownerRefTask struct {
+		kind          string
+		oldAPIVersion string
+		newAPIVersion string
+		namespaces    []string
+		drop          bool
+	}
+
+	ownerTasks := []ownerRefTask{}
+	for _, t := range cloneTasks {
+		ownerTasks = append(ownerTasks, ownerRefTask{
+			kind:          t.kind,
+			oldAPIVersion: t.oldAPIVersion,
+			newAPIVersion: newKubermaticAPIVersion,
+		})
+	}
+
+	// in addition to k8c.io resources, some global resources also have owner refs
+	// pointing to k8c.io resources; those resources must also be fixed
+	ownerTasks = append(ownerTasks, ownerRefTask{
+		kind:          "ClusterRole",
+		oldAPIVersion: "rbac.authorization.k8s.io/v1",
+		newAPIVersion: "rbac.authorization.k8s.io/v1",
+	}, ownerRefTask{
+		kind:          "ClusterRoleBinding",
+		oldAPIVersion: "rbac.authorization.k8s.io/v1",
+		newAPIVersion: "rbac.authorization.k8s.io/v1",
+	}, ownerRefTask{
+		kind:          "Namespace",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+	}, ownerRefTask{
+		kind:          "Secret",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "CronJob",
+		oldAPIVersion: "batch/v1",
+		newAPIVersion: "batch/v1",
+		namespaces:    []string{metav1.NamespaceSystem},
+	}, ownerRefTask{
+		kind:          "Job",
+		oldAPIVersion: "batch/v1",
+		newAPIVersion: "batch/v1",
+		namespaces:    []string{metav1.NamespaceSystem},
+	})
+
+	// older KKP versions set explicit owner refs even on resources living in the
+	// cluster namespace; those are dropped in 2.20 and affect pretty much all resources
+	// in the cluster namespace
+	clusterNamespaces, err := getClusterNamespaces(ctx, client)
+	if err != nil {
+		return fmt.Errorf("failed to determine usercluster namespaces: %w", err)
+	}
+
+	ownerTasks = append(ownerTasks, ownerRefTask{
+		kind:          "Role",
+		oldAPIVersion: "rbac.authorization.k8s.io/v1",
+		newAPIVersion: "rbac.authorization.k8s.io/v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "RoleBinding",
+		oldAPIVersion: "rbac.authorization.k8s.io/v1",
+		newAPIVersion: "rbac.authorization.k8s.io/v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "Service",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "ServiceAccount",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "Secret",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "ConfigMap",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "Deployment",
+		oldAPIVersion: "apps/v1",
+		newAPIVersion: "apps/v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "StatefulSet", // not etcd, etcd gets special treatment
+		oldAPIVersion: "apps/v1",
+		newAPIVersion: "apps/v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "CronJob",
+		oldAPIVersion: "batch/v1",
+		newAPIVersion: "batch/v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "PodDisruptionBudget",
+		oldAPIVersion: "policy/v1beta1",
+		newAPIVersion: "policy/v1beta1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	}, ownerRefTask{
+		kind:          "PersistentVolumeClaim",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    clusterNamespaces,
+		drop:          true,
+	})
+
+	logger.Info("Adjusting owner references…")
+
+	for _, task := range ownerTasks {
+		logger.Debugf("Adjusting owner references for %s objects…", task.kind)
+
+		err := migrateOwnerReferencesForKind(ctx, logger, client, task.namespaces, task.oldAPIVersion, task.kind, task.newAPIVersion, task.drop)
+		if err != nil {
+			return fmt.Errorf("failed to update %s objects: %w", task.kind, err)
+		}
+	}
+
+	// statefulsets are special because of the ownerRef in the PVC claim templates;
+	// since the PVC claim template cannot be edited, we must delete the etcd STS
+	// and recreate it
+	logger.Info("Adjusting owner references for etcd rings…")
+
+	err = migrateOwnerReferencesForEtcd(ctx, logger, client, clusterNamespaces, etcdTimeout)
+	if err != nil {
+		return fmt.Errorf("failed to update etcd rings: %w", err)
 	}
 
 	return nil
+}
+
+func getClusterNamespaces(ctx context.Context, client ctrlruntimeclient.Client) ([]string, error) {
+	clusterList := &kubermaticv1.ClusterList{}
+	if err := client.List(ctx, clusterList); err != nil {
+		return nil, fmt.Errorf("failed to list Clusters: %w", err)
+	}
+
+	namespaces := []string{}
+	for _, cluster := range clusterList.Items {
+		namespaces = append(namespaces, cluster.Status.NamespaceName)
+	}
+
+	return namespaces, nil
 }
 
 // uidCache is a primitive runtime cache for the UIDs of
@@ -128,9 +305,41 @@ func getUIDCacheKeyForObject(obj ctrlruntimeclient.Object, client ctrlruntimecli
 }
 
 func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, cacheUID bool) error {
-	if err := client.Create(ctx, obj); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return err
+	oldVersion := ""
+
+	existingObj := &unstructured.Unstructured{}
+	existingObj.SetAPIVersion(obj.GetObjectKind().GroupVersionKind().GroupVersion().String())
+	existingObj.SetKind(obj.GetObjectKind().GroupVersionKind().Kind)
+
+	// Some kube-apiservers, like GKE, like to fail with a HTTP 500 "please try again later"
+	// when attempting to create an object that already exists, probably only when both old
+	// and new CRDs exist at the same time and GKE gets confused.
+	// To prevent this, we carefully check the existence first.
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(obj), existingObj); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to check for object existence: %w", err)
+		}
+
+		if err := client.Create(ctx, obj); err != nil {
+			if !apierrors.IsAlreadyExists(err) {
+				return fmt.Errorf("failed to create object: %w", err)
+			}
+		}
+	} else {
+		oldVersion = existingObj.GetResourceVersion()
+
+		// forcefully overwrite any differences
+		obj.SetResourceVersion(existingObj.GetResourceVersion())
+		obj.SetGeneration(existingObj.GetGeneration())
+
+		if err := client.Update(ctx, obj); err != nil {
+			return fmt.Errorf("failed to update object: %w", err)
+		}
+
+		// if there was no actual change, reset the oldVersion so the
+		// wait loop below triggers on the first .Get()
+		if obj.GetResourceVersion() == oldVersion {
+			oldVersion = ""
 		}
 	}
 
@@ -140,7 +349,17 @@ func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrl
 	// Get()ing an object fills in the APIVersion and Kind too, but only if the client
 	// is backed by a cache (e.g. ctrlruntime's delegatingClient). Since the clients our
 	// seedClientGetter provides do not have caches attached, this won't work.
-	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(obj), obj); err != nil {
+	if err := wait.PollImmediate(100*time.Millisecond, 5*time.Second, func() (done bool, err error) {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(obj), obj); err != nil {
+			if kerrors.IsNotFound(err) {
+				return false, nil
+			}
+
+			return false, err
+		}
+
+		return obj.GetResourceVersion() != oldVersion, nil
+	}); err != nil {
 		return err
 	}
 
@@ -152,12 +371,19 @@ func ensureObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrl
 }
 
 func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
+	// owner references are migrated later, once all objects are cloned
 	om = *om.DeepCopy()
-	om.OwnerReferences = migrateOwnerReferences(om.OwnerReferences, om.Namespace)
+	om.OwnerReferences = []metav1.OwnerReference{}
 	om.UID = ""
 	om.Generation = 0
 	om.ResourceVersion = ""
 	om.CreationTimestamp = metav1.Time{}
+
+	// normally, due to the preflight checks, no object can be in deletion;
+	// during development this is possible however, so we still ensure that
+	// no deletion info is copied by accident
+	om.DeletionTimestamp = nil
+	om.DeletionGracePeriodSeconds = nil
 
 	// normalize/rename finalizers
 	for i, finalizer := range om.Finalizers {
@@ -170,14 +396,174 @@ func convertObjectMeta(om metav1.ObjectMeta) metav1.ObjectMeta {
 	return om
 }
 
-func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string) []metav1.OwnerReference {
+func migrateOwnerReferencesForKind(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, namespaces []string, oldAPIVersion string, kind string, newAPIVersion string, dropReferences bool) error {
+	list := &unstructured.UnstructuredList{}
+	list.SetAPIVersion(oldAPIVersion)
+	list.SetKind(kind)
+
+	if err := client.List(ctx, list); err != nil {
+		return fmt.Errorf("failed to list objects: %w", err)
+	}
+
+	selectedNamespaces := sets.NewString(namespaces...)
+
+	for _, oldObj := range list.Items {
+		// ignore object in unselected namespace
+		if namespaces != nil && !selectedNamespaces.Has(oldObj.GetNamespace()) {
+			continue
+		}
+
+		// ignore etcd statefulsets, they are processed by migrateOwnerReferencesForEtcd()
+		if oldObj.GetName() == resources.EtcdStatefulSetName && kind == "StatefulSet" {
+			continue
+		}
+
+		ownerRefs := oldObj.GetOwnerReferences()
+		if len(ownerRefs) == 0 {
+			continue
+		}
+
+		newOwnerRefs := migrateOwnerReferences(ownerRefs, oldObj.GetNamespace(), dropReferences)
+
+		if !reflect.DeepEqual(ownerRefs, newOwnerRefs) {
+			// fetch the corresponding new object
+			newObj := &unstructured.Unstructured{}
+			newObj.SetAPIVersion(newAPIVersion)
+			newObj.SetKind(kind)
+			if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(&oldObj), newObj); err != nil {
+				return fmt.Errorf("failed to get cloned object: %w", err)
+			}
+
+			resourceName := ctrlruntimeclient.ObjectKeyFromObject(newObj).String()
+			if newObj.GetNamespace() == "" {
+				resourceName = newObj.GetName()
+			}
+
+			logger.WithField("resource", resourceName).Debugf("Updating %s…", kind)
+
+			// update its owner refs
+			newObj.SetOwnerReferences(newOwnerRefs)
+			if err := client.Update(ctx, newObj); err != nil {
+				return fmt.Errorf("failed to update object: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// migrateOwnerReferencesForEtcd migrated etcd sets. This StatefulSet is special, because
+// it not only contains ownerRefs n its own object meta, but the PVC template also has
+// an ownerRef. The PVC template is immutable however, so we need to completely recreate
+// the StatefulSet and pray to god that no volumes are affected.
+func migrateOwnerReferencesForEtcd(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, namespaces []string, timeout time.Duration) error {
+	list := &appsv1.StatefulSetList{}
+	if err := client.List(ctx, list); err != nil {
+		return fmt.Errorf("failed to list objects: %w", err)
+	}
+
+	selectedNamespaces := sets.NewString(namespaces...)
+
+	for _, sts := range list.Items {
+		// ignore object in unselected namespace
+		if namespaces != nil && !selectedNamespaces.Has(sts.GetNamespace()) {
+			continue
+		}
+
+		// ignore everything but etcd statefulsets
+		if sts.GetName() != resources.EtcdStatefulSetName {
+			continue
+		}
+
+		stsOwnerRefs := sts.GetOwnerReferences()
+
+		pvcOwnerRefs := []metav1.OwnerReference{}
+		if tpls := sts.Spec.VolumeClaimTemplates; len(tpls) > 0 {
+			pvcOwnerRefs = tpls[0].OwnerReferences
+		}
+
+		if len(stsOwnerRefs) == 0 && len(pvcOwnerRefs) == 0 {
+			continue
+		}
+
+		newSTSOwnerRefs := migrateOwnerReferences(stsOwnerRefs, sts.GetNamespace(), true)
+		newPVCOwnerRefs := migrateOwnerReferences(pvcOwnerRefs, sts.GetNamespace(), true)
+
+		if !reflect.DeepEqual(stsOwnerRefs, newSTSOwnerRefs) || !reflect.DeepEqual(pvcOwnerRefs, newPVCOwnerRefs) {
+			stsLogger := logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&sts))
+			stsLogger.Debug("Recreating StatefulSet…")
+
+			// delete the sts
+			if err := client.Delete(ctx, &sts); err != nil {
+				return fmt.Errorf("failed to delete object: %w", err)
+			}
+
+			// recreate it
+			newSTS := appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:       sts.GetNamespace(),
+					Name:            sts.GetName(),
+					OwnerReferences: newSTSOwnerRefs,
+				},
+				Spec: *sts.Spec.DeepCopy(),
+			}
+
+			if len(newSTS.Spec.VolumeClaimTemplates) > 0 {
+				newSTS.Spec.VolumeClaimTemplates[0].OwnerReferences = newPVCOwnerRefs
+			}
+
+			if err := client.Create(ctx, &newSTS); err != nil {
+				return fmt.Errorf("failed to create object: %w", err)
+			}
+
+			// if enabled, wait for the etcd pods to get ready again; this slows down the
+			// migration, but lowers the performance impact of the migration
+			if timeout > 0 {
+				if err := waitForEtcdReady(ctx, stsLogger, client, ctrlruntimeclient.ObjectKeyFromObject(&sts), timeout); err != nil {
+					return fmt.Errorf("failed to wait for etcd: %w", err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func waitForEtcdReady(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, key types.NamespacedName, timeout time.Duration) error {
+	logger.Debugf("Waiting up to %v for etcd to become ready…", timeout)
+
+	err := wait.Poll(1*time.Second, timeout, func() (done bool, err error) {
+		sts := &appsv1.StatefulSet{}
+		if err := client.Get(ctx, key, sts); err != nil {
+			return false, err
+		}
+
+		return sts.Status.ReadyReplicas == *sts.Spec.Replicas, nil
+	})
+
+	// etcd being "slow" is not an error per-se; treating this as a warning only allows the
+	// user to choose a very small timeout (5s) only to slow down the migration a bit, without
+	// blocking for each user cluster.
+	if errors.Is(err, wait.ErrWaitTimeout) {
+		logger.Warn("StatefulSet did not become ready within the timeout.")
+		return nil
+	}
+
+	return err
+}
+
+func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string, dropReferences bool) []metav1.OwnerReference {
 	result := []metav1.OwnerReference{}
 
 	for _, ref := range ownerRefs {
+		if dropReferences && (ref.APIVersion == oldAPIGroupVersion || ref.APIVersion == newAPIGroupVersion) {
+			continue
+		}
+
 		newRef := ref.DeepCopy()
 
-		if newRef.APIVersion == "kubermatic.k8s.io/v1" {
-			newRef.APIVersion = "kubermatic.k8c.io/v1"
+		if newRef.APIVersion == oldAPIGroupVersion {
+			newRef.APIVersion = newAPIGroupVersion
 
 			cacheKey := getUIDCacheKey(newRef.Kind, namespace, newRef.Name)
 			uid, exists := uidCache[cacheKey]
@@ -197,8 +583,8 @@ func migrateOwnerReferences(ownerRefs []metav1.OwnerReference, namespace string)
 func migrateObjectReference(objectRef corev1.ObjectReference, namespace string) corev1.ObjectReference {
 	newRef := *objectRef.DeepCopy()
 
-	if newRef.APIVersion == "kubermatic.k8s.io/v1" {
-		newRef.APIVersion = "kubermatic.k8c.io/v1"
+	if newRef.APIVersion == oldAPIGroupVersion {
+		newRef.APIVersion = newAPIGroupVersion
 
 		if newRef.Namespace != "" {
 			namespace = newRef.Namespace
@@ -223,7 +609,16 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 	}
 
 	for _, oldObject := range oldObjects.Items {
+		versions, err := convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes)
+		if err != nil {
+			return 0, fmt.Errorf("KubermaticConfiguration %s is invalid: %w", oldObject.Name, err)
+		}
+
 		newObject := newv1.KubermaticConfiguration{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "KubermaticConfiguration",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.KubermaticConfigurationSpec{
 				CABundle:        oldObject.Spec.CABundle,
@@ -265,9 +660,9 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 					APIServerReplicas:                   oldObject.Spec.UserCluster.APIServerReplicas,
 					MachineController:                   newv1.MachineControllerConfiguration(oldObject.Spec.UserCluster.MachineController),
 				},
-				ExposeStrategy: newv1.ExposeStrategy(oldObject.Spec.ExposeStrategy),
+				ExposeStrategy: oldObject.Spec.ExposeStrategy,
 				Ingress:        newv1.KubermaticIngressConfiguration(oldObject.Spec.Ingress),
-				Versions:       convertKubermaticVersioningConfiguration(oldObject.Spec.Versions.Kubernetes),
+				Versions:       *versions,
 				VerticalPodAutoscaler: newv1.KubermaticVPAConfiguration{
 					Recommender:         newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Recommender),
 					Updater:             newv1.KubermaticVPAComponent(oldObject.Spec.VerticalPodAutoscaler.Updater),
@@ -281,6 +676,8 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 			newObject.Spec.FeatureGates[feature] = true
 		}
 
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating KubermaticConfiguration…")
+
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
@@ -289,11 +686,16 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 	return len(oldObjects.Items), nil
 }
 
-func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVersioningConfiguration) newv1.KubermaticVersioningConfiguration {
+func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVersioningConfiguration) (*newv1.KubermaticVersioningConfiguration, error) {
 	result := newv1.KubermaticVersioningConfiguration{}
 
 	if old.Default != nil {
-		result.Default = semver.Semver(old.Default.String())
+		parsed, err := semver.NewSemver(old.Default.String())
+		if err != nil {
+			return nil, fmt.Errorf("invalid default version %q: %w", old.Default.String(), err)
+		}
+
+		result.Default = parsed
 	}
 
 	for _, v := range old.Versions {
@@ -306,14 +708,14 @@ func convertKubermaticVersioningConfiguration(old operatorv1alpha1.KubermaticVer
 
 	for _, i := range old.ProviderIncompatibilities {
 		result.ProviderIncompatibilities = append(result.ProviderIncompatibilities, newv1.Incompatibility{
-			Provider:  newv1.ProviderType(i.Provider),
+			Provider:  i.Provider,
 			Version:   i.Version,
 			Condition: newv1.ConditionType(i.Condition),
 			Operation: newv1.OperationType(i.Operation),
 		})
 	}
 
-	return result
+	return &result, nil
 }
 
 func convertHealthStatus(oldHs kubermaticv1.HealthStatus) newv1.HealthStatus {
@@ -344,10 +746,16 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Cluster{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "Cluster",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Address:    newv1.ClusterAddress(oldObject.Address),
 			Spec:       convertClusterSpec(oldObject.Spec),
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating Cluster…")
 
 		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -450,6 +858,30 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 		ServiceAccount:                       (*newv1.ServiceAccountSettings)(old.ServiceAccount),
 		MLA:                                  (*newv1.MLASettings)(old.MLA),
 		ContainerRuntime:                     old.ContainerRuntime,
+	}
+
+	// borrowed from the ClusterSpec defaulting, because not all existing templates
+	// might have the CIDRs set
+	if len(result.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		if result.Cloud.Kubevirt != nil {
+			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+			// thus we have to avoid network collision
+			result.ClusterNetwork.Services.CIDRBlocks = []string{"10.241.0.0/20"}
+		} else {
+			result.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
+		}
+	}
+
+	if len(result.ClusterNetwork.Pods.CIDRBlocks) == 0 {
+		if result.Cloud.Kubevirt != nil {
+			result.ClusterNetwork.Pods.CIDRBlocks = []string{"172.26.0.0/16"}
+		} else {
+			result.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+		}
+	}
+
+	if result.ExposeStrategy == "" {
+		result.ExposeStrategy = defaults.DefaultExposeStrategy
 	}
 
 	if old := old.Cloud.Azure; old != nil {
@@ -573,6 +1005,10 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Addon{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "Addon",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AddonSpec{
 				Name:      oldObject.Spec.Name,
@@ -585,6 +1021,8 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 		for _, t := range oldObject.Spec.RequiredResourceTypes {
 			newObject.Spec.RequiredResourceTypes = append(newObject.Spec.RequiredResourceTypes, newv1.GroupVersionKind(t))
 		}
+
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating Addon…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -615,6 +1053,10 @@ func cloneAddonConfigResourcesInCluster(ctx context.Context, logger logrus.Field
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.AddonConfig{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "AddonConfig",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AddonConfigSpec{
 				ShortDescription: oldObject.Spec.ShortDescription,
@@ -628,6 +1070,8 @@ func cloneAddonConfigResourcesInCluster(ctx context.Context, logger logrus.Field
 		for _, ctrl := range oldObject.Spec.Controls {
 			newObject.Spec.Controls = append(newObject.Spec.Controls, newv1.AddonFormControl(ctrl))
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating AddonConfig…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -645,12 +1089,18 @@ func cloneAdmissionPluginResourcesInCluster(ctx context.Context, logger logrus.F
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.AdmissionPlugin{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "AdmissionPlugin",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AdmissionPluginSpec{
 				PluginName:  oldObject.Spec.PluginName,
 				FromVersion: oldObject.Spec.FromVersion,
 			},
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating AdmissionPlugin…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -668,11 +1118,17 @@ func cloneAlertmanagerResourcesInCluster(ctx context.Context, logger logrus.Fiel
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Alertmanager{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "Alertmanager",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AlertmanagerSpec{
 				ConfigSecret: oldObject.Spec.DeepCopy().ConfigSecret,
 			},
 		}
+
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating Alertmanager…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -702,11 +1158,17 @@ func cloneAllowedRegistryResourcesInCluster(ctx context.Context, logger logrus.F
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.AllowedRegistry{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "AllowedRegistry",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.AllowedRegistrySpec{
 				RegistryPrefix: oldObject.Spec.RegistryPrefix,
 			},
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating AllowedRegistry…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -724,6 +1186,10 @@ func cloneClusterTemplateResourcesInCluster(ctx context.Context, logger logrus.F
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ClusterTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "ClusterTemplate",
+			},
 			ObjectMeta:             convertObjectMeta(oldObject.ObjectMeta),
 			Credential:             oldObject.Credential,
 			ClusterLabels:          oldObject.ClusterLabels,
@@ -735,6 +1201,8 @@ func cloneClusterTemplateResourcesInCluster(ctx context.Context, logger logrus.F
 		for _, key := range oldObject.UserSSHKeys {
 			newObject.UserSSHKeys = append(newObject.UserSSHKeys, newv1.ClusterTemplateSSHKey(key))
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating ClusterTemplate…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -752,6 +1220,10 @@ func cloneClusterTemplateInstanceResourcesInCluster(ctx context.Context, logger 
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ClusterTemplateInstance{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "ClusterTemplateInstance",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ClusterTemplateInstanceSpec{
 				ProjectID:           oldObject.Spec.ProjectID,
@@ -760,6 +1232,8 @@ func cloneClusterTemplateInstanceResourcesInCluster(ctx context.Context, logger 
 				Replicas:            oldObject.Spec.Replicas,
 			},
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating ClusterTemplateInstance…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -777,6 +1251,10 @@ func cloneConstraintTemplateResourcesInCluster(ctx context.Context, logger logru
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ConstraintTemplate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "ConstraintTemplate",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ConstraintTemplateSpec{
 				CRD:      oldObject.Spec.CRD,
@@ -784,6 +1262,8 @@ func cloneConstraintTemplateResourcesInCluster(ctx context.Context, logger logru
 				Targets:  oldObject.Spec.Targets,
 			},
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating ConstraintTemplate…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -801,6 +1281,10 @@ func cloneConstraintResourcesInCluster(ctx context.Context, logger logrus.FieldL
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Constraint{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "Constraint",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ConstraintSpec{
 				ConstraintType: oldObject.Spec.ConstraintType,
@@ -816,6 +1300,8 @@ func cloneConstraintResourcesInCluster(ctx context.Context, logger logrus.FieldL
 				Selector:   newv1.ConstraintSelector(oldObject.Spec.Selector),
 			},
 		}
+
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating Constraint…")
 
 		for _, kind := range oldObject.Spec.Match.Kinds {
 			newObject.Spec.Match.Kinds = append(newObject.Spec.Match.Kinds, newv1.Kind(kind))
@@ -837,6 +1323,10 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.EtcdBackupConfig{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "EtcdBackupConfig",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.EtcdBackupConfigSpec{
 				Name:        oldObject.Spec.Name,
@@ -846,6 +1336,8 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 				Destination: oldObject.Spec.Destination,
 			},
 		}
+
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating EtcdBackupConfig…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -899,6 +1391,10 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.EtcdRestore{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "EtcdRestore",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.EtcdRestoreSpec{
 				Name:                            oldObject.Spec.Name,
@@ -909,6 +1405,8 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 			},
 		}
 
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating EtcdRestore…")
+
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
@@ -916,6 +1414,10 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 		newObject.Status = newv1.EtcdRestoreStatus{
 			Phase:       newv1.EtcdRestorePhase(oldObject.Status.Phase),
 			RestoreTime: oldObject.Status.RestoreTime,
+		}
+
+		if newObject.Status.Phase == "" {
+			newObject.Status.Phase = newv1.EtcdRestorePhaseStarted
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
@@ -934,6 +1436,10 @@ func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.F
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.ExternalCluster{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "ExternalCluster",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ExternalClusterSpec{
 				HumanReadableName:   oldObject.Spec.HumanReadableName,
@@ -949,7 +1455,9 @@ func cloneExternalClusterResourcesInCluster(ctx context.Context, logger logrus.F
 			}
 		}
 
-		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating ExternalCluster…")
+
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
@@ -965,6 +1473,10 @@ func cloneKubermaticSettingResourcesInCluster(ctx context.Context, logger logrus
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.KubermaticSetting{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "KubermaticSetting",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.SettingSpec{
 				CustomLinks:                      newv1.CustomLinks{},
@@ -990,6 +1502,8 @@ func cloneKubermaticSettingResourcesInCluster(ctx context.Context, logger logrus
 			newObject.Spec.CustomLinks = append(newObject.Spec.CustomLinks, newv1.CustomLink(link))
 		}
 
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating KubermaticSetting…")
+
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
@@ -1006,6 +1520,10 @@ func cloneMLAAdminSettingResourcesInCluster(ctx context.Context, logger logrus.F
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.MLAAdminSetting{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "MLAAdminSetting",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.MLAAdminSettingSpec{
 				ClusterName: oldObject.Spec.ClusterName,
@@ -1034,6 +1552,8 @@ func cloneMLAAdminSettingResourcesInCluster(ctx context.Context, logger logrus.F
 			}
 		}
 
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating MLAAdminSetting…")
+
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
@@ -1050,6 +1570,10 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Preset{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "Preset",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.PresetSpec{
 				Enabled:        oldObject.Spec.Enabled,
@@ -1233,6 +1757,8 @@ func clonePresetResourcesInCluster(ctx context.Context, logger logrus.FieldLogge
 			}
 		}
 
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating Preset…")
+
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
@@ -1249,11 +1775,17 @@ func cloneProjectResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Project{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "Project",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.ProjectSpec{
 				Name: oldObject.Spec.Name,
 			},
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating Project…")
 
 		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -1279,6 +1811,10 @@ func cloneRuleGroupResourcesInCluster(ctx context.Context, logger logrus.FieldLo
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.RuleGroup{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "RuleGroup",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.RuleGroupSpec{
 				RuleGroupType: newv1.RuleGroupType(oldObject.Spec.RuleGroupType),
@@ -1286,6 +1822,8 @@ func cloneRuleGroupResourcesInCluster(ctx context.Context, logger logrus.FieldLo
 				Cluster:       migrateObjectReference(oldObject.Spec.Cluster, ""),
 			},
 		}
+
+		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating RuleGroup…")
 
 		if err := ensureObject(ctx, client, &newObject, false); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -1303,6 +1841,10 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.Seed{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "Seed",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.SeedSpec{
 				Country:          oldObject.Spec.Country,
@@ -1370,7 +1912,9 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			}
 		}
 
-		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating Seed…")
+
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
@@ -1590,6 +2134,10 @@ func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.User{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "User",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.UserSpec{
 				ID:                     oldObject.Spec.ID,
@@ -1611,6 +2159,8 @@ func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 				LastSeenChangelogVersion:   s.LastSeenChangelogVersion,
 			}
 		}
+
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating User…")
 
 		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
@@ -1636,6 +2186,10 @@ func cloneUserProjectBindingResourcesInCluster(ctx context.Context, logger logru
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.UserProjectBinding{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "UserProjectBinding",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.UserProjectBindingSpec{
 				UserEmail: oldObject.Spec.UserEmail,
@@ -1644,7 +2198,9 @@ func cloneUserProjectBindingResourcesInCluster(ctx context.Context, logger logru
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating UserProjectBinding…")
+
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
@@ -1660,6 +2216,10 @@ func cloneUserSSHKeyResourcesInCluster(ctx context.Context, logger logrus.FieldL
 
 	for _, oldObject := range oldObjects.Items {
 		newObject := newv1.UserSSHKey{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: newv1.SchemeGroupVersion.String(),
+				Kind:       "UserSSHKey",
+			},
 			ObjectMeta: convertObjectMeta(oldObject.ObjectMeta),
 			Spec: newv1.SSHKeySpec{
 				Owner:       oldObject.Spec.Owner,
@@ -1670,7 +2230,9 @@ func cloneUserSSHKeyResourcesInCluster(ctx context.Context, logger logrus.FieldL
 			},
 		}
 
-		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+		logger.WithField("resource", oldObject.GetName()).Debug("Duplicating UserSSHKey…")
+
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}

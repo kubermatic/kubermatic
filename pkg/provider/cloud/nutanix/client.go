@@ -27,7 +27,7 @@ import (
 	nutanixclient "github.com/embik/nutanix-client-go/pkg/client"
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -50,7 +50,37 @@ type ErrorResponseMsg struct {
 }
 
 func GetClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.NutanixCloudSpec, secretKeyGetter provider.SecretKeySelectorValueFunc) (*ClientSet, error) {
-	return getClientSet(dc, cloud, secretKeyGetter)
+	credentials, err := getCredentials(dc, cloud, secretKeyGetter)
+	if err != nil {
+		return nil, err
+	}
+
+	return getClientSet(credentials)
+}
+
+func GetClientSetWithCreds(endpoint string, port *int32, allowInsecure *bool, proxyURL, username, password string) (*ClientSet, error) {
+	var endpointPort int32 = 9440
+	if port != nil {
+		endpointPort = *port
+	}
+
+	creds := nutanixclient.Credentials{
+		URL:      net.JoinHostPort(endpoint, fmt.Sprint(endpointPort)),
+		Endpoint: endpoint,
+		Port:     strconv.Itoa(int(endpointPort)),
+		Username: username,
+		Password: password,
+	}
+
+	if allowInsecure != nil {
+		creds.Insecure = *allowInsecure
+	}
+
+	if proxyURL != "" {
+		creds.ProxyURL = proxyURL
+	}
+
+	return getClientSet(creds)
 }
 
 func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.NutanixCloudSpec, secretKeyGetter provider.SecretKeySelectorValueFunc) (nutanixclient.Credentials, error) {
@@ -110,12 +140,7 @@ func getCredentials(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.
 	return creds, nil
 }
 
-func getClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.NutanixCloudSpec, secretKeyGetter provider.SecretKeySelectorValueFunc) (*ClientSet, error) {
-	credentials, err := getCredentials(dc, cloud, secretKeyGetter)
-	if err != nil {
-		return nil, err
-	}
-
+func getClientSet(credentials nutanixclient.Credentials) (*ClientSet, error) {
 	clientV3, err := nutanixv3.NewV3Client(credentials)
 	if err != nil {
 		return nil, err

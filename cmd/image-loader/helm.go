@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
@@ -37,7 +37,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConfiguration, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
+func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
 	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
 	}
