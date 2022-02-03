@@ -191,9 +191,15 @@ echodate "VPA is ready."
 
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
-TEST_NAME="Expose Dex and Kubermatic API"
 echodate "Exposing Dex and Kubermatic API to localhost..."
 kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null &
 kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null &
+
 hack/ci/setup-mla.sh
+
+echodate "Exposing Grafana to localhost..."
+kubectl port-forward --address 0.0.0.0 -n mla svc/grafana 3000:80 > /dev/null &
+kubectl port-forward --address 0.0.0.0 -n mla svc/cortex-alertmanager 3001:8080 > /dev/null &
+kubectl port-forward --address 0.0.0.0 -n mla svc/cortex-ruler 3002:8080 > /dev/null &
+kubectl port-forward --address 0.0.0.0 -n mla svc/loki-distributed-ruler 3003:3100 > /dev/null &
 echodate "Finished exposing components"
