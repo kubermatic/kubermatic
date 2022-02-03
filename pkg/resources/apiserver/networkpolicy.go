@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // DenyAllPolicyCreator returns a func to create/update the apiserver
@@ -97,6 +98,10 @@ func EctdAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCre
 func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "dns-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			dnsPort := intstr.FromInt(53)
+			protoUdp := corev1.ProtocolUDP
+			protoTcp := corev1.ProtocolTCP
+
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
@@ -108,20 +113,19 @@ func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCrea
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
-						To: []networkingv1.NetworkPolicyPeer{
+						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								PodSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{
-										resources.AppLabelKey: "dns-resolver",
-										"cluster":             c.ObjectMeta.Name,
-									},
-								},
+								Protocol: &protoUdp,
+								Port:     &dnsPort,
+							},
+							{
+								Protocol: &protoTcp,
+								Port:     &dnsPort,
 							},
 						},
 					},
 				},
 			}
-
 			return np, nil
 		}
 	}
