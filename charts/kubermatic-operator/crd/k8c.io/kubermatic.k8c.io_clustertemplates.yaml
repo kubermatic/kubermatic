@@ -329,7 +329,6 @@ spec:
                       vnetResourceGroup:
                         type: string
                     required:
-                    - assignAvailabilitySet
                     - availabilitySet
                     - loadBalancerSKU
                     - resourceGroup
