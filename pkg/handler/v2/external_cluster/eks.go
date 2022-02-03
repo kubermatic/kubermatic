@@ -19,8 +19,10 @@ package externalcluster
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -41,9 +43,52 @@ const (
 	EKSNodeGroupNameLabel = "eks.amazonaws.com/nodegroup"
 )
 
-func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
-	if cloud.EKS.Name == "" || cloud.EKS.Region == "" || cloud.EKS.AccessKeyID == "" || cloud.EKS.SecretAccessKey == "" {
-		return nil, errors.NewBadRequest("the EKS cluster name, region or credentials can not be empty")
+func createNewEKSCluster(ctx context.Context, eksCloudSpec *apiv2.EKSCloudSpec) error {
+	client, err := awsprovider.GetClientSet(eksCloudSpec.AccessKeyID, eksCloudSpec.SecretAccessKey, "", "", eksCloudSpec.Region)
+	if err != nil {
+		return err
+	}
+
+	clusterSpec := eksCloudSpec.ClusterSpec
+
+	fields := reflect.ValueOf(clusterSpec).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
+		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
+			return fmt.Errorf("required field is missing %v", fields.Type().Field(i).Tag)
+		}
+	}
+	input := &eks.CreateClusterInput{
+		Name: aws.String(eksCloudSpec.Name),
+		ResourcesVpcConfig: &eks.VpcConfigRequest{
+			SecurityGroupIds: clusterSpec.ResourcesVpcConfig.SecurityGroupIds,
+			SubnetIds:        clusterSpec.ResourcesVpcConfig.SubnetIds,
+		},
+		RoleArn: aws.String(clusterSpec.RoleArn),
+		Version: aws.String(clusterSpec.Version),
+	}
+	_, err = client.EKS.CreateCluster(input)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	fields := reflect.ValueOf(cloud.EKS).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
+		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
+			return nil, errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
+		}
+	}
+
+	if cloud.EKS.ClusterSpec != nil {
+		if err := createNewEKSCluster(ctx, cloud.EKS); err != nil {
+			return nil, err
+		}
 	}
 
 	newCluster := genExternalCluster(name, project.Name)
@@ -53,6 +98,7 @@ func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.
 			Region: cloud.EKS.Region,
 		},
 	}
+
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)

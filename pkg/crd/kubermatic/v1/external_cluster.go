@@ -74,27 +74,27 @@ type ExternalClusterCloudSpec struct {
 
 type ExternalClusterGKECloudSpec struct {
 	Name                 string                                  `json:"name"`
-	ServiceAccount       string                                  `json:"serviceAccount"`
+	ServiceAccount       string                                  `json:"serviceAccount,omitempty"`
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 	Zone                 string                                  `json:"zone"`
 }
 
 type ExternalClusterEKSCloudSpec struct {
 	Name                 string                                  `json:"name"`
-	AccessKeyID          string                                  `json:"accessKeyID"`
-	SecretAccessKey      string                                  `json:"secretAccessKey"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	AccessKeyID          string                                  `json:"accessKeyID,omitempty"`
+	SecretAccessKey      string                                  `json:"secretAccessKey,omitempty"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 	Region               string                                  `json:"region"`
 }
 
 type ExternalClusterAKSCloudSpec struct {
 	Name                 string                                  `json:"name"`
-	TenantID             string                                  `json:"tenantID"`
-	SubscriptionID       string                                  `json:"subscriptionID"`
-	ClientID             string                                  `json:"clientID"`
-	ClientSecret         string                                  `json:"clientSecret"`
+	TenantID             string                                  `json:"tenantID,omitempty"`
+	SubscriptionID       string                                  `json:"subscriptionID,omitempty"`
+	ClientID             string                                  `json:"clientID,omitempty"`
+	ClientSecret         string                                  `json:"clientSecret,omitempty"`
 	ResourceGroup        string                                  `json:"resourceGroup"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 }
 
 func (i *ExternalCluster) GetKubeconfigSecretName() string {

@@ -423,19 +423,69 @@ type GKECloudSpec struct {
 }
 
 type EKSCloudSpec struct {
-	Name            string `json:"name"`
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
-	Region          string `json:"region"`
+	Name            string          `json:"name" required:"true"`
+	AccessKeyID     string          `json:"accessKeyID" required:"true"`
+	SecretAccessKey string          `json:"secretAccessKey" required:"true"`
+	Region          string          `json:"region" required:"true"`
+	ClusterSpec     *EKSClusterSpec `json:"clusterSpec,omitempty"`
 }
 
 type AKSCloudSpec struct {
+	// The unique name to give to your cluster.
+	// Name is a required field
 	Name           string `json:"name"`
 	TenantID       string `json:"tenantID"`
 	SubscriptionID string `json:"subscriptionID"`
 	ClientID       string `json:"clientID"`
 	ClientSecret   string `json:"clientSecret"`
 	ResourceGroup  string `json:"resourceGroup"`
+}
+
+type EKSClusterSpec struct {
+	// The VPC configuration used by the cluster control plane. Amazon EKS VPC resources
+	// have specific requirements to work properly with Kubernetes. For more information,
+	// see Cluster VPC Considerations (https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html)
+	// and Cluster Security Group Considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
+	// in the Amazon EKS User Guide. You must specify at least two subnets. You
+	// can specify up to five security groups, but we recommend that you use a dedicated
+	// security group for your cluster control plane.
+	//
+	// ResourcesVpcConfig is a required field
+
+	ResourcesVpcConfig VpcConfigRequest `json:"vpcConfigRequest" required:"true"`
+
+	// The desired Kubernetes version for your cluster. If you don't specify a value
+	// here, the latest version available in Amazon EKS is used.
+	Version string `json:"version"`
+
+	// The Amazon Resource Name (ARN) of the IAM role that provides permissions
+	// for the Kubernetes control plane to make calls to AWS API operations on your
+	// behalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)
+	// in the Amazon EKS User Guide .
+	//
+	// RoleArn is a required field
+	RoleArn string `json:"roleArn" required:"true"`
+}
+
+type VpcConfigRequest struct {
+	// Specify one or more security groups for the cross-account elastic network
+	// interfaces that Amazon EKS creates to use to allow communication between
+	// your nodes and the Kubernetes control plane. If you don't specify any security
+	// groups, then familiarize yourself with the difference between Amazon EKS
+	// defaults for clusters deployed with Kubernetes:
+	//
+	//    * 1.14 Amazon EKS platform version eks.2 and earlier
+	//
+	//    * 1.14 Amazon EKS platform version eks.3 and later
+	//
+	// For more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
+	// in the Amazon EKS User Guide .
+	SecurityGroupIds []*string `json:"securityGroupIds" required:"true"`
+
+	// Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account
+	// elastic network interfaces in these subnets to allow communication between
+	// your nodes and the Kubernetes control plane.
+	SubnetIds []*string `json:"subnetIds" required:"true"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
