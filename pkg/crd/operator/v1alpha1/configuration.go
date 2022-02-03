@@ -341,9 +341,11 @@ type KubermaticVersioningConfiguration struct {
 
 // Update represents an update option for a user cluster.
 type Update struct {
-	// From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+	// From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.20.*".
 	From string `json:"from,omitempty"`
-	// From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+	// To is the version to which an update is allowed.
+	// Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
+	// Can be a wildcard otherwise, e.g. "1.20.*".
 	To string `json:"to,omitempty"`
 	// Automatic controls whether this update is executed automatically
 	// for the control plane of all matching user clusters.
