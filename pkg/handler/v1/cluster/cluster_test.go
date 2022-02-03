@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -1401,7 +1402,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: gets cluster with the given name that belongs to the given project",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"private-do1","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"private-do1","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1417,7 +1418,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1437,7 +1438,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: the admin John can get Bob's cluster",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1529,6 +1530,10 @@ func TestListClusters(t *testing.T) {
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
 						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+						},
 					},
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
@@ -1555,6 +1560,10 @@ func TestListClusters(t *testing.T) {
 							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1590,6 +1599,10 @@ func TestListClusters(t *testing.T) {
 							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1638,6 +1651,10 @@ func TestListClusters(t *testing.T) {
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
 						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+						},
 					},
 					Status: apiv1.ClusterStatus{
 						Version:              *semver.NewSemverOrDie("9.9.9"),
@@ -1664,6 +1681,10 @@ func TestListClusters(t *testing.T) {
 							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1699,6 +1720,10 @@ func TestListClusters(t *testing.T) {
 							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1785,6 +1810,10 @@ func TestListClustersForProject(t *testing.T) {
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
 						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
@@ -1819,6 +1848,10 @@ func TestListClustersForProject(t *testing.T) {
 							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
@@ -1864,6 +1897,10 @@ func TestListClustersForProject(t *testing.T) {
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
 						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
@@ -1899,6 +1936,10 @@ func TestListClustersForProject(t *testing.T) {
 							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
 							ProxyMode: "ipvs",
 							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 						Version: *semver.NewSemverOrDie("9.9.9"),
 					},
