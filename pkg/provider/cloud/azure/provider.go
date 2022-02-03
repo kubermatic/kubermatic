@@ -304,6 +304,14 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 }
 
 func (a *Azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+	if cloud.Azure == nil {
+		return fmt.Errorf("no Azure cloud spec found")
+	}
+
+	if cloud.Azure.LoadBalancerSKU == "" {
+		cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureBasicLBSKU
+	}
+
 	return nil
 }
 
