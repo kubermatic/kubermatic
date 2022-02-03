@@ -730,6 +730,54 @@ spec:
                         type: object
                     type: object
                 type: object
+              webhook:
+                description: Webhook configures the webhook.
+                properties:
+                  debugLog:
+                    description: DebugLog enables more verbose logging.
+                    type: boolean
+                  dockerRepository:
+                    description: DockerRepository is the repository containing the
+                      Kubermatic webhook image.
+                    type: string
+                  pprofEndpoint:
+                    description: PProfEndpoint controls the port the webhook should
+                      listen on to provide pprof data. This port is never exposed
+                      from the container and only available via port-forwardings.
+                    type: string
+                  replicas:
+                    description: Replicas sets the number of pod replicas for the
+                      webhook.
+                    format: int32
+                    type: integer
+                  resources:
+                    description: Resources describes the requested and maximum allowed
+                      CPU/memory usage.
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
+                type: object
             required:
             - auth
             type: object
