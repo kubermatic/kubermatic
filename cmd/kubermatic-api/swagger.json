@@ -18857,7 +18857,7 @@
           "x-go-name": "NodeLabels"
         },
         "nodeTaints": {
-          "description": "NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.",
+          "description": "NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.\nPlacing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail",
           "type": "array",
           "items": {
             "type": "string"

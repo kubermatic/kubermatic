@@ -430,19 +430,19 @@ type EKSCloudSpec struct {
 }
 
 type AKSCloudSpec struct {
-	Name           string          `json:"name"`
-	TenantID       string          `json:"tenantID,omitempty"`
-	SubscriptionID string          `json:"subscriptionID,omitempty"`
-	ClientID       string          `json:"clientID,omitempty"`
-	ClientSecret   string          `json:"clientSecret,omitempty"`
-	ResourceGroup  string          `json:"resourceGroup"`
+	Name           string          `json:"name" required:"true"`
+	TenantID       string          `json:"tenantID,omitempty" required:"true"`
+	SubscriptionID string          `json:"subscriptionID,omitempty" required:"true"`
+	ClientID       string          `json:"clientID,omitempty" required:"true"`
+	ClientSecret   string          `json:"clientSecret,omitempty" required:"true"`
+	ResourceGroup  string          `json:"resourceGroup" required:"true"`
 	ClusterSpec    *AKSClusterSpec `json:"clusterSpec,omitempty"`
 }
 
 // AKSClusterSpec Azure Kubernetes Service cluster.
 type AKSClusterSpec struct {
 	// Location - Resource location
-	Location string `json:"location"`
+	Location string `json:"location" required:"true"`
 	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
 	KubernetesVersion string `json:"kubernetesVersion"`
 	// MachineDeploymentSpec - The agent pool properties.
@@ -538,7 +538,7 @@ type ExternalClusterMachineDeploymentCloudSpec struct {
 }
 
 type AKSMachineDeploymentCloudSpec struct {
-	Name string `json:"name"`
+	Name string `json:"name" required:"true"`
 	// Basics - Settings for creating the AKS agentpool
 	Basics AgentPoolBasics `json:"basicsSettings"`
 	// OptionalSettings - Optional Settings for creating the AKS agentpool
@@ -547,9 +547,9 @@ type AKSMachineDeploymentCloudSpec struct {
 
 type AgentPoolBasics struct {
 	// Required: Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
-	Count int32 `json:"count,omitempty"`
+	Count int32 `json:"count" required:"true"`
 	// Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
-	VMSize string `json:"vmSize,omitempty"`
+	VMSize string `json:"vmSize" required:"true"`
 	// Mode - Possible values include: 'System', 'User'
 	Mode string `json:"mode,omitempty"`
 	// OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).
@@ -568,8 +568,9 @@ type AgentPoolBasics struct {
 
 type AgentPoolOptionalSettings struct {
 	// NodeLabels - The node labels to be persisted across all nodes in agent pool.
-	NodeLabels map[string]*string `json:"nodeLabels"`
+	NodeLabels map[string]*string `json:"nodeLabels,omitempty"`
 	// NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.
+	// Placing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail
 	NodeTaints []string `json:"nodeTaints,omitempty"`
 }
 

@@ -19,6 +19,8 @@ package externalcluster
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
@@ -72,18 +74,16 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 				KubernetesVersion: to.StringPtr(clusterSpec.KubernetesVersion),
 				AgentPoolProfiles: &[]containerservice.ManagedClusterAgentPoolProfile{
 					{
-						Name:                to.StringPtr(agentPoolProfiles.Name),
-						VMSize:              to.StringPtr(basicSettings.VMSize),
-						Count:               to.Int32Ptr(basicSettings.Count),
-						OrchestratorVersion: to.StringPtr(basicSettings.OrchestratorVersion),
-						Mode:                (containerservice.AgentPoolMode)(basicSettings.Mode),
-						OsDiskSizeGB:        to.Int32Ptr(basicSettings.OsDiskSizeGB),
-						AvailabilityZones:   &basicSettings.AvailabilityZones,
-						EnableAutoScaling:   to.BoolPtr(basicSettings.EnableAutoScaling),
-						MaxCount:            to.Int32Ptr(basicSettings.MaxCount),
-						MinCount:            to.Int32Ptr(basicSettings.MinCount),
-						NodeLabels:          optionalSettings.NodeLabels,
-						NodeTaints:          &optionalSettings.NodeTaints,
+						Name:              to.StringPtr(agentPoolProfiles.Name),
+						VMSize:            to.StringPtr(basicSettings.VMSize),
+						Count:             to.Int32Ptr(basicSettings.Count),
+						Mode:              (containerservice.AgentPoolMode)(basicSettings.Mode),
+						OsDiskSizeGB:      to.Int32Ptr(basicSettings.OsDiskSizeGB),
+						AvailabilityZones: &basicSettings.AvailabilityZones,
+						EnableAutoScaling: to.BoolPtr(basicSettings.EnableAutoScaling),
+						MaxCount:          to.Int32Ptr(basicSettings.MaxCount),
+						MinCount:          to.Int32Ptr(basicSettings.MinCount),
+						NodeLabels:        optionalSettings.NodeLabels,
 					},
 				},
 				ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
@@ -102,8 +102,12 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 }
 
 func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
-	if cloud.AKS.Name == "" || cloud.AKS.TenantID == "" || cloud.AKS.SubscriptionID == "" || cloud.AKS.ClientID == "" || cloud.AKS.ClientSecret == "" || cloud.AKS.ResourceGroup == "" {
-		return nil, errors.NewBadRequest("the AKS cluster name, tenant id or subscription id or client id or client secret or resource group can not be empty")
+	fields := reflect.ValueOf(cloud.AKS).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
+		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
+			return nil, errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
+		}
 	}
 
 	if cloud.AKS.ClusterSpec != nil {
