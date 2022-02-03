@@ -87,7 +87,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider {
 		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
 		if err != nil {
 			return fmt.Errorf("failed to get cloudConfig: %w", err)
@@ -751,11 +751,15 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		)
 	}
 
-	if data.csiCloudConfig != nil {
+	if data.csiCloudConfig != nil && r.cloudProvider == kubermaticv1.VSphereCloudProvider {
 		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
 		if data.ccmMigration {
 			creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
 		}
+	}
+
+	if data.csiCloudConfig != nil && r.cloudProvider == kubermaticv1.NutanixCloudProvider {
+		creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig))
 	}
 
 	if r.userSSHKeyAgent {
@@ -986,7 +990,7 @@ type reconcileData struct {
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
-	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
+	// csiCloudConfig is currently used only by vSphere and Nutanix, whose needs it to properly configure the external CSI driver
 	csiCloudConfig              []byte
 	ccmMigration                bool
 	monitoringRequirements      *corev1.ResourceRequirements

@@ -1886,6 +1886,11 @@ func (in *DatacenterSpecNutanix) DeepCopyInto(out *DatacenterSpecNutanix) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.PePort != nil {
+		in, out := &in.PePort, &out.PePort
+		*out = new(int32)
+		**out = **in
+	}
 	if in.Images != nil {
 		in, out := &in.Images, &out.Images
 		*out = make(ImageList, len(*in))

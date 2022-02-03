@@ -839,6 +839,10 @@ type NutanixCloudSpec struct {
 	ProxyURL string `json:"proxyURL,omitempty"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
+
+	// Prism Element credentials, required for csi driver
+	PeUsername string `json:"peUsername,omitempty"`
+	PePassword string `json:"pePassword,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=HealthStatusDown;HealthStatusUp;HealthStatusProvisioning

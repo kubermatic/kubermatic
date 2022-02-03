@@ -454,6 +454,12 @@ type DatacenterSpecNutanix struct {
 	Endpoint string `json:"endpoint"`
 	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
 	Port *int32 `json:"port,omitempty"`
+
+	// PeEndpoint to use for accessing Nutanix Prism Element. No protocol or port should be passed,
+	PeEndpoint string `json:"peEndpoint"`
+	// Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	PePort *int32 `json:"pePort,omitempty"`
+
 	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
 	AllowInsecure bool `json:"allowInsecure,omitempty"`
 	// Images to use for each supported operating system

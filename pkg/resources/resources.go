@@ -537,6 +537,10 @@ const (
 
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"
+	// NutanixCSIConfigSecretKey is the secret key for nutanix csi secret
+	NutanixCSIConfigSecretKey = "key"
+	// NutanixCSIConfigSecretName is the secret key for nutanix csi secret
+	NutanixCSIConfigSecretName = "ntnx-secret"
 )
 
 const (
@@ -585,9 +589,11 @@ const (
 
 	AnexiaToken = "token"
 
-	NutanixUsername = "username"
-	NutanixPassword = "password"
-	NutanixProxyURL = "proxyURL"
+	NutanixUsername   = "username"
+	NutanixPassword   = "password"
+	NutanixPeUsername = "peUsername"
+	NutanixPePassword = "pePassword"
+	NutanixProxyURL   = "proxyURL"
 
 	UserSSHKeys = "usersshkeys"
 )

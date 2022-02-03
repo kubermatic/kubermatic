@@ -106,6 +106,36 @@ func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConf
 	}
 }
 
+func ConfigmapNutanixCSICreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.CSICloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			var pePort int32
+			if data.DC().Spec.Nutanix.PePort != nil {
+				pePort = *data.DC().Spec.Nutanix.PePort
+			} else {
+				// default nutanix prism element port
+				pePort = 9440
+			}
+
+			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", data.DC().Spec.Nutanix.PeEndpoint, pePort, credentials.Nutanix.PeUsername, credentials.Nutanix.PePassword)
+
+			cm.Labels = resources.BaseAppLabels(name, nil)
+			cm.Data[resources.CloudConfigConfigMapKey] = nutanixCsiConf
+
+			return cm, nil
+		}
+	}
+}
+
 // CloudConfig returns the cloud-config for the supplied data.
 func CloudConfig(
 	cluster *kubermaticv1.Cluster,

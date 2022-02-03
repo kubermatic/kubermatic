@@ -319,6 +319,16 @@ spec:
                               description: Images to use for each supported operating
                                 system
                               type: object
+                            peEndpoint:
+                              description: PeEndpoint to use for accessing Nutanix
+                                Prism Element. No protocol or port should be passed,
+                              type: string
+                            pePort:
+                              description: 'Optional: PePort to use when connecting
+                                to the Nutanix Prism Element endpoint (defaults to
+                                9440)'
+                              format: int32
+                              type: integer
                             port:
                               description: 'Optional: Port to use when connecting
                                 to the Nutanix Prism Central endpoint (defaults to
@@ -328,6 +338,7 @@ spec:
                           required:
                           - endpoint
                           - images
+                          - peEndpoint
                           type: object
                         openstack:
                           description: DatacenterSpecOpenstack describes an OpenStack

@@ -633,6 +633,11 @@ spec:
                         type: object
                       password:
                         type: string
+                      pePassword:
+                        type: string
+                      peUsername:
+                        description: Prism Element credentials, required for csi driver
+                        type: string
                       projectName:
                         description: ProjectName is the project that this cluster
                           is deployed into. If none is given, no project will be used.
