@@ -21,6 +21,7 @@ type AgentPoolOptionalSettings struct {
 	NodeLabels map[string]string `json:"nodeLabels,omitempty"`
 
 	// NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.
+	// Placing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail
 	NodeTaints []string `json:"nodeTaints"`
 }
 
