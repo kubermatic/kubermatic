@@ -20,8 +20,6 @@ cd $(dirname $0)/../..
 source hack/lib.sh
 
 KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-kubermatic.local}"
-NODE_IMAGE="kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6"
-KINDEST_FILENAME="kindest.tar"
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 export SERVICE_ACCOUNT_KEY="${SERVICE_ACCOUNT_KEY:-69860bda5563ac81e3c0057d654b52532}"
@@ -39,7 +37,6 @@ export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
-export KIND_NODE_VERSION=v1.21.1
 # The Kubermatic version to build.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 
@@ -60,26 +57,19 @@ IMAGE_PULL_SECRET_DATA="${IMAGE_PULL_SECRET_DATA:-$(vault kv get -field=.dockerc
 
 kind delete cluster --name "$KIND_CLUSTER_NAME"
 
-echodate "Pulling kindest image $NODE_IMAGE ..."
-docker pull "$NODE_IMAGE"
-mkdir -p _build
-docker save -o _build/"$KINDEST_FILENAME" "$NODE_IMAGE"
-
 if [ "${OS}" != "darwin" ]; then
   # no iptables on mac so ...
   echodate "Setting iptables rule to clamp mss to path mtu"
   sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 fi
 
-docker load --input _build/kindest.tar
-
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
 
 beforeKindCreate=$(nowms)
 
-kind create cluster --name "$KIND_CLUSTER_NAME" --config "$DATA_FILE"/cluster.yaml --image=kindest/node:$KIND_NODE_VERSION
-pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
+kind create cluster --name "$KIND_CLUSTER_NAME" --config "$DATA_FILE"/cluster.yaml
+pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate
 
 if [ -z "${KIND_CLUSTER_NAME:-}" ]; then
   echodate "KIND_CLUSTER_NAME must be set by calling setup-kind-cluster.sh first."

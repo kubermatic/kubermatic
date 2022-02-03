@@ -32,7 +32,6 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.21.1}"
 KIND_PORT="${KIND_PORT-31000}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
 USER_CLUSTER_NAME="${USER_CLUSTER_NAME-$(head -3 /dev/urandom | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' | cut -c -10)}"
@@ -72,7 +71,6 @@ EOF
 # setup Kind cluster
 time retry 5 kind create cluster \
   --name="${KIND_CLUSTER_NAME}" \
-  --image=kindest/node:"${KIND_NODE_VERSION}" \
   --config=kind-config.yaml
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 

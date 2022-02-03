@@ -56,18 +56,12 @@ source <(k completion bash )
 source <(k completion bash | sed s/kubectl/k/g)
 EOF
 
-# Load kind image
-echodate "Loading kindest image"
-docker load --input /kindest.tar
-echodate "Loaded kindest image"
-
 # Create kind cluster
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-export KIND_NODE_VERSION=v1.21.1
 
 # make the registry mirror available as a socket,
 # so we can mount it into the kind cluster
@@ -80,7 +74,6 @@ apiVersion: kind.x-k8s.io/v1alpha4
 name: "${KIND_CLUSTER_NAME}"
 nodes:
   - role: control-plane
-    image: "kindest/node:${KIND_NODE_VERSION}"
     extraMounts:
     - hostPath: /mirror
       containerPath: /mirror
@@ -91,7 +84,7 @@ containerdConfigPatches:
 EOF
 
 kind create cluster --config kind-config.yaml
-pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
+pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate
 
 # unwrap the socket inside the kind cluster and make it available on a TCP port,
 # because containerd/Docker doesn't support sockets for mirrors.
@@ -137,4 +130,4 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   echodate "Successfully set up iptables rules for nodeports"
 fi
 
-echodate "Kind cluster $KIND_CLUSTER_NAME using Kubernetes $KIND_NODE_VERSION is up and running."
+echodate "Kind cluster $KIND_CLUSTER_NAME is up and running."

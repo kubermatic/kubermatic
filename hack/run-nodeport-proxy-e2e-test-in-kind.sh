@@ -27,7 +27,6 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.21.1}"
 
 type kind > /dev/null || fatal \
   "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
@@ -51,7 +50,7 @@ make -C cmd/nodeport-proxy docker \
   TAG="${TAG}"
 
 # setup Kind cluster
-time retry 5 kind create cluster --name "${KIND_CLUSTER_NAME}" --image=kindest/node:"${KIND_NODE_VERSION}"
+time retry 5 kind create cluster --name "${KIND_CLUSTER_NAME}"
 # load nodeport-proxy image
 time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND_CLUSTER_NAME"
 # run tests
