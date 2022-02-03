@@ -63,32 +63,55 @@ export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
 
-# make the registry mirror available as a socket,
-# so we can mount it into the kind cluster
-mkdir -p /mirror
-socat UNIX-LISTEN:/mirror/mirror.sock,fork,reuseaddr,unlink-early,mode=777 TCP4:registry-mirror.registry.svc.cluster.local.:5001 &
+# If a Docker mirror is available, we tunnel it into the
+# kind cluster, which has its own containerd daemon.
+# kind current does not allow accessing ports on the host
+# from within the cluster and also does not allow adding
+# custom flags to the `docker run` call it does in the
+# background.
+# To circumvent this, we use socat to make the TCP-based
+# mirror available as a local socket and then mount this
+# into the kind container.
+# Since containerd does not support sockets, we also start
+# a second socat process in the kind container that unwraps
+# the socket again and listens on 127.0.0.1:5001, which is
+# then used for containerd.
+# Being a docker registry does not incur a lot of requests,
+# just a few big ones. For this socat seems pretty reliable.
+if [ -n "${DOCKER_REGISTRY_MIRROR_ADDR:-}" ]; then
+  mirrorHost="$(echo "$DOCKER_REGISTRY_MIRROR_ADDR" | sed 's#http://##' | sed 's#/+$##g')"
 
-cat << EOF > kind-config.yaml
+  # make the registry mirror available as a socket,
+  # so we can mount it into the kind cluster
+  mkdir -p /mirror
+  socat UNIX-LISTEN:/mirror/mirror.sock,fork,reuseaddr,unlink-early,mode=777 TCP4:$mirrorHost &
+
+  cat << EOF > kind-config.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: "${KIND_CLUSTER_NAME}"
 nodes:
   - role: control-plane
+    # mount the socket
     extraMounts:
     - hostPath: /mirror
       containerPath: /mirror
 containerdConfigPatches:
+  # point to the soon-to-start local socat process
   - |-
     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
     endpoint = ["http://127.0.0.1:5001"]
 EOF
 
-kind create cluster --config kind-config.yaml
-pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate
+  kind create cluster --config kind-config.yaml
+  pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate
 
-# unwrap the socket inside the kind cluster and make it available on a TCP port,
-# because containerd/Docker doesn't support sockets for mirrors.
-docker exec kubermatic-control-plane bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
+  # unwrap the socket inside the kind cluster and make it available on a TCP port,
+  # because containerd/Docker doesn't support sockets for mirrors.
+  docker exec kubermatic-control-plane bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
+else
+  kind create cluster --name "$KIND_CLUSTER_NAME"
+fi
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as

@@ -92,7 +92,7 @@ rm _build/kubermatic-installer
 make _build/kubermatic-installer
 
 # setup Kind cluster
-time retry 5 kind create cluster --name="${KIND_CLUSTER_NAME}" \
+time retry 5 kind create cluster --name="${KIND_CLUSTER_NAME}"
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
 # load nodeport-proxy image
