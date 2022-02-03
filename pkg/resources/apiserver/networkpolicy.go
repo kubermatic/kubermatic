@@ -99,8 +99,8 @@ func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCrea
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "dns-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			dnsPort := intstr.FromInt(53)
-			protoUdp := corev1.ProtocolUDP
-			protoTcp := corev1.ProtocolTCP
+			protoUDP := corev1.ProtocolUDP
+			protoTCP := corev1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -115,11 +115,11 @@ func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCrea
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: &protoUdp,
+								Protocol: &protoUDP,
 								Port:     &dnsPort,
 							},
 							{
-								Protocol: &protoTcp,
+								Protocol: &protoTCP,
 								Port:     &dnsPort,
 							},
 						},
