@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -124,6 +124,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				modifiedCluster := cluster.DeepCopy()
+				modifiedCluster.ResourceVersion = ""
 				modifiedCluster.Name = ""
 				modifiedCluster.Spec.HumanReadableName = ""
 
@@ -132,6 +133,7 @@ func TestReconcile(t *testing.T) {
 			expectedClusterList := []*kubermaticv1.Cluster{}
 			for _, cluster := range tc.expectedClusters {
 				modifiedCluster := cluster.DeepCopy()
+				modifiedCluster.ResourceVersion = ""
 				modifiedCluster.Name = ""
 				modifiedCluster.Spec.HumanReadableName = ""
 				expectedClusterList = append(expectedClusterList, modifiedCluster)

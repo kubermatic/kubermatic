@@ -26,9 +26,8 @@ import (
 	"github.com/go-test/deep"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -49,7 +48,7 @@ import (
 
 var (
 	testScheme = runtime.NewScheme()
-	config     = operatorv1alpha1.KubermaticConfiguration{}
+	config     = kubermaticv1.KubermaticConfiguration{}
 	seed       = kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-seed",
@@ -1063,7 +1062,7 @@ type rawClusterGen struct {
 func (r rawClusterGen) Do() []byte {
 	c := kubermaticv1.Cluster{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{

@@ -28,12 +28,12 @@ import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"gopkg.in/square/go-jose.v2/jwt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -91,7 +91,7 @@ func createSANoPrefix(name, projectName, group, id string) *kubermaticv1.User {
 	return sa
 }
 
-func sortTokenByName(tokens []*v1.Secret) {
+func sortTokenByName(tokens []*corev1.Secret) {
 	sort.SliceStable(tokens, func(i, j int) bool {
 		mi, mj := tokens[i], tokens[j]
 		return mi.Name < mj.Name
@@ -133,11 +133,11 @@ func genDefaultUser() *kubermaticv1.User {
 }
 
 // genProject generates new empty project.
-func genProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
+func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Project",
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),
@@ -208,8 +208,8 @@ func genBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding
 	}
 }
 
-func genSecret(projectID, saID, name, id string) *v1.Secret {
-	secret := &v1.Secret{}
+func genSecret(projectID, saID, name, id string) *corev1.Secret {
+	secret := &corev1.Secret{}
 	secret.Name = fmt.Sprintf("sa-token-%s", id)
 	secret.Type = "Opaque"
 	secret.Namespace = "kubermatic"

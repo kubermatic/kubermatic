@@ -18,7 +18,7 @@ metadata:
   name: {{ .Release.Name }}-kubermatic-agent-role
 rules:
 - apiGroups:
-  - kubermatic.k8s.io
+  - kubermatic.k8c.io
   resources:
   - seeds
   - clusters

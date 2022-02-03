@@ -127,7 +127,7 @@ echo "Config dir: ${TMPDIR}"
 KUBERMATIC_CONFIG="${TMPDIR}/kubermatic.yaml"
 
 cat << EOF > ${KUBERMATIC_CONFIG}
-apiVersion: operator.kubermatic.io/v1alpha1
+apiVersion: kubermatic.k8c.io/v1
 kind: KubermaticConfiguration
 metadata:
   name: e2e
@@ -142,7 +142,7 @@ spec:
     replicas: 0
     debugLog: true
   featureGates:
-    TunnelingExposeStrategy: {}
+    TunnelingExposeStrategy: true
   ui:
     replicas: 0
   # Dex integration
@@ -195,7 +195,7 @@ data:
 
 ---
 kind: Seed
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 metadata:
   name: "${SEED_NAME}"
   namespace: kubermatic
@@ -215,27 +215,27 @@ spec:
       node: {}
       spec:
         openstack:
-          auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
-          availability_zone: dbl1
-          dns_servers:
+          authURL: https://api.cbk.cloud.syseleven.net:5000/v3
+          availabilityZone: dbl1
+          dnsServers:
           - 37.123.105.116
           - 37.123.105.117
-          enabled_flavors: null
-          enforce_floating_ip: true
-          ignore_volume_az: false
+          enabledFlavors: null
+          enforceFloatingIP: true
+          ignoreVolumeAZ: false
           images:
             centos: kubermatic-e2e-centos
             coreos: kubermatic-e2e-coreos
             flatcar: flatcar
             ubuntu: kubermatic-e2e-ubuntu
-          manage_security_groups: null
-          node_size_requirements:
-            minimum_memory: 0
-            minimum_vcpus: 0
+          manageSecurityGroups: null
+          nodeSizeRequirements:
+            minimumMemory: 0
+            minimumVCPUs: 0
           region: dbl
-          trust_device_path: null
-          use_octavia: null
-  expose_strategy: Tunneling
+          trustDevicePath: null
+          useOctavia: null
+  exposeStrategy: Tunneling
 EOF
 
 retry 3 kubectl apply -f $SEED_MANIFEST
@@ -266,7 +266,7 @@ EOF
 time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
 
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
     -openstack-auth-url=${OS_AUTH_URL}
@@ -290,6 +290,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     --trace \
     --race \
     --progress \
+    -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
@@ -301,6 +302,7 @@ else
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \
+    --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \

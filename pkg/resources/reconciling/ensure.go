@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -110,9 +110,9 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		// We keep resetting the status here to avoid working on any outdated object
 		// and all objects are up-to-date once a reconcile process starts.
 		switch v := obj.(type) {
-		case *v1.StatefulSet:
+		case *appsv1.StatefulSet:
 			v.Status.Reset()
-		case *v1.Deployment:
+		case *appsv1.Deployment:
 			v.Status.Reset()
 		}
 

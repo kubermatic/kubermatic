@@ -64,7 +64,6 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			}
 
 			set.Name = resources.PrometheusStatefulSetName
-			set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 			requiredBaseLabels := map[string]string{"cluster": data.Cluster().Name}
 			set.Labels = resources.BaseAppLabels(name, requiredBaseLabels)

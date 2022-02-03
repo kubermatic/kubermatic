@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"net/http"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/email"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
@@ -70,12 +70,7 @@ func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacent
 // canAccessDatacenter returns information if user with provided email can access given datacenter
 // based on the required emails that are set on it.
 func canAccessDatacenter(dc kubermaticv1.Datacenter, emailAddress string) bool {
-	requirements := dc.Spec.RequiredEmailDomains
-	if legacy := dc.Spec.RequiredEmailDomain; len(legacy) != 0 {
-		requirements = append(requirements, legacy)
-	}
-
-	matches, _ := email.MatchesRequirements(emailAddress, requirements)
+	matches, _ := email.MatchesRequirements(emailAddress, dc.Spec.RequiredEmails)
 
 	return matches
 }

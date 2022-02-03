@@ -57,68 +57,10 @@ following Go conventions - `stateLock`, `mapLock` etc.
 
 ### Imports
 
-We group imports the following way:
-- Go SDK
+We use [gimps](https://github.com/xrstf/gimps) to sort imports and have codified the rules
+in `.gimps.yaml`. In general the orer is
+
+- Go stdlib
 - external packages which do not apply to other rules (Like `github.com/golang/glog`, etc.)
-- github.com/kubermatic
-- k8s.io/*
-
-For example:
-```go
-package main
-
-import (
-	"context"
-	cryptorand "crypto/rand"
-	"crypto/rsa"
-	"path"
-	"strings"
-	"sync"
-	"time"
-
-	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh"
-
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
-	kubermaticinformers "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
-	kubermaticv1lister "k8c.io/kubermatic/v2/pkg/crd/client/listers/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/semver"
-	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
-	"k8c.io/kubermatic/v2/pkg/util/informer"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-)
-
-```
-
-Depending of the number of packages we import from a individual repository, those packages can be grouped as well.
-
-Like:
-```go
-package aws
-
-import (
-	"errors"
-	"fmt"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
-
-	"github.com/golang/glog"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/iam"
-)
-```
+- github.com/kubermatic/* (KKP, machine-controller, etc.)
+- *.k8s.io

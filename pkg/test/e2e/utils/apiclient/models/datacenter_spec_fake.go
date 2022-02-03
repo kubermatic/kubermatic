@@ -18,7 +18,7 @@ import (
 type DatacenterSpecFake struct {
 
 	// fake property
-	FakeProperty string `json:"fake_property,omitempty"`
+	FakeProperty string `json:"fakeProperty,omitempty"`
 }
 
 // Validate validates this datacenter spec fake

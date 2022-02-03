@@ -19,11 +19,12 @@ package clustertemplatecontroller
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -142,14 +143,17 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 }
 
 func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, remove bool) error {
-	kuberneteshelper.AddFinalizer(instance, finalizer)
+	oldInstance := instance.DeepCopy()
 
+	kuberneteshelper.AddFinalizer(instance, finalizer)
 	if remove {
 		kuberneteshelper.RemoveFinalizer(instance, finalizer)
 	}
 
-	if err := r.seedClient.Update(ctx, instance); err != nil {
-		return fmt.Errorf("failed to update cluster template instance %s finalizer: %w", instance.Name, err)
+	if !reflect.DeepEqual(oldInstance, instance) {
+		if err := r.seedClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+			return fmt.Errorf("failed to update cluster template instance %s finalizer: %w", instance.Name, err)
+		}
 	}
 
 	return nil
@@ -176,6 +180,7 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 		oldInstance := instance.DeepCopy()
 		for i := 0; i < int(instance.Spec.Replicas); i++ {
 			newCluster := genNewCluster(template, instance, r.workerName)
+			newStatus := newCluster.Status.DeepCopy()
 
 			// Here partialCluster is used to copy credentials to the new cluster
 			err := resources.CopyCredentials(resources.NewCredentialsData(context.Background(), partialCluster, r.seedClient), newCluster)
@@ -197,6 +202,13 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 				}
 				return fmt.Errorf("failed to create desired number of clusters. Created %d from %d", created, totalReplicas)
 			}
+
+			oldCluster := newCluster.DeepCopy()
+			newCluster.Status = *newStatus
+			if err := r.seedClient.Status().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+				return fmt.Errorf("failed to set cluster status: %w", err)
+			}
+
 			if err := r.assignSSHKeyToCluster(ctx, newCluster.Name, template.UserSSHKeys); err != nil {
 				log.Errorf("failed to assign SSH key to the cluster %v", err)
 			}

@@ -26,8 +26,8 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -90,9 +90,7 @@ type DatacenterSpec struct {
 	// not specified here.
 	Node kubermaticv1.NodeSettings `json:"node"`
 
-	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
-	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
+	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
@@ -423,6 +421,38 @@ type PacketDrive struct {
 	Size  string `json:"size,omitempty"`
 	Type  string `json:"type,omitempty"`
 }
+
+// NutanixCluster represents a Nutanix cluster.
+// swagger:model NutanixCluster
+type NutanixCluster struct {
+	Name string `json:"name"`
+}
+
+// NutanixClusterList represents an array of Nutanix clusters.
+// swagger:model NutanixClusterList
+type NutanixClusterList []NutanixCluster
+
+// NutanixProject represents a Nutanix project.
+// swagger:model NutanixProject
+type NutanixProject struct {
+	Name string `json:"name"`
+}
+
+// NutanixProjectList represents an array of Nutanix projects.
+// swagger:model NutanixProjectList
+type NutanixProjectList []NutanixProject
+
+// NutanixSubnet represents a Nutanix subnet.
+// swagger:model NutanixSubnet
+type NutanixSubnet struct {
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	VlanID int    `json:"vlanID,omitempty"`
+}
+
+// NutanixSubnetList represents an array of Nutanix subnets.
+// swagger:model NutanixSubnetList
+type NutanixSubnetList []NutanixSubnet
 
 // SSHKey represents a ssh key
 // swagger:model SSHKey
@@ -1005,8 +1035,6 @@ type PublicOpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
 	Project        string `json:"project,omitempty"`
 	ProjectID      string `json:"projectID,omitempty"`
-	Tenant         string `json:"tenant,omitempty"`
-	TenantID       string `json:"tenantID,omitempty"`
 	Domain         string `json:"domain,omitempty"`
 	Network        string `json:"network"`
 	SecurityGroups string `json:"securityGroups"`
@@ -1021,10 +1049,8 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 
 	return &PublicOpenstackCloudSpec{
 		FloatingIPPool: internal.FloatingIPPool,
-		Project:        internal.GetProject(),
-		ProjectID:      internal.GetProjectId(),
-		Tenant:         internal.GetProject(),
-		TenantID:       internal.GetProjectId(),
+		Project:        internal.Project,
+		ProjectID:      internal.ProjectID,
 		Domain:         internal.Domain,
 		Network:        internal.Network,
 		SecurityGroups: internal.SecurityGroups,
@@ -2350,13 +2376,6 @@ const (
 	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup.
 	SeedClusterTemplateInstanceFinalizer = "kubermatic.io/cleanup-seed-cluster-template-instance"
 )
-
-func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
-	if externalClusterType == KubernetesClusterType {
-		return kubermaticv1.ClusterTypeKubernetes
-	}
-	return kubermaticv1.ClusterTypeAll
-}
 
 const (
 	InitialMachineDeploymentRequestAnnotation = "kubermatic.io/initial-machinedeployment-request"

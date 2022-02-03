@@ -22,10 +22,9 @@ import (
 	"fmt"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -37,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -74,7 +74,7 @@ var (
 )
 
 func isKubermaticConfiguration(ref metav1.OwnerReference) bool {
-	return ref.APIVersion == operatorv1alpha1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
+	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
 }
 
 func isSeed(ref metav1.OwnerReference) bool {
@@ -82,14 +82,17 @@ func isSeed(ref metav1.OwnerReference) bool {
 }
 
 // StringifyFeatureGates takes a set of enabled features and returns a comma-separated
-// key=value list like "featureA=true,featureB=true,...".
-func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
-	features := make([]string, 0)
-	for _, feature := range cfg.Spec.FeatureGates.List() {
-		features = append(features, fmt.Sprintf("%s=true", feature))
+// key=value list like "featureA=true,featureB=true,...". The list of feature gates is
+// sorted, so the output of this function is stable.
+func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
+	// use a set to ensure that the result is sorted, otherwise reconciling code that
+	// uses this will end up in endless loops
+	features := sets.NewString()
+	for feature, enabled := range cfg.Spec.FeatureGates {
+		features.Insert(fmt.Sprintf("%s=%v", feature, enabled))
 	}
 
-	return strings.Join(features, ",")
+	return strings.Join(features.List(), ",")
 }
 
 // OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
@@ -208,7 +211,7 @@ func CleanupClusterResource(client ctrlruntimeclient.Client, obj ctrlruntimeclie
 	return nil
 }
 
-func ProxyEnvironmentVars(cfg *operatorv1alpha1.KubermaticConfiguration) []corev1.EnvVar {
+func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.EnvVar {
 	result := []corev1.EnvVar{}
 	settings := cfg.Spec.Proxy
 

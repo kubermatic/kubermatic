@@ -51,6 +51,7 @@ const (
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticConfiguration is the configuration required for running Kubermatic.
 type KubermaticConfiguration struct {
@@ -315,7 +316,7 @@ type KubermaticVersioningConfiguration struct {
 	// Versions lists the available versions.
 	Versions []semver.Semver `json:"versions,omitempty"`
 	// Default is the default version to offer users.
-	Default semver.Semver `json:"default,omitempty"`
+	Default *semver.Semver `json:"default,omitempty"`
 
 	// Updates is a list of available and automatic upgrades.
 	// All 'to' versions must be configured in the version list for this orchestrator.
@@ -336,7 +337,9 @@ type KubermaticVersioningConfiguration struct {
 type Update struct {
 	// From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
 	From string `json:"from,omitempty"`
-	// From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+	// To is the version to which an update is allowed.
+	// Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
+	// Can be a wildcard otherwise, e.g. "1.20.*".
 	To string `json:"to,omitempty"`
 	// Automatic controls whether this update is executed automatically
 	// for the control plane of all matching user clusters.

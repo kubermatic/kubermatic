@@ -42,9 +42,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -126,10 +126,11 @@ type secrets struct {
 		Token string
 	}
 	OpenStack struct {
-		Domain   string
-		Tenant   string
-		Username string
-		Password string
+		Domain    string
+		Project   string
+		ProjectID string
+		Username  string
+		Password  string
 	}
 	VSphere struct {
 		Username string
@@ -234,7 +235,8 @@ func main() {
 	flag.StringVar(&opts.secrets.Digitalocean.Token, "digitalocean-token", "", "Digitalocean: API Token")
 	flag.StringVar(&opts.secrets.Hetzner.Token, "hetzner-token", "", "Hetzner: API Token")
 	flag.StringVar(&opts.secrets.OpenStack.Domain, "openstack-domain", "", "OpenStack: Domain")
-	flag.StringVar(&opts.secrets.OpenStack.Tenant, "openstack-tenant", "", "OpenStack: Tenant")
+	flag.StringVar(&opts.secrets.OpenStack.Project, "openstack-project", "", "OpenStack: Project")
+	flag.StringVar(&opts.secrets.OpenStack.ProjectID, "openstack-project-id", "", "OpenStack: Project ID")
 	flag.StringVar(&opts.secrets.OpenStack.Username, "openstack-username", "", "OpenStack: Username")
 	flag.StringVar(&opts.secrets.OpenStack.Password, "openstack-password", "", "OpenStack: Password")
 	flag.StringVar(&opts.secrets.VSphere.Username, "vsphere-username", "", "vSphere: Username")
@@ -629,7 +631,7 @@ func createProject(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 			log.Errorw("Failed to get project", zap.Error(err))
 			return false, nil
 		}
-		if response.Payload.Status != kubermaticv1.ProjectActive {
+		if response.Payload.Status != string(kubermaticv1.ProjectActive) {
 			log.Warnw("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
@@ -665,14 +667,15 @@ func createSSHKeys(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 	return nil
 }
 
-func getLatestMinorVersions(versions []*semver.Version) []string {
+func getLatestMinorVersions(versions []kubermativsemver.Semver) []string {
 	minorMap := map[uint64]*semver.Version{}
 
-	for i, version := range versions {
-		minor := version.Minor()
+	for _, version := range versions {
+		sversion := version.Semver()
+		minor := sversion.Minor()
 
-		if existing := minorMap[minor]; existing == nil || existing.LessThan(version) {
-			minorMap[minor] = versions[i]
+		if existing := minorMap[minor]; existing == nil || existing.LessThan(sversion) {
+			minorMap[minor] = sversion
 		}
 	}
 

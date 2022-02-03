@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// LBSKU l b s k u
+// LBSKU +kubebuilder:validation:Enum=standard;basic
 //
 // swagger:model LBSKU
 type LBSKU string

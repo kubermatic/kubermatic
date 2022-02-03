@@ -40,12 +40,6 @@ type PublicOpenstackCloudSpec struct {
 
 	// subnet ID
 	SubnetID string `json:"subnetID,omitempty"`
-
-	// tenant
-	Tenant string `json:"tenant,omitempty"`
-
-	// tenant ID
-	TenantID string `json:"tenantID,omitempty"`
 }
 
 // Validate validates this public openstack cloud spec

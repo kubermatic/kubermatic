@@ -33,6 +33,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.owner",name="Owner",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // UserSSHKey specifies a users UserSSHKey.
 type UserSSHKey struct {

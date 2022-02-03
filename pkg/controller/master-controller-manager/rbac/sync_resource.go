@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -236,7 +236,7 @@ func getProjectName(metaObject metav1.Object, rmapping *meta.RESTMapping) (strin
 	}
 
 	if len(projectName) == 0 {
-		return "", fmt.Errorf("unable to find owning project for the object name = %s, gvr = %s", metaObject.GetName(), rmapping)
+		return "", fmt.Errorf("unable to find owning project for %s %s", rmapping.GroupVersionKind.Kind, metaObject.GetName())
 	}
 	return projectName, nil
 }

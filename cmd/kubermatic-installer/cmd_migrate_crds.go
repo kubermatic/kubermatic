@@ -19,20 +19,21 @@ package main
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	newv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	legacykubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/crdmigration"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -44,21 +45,27 @@ var (
 		Usage:  "Context to use from the given kubeconfig",
 		EnvVar: "KUBE_CONTEXT",
 	}
-	keepOldResourcesFlag = cli.BoolFlag{
-		Name:  "keep-resources",
-		Usage: "Do not delete resources in the old API group when the migration is completed",
+	etcdTimeoutFlag = cli.DurationFlag{
+		Name:  "etcd-timeout",
+		Usage: "Max duration for the etcd StatefulSet of a usercluster to become ready before migrating the next (0 to disable waiting)",
+		Value: 0,
+	}
+	removeOldResourcesFlag = cli.BoolFlag{
+		Name:  "remove-old-resources",
+		Usage: "Delete resources in the old API group when the migration is completed",
 	}
 )
 
 func MigrateCRDsCommand(logger *logrus.Logger) cli.Command {
 	return cli.Command{
 		Name:   "migrate-crds",
-		Usage:  "(development only) Migrates the KKP CRDs to their new API groups",
+		Usage:  "[CRD migration] Migrates the KKP CRDs to their new API groups",
 		Action: MigrateCRDsAction(logger),
-		Hidden: true, // users must not run this before it's released
 		Flags: []cli.Flag{
+			chartsDirectoryFlag,
 			migrateCRDsKubeContextFlag,
-			keepOldResourcesFlag,
+			removeOldResourcesFlag,
+			etcdTimeoutFlag,
 		},
 	}
 }
@@ -81,31 +88,16 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("failed to create Kubernetes client: %w", err)
 		}
 
-		// retrieve KubermaticConfiguration
-		configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(kubeClient, namespace)
-		if err != nil {
-			return fmt.Errorf("failed to create KubermaticConfiguration client: %w", err)
-		}
-
-		config, err := configGetter(appContext)
+		// retrieve legacy KubermaticConfiguration (note: this is NOT defaulted, because
+		// the defaulting code is only working for the new API group)
+		config, err := loadLegacyKubermaticConfiguration(appContext, kubeClient, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve KubermaticConfiguration: %w", err)
 		}
 
-		// find all seeds
-		seedsGetter, err := seedsGetterFactory(appContext, kubeClient)
-		if err != nil {
-			return fmt.Errorf("failed to create Seeds getter: %w", err)
-		}
-
-		seedKubeconfigGetter, err := seedKubeconfigGetterFactory(appContext, kubeClient)
-		if err != nil {
-			return fmt.Errorf("failed to create Seed kubeconfig getter: %w", err)
-		}
-
 		logger.Info("Retrieving Seeds…")
 
-		allSeeds, err := seedsGetter()
+		allSeeds, err := getLegacySeeds(appContext, kubeClient, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to list Seeds: %w", err)
 		}
@@ -114,12 +106,11 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 
 		// build kube client for each seed cluster
 		seedClients := map[string]ctrlruntimeclient.Client{}
-		seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("Creating Kubernetes client for each Seed…")
 
 		for _, seed := range allSeeds {
-			seedClient, err := seedClientGetter(seed)
+			seedClient, err := getSeedClient(appContext, kubeClient, seed)
 			if err != nil {
 				return fmt.Errorf("failed to create Kubernetes client for Seed %q: %w", seed.Name, err)
 			}
@@ -134,7 +125,9 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			MasterClient:            kubeClient,
 			Seeds:                   allSeeds,
 			SeedClients:             seedClients,
-			CRDDirectory:            filepath.Join(ctx.GlobalString(chartsDirectoryFlag.Name), "kubermatic-operator", "crd", "k8c.io"),
+			ChartsDirectory:         ctx.GlobalString(chartsDirectoryFlag.Name),
+			EtcdTimeout:             ctx.Duration(etcdTimeoutFlag.Name),
+			CheckRunning:            true,
 		}
 
 		// ////////////////////////////////////
@@ -162,7 +155,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("resource cloning failed: %w", err)
 		}
 
-		if !ctx.Bool(keepOldResourcesFlag.Name) {
+		if ctx.Bool(removeOldResourcesFlag.Name) {
 			if err := crdmigration.RemoveOldResources(appContext, logger.WithField("phase", "cleanup"), &opt); err != nil {
 				return fmt.Errorf("resource cleanup failed: %w", err)
 			}
@@ -174,7 +167,7 @@ func MigrateCRDsAction(logger *logrus.Logger) cli.ActionFunc {
 		logger.Info("All Done :)")
 		logger.Info("All KKP resources have been successfully migrated to the new API group.")
 
-		if ctx.Bool(keepOldResourcesFlag.Name) {
+		if !ctx.Bool(removeOldResourcesFlag.Name) {
 			logger.Info("You can remove the resources from the old group, kubermatic.k8s.io, manually at a later time.")
 		}
 
@@ -199,15 +192,15 @@ func getKubeClient(ctx context.Context, logger logrus.FieldLogger, kubeContext s
 		return nil, fmt.Errorf("failed to construct mgr: %w", err)
 	}
 
-	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-		return nil, fmt.Errorf("failed to add scheme: %w", err)
-	}
-
-	if err := newv1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := legacykubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		return nil, fmt.Errorf("failed to add scheme: %w", err)
+	}
+
+	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return nil, fmt.Errorf("failed to add scheme: %w", err)
 	}
 
@@ -230,4 +223,33 @@ func getKubeClient(ctx context.Context, logger logrus.FieldLogger, kubeContext s
 	}
 
 	return mgr.GetClient(), nil
+}
+
+func getSeedClient(ctx context.Context, client ctrlruntimeclient.Client, seed *legacykubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+	secret := &corev1.Secret{}
+	name := types.NamespacedName{
+		Namespace: seed.Spec.Kubeconfig.Namespace,
+		Name:      seed.Spec.Kubeconfig.Name,
+	}
+	if name.Namespace == "" {
+		name.Namespace = seed.Namespace
+	}
+	if err := client.Get(ctx, name, secret); err != nil {
+		return nil, fmt.Errorf("failed to get kubeconfig secret %q: %w", name.String(), err)
+	}
+
+	fieldPath := seed.Spec.Kubeconfig.FieldPath
+	if len(fieldPath) == 0 {
+		fieldPath = legacykubermaticv1.DefaultKubeconfigFieldPath
+	}
+	if _, exists := secret.Data[fieldPath]; !exists {
+		return nil, fmt.Errorf("secret %q has no key %q", name.String(), fieldPath)
+	}
+
+	cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[fieldPath])
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
+	}
+
+	return ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 }

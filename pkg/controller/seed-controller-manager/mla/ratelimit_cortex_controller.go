@@ -24,8 +24,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -244,9 +244,10 @@ func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap
 		}
 	}
 	if kubernetes.HasFinalizer(mlaAdminSetting, mlaFinalizer) {
+		oldSetting := mlaAdminSetting.DeepCopy()
 		kubernetes.RemoveFinalizer(mlaAdminSetting, mlaFinalizer)
-		if err := r.Update(ctx, mlaAdminSetting); err != nil {
-			return fmt.Errorf("updating mlaAdminSetting: %w", err)
+		if err := r.Patch(ctx, mlaAdminSetting, ctrlruntimeclient.MergeFrom(oldSetting)); err != nil {
+			return fmt.Errorf("failed to update mlaAdminSetting: %w", err)
 		}
 	}
 	return nil

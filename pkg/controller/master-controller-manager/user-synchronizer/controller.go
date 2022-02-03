@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -137,7 +137,23 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		userCreatorGetter(user),
 	}
 	err := r.syncAllSeeds(log, user, func(seedClusterClient ctrlruntimeclient.Client, user *kubermaticv1.User) error {
-		return reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClusterClient)
+		err := reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClusterClient)
+		if err != nil {
+			return fmt.Errorf("failed to reconcile user: %w", err)
+		}
+
+		seedUser := &kubermaticv1.User{}
+		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedUser); err != nil {
+			return fmt.Errorf("failed to fetch user on seed cluster: %w", err)
+		}
+
+		oldSeedUser := seedUser.DeepCopy()
+		seedUser.Status = *user.Status.DeepCopy()
+		if err := seedClusterClient.Status().Patch(ctx, seedUser, ctrlruntimeclient.MergeFrom(oldSeedUser)); err != nil {
+			return fmt.Errorf("failed to update user status on seed cluster: %w", err)
+		}
+
+		return nil
 	})
 	if err != nil {
 		r.recorder.Eventf(user, corev1.EventTypeWarning, "ReconcilingError", err.Error())

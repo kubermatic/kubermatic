@@ -23,7 +23,7 @@ import (
 	"net/http"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -86,7 +86,7 @@ func OpenstackTenantWithClusterCredentialsEndpoint(ctx context.Context, userInfo
 	if err != nil {
 		return nil, err
 	}
-	return GetOpenstackTenants(userInfo, seedsGetter, creds, datacenterName, caBundle)
+	return GetOpenstackProjects(userInfo, seedsGetter, creds, datacenterName, caBundle)
 }
 
 func OpenstackNetworkWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
@@ -248,28 +248,26 @@ func GetOpenstackNetworks(userInfo *provider.UserInfo, seedsGetter provider.Seed
 	return apiNetworks, nil
 }
 
-func GetOpenstackTenants(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackTenant, error) {
+func GetOpenstackProjects(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackTenant, error) {
 	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	tenants, err := openstack.GetTenants(authURL, region, credentials, caBundle)
+	projects, err := openstack.GetTenants(authURL, region, credentials, caBundle)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get tenants: %w", err)
+		return nil, fmt.Errorf("couldn't get projects: %w", err)
 	}
 
-	apiTenants := []apiv1.OpenstackTenant{}
-	for _, tenant := range tenants {
-		apiTenant := apiv1.OpenstackTenant{
-			Name: tenant.Name,
-			ID:   tenant.ID,
-		}
-
-		apiTenants = append(apiTenants, apiTenant)
+	apiProjects := []apiv1.OpenstackTenant{}
+	for _, project := range projects {
+		apiProjects = append(apiProjects, apiv1.OpenstackTenant{
+			Name: project.Name,
+			ID:   project.ID,
+		})
 	}
 
-	return apiTenants, nil
+	return apiProjects, nil
 }
 
 func GetOpenstackSizes(credentials *resources.OpenstackCredentials, datacenter *kubermaticv1.Datacenter,

@@ -3365,7 +3365,11 @@ func (in *KubermaticVersioningConfiguration) DeepCopyInto(out *KubermaticVersion
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	out.Default = in.Default.DeepCopy()
+	if in.Default != nil {
+		in, out := &in.Default, &out.Default
+		x := (*in).DeepCopy()
+		*out = &x
+	}
 	if in.Updates != nil {
 		in, out := &in.Updates, &out.Updates
 		*out = make([]Update, len(*in))

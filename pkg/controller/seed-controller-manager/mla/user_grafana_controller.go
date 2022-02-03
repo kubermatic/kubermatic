@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -179,9 +179,10 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 		}
 	}
 	if kubernetes.HasFinalizer(user, mlaFinalizer) {
+		oldUser := user.DeepCopy()
 		kubernetes.RemoveFinalizer(user, mlaFinalizer)
-		if err := r.Update(ctx, user); err != nil {
-			return fmt.Errorf("updating User: %w", err)
+		if err := r.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+			return fmt.Errorf("failed to update User: %w", err)
 		}
 	}
 	return nil

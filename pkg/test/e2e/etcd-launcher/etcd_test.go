@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -50,6 +50,7 @@ const (
 	scaleUpCount           = 5
 	scaleDownCount         = 3
 	minioBackupDestination = "minio"
+	namespaceName          = "backup-test"
 )
 
 func TestBackup(t *testing.T) {
@@ -96,11 +97,34 @@ func TestBackup(t *testing.T) {
 		t.Fatalf("failed to get cluster: %v", err)
 	}
 
+	t.Log("creating client for user cluster...")
+	userClient, err := testClient.GetUserClusterClient(datacenter, project.ID, apiCluster.ID)
+	if err != nil {
+		t.Fatalf("error creating user cluster client: %v", err)
+	}
+
+	// Create a resource on the cluster so that we can see that the backup works
+	testNamespace := &corev1.Namespace{}
+	testNamespace.Name = namespaceName
+	err = userClient.Create(ctx, testNamespace)
+	if err != nil {
+		t.Fatalf("failed to create test namespace: %v", err)
+	}
+	t.Log("created test namespace")
+
 	// create etcd backup that will be restored later
 	err, backup := createBackup(ctx, t, client, cluster)
 	if err != nil {
 		t.Fatalf("failed to create etcd backup: %v", err)
 	}
+	t.Log("created etcd backup")
+
+	// delete the test resource
+	err = userClient.Delete(ctx, testNamespace)
+	if err != nil {
+		t.Fatalf("failed to delete test namespace: %v", err)
+	}
+	t.Log("deleted test namespace")
 
 	// enable etcd-launcher feature after creating a backup
 	if err := enableLauncher(ctx, t, client, cluster); err != nil {
@@ -112,6 +136,15 @@ func TestBackup(t *testing.T) {
 	if err := restoreBackup(ctx, t, client, cluster, backup); err != nil {
 		t.Fatalf("failed to restore etcd backup: %v", err)
 	}
+	t.Log("restored etcd backup")
+
+	// check if resource was restored
+	restoredNamespace := &corev1.Namespace{}
+	err = userClient.Get(ctx, types.NamespacedName{Name: namespaceName}, restoredNamespace)
+	if err != nil {
+		t.Fatalf("failed to get restored test namespace: %v", err)
+	}
+	t.Log("deleted namespace was restored by backup")
 
 	t.Log("tests succeeded")
 }

@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -1717,7 +1717,7 @@ type rawClusterGen struct {
 func (r rawClusterGen) Do() []byte {
 	c := kubermaticv1.Cluster{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{

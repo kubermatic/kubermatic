@@ -29,7 +29,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -57,17 +57,13 @@ func CreateEndpoint(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
-		globalSettings, err := settingsProvider.GetGlobalSettings()
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
 		config, err := configGetter(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, version.NewFromConfiguration(config))
+		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -245,7 +241,7 @@ type CreateReq struct {
 }
 
 // Validate validates CreateEndpoint request.
-func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
+func (r CreateReq) Validate(updateManager common.UpdateManager) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")
 	}
@@ -255,10 +251,6 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 
 	if !handlercommon.ClusterTypes.Has(r.Body.Cluster.Type) {
 		return fmt.Errorf("invalid cluster type %s", r.Body.Cluster.Type)
-	}
-
-	if clusterType != kubermaticv1.ClusterTypeAll && clusterType != apiv1.ToInternalClusterType(r.Body.Cluster.Type) {
-		return fmt.Errorf("disabled cluster type %s", r.Body.Cluster.Type)
 	}
 
 	if r.Body.Cluster.Spec.Version.Semver() == nil {

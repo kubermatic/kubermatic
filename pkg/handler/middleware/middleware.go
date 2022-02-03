@@ -27,7 +27,7 @@ import (
 	transporthttp "github.com/go-kit/kit/transport/http"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -375,7 +375,7 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	}
 }
 
-func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
+func createUserInfo(user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
 	var group string
 	if projectID != "" {
 		var err error
@@ -415,7 +415,7 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 	return clusterProvider, ctx, nil
 }
 
-func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kubermaticapiv1.Seed, clusterProviderGetter provider.ClusterProviderGetter, clusterID string) (provider.ClusterProvider, context.Context, error) {
+func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kubermaticv1.Seed, clusterProviderGetter provider.ClusterProviderGetter, clusterID string) (provider.ClusterProvider, context.Context, error) {
 	for _, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
@@ -436,7 +436,7 @@ func checkBlockedTokens(email, token string, userProvider provider.UserProvider)
 		}
 		return nil
 	}
-	blockedTokens, err := userProvider.GetUserBlacklistTokens(user)
+	blockedTokens, err := userProvider.GetInvalidatedTokens(user)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}

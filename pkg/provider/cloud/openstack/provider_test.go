@@ -26,7 +26,7 @@ import (
 	"github.com/gophercloud/gophercloud"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	ostesting "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack/internal/testing"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -401,13 +401,6 @@ func TestGetCredentialsForCluster(t *testing.T) {
 			spec:    &kubermaticv1.OpenstackCloudSpec{Domain: "domain", ApplicationCredentialID: "", Username: "user", Password: "pass", Project: "the_project", ProjectID: "the_project_id"},
 			mock:    test.ShouldNotBeCalled,
 			want:    &resources.OpenstackCredentials{Username: "user", Password: "pass", Project: "the_project", ProjectID: "the_project_id", Domain: "domain", ApplicationCredentialID: "", ApplicationCredentialSecret: ""},
-			wantErr: false,
-		},
-		{
-			name:    "valid spec with values - auth with user with tenant( when project not defined it should fallback to tenant)",
-			spec:    &kubermaticv1.OpenstackCloudSpec{Domain: "domain", ApplicationCredentialID: "", Username: "user", Password: "pass", Tenant: "the_tenant", TenantID: "the_tenant_id"},
-			mock:    test.ShouldNotBeCalled,
-			want:    &resources.OpenstackCredentials{Username: "user", Password: "pass", Project: "the_tenant", ProjectID: "the_tenant_id", Domain: "domain", ApplicationCredentialID: "", ApplicationCredentialSecret: ""},
 			wantErr: false,
 		},
 		{

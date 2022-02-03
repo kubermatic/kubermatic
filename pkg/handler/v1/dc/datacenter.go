@@ -30,7 +30,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -212,12 +212,7 @@ func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]a
 	var result []apiv1.Datacenter
 
 	for _, dc := range list {
-		requirements := dc.Spec.RequiredEmailDomains
-		if legacy := dc.Spec.RequiredEmailDomain; len(legacy) != 0 {
-			requirements = append(requirements, legacy)
-		}
-
-		matches, err := email.MatchesRequirements(userInfo.Email, requirements)
+		matches, err := email.MatchesRequirements(userInfo.Email, dc.Spec.RequiredEmails)
 		if err != nil {
 			return nil, err
 		}
@@ -637,8 +632,7 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		Alibaba:                  dc.Spec.Alibaba,
 		Anexia:                   dc.Spec.Anexia,
 		Fake:                     dc.Spec.Fake,
-		RequiredEmailDomain:      dc.Spec.RequiredEmailDomain,
-		RequiredEmailDomains:     dc.Spec.RequiredEmailDomains,
+		RequiredEmails:           dc.Spec.RequiredEmails,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
 		EnforcePodSecurityPolicy: dc.Spec.EnforcePodSecurityPolicy,
 	}, nil
@@ -663,8 +657,7 @@ func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.
 			Alibaba:                  datacenter.Alibaba,
 			Anexia:                   datacenter.Anexia,
 			Fake:                     datacenter.Fake,
-			RequiredEmailDomain:      datacenter.RequiredEmailDomain,
-			RequiredEmailDomains:     datacenter.RequiredEmailDomains,
+			RequiredEmails:           datacenter.RequiredEmails,
 			EnforceAuditLogging:      datacenter.EnforceAuditLogging,
 			EnforcePodSecurityPolicy: datacenter.EnforcePodSecurityPolicy,
 		},

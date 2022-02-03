@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/test"
 
 	corev1 "k8s.io/api/core/v1"
@@ -48,21 +48,14 @@ func TestGetOpenstackCredentials(t *testing.T) {
 		want    OpenstackCredentials
 		wantErr bool
 	}{
-		// there are 2 kinds of auth mode for openstack which are mutualy exclusive
+		// there are 2 kinds of auth mode for openstack which are mutually exclusive
 		//   * domain + ApplicationCredential (ApplicationCredentialID and ApplicationCredentialSecret)
-		//   * domain + user (ie  Username, Password, (Project or Tenant) and (ProjectID or tenantID))
+		//   * domain + user (i.e. Username, Password, (Project or Tenant) and (ProjectID or tenantID))
 		{
 			name:    "valid spec with values - auth with user with project",
 			spec:    &kubermaticv1.OpenstackCloudSpec{Domain: "domain", ApplicationCredentialID: "", Username: "user", Password: "pass", Project: "the_project", ProjectID: "the_project_id"},
 			mock:    test.ShouldNotBeCalled,
 			want:    OpenstackCredentials{Username: "user", Password: "pass", Project: "the_project", ProjectID: "the_project_id", Domain: "domain", ApplicationCredentialID: "", ApplicationCredentialSecret: ""},
-			wantErr: false,
-		},
-		{
-			name:    "valid spec with values - auth with user with tenant( when project not defined it should fallback to tenant)",
-			spec:    &kubermaticv1.OpenstackCloudSpec{Domain: "domain", ApplicationCredentialID: "", Username: "user", Password: "pass", Tenant: "the_tenant", TenantID: "the_tenant_id"},
-			mock:    test.ShouldNotBeCalled,
-			want:    OpenstackCredentials{Username: "user", Password: "pass", Project: "the_tenant", ProjectID: "the_tenant_id", Domain: "domain", ApplicationCredentialID: "", ApplicationCredentialSecret: ""},
 			wantErr: false,
 		},
 		{

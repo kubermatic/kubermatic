@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -150,8 +150,9 @@ func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(ctx contex
 
 func (r *reconcileSyncProjectBinding) removeFinalizerFromBinding(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) error {
 	if kuberneteshelper.HasFinalizer(projectBinding, rbac.CleanupFinalizerName) {
+		oldBinding := projectBinding.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(projectBinding, rbac.CleanupFinalizerName)
-		return r.Update(ctx, projectBinding)
+		return r.Patch(ctx, projectBinding, ctrlruntimeclient.MergeFrom(oldBinding))
 	}
 	return nil
 }

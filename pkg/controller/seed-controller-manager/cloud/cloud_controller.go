@@ -19,6 +19,7 @@ package cloud
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -27,9 +28,9 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
@@ -40,7 +41,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -225,8 +225,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 
 			// remember that we reconciled
-			cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-				now := v1.Now()
+			cluster, err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
+				now := metav1.Now()
 				c.Status.LastProviderReconciliation = &now
 			})
 			if err != nil {
@@ -244,7 +244,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+	if _, err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
 	}); err != nil {
 		return nil, fmt.Errorf("failed to set cluster health: %w", err)
@@ -267,12 +267,10 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 		log.Info("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	}
 
-	var err error
-	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+	if _, err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.CloudMigrationRevision = icmpMigrationRevision
 	}); err != nil {
-		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %w",
-			cluster.Name, err)
+		return fmt.Errorf("failed to update cluster after successfully executing its cloud provider migration: %w", err)
 	}
 
 	return nil
@@ -283,11 +281,17 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 	if err := r.Get(context.Background(), types.NamespacedName{Name: name}, cluster); err != nil {
 		return nil, err
 	}
+
 	oldCluster := cluster.DeepCopy()
 	modify(cluster)
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return cluster, nil
 	}
+
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		return nil, errors.New("updateCluster must not change cluster status")
+	}
+
 	opts := (&provider.UpdaterOptions{}).Apply(options...)
 	var patch ctrlruntimeclient.Patch
 	if opts.OptimisticLock {
@@ -295,7 +299,28 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 	} else {
 		patch = ctrlruntimeclient.MergeFrom(oldCluster)
 	}
-	return cluster, r.Patch(context.Background(), cluster, patch)
+
+	if err := r.Patch(context.Background(), cluster, patch); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
+}
+
+func (r *Reconciler) updateClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
+	oldCluster := cluster.DeepCopy()
+	modify(cluster)
+	if reflect.DeepEqual(oldCluster, cluster) {
+		return cluster, nil
+	}
+
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return nil, err
+		}
+	}
+
+	return cluster, nil
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {

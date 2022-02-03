@@ -28,7 +28,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	legacykubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,6 +55,25 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 		}
 		return seedMap, nil
 	}, nil
+}
+
+func GetLegacySeeds(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (map[string]*legacykubermaticv1.Seed, error) {
+	// We only have a options func for raw *metav1.ListOpts as the rbac controller currently required that
+	listOpts := &ctrlruntimeclient.ListOptions{
+		Namespace: namespace,
+	}
+
+	seeds := &legacykubermaticv1.SeedList{}
+	if err := client.List(ctx, seeds, listOpts); err != nil {
+		return nil, fmt.Errorf("failed to list the seeds: %w", err)
+	}
+
+	seedMap := map[string]*legacykubermaticv1.Seed{}
+	for idx, seed := range seeds.Items {
+		seedMap[seed.Name] = &seeds.Items[idx]
+	}
+
+	return seedMap, nil
 }
 
 type EESeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
