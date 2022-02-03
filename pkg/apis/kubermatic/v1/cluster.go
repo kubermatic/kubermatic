@@ -681,7 +681,7 @@ type AzureCloudSpec struct {
 	RouteTableName          string `json:"routeTable"`
 	SecurityGroup           string `json:"securityGroup"`
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-	AssignAvailabilitySet   *bool  `json:"assignAvailabilitySet"`
+	AssignAvailabilitySet   *bool  `json:"assignAvailabilitySet,omitempty"`
 	AvailabilitySet         string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
