@@ -230,13 +230,6 @@ func TestHandle(t *testing.T) {
 								},
 							},
 						},
-						NodePortProxyEnvoy: kubermaticv1.NodeportProxyComponent{
-							Resources: corev1.ResourceRequirements{
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									"memory": resource.MustParse("500M"),
-								},
-							},
-						},
 					},
 				},
 			},

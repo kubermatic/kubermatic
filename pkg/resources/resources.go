@@ -100,7 +100,7 @@ const (
 	EtcdDefaultBackupConfigName = "default-backups"
 	// EtcdTLSEnabledAnnotation is the annotation assigned to etcd Pods that run with a TLS peer endpoint.
 	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
-	// NodePortProxyEnvoyDeploymentName is the name of the nodeport-proxy deployment in the user cluster
+	// NodePortProxyEnvoyDeploymentName is the name of the nodeport-proxy deployment in the user cluster.
 	NodePortProxyEnvoyDeploymentName = "nodeport-proxy-envoy"
 
 	// ApiserverServiceName is the name for the apiserver service.
