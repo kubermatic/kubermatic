@@ -365,9 +365,37 @@ cleanup_kubermatic_clusters_in_kind() {
   set -e
 }
 
-start_docker_daemon() {
-  # DOCKER_REGISTRY_MIRROR_ADDR is injected via Prow preset
+docker_logs() {
+  if [[ $? -ne 0 ]]; then
+    echodate "Printing Docker logs"
+    cat /tmp/docker.log
+    echodate "Done printing Docker logs"
+  fi
+}
+
+start_docker_daemon_ci() {
+  # DOCKER_REGISTRY_MIRROR_ADDR is injected via Prow preset;
+  # start-docker.sh is part of the build image.
   DOCKER_REGISTRY_MIRROR="${DOCKER_REGISTRY_MIRROR_ADDR:-}" DOCKER_MTU=1400 start-docker.sh
+}
+
+start_docker_daemon() {
+  if docker stats --no-stream > /dev/null 2>&1; then
+    echodate "Not starting Docker again, it's already running."
+    return
+  fi
+
+  # Start Docker daemon
+  echodate "Starting Docker"
+  dockerd > /tmp/docker.log 2>&1 &
+
+  echodate "Started Docker successfully"
+  appendTrap docker_logs EXIT
+
+  # Wait for Docker to start
+  echodate "Waiting for Docker"
+  retry 5 docker stats --no-stream
+  echodate "Docker became ready"
 }
 
 repeat() {

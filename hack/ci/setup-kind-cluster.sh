@@ -24,7 +24,7 @@ fi
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
-start_docker_daemon
+start_docker_daemon_ci
 
 # Prevent mtu-related timeouts
 echodate "Setting iptables rule to clamp mss to path mtu"
