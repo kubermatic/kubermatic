@@ -615,7 +615,7 @@ func TestHandle(t *testing.T) {
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
 					"type":    string(kubermaticv1.CNIPluginTypeCanal),
-					"version": cni.CanalCNILastUnspecifiedVersion,
+					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 				}),
 			),
 		},
