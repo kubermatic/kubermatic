@@ -35,6 +35,9 @@ spec:
     - jsonPath: .spec.pause
       name: Paused
       type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
