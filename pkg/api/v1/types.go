@@ -80,6 +80,7 @@ type DatacenterSpec struct {
 	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Anexia       *kubermaticv1.DatacenterSpecAnexia       `json:"anexia,omitempty"`
+	Nutanix      *kubermaticv1.DatacenterSpecNutanix      `json:"nutanix,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
