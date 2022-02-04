@@ -136,10 +136,12 @@ func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 	}
 
 	// remove tag
-	_, err = client.DeleteTags(&ec2.DeleteTagsInput{
-		Resources: resourceIDs,
-		Tags:      []*ec2.Tag{tag},
-	})
+	if len(resourceIDs) > 0 {
+		_, err = client.DeleteTags(&ec2.DeleteTagsInput{
+			Resources: resourceIDs,
+			Tags:      []*ec2.Tag{tag},
+		})
+	}
 
 	return err
 }
