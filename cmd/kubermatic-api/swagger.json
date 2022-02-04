@@ -20803,6 +20803,9 @@
         "node": {
           "$ref": "#/definitions/NodeSettings"
         },
+        "nutanix": {
+          "$ref": "#/definitions/DatacenterSpecNutanix"
+        },
         "openstack": {
           "$ref": "#/definitions/DatacenterSpecOpenstack"
         },
@@ -20977,6 +20980,33 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecNutanix": {
+      "description": "NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.",
+      "type": "object",
+      "title": "DatacenterSpecNutanix describes a Nutanix datacenter.",
+      "properties": {
+        "allowInsecure": {
+          "description": "Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)",
+          "type": "boolean",
+          "x-go-name": "AllowInsecure"
+        },
+        "endpoint": {
+          "description": "Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,\nfor example \"nutanix.example.com\" or \"10.0.0.1\"",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
+        "images": {
+          "$ref": "#/definitions/ImageList"
+        },
+        "port": {
+          "description": "Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Port"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "DatacenterSpecOpenstack": {
       "description": "DatacenterSpecOpenstack describes an OpenStack datacenter",
