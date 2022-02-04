@@ -269,10 +269,20 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 }
 
 func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	network := nodeSpec.Cloud.Hetzner.Network
+	// fall back to network defined in cluster spec
+	if network == "" {
+		network = c.Spec.Cloud.Hetzner.Network
+	}
+	// fall back to network defined in datacenter spec
+	if network == "" {
+		network = dc.Spec.Hetzner.Network
+	}
+
 	config := hetzner.RawConfig{
 		Datacenter: providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Datacenter},
 		Location:   providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Location},
-		Networks:   []providerconfig.ConfigVarString{{Value: dc.Spec.Hetzner.Network}},
+		Networks:   []providerconfig.ConfigVarString{{Value: network}},
 		ServerType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Hetzner.Type},
 	}
 
