@@ -36,21 +36,26 @@ type KubermaticSetting struct {
 }
 
 type SettingSpec struct {
-	CustomLinks                 CustomLinks    `json:"customLinks"`
-	CleanupOptions              CleanupOptions `json:"cleanupOptions"`
-	DefaultNodeCount            int8           `json:"defaultNodeCount"`
-	DisplayDemoInfo             bool           `json:"displayDemoInfo"`
-	DisplayAPIDocs              bool           `json:"displayAPIDocs"`
-	DisplayTermsOfService       bool           `json:"displayTermsOfService"`
-	EnableDashboard             bool           `json:"enableDashboard"`
-	EnableOIDCKubeconfig        bool           `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
-	UserProjectsLimit           int64          `json:"userProjectsLimit"`
-	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
-	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
-	OpaOptions                  OpaOptions     `json:"opaOptions"`
-	MlaOptions                  MlaOptions     `json:"mlaOptions"`
-	MlaAlertmanagerPrefix       string         `json:"mlaAlertmanagerPrefix"`
-	MlaGrafanaPrefix            string         `json:"mlaGrafanaPrefix"`
+	CustomLinks                 CustomLinks `json:"customLinks"`
+	DefaultNodeCount            int8        `json:"defaultNodeCount"`
+	DisplayDemoInfo             bool        `json:"displayDemoInfo"`
+	DisplayAPIDocs              bool        `json:"displayAPIDocs"`
+	DisplayTermsOfService       bool        `json:"displayTermsOfService"`
+	EnableDashboard             bool        `json:"enableDashboard"`
+	EnableOIDCKubeconfig        bool        `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
+	UserProjectsLimit           int64       `json:"userProjectsLimit"`
+	RestrictProjectCreation     bool        `json:"restrictProjectCreation"`
+	EnableExternalClusterImport bool        `json:"enableExternalClusterImport"`
+
+	// +optional
+	CleanupOptions CleanupOptions `json:"cleanupOptions,omitempty"`
+	// +optional
+	OpaOptions OpaOptions `json:"opaOptions,omitempty"`
+	// +optional
+	MlaOptions MlaOptions `json:"mlaOptions,omitempty"`
+
+	MlaAlertmanagerPrefix string `json:"mlaAlertmanagerPrefix"`
+	MlaGrafanaPrefix      string `json:"mlaGrafanaPrefix"`
 
 	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
 
@@ -67,8 +72,8 @@ type CustomLink struct {
 }
 
 type CleanupOptions struct {
-	Enabled  bool `json:"enabled"`
-	Enforced bool `json:"enforced"`
+	Enabled  bool `json:"enabled,omitempty"`
+	Enforced bool `json:"enforced,omitempty"`
 }
 
 type MachineDeploymentVMResourceQuota struct {
@@ -85,15 +90,15 @@ type MachineDeploymentVMResourceQuota struct {
 }
 
 type OpaOptions struct {
-	Enabled  bool `json:"enabled"`
-	Enforced bool `json:"enforced"`
+	Enabled  bool `json:"enabled,omitempty"`
+	Enforced bool `json:"enforced,omitempty"`
 }
 
 type MlaOptions struct {
-	LoggingEnabled     bool `json:"loggingEnabled"`
-	LoggingEnforced    bool `json:"loggingEnforced"`
-	MonitoringEnabled  bool `json:"monitoringEnabled"`
-	MonitoringEnforced bool `json:"monitoringEnforced"`
+	LoggingEnabled     bool `json:"loggingEnabled,omitempty"`
+	LoggingEnforced    bool `json:"loggingEnforced,omitempty"`
+	MonitoringEnabled  bool `json:"monitoringEnabled,omitempty"`
+	MonitoringEnforced bool `json:"monitoringEnforced,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
