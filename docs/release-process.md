@@ -27,6 +27,9 @@ This section covers the process to create a new Kubermatic release. Reflects the
     - A release branch(example: `release/v2.15`) has been created in:
       - https://github.com/kubermatic/kubermatic
       - https://github.com/kubermatic/dashboard
+1. Check which of the Helm charts have changed since the last release.
+   Bump their version accordingly to ensure users can install without using --force
+   in the installer. Continue once the version-bump PR is merged.
 1. Duplicate the `master` documentation for KKP in https://github.com/kubermatic/docs
    (i.e. copy the content, data, etc. files and adjust accordingly)
 1. Adjust postsubmit jobs in the infra repo to start running for
