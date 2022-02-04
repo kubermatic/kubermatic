@@ -86,6 +86,7 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Cluster is the object representing a cluster.
 type Cluster struct {
