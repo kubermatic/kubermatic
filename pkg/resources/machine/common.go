@@ -279,10 +279,16 @@ func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		network = dc.Spec.Hetzner.Network
 	}
 
+	networks := []providerconfig.ConfigVarString{}
+
+	if network != "" {
+		networks = append(networks, providerconfig.ConfigVarString{Value: network})
+	}
+
 	config := hetzner.RawConfig{
 		Datacenter: providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Datacenter},
 		Location:   providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Location},
-		Networks:   []providerconfig.ConfigVarString{{Value: network}},
+		Networks:   networks,
 		ServerType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Hetzner.Type},
 	}
 
