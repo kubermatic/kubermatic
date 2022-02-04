@@ -54,7 +54,7 @@ appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-  start_docker_daemon
+  start_docker_daemon_ci
 fi
 
 cat << EOF > kind-config.yaml
