@@ -19,7 +19,7 @@ require (
 	github.com/digitalocean/godo v1.65.0
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/embik/nutanix-client-go v0.0.0-20220106131900-50b8f27e5f60
-	github.com/envoyproxy/go-control-plane v0.9.9-0.20210512163311-63b5d3c536b0
+	github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021
 	github.com/evanphx/json-patch v4.12.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.62.0 // indirect
@@ -123,7 +123,7 @@ require (
 	github.com/census-instrumentation/opencensus-proto v0.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/clarketm/json v1.13.4 // indirect
-	github.com/cncf/xds/go v0.0.0-20210312221358-fbca930ec8ed // indirect
+	github.com/cncf/xds/go v0.0.0-20210805033703-aa0b78936158 // indirect
 	github.com/coreos/container-linux-config-transpiler v0.9.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
