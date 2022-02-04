@@ -424,6 +424,38 @@ type PacketDrive struct {
 	Type  string `json:"type,omitempty"`
 }
 
+// NutanixCluster represents a Nutanix cluster.
+// swagger:model NutanixCluster
+type NutanixCluster struct {
+	Name string `json:"name"`
+}
+
+// NutanixClusterList represents an array of Nutanix clusters.
+// swagger:model NutanixClusterList
+type NutanixClusterList []NutanixCluster
+
+// NutanixProject represents a Nutanix project.
+// swagger:model NutanixProject
+type NutanixProject struct {
+	Name string `json:"name"`
+}
+
+// NutanixProjectList represents an array of Nutanix projects.
+// swagger:model NutanixProjectList
+type NutanixProjectList []NutanixProject
+
+// NutanixSubnet represents a Nutanix subnet.
+// swagger:model NutanixSubnet
+type NutanixSubnet struct {
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	VlanID int    `json:"vlanID,omitempty"`
+}
+
+// NutanixSubnetList represents an array of Nutanix subnets.
+// swagger:model NutanixSubnetList
+type NutanixSubnetList []NutanixSubnet
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {

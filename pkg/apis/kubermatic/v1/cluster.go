@@ -980,6 +980,9 @@ func (cluster *Cluster) GetSecretName() string {
 	if cluster.Spec.Cloud.Anexia != nil {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
 	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
+	}
 	return ""
 }
 
