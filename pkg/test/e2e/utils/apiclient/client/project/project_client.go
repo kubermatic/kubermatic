@@ -102,6 +102,8 @@ type ClientService interface {
 
 	DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DetachSSHKeyFromClusterV2OK, error)
 
+	ExportClusterTemplate(params *ExportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportClusterTemplateOK, error)
+
 	GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAlertmanagerOK, error)
 
 	GetBackupDestinationNames(params *GetBackupDestinationNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBackupDestinationNamesOK, error)
@@ -165,6 +167,8 @@ type ClientService interface {
 	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
 
 	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error)
+
+	ImportClusterTemplate(params *ImportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ImportClusterTemplateCreated, error)
 
 	ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error)
 
@@ -1712,6 +1716,44 @@ func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Para
 }
 
 /*
+  ExportClusterTemplate exports cluster template to file
+*/
+func (a *Client) ExportClusterTemplate(params *ExportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportClusterTemplateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewExportClusterTemplateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "exportClusterTemplate",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/export",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ExportClusterTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ExportClusterTemplateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ExportClusterTemplateDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetAlertmanager gets the alertmanager configuration for the specified cluster
 */
 func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAlertmanagerOK, error) {
@@ -2924,6 +2966,44 @@ func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoW
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ImportClusterTemplate imports a cluster templates for the given project
+*/
+func (a *Client) ImportClusterTemplate(params *ImportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ImportClusterTemplateCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewImportClusterTemplateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "importClusterTemplate",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/import",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ImportClusterTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ImportClusterTemplateCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ImportClusterTemplateDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

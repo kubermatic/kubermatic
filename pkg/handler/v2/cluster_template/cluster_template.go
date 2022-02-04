@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"gopkg.in/yaml.v2"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -51,12 +52,13 @@ var scopeList = []string{
 	kubermaticv1.GlobalClusterTemplateScope,
 }
 
+const yamlFormat = "yaml"
+
 func CreateEndpoint(
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter,
 	clusterTemplateProvider provider.ClusterTemplateProvider,
-	settingsProvider provider.SettingsProvider,
 	seedsGetter provider.SeedsGetter,
 	credentialManager provider.PresetProvider,
 	caBundle *x509.CertPool,
@@ -68,8 +70,6 @@ func CreateEndpoint(
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterTemplateReq)
 
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-
 		config, err := configGetter(ctx)
 		if err != nil {
 			return nil, err
@@ -80,81 +80,7 @@ func CreateEndpoint(
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		adminUserInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
-		if err != nil {
-			return nil, err
-		}
-
-		newClusterTemplate := &kubermaticv1.ClusterTemplate{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        partialCluster.Name,
-				Labels:      map[string]string{},
-				Annotations: map[string]string{},
-			},
-			Credential:             partialCluster.GetSecretName(),
-			ClusterLabels:          partialCluster.Labels,
-			InheritedClusterLabels: req.Body.Cluster.InheritedLabels,
-			Spec:                   partialCluster.Spec,
-		}
-
-		if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, false); err != nil {
-			return nil, err
-		}
-
-		isBYO, err := common.IsBringYourOwnProvider(partialCluster.Spec.Cloud)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if !isBYO {
-			kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
-		}
-
-		newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
-
-		newClusterTemplate.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = adminUserInfo.Email
-		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateProjectLabelKey] = project.Name
-		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] = req.Body.Scope
-		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey] = req.Body.Name
-
-		// SSH check
-		if len(req.Body.UserSSHKeys) > 0 && req.Body.Scope == kubermaticv1.ProjectClusterTemplateScope {
-			projectSSHKeys, err := sshKeyProvider.List(project, nil)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			for _, templateKey := range req.Body.UserSSHKeys {
-				found := false
-				for _, projectSSHKey := range projectSSHKeys {
-					if projectSSHKey.Name == templateKey.ID {
-						found = true
-						break
-					}
-				}
-				if !found {
-					return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", templateKey.ID, project.Spec.Name, project.Name)
-				}
-				newClusterTemplate.UserSSHKeys = append(newClusterTemplate.UserSSHKeys, kubermaticv1.ClusterTemplateSSHKey{
-					Name: templateKey.Name,
-					ID:   templateKey.ID,
-				})
-			}
-		}
-
-		clusterTemplate, err := clusterTemplateProvider.New(adminUserInfo, newClusterTemplate, req.Body.Scope, project.Name)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalClusterTemplatetoExternal(clusterTemplate)
+		return createClusterTemplate(ctx, userInfoGetter, seedsGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, credentialManager, exposeStrategy, caBundle, configGetter, features, clusterTemplateProvider, req.Body.CreateClusterSpec, req.ProjectID, req.Body.Name, req.Body.Scope, req.Body.UserSSHKeys)
 	}
 }
 
@@ -297,21 +223,185 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+
+		return getClusterTemplate(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterTemplateProvider, req.ProjectID, req.ClusterTemplateID)
+	}
+}
+
+func getClusterTemplate(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, projectID, clusterTemplateID string) (*apiv2.ClusterTemplate, error) {
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	template, err := clusterTemplateProvider.Get(userInfo, project.Name, clusterTemplateID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return convertInternalClusterTemplatetoExternal(template)
+}
+
+func ExportEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(exportClusterTemplatesReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		userInfo, err := userInfoGetter(ctx, "")
+		clusterTemplate, err := getClusterTemplate(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterTemplateProvider, req.ProjectID, req.ClusterTemplateID)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
-		template, err := clusterTemplateProvider.Get(userInfo, project.Name, req.ClusterTemplateID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+
+		clusterTemplate.ID = ""
+		clusterTemplate.ProjectID = ""
+		if clusterTemplate.Cluster.Labels != nil {
+			delete(clusterTemplate.Cluster.Labels, kubermaticv1.ProjectIDLabelKey)
 		}
-		return convertInternalClusterTemplatetoExternal(template)
+		clusterTemplate.Cluster.Credential = ""
+
+		return &encodeClusterTemplateResponse{
+			clusterTemplate: clusterTemplate,
+			filePrefix:      req.ClusterTemplateID,
+			format:          req.Format,
+		}, nil
 	}
+}
+
+func ImportEndpoint(
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
+	clusterTemplateProvider provider.ClusterTemplateProvider,
+	seedsGetter provider.SeedsGetter,
+	credentialManager provider.PresetProvider,
+	caBundle *x509.CertPool,
+	exposeStrategy kubermaticv1.ExposeStrategy,
+	sshKeyProvider provider.SSHKeyProvider,
+	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
+) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(importClusterTemplateReq)
+
+		config, err := configGetter(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		err = req.Validate(version.NewFromConfiguration(config))
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		var nd *apiv1.NodeDeployment
+		if req.Body.NodeDeployment != nil {
+			nd = &apiv1.NodeDeployment{
+				Spec: req.Body.NodeDeployment.Spec,
+			}
+		}
+		createCluster := apiv1.CreateClusterSpec{
+			Cluster: apiv1.Cluster{
+				ObjectMeta: apiv1.ObjectMeta{
+					Name: req.Body.Name,
+				},
+				Labels:          req.Body.Cluster.Labels,
+				InheritedLabels: req.Body.Cluster.InheritedLabels,
+				Type:            apiv1.KubernetesClusterType,
+				Credential:      req.Body.Cluster.Credential,
+				Spec:            req.Body.Cluster.Spec,
+			},
+			NodeDeployment: nd,
+		}
+
+		return createClusterTemplate(ctx, userInfoGetter, seedsGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, credentialManager, exposeStrategy, caBundle, configGetter, features, clusterTemplateProvider, createCluster, req.ProjectID, req.Body.Name, req.Body.Scope, req.Body.UserSSHKeys)
+	}
+}
+
+func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, sshKeyProvider provider.SSHKeyProvider, credentialManager provider.PresetProvider, exposeStrategy kubermaticv1.ExposeStrategy, caBundle *x509.CertPool, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate, clusterTemplateProvider provider.ClusterTemplateProvider, createCluster apiv1.CreateClusterSpec, projectID, name, scope string, userSSHKeys []apiv2.ClusterTemplateSSHKey) (*apiv2.ClusterTemplate, error) {
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	partialCluster, err := handlercommon.GenerateCluster(ctx, projectID, createCluster, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
+	if err != nil {
+		return nil, err
+	}
+
+	newClusterTemplate := &kubermaticv1.ClusterTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        partialCluster.Name,
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
+		},
+		Credential:             "",
+		ClusterLabels:          partialCluster.Labels,
+		InheritedClusterLabels: createCluster.Cluster.InheritedLabels,
+		Spec:                   partialCluster.Spec,
+	}
+
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, false); err != nil {
+		return nil, err
+	}
+
+	isBYO, err := common.IsBringYourOwnProvider(partialCluster.Spec.Cloud)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	if !isBYO {
+		kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
+	}
+
+	newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
+
+	newClusterTemplate.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = adminUserInfo.Email
+	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateProjectLabelKey] = project.Name
+	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] = scope
+	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey] = name
+
+	// SSH check
+	if len(userSSHKeys) > 0 && scope == kubermaticv1.ProjectClusterTemplateScope {
+		projectSSHKeys, err := sshKeyProvider.List(project, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		for _, templateKey := range userSSHKeys {
+			found := false
+			for _, projectSSHKey := range projectSSHKeys {
+				if projectSSHKey.Name == templateKey.ID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", templateKey.ID, project.Spec.Name, project.Name)
+			}
+			newClusterTemplate.UserSSHKeys = append(newClusterTemplate.UserSSHKeys, kubermaticv1.ClusterTemplateSSHKey{
+				Name: templateKey.Name,
+				ID:   templateKey.ID,
+			})
+		}
+	}
+
+	ct, err := clusterTemplateProvider.New(adminUserInfo, newClusterTemplate, scope, project.Name)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return convertInternalClusterTemplatetoExternal(ct)
 }
 
 func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -397,6 +487,43 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 	}
 }
 
+type encodeClusterTemplateResponse struct {
+	clusterTemplate *apiv2.ClusterTemplate
+	filePrefix      string
+	format          string
+}
+
+func EncodeClusterTemplate(_ context.Context, w http.ResponseWriter, response interface{}) (err error) {
+	rsp := response.(*encodeClusterTemplateResponse)
+	clusterTemplate := rsp.clusterTemplate
+	filename := "clusterTemplate"
+
+	if len(rsp.filePrefix) > 0 {
+		filename = fmt.Sprintf("%s-%s", filename, rsp.filePrefix)
+	}
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Add("Cache-Control", "no-cache")
+
+	if rsp.format == yamlFormat {
+		b, err := yaml.Marshal(clusterTemplate)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write(b)
+		return err
+	}
+
+	b, err := json.Marshal(clusterTemplate)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(b)
+	return err
+}
+
 // createInstanceReq defines HTTP request for createClusterTemplateInstance
 // swagger:parameters createClusterTemplateInstance
 type createInstanceReq struct {
@@ -456,6 +583,34 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// exportClusterTemplatesReq defines HTTP request for exportClusterTemplate
+// swagger:parameters exportClusterTemplate
+type exportClusterTemplatesReq struct {
+	getClusterTemplatesReq
+
+	// in: query
+	Format string `json:"format,omitempty"`
+}
+
+func DecodeExportReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req exportClusterTemplatesReq
+
+	getReq, err := DecodeGetReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.getClusterTemplatesReq = getReq.(getClusterTemplatesReq)
+
+	queryParam := r.URL.Query().Get("format")
+
+	if len(queryParam) > 0 && queryParam != yamlFormat {
+		return nil, fmt.Errorf("not supported file format: %s", queryParam)
+	}
+	req.Format = queryParam
+
+	return req, nil
+}
+
 func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemplate) (*apiv2.ClusterTemplate, error) {
 	md := &apiv1.NodeDeployment{}
 	rawMachineDeployment, ok := template.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
@@ -484,7 +639,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 		ProjectID: template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey],
 		User:      template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
 		Scope:     template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
-		Cluster: &apiv1.Cluster{
+		Cluster: &apiv2.ClusterTemplateInfo{
 			Labels:          template.ClusterLabels,
 			InheritedLabels: template.InheritedClusterLabels,
 			Credential:      template.Credential,
@@ -507,7 +662,9 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 				ContainerRuntime:                     template.Spec.ContainerRuntime,
 			},
 		},
-		NodeDeployment: md,
+		NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{
+			Spec: md.Spec,
+		},
 	}
 
 	if len(template.UserSSHKeys) > 0 {
@@ -520,4 +677,80 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 	}
 
 	return ct, nil
+}
+
+// importClusterTemplateReq defines HTTP requests for importClusterTemplate
+// swagger:parameters importClusterTemplate
+type importClusterTemplateReq struct {
+	common.ProjectReq
+	// in: body
+	Body struct {
+		apiv2.ClusterTemplate
+	}
+
+	// private field for the seed name. Needed for the cluster provider.
+	seedName string
+}
+
+// GetSeedCluster returns the SeedCluster object.
+func (req importClusterTemplateReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.seedName,
+	}
+}
+
+// Validate validates addReq request.
+func (req importClusterTemplateReq) Validate(updateManager common.UpdateManager) error {
+	if req.Body.Cluster == nil {
+		return fmt.Errorf("the cluster cannot be empty")
+	}
+	if len(req.ProjectID) == 0 || len(req.Body.Name) == 0 || len(req.Body.Scope) == 0 {
+		return fmt.Errorf("the name, project ID and scope cannot be empty")
+	}
+
+	var nd *apiv1.NodeDeployment
+	if req.Body.NodeDeployment != nil {
+		nd = &apiv1.NodeDeployment{
+			Spec: req.Body.NodeDeployment.Spec,
+		}
+	}
+
+	if err := handlercommon.ValidateClusterSpec(updateManager, apiv1.CreateClusterSpec{
+		Cluster: apiv1.Cluster{
+			Type: apiv1.KubernetesClusterType,
+			Spec: req.Body.Cluster.Spec,
+		},
+		NodeDeployment: nd,
+	}); err != nil {
+		return err
+	}
+
+	for _, scope := range scopeList {
+		if scope == req.Body.Scope {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid scope name %s", req.Body.Scope)
+}
+
+func DecodeImportReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req importClusterTemplateReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	seedName, err := clusterv2.FindSeedNameForDatacenter(c, req.Body.Cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	req.seedName = seedName
+
+	return req, nil
 }

@@ -1775,16 +1775,10 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 		ProjectID: template.Payload.ProjectID,
 		User:      template.Payload.User,
 		Scope:     template.Payload.Scope,
-		Cluster: &apiv1.Cluster{
-			ObjectMeta: apiv1.ObjectMeta{
-				Name: template.Payload.Cluster.Name,
-			},
+		Cluster: &apiv2.ClusterTemplateInfo{
 			Labels:          template.Payload.Cluster.Labels,
 			InheritedLabels: template.Payload.Cluster.InheritedLabels,
-			Type:            template.Payload.Cluster.Type,
 			Credential:      template.Payload.Cluster.Credential,
-
-			Status: apiv1.ClusterStatus{},
 		},
 	}, nil
 }
