@@ -45,9 +45,6 @@ spec:
                     type: boolean
                   enforced:
                     type: boolean
-                required:
-                - enabled
-                - enforced
                 type: object
               customLinks:
                 items:
@@ -118,11 +115,6 @@ spec:
                     type: boolean
                   monitoringEnforced:
                     type: boolean
-                required:
-                - loggingEnabled
-                - loggingEnforced
-                - monitoringEnabled
-                - monitoringEnforced
                 type: object
               opaOptions:
                 properties:
@@ -130,9 +122,6 @@ spec:
                     type: boolean
                   enforced:
                     type: boolean
-                required:
-                - enabled
-                - enforced
                 type: object
               restrictProjectCreation:
                 type: boolean
@@ -140,7 +129,6 @@ spec:
                 format: int64
                 type: integer
             required:
-            - cleanupOptions
             - customLinks
             - defaultNodeCount
             - displayAPIDocs
@@ -152,8 +140,6 @@ spec:
             - machineDeploymentVMResourceQuota
             - mlaAlertmanagerPrefix
             - mlaGrafanaPrefix
-            - mlaOptions
-            - opaOptions
             - restrictProjectCreation
             - userProjectsLimit
             type: object
