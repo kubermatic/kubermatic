@@ -345,7 +345,7 @@ func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, clie
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8s-io-v1-seed"),
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-seed"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
