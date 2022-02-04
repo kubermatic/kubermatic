@@ -18,7 +18,10 @@ package crdmigration
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -32,9 +35,11 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -70,8 +75,19 @@ func shutdownCluster(ctx context.Context, logger logrus.FieldLogger, client ctrl
 }
 
 func shutdownDeploymentsInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, isSeed bool) error {
+	// shutdown operator first, it would recreate everything else
+	deploymentName := "kubermatic-operator" // as named in our Helm chart
+
+	if err := shutdownDeployment(ctx, logger, client, kubermaticNamespace, deploymentName); err != nil {
+		return err
+	}
+
+	if err := waitForAllPodsToBeGone(ctx, logger, client, kubermaticNamespace, deploymentName); err != nil {
+		return err
+	}
+
+	// now shut down KKP controllers
 	deployments := []string{
-		"kubermatic-operator", // as named in our Helm chart
 		common.MasterControllerManagerDeploymentName,
 		kubermaticmaster.APIDeploymentName,
 		common.SeedControllerManagerDeploymentName,
@@ -79,6 +95,12 @@ func shutdownDeploymentsInCluster(ctx context.Context, logger logrus.FieldLogger
 
 	for _, deploymentName := range deployments {
 		if err := shutdownDeployment(ctx, logger, client, kubermaticNamespace, deploymentName); err != nil {
+			return err
+		}
+	}
+
+	for _, deploymentName := range deployments {
+		if err := waitForAllPodsToBeGone(ctx, logger, client, kubermaticNamespace, deploymentName); err != nil {
 			return err
 		}
 	}
@@ -94,6 +116,12 @@ func shutdownDeploymentsInCluster(ctx context.Context, logger logrus.FieldLogger
 
 		for _, namespace := range clusterNamespaces {
 			if err := shutdownDeployment(ctx, logger, client, namespace, resources.UserClusterControllerDeploymentName); err != nil {
+				return err
+			}
+		}
+
+		for _, namespace := range clusterNamespaces {
+			if err := waitForAllPodsToBeGone(ctx, logger, client, namespace, resources.UserClusterControllerDeploymentName); err != nil {
 				return err
 			}
 		}
@@ -130,6 +158,46 @@ func shutdownDeployment(ctx context.Context, logger logrus.FieldLogger, client c
 	}
 
 	return nil
+}
+
+func waitForAllPodsToBeGone(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, namespace string, name string) error {
+	depLogger := logger.WithField("deployment", name).WithField("namespace", namespace)
+	depLogger.Debug("Waiting for Pods to be gone…")
+
+	// waiting for shutdown, as even a Terminating pod can still run and do dangerous things;
+	// sadly Kubernetes does not provide any status information on the Deployment when it's
+	// scaled down to 0 replicas, so we must check for existing pods
+	podNamePrefix := name + "-"
+
+	err := wait.Poll(500*time.Millisecond, 1*time.Minute, func() (done bool, err error) {
+		pods := &corev1.PodList{}
+		opt := ctrlruntimeclient.ListOptions{
+			Namespace: namespace,
+		}
+
+		if err := client.List(ctx, pods, &opt); err != nil {
+			return false, fmt.Errorf("failed to list pods in %s: %w", namespace, err)
+		}
+
+		// Kubernetes does not provide real status information for pods that are terminating,
+		// so all we have to go on is pod existence, which in itself can be problematic on
+		// some providers like GKE which like to keep Terminated pods around forever.
+		for _, pod := range pods.Items {
+			// we found a pod
+			if strings.HasPrefix(pod.Name, podNamePrefix) {
+				return false, nil
+			}
+		}
+
+		// no more pods left
+		return true, nil
+	})
+
+	if errors.Is(err, wait.ErrWaitTimeout) {
+		return errors.New("there are still Pods running, please wait and let them shut down")
+	}
+
+	return err
 }
 
 func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) error {
