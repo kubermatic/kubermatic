@@ -34,7 +34,7 @@ const (
 
 // AllowedRegistry is the object representing an allowed registry.
 type AllowedRegistry struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec AllowedRegistrySpec `json:"spec,omitempty"`
@@ -52,7 +52,7 @@ type AllowedRegistrySpec struct {
 
 // AllowedRegistryList specifies a list of allowed registries.
 type AllowedRegistryList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []AllowedRegistry `json:"items"`

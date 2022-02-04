@@ -89,7 +89,7 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 
 // Cluster is the object representing a cluster.
 type Cluster struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec    ClusterSpec    `json:"spec,omitempty"`
@@ -102,7 +102,7 @@ type Cluster struct {
 
 // ClusterList specifies a list of clusters.
 type ClusterList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Cluster `json:"items"`
@@ -486,14 +486,14 @@ type ComponentSettings struct {
 }
 
 type APIServerSettings struct {
-	DeploymentSettings `json:",inline"`
+	DeploymentSettings `json:"inline"`
 
 	EndpointReconcilingDisabled *bool  `json:"endpointReconcilingDisabled,omitempty"`
 	NodePortRange               string `json:"nodePortRange,omitempty"`
 }
 
 type ControllerSettings struct {
-	DeploymentSettings     `json:",inline"`
+	DeploymentSettings     `json:"inline"`
 	LeaderElectionSettings `json:"leaderElection,omitempty"`
 }
 

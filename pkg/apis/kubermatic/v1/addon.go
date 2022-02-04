@@ -39,7 +39,7 @@ const (
 
 // Addon specifies a add-on.
 type Addon struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   AddonSpec   `json:"spec,omitempty"`
@@ -76,7 +76,7 @@ type AddonSpec struct {
 
 // AddonList is a list of addons.
 type AddonList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Addon `json:"items"`

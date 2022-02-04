@@ -35,7 +35,7 @@ const (
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 type Alertmanager struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   AlertmanagerSpec   `json:"spec,omitempty"`
@@ -52,7 +52,7 @@ type AlertmanagerSpec struct {
 // +kubebuilder:object:root=true
 
 type AlertmanagerList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Alertmanager `json:"items"`

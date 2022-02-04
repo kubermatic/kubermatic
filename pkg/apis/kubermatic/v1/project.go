@@ -54,7 +54,7 @@ const (
 
 // Project is the type describing a project.
 type Project struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   ProjectSpec   `json:"spec,omitempty"`
@@ -76,7 +76,7 @@ type ProjectStatus struct {
 
 // ProjectList is a collection of projects.
 type ProjectList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Project `json:"items"`

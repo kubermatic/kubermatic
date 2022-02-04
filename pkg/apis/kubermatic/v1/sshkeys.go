@@ -37,7 +37,7 @@ const (
 
 // UserSSHKey specifies a users UserSSHKey.
 type UserSSHKey struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec SSHKeySpec `json:"spec,omitempty"`
@@ -82,7 +82,7 @@ func (sk *UserSSHKey) AddToCluster(clustername string) {
 
 // UserSSHKeyList specifies a users UserSSHKey.
 type UserSSHKeyList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []UserSSHKey `json:"items"`

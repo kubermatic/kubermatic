@@ -51,7 +51,7 @@ const (
 
 // ClusterTemplate is the object representing a cluster template.
 type ClusterTemplate struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	ClusterLabels          map[string]string       `json:"clusterLabels,omitempty"`
@@ -66,7 +66,7 @@ type ClusterTemplate struct {
 
 // ClusterTemplateList specifies a list of cluster templates.
 type ClusterTemplateList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []ClusterTemplate `json:"items"`

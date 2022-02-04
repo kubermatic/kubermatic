@@ -92,7 +92,7 @@ func IsProviderSupported(name string) bool {
 
 // SeedDatacenterList is the type representing a SeedDatacenterList.
 type SeedList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	// List of seeds
@@ -105,7 +105,7 @@ type SeedList struct {
 
 // Seed is the type representing a SeedDatacenter.
 type Seed struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec SeedSpec `json:"spec"`
@@ -529,7 +529,7 @@ func (p *ProxySettings) Merge(dst *ProxySettings) {
 type NodeSettings struct {
 	// Optional: Proxy settings for the Nodes in this datacenter.
 	// Defaults to the Proxy settings of the seed.
-	ProxySettings `json:",inline"`
+	ProxySettings `json:"inline"`
 	// Optional: These image registries will be configured as insecure
 	// on the container runtime.
 	InsecureRegistries []string `json:"insecureRegistries,omitempty"`

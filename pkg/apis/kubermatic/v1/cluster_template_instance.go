@@ -36,7 +36,7 @@ const (
 
 // ClusterTemplateInstance is the object representing a cluster template instance.
 type ClusterTemplateInstance struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec ClusterTemplateInstanceSpec `json:"spec,omitempty"`
@@ -55,7 +55,7 @@ type ClusterTemplateInstanceSpec struct {
 
 // ClusterTemplateInstanceList specifies a list of cluster template instances.
 type ClusterTemplateInstanceList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []ClusterTemplateInstance `json:"items"`

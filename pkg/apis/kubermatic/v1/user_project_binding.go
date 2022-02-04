@@ -40,7 +40,7 @@ const (
 // UserProjectBinding specifies a binding between a user and a project
 // This resource is used by the user management to manipulate members of the given project.
 type UserProjectBinding struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec UserProjectBindingSpec `json:"spec,omitempty"`
@@ -58,7 +58,7 @@ type UserProjectBindingSpec struct {
 
 // UserProjectBindingList is a list of users.
 type UserProjectBindingList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []UserProjectBinding `json:"items"`

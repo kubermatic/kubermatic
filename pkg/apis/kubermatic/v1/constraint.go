@@ -37,7 +37,7 @@ const (
 
 // Constraint specifies a kubermatic wrapper for the gatekeeper constraints.
 type Constraint struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec ConstraintSpec `json:"spec,omitempty"`
@@ -111,7 +111,7 @@ type Kind struct {
 
 // ConstraintList specifies a list of constraints.
 type ConstraintList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Constraint `json:"items"`

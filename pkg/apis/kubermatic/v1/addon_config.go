@@ -27,7 +27,7 @@ import (
 
 // AddonConfig specifies addon configuration.
 type AddonConfig struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec AddonConfigSpec `json:"spec,omitempty"`
@@ -67,7 +67,7 @@ type AddonFormControl struct {
 
 // AddonConfigList is a list of addon configs.
 type AddonConfigList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []AddonConfig `json:"items"`

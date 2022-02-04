@@ -28,7 +28,7 @@ import (
 
 // AdmissionPluginList is the type representing a AdmissionPluginList.
 type AdmissionPluginList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	// List of Admission Plugins
@@ -41,7 +41,7 @@ type AdmissionPluginList struct {
 
 // AdmissionPlugin is the type representing a AdmissionPlugin.
 type AdmissionPlugin struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec AdmissionPluginSpec `json:"spec,omitempty"`

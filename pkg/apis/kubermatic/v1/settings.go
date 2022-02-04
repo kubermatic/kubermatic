@@ -29,7 +29,7 @@ const GlobalSettingsName = "globalsettings"
 
 // KubermaticSetting is the type representing a KubermaticSetting.
 type KubermaticSetting struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec SettingSpec `json:"spec,omitempty"`
@@ -101,7 +101,7 @@ type MlaOptions struct {
 
 // KubermaticSettingList is a list of settings.
 type KubermaticSettingList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []KubermaticSetting `json:"items"`

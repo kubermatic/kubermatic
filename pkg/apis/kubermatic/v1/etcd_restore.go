@@ -51,7 +51,7 @@ type EtcdRestorePhase string
 
 // EtcdRestore specifies a add-on.
 type EtcdRestore struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   EtcdRestoreSpec   `json:"spec,omitempty"`
@@ -81,7 +81,7 @@ type EtcdRestoreSpec struct {
 
 // EtcdRestoreList is a list of etcd restores.
 type EtcdRestoreList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []EtcdRestore `json:"items"`

@@ -41,7 +41,7 @@ const (
 
 // ExternalCluster is the object representing an external kubernetes cluster.
 type ExternalCluster struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec ExternalClusterSpec `json:"spec,omitempty"`
@@ -52,7 +52,7 @@ type ExternalCluster struct {
 
 // ExternalClusterList specifies a list of external kubernetes clusters.
 type ExternalClusterList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []ExternalCluster `json:"items"`

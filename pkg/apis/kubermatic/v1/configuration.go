@@ -55,7 +55,7 @@ const (
 
 // KubermaticConfiguration is the configuration required for running Kubermatic.
 type KubermaticConfiguration struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec KubermaticConfigurationSpec `json:"spec,omitempty"`
@@ -407,7 +407,7 @@ type KubermaticProxyConfiguration struct {
 
 // KubermaticConfigurationList is a collection of KubermaticConfigurations.
 type KubermaticConfigurationList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []KubermaticConfiguration `json:"items"`

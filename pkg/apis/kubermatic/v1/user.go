@@ -42,7 +42,7 @@ const (
 
 // User specifies a user.
 type User struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta   `json:"inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   UserSpec   `json:"spec,omitempty"`
@@ -81,7 +81,7 @@ type UserSettings struct {
 
 // UserList is a list of users.
 type UserList struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta `json:"inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []User `json:"items"`
