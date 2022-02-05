@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	alertmanagerFinalizer        = "kubermatic.io/alertmanager"
+	alertmanagerFinalizer        = "kubermatic.k8c.io/alertmanager"
 	AlertmanagerConfigEndpoint   = "/api/v1/alerts"
 	AlertmanagerTenantHeaderName = "X-Scope-OrgID"
 )

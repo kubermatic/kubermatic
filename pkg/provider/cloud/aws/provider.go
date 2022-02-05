@@ -32,15 +32,15 @@ const (
 
 	regionAnnotationKey = "kubermatic.io/aws-region"
 
-	cleanupFinalizer = "kubermatic.io/cleanup-aws"
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-aws"
 
 	// The individual finalizers are deprecated and not used for newly reconciled
 	// clusters, where the single cleanupFinalizer is enough.
 
-	securityGroupCleanupFinalizer    = "kubermatic.io/cleanup-aws-security-group"
-	instanceProfileCleanupFinalizer  = "kubermatic.io/cleanup-aws-instance-profile"
-	controlPlaneRoleCleanupFinalizer = "kubermatic.io/cleanup-aws-control-plane-role"
-	tagCleanupFinalizer              = "kubermatic.io/cleanup-aws-tags"
+	securityGroupCleanupFinalizer    = "kubermatic.k8c.io/cleanup-aws-security-group"
+	instanceProfileCleanupFinalizer  = "kubermatic.k8c.io/cleanup-aws-instance-profile"
+	controlPlaneRoleCleanupFinalizer = "kubermatic.k8c.io/cleanup-aws-control-plane-role"
+	tagCleanupFinalizer              = "kubermatic.k8c.io/cleanup-aws-tags"
 
 	authFailure = "AuthFailure"
 )

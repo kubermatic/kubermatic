@@ -47,19 +47,19 @@ import (
 
 const (
 	// SecurityGroupCleanupFinalizer will instruct the deletion of the security group.
-	SecurityGroupCleanupFinalizer = "kubermatic.io/cleanup-openstack-security-group"
+	SecurityGroupCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-security-group"
 	// OldNetworkCleanupFinalizer will instruct the deletion of all network components. Router, Network, Subnet
 	// Deprecated: Got split into dedicated finalizers.
-	OldNetworkCleanupFinalizer = "kubermatic.io/cleanup-openstack-network"
+	OldNetworkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-network"
 
 	// NetworkCleanupFinalizer will instruct the deletion of the network.
-	NetworkCleanupFinalizer = "kubermatic.io/cleanup-openstack-network-v2"
+	NetworkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-network-v2"
 	// SubnetCleanupFinalizer will instruct the deletion of the subnet.
-	SubnetCleanupFinalizer = "kubermatic.io/cleanup-openstack-subnet-v2"
+	SubnetCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-subnet-v2"
 	// RouterCleanupFinalizer will instruct the deletion of the router.
-	RouterCleanupFinalizer = "kubermatic.io/cleanup-openstack-router-v2"
+	RouterCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-v2"
 	// RouterSubnetLinkCleanupFinalizer will instruct the deletion of the link between the router and the subnet.
-	RouterSubnetLinkCleanupFinalizer = "kubermatic.io/cleanup-openstack-router-subnet-link-v2"
+	RouterSubnetLinkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-subnet-link-v2"
 )
 
 type getClientFunc func(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)

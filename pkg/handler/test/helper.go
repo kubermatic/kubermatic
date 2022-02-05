@@ -947,7 +947,7 @@ func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.
 func GenDefaultProject() *kubermaticv1.Project {
 	user := GenDefaultUser()
 	oRef := metav1.OwnerReference{
-		APIVersion: "kubermatic.io/v1",
+		APIVersion: "kubermatic.k8c.io/v1",
 		Kind:       "User",
 		UID:        user.UID,
 		Name:       user.Name,
