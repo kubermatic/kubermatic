@@ -155,8 +155,8 @@ func Add(
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObj := e.ObjectOld.(*kubermaticv1.Cluster)
 			newObj := e.ObjectNew.(*kubermaticv1.Cluster)
-			_, oldCondition := kubermaticv1helper.GetClusterCondition(oldObj, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
-			_, newCondition := kubermaticv1helper.GetClusterCondition(newObj, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
+			oldCondition := oldObj.Status.Conditions[kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess]
+			newCondition := newObj.Status.Conditions[kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess]
 			if !reflect.DeepEqual(oldCondition, newCondition) {
 				return true
 			}
@@ -532,10 +532,10 @@ func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermatic
 }
 
 func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
-	_, cond := getAddonCondition(addon, kubermaticv1.AddonResourcesCreated)
-	if cond != nil && cond.Status == corev1.ConditionTrue {
+	if addon.Status.Conditions[kubermaticv1.AddonResourcesCreated].Status == corev1.ConditionTrue {
 		return nil
 	}
+
 	oldAddon := addon.DeepCopy()
 	setAddonCodition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
@@ -606,39 +606,24 @@ func formatGVK(gvk kubermaticv1.GroupVersionKind) string {
 }
 
 func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
-	idx, cond := getAddonCondition(a, condType)
-	if cond == nil {
-		cond = &kubermaticv1.AddonCondition{}
-		cond.Type = condType
-		cond.Status = status
-		cond.LastHeartbeatTime = metav1.Now()
-		cond.LastTransitionTime = metav1.Now()
-		a.Status.Conditions = append(a.Status.Conditions, *cond)
-		return
-	}
-	if cond.Status != status {
-		cond.LastTransitionTime = metav1.Now()
-		cond.Status = status
-	}
-	cond.LastHeartbeatTime = metav1.Now()
-	a.Status.Conditions[idx] = *cond
-}
+	now := metav1.Now()
 
-func getAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType) (int, *kubermaticv1.AddonCondition) {
-	for i, c := range a.Status.Conditions {
-		if c.Type == condType {
-			return i, &c
-		}
+	condition, exists := a.Status.Conditions[condType]
+	if exists && condition.Status != status {
+		condition.LastTransitionTime = &now
 	}
-	return -1, nil
+
+	condition.Status = status
+	condition.LastHeartbeatTime = now
+
+	if a.Status.Conditions == nil {
+		a.Status.Conditions = map[kubermaticv1.AddonConditionType]kubermaticv1.AddonCondition{}
+	}
+	a.Status.Conditions[condType] = condition
 }
 
 func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
-	_, cond := getAddonCondition(addon, kubermaticv1.AddonResourcesCreated)
-	if cond != nil && cond.Status == corev1.ConditionTrue {
-		return true
-	}
-	return false
+	return addon.Status.Conditions[kubermaticv1.AddonResourcesCreated].Status == corev1.ConditionTrue
 }
 
 func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {

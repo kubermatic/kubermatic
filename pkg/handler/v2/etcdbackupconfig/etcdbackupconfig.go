@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
@@ -411,12 +412,12 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 		etcdBackupConfig.Status.CurrentBackups = append(etcdBackupConfig.Status.CurrentBackups, apiBackupStatus)
 	}
 
-	for _, condition := range ebc.Status.Conditions {
+	for conditionType, condition := range ebc.Status.Conditions {
 		lastHeartbeatTime := apiv1.NewTime(condition.LastHeartbeatTime.Time)
 		lastTransitionTime := apiv1.NewTime(condition.LastTransitionTime.Time)
 
 		apiCondition := apiv2.EtcdBackupConfigCondition{
-			Type:               condition.Type,
+			Type:               conditionType,
 			Status:             condition.Status,
 			LastHeartbeatTime:  lastHeartbeatTime,
 			LastTransitionTime: lastTransitionTime,
@@ -425,6 +426,11 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 		}
 		etcdBackupConfig.Status.Conditions = append(etcdBackupConfig.Status.Conditions, apiCondition)
 	}
+
+	// ensure a stable sorting order
+	sort.Slice(etcdBackupConfig.Status.Conditions, func(i, j int) bool {
+		return etcdBackupConfig.Status.Conditions[i].Type < etcdBackupConfig.Status.Conditions[j].Type
+	})
 
 	return etcdBackupConfig
 }

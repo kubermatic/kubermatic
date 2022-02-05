@@ -968,7 +968,6 @@ func TestGetClusterHealth(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver:                    kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
@@ -1000,7 +999,6 @@ func TestGetClusterHealth(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver:                    kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
@@ -1032,7 +1030,6 @@ func TestGetClusterHealth(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver:                    kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
@@ -1062,7 +1059,6 @@ func TestGetClusterHealth(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver:                    kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
@@ -1095,7 +1091,6 @@ func TestGetClusterHealth(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver:                    kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
@@ -1128,7 +1123,6 @@ func TestGetClusterHealth(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver:                    kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
@@ -1161,7 +1155,6 @@ func TestGetClusterHealth(t *testing.T) {
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver:                    kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,

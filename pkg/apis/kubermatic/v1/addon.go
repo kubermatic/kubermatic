@@ -83,7 +83,7 @@ type AddonList struct {
 }
 
 type AddonStatus struct {
-	Conditions []AddonCondition `json:"conditions,omitempty"`
+	Conditions map[AddonConditionType]AddonCondition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=AddonResourcesCreatedSuccessfully
@@ -91,14 +91,11 @@ type AddonStatus struct {
 type AddonConditionType string
 
 type AddonCondition struct {
-	// Type of addon condition.
-	Type AddonConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
-	// +optional
-	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
 	// Last time the condition transit from one status to another.
 	// +optional
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
 }

@@ -37,7 +37,7 @@ import (
 )
 
 type cleaner interface {
-	cleanUp(context.Context) error
+	CleanUp(context.Context) error
 }
 
 const (

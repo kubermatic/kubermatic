@@ -233,7 +233,7 @@ func (r *alertmanagerController) reconcile(ctx context.Context, cluster *kuberma
 	return nil, nil
 }
 
-func (r *alertmanagerController) cleanUp(ctx context.Context) error {
+func (r *alertmanagerController) CleanUp(ctx context.Context) error {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.List(ctx, clusterList); err != nil {
 		return err
@@ -247,26 +247,32 @@ func (r *alertmanagerController) cleanUp(ctx context.Context) error {
 }
 
 func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
-	err := r.cleanUpAlertmanagerConfiguration(ctx, cluster)
-	// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
-	if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil && !errors.IsNotFound(errC) {
-		return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to delete alertmanager configuration: %w", err)
-	}
-	if cluster.DeletionTimestamp.IsZero() {
-		// if cluster is still there we need to delete objects manually
-		err := r.cleanUpAlertmanagerObjects(ctx, cluster)
+	// only perform cleanup steps if the Cluster object is valid,
+	// but do remove the finalizer at the end even if the object was junk,
+	// so that we do not block cluster deletion
+	if cluster.Status.NamespaceName != "" {
+		// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
+		err := r.cleanUpAlertmanagerConfiguration(ctx, cluster)
 		// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
-		if errC := r.cleanUpAlertmanagerConfigurationStatus(ctx, cluster, err); errC != nil {
-			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", errC)
+		if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil && !errors.IsNotFound(errC) {
+			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
 		}
 		if err != nil {
-			return fmt.Errorf("failed to remove alertmanager objects: %w", err)
+			return fmt.Errorf("failed to delete alertmanager configuration: %w", err)
+		}
+		if cluster.DeletionTimestamp.IsZero() {
+			// if cluster is still there we need to delete objects manually
+			err := r.cleanUpAlertmanagerObjects(ctx, cluster)
+			// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
+			if errC := r.cleanUpAlertmanagerConfigurationStatus(ctx, cluster, err); errC != nil {
+				return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", errC)
+			}
+			if err != nil {
+				return fmt.Errorf("failed to remove alertmanager objects: %w", err)
+			}
 		}
 	}
+
 	if kubernetes.HasFinalizer(cluster, alertmanagerFinalizer) {
 		oldCluster := cluster.DeepCopy()
 		kubernetes.RemoveFinalizer(cluster, alertmanagerFinalizer)
@@ -301,21 +307,14 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(ctx context.Co
 }
 
 func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx context.Context, cluster *kubermaticv1.Cluster, errC error) error {
-	oldCluster := cluster.DeepCopy()
-	// Remove the alertmanager config status in Cluster CR
-	cluster.Status.ExtendedHealth.AlertmanagerConfig = nil
-	if errC != nil && !errors.IsNotFound(errC) {
-		down := kubermaticv1.HealthStatusDown
-		cluster.Status.ExtendedHealth.AlertmanagerConfig = &down
-	}
-
-	// Update alertmanager config status in Cluster CR
-	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
-		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("error patching cluster health status: %w", err)
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		// Remove the alertmanager config status in Cluster CR
+		c.Status.ExtendedHealth.AlertmanagerConfig = nil
+		if errC != nil && !errors.IsNotFound(errC) {
+			down := kubermaticv1.HealthStatusDown
+			c.Status.ExtendedHealth.AlertmanagerConfig = &down
 		}
-	}
-	return nil
+	})
 }
 
 func (r *alertmanagerController) cleanUpAlertmanagerObjects(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -488,20 +487,19 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 		return fmt.Errorf("failed to get alertmanager: %w", err)
 	}
 	oldAlertmanager := alertmanager.DeepCopy()
-	oldCluster := cluster.DeepCopy()
 
 	up := kubermaticv1.HealthStatusUp
 	down := kubermaticv1.HealthStatusDown
 
 	alertmanager.Status.ConfigStatus.ErrorMessage = "" // reset error message
 	alertmanager.Status.ConfigStatus.Status = corev1.ConditionTrue
-	cluster.Status.ExtendedHealth.AlertmanagerConfig = &up
 	alertmanager.Status.ConfigStatus.LastUpdated = metav1.Now()
+	clusterStatus := &up
 	if configErr != nil {
 		alertmanager.Status.ConfigStatus.ErrorMessage = configErr.Error()
 		alertmanager.Status.ConfigStatus.Status = corev1.ConditionFalse
-		cluster.Status.ExtendedHealth.AlertmanagerConfig = &down
 		alertmanager.Status.ConfigStatus.LastUpdated = oldAlertmanager.Status.ConfigStatus.LastUpdated
+		clusterStatus = &down
 	}
 
 	// Update alertmanager config status in Alertmanager CR
@@ -512,10 +510,11 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 	}
 
 	// Update alertmanager config status in Cluster CR
-	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
-		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("error patching cluster health status: %w", err)
-		}
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth.AlertmanagerConfig = clusterStatus
+	})
+	if err != nil {
+		return fmt.Errorf("error patching cluster health status: %w", err)
 	}
 
 	return nil

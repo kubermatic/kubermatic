@@ -19,7 +19,6 @@ package helper
 import (
 	"context"
 	"reflect"
-	"sort"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -27,11 +26,38 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+type ClusterPatchFunc func(cluster *kubermaticv1.Cluster)
+
+// UpdateClusterStatus will attempt to patch the cluster status
+// of the given cluster.
+func UpdateClusterStatus(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, patch ClusterPatchFunc) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(cluster)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the cluster
+		if err := client.Get(ctx, key, cluster); err != nil {
+			return err
+		}
+
+		// modify it
+		original := cluster.DeepCopy()
+		patch(cluster)
+
+		// save some work
+		if reflect.DeepEqual(original.Status, cluster.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original))
+	})
+}
 
 // ClusterReconcileWrapper is a wrapper that should be used around
 // any cluster reconciliaton. It:
@@ -65,49 +91,19 @@ func ClusterReconcileWrapper(
 
 	errs := []error{err}
 	if conditionType != kubermaticv1.ClusterConditionNone {
-		curCluster := &kubermaticv1.Cluster{}
-
-		err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, curCluster)
+		err = UpdateClusterStatus(ctx, client, cluster, func(c *kubermaticv1.Cluster) {
+			SetClusterCondition(c, versions, conditionType, reconcilingStatus, "", "")
+		})
 		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			errs = append(errs, err)
-		} else if err == nil {
-			clusterCopy := curCluster.DeepCopy()
-			SetClusterCondition(curCluster, versions, conditionType, reconcilingStatus, "", "")
-
-			if !reflect.DeepEqual(clusterCopy, curCluster) {
-				patch := ctrlruntimeclient.MergeFrom(clusterCopy)
-
-				if err := client.Status().Patch(ctx, curCluster, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-					errs = append(errs, err)
-				}
-			}
 		}
 	}
 
 	return result, utilerrors.NewAggregate(errs)
 }
 
-// GetClusterCondition returns the index of the given condition or -1 and the condition itself
-// or a nilpointer.
-func GetClusterCondition(c *kubermaticv1.Cluster, conditionType kubermaticv1.ClusterConditionType) (int, *kubermaticv1.ClusterCondition) {
-	for i, condition := range c.Status.Conditions {
-		if conditionType == condition.Type {
-			return i, &condition
-		}
-	}
-	return -1, nil
-}
-
-func ClusterConditionHasStatus(c *kubermaticv1.Cluster, conditionType kubermaticv1.ClusterConditionType, status corev1.ConditionStatus) bool {
-	_, cond := GetClusterCondition(c, conditionType)
-	if cond != nil {
-		return cond.Status == status
-	}
-	return false
-}
-
 // SetClusterCondition sets a condition on the given cluster using the provided type, status,
-// reason and message. It also adds the Kubermatic version and tiemstamps.
+// reason and message. It also adds the Kubermatic version and timestamps.
 func SetClusterCondition(
 	c *kubermaticv1.Cluster,
 	v kubermatic.Versions,
@@ -117,36 +113,39 @@ func SetClusterCondition(
 	message string,
 ) {
 	newCondition := kubermaticv1.ClusterCondition{
-		Type:              conditionType,
 		Status:            status,
 		KubermaticVersion: uniqueVersion(v),
 		Reason:            reason,
 		Message:           message,
 	}
-	pos, oldCondition := GetClusterCondition(c, conditionType)
-	if oldCondition != nil {
+
+	oldCondition, hadCondition := c.Status.Conditions[conditionType]
+	if hadCondition {
+		conditionCopy := oldCondition.DeepCopy()
+
 		// Reset the times before comparing
-		oldCondition.LastHeartbeatTime.Reset()
-		oldCondition.LastTransitionTime.Reset()
-		if apiequality.Semantic.DeepEqual(*oldCondition, newCondition) {
+		conditionCopy.LastHeartbeatTime.Reset()
+
+		if conditionCopy.LastTransitionTime != nil {
+			conditionCopy.LastTransitionTime.Reset()
+		}
+
+		if apiequality.Semantic.DeepEqual(*conditionCopy, newCondition) {
 			return
 		}
 	}
 
-	newCondition.LastHeartbeatTime = metav1.Now()
-	if oldCondition != nil && oldCondition.Status != status {
-		newCondition.LastTransitionTime = metav1.Now()
+	now := metav1.Now()
+	newCondition.LastHeartbeatTime = now
+	newCondition.LastTransitionTime = oldCondition.LastTransitionTime
+	if hadCondition && oldCondition.Status != status {
+		newCondition.LastTransitionTime = &now
 	}
 
-	if oldCondition != nil {
-		c.Status.Conditions[pos] = newCondition
-	} else {
-		c.Status.Conditions = append(c.Status.Conditions, newCondition)
+	if c.Status.Conditions == nil {
+		c.Status.Conditions = map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{}
 	}
-	// Has to be sorted, otherwise we may end up creating patches that just re-arrange them.
-	sort.SliceStable(c.Status.Conditions, func(i, j int) bool {
-		return c.Status.Conditions[i].Type < c.Status.Conditions[j].Type
-	})
+	c.Status.Conditions[conditionType] = newCondition
 }
 
 // ClusterReconciliationSuccessful checks if cluster has all conditions that are
@@ -184,23 +183,20 @@ func clusterHasCurrentSuccessfullConditionType(
 	conditionType kubermaticv1.ClusterConditionType,
 	ignoreKubermaticVersion bool,
 ) bool {
-	for _, condition := range cluster.Status.Conditions {
-		if condition.Type != conditionType {
-			continue
-		}
-
-		if condition.Status != corev1.ConditionTrue {
-			return false
-		}
-
-		if !ignoreKubermaticVersion && (condition.KubermaticVersion != uniqueVersion(versions)) {
-			return false
-		}
-
-		return true
+	condition, exists := cluster.Status.Conditions[conditionType]
+	if !exists {
+		return false
 	}
 
-	return false
+	if condition.Status != corev1.ConditionTrue {
+		return false
+	}
+
+	if !ignoreKubermaticVersion && (condition.KubermaticVersion != uniqueVersion(versions)) {
+		return false
+	}
+
+	return true
 }
 
 func IsClusterInitialized(cluster *kubermaticv1.Cluster, versions kubermatic.Versions) bool {
@@ -231,11 +227,10 @@ func uniqueVersion(v kubermatic.Versions) string {
 func NeedCCMMigration(cluster *kubermaticv1.Cluster) bool {
 	_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 	_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
-	migrated := ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
 
-	return ccmOk && csiOk && !migrated
+	return ccmOk && csiOk && !CCMMigrationCompleted(cluster)
 }
 
 func CCMMigrationCompleted(cluster *kubermaticv1.Cluster) bool {
-	return ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
+	return cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
 }

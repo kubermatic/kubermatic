@@ -225,7 +225,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 
 			// remember that we reconciled
-			cluster, err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 				now := metav1.Now()
 				c.Status.LastProviderReconciliation = &now
 			})
@@ -244,7 +244,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	if _, err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
 	}); err != nil {
 		return nil, fmt.Errorf("failed to set cluster health: %w", err)
@@ -267,7 +267,7 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 		log.Info("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	}
 
-	if _, err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.CloudMigrationRevision = icmpMigrationRevision
 	}); err != nil {
 		return fmt.Errorf("failed to update cluster after successfully executing its cloud provider migration: %w", err)
@@ -302,22 +302,6 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 
 	if err := r.Patch(context.Background(), cluster, patch); err != nil {
 		return nil, err
-	}
-
-	return cluster, nil
-}
-
-func (r *Reconciler) updateClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
-	oldCluster := cluster.DeepCopy()
-	modify(cluster)
-	if reflect.DeepEqual(oldCluster, cluster) {
-		return cluster, nil
-	}
-
-	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
-		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return nil, err
-		}
 	}
 
 	return cluster, nil

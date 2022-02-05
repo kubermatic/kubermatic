@@ -23,10 +23,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,7 +54,7 @@ func migrateOpenStackCSIDrivers(ctx context.Context, logger *logrus.Entry, kubeC
 			continue
 		}
 
-		if idx, _ := kubermaticv1helper.GetClusterCondition(&cluster, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess); idx != -1 {
+		if cluster.Status.Conditions[kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess].Status == corev1.ConditionTrue {
 			// cluster successfully reconciled addons, no need to migrate CSIDriver
 			continue
 		}

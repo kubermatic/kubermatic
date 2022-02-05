@@ -134,6 +134,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	if cluster.Status.NamespaceName == "" {
+		log.Debug("Cluster has no namespace name yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	log = r.log.With("cluster", cluster.Name, "restore", restore.Name)
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
@@ -289,9 +294,9 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	log.Infof("rebuildEtcdStatefulset")
 
 	if cluster.Spec.Pause {
-		if err := r.updateClusterStatus(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
-				cluster,
+				c,
 				r.versions,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,
 				corev1.ConditionFalse,
@@ -301,6 +306,7 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 		}); err != nil {
 			return nil, fmt.Errorf("failed to reset etcd initialized status: %w", err)
 		}
+
 		if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Pause = false
 		}); err != nil {
@@ -342,22 +348,6 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (r *Reconciler) updateClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
-	oldCluster := cluster.DeepCopy()
-	modify(cluster)
-	if reflect.DeepEqual(oldCluster, cluster) {
-		return nil
-	}
-
-	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
-		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return err
-		}
 	}
 
 	return nil

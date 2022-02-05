@@ -201,6 +201,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	if cluster.Status.NamespaceName == "" {
+		log.Debug("Cluster has no namespace name yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	seed, err := r.seedGetter()
 	if err != nil {
 		return reconcile.Result{}, err
@@ -444,28 +449,28 @@ func (r *Reconciler) limitNameLength(name string) string {
 	return name[0:63-len(randomness)] + randomness
 }
 
-// set a condition on a backupConfig, return true iff the condition's status was changed.
+// set a condition on a backupConfig, return true if the condition's status was changed.
 func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBackupConfig, conditionType kubermaticv1.EtcdBackupConfigConditionType, status corev1.ConditionStatus, reason, message string) bool {
-	newCond := kubermaticv1.EtcdBackupConfigCondition{
-		Type:               conditionType,
-		Status:             status,
-		LastTransitionTime: metav1.Time{Time: r.clock.Now()},
-		Reason:             reason,
-		Message:            message,
-	}
-	for i := range backupConfig.Status.Conditions {
-		cond := &backupConfig.Status.Conditions[i]
-		if cond.Type == conditionType {
-			if cond.Status == status {
-				return false
-			}
-			*cond = newCond
-			return true
-		}
+	now := metav1.Now()
+	statusChanged := false
+
+	condition, exists := backupConfig.Status.Conditions[conditionType]
+	if exists && condition.Status != status {
+		condition.LastTransitionTime = &now
+		statusChanged = true
 	}
 
-	backupConfig.Status.Conditions = append(backupConfig.Status.Conditions, newCond)
-	return true
+	condition.Status = status
+	condition.LastHeartbeatTime = now
+	condition.Reason = reason
+	condition.Message = message
+
+	if backupConfig.Status.Conditions == nil {
+		backupConfig.Status.Conditions = map[kubermaticv1.EtcdBackupConfigConditionType]kubermaticv1.EtcdBackupConfigCondition{}
+	}
+	backupConfig.Status.Conditions[conditionType] = condition
+
+	return !exists || statusChanged
 }
 
 // create any backup jobs that can be created, i.e. that don't exist yet while their scheduled time has arrived

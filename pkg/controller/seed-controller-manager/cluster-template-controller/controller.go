@@ -25,6 +25,7 @@ import (
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -139,6 +140,7 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 			return err
 		}
 	}
+
 	return r.seedClient.Delete(ctx, instance)
 }
 
@@ -203,9 +205,9 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 				return fmt.Errorf("failed to create desired number of clusters. Created %d from %d", created, totalReplicas)
 			}
 
-			oldCluster := newCluster.DeepCopy()
-			newCluster.Status = *newStatus
-			if err := r.seedClient.Status().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			if err := helper.UpdateClusterStatus(ctx, r.seedClient, newCluster, func(c *kubermaticv1.Cluster) {
+				c.Status = *newStatus
+			}); err != nil {
 				return fmt.Errorf("failed to set cluster status: %w", err)
 			}
 
@@ -243,7 +245,6 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 			Labels:      template.ClusterLabels,
 			Annotations: template.Annotations,
 		},
-		Status: kubermaticv1.ClusterStatus{},
 	}
 
 	if newCluster.Labels == nil {

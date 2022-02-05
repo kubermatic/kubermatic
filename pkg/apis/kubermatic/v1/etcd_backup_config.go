@@ -90,7 +90,7 @@ type EtcdBackupConfigStatus struct {
 	// CurrentBackups tracks the creation and deletion progress of all backups managed by the EtcdBackupConfig
 	CurrentBackups []BackupStatus `json:"currentBackups,omitempty"`
 	// Conditions contains conditions of the EtcdBackupConfig
-	Conditions []EtcdBackupConfigCondition `json:"conditions,omitempty"`
+	Conditions map[EtcdBackupConfigConditionType]EtcdBackupConfigCondition `json:"conditions,omitempty"`
 	// If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job
 	CleanupRunning bool `json:"cleanupRunning,omitempty"`
 }
@@ -114,16 +114,13 @@ type BackupStatus struct {
 }
 
 type EtcdBackupConfigCondition struct {
-	// Type of EtcdBackupConfig condition.
-	Type EtcdBackupConfigConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
-	// +optional
-	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
 	// Last time the condition transit from one status to another.
 	// +optional
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	// +optional
 	Reason string `json:"reason,omitempty"`
