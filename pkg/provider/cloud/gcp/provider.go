@@ -44,10 +44,10 @@ import (
 const (
 	DefaultNetwork                   = "global/networks/default"
 	computeAPIEndpoint               = "https://www.googleapis.com/compute/v1/"
-	firewallSelfCleanupFinalizer     = "kubermatic.io/cleanup-gcp-firewall-self"
-	firewallICMPCleanupFinalizer     = "kubermatic.io/cleanup-gcp-firewall-icmp"
-	firewallNodePortCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-nodeport"
-	routesCleanupFinalizer           = "kubermatic.io/cleanup-gcp-routes"
+	firewallSelfCleanupFinalizer     = "kubermatic.k8c.io/cleanup-gcp-firewall-self"
+	firewallICMPCleanupFinalizer     = "kubermatic.k8c.io/cleanup-gcp-firewall-icmp"
+	firewallNodePortCleanupFinalizer = "kubermatic.k8c.io/cleanup-gcp-firewall-nodeport"
+	routesCleanupFinalizer           = "kubermatic.k8c.io/cleanup-gcp-routes"
 
 	k8sNodeRouteTag          = "k8s-node-route"
 	k8sNodeRoutePrefixRegexp = "kubernetes-.*"

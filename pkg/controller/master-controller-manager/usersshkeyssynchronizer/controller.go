@@ -48,7 +48,7 @@ import (
 const (
 	ControllerName = "usersshkeys_synchronizer"
 
-	UserSSHKeysClusterIDsCleanupFinalizer = "kubermatic.io/cleanup-usersshkeys-cluster-ids"
+	UserSSHKeysClusterIDsCleanupFinalizer = "kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids"
 )
 
 // Reconciler is a controller which is responsible for managing clusters.

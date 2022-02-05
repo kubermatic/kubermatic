@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
+	CleanupFinalizerName = "kubermatic.k8c.io/controller-manager-rbac-cleanup"
 )
 
 func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {

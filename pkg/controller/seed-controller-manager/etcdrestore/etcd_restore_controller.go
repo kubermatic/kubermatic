@@ -54,12 +54,12 @@ const (
 	ControllerName = "kubermatic_etcd_restore_controller"
 
 	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset.
-	FinishRestoreFinalizer = "kubermatic.io/finish-restore"
+	FinishRestoreFinalizer = "kubermatic.k8c.io/finish-restore"
 
 	// ActiveRestoreAnnotationName is the cluster annotation that records the EtcdRestore resource that's currently
 	// being restored into the cluster, if any. This is also used for mutual exclusion, i.e. to make sure that not
 	// more than one EtcdRestore resource is active for the cluster at the same time.
-	ActiveRestoreAnnotationName = "kubermatic.io/active-restore"
+	ActiveRestoreAnnotationName = "kubermatic.k8c.io/active-restore"
 )
 
 // Reconciler stores necessary components that are required to restore etcd backups.

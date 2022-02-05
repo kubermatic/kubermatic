@@ -70,7 +70,7 @@ const (
 	// cronJobPrefix defines the prefix used for all backup cronjob names.
 	cronJobPrefix = "etcd-backup"
 	// cleanupFinalizer defines the name for the finalizer to ensure we cleanup after we deleted a cluster.
-	cleanupFinalizer = "kubermatic.io/cleanup-backups"
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-backups"
 	// backupCleanupJobLabel defines the label we use on all cleanup jobs.
 	backupCleanupJobLabel = "kubermatic-etcd-backup-cleaner"
 	// clusterEnvVarKey defines the environment variable key for the cluster name.
