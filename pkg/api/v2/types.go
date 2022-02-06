@@ -501,6 +501,14 @@ type EKSClusterList []EKSCluster
 // swagger:model Regions
 type Regions []string
 
+// EKSSubnetIDList represents an array of EKS availability subnetIDs.
+// swagger:model EKSSubnetIDList
+type EKSSubnetIDList []EKSSubnetID
+
+// EKSSubnetID represents a object of EKS availability subnetID.
+// swagger:model EKSSubnetID
+type EKSSubnetID string
+
 // AKSCluster represents a object of AKS cluster.
 // swagger:model AKSCluster
 type AKSCluster struct {

@@ -109,3 +109,17 @@ func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error
 
 	return err
 }
+
+func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
+	subnetIDs := apiv2.EKSSubnetIDList{}
+
+	subnetResults, err := awsprovider.GetSubnets(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get subnets: %w", err)
+	}
+
+	for _, subnet := range subnetResults {
+		subnetIDs = append(subnetIDs, apiv2.EKSSubnetID(*subnet.SubnetId))
+	}
+	return subnetIDs, nil
+}

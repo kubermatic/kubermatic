@@ -16988,6 +16988,59 @@
         }
       }
     },
+    "/api/v2/providers/eks/subnetIDs": {
+      "get": {
+        "description": "Lists EKS subnetID list",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "operationId": "listEKSSubnetIDs",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSSubnetIDList",
+            "schema": {
+              "$ref": "#/definitions/EKSSubnetIDList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/eks/validatecredentials": {
       "get": {
         "description": "Validates EKS credentials",
@@ -21554,6 +21607,19 @@
       "title": "EKSClusterList represents an list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSubnetID": {
+      "type": "string",
+      "title": "EKSSubnetID represents a object of EKS availability subnetID.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSubnetIDList": {
+      "type": "array",
+      "title": "EKSSubnetIDList represents an array of EKS availability subnetIDs.",
+      "items": {
+        "$ref": "#/definitions/EKSSubnetID"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
