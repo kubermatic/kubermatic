@@ -63,7 +63,7 @@ const (
 	ControllerName = "kubermatic_etcd_backup_controller"
 
 	// DeleteAllBackupsFinalizer indicates that the backups still need to be deleted in the backend.
-	DeleteAllBackupsFinalizer = "kubermatic.io/delete-all-backups"
+	DeleteAllBackupsFinalizer = "kubermatic.k8c.io/delete-all-backups"
 
 	// BackupConfigNameLabelKey is the label key which should be used to name the BackupConfig a job belongs to.
 	BackupConfigNameLabelKey = "backupConfig"

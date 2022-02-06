@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	folderCleanupFinalizer = "kubermatic.io/cleanup-vsphere-folder"
+	folderCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-folder"
 )
 
 // Provider represents the vsphere provider.

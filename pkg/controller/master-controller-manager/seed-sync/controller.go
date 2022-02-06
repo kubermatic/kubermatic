@@ -45,7 +45,7 @@ const (
 
 	// CleanupFinalizer is put on Seed CRs to facilitate proper
 	// cleanup when a Seed is deleted.
-	CleanupFinalizer = "kubermatic.io/cleanup-seed-sync"
+	CleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-sync"
 )
 
 // Add creates a new Seed-Sync controller and sets up Watches.
