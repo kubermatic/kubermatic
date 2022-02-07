@@ -39,11 +39,11 @@ type NutanixCommonReq struct {
 
 	// in: header
 	// name: NutanixUsername
-	Username string
+	NutanixUsername string
 
 	// in: header
 	// name: NutanixPassword
-	Password string
+	NutanixPassword string
 
 	// in: header
 	// name: ProxyURL
@@ -71,13 +71,15 @@ type NutanixProjectReq struct {
 type NutanixSubnetReq struct {
 	NutanixCommonReq
 
-	// in: path
+	// in: header
+	// name: NutanixCluster
 	// required: true
-	ClusterName string `json:"cluster_name"`
+	NutanixCluster string
 
 	// Project query parameter. Can be omitted to query subnets without project scope
-	// in: query
-	ProjectName string `json:"project_name,omitempty"`
+	// in: header
+	// name: NutanixProject
+	NutanixProject string
 }
 
 // NutanixNoCredentialReq represent a request for Nutanix information with cluster-provided credentials
@@ -89,8 +91,8 @@ type NutanixNoCredentialReq struct {
 func DecodeNutanixCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NutanixCommonReq
 
-	req.Username = r.Header.Get("NutanixUsername")
-	req.Password = r.Header.Get("NutanixPassword")
+	req.NutanixUsername = r.Header.Get("NutanixUsername")
+	req.NutanixPassword = r.Header.Get("NutanixPassword")
 	req.ProxyURL = r.Header.Get("NutanixProxyURL")
 	req.Credential = r.Header.Get("Credential")
 
@@ -111,13 +113,8 @@ func DecodeNutanixSubnetReq(c context.Context, r *http.Request) (interface{}, er
 		return nil, err
 	}
 	req.NutanixCommonReq = commonReq.(NutanixCommonReq)
-	req.ProjectName = r.URL.Query().Get("project_name")
-
-	cluster, ok := mux.Vars(r)["cluster_name"]
-	if !ok {
-		return nil, fmt.Errorf("'cluster_name' parameter is required")
-	}
-	req.ClusterName = cluster
+	req.NutanixCluster = r.Header.Get("NutanixCluster")
+	req.NutanixProject = r.Header.Get("NutanixProject")
 
 	return req, nil
 }
@@ -147,8 +144,8 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 
 		creds := providercommon.NutanixCredentials{
 			ProxyURL: req.ProxyURL,
-			Username: req.Username,
-			Password: req.Password,
+			Username: req.NutanixUsername,
+			Password: req.NutanixPassword,
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -159,7 +156,7 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credential := preset.Spec.Nutanix; credential != nil {
 				creds.ProxyURL = credential.ProxyURL
@@ -196,8 +193,8 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 
 		creds := providercommon.NutanixCredentials{
 			ProxyURL: req.ProxyURL,
-			Username: req.Username,
-			Password: req.Password,
+			Username: req.NutanixUsername,
+			Password: req.NutanixPassword,
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -245,9 +242,12 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 
 		creds := providercommon.NutanixCredentials{
 			ProxyURL: req.ProxyURL,
-			Username: req.Username,
-			Password: req.Password,
+			Username: req.NutanixUsername,
+			Password: req.NutanixPassword,
 		}
+
+		cluster := req.NutanixCluster
+		project := req.NutanixProject
 
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -260,9 +260,11 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credential := preset.Spec.Nutanix; credential != nil {
-				creds.ProxyURL = credential.ProxyURL
+				//creds.ProxyURL = credential.ProxyURL
 				creds.Username = credential.Username
 				creds.Password = credential.Password
+				cluster = credential.ClusterName
+				project = credential.ProjectName
 			}
 		}
 
@@ -278,7 +280,7 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 		}
 
-		subnets, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixSubnets(req.ClusterName, req.ProjectName)
+		subnets, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixSubnets(cluster, project)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list subnets: %s", err.Error()))
 		}
