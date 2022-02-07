@@ -622,7 +622,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listNutanixProjects())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/{dc}/{cluster_name}/subnets").
+		Path("/providers/nutanix/{dc}/subnets").
 		Handler(r.listNutanixSubnets())
 
 	// Define a set of endpoints for preset management
