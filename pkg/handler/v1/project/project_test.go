@@ -61,7 +61,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 
 	oRef := func(user *kubermaticv1.User) metav1.OwnerReference {
 		return metav1.OwnerReference{
-			APIVersion: "kubermatic.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 			Kind:       "User",
 			UID:        user.UID,
 			Name:       user.Name,

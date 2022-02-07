@@ -38,17 +38,17 @@ const (
 	clusterTagKey = "cluster"
 
 	// FinalizerSecurityGroup will instruct the deletion of the security group.
-	FinalizerSecurityGroup = "kubermatic.io/cleanup-azure-security-group"
+	FinalizerSecurityGroup = "kubermatic.k8c.io/cleanup-azure-security-group"
 	// FinalizerRouteTable will instruct the deletion of the route table.
-	FinalizerRouteTable = "kubermatic.io/cleanup-azure-route-table"
+	FinalizerRouteTable = "kubermatic.k8c.io/cleanup-azure-route-table"
 	// FinalizerSubnet will instruct the deletion of the subnet.
-	FinalizerSubnet = "kubermatic.io/cleanup-azure-subnet"
+	FinalizerSubnet = "kubermatic.k8c.io/cleanup-azure-subnet"
 	// FinalizerVNet will instruct the deletion of the virtual network.
-	FinalizerVNet = "kubermatic.io/cleanup-azure-vnet"
+	FinalizerVNet = "kubermatic.k8c.io/cleanup-azure-vnet"
 	// FinalizerResourceGroup will instruct the deletion of the resource group.
-	FinalizerResourceGroup = "kubermatic.io/cleanup-azure-resource-group"
+	FinalizerResourceGroup = "kubermatic.k8c.io/cleanup-azure-resource-group"
 	// FinalizerAvailabilitySet will instruct the deletion of the availability set.
-	FinalizerAvailabilitySet = "kubermatic.io/cleanup-azure-availability-set"
+	FinalizerAvailabilitySet = "kubermatic.k8c.io/cleanup-azure-availability-set"
 
 	denyAllTCPSecGroupRuleName   = "deny_all_tcp"
 	denyAllUDPSecGroupRuleName   = "deny_all_udp"

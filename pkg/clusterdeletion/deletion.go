@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
+	deletedLBAnnotationName = "kubermatic.k8c.io/cleaned-up-loadbalancers"
 )
 
 func New(seedClient ctrlruntimeclient.Client, userClusterClientGetter func() (ctrlruntimeclient.Client, error), etcdBackupRestoreController bool) *Deletion {

@@ -2335,46 +2335,46 @@ type ReportURL string
 
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup.
-	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
+	NodeDeletionFinalizer = "kubermatic.k8c.io/delete-nodes"
 	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup.
-	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
+	InClusterPVCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-pv"
 	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup.
-	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
+	InClusterLBCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-lb"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
-	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
+	CredentialsSecretsCleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials-secrets"
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
-	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
+	UserClusterRoleCleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
 	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.
-	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
+	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeconfig-secret"
 	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup.
-	EtcdBackupConfigCleanupFinalizer = "kubermatic.io/cleanup-etcdbackupconfigs"
+	EtcdBackupConfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-etcdbackupconfigs"
 	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup.
-	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraint-templates"
+	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraint-templates"
 	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup.
-	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-master-constraint-templates"
+	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-master-constraint-templates"
 	// GatekeeperSeedConstraintCleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup.
-	GatekeeperSeedConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-seed-constraint"
+	GatekeeperSeedConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-seed-constraint"
 	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup.
-	GatekeeperConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraints"
+	GatekeeperConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraints"
 	// KubermaticUserClusterNsDefaultConstraintCleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup.
-	KubermaticUserClusterNsDefaultConstraintCleanupFinalizer = "kubermatic.io/cleanup-kubermatic-usercluster-ns-default-constraints"
+	KubermaticUserClusterNsDefaultConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-usercluster-ns-default-constraints"
 	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup.
-	KubermaticConstraintCleanupFinalizer = "kubermatic.io/cleanup-kubermatic-constraints"
+	KubermaticConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-constraints"
 	// SeedProjectCleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup.
-	SeedProjectCleanupFinalizer = "kubermatic.io/cleanup-seed-projects"
+	SeedProjectCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-projects"
 	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup.
-	SeedUserProjectBindingCleanupFinalizer = "kubermatic.io/cleanup-seed-user-project-bindings"
+	SeedUserProjectBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-user-project-bindings"
 	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
-	SeedUserCleanupFinalizer = "kubermatic.io/cleanup-seed-users"
+	SeedUserCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
 	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup.
 	// This finalizer is deprecated and should not be used anymore since we migrated to using owner references for cleanup.
-	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
+	ClusterRoleBindingsCleanupFinalizer = "kubermatic.k8c.io/cleanup-cluster-role-bindings"
 	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup.
-	ClusterTemplateSeedCleanupFinalizer = "kubermatic.io/cleanup-seed-cluster-template"
+	ClusterTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template"
 	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
-	AllowedRegistryCleanupFinalizer = "kubermatic.io/cleanup-allowed-registry"
+	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
 	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup.
-	SeedClusterTemplateInstanceFinalizer = "kubermatic.io/cleanup-seed-cluster-template-instance"
+	SeedClusterTemplateInstanceFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template-instance"
 )
 
 const (

@@ -38,7 +38,7 @@ const (
 	categoryDescription = "automatically created by KKP"
 	categoryValuePrefix = "kubernetes-"
 
-	categoryCleanupFinalizer = "kubermatic.io/cleanup-nutanix-categories"
+	categoryCleanupFinalizer = "kubermatic.k8c.io/cleanup-nutanix-categories"
 )
 
 type Nutanix struct {
