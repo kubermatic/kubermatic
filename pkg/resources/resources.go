@@ -1276,9 +1276,11 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Prometheus.Resources != nil {
 		r[PrometheusStatefulSetName] = componentSettings.Prometheus.Resources.DeepCopy()
 	}
-	if componentSettings.NodePortProxyEnvoy.Resources.Requests != nil ||
-		componentSettings.NodePortProxyEnvoy.Resources.Limits != nil {
-		r[NodePortProxyEnvoyDeploymentName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
+	if componentSettings.NodePortProxyEnvoy != nil {
+		if componentSettings.NodePortProxyEnvoy.Resources.Requests != nil ||
+			componentSettings.NodePortProxyEnvoy.Resources.Limits != nil {
+			r[NodePortProxyEnvoyDeploymentName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
+		}
 	}
 
 	return r

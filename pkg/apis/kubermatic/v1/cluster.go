@@ -484,7 +484,7 @@ type ComponentSettings struct {
 	Scheduler          ControllerSettings      `json:"scheduler"`
 	Etcd               EtcdStatefulSetSettings `json:"etcd"`
 	Prometheus         StatefulSetSettings     `json:"prometheus"`
-	NodePortProxyEnvoy NodeportProxyComponent  `json:"nodePortProxyEnvoy"`
+	NodePortProxyEnvoy *NodeportProxyComponent `json:"nodePortProxyEnvoy,omitempty"`
 }
 
 type APIServerSettings struct {
