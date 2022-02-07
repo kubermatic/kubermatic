@@ -17,6 +17,7 @@ limitations under the License.
 package nutanix
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -67,13 +68,32 @@ func GetSubnets(client *ClientSet, clusterName, projectName string) ([]nutanixv3
 		return nil, wrapNutanixError(err)
 	}
 
-	var subnets []nutanixv3.SubnetIntentResponse
+	var (
+		subnets             []nutanixv3.SubnetIntentResponse
+		projectAllowedUUIDs []string
+	)
+
+	// get all subnets associated with the project. We _could_ return that as a list, but we
+	// want to return the full information of subnets, so we only use this list of names as
+	// constraints for our loop later on.
+	if projectName != "" {
+		project, err := GetProjectByName(client, projectName)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, subnetRef := range project.Spec.Resources.SubnetReferenceList {
+			if subnetRef != nil {
+				projectAllowedUUIDs = append(projectAllowedUUIDs, subnetRef.UUID)
+			}
+		}
+	}
 
 	if resp != nil {
 		for _, entity := range resp.Entities {
 			if entity != nil {
 				if entity.Status != nil && entity.Status.ClusterReference != nil && *entity.Status.ClusterReference.Name == clusterName &&
-					(projectName == "" || (entity.Metadata != nil && entity.Metadata.ProjectReference != nil && *entity.Metadata.ProjectReference.Name == projectName)) {
+					(projectName == "" || contains(projectAllowedUUIDs, *entity.Metadata.UUID)) {
 					subnets = append(subnets, *entity)
 				}
 			}
@@ -100,4 +120,14 @@ func wrapNutanixError(initialErr error) error {
 	}
 
 	return fmt.Errorf("api error (%s, code %d): %s", resp.State, resp.Code, strings.Join(msgs, ", "))
+}
+
+func contains(sArr []string, s string) bool {
+	for _, elem := range sArr {
+		if elem == s {
+			return true
+		}
+	}
+
+	return false
 }
