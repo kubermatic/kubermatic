@@ -126,7 +126,7 @@ func (a *Client) ListNutanixSubnets(params *ListNutanixSubnetsParams, authInfo r
 	op := &runtime.ClientOperation{
 		ID:                 "listNutanixSubnets",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/nutanix/{dc}/{cluster_name}/subnets",
+		PathPattern:        "/api/v2/providers/nutanix/{dc}/subnets",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
