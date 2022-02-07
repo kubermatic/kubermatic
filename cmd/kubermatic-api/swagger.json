@@ -17308,12 +17308,12 @@
           },
           {
             "type": "string",
-            "name": "Username",
+            "name": "NutanixUsername",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "Password",
+            "name": "NutanixPassword",
             "in": "header"
           },
           {
@@ -17364,12 +17364,12 @@
           },
           {
             "type": "string",
-            "name": "Username",
+            "name": "NutanixUsername",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "Password",
+            "name": "NutanixPassword",
             "in": "header"
           },
           {
@@ -17399,7 +17399,7 @@
         }
       }
     },
-    "/api/v2/providers/nutanix/{dc}/{cluster_name}/subnets": {
+    "/api/v2/providers/nutanix/{dc}/subnets": {
       "get": {
         "description": "List subnets from Nutanix",
         "produces": [
@@ -17420,12 +17420,12 @@
           },
           {
             "type": "string",
-            "name": "Username",
+            "name": "NutanixUsername",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "Password",
+            "name": "NutanixPassword",
             "in": "header"
           },
           {
@@ -17440,17 +17440,15 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
-            "in": "path",
+            "name": "NutanixCluster",
+            "in": "header",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
             "description": "Project query parameter. Can be omitted to query subnets without project scope",
-            "name": "project_name",
-            "in": "query"
+            "name": "NutanixProject",
+            "in": "header"
           }
         ],
         "responses": {

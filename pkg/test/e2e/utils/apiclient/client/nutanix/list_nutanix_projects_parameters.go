@@ -62,14 +62,14 @@ type ListNutanixProjectsParams struct {
 	// Credential.
 	Credential *string
 
-	// Password.
-	Password *string
+	// NutanixPassword.
+	NutanixPassword *string
+
+	// NutanixUsername.
+	NutanixUsername *string
 
 	// ProxyURL.
 	ProxyURL *string
-
-	// Username.
-	Username *string
 
 	/* Dc.
 
@@ -141,15 +141,26 @@ func (o *ListNutanixProjectsParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
-// WithPassword adds the password to the list nutanix projects params
-func (o *ListNutanixProjectsParams) WithPassword(password *string) *ListNutanixProjectsParams {
-	o.SetPassword(password)
+// WithNutanixPassword adds the nutanixPassword to the list nutanix projects params
+func (o *ListNutanixProjectsParams) WithNutanixPassword(nutanixPassword *string) *ListNutanixProjectsParams {
+	o.SetNutanixPassword(nutanixPassword)
 	return o
 }
 
-// SetPassword adds the password to the list nutanix projects params
-func (o *ListNutanixProjectsParams) SetPassword(password *string) {
-	o.Password = password
+// SetNutanixPassword adds the nutanixPassword to the list nutanix projects params
+func (o *ListNutanixProjectsParams) SetNutanixPassword(nutanixPassword *string) {
+	o.NutanixPassword = nutanixPassword
+}
+
+// WithNutanixUsername adds the nutanixUsername to the list nutanix projects params
+func (o *ListNutanixProjectsParams) WithNutanixUsername(nutanixUsername *string) *ListNutanixProjectsParams {
+	o.SetNutanixUsername(nutanixUsername)
+	return o
+}
+
+// SetNutanixUsername adds the nutanixUsername to the list nutanix projects params
+func (o *ListNutanixProjectsParams) SetNutanixUsername(nutanixUsername *string) {
+	o.NutanixUsername = nutanixUsername
 }
 
 // WithProxyURL adds the proxyURL to the list nutanix projects params
@@ -161,17 +172,6 @@ func (o *ListNutanixProjectsParams) WithProxyURL(proxyURL *string) *ListNutanixP
 // SetProxyURL adds the proxyUrl to the list nutanix projects params
 func (o *ListNutanixProjectsParams) SetProxyURL(proxyURL *string) {
 	o.ProxyURL = proxyURL
-}
-
-// WithUsername adds the username to the list nutanix projects params
-func (o *ListNutanixProjectsParams) WithUsername(username *string) *ListNutanixProjectsParams {
-	o.SetUsername(username)
-	return o
-}
-
-// SetUsername adds the username to the list nutanix projects params
-func (o *ListNutanixProjectsParams) SetUsername(username *string) {
-	o.Username = username
 }
 
 // WithDC adds the dc to the list nutanix projects params
@@ -201,10 +201,18 @@ func (o *ListNutanixProjectsParams) WriteToRequest(r runtime.ClientRequest, reg 
 		}
 	}
 
-	if o.Password != nil {
+	if o.NutanixPassword != nil {
 
-		// header param Password
-		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+		// header param NutanixPassword
+		if err := r.SetHeaderParam("NutanixPassword", *o.NutanixPassword); err != nil {
+			return err
+		}
+	}
+
+	if o.NutanixUsername != nil {
+
+		// header param NutanixUsername
+		if err := r.SetHeaderParam("NutanixUsername", *o.NutanixUsername); err != nil {
 			return err
 		}
 	}
@@ -213,14 +221,6 @@ func (o *ListNutanixProjectsParams) WriteToRequest(r runtime.ClientRequest, reg 
 
 		// header param ProxyURL
 		if err := r.SetHeaderParam("ProxyURL", *o.ProxyURL); err != nil {
-			return err
-		}
-	}
-
-	if o.Username != nil {
-
-		// header param Username
-		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
 			return err
 		}
 	}
