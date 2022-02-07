@@ -260,7 +260,7 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credential := preset.Spec.Nutanix; credential != nil {
-				//creds.ProxyURL = credential.ProxyURL
+				creds.ProxyURL = credential.ProxyURL
 				creds.Username = credential.Username
 				creds.Password = credential.Password
 				cluster = credential.ClusterName
