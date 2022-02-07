@@ -423,9 +423,149 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 	}
 }
 
-// deletePresetReq represents a request to delete a new preset
+// deletePresetReq represents a request to delete a preset
 // swagger:parameters deletePreset
 type deletePresetReq struct {
+	// in: path
+	// required: true
+	PresetName string `json:"preset_name"`
+}
+
+// Validate validates deletePresetReq request.
+func (r deletePresetReq) Validate() error {
+	if len(r.PresetName) == 0 {
+		return fmt.Errorf("preset name cannot be empty")
+	}
+	return nil
+}
+
+func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error) {
+	var req deletePresetReq
+
+	req.PresetName = mux.Vars(r)["preset_name"]
+
+	return req, nil
+}
+
+// DeletePreset deletes preset.
+func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(deletePresetReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if !userInfo.IsAdmin {
+			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
+		}
+
+		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
+		if k8serrors.IsNotFound(err) {
+			return nil, errors.NewNotFound("Preset", "preset was not found.")
+		}
+
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return nil, err
+		}
+
+		_, err = presetProvider.DeletePreset(preset)
+
+		return nil, err
+	}
+}
+
+// deletePresetProviderReq represents a request to delete preset provider
+// swagger:parameters deletePresetProvider
+type deletePresetProviderReq struct {
+	// in: path
+	// required: true
+	PresetName string `json:"preset_name"`
+	// in: path
+	// required: true
+	ProviderName string `json:"provider_name,omitempty"`
+}
+
+func DecodeDeletePresetProvider(_ context.Context, r *http.Request) (interface{}, error) {
+	var req deletePresetProviderReq
+
+	req.PresetName = mux.Vars(r)["preset_name"]
+	req.ProviderName = mux.Vars(r)["provider_name"]
+
+	return req, nil
+}
+
+// Validate validates deletePresetProviderReq request.
+func (r deletePresetProviderReq) Validate() error {
+	if len(r.PresetName) == 0 {
+		return fmt.Errorf("the preset name cannot be empty")
+	}
+
+	if len(r.ProviderName) == 0 {
+		return fmt.Errorf("the provider name cannot be empty")
+	}
+
+	if !kubermaticv1.IsProviderSupported(r.ProviderName) {
+		return fmt.Errorf("invalid provider name %s", r.ProviderName)
+	}
+
+	return nil
+}
+
+func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(deletePresetProviderReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if !userInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden, "only admins can delete preset providers")
+		}
+
+		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
+		if k8serrors.IsNotFound(err) {
+			return nil, errors.NewNotFound("Preset", "preset was not found.")
+		}
+
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		providerName := kubermaticv1.ProviderType(req.ProviderName)
+		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, providerName); !hasProvider {
+			return nil, errors.NewNotFound("Preset", fmt.Sprintf("preset %s does not contain %s provider", req.PresetName, req.ProviderName))
+		}
+
+		preset = kubermaticv1helper.RemoveProvider(preset, providerName)
+		_, err = presetProvider.UpdatePreset(preset)
+
+		return preset, err
+	}
+}
+
+// deleteProviderPresetReq represents a request to delete a preset or one of its providers
+// swagger:parameters deleteProviderPreset
+type deleteProviderPresetReq struct {
 	// in: path
 	// required: true
 	ProviderName string `json:"provider_name"`
@@ -434,8 +574,8 @@ type deletePresetReq struct {
 	PresetName string `json:"preset_name"`
 }
 
-// Validate validates deletePresetReq request.
-func (r deletePresetReq) Validate() error {
+// Validate validates deleteProviderPresetReq request.
+func (r deleteProviderPresetReq) Validate() error {
 	if len(r.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
 	}
@@ -450,8 +590,8 @@ func (r deletePresetReq) Validate() error {
 	return nil
 }
 
-func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error) {
-	var req deletePresetReq
+func DecodeDeleteProviderPreset(_ context.Context, r *http.Request) (interface{}, error) {
+	var req deleteProviderPresetReq
 
 	req.ProviderName = mux.Vars(r)["provider_name"]
 	req.PresetName = mux.Vars(r)["preset_name"]
@@ -459,10 +599,11 @@ func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// DeletePreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted.
-func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// DeleteProviderPreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted.
+// Deprecated: This function has been deprecated; use DeletePreset or DeletePresetProvider.
+func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(deletePresetReq)
+		req, ok := request.(deleteProviderPresetReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -493,10 +634,18 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		// remove provider from preset
 		preset = kubermaticv1helper.RemoveProvider(preset, kubermaticv1.ProviderType(req.ProviderName))
 
-		// Delete the provider from the preset OR the whole preset
-		preset, err = presetProvider.DeletePreset(preset)
-		if err != nil {
-			return nil, err
+		existingProviders := kubermaticv1helper.GetProviderList(preset)
+		if len(existingProviders) > 0 {
+			// Case: Remove provider from the preset
+			preset, err = presetProvider.UpdatePreset(preset)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			preset, err = presetProvider.DeletePreset(preset)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		enabled := preset.Spec.IsEnabled()

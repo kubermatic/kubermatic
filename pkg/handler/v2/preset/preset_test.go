@@ -1187,7 +1187,7 @@ func TestUpdatePreset(t *testing.T) {
 	}
 }
 
-func TestDeletePreset(t *testing.T) {
+func TestDeleteProviderPreset(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name            string
@@ -1283,6 +1283,189 @@ func TestDeletePreset(t *testing.T) {
 					return
 				}
 			}
+
+			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
+				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			}
+		})
+	}
+}
+
+func TestDeletePresetProvider(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name            string
+		PresetName      string
+		Provider        v2.PresetProvider
+		Body            string
+		ExistingPreset  *kubermaticv1.Preset
+		ExpectedPreset  *kubermaticv1.Preset
+		HTTPStatus      int
+		ExistingAPIUser *apiv1.User
+	}{
+		// scenario 1
+		{
+			Name:       "scenario 1: delete aws provider",
+			PresetName: "do-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.AWSCloudProvider, Enabled: true},
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: metav1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   metav1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					AWS: &kubermaticv1.AWS{
+						AccessKeyID:     "AKIAIOSFODNN7EXAMPLE",
+						SecretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+						AssumeRoleARN:   "arn:aws:iam::123456789012:role/kubermaitc-test",
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: metav1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   metav1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
+				Spec:       kubermaticv1.PresetSpec{},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:            "scenario 2: delete aws provider as non admin",
+			PresetName:      test.TestFakeCredential,
+			Provider:        v2.PresetProvider{Name: kubermaticv1.OpenstackCloudProvider, Enabled: true},
+			ExistingPreset:  test.GenDefaultPreset(),
+			HTTPStatus:      http.StatusForbidden,
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 3
+		{
+			Name:       "scenario 3: delete non-existing provider",
+			PresetName: "do-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.AWSCloudProvider, Enabled: true},
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: metav1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   metav1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8c.io/v1"},
+				Spec:       kubermaticv1.PresetSpec{},
+			},
+			HTTPStatus:      http.StatusNotFound,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+		// scenario 4
+		{
+			Name:            "scenario 4: delete provider from non-existing preset",
+			PresetName:      "non-existing-preset",
+			Provider:        v2.PresetProvider{Name: kubermaticv1.OpenstackCloudProvider, Enabled: true},
+			ExistingPreset:  test.GenDefaultPreset(),
+			HTTPStatus:      http.StatusNotFound,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v2/presets/%s/provider/%s", tc.PresetName, tc.Provider.Name), nil)
+
+			res := httptest.NewRecorder()
+
+			existingKubermaticObjs := []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
+			if tc.ExistingPreset != nil {
+				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
+			}
+
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+			assert.Equal(t, tc.HTTPStatus, res.Code)
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			preset := &kubermaticv1.Preset{}
+			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+				t.Fatalf("failed to get preset: %+v", err)
+			}
+
+			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
+
+			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
+				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			}
+		})
+	}
+}
+
+func TestDeletePreset(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name            string
+		PresetName      string
+		Body            string
+		ExistingPreset  *kubermaticv1.Preset
+		ExpectedPreset  *kubermaticv1.Preset
+		IsDeleted       bool
+		HTTPStatus      int
+		ExistingAPIUser *apiv1.User
+	}{
+		// scenario 1
+		{
+			Name:            "scenario 1: delete preset",
+			PresetName:      test.TestFakeCredential,
+			ExistingPreset:  test.GenDefaultPreset(),
+			IsDeleted:       true,
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:            "scenario 2: delete preset as non-admin",
+			PresetName:      test.TestFakeCredential,
+			ExistingPreset:  test.GenDefaultPreset(),
+			HTTPStatus:      http.StatusForbidden,
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 3
+		{
+			Name:            "scenario 3: delete non-existing preset",
+			PresetName:      "non-existing-preset",
+			ExistingPreset:  test.GenDefaultPreset(),
+			HTTPStatus:      http.StatusNotFound,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v2/presets/%s", tc.PresetName), nil)
+			res := httptest.NewRecorder()
+
+			existingKubermaticObjs := []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
+			if tc.ExistingPreset != nil {
+				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
+			}
+
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+			assert.Equal(t, tc.HTTPStatus, res.Code)
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			preset := &kubermaticv1.Preset{}
+			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+				if !tc.IsDeleted {
+					t.Fatalf("failed to get preset: %+v", err)
+				} else {
+					return
+				}
+			}
+
+			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
 
 			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
 				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
