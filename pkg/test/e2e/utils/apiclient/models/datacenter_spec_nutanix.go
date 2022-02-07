@@ -21,7 +21,7 @@ import (
 type DatacenterSpecNutanix struct {
 
 	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
-	AllowInsecure bool `json:"allowInsecure,omitempty"`
+	AllowInsecure bool `json:"allow_insecure,omitempty"`
 
 	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
 	// for example "nutanix.example.com" or "10.0.0.1"
