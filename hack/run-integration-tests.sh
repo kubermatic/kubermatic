@@ -39,7 +39,9 @@ LOCALSTACK_IMAGE="${LOCALSTACK_IMAGE:-localstack/localstack:$LOCALSTACK_TAG}"
 if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   echodate "Setting up localstack container, set \$SKIP_AWS_PROVIDER to skip..."
 
-  start_docker_daemon
+  if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
+    start_docker_daemon_ci
+  fi
 
   containerName=kkp-localstack
 

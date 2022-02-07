@@ -86,6 +86,7 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Cluster is the object representing a cluster.
 type Cluster struct {
@@ -681,7 +682,7 @@ type AzureCloudSpec struct {
 	RouteTableName          string `json:"routeTable"`
 	SecurityGroup           string `json:"securityGroup"`
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-	AssignAvailabilitySet   *bool  `json:"assignAvailabilitySet"`
+	AssignAvailabilitySet   *bool  `json:"assignAvailabilitySet,omitempty"`
 	AvailabilitySet         string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
@@ -980,6 +981,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Anexia != nil {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }

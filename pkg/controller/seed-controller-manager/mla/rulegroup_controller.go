@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	ruleGroupFinalizer             = "kubermatic.io/rule-group"
+	ruleGroupFinalizer             = "kubermatic.k8c.io/rule-group"
 	MetricsRuleGroupConfigEndpoint = "/api/v1/rules"
 	LogRuleGroupConfigEndpoint     = "/loki/api/v1/rules"
 	RuleGroupTenantHeaderName      = "X-Scope-OrgID"

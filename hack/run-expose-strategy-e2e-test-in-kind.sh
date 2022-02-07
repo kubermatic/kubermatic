@@ -44,7 +44,6 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.21.1}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
@@ -64,7 +63,7 @@ appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-  start_docker_daemon
+  start_docker_daemon_ci
 fi
 
 # build Docker images
@@ -93,9 +92,7 @@ rm _build/kubermatic-installer
 make _build/kubermatic-installer
 
 # setup Kind cluster
-time retry 5 kind create cluster \
-  --name="${KIND_CLUSTER_NAME}" \
-  --image=kindest/node:"${KIND_NODE_VERSION}"
+time retry 5 kind create cluster --name="${KIND_CLUSTER_NAME}"
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
 # load nodeport-proxy image

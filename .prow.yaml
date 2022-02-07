@@ -26,7 +26,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-7
         command:
         - make
         args:
@@ -44,11 +44,12 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
+      preset-docker-mirror: "true"
       preset-vsphere: "true"
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/integration-tests:5-0
+      - image: quay.io/kubermatic/integration-tests:5-1
         command:
         - make
         args:
@@ -76,7 +77,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-7
         command:
         - ./hack/ci/verify.sh
         resources:
@@ -154,7 +155,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-7
         command:
         - ./hack/ci/test-github-release.sh
         resources:
@@ -167,13 +168,14 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
           command:
             - "./hack/ci/test-helm-charts.sh"
           env:
@@ -194,10 +196,11 @@ presubmits:
     run_if_changed: "cmd/user-ssh-keys-agent/"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
+      preset-docker-mirror: "true"
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -224,6 +227,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -234,7 +238,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -265,6 +269,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -275,7 +280,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -306,6 +311,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -316,7 +322,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -347,6 +353,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -357,7 +364,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: "ce"
@@ -395,6 +402,7 @@ presubmits:
     labels:
       preset-azure: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -404,7 +412,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -441,6 +449,7 @@ presubmits:
     labels:
       preset-gce: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -450,7 +459,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -484,6 +493,7 @@ presubmits:
     labels:
       preset-gce: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -493,7 +503,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -532,6 +542,7 @@ presubmits:
     labels:
       preset-digitalocean: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -541,7 +552,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -575,6 +586,7 @@ presubmits:
     labels:
       preset-packet: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -584,7 +596,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -618,6 +630,7 @@ presubmits:
     labels:
       preset-kubevirt: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -627,7 +640,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -661,6 +674,7 @@ presubmits:
     labels:
       preset-hetzner: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -670,7 +684,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -706,6 +720,7 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -715,7 +730,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -751,6 +766,7 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -760,7 +776,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -796,6 +812,7 @@ presubmits:
     labels:
       preset-vsphere: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -805,7 +822,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -840,6 +857,7 @@ presubmits:
     labels:
       preset-vsphere: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -849,7 +867,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -886,6 +904,7 @@ presubmits:
     labels:
       preset-vsphere: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -895,7 +914,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -932,6 +951,7 @@ presubmits:
     labels:
       preset-nutanix: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -941,7 +961,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -976,6 +996,7 @@ presubmits:
     labels:
       preset-nutanix: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
@@ -985,7 +1006,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1025,6 +1046,7 @@ presubmits:
       preset-openstack: "true"
       preset-azure: "true"
       preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-gce: "true"
@@ -1033,8 +1055,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
-        imagePullPolicy: Always
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         command:
         - "./hack/ci/run-api-e2e.sh"
         env:
@@ -1067,6 +1088,7 @@ presubmits:
     labels:
       preset-digitalocean: "true"
       preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
@@ -1074,7 +1096,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         command:
         - "./hack/ci/run-etcd-launcher-tests.sh"
         env:
@@ -1105,14 +1127,14 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
-        imagePullPolicy: Always
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         command:
         - ./hack/run-nodeport-proxy-e2e-test-in-kind.sh
         securityContext:
@@ -1135,6 +1157,7 @@ presubmits:
     labels:
       preset-digitalocean: "true"
       preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
@@ -1142,7 +1165,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
@@ -1173,14 +1196,14 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
-        imagePullPolicy: Always
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         command:
         - ./hack/run-expose-strategy-e2e-test-in-kind.sh
         securityContext:
@@ -1202,13 +1225,14 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-openstack: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
           env:
             - name: KUBERMATIC_EDITION
               value: ce
@@ -1234,12 +1258,13 @@ presubmits:
     labels:
       preset-gce: "true"
       preset-vault: "true"
+      preset-docker-mirror: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
         command:
         - "./hack/ci/run-offline-test.sh"
         # docker-in-docker needs privileged mode
@@ -1264,6 +1289,7 @@ presubmits:
     labels:
       preset-digitalocean: "true"
       preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
@@ -1271,7 +1297,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-6
+        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:

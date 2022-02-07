@@ -631,6 +631,7 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		Kubevirt:                 dc.Spec.Kubevirt,
 		Alibaba:                  dc.Spec.Alibaba,
 		Anexia:                   dc.Spec.Anexia,
+		Nutanix:                  dc.Spec.Nutanix,
 		Fake:                     dc.Spec.Fake,
 		RequiredEmails:           dc.Spec.RequiredEmails,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
@@ -656,6 +657,7 @@ func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.
 			Kubevirt:                 datacenter.Kubevirt,
 			Alibaba:                  datacenter.Alibaba,
 			Anexia:                   datacenter.Anexia,
+			Nutanix:                  datacenter.Nutanix,
 			Fake:                     datacenter.Fake,
 			RequiredEmails:           datacenter.RequiredEmails,
 			EnforceAuditLogging:      datacenter.EnforceAuditLogging,
@@ -937,6 +939,9 @@ func validateProvider(dcSpec *apiv1.DatacenterSpec) error {
 	}
 	if dcSpec.Anexia != nil {
 		providerNames = append(providerNames, kubermaticv1.AnexiaCloudProvider)
+	}
+	if dcSpec.Nutanix != nil {
+		providerNames = append(providerNames, kubermaticv1.NutanixCloudProvider)
 	}
 
 	if len(providerNames) != 1 {

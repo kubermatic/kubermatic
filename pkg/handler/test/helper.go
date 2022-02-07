@@ -54,6 +54,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
@@ -946,7 +947,7 @@ func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.
 func GenDefaultProject() *kubermaticv1.Project {
 	user := GenDefaultUser()
 	oRef := metav1.OwnerReference{
-		APIVersion: "kubermatic.io/v1",
+		APIVersion: "kubermatic.k8c.io/v1",
 		Kind:       "User",
 		UID:        user.UID,
 		Name:       user.Name,
@@ -1023,6 +1024,10 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"5.6.7.8/8"},
 				},
+			},
+			CNIPlugin: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 			},
 		},
 		Address: kubermaticv1.ClusterAddress{

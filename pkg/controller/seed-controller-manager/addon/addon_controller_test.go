@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -161,6 +162,7 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 						cidrBlock,
 					},
 				},
+
 				Pods: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{
 						"172.25.0.0/16",
@@ -168,6 +170,10 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 				},
 				DNSDomain: "cluster.local",
 				ProxyMode: resources.IPVSProxyMode,
+			},
+			CNIPlugin: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 			},
 			Cloud: kubermaticv1.CloudSpec{
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{

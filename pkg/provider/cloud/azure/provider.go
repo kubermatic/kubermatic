@@ -38,17 +38,17 @@ const (
 	clusterTagKey = "cluster"
 
 	// FinalizerSecurityGroup will instruct the deletion of the security group.
-	FinalizerSecurityGroup = "kubermatic.io/cleanup-azure-security-group"
+	FinalizerSecurityGroup = "kubermatic.k8c.io/cleanup-azure-security-group"
 	// FinalizerRouteTable will instruct the deletion of the route table.
-	FinalizerRouteTable = "kubermatic.io/cleanup-azure-route-table"
+	FinalizerRouteTable = "kubermatic.k8c.io/cleanup-azure-route-table"
 	// FinalizerSubnet will instruct the deletion of the subnet.
-	FinalizerSubnet = "kubermatic.io/cleanup-azure-subnet"
+	FinalizerSubnet = "kubermatic.k8c.io/cleanup-azure-subnet"
 	// FinalizerVNet will instruct the deletion of the virtual network.
-	FinalizerVNet = "kubermatic.io/cleanup-azure-vnet"
+	FinalizerVNet = "kubermatic.k8c.io/cleanup-azure-vnet"
 	// FinalizerResourceGroup will instruct the deletion of the resource group.
-	FinalizerResourceGroup = "kubermatic.io/cleanup-azure-resource-group"
+	FinalizerResourceGroup = "kubermatic.k8c.io/cleanup-azure-resource-group"
 	// FinalizerAvailabilitySet will instruct the deletion of the availability set.
-	FinalizerAvailabilitySet = "kubermatic.io/cleanup-azure-availability-set"
+	FinalizerAvailabilitySet = "kubermatic.k8c.io/cleanup-azure-availability-set"
 
 	denyAllTCPSecGroupRuleName   = "deny_all_tcp"
 	denyAllUDPSecGroupRuleName   = "deny_all_udp"
@@ -304,6 +304,14 @@ func (a *Azure) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.
 }
 
 func (a *Azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+	if cloud.Azure == nil {
+		return errors.New("no Azure cloud spec found")
+	}
+
+	if cloud.Azure.LoadBalancerSKU == "" {
+		cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureBasicLBSKU
+	}
+
 	return nil
 }
 
@@ -393,6 +401,12 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	sg, err := sgClient.Get(a.ctx, azure.ResourceGroup, azure.SecurityGroup, "")
 	if err != nil {
 		return fmt.Errorf("failed to get security group %q: %w", azure.SecurityGroup, err)
+	}
+
+	// we do not want to add IMCP rules to a NSG we do not own;
+	// which is the case when a pre-provisioned NSG is configured.
+	if !hasOwnershipTag(sg.Tags, cluster) {
+		return nil
 	}
 
 	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool

@@ -373,6 +373,12 @@ docker_logs() {
   fi
 }
 
+start_docker_daemon_ci() {
+  # DOCKER_REGISTRY_MIRROR_ADDR is injected via Prow preset;
+  # start-docker.sh is part of the build image.
+  DOCKER_REGISTRY_MIRROR="${DOCKER_REGISTRY_MIRROR_ADDR:-}" DOCKER_MTU=1400 start-docker.sh
+}
+
 start_docker_daemon() {
   if docker stats --no-stream > /dev/null 2>&1; then
     echodate "Not starting Docker again, it's already running."
@@ -381,8 +387,8 @@ start_docker_daemon() {
 
   # Start Docker daemon
   echodate "Starting Docker"
-  # Set the MTU to 1400 to avoid issues with our CI environment.
-  dockerd --mtu 1400 > /tmp/docker.log 2>&1 &
+  dockerd > /tmp/docker.log 2>&1 &
+
   echodate "Started Docker successfully"
   appendTrap docker_logs EXIT
 

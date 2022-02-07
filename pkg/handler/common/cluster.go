@@ -499,18 +499,9 @@ func PatchEndpoint(
 		return nil, err
 	}
 
-	// Prevent unconditional CNI upgrades for old clusters.
-	// Do not default cni if it was not explicitly set.
-	// Todo: Temporary hack will be removed soon
-	preventCNIDefaulting := newInternalCluster.Spec.CNIPlugin == nil
-
 	// apply default values to the new cluster
 	if err := defaulting.DefaultClusterSpec(&newInternalCluster.Spec, defaultingTemplate, seed, config, cloudProvider); err != nil {
 		return nil, err
-	}
-
-	if preventCNIDefaulting {
-		newInternalCluster.Spec.CNIPlugin = nil
 	}
 
 	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, seedClient, newInternalCluster); err != nil {

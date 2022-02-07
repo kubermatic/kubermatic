@@ -290,11 +290,17 @@ func (s Anexia) IsValid() bool {
 type Nutanix struct {
 	ProviderPreset `json:",inline"`
 
-	ProxyURL string `json:"proxyURL"`
+	// ProxyURL is used to optionally configure a HTTP proxy to access Nutanix Prism Central.
+	ProxyURL string `json:"proxyURL,omitempty"`
+	// Username is the username to access the Nutanix Prism Central API.
 	Username string `json:"username"`
+	// Password is the password corresponding to the provided user.
 	Password string `json:"password"`
 
-	ClusterName string `json:"clusterName,omitempty"`
+	// ClusterName is the Nutanix cluster to deploy resources and nodes to.
+	ClusterName string `json:"clusterName"`
+	// ProjectName is the optional Nutanix project to use. If none is given,
+	// no project will be used.
 	ProjectName string `json:"projectName,omitempty"`
 }
 
