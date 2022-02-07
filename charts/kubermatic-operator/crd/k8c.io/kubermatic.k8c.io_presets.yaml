@@ -253,22 +253,32 @@ spec:
               nutanix:
                 properties:
                   clusterName:
+                    description: ClusterName is the Nutanix cluster to deploy resources
+                      and nodes to.
                     type: string
                   datacenter:
                     type: string
                   enabled:
                     type: boolean
                   password:
+                    description: Password is the password corresponding to the provided
+                      user.
                     type: string
                   projectName:
+                    description: ProjectName is the optional Nutanix project to use.
+                      If none is given, no project will be used.
                     type: string
                   proxyURL:
+                    description: ProxyURL is used to optionally configure a HTTP proxy
+                      to access Nutanix Prism Central.
                     type: string
                   username:
+                    description: Username is the username to access the Nutanix Prism
+                      Central API.
                     type: string
                 required:
+                - clusterName
                 - password
-                - proxyURL
                 - username
                 type: object
               openstack:
