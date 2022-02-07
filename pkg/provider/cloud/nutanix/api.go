@@ -17,7 +17,6 @@ limitations under the License.
 package nutanix
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
