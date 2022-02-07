@@ -55,7 +55,7 @@ type ListNutanixSubnetsOK struct {
 }
 
 func (o *ListNutanixSubnetsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/{cluster_name}/subnets][%d] listNutanixSubnetsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/subnets][%d] listNutanixSubnetsOK  %+v", 200, o.Payload)
 }
 func (o *ListNutanixSubnetsOK) GetPayload() models.NutanixSubnetList {
 	return o.Payload
@@ -94,7 +94,7 @@ func (o *ListNutanixSubnetsDefault) Code() int {
 }
 
 func (o *ListNutanixSubnetsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/{cluster_name}/subnets][%d] listNutanixSubnets default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/subnets][%d] listNutanixSubnets default  %+v", o._statusCode, o.Payload)
 }
 func (o *ListNutanixSubnetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
