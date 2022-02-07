@@ -18,10 +18,11 @@ package machinecontroller
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -51,9 +52,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "v1.36.2"
-
-	NodeLocalDNSCacheAddress = "169.254.20.10"
+	Tag  = "v1.42.0"
 )
 
 type machinecontrollerData interface {
@@ -70,7 +69,7 @@ type machinecontrollerData interface {
 	MachineControllerImageRepository() string
 }
 
-// DeploymentCreator returns the function to create and update the machine controller deployment
+// DeploymentCreator returns the function to create and update the machine controller deployment.
 func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -81,7 +80,7 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 			}
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			deployment.Spec.Template.Spec = *wrappedPodSpec
 
@@ -109,7 +108,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 
 			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -121,7 +120,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 				},
 			}
 
-			clusterDNSIP := NodeLocalDNSCacheAddress
+			clusterDNSIP := resources.NodeLocalDNSCacheAddress
 			if !data.NodeLocalDNSCacheEnabled() {
 				clusterDNSIP, err = resources.UserClusterDNSResolverIP(data.Cluster())
 				if err != nil {
@@ -149,13 +148,13 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.EnableOperatingSystemManager),
 					Env: append(envVars, corev1.EnvVar{
-						Name:  "KUBECONFIG",
+						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 					}),
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
 								Port:   intstr.FromInt(8085),
@@ -182,29 +181,17 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					},
 				},
 			}
+
+			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
 		}
 	}
-}
-
-// sanitizeEnvVar will take the value of a environment variable and sanatises it.
-// the need for this comes from github.com/kubermatic/kubermatic/issues/7960
-func sanitizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
-	sanitizedEnvVars := make([]corev1.EnvVar, len(envVars))
-
-	for idx, envVar := range envVars {
-		sanitizedEnvVars[idx] = corev1.EnvVar{
-			Name:  envVar.Name,
-			Value: strings.ReplaceAll(envVar.Value, "$", "$$"),
-		}
-	}
-
-	return sanitizedEnvVars
 }
 
 func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
@@ -217,6 +204,8 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	if data.Cluster().Spec.Cloud.AWS != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: credentials.AWS.AssumeRoleARN})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: credentials.AWS.AssumeRoleExternalID})
 	}
 	if data.Cluster().Spec.Cloud.Azure != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", Value: credentials.Azure.ClientID})
@@ -262,12 +251,29 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	if data.Cluster().Spec.Cloud.Anexia != nil {
 		vars = append(vars, corev1.EnvVar{Name: "ANEXIA_TOKEN", Value: credentials.Anexia.Token})
 	}
+	if data.Cluster().Spec.Cloud.Nutanix != nil {
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: data.DC().Spec.Nutanix.Endpoint})
+		if port := data.DC().Spec.Nutanix.Port; port != nil {
+			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PORT", Value: strconv.Itoa(int(*port))})
+		}
+		if data.DC().Spec.Nutanix.AllowInsecure {
+			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_INSECURE", Value: "true"})
+		}
+
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_USERNAME", Value: credentials.Nutanix.Username})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PASSWORD", Value: credentials.Nutanix.Password})
+		if proxyURL := credentials.Nutanix.ProxyURL; proxyURL != "" {
+			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", Value: proxyURL})
+		}
+
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_CLUSTER_NAME", Value: data.Cluster().Spec.Cloud.Nutanix.ClusterName})
+	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 
-	return sanitizeEnvVars(vars), nil
+	return resources.SanitizeEnvVars(vars), nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, enableOperatingSystemManager bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -303,6 +309,11 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 
 	if cri != "" {
 		flags = append(flags, "-node-container-runtime", cri)
+	}
+
+	// Machine Controller will use OSM for managing machine's provisioning and bootstrapping configurations
+	if enableOperatingSystemManager {
+		flags = append(flags, "-use-osm")
 	}
 
 	return flags

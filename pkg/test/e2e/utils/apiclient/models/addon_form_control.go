@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AddonFormControl AddonFormControl specifies addon form control
+// AddonFormControl AddonFormControl specifies addon form control.
 //
 // swagger:model AddonFormControl
 type AddonFormControl struct {

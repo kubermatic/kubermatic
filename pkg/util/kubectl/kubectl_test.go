@@ -24,7 +24,7 @@ import (
 
 func TestKubectlForAllSupportedVersions(t *testing.T) {
 	for _, v := range defaults.DefaultKubernetesVersioning.Versions {
-		_, err := BinaryForClusterVersion(v)
+		_, err := BinaryForClusterVersion(v.Semver())
 		if err != nil {
 			t.Errorf("No kubectl binary found for cluster version %q: %v", v, err)
 		}

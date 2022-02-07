@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// SSHKeySpec SSHKeySpec represents the details of a ssh key
+// SSHKeySpec SSHKeySpec represents the details of a ssh key.
 //
 // swagger:model SSHKeySpec
 type SSHKeySpec struct {

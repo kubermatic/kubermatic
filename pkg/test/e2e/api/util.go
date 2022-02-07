@@ -61,7 +61,7 @@ func cleanupProject(t *testing.T, id string) {
 	utils.NewTestClient(token, t).CleanupProject(t, id)
 }
 
-// getErrorResponse converts the client error response to string
+// getErrorResponse converts the client error response to string.
 func getErrorResponse(err error) string {
 	rawData, newErr := json.Marshal(err)
 	if newErr != nil {

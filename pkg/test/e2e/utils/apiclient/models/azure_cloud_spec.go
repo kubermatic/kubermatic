@@ -30,6 +30,9 @@ type AzureCloudSpec struct {
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
 
+	// node ports allowed IP range
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
+
 	// resource group
 	ResourceGroup string `json:"resourceGroup,omitempty"`
 

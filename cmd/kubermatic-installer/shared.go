@@ -26,7 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -55,7 +55,7 @@ func setupLogger(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
 	}
 }
 
-func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, *unstructured.Unstructured, error) {
+func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, *unstructured.Unstructured, error) {
 	if filename == "" {
 		return nil, nil, errors.New("no file specified via --config flag")
 	}
@@ -67,12 +67,12 @@ func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticC
 
 	raw := &unstructured.Unstructured{}
 	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(raw); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode %s: %v", filename, err)
+		return nil, nil, fmt.Errorf("failed to decode %s: %w", filename, err)
 	}
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(config); err != nil {
-		return nil, raw, fmt.Errorf("failed to decode %s: %v", filename, err)
+		return nil, raw, fmt.Errorf("failed to decode %s: %w", filename, err)
 	}
 
 	return config, raw, nil
@@ -91,7 +91,7 @@ func loadHelmValues(filename string) (*yamled.Document, error) {
 
 	values, err := yamled.Load(f)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode %s: %v", filename, err)
+		return nil, fmt.Errorf("failed to decode %s: %w", filename, err)
 	}
 
 	return values, nil

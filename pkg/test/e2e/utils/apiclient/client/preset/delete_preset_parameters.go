@@ -62,9 +62,6 @@ type DeletePresetParams struct {
 	// PresetName.
 	PresetName string
 
-	// ProviderName.
-	ProviderName string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -129,17 +126,6 @@ func (o *DeletePresetParams) SetPresetName(presetName string) {
 	o.PresetName = presetName
 }
 
-// WithProviderName adds the providerName to the delete preset params
-func (o *DeletePresetParams) WithProviderName(providerName string) *DeletePresetParams {
-	o.SetProviderName(providerName)
-	return o
-}
-
-// SetProviderName adds the providerName to the delete preset params
-func (o *DeletePresetParams) SetProviderName(providerName string) {
-	o.ProviderName = providerName
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *DeletePresetParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -150,11 +136,6 @@ func (o *DeletePresetParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 
 	// path param preset_name
 	if err := r.SetPathParam("preset_name", o.PresetName); err != nil {
-		return err
-	}
-
-	// path param provider_name
-	if err := r.SetPathParam("provider_name", o.ProviderName); err != nil {
 		return err
 	}
 

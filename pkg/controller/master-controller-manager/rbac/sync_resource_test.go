@@ -24,8 +24,8 @@ import (
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -2597,7 +2597,6 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }
@@ -3006,7 +3005,6 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }
@@ -3314,7 +3312,6 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }

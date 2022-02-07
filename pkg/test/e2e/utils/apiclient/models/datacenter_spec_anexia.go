@@ -18,7 +18,7 @@ import (
 type DatacenterSpecAnexia struct {
 
 	// LocationID the location of the region
-	LocationID string `json:"location_id,omitempty"`
+	LocationID string `json:"locationID,omitempty"`
 }
 
 // Validate validates this datacenter spec anexia

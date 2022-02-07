@@ -10,6 +10,11 @@
   "panels": [
     {
       "collapsed": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -32,12 +37,14 @@
       "description": "",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 0,
         "y": 1
       },
+      "hiddenSeries": false,
       "id": 47,
       "legend": {
         "avg": false,
@@ -52,7 +59,11 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null as zero",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -122,12 +133,14 @@
       "description": "",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 8,
         "y": 1
       },
+      "hiddenSeries": false,
       "id": 50,
       "legend": {
         "avg": false,
@@ -142,7 +155,11 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null as zero",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -211,12 +228,14 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 16,
         "y": 1
       },
+      "hiddenSeries": false,
       "id": 46,
       "legend": {
         "avg": false,
@@ -231,7 +250,11 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null as zero",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -292,6 +315,11 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -315,12 +343,14 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 0,
         "y": 11
       },
+      "hiddenSeries": false,
       "id": 2,
       "interval": "",
       "legend": {
@@ -338,7 +368,11 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -349,9 +383,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kubelet_pod_worker_duration_seconds{instance=~\"$node\",quantile=\"0.9\",operation_type=~\"$operations\"}[5m])) by (instance)",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.9, sum(rate(kubelet_pod_worker_duration_seconds_bucket{instance=~\"$node\",operation_type=~\"$operations\"}[5m])) by (instance, le))",
           "format": "time_series",
           "instant": false,
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ instance }}",
           "refId": "D"
@@ -411,12 +447,14 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 6,
         "y": 11
       },
+      "hiddenSeries": false,
       "id": 51,
       "interval": "",
       "legend": {
@@ -434,7 +472,11 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -444,9 +486,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kubelet_cgroup_manager_duration_seconds{instance=~\"$node\",quantile=\"0.9\",operation_type=~\"$operations\"}[5m])) by (instance)",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.9, sum(rate(kubelet_cgroup_manager_duration_seconds_bucket{instance=~\"$node\",operation_type=~\"$operations\"}[5m])) by (instance, le))",
           "format": "time_series",
           "instant": false,
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ instance }}",
           "refId": "D"
@@ -506,12 +550,14 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 12,
         "y": 11
       },
+      "hiddenSeries": false,
       "id": 52,
       "interval": "",
       "legend": {
@@ -529,7 +575,11 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -539,9 +589,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kubelet_runtime_operations_duration_seconds{instance=~\"$node\",quantile=\"0.9\",operation_type=~\"$operations\"}[5m])) by (instance)",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.9, sum(rate(kubelet_runtime_operations_duration_seconds_bucket{instance=~\"$node\",operation_type=~\"$operations\"}[5m])) by (instance, le))",
           "format": "time_series",
           "instant": false,
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ instance }}",
           "refId": "D"
@@ -601,12 +653,14 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 18,
         "y": 11
       },
+      "hiddenSeries": false,
       "id": 53,
       "interval": "",
       "legend": {
@@ -624,7 +678,11 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "percentage": false,
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -634,9 +692,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(kubelet_pleg_relist_duration_seconds{instance=~\"$node\",quantile=\"0.9\",operation_type=~\"$operations\"}[5m])) by (instance)",
+          "exemplar": true,
+          "expr": "histogram_quantile(0.9, sum(rate(kubelet_pleg_relist_duration_seconds_bucket{instance=~\"$node\"}[5m])) by (instance, le))",
           "format": "time_series",
           "instant": false,
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ instance }}",
           "refId": "D"
@@ -686,6 +746,11 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -719,16 +784,17 @@
         "y": 20
       },
       "heatmap": {},
+      "hideZeroBuckets": false,
       "highlightCards": true,
       "id": 57,
       "legend": {
         "show": false
       },
       "links": [],
-      "minSpan": 8,
+      "maxPerRow": 3,
       "repeat": "node",
       "repeatDirection": "h",
-      "scopedVars": {},
+      "reverseYBuckets": false,
       "targets": [
         {
           "expr": "sum(increase(rest_client_request_duration_seconds_bucket{job=\"kubelet\",instance=\"$node\"}[5m])) by (le)",
@@ -768,15 +834,19 @@
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 16,
+  "schemaVersion": 30,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {},
+        "description": null,
+        "error": null,
         "hide": 0,
+        "includeAll": false,
         "label": null,
+        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "prometheus",
@@ -790,65 +860,49 @@
         "current": {},
         "datasource": "$datasource",
         "definition": "label_values(node_boot_time_seconds, node_name)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Node",
         "multi": true,
         "name": "node",
         "options": [],
-        "query": "label_values(node_boot_time_seconds, node_name)",
+        "query": {
+          "query": "label_values(node_boot_time_seconds, node_name)",
+          "refId": "prometheus-node-Variable-Query"
+        },
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
         "allValue": null,
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
+        "datasource": "${datasource}",
+        "definition": "label_values({__name__=~\"kubelet_.+?_duration_seconds_bucket\",operation_type!=\"\"}, operation_type)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Operations",
         "multi": true,
         "name": "operations",
-        "options": [
-          {
-            "selected": true,
-            "text": "All",
-            "value": "$__all"
-          },
-          {
-            "selected": false,
-            "text": "create",
-            "value": "create"
-          },
-          {
-            "selected": false,
-            "text": "update",
-            "value": "update"
-          },
-          {
-            "selected": false,
-            "text": "sync",
-            "value": "sync"
-          },
-          {
-            "selected": false,
-            "text": "kill",
-            "value": "kill"
-          }
-        ],
-        "query": "create,update,sync,kill",
+        "options": [],
+        "query": {
+          "query": "label_values({__name__=~\"kubelet_.+?_duration_seconds_bucket\",operation_type!=\"\"}, operation_type)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
         "skipUrlSync": false,
-        "type": "custom"
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
@@ -885,5 +939,5 @@
   "timezone": "",
   "title": "Kubelets Overview",
   "uid": "ZJ1iOSemz",
-  "version": 12
+  "version": 13
 }

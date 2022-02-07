@@ -17,16 +17,80 @@ limitations under the License.
 package v1
 
 import (
+	"strings"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake
+
+type ProviderType string
+
+const (
+	// Constants defining known cloud providers.
+	FakeCloudProvider         ProviderType = "fake"
+	AKSCloudProvider          ProviderType = "aks"
+	AlibabaCloudProvider      ProviderType = "alibaba"
+	AnexiaCloudProvider       ProviderType = "anexia"
+	AWSCloudProvider          ProviderType = "aws"
+	AzureCloudProvider        ProviderType = "azure"
+	BringYourOwnCloudProvider ProviderType = "bringyourown"
+	DigitaloceanCloudProvider ProviderType = "digitalocean"
+	EKSCloudProvider          ProviderType = "eks"
+	GCPCloudProvider          ProviderType = "gcp"
+	GKECloudProvider          ProviderType = "gke"
+	HetznerCloudProvider      ProviderType = "hetzner"
+	KubevirtCloudProvider     ProviderType = "kubevirt"
+	NutanixCloudProvider      ProviderType = "nutanix"
+	OpenstackCloudProvider    ProviderType = "openstack"
+	PacketCloudProvider       ProviderType = "packet"
+	VSphereCloudProvider      ProviderType = "vsphere"
+
+	DefaultSSHPort     = 22
+	DefaultKubeletPort = 10250
+
+	DefaultKubeconfigFieldPath = "kubeconfig"
+)
+
+var (
+	SupportedProviders = []ProviderType{
+		AKSCloudProvider,
+		AlibabaCloudProvider,
+		AnexiaCloudProvider,
+		AWSCloudProvider,
+		AzureCloudProvider,
+		BringYourOwnCloudProvider,
+		DigitaloceanCloudProvider,
+		EKSCloudProvider,
+		FakeCloudProvider,
+		GCPCloudProvider,
+		GKECloudProvider,
+		HetznerCloudProvider,
+		KubevirtCloudProvider,
+		NutanixCloudProvider,
+		OpenstackCloudProvider,
+		PacketCloudProvider,
+		VSphereCloudProvider,
+	}
+)
+
+func IsProviderSupported(name string) bool {
+	for _, provider := range SupportedProviders {
+		if strings.EqualFold(name, string(provider)) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// SeedList is the type representing a SeedList
+// SeedDatacenterList is the type representing a SeedDatacenterList.
 type SeedList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -37,13 +101,14 @@ type SeedList struct {
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a Seed
+// Seed is the type representing a SeedDatacenter.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SeedSpec `json:"spec,omitempty"`
+	Spec SeedSpec `json:"spec"`
 }
 
 func (s *Seed) SetDefaults() {
@@ -60,7 +125,7 @@ func (s *Seed) SetDefaults() {
 	}
 }
 
-// The spec for a seed data
+// The spec for a seed data.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
@@ -106,7 +171,7 @@ type SeedSpec struct {
 }
 
 // SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.
-// Deprecated: use EtcdBackupRestore
+// Deprecated: use EtcdBackupRestore.
 type SeedBackupRestoreConfiguration struct {
 	// S3Endpoint is the S3 API endpoint to use for backup and restore.
 	S3Endpoint string `json:"s3Endpoint,omitempty"`
@@ -114,11 +179,16 @@ type SeedBackupRestoreConfiguration struct {
 	S3BucketName string `json:"s3BucketName,omitempty"`
 }
 
-// EtcdBackupRestore holds the configuration of the automatic backup restores
+// EtcdBackupRestore holds the configuration of the automatic backup restores.
 type EtcdBackupRestore struct {
 	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
 	// it enables automatic backup and restore for the seed.
 	Destinations map[string]*BackupDestination `json:"destinations,omitempty"`
+	// DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is
+	// created for every user cluster. If not set, the default etcd backup config won't be created (unless the legacy Seed.Spec.BackupRestore is used).
+	// Has to correspond to a destination in Destinations.
+	// If removed, it removes the related default etcd backup configs.
+	DefaultDestination *string `json:"defaultDestination,omitempty"`
 }
 
 // BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.
@@ -171,7 +241,7 @@ type Datacenter struct {
 	Spec DatacenterSpec `json:"spec"`
 }
 
-// DatacenterSpec mutually points to provider datacenter spec
+// DatacenterSpec mutually points to provider datacenter spec.
 type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	// BringYourOwn contains settings for clusters using manually created
@@ -187,6 +257,8 @@ type DatacenterSpec struct {
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Anexia       *DatacenterSpecAnexia       `json:"anexia,omitempty"`
+	// Nutanix is experimental and unsupported
+	Nutanix *DatacenterSpecNutanix `json:"nutanix,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -216,10 +288,10 @@ type DatacenterSpec struct {
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
 }
 
-// ImageList defines a map of operating system and the image to use
+// ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
 
-// DatacenterSpecHetzner describes a Hetzner cloud datacenter
+// DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 type DatacenterSpecHetzner struct {
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
 	// at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
@@ -230,25 +302,25 @@ type DatacenterSpecHetzner struct {
 	Network string `json:"network"`
 	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
 	// For informational purposes only.
-	Location string `json:"location"`
+	Location string `json:"location,omitempty"`
 }
 
-// DatacenterSpecDigitalocean describes a DigitalOcean datacenter
+// DatacenterSpecDigitalocean describes a DigitalOcean datacenter.
 type DatacenterSpecDigitalocean struct {
 	// Datacenter location, e.g. "ams3". A list of existing datacenters can be found
 	// at https://www.digitalocean.com/docs/platform/availability-matrix/
 	Region string `json:"region"`
 }
 
-// DatacenterSpecOpenstack describes an OpenStack datacenter
+// DatacenterSpecOpenstack describes an OpenStack datacenter.
 type DatacenterSpecOpenstack struct {
 	AuthURL          string `json:"authURL"`
 	AvailabilityZone string `json:"availabilityZone"`
 	Region           string `json:"region"`
 	// Optional
-	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ"` //nolint:tagliatelle
+	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"` //nolint:tagliatelle
 	// Optional
-	EnforceFloatingIP bool `json:"enforceFloatingIP"`
+	EnforceFloatingIP bool `json:"enforceFloatingIP,omitempty"`
 	// Used for automatic network creation
 	DNSServers []string `json:"dnsServers"`
 	// Images to use for each supported operating system.
@@ -256,18 +328,18 @@ type DatacenterSpecOpenstack struct {
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
-	ManageSecurityGroups *bool `json:"manageSecurityGroups"`
+	ManageSecurityGroups *bool `json:"manageSecurityGroups,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
 	// use-octavia is enabled by default in CCM since v1.17.0, and disabled by
 	// default with the in-tree cloud provider.
-	UseOctavia *bool `json:"useOctavia"`
+	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
-	TrustDevicePath      *bool                         `json:"trustDevicePath"`
+	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
 	// Optional: List of enabled flavors for the given datacenter
-	EnabledFlavors []string `json:"enabledFlavors"`
+	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
@@ -277,19 +349,19 @@ type OpenstackNodeSizeRequirements struct {
 	MinimumMemory int `json:"minimumMemory"`
 }
 
-// DatacenterSpecAzure describes an Azure cloud datacenter
+// DatacenterSpecAzure describes an Azure cloud datacenter.
 type DatacenterSpecAzure struct {
 	// Region to use, for example "westeurope". A list of available regions can be
 	// found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
 	Location string `json:"location"`
 }
 
-// DatacenterSpecVSphere describes a vSphere datacenter
+// DatacenterSpecVSphere describes a vSphere datacenter.
 type DatacenterSpecVSphere struct {
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint"`
 	// If set to true, disables the TLS certificate check against the endpoint.
-	AllowInsecure bool `json:"allowInsecure"`
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
 	// The default Datastore to be used for provisioning volumes using storage
 	// classes/dynamic provisioning and for storing virtual machine files in
 	// case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
@@ -301,14 +373,14 @@ type DatacenterSpecVSphere struct {
 	// currently ignored.
 	// The cluster hosting the VMs will be the same VM used as a template is
 	// located.
-	Cluster string `json:"cluster"`
+	Cluster string `json:"cluster,omitempty"`
 	// The name of the storage policy to use for the storage class created in the user cluster.
-	DefaultStoragePolicy string `json:"storagePolicy"`
+	DefaultStoragePolicy string `json:"storagePolicy,omitempty"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
 	// folder: "/datacenter-1/vm"
-	RootPath string `json:"rootPath"`
+	RootPath string `json:"rootPath,omitempty"`
 	// A list of VM templates to use for a given operating system. You must
 	// define at least one template.
 	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
@@ -319,7 +391,7 @@ type DatacenterSpecVSphere struct {
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
 }
 
-// DatacenterSpecAWS describes an AWS datacenter
+// DatacenterSpecAWS describes an AWS datacenter.
 type DatacenterSpecAWS struct {
 	// The AWS region to use, e.g. "us-east-1". For a list of available regions, see
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
@@ -329,21 +401,21 @@ type DatacenterSpecAWS struct {
 	// This gets defaulted by querying for the latest AMI for the given distribution
 	// when machines are created, so under normal circumstances it is not necessary
 	// to define the AMIs statically.
-	Images ImageList `json:"images"`
+	Images ImageList `json:"images,omitempty"`
 }
 
-// DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes
+// DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
 type DatacenterSpecBringYourOwn struct {
 }
 
-// DatacenterSpecPacket describes a Packet datacenter
+// DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
 	// facilities see https://support.packet.com/kb/articles/data-centers
 	Facilities []string `json:"facilities"`
 }
 
-// DatacenterSpecGCP describes a GCP datacenter
+// DatacenterSpecGCP describes a GCP datacenter.
 type DatacenterSpecGCP struct {
 	// Region to use, for example "europe-west3", for a full list of regions see
 	// https://cloud.google.com/compute/docs/regions-zones/
@@ -358,7 +430,7 @@ type DatacenterSpecGCP struct {
 	Regional bool `json:"regional,omitempty"`
 }
 
-// DatacenterSpecFake describes a fake datacenter
+// DatacenterSpecFake describes a fake datacenter.
 type DatacenterSpecFake struct {
 	FakeProperty string `json:"fakeProperty,omitempty"`
 }
@@ -376,6 +448,20 @@ type DatacenterSpecKubevirt struct {
 	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
+}
+
+// DatacenterSpecNutanix describes a Nutanix datacenter.
+// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
+type DatacenterSpecNutanix struct {
+	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
+	// for example "nutanix.example.com" or "10.0.0.1"
+	Endpoint string `json:"endpoint"`
+	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
+	Port *int32 `json:"port,omitempty"`
+	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
+	// Images to use for each supported operating system
+	Images ImageList `json:"images"`
 }
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.
@@ -411,7 +497,7 @@ func (p *ProxyValue) String() string {
 }
 
 // ProxySettings allow configuring a HTTP proxy for the controlplanes
-// and nodes
+// and nodes.
 type ProxySettings struct {
 	// Optional: If set, this proxy will be configured for both HTTP and HTTPS.
 	HTTPProxy *ProxyValue `json:"httpProxy,omitempty"`
@@ -439,7 +525,7 @@ func (p *ProxySettings) Merge(dst *ProxySettings) {
 	}
 }
 
-// NodeSettings are node specific flags which can be configured on datacenter level
+// NodeSettings are node specific flags which can be configured on datacenter level.
 type NodeSettings struct {
 	// Optional: Proxy settings for the Nodes in this datacenter.
 	// Defaults to the Proxy settings of the seed.
@@ -472,4 +558,11 @@ type MeteringConfiguration struct {
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
+}
+
+// IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
+func (s *Seed) IsDefaultEtcdAutomaticBackupEnabled() bool {
+	return s.Spec.BackupRestore != nil ||
+		(s.Spec.EtcdBackupRestore != nil && len(s.Spec.EtcdBackupRestore.Destinations) > 0 &&
+			s.Spec.EtcdBackupRestore.DefaultDestination != nil && *s.Spec.EtcdBackupRestore.DefaultDestination != "")
 }

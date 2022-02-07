@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -40,9 +41,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -269,7 +270,7 @@ func (r *testRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 	// We'll store the report there and all kinds of logs
 	scenarioFolder := path.Join(r.reportsRoot, scenario.Name())
 	if err := os.MkdirAll(scenarioFolder, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create the scenario folder '%s': %v", scenarioFolder, err)
+		return nil, fmt.Errorf("failed to create the scenario folder '%s': %w", scenarioFolder, err)
 	}
 
 	// We need the closure to defer the evaluation of the time.Since(totalStart) call
@@ -298,18 +299,18 @@ func (r *testRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 				cluster, err = r.createCluster(ctx, log, scenario)
 				return err
 			}); err != nil {
-			return report, fmt.Errorf("failed to create cluster: %v", err)
+			return report, fmt.Errorf("failed to create cluster: %w", err)
 		}
 	} else {
 		log.Info("Using existing cluster")
 		selector, err := labels.Parse(r.existingClusterLabel)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse labelselector %q: %v", r.existingClusterLabel, err)
+			return nil, fmt.Errorf("failed to parse labelselector %q: %w", r.existingClusterLabel, err)
 		}
 		clusterList := &kubermaticv1.ClusterList{}
 		listOptions := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 		if err := r.seedClusterClient.List(ctx, clusterList, listOptions); err != nil {
-			return nil, fmt.Errorf("failed to list clusters: %v", err)
+			return nil, fmt.Errorf("failed to list clusters: %w", err)
 		}
 		if foundClusterNum := len(clusterList.Items); foundClusterNum != 1 {
 			return nil, fmt.Errorf("expected to find exactly one existing cluster, but got %d", foundClusterNum)
@@ -343,7 +344,7 @@ func (r *testRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 			},
 		),
 	); err != nil {
-		return report, fmt.Errorf("failed to wait for successful reconciliation: %v", err)
+		return report, fmt.Errorf("failed to wait for successful reconciliation: %w", err)
 	}
 
 	if err := r.executeTests(ctx, log, cluster, report, scenario); err != nil {
@@ -387,7 +388,7 @@ func (r *testRunner) executeTests(
 			},
 		),
 	); err != nil {
-		return fmt.Errorf("failed waiting for control plane to become ready: %v", err)
+		return fmt.Errorf("failed waiting for control plane to become ready: %w", err)
 	}
 
 	if err := junitReporterWrapper(
@@ -406,12 +407,12 @@ func (r *testRunner) executeTests(
 			})
 		},
 	); err != nil {
-		return fmt.Errorf("failed to add PV and LB cleanup finalizers: %v", err)
+		return fmt.Errorf("failed to add PV and LB cleanup finalizers: %w", err)
 	}
 
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
-		return fmt.Errorf("failed to get cloud provider name from cluster: %v", err)
+		return fmt.Errorf("failed to get cloud provider name from cluster: %w", err)
 	}
 
 	log = log.With("cloud-provider", providerName)
@@ -423,17 +424,17 @@ func (r *testRunner) executeTests(
 
 	kubeconfigFilename, err := r.getKubeconfig(ctx, log, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to get kubeconfig: %v", err)
+		return fmt.Errorf("failed to get kubeconfig: %w", err)
 	}
 
 	cloudConfigFilename, err := r.getCloudConfig(ctx, log, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to get cloud config: %v", err)
+		return fmt.Errorf("failed to get cloud config: %w", err)
 	}
 
 	userClusterClient, err := r.clusterClientProvider.GetClient(ctx, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to get the client for the cluster: %v", err)
+		return fmt.Errorf("failed to get the client for the cluster: %w", err)
 	}
 
 	if err := junitReporterWrapper(
@@ -443,7 +444,7 @@ func (r *testRunner) executeTests(
 			return r.createNodeDeployments(ctx, log, scenario, clusterName)
 		},
 	); err != nil {
-		return fmt.Errorf("failed to setup nodes: %v", err)
+		return fmt.Errorf("failed to setup nodes: %w", err)
 	}
 
 	if r.printContainerLogs {
@@ -477,7 +478,7 @@ func (r *testRunner) executeTests(
 			},
 		),
 	); err != nil {
-		return fmt.Errorf("failed to wait for machines to get a node: %v", err)
+		return fmt.Errorf("failed to wait for machines to get a node: %w", err)
 	}
 
 	if err := junitReporterWrapper(
@@ -495,7 +496,7 @@ func (r *testRunner) executeTests(
 			},
 		),
 	); err != nil {
-		return fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
+		return fmt.Errorf("failed to wait for all nodes to be ready: %w", err)
 	}
 
 	if err := junitReporterWrapper(
@@ -509,7 +510,7 @@ func (r *testRunner) executeTests(
 			},
 		),
 	); err != nil {
-		return fmt.Errorf("failed to wait for all pods to get ready: %v", err)
+		return fmt.Errorf("failed to wait for all pods to get ready: %w", err)
 	}
 
 	if r.onlyTestCreation {
@@ -526,7 +527,7 @@ func (r *testRunner) executeTests(
 		cloudConfigFilename,
 		report,
 	); err != nil {
-		return fmt.Errorf("failed to test cluster: %v", err)
+		return fmt.Errorf("failed to test cluster: %w", err)
 	}
 
 	return nil
@@ -548,7 +549,7 @@ func (r *testRunner) deleteCluster(ctx context.Context, report *reporters.JUnitT
 			if r.workerName != "" {
 				selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
 				if err != nil {
-					return fmt.Errorf("failed to parse selector: %v", err)
+					return fmt.Errorf("failed to parse selector: %w", err)
 				}
 			}
 			return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
@@ -609,7 +610,7 @@ func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("function did not succeed after %d attempts: %v", maxAttempts, err)
+	return fmt.Errorf("function did not succeed after %d attempts: %w", maxAttempts, err)
 }
 
 // measuredRetryNAttempts wraps retryNAttempts with code that counts
@@ -658,7 +659,7 @@ func (r *testRunner) testCluster(
 
 	ginkgoRuns, err := r.getGinkgoRuns(log, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to get Ginkgo runs: %v", err)
+		return fmt.Errorf("failed to get Ginkgo runs: %w", err)
 	}
 	for _, run := range ginkgoRuns {
 		if err := junitReporterWrapper(
@@ -673,7 +674,7 @@ func (r *testRunner) testCluster(
 				return err
 			},
 		); err != nil {
-			log.Errorf("Ginkgo scenario '%s' failed, giving up retrying: %v", err)
+			log.Errorf("Ginkgo scenario '%s' failed, giving up retrying: %w", err)
 			// We still want to run potential next runs
 			continue
 		}
@@ -753,6 +754,16 @@ func (r *testRunner) testCluster(
 		log.Errorf("Failed to verify that pod and node metrics are available: %v", err)
 	}
 
+	// Check seccomp profiles for Pods running on user cluster - with retries
+	if err := junitReporterWrapper(
+		"[Kubermatic] Test pod seccomp profiles on user cluster", report, func() error {
+			return retryNAttempts(maxTestAttempts, func(attempt int) error {
+				return r.testUserClusterSeccompProfiles(ctx, log, cluster, userClusterClient)
+			})
+		}); err != nil {
+		log.Errorf("failed to verify that pods have a seccomp profile: %v", err)
+	}
+
 	return nil
 }
 
@@ -823,7 +834,7 @@ func (r *testRunner) createNodeDeployments(ctx context.Context, log *zap.Sugared
 	log.Info("Getting existing NodeDeployments")
 	resp, err := r.kubermaticClient.Project.ListNodeDeployments(nodeDeploymentGetParams, r.kubermaticAuthenticator)
 	if err != nil {
-		return fmt.Errorf("failed to get existing NodeDeployments: %v", err)
+		return fmt.Errorf("failed to get existing NodeDeployments: %w", err)
 	}
 
 	existingReplicas := 0
@@ -851,7 +862,7 @@ func (r *testRunner) createNodeDeployments(ctx context.Context, log *zap.Sugared
 		}
 		return true, nil
 	}); err != nil {
-		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %v", err)
+		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %w", err)
 	}
 
 	log.Info("Creating NodeDeployments via Kubermatic API")
@@ -866,7 +877,7 @@ func (r *testRunner) createNodeDeployments(ctx context.Context, log *zap.Sugared
 		utils.SetupParams(nil, params, 5*time.Second, 1*time.Minute, http.StatusConflict)
 
 		if _, err := r.kubermaticClient.Project.CreateNodeDeployment(params, r.kubermaticAuthenticator); err != nil {
-			return fmt.Errorf("failed to create NodeDeployment %s: %v", nd.Name, err)
+			return fmt.Errorf("failed to create NodeDeployment %s: %w", nd.Name, err)
 		}
 	}
 
@@ -888,12 +899,12 @@ func (r *testRunner) getKubeconfig(ctx context.Context, log *zap.SugaredLogger, 
 		}
 		return true, nil
 	}); err != nil {
-		return "", fmt.Errorf("failed to wait for kubeconfig: %v", err)
+		return "", fmt.Errorf("failed to wait for kubeconfig: %w", err)
 	}
 
 	filename := path.Join(r.homeDir, fmt.Sprintf("%s-kubeconfig", cluster.Name))
 	if err := ioutil.WriteFile(filename, kubeconfig, 0644); err != nil {
-		return "", fmt.Errorf("failed to write kubeconfig to %s: %v", filename, err)
+		return "", fmt.Errorf("failed to write kubeconfig to %s: %w", filename, err)
 	}
 
 	log.Infof("Successfully wrote kubeconfig to %s", filename)
@@ -916,12 +927,12 @@ func (r *testRunner) getCloudConfig(ctx context.Context, log *zap.SugaredLogger,
 		cmData = cm.Data["config"]
 		return true, nil
 	}); err != nil {
-		return "", fmt.Errorf("failed to get ConfigMap %s: %v", name.String(), err)
+		return "", fmt.Errorf("failed to get ConfigMap %s: %w", name.String(), err)
 	}
 
 	filename := path.Join(r.homeDir, fmt.Sprintf("%s-cloud-config", cluster.Name))
 	if err := ioutil.WriteFile(filename, []byte(cmData), 0644); err != nil {
-		return "", fmt.Errorf("failed to write cloud config: %v", err)
+		return "", fmt.Errorf("failed to write cloud config: %w", err)
 	}
 
 	log.Infof("Successfully wrote cloud-config to %s", filename)
@@ -956,7 +967,7 @@ func (r *testRunner) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	response, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(getErrorResponse(err))
 	}
 
 	clusterID := response.Payload.ID
@@ -975,7 +986,7 @@ func (r *testRunner) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 		return true, nil
 	}); err != nil {
-		return nil, fmt.Errorf("failed to wait for Cluster to appear: %v", err)
+		return nil, fmt.Errorf("failed to wait for Cluster to appear: %w", err)
 	}
 
 	// fetch all existing SSH keys
@@ -987,7 +998,7 @@ func (r *testRunner) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	result, err := r.kubermaticClient.Project.ListSSHKeys(listKeysBody, r.kubermaticAuthenticator)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list project's SSH keys: %v", err)
+		return nil, fmt.Errorf("failed to list project's SSH keys: %w", err)
 	}
 
 	keyIDs := []string{}
@@ -1007,7 +1018,7 @@ func (r *testRunner) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 		utils.SetupParams(nil, assignKeyBody, 3*time.Second, 1*time.Minute, http.StatusConflict, http.StatusNotFound, http.StatusForbidden)
 
 		if _, err := r.kubermaticClient.Project.AssignSSHKeyToCluster(assignKeyBody, r.kubermaticAuthenticator); err != nil {
-			return nil, fmt.Errorf("failed to assign SSH key to cluster: %v", err)
+			return nil, fmt.Errorf("failed to assign SSH key to cluster: %w", err)
 		}
 	}
 
@@ -1040,7 +1051,7 @@ func (r *testRunner) waitForControlPlane(ctx context.Context, log *zap.SugaredLo
 			controlPlanePods,
 			&ctrlruntimeclient.ListOptions{Namespace: newCluster.Status.NamespaceName},
 		); err != nil {
-			return false, fmt.Errorf("failed to list controlplane pods: %v", err)
+			return false, fmt.Errorf("failed to list controlplane pods: %w", err)
 		}
 		for _, pod := range controlPlanePods.Items {
 			if !podIsReady(&pod) {
@@ -1176,7 +1187,6 @@ func (r *testRunner) getGinkgoRuns(
 	binRoot := path.Join(versionRoot, "/platforms/linux/amd64")
 	var ginkgoRuns []*ginkgoRun
 	for _, run := range runs {
-
 		reportsDir := path.Join("/tmp", scenario.Name(), run.name)
 		env := []string{
 			// `kubectl diff` needs to find /usr/bin/diff
@@ -1239,7 +1249,7 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 	log := parentLog.With("reports-dir", run.reportsDir)
 
 	if err := r.cleanupBeforeGinkgo(ctx, log, client); err != nil {
-		return nil, fmt.Errorf("failed to cleanup before the Ginkgo run: %v", err)
+		return nil, fmt.Errorf("failed to cleanup before the Ginkgo run: %w", err)
 	}
 
 	timedCtx, cancel := context.WithTimeout(ctx, run.timeout)
@@ -1250,13 +1260,13 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 		log.Errorw("Failed to remove temporary reports directory", zap.Error(err))
 	}
 	if err := os.MkdirAll(run.reportsDir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create temporary reports directory: %v", err)
+		return nil, fmt.Errorf("failed to create temporary reports directory: %w", err)
 	}
 
 	// Make sure we write to a file instead of a byte buffer as the logs are pretty big
 	file, err := ioutil.TempFile("/tmp", run.name+"-log")
 	if err != nil {
-		return nil, fmt.Errorf("failed to open logfile: %v", err)
+		return nil, fmt.Errorf("failed to open logfile: %w", err)
 	}
 	defer file.Close()
 	log = log.With("ginkgo-log", file.Name())
@@ -1274,7 +1284,7 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 	cmd.Dir = run.cmd.Dir
 	cmd.ExtraFiles = run.cmd.ExtraFiles
 	if _, err := writer.Write([]byte(strings.Join(cmd.Args, argSeparator))); err != nil {
-		return nil, fmt.Errorf("failed to write command to log: %v", err)
+		return nil, fmt.Errorf("failed to write command to log: %w", err)
 	}
 
 	log.Infof("Starting Ginkgo run '%s'...", run.name)
@@ -1300,10 +1310,11 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 			return nil, ctxErr
 		}
 
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			log.Debugf("Ginkgo exited with a non-zero return code %d: %v", exitErr.ExitCode(), exitErr)
 		} else {
-			return nil, fmt.Errorf("ginkgo failed to start: %T %v", err, err)
+			return nil, fmt.Errorf("ginkgo failed to start: %T %w", err, err)
 		}
 	}
 
@@ -1471,7 +1482,7 @@ func junitReporterWrapper(
 		report.Failures++
 		for _, extraOut := range extraErrOutputFn {
 			extraOutString := extraOut()
-			err = fmt.Errorf("%v\n%s", err, extraOutString)
+			err = fmt.Errorf("%w\n%s", err, extraOutString)
 			junitTestCase.FailureMessage.Message += "\n" + extraOutString
 		}
 	}
@@ -1494,7 +1505,7 @@ func printEventsAndLogsForAllPods(
 
 	pods := &corev1.PodList{}
 	if err := client.List(ctx, pods, ctrlruntimeclient.InNamespace(namespace)); err != nil {
-		return fmt.Errorf("failed to list pods: %v", err)
+		return fmt.Errorf("failed to list pods: %w", err)
 	}
 
 	var errs []error
@@ -1585,7 +1596,7 @@ func logEventsObject(
 		FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(uid)),
 	}
 	if err := client.List(ctx, events, listOpts); err != nil {
-		return fmt.Errorf("failed to get events: %v", err)
+		return fmt.Errorf("failed to get events: %w", err)
 	}
 
 	for _, event := range events.Items {
@@ -1637,4 +1648,13 @@ func logUserClusterPodEventsAndLogs(
 	); err != nil {
 		log.Errorw("Failed to print events and logs for usercluster pods", zap.Error(err))
 	}
+}
+
+// getErrorResponse converts the client error response to string.
+func getErrorResponse(err error) string {
+	rawData, newErr := json.Marshal(err)
+	if newErr != nil {
+		return err.Error()
+	}
+	return string(rawData)
 }

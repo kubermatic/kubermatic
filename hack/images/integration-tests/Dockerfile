@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM quay.io/kubermatic/build:go-1.17-node-14-kind-0.11-1
+FROM quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
 LABEL maintainer="support@kubermatic.com"
 
 # envtest binaries are not available for all k8s patch releases, so beware when updating
-ENV KUBE_VERSION=1.21.4
+ENV KUBE_VERSION=1.23.3
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \

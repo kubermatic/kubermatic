@@ -19,11 +19,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"reflect"
 
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 const (
@@ -40,7 +41,7 @@ type ErrorResponse struct {
 	Error ErrorDetails `json:"error"`
 }
 
-// ErrorDetails contains details about the error
+// ErrorDetails contains details about the error.
 type ErrorDetails struct {
 	// The error code
 	//
@@ -64,11 +65,14 @@ func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	var additional []string
 	errorCode := http.StatusInternalServerError
 	msg := err.Error()
-	if h, ok := err.(errors.HTTPError); ok {
-		errorCode = h.StatusCode()
-		msg = h.Error()
-		additional = h.Details()
+
+	var httpErr kubermaticerrors.HTTPError
+	if errors.As(err, &httpErr) {
+		errorCode = httpErr.StatusCode()
+		msg = httpErr.Error()
+		additional = httpErr.Details()
 	}
+
 	e := ErrorResponse{
 		Error: ErrorDetails{
 			Code:       errorCode,
@@ -85,7 +89,7 @@ func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	}
 }
 
-// EncodeJSON writes the JSON encoding of response to the http response writer
+// EncodeJSON writes the JSON encoding of response to the http response writer.
 func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set(headerContentType, contentTypeJSON)
 
@@ -111,7 +115,7 @@ func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 	return json.NewEncoder(w).Encode(response)
 }
 
-// statusOK returns the status code 200
+// statusOK returns the status code 200.
 func statusOK(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }

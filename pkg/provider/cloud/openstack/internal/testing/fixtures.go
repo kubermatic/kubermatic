@@ -35,7 +35,7 @@ const (
 	SecGroupRuleID  = "da8d0577-eeb8-4351-b543-4bb0687f81d3"
 )
 
-// Relative paths to resource endpoints
+// Relative paths to resource endpoints.
 const (
 	SecurityGroupsEndpoint = "/security-groups"
 	NetworksEndpoint       = "/networks"

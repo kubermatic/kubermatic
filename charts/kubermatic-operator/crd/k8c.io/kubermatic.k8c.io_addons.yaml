@@ -16,10 +16,14 @@ spec:
     singular: addon
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
-        description: Addon specifies a add-on
+        description: Addon specifies a add-on.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +38,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AddonSpec specifies details of an addon
+            description: AddonSpec specifies details of an addon.
             properties:
               cluster:
                 description: Cluster is the reference to the cluster the addon should
@@ -86,9 +90,9 @@ spec:
                   must be installed before this addon can be installed. The addon
                   will not be installed until that resource is served.
                 items:
-                  description: GroupVersionKind unambiguously identifies a kind.  It
-                    doesn't anonymously include GroupVersion to avoid automatic coercion.  It
-                    doesn't use a GroupVersion to avoid custom marshalling
+                  description: GroupVersionKind unambiguously identifies a kind. It
+                    doesn't anonymously include GroupVersion to avoid automatic coercion.
+                    It doesn't use a GroupVersion to avoid custom marshalling.
                   properties:
                     group:
                       type: string

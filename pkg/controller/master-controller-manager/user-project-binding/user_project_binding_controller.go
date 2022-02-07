@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -53,7 +53,7 @@ func Add(mgr manager.Manager) error {
 	return nil
 }
 
-// reconcileSyncProjectBinding reconciles UserProjectBinding objects
+// reconcileSyncProjectBinding reconciles UserProjectBinding objects.
 type reconcileSyncProjectBinding struct {
 	ctrlruntimeclient.Client
 }
@@ -74,10 +74,9 @@ func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request rec
 		return reconcile.Result{}, r.ensureProjectOwnerForBinding(ctx, projectBinding)
 	}
 	return reconcile.Result{}, r.ensureNotProjectOwnerForBinding(ctx, projectBinding)
-
 }
 
-// ensureProjectOwnerForBinding makes sure that the owner reference is set on the project resource for the given binding
+// ensureProjectOwnerForBinding makes sure that the owner reference is set on the project resource for the given binding.
 func (r *reconcileSyncProjectBinding) ensureProjectOwnerForBinding(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) error {
 	project, err := r.getProjectForBinding(ctx, projectBinding)
 	if err != nil {
@@ -114,7 +113,7 @@ func (r *reconcileSyncProjectBinding) ensureProjectOwnerForBinding(ctx context.C
 	return r.Update(ctx, project)
 }
 
-// ensureNotProjectOwnerForBinding checks if the owner reference entry is removed from the project for the given binding
+// ensureNotProjectOwnerForBinding checks if the owner reference entry is removed from the project for the given binding.
 func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) error {
 	project, err := r.getProjectForBinding(ctx, projectBinding)
 	if err != nil {
@@ -151,9 +150,9 @@ func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(ctx contex
 
 func (r *reconcileSyncProjectBinding) removeFinalizerFromBinding(ctx context.Context, projectBinding *kubermaticv1.UserProjectBinding) error {
 	if kuberneteshelper.HasFinalizer(projectBinding, rbac.CleanupFinalizerName) {
+		oldBinding := projectBinding.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(projectBinding, rbac.CleanupFinalizerName)
-		return r.Update(ctx, projectBinding)
-
+		return r.Patch(ctx, projectBinding, ctrlruntimeclient.MergeFrom(oldBinding))
 	}
 	return nil
 }

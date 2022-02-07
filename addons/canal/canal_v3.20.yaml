@@ -20,6 +20,9 @@
 #   - removed the flexvolume installation as it does not work on Flatcar Linux & is only required for application policies
 #     (https://docs.projectcalico.org/reference/faq#are-the-calico-manifests-compatible-with-coreos)
 #   - added envoyagent interface to the exclusion list for Calico IP autodetection
+#   - added seccomp profile to calico-controllers
+#   - Add custom network policy
+#   - Canal image bumped to v0.15.1
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.20" }}
@@ -3946,7 +3949,7 @@ spec:
         # This container runs flannel using the kube-subnet-mgr backend
         # for allocating subnets.
         - name: kube-flannel
-          image: '{{ Registry "quay.io" }}/coreos/flannel:v0.14.0'
+          image: '{{ Registry "quay.io" }}/coreos/flannel:v0.15.1'
           command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
           securityContext:
             privileged: true
@@ -4057,6 +4060,9 @@ spec:
           effect: NoSchedule
       serviceAccountName: calico-kube-controllers
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: calico-kube-controllers
           image: '{{ Registry "docker.io" }}/calico/kube-controllers:v3.20.2'
@@ -4090,8 +4096,25 @@ metadata:
   name: calico-kube-controllers
   namespace: kube-system
 
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
 ---
-
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: calico
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      k8s-app: calico-kube-controllers
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - {}
+{{ end }}
+---
 # This manifest creates a Pod Disruption Budget for Controller to allow K8s Cluster Autoscaler to evict
 
 apiVersion: policy/v1beta1

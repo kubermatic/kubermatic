@@ -18,28 +18,27 @@ package mutation
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
-	"github.com/imdario/mergo"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)
-
-var (
-	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
-		kubermaticv1.CNIPluginTypeCanal:  "v3.20",
-		kubermaticv1.CNIPluginTypeCilium: "v1.10",
-	}
 )
 
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
@@ -47,14 +46,28 @@ type AdmissionHandler struct {
 	log     logr.Logger
 	decoder *admission.Decoder
 
-	defaultTemplate kubermaticv1.ClusterTemplate
+	client       ctrlruntimeclient.Client
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
+	caBundle     *x509.CertPool
+
+	// disableProviderMutation is only for unit tests, to ensure no
+	// provide would phone home to validate dummy test credentials
+	disableProviderMutation bool
 }
 
 // NewAdmissionHandler returns a new cluster mutation AdmissionHandler.
-func NewAdmissionHandler(defaults kubermaticv1.ClusterTemplate) *AdmissionHandler {
+func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *AdmissionHandler {
 	return &AdmissionHandler{
-		defaultTemplate: defaults,
+		client:       client,
+		configGetter: configGetter,
+		seedGetter:   seedGetter,
+		caBundle:     caBundle,
 	}
+}
+
+func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
+	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-cluster", &webhook.Admission{Handler: h})
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
@@ -76,10 +89,18 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		err := h.applyDefaults(cluster)
+
+		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("applying default template failed: %v", err))
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
+
+		if err := h.mutateCreate(cluster); err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+		}
+
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -88,99 +109,65 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
+		// apply defaults to the existing clusters
+		err := h.applyDefaults(ctx, cluster)
+		if err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+		}
+
 		if err := h.mutateUpdate(oldCluster, cluster); err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
+
 	case admissionv1.Delete:
 		return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
+
 	default:
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
 	}
 
 	mutatedCluster, err := json.Marshal(cluster)
 	if err != nil {
-		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %v", err))
+		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %w", err))
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
 }
 
-func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) error {
+func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cluster) error {
+	seed, provider, fieldErr := h.buildDefaultingDependencies(ctx, c)
+	if fieldErr != nil {
+		return fieldErr
+	}
 
-	// merge provided defaults into newly created cluster
-	err := mergo.Merge(&c.Spec, h.defaultTemplate.Spec)
+	config, err := h.configGetter(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Add default CNI plugin settings if not present.
-	if c.Spec.CNIPlugin == nil {
-		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-			Type:    kubermaticv1.CNIPluginTypeCanal,
-			Version: defaultCNIPluginVersion[kubermaticv1.CNIPluginTypeCanal],
-		}
-	} else if c.Spec.CNIPlugin.Version == "" {
-		c.Spec.CNIPlugin.Version = defaultCNIPluginVersion[c.Spec.CNIPlugin.Type]
+	defaultTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, h.client, seed)
+	if err != nil {
+		return err
 	}
 
-	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		if c.Spec.Cloud.Kubevirt != nil {
-			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
-			// thus we have to avoid network collision
-			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.241.0.0/20"}
-		} else {
-			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
-		}
-	}
+	return defaulting.DefaultClusterSpec(&c.Spec, defaultTemplate, seed, config, provider)
+}
 
-	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		if c.Spec.Cloud.Kubevirt != nil {
-			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.26.0.0/16"}
-		} else {
-			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
-		}
-	}
-
-	if c.Spec.ClusterNetwork.DNSDomain == "" {
-		c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-	}
-
-	if c.Spec.ClusterNetwork.ProxyMode == "" {
-		// IPVS causes issues with Hetzner's LoadBalancers, which should
-		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
-		if c.Spec.Cloud.Hetzner != nil {
-			c.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
-		} else {
-			c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
-		}
-	}
-
-	if c.Spec.ClusterNetwork.IPVS != nil {
-		if c.Spec.ClusterNetwork.IPVS.StrictArp == nil {
-			c.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
-		}
+// mutateCreate is an addition to regular defaulting for new clusters.
+// at the time of writing it handles features that should only be enabled for new clusters.
+func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error {
+	if newCluster.Spec.Features == nil {
+		newCluster.Spec.Features = map[string]bool{}
 	}
 
 	// Network policies for Apiserver are deployed by default
-	if _, ok := c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
-		if c.Spec.Features == nil {
-			c.Spec.Features = map[string]bool{}
-		}
-		c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
-	}
-
-	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
-	}
-
-	// Always enable external CCM
-	if c.Spec.Cloud.Anexia != nil || c.Spec.Cloud.Kubevirt != nil {
-		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	if _, ok := newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
+		newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
 	}
 
 	return nil
-
 }
 
 func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster) error {
@@ -194,16 +181,30 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		case newCluster.Spec.Cloud.Openstack != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
 			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.BoolPtr(true)
+
 		case newCluster.Spec.Cloud.VSphere != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
 		}
 	}
 
-	return nil
-}
+	// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
+	// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
+	// are not supported anymore.
+	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal &&
+		newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
+		upgradeConstraint, err := semver.NewConstraint(">= 1.22")
+		if err != nil {
+			return fmt.Errorf("parsing CNI upgrade constraint failed: %w", err)
+		}
+		if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
+			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+			}
+		}
+	}
 
-func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
+	return nil
 }
 
 func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
@@ -213,4 +214,28 @@ func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
 
 	cluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
 	cluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
+}
+
+func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
+	seed, err := h.seedGetter()
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+
+	if h.disableProviderMutation {
+		return seed, nil, nil
+	}
+
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
+	if fieldErr != nil {
+		return nil, nil, fieldErr
+	}
+
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
+	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+
+	return seed, cloudProvider, nil
 }

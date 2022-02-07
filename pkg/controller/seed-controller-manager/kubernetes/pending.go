@@ -21,7 +21,7 @@ import (
 	"time"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -33,7 +33,8 @@ const (
 
 func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// Create the namespace
-	if err := r.ensureNamespaceExists(ctx, cluster); err != nil {
+	namespace, err := r.ensureNamespaceExists(ctx, cluster)
+	if err != nil {
 		return nil, err
 	}
 
@@ -53,7 +54,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	// Deploy & Update master components for Kubernetes
-	res, err := r.ensureResourcesAreDeployed(ctx, cluster)
+	res, err := r.ensureResourcesAreDeployed(ctx, cluster, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -78,14 +79,10 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 			finalizers = append(finalizers, kubermaticapiv1.NodeDeletionFinalizer)
 		}
-
 	}
 
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer) {
 		finalizers = append(finalizers, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
-	}
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer) {
-		finalizers = append(finalizers, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer)
 	}
 
 	if len(finalizers) > 0 {
@@ -95,7 +92,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	return &reconcile.Result{}, nil
 }
 
-// ensureEtcdLauncherFeatureFlag will apply seed controller etcdLauncher setting on the cluster level
+// ensureEtcdLauncherFeatureFlag will apply seed controller etcdLauncher setting on the cluster level.
 func (r *Reconciler) ensureEtcdLauncherFeatureFlag(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		if r.features.EtcdLauncher { // enabled at the controller level

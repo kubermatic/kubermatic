@@ -17,7 +17,7 @@ limitations under the License.
 package apiserver
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -97,7 +97,6 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 
 			// if the policyPreset field is empty, only update the ConfigMap on creation
 			if preset != "" || cm.Data == nil {
-
 				// if the preset is empty, set it to 'metadata' to generate a valid audit policy
 				if preset == "" {
 					preset = kubermaticv1.AuditPolicyMetadata

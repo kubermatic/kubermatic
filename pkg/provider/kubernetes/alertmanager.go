@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -43,7 +43,7 @@ type AlertmanagerProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// NewAlertmanagerProvider returns an alertmanager provider
+// NewAlertmanagerProvider returns an alertmanager provider.
 func NewAlertmanagerProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *AlertmanagerProvider {
 	return &AlertmanagerProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,

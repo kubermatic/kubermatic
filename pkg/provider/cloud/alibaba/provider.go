@@ -22,7 +22,7 @@ import (
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -54,7 +54,7 @@ func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	_, err = ecs.NewClientWithAccessKey(a.dc.Region, accessKeyID, accessKeySecret)
 	if err != nil {
-		return fmt.Errorf("failed to get Alibaba cloud client: %v", err)
+		return fmt.Errorf("failed to get Alibaba cloud client: %w", err)
 	}
 	return nil
 }
@@ -71,7 +71,7 @@ func (a *Alibaba) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpe
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc, dc *kubermaticv1.DatacenterSpecAlibaba) (accessKeyID string, accessKeySecret string, err error) {
 	accessKeyID = cloud.Alibaba.AccessKeyID
 	accessKeySecret = cloud.Alibaba.AccessKeySecret

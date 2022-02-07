@@ -18,17 +18,14 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"google.golang.org/api/compute/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -36,13 +33,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
-
-const allZones = "-"
 
 func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID, zone string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -242,7 +236,6 @@ func ListGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datace
 
 				subnetworks = append(subnetworks, net)
 			}
-
 		}
 		return nil
 	})
@@ -300,7 +293,6 @@ func ListGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacent
 	req := computeService.Zones.List(project)
 	err = req.Pages(ctx, func(page *compute.ZoneList) error {
 		for _, zone := range page.Items {
-
 			if strings.HasPrefix(zone.Name, datacenter.Spec.GCP.Region) {
 				apiZone := apiv1.GCPZone{Name: zone.Name}
 				zones = append(zones, apiZone)
@@ -358,124 +350,4 @@ func filterGCPByQuota(instances apiv1.GCPMachineSizeList, quota kubermaticv1.Mac
 	}
 
 	return filteredRecords
-}
-
-func ListGKEClusters(ctx context.Context, sa string) (apiv2.GKEClusterList, error) {
-	clusters := apiv2.GKEClusterList{}
-	svc, project, err := gcp.ConnectToContainerService(sa)
-	if err != nil {
-		return clusters, err
-	}
-
-	req := svc.Projects.Zones.Clusters.List(project, allZones)
-	resp, err := req.Context(ctx).Do()
-	if err != nil {
-		return clusters, fmt.Errorf("clusters list project=%s: %w", project, err)
-	}
-	for _, f := range resp.Clusters {
-		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone})
-	}
-	return clusters, nil
-}
-
-func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVersion, error) {
-	upgrades := make([]*apiv1.MasterVersion, 0)
-	svc, project, err := gcp.ConnectToContainerService(sa)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterReq := svc.Projects.Zones.Clusters.Get(project, zone, name)
-	cluster, err := clusterReq.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	currentClusterVer, err := semverlib.NewVersion(cluster.CurrentMasterVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	req := svc.Projects.Zones.GetServerconfig(project, zone)
-	resp, err := req.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-	upgradesMap := map[string]bool{}
-	for _, channel := range resp.Channels {
-
-		defaultChannelVersion, err := semverlib.NewVersion(channel.DefaultVersion)
-		if err != nil {
-			return nil, err
-		}
-		// select correct channel
-		if isValidVersion(currentClusterVer, defaultChannelVersion) {
-			for _, v := range channel.ValidVersions {
-				validVersion, err := semverlib.NewVersion(v)
-				if err != nil {
-					return nil, err
-				}
-				// select the correct version from the channel
-				if isValidVersion(currentClusterVer, validVersion) {
-					upgradesMap[v] = v == channel.DefaultVersion
-				}
-			}
-		}
-	}
-	for version, isDefault := range upgradesMap {
-		v, err := ksemver.NewSemver(version)
-		if err != nil {
-			return nil, err
-		}
-		upgrades = append(upgrades, &apiv1.MasterVersion{
-			Version: v.Semver(),
-			Default: isDefault,
-		})
-	}
-
-	return upgrades, nil
-}
-
-func ListGKEMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
-	upgrades := make([]*apiv1.MasterVersion, 0)
-	svc, project, err := gcp.ConnectToContainerService(sa)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterReq := svc.Projects.Zones.Clusters.Get(project, zone, clusterName)
-	cluster, err := clusterReq.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	currentClusterVer, err := semverlib.NewVersion(cluster.CurrentMasterVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	req := svc.Projects.Zones.Clusters.NodePools.Get(project, zone, clusterName, machineDeployment)
-	np, err := req.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	currentMachineDeploymentVer, err := semverlib.NewVersion(np.Version)
-	if err != nil {
-		return nil, err
-	}
-
-	// return control plane version
-	if currentClusterVer.GreaterThan(currentMachineDeploymentVer) {
-		upgrades = append(upgrades, &apiv1.MasterVersion{Version: currentClusterVer})
-	}
-
-	return upgrades, nil
-}
-
-func isValidVersion(currentVersion, newVersion *semverlib.Version) bool {
-	if currentVersion.Major() == newVersion.Major() && (currentVersion.Minor()+1) == newVersion.Minor() {
-		return true
-	}
-	return false
 }

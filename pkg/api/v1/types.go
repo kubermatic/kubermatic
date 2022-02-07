@@ -26,8 +26,8 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -80,6 +80,7 @@ type DatacenterSpec struct {
 	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Anexia       *kubermaticv1.DatacenterSpecAnexia       `json:"anexia,omitempty"`
+	Nutanix      *kubermaticv1.DatacenterSpecNutanix      `json:"nutanix,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -90,9 +91,7 @@ type DatacenterSpec struct {
 	// not specified here.
 	Node kubermaticv1.NodeSettings `json:"node"`
 
-	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
-	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
+	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
@@ -424,6 +423,38 @@ type PacketDrive struct {
 	Type  string `json:"type,omitempty"`
 }
 
+// NutanixCluster represents a Nutanix cluster.
+// swagger:model NutanixCluster
+type NutanixCluster struct {
+	Name string `json:"name"`
+}
+
+// NutanixClusterList represents an array of Nutanix clusters.
+// swagger:model NutanixClusterList
+type NutanixClusterList []NutanixCluster
+
+// NutanixProject represents a Nutanix project.
+// swagger:model NutanixProject
+type NutanixProject struct {
+	Name string `json:"name"`
+}
+
+// NutanixProjectList represents an array of Nutanix projects.
+// swagger:model NutanixProjectList
+type NutanixProjectList []NutanixProject
+
+// NutanixSubnet represents a Nutanix subnet.
+// swagger:model NutanixSubnet
+type NutanixSubnet struct {
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	VlanID int    `json:"vlanID,omitempty"`
+}
+
+// NutanixSubnetList represents an array of Nutanix subnets.
+// swagger:model NutanixSubnetList
+type NutanixSubnetList []NutanixSubnet
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
@@ -431,7 +462,7 @@ type SSHKey struct {
 	Spec SSHKeySpec `json:"spec"`
 }
 
-// SSHKeySpec represents the details of a ssh key
+// SSHKeySpec represents the details of a ssh key.
 type SSHKeySpec struct {
 	Fingerprint string `json:"fingerprint"`
 	PublicKey   string `json:"publicKey"`
@@ -468,8 +499,8 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 		IsAdmin: internalUser.Spec.IsAdmin,
 	}
 
-	if internalUser.Spec.LastSeen != nil {
-		apiUser.LastSeen = &[]Time{NewTime(internalUser.Spec.LastSeen.Time)}[0]
+	if internalUser.Status.LastSeen != nil {
+		apiUser.LastSeen = &[]Time{NewTime(internalUser.Status.LastSeen.Time)}[0]
 	}
 
 	if includeSettings {
@@ -505,7 +536,7 @@ type Admin struct {
 }
 
 // ProjectGroup is a helper data structure that
-// stores the information about a project and a group prefix that a user belongs to
+// stores the information about a project and a group prefix that a user belongs to.
 type ProjectGroup struct {
 	ID          string `json:"id"`
 	GroupPrefix string `json:"group"`
@@ -513,13 +544,13 @@ type ProjectGroup struct {
 
 // These are the valid statuses of a ServiceAccount.
 const (
-	// ServiceAccountActive means the ServiceAccount is available for use in the system
+	// ServiceAccountActive means the ServiceAccount is available for use in the system.
 	ServiceAccountActive string = "Active"
 
-	// ServiceAccountInactive means the ServiceAccount is inactive and requires further initialization
+	// ServiceAccountInactive means the ServiceAccount is inactive and requires further initialization.
 	ServiceAccountInactive string = "Inactive"
 
-	// ServiceAccountTerminating means the ServiceAccount is undergoing graceful termination
+	// ServiceAccountTerminating means the ServiceAccount is undergoing graceful termination.
 	ServiceAccountTerminating string = "Terminating"
 )
 
@@ -734,7 +765,7 @@ type CreateClusterSpec struct {
 }
 
 const (
-	// KubernetesClusterType defines the Kubernetes cluster type
+	// KubernetesClusterType defines the Kubernetes cluster type.
 	KubernetesClusterType string = "kubernetes"
 )
 
@@ -755,7 +786,7 @@ type Cluster struct {
 	Status          ClusterStatus     `json:"status"`
 }
 
-// ClusterSpec defines the cluster specification
+// ClusterSpec defines the cluster specification.
 type ClusterSpec struct {
 	// Cloud specifies the cloud providers configuration
 	Cloud kubermaticv1.CloudSpec `json:"cloud"`
@@ -778,12 +809,18 @@ type ClusterSpec struct {
 	// If active the PodNodeSelector admission plugin is configured at the apiserver
 	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 
+	// If active the EventRateLimit admission plugin is configured at the apiserver
+	UseEventRateLimitAdmissionPlugin bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
+
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
 	// to the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after
 	// the cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled
 	// it cannot be changed after the cluster is being created.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
+
+	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
+	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
@@ -794,6 +831,11 @@ type ClusterSpec struct {
 	//  namespace1: <node-selectors-labels>
 	//  namespace2: <node-selectors-labels>
 	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
+
+	// EventRateLimitConfig allows configuring the EventRateLimit admission plugin (if enabled via useEventRateLimitAdmissionPlugin)
+	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing incoming Events
+	// to several configured buckets based on the type of event rate limit.
+	EventRateLimitConfig *kubermaticv1.EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
 
 	// Additional Admission Controller plugins
 	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
@@ -833,15 +875,19 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UpdateWindow                         *kubermaticv1.UpdateWindow             `json:"updateWindow,omitempty"`
 		UsePodSecurityPolicyAdmissionPlugin  bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 		UsePodNodeSelectorAdmissionPlugin    bool                                   `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+		UseEventRateLimitAdmissionPlugin     bool                                   `json:"useEventRateLimitAdmissionPlugin,omitempty"`
 		EnableUserSSHKeyAgent                *bool                                  `json:"enableUserSSHKeyAgent,omitempty"`
+		EnableOperatingSystemManager         bool                                   `json:"enableOperatingSystemManager,omitempty"`
 		AuditLogging                         *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 		AdmissionPlugins                     []string                               `json:"admissionPlugins,omitempty"`
 		PodNodeSelectorAdmissionPluginConfig map[string]string                      `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
+		EventRateLimitConfig                 *kubermaticv1.EventRateLimitConfig     `json:"eventRateLimitConfig,omitempty"`
 		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
 		OPAIntegration                       *kubermaticv1.OPAIntegrationSettings   `json:"opaIntegration,omitempty"`
 		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
 		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
+		CNIPlugin                            *kubermaticv1.CNIPluginSettings        `json:"cniPlugin,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -858,6 +904,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
 			Anexia:         newPublicAnexiaCloudSpec(cs.Cloud.Anexia),
+			Nutanix:        newPublicNutanixCloudSpec(cs.Cloud.Nutanix),
 		},
 		Version:                              cs.Version,
 		MachineNetworks:                      cs.MachineNetworks,
@@ -865,15 +912,19 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UpdateWindow:                         cs.UpdateWindow,
 		UsePodSecurityPolicyAdmissionPlugin:  cs.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:    cs.UsePodNodeSelectorAdmissionPlugin,
+		UseEventRateLimitAdmissionPlugin:     cs.UseEventRateLimitAdmissionPlugin,
 		EnableUserSSHKeyAgent:                cs.EnableUserSSHKeyAgent,
+		EnableOperatingSystemManager:         cs.EnableOperatingSystemManager,
 		AuditLogging:                         cs.AuditLogging,
 		AdmissionPlugins:                     cs.AdmissionPlugins,
 		PodNodeSelectorAdmissionPluginConfig: cs.PodNodeSelectorAdmissionPluginConfig,
+		EventRateLimitConfig:                 cs.EventRateLimitConfig,
 		ServiceAccount:                       cs.ServiceAccount,
 		OPAIntegration:                       cs.OPAIntegration,
 		MLA:                                  cs.MLA,
 		ContainerRuntime:                     cs.ContainerRuntime,
 		ClusterNetwork:                       cs.ClusterNetwork,
+		CNIPlugin:                            cs.CNIPlugin,
 	})
 
 	return ret, err
@@ -896,6 +947,7 @@ type PublicCloudSpec struct {
 	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba        *PublicAlibabaCloudSpec      `json:"alibaba,omitempty"`
 	Anexia         *PublicAnexiaCloudSpec       `json:"anexia,omitempty"`
+	Nutanix        *PublicNutanixCloudSpec      `json:"nutanix,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -984,8 +1036,6 @@ type PublicOpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
 	Project        string `json:"project,omitempty"`
 	ProjectID      string `json:"projectID,omitempty"`
-	Tenant         string `json:"tenant,omitempty"`
-	TenantID       string `json:"tenantID,omitempty"`
 	Domain         string `json:"domain,omitempty"`
 	Network        string `json:"network"`
 	SecurityGroups string `json:"securityGroups"`
@@ -1000,10 +1050,8 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 
 	return &PublicOpenstackCloudSpec{
 		FloatingIPPool: internal.FloatingIPPool,
-		Project:        internal.GetProject(),
-		ProjectID:      internal.GetProjectId(),
-		Tenant:         internal.GetProject(),
-		TenantID:       internal.GetProjectId(),
+		Project:        internal.Project,
+		ProjectID:      internal.ProjectID,
 		Domain:         internal.Domain,
 		Network:        internal.Network,
 		SecurityGroups: internal.SecurityGroups,
@@ -1067,7 +1115,18 @@ func newPublicAnexiaCloudSpec(internal *kubermaticv1.AnexiaCloudSpec) (public *P
 	return &PublicAnexiaCloudSpec{}
 }
 
-// ClusterStatus defines the cluster status
+// PublicNutanixCloudSpec is a public counterpart of apiv1.NutanixCloudSpec.
+type PublicNutanixCloudSpec struct{}
+
+func newPublicNutanixCloudSpec(internal *kubermaticv1.NutanixCloudSpec) (public *PublicNutanixCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicNutanixCloudSpec{}
+}
+
+// ClusterStatus defines the cluster status.
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
 	Version ksemver.Semver `json:"version"`
@@ -1080,13 +1139,13 @@ type ClusterStatus struct {
 type ExternalCCMMigrationStatus string
 
 var (
-	// ExternalCCMMigrationNotNeeded indicates that the external CCM is already in use
+	// ExternalCCMMigrationNotNeeded indicates that the external CCM is already in use.
 	ExternalCCMMigrationNotNeeded ExternalCCMMigrationStatus = "NotNeeded"
-	// ExternalCCMMigrationSupported indicates that the external CCM is not used but supported
+	// ExternalCCMMigrationSupported indicates that the external CCM is not used but supported.
 	ExternalCCMMigrationSupported ExternalCCMMigrationStatus = "Supported"
-	// ExternalCCMMigrationUnsupported indicates that the external CCM is not used and not supported
+	// ExternalCCMMigrationUnsupported indicates that the external CCM is not used and not supported.
 	ExternalCCMMigrationUnsupported ExternalCCMMigrationStatus = "Unsupported"
-	// ExternalCCMMigrationInProgress indicates that the migration procedure to the external CCM is in progress
+	// ExternalCCMMigrationInProgress indicates that the migration procedure to the external CCM is in progress.
 	ExternalCCMMigrationInProgress ExternalCCMMigrationStatus = "InProgress"
 )
 
@@ -1165,6 +1224,7 @@ type NodeCloudSpec struct {
 	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaNodeSpec      `json:"alibaba,omitempty"`
 	Anexia       *AnexiaNodeSpec       `json:"anexia,omitempty"`
+	Nutanix      *NutanixNodeSpec      `json:"nutanix,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -1174,7 +1234,7 @@ type UbuntuSpec struct {
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
-// CentOSSpec contains CentOS specific settings
+// CentOSSpec contains CentOS specific settings.
 type CentOSSpec struct {
 	// do a dist-upgrade on boot and reboot it required afterwards
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
@@ -1224,7 +1284,7 @@ type NodeVersionInfo struct {
 	Kubelet string `json:"kubelet"`
 }
 
-// TaintSpec defines a node taint
+// TaintSpec defines a node taint.
 type TaintSpec struct {
 	Key    string `json:"key"`
 	Value  string `json:"value"`
@@ -1539,6 +1599,14 @@ type AWSNodeSpec struct {
 	// available at the price you specified, if there is no capacity, or if a constraint cannot be met. Charges for EBS
 	// volume storage apply when an instance is stopped.
 	SpotInstanceInterruptionBehavior *string `json:"spotInstanceInterruptionBehavior"`
+	// AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
+	// required: false
+	AssumeRoleARN string `json:"assumeRoleARN"`
+	// AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// Using an external ID can help to prevent the "confused deputy problem".
+	// required: false
+	AssumeRoleExternalID string `json:"assumeRoleExternalID"`
 }
 
 func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1884,6 +1952,43 @@ func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&res)
 }
 
+// NutanixNodeSpec nutanix specific node settings
+// swagger:model NutanixNodeSpec
+type NutanixNodeSpec struct {
+	SubnetName     string            `json:"subnetName"`
+	ImageName      string            `json:"imageName"`
+	Categories     map[string]string `json:"categories"`
+	CPUs           int64             `json:"cpus"`
+	CPUCores       *int64            `json:"cpuCores"`
+	CPUPassthrough *bool             `json:"cpuPassthrough"`
+	MemoryMB       int64             `json:"memoryMB"`
+	DiskSize       *int64            `json:"diskSize"`
+}
+
+func (spec *NutanixNodeSpec) MarshalJSON() ([]byte, error) {
+	res := struct {
+		SubnetName     string            `json:"subnetName"`
+		ImageName      string            `json:"imageName"`
+		Categories     map[string]string `json:"categories"`
+		CPUs           int64             `json:"cpus"`
+		CPUCores       *int64            `json:"cpuCores"`
+		CPUPassthrough *bool             `json:"cpuPassthrough"`
+		MemoryMB       int64             `json:"memoryMB"`
+		DiskSize       *int64            `json:"diskSize"`
+	}{
+		SubnetName:     spec.SubnetName,
+		ImageName:      spec.ImageName,
+		Categories:     spec.Categories,
+		CPUs:           spec.CPUs,
+		CPUCores:       spec.CPUCores,
+		CPUPassthrough: spec.CPUPassthrough,
+		MemoryMB:       spec.MemoryMB,
+		DiskSize:       spec.DiskSize,
+	}
+
+	return json.Marshal(&res)
+}
+
 // NodeResources cpu and memory of a node
 // swagger:model NodeResources
 type NodeResources struct {
@@ -2174,7 +2279,7 @@ type Seed struct {
 	SeedSpec `json:"spec"`
 }
 
-// The spec for a seed data
+// The spec for a seed data.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
@@ -2211,7 +2316,7 @@ type SeedSpec struct {
 // swagger:model SeedNamesList
 type SeedNamesList []string
 
-// SeedCluster holds seed name for the cluster
+// SeedCluster holds seed name for the cluster.
 type SeedCluster struct {
 	SeedName  string
 	ClusterID string
@@ -2230,54 +2335,48 @@ type MeteringReport struct {
 type ReportURL string
 
 const (
-	// NodeDeletionFinalizer indicates that the nodes still need cleanup
-	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
-	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup
-	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
-	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup
-	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
-	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
-	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
-	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
-	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
-	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup
-	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
-	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup
-	EtcdBackupConfigCleanupFinalizer = "kubermatic.io/cleanup-etcdbackupconfigs"
-	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup
-	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraint-templates"
-	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup
-	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-master-constraint-templates"
-	// GatekeeperSeedConstraintCleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup
-	GatekeeperSeedConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-seed-constraint"
-	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup
-	GatekeeperConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraints"
-	// KubermaticUserClusterNsDefaultConstraintCleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup
-	KubermaticUserClusterNsDefaultConstraintCleanupFinalizer = "kubermatic.io/cleanup-kubermatic-usercluster-ns-default-constraints"
-	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup
-	KubermaticConstraintCleanupFinalizer = "kubermatic.io/cleanup-kubermatic-constraints"
-	// SeedProjectCleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup
-	SeedProjectCleanupFinalizer = "kubermatic.io/cleanup-seed-projects"
-	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup
-	SeedUserProjectBindingCleanupFinalizer = "kubermatic.io/cleanup-seed-user-project-bindings"
-	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup
-	SeedUserCleanupFinalizer = "kubermatic.io/cleanup-seed-users"
-	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup
-	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
-	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup
-	ClusterTemplateSeedCleanupFinalizer = "kubermatic.io/cleanup-seed-cluster-template"
-	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up
-	AllowedRegistryCleanupFinalizer = "kubermatic.io/cleanup-allowed-registry"
-	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup
-	SeedClusterTemplateInstanceFinalizer = "kubermatic.io/cleanup-seed-cluster-template-instance"
+	// NodeDeletionFinalizer indicates that the nodes still need cleanup.
+	NodeDeletionFinalizer = "kubermatic.k8c.io/delete-nodes"
+	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup.
+	InClusterPVCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-pv"
+	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup.
+	InClusterLBCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-lb"
+	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
+	CredentialsSecretsCleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials-secrets"
+	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
+	UserClusterRoleCleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
+	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.
+	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeconfig-secret"
+	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup.
+	EtcdBackupConfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-etcdbackupconfigs"
+	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup.
+	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraint-templates"
+	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup.
+	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-master-constraint-templates"
+	// GatekeeperSeedConstraintCleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup.
+	GatekeeperSeedConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-seed-constraint"
+	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup.
+	GatekeeperConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraints"
+	// KubermaticUserClusterNsDefaultConstraintCleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup.
+	KubermaticUserClusterNsDefaultConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-usercluster-ns-default-constraints"
+	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup.
+	KubermaticConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-constraints"
+	// SeedProjectCleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup.
+	SeedProjectCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-projects"
+	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup.
+	SeedUserProjectBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-user-project-bindings"
+	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
+	SeedUserCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
+	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup.
+	// This finalizer is deprecated and should not be used anymore since we migrated to using owner references for cleanup.
+	ClusterRoleBindingsCleanupFinalizer = "kubermatic.k8c.io/cleanup-cluster-role-bindings"
+	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup.
+	ClusterTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template"
+	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
+	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
+	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup.
+	SeedClusterTemplateInstanceFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template-instance"
 )
-
-func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
-	if externalClusterType == KubernetesClusterType {
-		return kubermaticv1.ClusterTypeKubernetes
-	}
-	return kubermaticv1.ClusterTypeAll
-}
 
 const (
 	InitialMachineDeploymentRequestAnnotation = "kubermatic.io/initial-machinedeployment-request"

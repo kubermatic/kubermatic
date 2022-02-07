@@ -20,15 +20,15 @@ import (
 	"strings"
 )
 
-// StringArray is an implementation flag.Value for parsing comma separated flags
+// StringArray is an implementation flag.Value for parsing comma separated flags.
 type StringArray []string
 
-// String is flag.Value implementation method
+// String is flag.Value implementation method.
 func (s StringArray) String() string {
 	return strings.Join(s, ",")
 }
 
-// Set is flag.Value implementation method
+// Set is flag.Value implementation method.
 func (s *StringArray) Set(val string) error {
 	tmp := strings.Split(val, ",")
 

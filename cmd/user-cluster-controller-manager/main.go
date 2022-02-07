@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
@@ -39,7 +40,6 @@ import (
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	rolecloner "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -85,6 +85,7 @@ type controllerRunOptions struct {
 	opaEnableMutation            bool
 	opaWebhookTimeout            int
 	useSSHKeyAgent               bool
+	networkPolicies              bool
 	caBundleFile                 string
 	mlaGatewayURL                string
 	userClusterLogging           bool
@@ -93,6 +94,9 @@ type controllerRunOptions struct {
 	ccmMigration                 bool
 	ccmMigrationCompleted        bool
 	isKonnectivityEnabled        bool
+	konnectivityServerHost       string
+	konnectivityServerPort       int
+	enableOperatingSystemManager bool
 }
 
 func main() {
@@ -126,6 +130,7 @@ func main() {
 	flag.BoolVar(&runOp.opaEnableMutation, "enable-mutation", false, "Enable OPA experimental mutation in user cluster")
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 1, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
+	flag.BoolVar(&runOp.networkPolicies, "enable-network-policies", false, "Enable deployment of network policies to kube-system namespace in user cluster")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
@@ -134,11 +139,17 @@ func main() {
 	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
 	flag.BoolVar(&runOp.ccmMigrationCompleted, "ccm-migration-completed", false, "cluster has been successfully migrated.")
 	flag.BoolVar(&runOp.isKonnectivityEnabled, "konnectivity-enabled", false, "Enable Konnectivity.")
-
+	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
+	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
+	flag.BoolVar(&runOp.enableOperatingSystemManager, "operating-system-manager-enabled", false, "Enable Operating System Manager, this only enables deployment of OSM resources.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+
+	// make sure the logging flags actually affect the global (deprecated) logger instance
+	kubermaticlog.Logger = log
 
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
@@ -162,8 +173,11 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed parsing clusterURL", zap.Error(err))
 	}
-	if runOp.openvpnServerPort == 0 {
+	if !runOp.isKonnectivityEnabled && runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
+	}
+	if runOp.isKonnectivityEnabled && runOp.konnectivityServerHost == "" {
+		log.Fatal("-konnectivity-server-host must be set when Konnectivity is enabled")
 	}
 	if len(runOp.caBundleFile) == 0 {
 		log.Fatal("-ca-bundle must be set")
@@ -192,8 +206,6 @@ func main() {
 	}
 
 	rootCtx := signals.SetupSignalHandler()
-
-	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	mgr, err := manager.New(cfg, manager.Options{
 		LeaderElection:          true,
@@ -265,6 +277,7 @@ func main() {
 		runOp.opaEnableMutation,
 		versions,
 		runOp.useSSHKeyAgent,
+		runOp.networkPolicies,
 		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{
@@ -275,8 +288,11 @@ func main() {
 		},
 		runOp.clusterName,
 		runOp.isKonnectivityEnabled,
+		runOp.konnectivityServerHost,
+		runOp.konnectivityServerPort,
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
+		runOp.enableOperatingSystemManager,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

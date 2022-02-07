@@ -17,8 +17,8 @@ limitations under the License.
 package nodeportproxy
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,11 +30,11 @@ import (
 // as all existing kubeconfigs for user clusters would be broken.
 
 const (
-	// ServiceName is the name for the created service object
+	// ServiceName is the name for the created service object.
 	ServiceName = "nodeport-proxy"
 )
 
-// ServiceCreator bootstraps the nodeport-proxy service object for a seed cluster resource
+// ServiceCreator bootstraps the nodeport-proxy service object for a seed cluster resource.
 func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return ServiceName, func(s *corev1.Service) (*corev1.Service, error) {

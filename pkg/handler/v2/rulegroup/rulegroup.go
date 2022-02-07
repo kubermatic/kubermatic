@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -256,6 +256,7 @@ func convertInternalToAPIRuleGroups(ruleGroups []*kubermaticv1.RuleGroup) []*api
 
 func convertInternalToAPIRuleGroup(ruleGroup *kubermaticv1.RuleGroup) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
+		Name:      ruleGroup.ObjectMeta.Name,
 		Data:      ruleGroup.Spec.Data,
 		Type:      ruleGroup.Spec.RuleGroupType,
 		IsDefault: ruleGroup.Spec.IsDefault,
@@ -275,7 +276,6 @@ func getAdminUserInfoPrivilegedRuleGroupProvider(ctx context.Context, userInfoGe
 }
 
 func getUserInfoRuleGroupProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.RuleGroupProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

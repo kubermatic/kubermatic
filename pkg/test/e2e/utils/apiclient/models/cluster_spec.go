@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ClusterSpec ClusterSpec defines the cluster specification
+// ClusterSpec ClusterSpec defines the cluster specification.
 //
 // swagger:model ClusterSpec
 type ClusterSpec struct {
@@ -24,6 +24,9 @@ type ClusterSpec struct {
 
 	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
 	ContainerRuntime string `json:"containerRuntime,omitempty"`
+
+	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
+	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
@@ -45,6 +48,9 @@ type ClusterSpec struct {
 	// namespace2: <node-selectors-labels>
 	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
 
+	// If active the EventRateLimit admission plugin is configured at the apiserver
+	UseEventRateLimitAdmissionPlugin bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
+
 	// If active the PodNodeSelector admission plugin is configured at the apiserver
 	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 
@@ -62,6 +68,9 @@ type ClusterSpec struct {
 
 	// cni plugin
 	CniPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
+
+	// event rate limit config
+	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
 
 	// mla
 	Mla *MLASettings `json:"mla,omitempty"`
@@ -103,6 +112,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCniPlugin(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEventRateLimitConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -220,6 +233,23 @@ func (m *ClusterSpec) validateCniPlugin(formats strfmt.Registry) error {
 		if err := m.CniPlugin.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cniPlugin")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateEventRateLimitConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.EventRateLimitConfig) { // not required
+		return nil
+	}
+
+	if m.EventRateLimitConfig != nil {
+		if err := m.EventRateLimitConfig.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eventRateLimitConfig")
 			}
 			return err
 		}
@@ -352,6 +382,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateEventRateLimitConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMla(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -448,6 +482,20 @@ func (m *ClusterSpec) contextValidateCniPlugin(ctx context.Context, formats strf
 		if err := m.CniPlugin.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cniPlugin")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateEventRateLimitConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.EventRateLimitConfig != nil {
+		if err := m.EventRateLimitConfig.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eventRateLimitConfig")
 			}
 			return err
 		}

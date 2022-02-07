@@ -104,6 +104,8 @@ type ClientService interface {
 
 	GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAlertmanagerOK, error)
 
+	GetBackupDestinationNames(params *GetBackupDestinationNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBackupDestinationNamesOK, error)
+
 	GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOK, error)
 
 	GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsOK, error)
@@ -164,6 +166,10 @@ type ClientService interface {
 
 	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error)
 
+	ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error)
+
+	ListCNIPluginVersionsForCluster(params *ListCNIPluginVersionsForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCNIPluginVersionsForClusterOK, error)
+
 	ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleOK, error)
 
 	ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingOK, error)
@@ -186,6 +192,8 @@ type ClientService interface {
 
 	ListConstraints(params *ListConstraintsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintsOK, error)
 
+	ListEKSClusters(params *ListEKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClustersOK, error)
+
 	ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterEventsOK, error)
 
 	ListExternalClusterMachineDeploymentMetrics(params *ListExternalClusterMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentMetricsOK, error)
@@ -199,6 +207,8 @@ type ClientService interface {
 	ListExternalClusterNodesMetrics(params *ListExternalClusterNodesMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesMetricsOK, error)
 
 	ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClustersOK, error)
+
+	ListGKEClusters(params *ListGKEClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClustersOK, error)
 
 	ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesOK, error)
 
@@ -1740,6 +1750,44 @@ func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime
 }
 
 /*
+  GetBackupDestinationNames Gets possible backup destination names for a cluster
+*/
+func (a *Client) GetBackupDestinationNames(params *GetBackupDestinationNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBackupDestinationNamesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetBackupDestinationNamesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getBackupDestinationNames",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetBackupDestinationNamesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetBackupDestinationNamesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetBackupDestinationNamesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetCluster Gets the cluster with the given name
 */
 func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOK, error) {
@@ -2880,6 +2928,82 @@ func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
+  ListAKSClusters Lists AKS clusters
+*/
+func (a *Client) ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAKSClustersParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAKSClusters",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/aks/clusters",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAKSClustersReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAKSClustersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAKSClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListCNIPluginVersionsForCluster lists c n i plugin versions for a given cluster
+*/
+func (a *Client) ListCNIPluginVersionsForCluster(params *ListCNIPluginVersionsForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCNIPluginVersionsForClusterOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListCNIPluginVersionsForClusterParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listCNIPluginVersionsForCluster",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListCNIPluginVersionsForClusterReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListCNIPluginVersionsForClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListCNIPluginVersionsForClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListClusterRole Lists all ClusterRoles
 */
 func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleOK, error) {
@@ -3298,6 +3422,44 @@ func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime
 }
 
 /*
+  ListEKSClusters Lists EKS clusters
+*/
+func (a *Client) ListEKSClusters(params *ListEKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClustersOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSClustersParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSClusters",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/eks/clusters",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSClustersReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSClustersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListExternalClusterEvents gets an external cluster events
 */
 func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterEventsOK, error) {
@@ -3560,6 +3722,44 @@ func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListExternalClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListGKEClusters lists g k e clusters
+*/
+func (a *Client) ListGKEClusters(params *ListGKEClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClustersOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGKEClustersParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listGKEClusters",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/clusters",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGKEClustersReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGKEClustersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGKEClustersDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

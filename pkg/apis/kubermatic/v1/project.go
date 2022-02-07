@@ -26,21 +26,21 @@ type ProjectPhase string
 
 // These are the valid phases of a project.
 const (
-	// ProjectActive means the project is available for use in the system
-	ProjectActive string = "Active"
+	// ProjectActive means the project is available for use in the system.
+	ProjectActive ProjectPhase = "Active"
 
-	// ProjectInactive means the project is inactive and requires further initialization
-	ProjectInactive string = "Inactive"
+	// ProjectInactive means the project is inactive and requires further initialization.
+	ProjectInactive ProjectPhase = "Inactive"
 
-	// ProjectTerminating means the project is undergoing graceful termination
-	ProjectTerminating string = "Terminating"
+	// ProjectTerminating means the project is undergoing graceful termination.
+	ProjectTerminating ProjectPhase = "Terminating"
 )
 
 const (
-	// ProjectResourceName represents "Resource" defined in Kubernetes
+	// ProjectResourceName represents "Resource" defined in Kubernetes.
 	ProjectResourceName = "projects"
 
-	// ProjectKindName represents "Kind" defined in Kubernetes
+	// ProjectKindName represents "Kind" defined in Kubernetes.
 	ProjectKindName = "Project"
 )
 
@@ -50,6 +50,7 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Status",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Project is the type describing a project.
 type Project struct {

@@ -20,19 +20,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
@@ -40,63 +38,20 @@ import (
 )
 
 var (
-	// ErrNotFound tells that the requests resource was not found
+	// ErrNotFound tells that the requests resource was not found.
 	ErrNotFound = errors.New("the given resource was not found")
-	// ErrAlreadyExists tells that the given resource already exists
+	// ErrAlreadyExists tells that the given resource already exists.
 	ErrAlreadyExists = errors.New("the given resource already exists")
 )
 
 const (
-	// Constants defining known cloud providers.
-	FakeCloudProvider         = "fake"
-	DigitaloceanCloudProvider = "digitalocean"
-	BringYourOwnCloudProvider = "bringyourown"
-	AWSCloudProvider          = "aws"
-	AzureCloudProvider        = "azure"
-	OpenstackCloudProvider    = "openstack"
-	PacketCloudProvider       = "packet"
-	HetznerCloudProvider      = "hetzner"
-	VSphereCloudProvider      = "vsphere"
-	GCPCloudProvider          = "gcp"
-	KubevirtCloudProvider     = "kubevirt"
-	AlibabaCloudProvider      = "alibaba"
-	AnexiaCloudProvider       = "anexia"
-
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
 
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
-func supportedProviders() []string {
-	return []string{
-		FakeCloudProvider,
-		DigitaloceanCloudProvider,
-		BringYourOwnCloudProvider,
-		AWSCloudProvider,
-		AzureCloudProvider,
-		OpenstackCloudProvider,
-		PacketCloudProvider,
-		HetznerCloudProvider,
-		VSphereCloudProvider,
-		GCPCloudProvider,
-		KubevirtCloudProvider,
-		AlibabaCloudProvider,
-		AnexiaCloudProvider,
-	}
-}
-
-func IsProviderSupported(name string) bool {
-	for _, provider := range supportedProviders() {
-		if strings.EqualFold(name, provider) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// CloudProvider declares a set of methods for interacting with a cloud provider
+// CloudProvider declares a set of methods for interacting with a cloud provider.
 type CloudProvider interface {
 	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
@@ -139,7 +94,7 @@ func (c *UpdaterOptions) Apply(opts ...UpdaterOption) *UpdaterOptions {
 	return c
 }
 
-// ClusterUpdater defines a function to persist an update to a cluster
+// ClusterUpdater defines a function to persist an update to a cluster.
 type ClusterUpdater func(string, func(*kubermaticv1.Cluster), ...UpdaterOption) (*kubermaticv1.Cluster, error)
 
 // ClusterListOptions allows to set filters that will be applied to filter the result.
@@ -148,7 +103,7 @@ type ClusterListOptions struct {
 	ClusterSpecName string
 }
 
-// ClusterGetOptions allows to check the status of the cluster
+// ClusterGetOptions allows to check the status of the cluster.
 type ClusterGetOptions struct {
 	// CheckInitStatus if set to true will check if cluster is initialized. The call will return error if
 	// not all cluster components are running
@@ -159,7 +114,7 @@ type ClusterGetOptions struct {
 // implementation, use SecretKeySelectorValueFuncFactory.
 type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 
-func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Client) SecretKeySelectorValueFunc {
+func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Reader) SecretKeySelectorValueFunc {
 	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
 		if configVar == nil {
 			return "", errors.New("configVar is nil")
@@ -177,7 +132,7 @@ func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimecl
 		secret := &corev1.Secret{}
 		namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
 		if err := client.Get(ctx, namespacedName, secret); err != nil {
-			return "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
+			return "", fmt.Errorf("failed to get secret %q: %w", namespacedName.String(), err)
 		}
 
 		if _, ok := secret.Data[key]; !ok {
@@ -188,14 +143,14 @@ func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimecl
 	}
 }
 
-// ProjectGetOptions allows to check the status of the Project
+// ProjectGetOptions allows to check the status of the Project.
 type ProjectGetOptions struct {
 	// IncludeUninitialized if set to true will skip the check if project is initialized. By default the call will return
 	// an  error if not all project components are active
 	IncludeUninitialized bool
 }
 
-// ProjectListOptions allows to set filters that will be applied to the result returned form List method
+// ProjectListOptions allows to set filters that will be applied to the result returned form List method.
 type ProjectListOptions struct {
 	// ProjectName list only projects with the given name
 	ProjectName string
@@ -205,7 +160,7 @@ type ProjectListOptions struct {
 }
 
 // ClusterProvider declares the set of methods for interacting with clusters
-// This provider is Project and RBAC compliant
+// This provider is Project and RBAC compliant.
 type ClusterProvider interface {
 	// New creates a brand new cluster that is bound to the given project
 	New(project *kubermaticv1.Project, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
@@ -258,6 +213,9 @@ type ClusterProvider interface {
 
 	// IsCluster checks if cluster exist with the given name
 	IsCluster(clusterName string) bool
+
+	// GetSeedName gets the seed name of the cluster
+	GetSeedName() string
 }
 
 // PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters
@@ -303,7 +261,7 @@ type SSHKeyListOptions struct {
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys
-// This provider is Project and RBAC compliant
+// This provider is Project and RBAC compliant.
 type SSHKeyProvider interface {
 	// List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
 	// If you want to filter the result please take a look at SSHKeyListOptions
@@ -325,7 +283,7 @@ type SSHKeyProvider interface {
 	Update(userInfo *UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
 }
 
-// SSHKeyProvider declares the set of methods for interacting with ssh keys and uses privileged account for it
+// SSHKeyProvider declares the set of methods for interacting with ssh keys and uses privileged account for it.
 type PrivilegedSSHKeyProvider interface {
 	// GetUnsecured returns a key with the given name
 	// This function is unsafe in a sense that it uses privileged account to get the ssh key
@@ -344,19 +302,18 @@ type PrivilegedSSHKeyProvider interface {
 	DeleteUnsecured(keyName string) error
 }
 
-// UserProvider declares the set of methods for interacting with kubermatic users
+// UserProvider declares the set of methods for interacting with kubermatic users.
 type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 	UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error)
 	UserByID(id string) (*kubermaticv1.User, error)
-	AddUserTokenToBlacklist(user *kubermaticv1.User, token string, expiry apiv1.Time) error
-	GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error)
-	WatchUser() (watch.Interface, error)
+	InvalidateToken(user *kubermaticv1.User, token string, expiry apiv1.Time) error
+	GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error)
 	List() ([]kubermaticv1.User, error)
 }
 
-// PrivilegedProjectProvider declares the set of method for interacting with kubermatic's project and uses privileged account for it
+// PrivilegedProjectProvider declares the set of method for interacting with kubermatic's project and uses privileged account for it.
 type PrivilegedProjectProvider interface {
 	// GetUnsecured returns the project with the given name
 	// This function is unsafe in a sense that it uses privileged account to get project with the given name
@@ -371,7 +328,7 @@ type PrivilegedProjectProvider interface {
 	UpdateUnsecured(project *kubermaticv1.Project) (*kubermaticv1.Project, error)
 }
 
-// ProjectProvider declares the set of method for interacting with kubermatic's project
+// ProjectProvider declares the set of method for interacting with kubermatic's project.
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
@@ -396,7 +353,7 @@ type ProjectProvider interface {
 	List(options *ProjectListOptions) ([]*kubermaticv1.Project, error)
 }
 
-// UserInfo represent authenticated user
+// UserInfo represent authenticated user.
 type UserInfo struct {
 	Email   string
 	Group   string
@@ -412,7 +369,7 @@ type ProjectMemberListOptions struct {
 	SkipPrivilegeVerification bool
 }
 
-// ProjectMemberProvider binds users with projects
+// ProjectMemberProvider binds users with projects.
 type ProjectMemberProvider interface {
 	// Create creates a binding for the given member and the given project
 	Create(userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
@@ -429,7 +386,7 @@ type ProjectMemberProvider interface {
 	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
-// PrivilegedProjectMemberProvider binds users with projects and uses privileged account for it
+// PrivilegedProjectMemberProvider binds users with projects and uses privileged account for it.
 type PrivilegedProjectMemberProvider interface {
 	// CreateUnsecured creates a binding for the given member and the given project
 	// This function is unsafe in a sense that it uses privileged account to create the resource
@@ -451,7 +408,7 @@ type PrivilegedProjectMemberProvider interface {
 }
 
 // ProjectMemberMapper exposes method that knows how to map
-// a user to a group for a project
+// a user to a group for a project.
 type ProjectMemberMapper interface {
 	// MapUserToGroup maps the given user to a specific group of the given project
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
@@ -464,45 +421,48 @@ type ProjectMemberMapper interface {
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
 func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
-	var clouds []string
+	var clouds []kubermaticv1.ProviderType
 	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
-	}
-	if spec.Azure != nil {
-		clouds = append(clouds, AzureCloudProvider)
-	}
-	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
-	}
-	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
-	}
-	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
-	}
-	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
-	}
-	if spec.Packet != nil {
-		clouds = append(clouds, PacketCloudProvider)
-	}
-	if spec.Hetzner != nil {
-		clouds = append(clouds, HetznerCloudProvider)
-	}
-	if spec.VSphere != nil {
-		clouds = append(clouds, VSphereCloudProvider)
-	}
-	if spec.GCP != nil {
-		clouds = append(clouds, GCPCloudProvider)
-	}
-	if spec.Kubevirt != nil {
-		clouds = append(clouds, KubevirtCloudProvider)
+		clouds = append(clouds, kubermaticv1.AWSCloudProvider)
 	}
 	if spec.Alibaba != nil {
-		clouds = append(clouds, AlibabaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
 	}
 	if spec.Anexia != nil {
-		clouds = append(clouds, AnexiaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
+	}
+	if spec.Azure != nil {
+		clouds = append(clouds, kubermaticv1.AzureCloudProvider)
+	}
+	if spec.BringYourOwn != nil {
+		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
+	}
+	if spec.Digitalocean != nil {
+		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
+	}
+	if spec.Fake != nil {
+		clouds = append(clouds, kubermaticv1.FakeCloudProvider)
+	}
+	if spec.GCP != nil {
+		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
+	}
+	if spec.Hetzner != nil {
+		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
+	}
+	if spec.Kubevirt != nil {
+		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
+	}
+	if spec.Openstack != nil {
+		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
+	}
+	if spec.Packet != nil {
+		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
+	}
+	if spec.VSphere != nil {
+		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
+	}
+	if spec.Nutanix != nil {
+		clouds = append(clouds, kubermaticv1.NutanixCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -510,7 +470,7 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if len(clouds) != 1 {
 		return "", fmt.Errorf("only one cloud provider can be set in CloudSpec: %+v", spec)
 	}
-	return clouds[0], nil
+	return string(clouds[0]), nil
 }
 
 // ClusterCloudProvider returns the provider for the given cluster where
@@ -537,45 +497,48 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	if spec == nil {
 		return "", nil
 	}
-	var clouds []string
+	var clouds []kubermaticv1.ProviderType
 	if spec.BringYourOwn != nil {
-		clouds = append(clouds, BringYourOwnCloudProvider)
+		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
 	}
 	if spec.Digitalocean != nil {
-		clouds = append(clouds, DigitaloceanCloudProvider)
+		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
 	}
 	if spec.AWS != nil {
-		clouds = append(clouds, AWSCloudProvider)
+		clouds = append(clouds, kubermaticv1.AWSCloudProvider)
 	}
 	if spec.Openstack != nil {
-		clouds = append(clouds, OpenstackCloudProvider)
+		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
 	}
 	if spec.Packet != nil {
-		clouds = append(clouds, PacketCloudProvider)
+		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
 	}
 	if spec.Hetzner != nil {
-		clouds = append(clouds, HetznerCloudProvider)
+		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)
 	}
 	if spec.VSphere != nil {
-		clouds = append(clouds, VSphereCloudProvider)
+		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
 	}
 	if spec.Azure != nil {
-		clouds = append(clouds, AzureCloudProvider)
+		clouds = append(clouds, kubermaticv1.AzureCloudProvider)
 	}
 	if spec.GCP != nil {
-		clouds = append(clouds, GCPCloudProvider)
+		clouds = append(clouds, kubermaticv1.GCPCloudProvider)
 	}
 	if spec.Fake != nil {
-		clouds = append(clouds, FakeCloudProvider)
+		clouds = append(clouds, kubermaticv1.FakeCloudProvider)
 	}
 	if spec.Kubevirt != nil {
-		clouds = append(clouds, KubevirtCloudProvider)
+		clouds = append(clouds, kubermaticv1.KubevirtCloudProvider)
 	}
 	if spec.Alibaba != nil {
-		clouds = append(clouds, AlibabaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AlibabaCloudProvider)
 	}
 	if spec.Anexia != nil {
-		clouds = append(clouds, AnexiaCloudProvider)
+		clouds = append(clouds, kubermaticv1.AnexiaCloudProvider)
+	}
+	if spec.Nutanix != nil {
+		clouds = append(clouds, kubermaticv1.NutanixCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -583,10 +546,10 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	if len(clouds) != 1 {
 		return "", fmt.Errorf("only one cloud provider can be set in DatacenterSpec: %+v", spec)
 	}
-	return clouds[0], nil
+	return string(clouds[0]), nil
 }
 
-// ServiceAccountProvider declares the set of methods for interacting with kubermatic service account
+// ServiceAccountProvider declares the set of methods for interacting with kubermatic service account.
 type ServiceAccountProvider interface {
 	CreateProjectServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
 	ListProjectServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
@@ -595,7 +558,7 @@ type ServiceAccountProvider interface {
 	DeleteProjectServiceAccount(userInfo *UserInfo, name string) error
 }
 
-// PrivilegedServiceAccountProvider declares the set of methods for interacting with kubermatic service account
+// PrivilegedServiceAccountProvider declares the set of methods for interacting with kubermatic service account.
 type PrivilegedServiceAccountProvider interface {
 	// CreateUnsecuredProjectServiceAccount creates a project service account
 	//
@@ -644,7 +607,7 @@ type ServiceAccountListOptions struct {
 	ServiceAccountName string
 }
 
-// ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token
+// ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token.
 type ServiceAccountTokenProvider interface {
 	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
 	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
@@ -668,7 +631,7 @@ type ServiceAccountTokenListOptions struct {
 	ServiceAccountID string
 }
 
-// PrivilegedServiceAccountTokenProvider declares the set of method for interacting with kubermatic's sa's tokens and uses privileged account for it
+// PrivilegedServiceAccountTokenProvider declares the set of method for interacting with kubermatic's sa's tokens and uses privileged account for it.
 type PrivilegedServiceAccountTokenProvider interface {
 	// ListUnsecured returns all tokens in kubermatic namespace
 	//
@@ -709,7 +672,7 @@ type EventRecorderProvider interface {
 	ClusterRecorderFor(client kubernetes.Interface) record.EventRecorder
 }
 
-// AddonProvider declares the set of methods for interacting with addons
+// AddonProvider declares the set of methods for interacting with addons.
 type AddonProvider interface {
 	// New creates a new addon in the given cluster
 	New(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
@@ -766,20 +729,19 @@ type AddonConfigProvider interface {
 	List() (*kubermaticv1.AddonConfigList, error)
 }
 
-// SettingsProvider declares the set of methods for interacting global settings
+// SettingsProvider declares the set of methods for interacting global settings.
 type SettingsProvider interface {
 	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
 	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
-	WatchGlobalSettings() (watch.Interface, error)
 }
 
-// AdminProvider declares the set of methods for interacting with admin
+// AdminProvider declares the set of methods for interacting with admin.
 type AdminProvider interface {
 	SetAdmin(userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
 	GetAdmins(userInfo *UserInfo) ([]kubermaticv1.User, error)
 }
 
-// PresetProvider declares the set of methods for interacting with presets
+// PresetProvider declares the set of methods for interacting with presets.
 type PresetProvider interface {
 	CreatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 	UpdatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
@@ -789,7 +751,7 @@ type PresetProvider interface {
 	SetCloudCredentials(userInfo *UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
 }
 
-// AdmissionPluginsProvider declares the set of methods for interacting with admission plugins
+// AdmissionPluginsProvider declares the set of methods for interacting with admission plugins.
 type AdmissionPluginsProvider interface {
 	List(userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
 	Get(userInfo *UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error)
@@ -798,7 +760,7 @@ type AdmissionPluginsProvider interface {
 	ListPluginNamesFromVersion(fromVersion string) ([]string, error)
 }
 
-// ExternalClusterProvider declares the set of methods for interacting with external cluster
+// ExternalClusterProvider declares the set of methods for interacting with external cluster.
 type ExternalClusterProvider interface {
 	New(userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
@@ -827,7 +789,7 @@ type ExternalClusterProvider interface {
 	IsMetricServerAvailable(cluster *kubermaticv1.ExternalCluster) (bool, error)
 }
 
-// ExternalClusterProvider declares the set of methods for interacting with external cluster
+// ExternalClusterProvider declares the set of methods for interacting with external cluster.
 type PrivilegedExternalClusterProvider interface {
 	// NewUnsecured creates an external cluster
 	//
@@ -860,7 +822,7 @@ type PrivilegedExternalClusterProvider interface {
 	GetMasterClient() ctrlruntimeclient.Client
 }
 
-// ConstraintTemplateProvider declares the set of method for interacting with gatekeeper's constraint templates
+// ConstraintTemplateProvider declares the set of method for interacting with gatekeeper's constraint templates.
 type ConstraintTemplateProvider interface {
 	// List gets a list of constraint templates, by default it returns all resources.
 	//
@@ -880,7 +842,7 @@ type ConstraintTemplateProvider interface {
 	Delete(ct *kubermaticv1.ConstraintTemplate) error
 }
 
-// ConstraintProvider declares the set of method for interacting with constraints
+// ConstraintProvider declares the set of method for interacting with constraints.
 type ConstraintProvider interface {
 	// List gets a list of constraints
 	//
@@ -900,7 +862,7 @@ type ConstraintProvider interface {
 	Update(userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
-// PrivilegedConstraintProvider declares a set of methods for interacting with constraints using a privileged client
+// PrivilegedConstraintProvider declares a set of methods for interacting with constraints using a privileged client.
 type PrivilegedConstraintProvider interface {
 	// CreateUnsecured creates the given constraint using a privileged client
 	//
@@ -921,7 +883,7 @@ type PrivilegedConstraintProvider interface {
 	UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
-// DefaultConstraintProvider declares the set of method for interacting with default constraints
+// DefaultConstraintProvider declares the set of method for interacting with default constraints.
 type DefaultConstraintProvider interface {
 	// List gets a list of default constraints
 	//
@@ -941,7 +903,7 @@ type DefaultConstraintProvider interface {
 	Update(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
-// AlertmanagerProvider declares the set of method for interacting with alertmanagers
+// AlertmanagerProvider declares the set of method for interacting with alertmanagers.
 type AlertmanagerProvider interface {
 	// Get gets the given alertmanager and the config secret
 	Get(cluster *kubermaticv1.Cluster, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
@@ -953,7 +915,7 @@ type AlertmanagerProvider interface {
 	Reset(cluster *kubermaticv1.Cluster, userInfo *UserInfo) error
 }
 
-// PrivilegedAlertmanagerProvider declares the set of method for interacting with alertmanagers using a privileged client
+// PrivilegedAlertmanagerProvider declares the set of method for interacting with alertmanagers using a privileged client.
 type PrivilegedAlertmanagerProvider interface {
 	// GetUnsecured gets the given alertmanager and the config secret using a privileged client
 	//
@@ -974,7 +936,7 @@ type PrivilegedAlertmanagerProvider interface {
 	ResetUnsecured(cluster *kubermaticv1.Cluster) error
 }
 
-// ClusterTemplateProvider declares the set of method for interacting with cluster templates
+// ClusterTemplateProvider declares the set of method for interacting with cluster templates.
 type ClusterTemplateProvider interface {
 	New(userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
 	List(userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
@@ -982,7 +944,7 @@ type ClusterTemplateProvider interface {
 	Delete(userInfo *UserInfo, projectID, templateID string) error
 }
 
-// ClusterTemplateInstanceProvider declares the set of method for interacting with cluster templates
+// ClusterTemplateInstanceProvider declares the set of method for interacting with cluster templates.
 type ClusterTemplateInstanceProvider interface {
 	Create(userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 	Get(userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
@@ -1031,7 +993,7 @@ type RuleGroupListOptions struct {
 	RuleGroupType kubermaticv1.RuleGroupType
 }
 
-// RuleGroupProvider declares the set of methods for interacting with ruleGroups
+// RuleGroupProvider declares the set of methods for interacting with ruleGroups.
 type RuleGroupProvider interface {
 	// Get gets the given ruleGroup
 	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
@@ -1083,7 +1045,7 @@ type PrivilegedRuleGroupProvider interface {
 	DeleteUnsecured(ruleGroupName, namespace string) error
 }
 
-// PrivilegedAllowedRegistryProvider declares the set of method for interacting with allowed registries
+// PrivilegedAllowedRegistryProvider declares the set of method for interacting with allowed registries.
 type PrivilegedAllowedRegistryProvider interface {
 	// CreateUnsecured creates the given allowed registry
 	//
@@ -1116,7 +1078,7 @@ type PrivilegedAllowedRegistryProvider interface {
 	DeleteUnsecured(name string) error
 }
 
-// EtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs
+// EtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs.
 type EtcdBackupConfigProvider interface {
 	// Create creates the given etcdBackupConfig
 	Create(userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
@@ -1131,10 +1093,10 @@ type EtcdBackupConfigProvider interface {
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 
 	// Patch updates the given etcdBackupConfig
-	Patch(userInfo *UserInfo, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	Patch(userInfo *UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
-// PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client
+// PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client.
 type PrivilegedEtcdBackupConfigProvider interface {
 	// CreateUnsecured creates the given etcdBackupConfig
 	//
@@ -1164,10 +1126,10 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to patch the resource
-	PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	PatchUnsecured(oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
-// EtcdRestoreProvider declares the set of method for interacting with etcd backup restores
+// EtcdRestoreProvider declares the set of method for interacting with etcd backup restores.
 type EtcdRestoreProvider interface {
 	// Create creates the given etcdRestore
 	Create(userInfo *UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
@@ -1182,7 +1144,7 @@ type EtcdRestoreProvider interface {
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 }
 
-// PrivilegedEtcdRestoreProvider declares the set of method for interacting with etcd backup configs using a privileged client
+// PrivilegedEtcdRestoreProvider declares the set of method for interacting with etcd backup configs using a privileged client.
 type PrivilegedEtcdRestoreProvider interface {
 	// CreateUnsecured creates the given etcdRestore
 	//
@@ -1209,13 +1171,13 @@ type PrivilegedEtcdRestoreProvider interface {
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
 }
 
-// EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs across projects and its seeds
+// EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs across projects and its seeds.
 type EtcdBackupConfigProjectProvider interface {
 	// List gets a list of etcdBackupConfig for a given project
 	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
-// PrivilegedEtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds
+// PrivilegedEtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds.
 type PrivilegedEtcdBackupConfigProjectProvider interface {
 	// ListUnsecured gets a list of all etcdBackupConfigs for a given project
 	//
@@ -1224,13 +1186,13 @@ type PrivilegedEtcdBackupConfigProjectProvider interface {
 	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
-// EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores across projects and its seeds
+// EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores across projects and its seeds.
 type EtcdRestoreProjectProvider interface {
 	// List gets a list of etcdRestore for a given project
 	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
-// PrivilegedEtcdRestoreProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds
+// PrivilegedEtcdRestoreProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds.
 type PrivilegedEtcdRestoreProjectProvider interface {
 	// ListUnsecured gets a list of all etcdRestores for a given project
 	//
@@ -1244,7 +1206,7 @@ type FeatureGatesProvider interface {
 	GetFeatureGates() (apiv2.FeatureGates, error)
 }
 
-// BackupCredentialsProvider declares the set of method for interacting with etcd backup credentials using a privileged client
+// BackupCredentialsProvider declares the set of method for interacting with etcd backup credentials using a privileged client.
 type BackupCredentialsProvider interface {
 	// CreateUnsecured creates the backup credentials
 	//
@@ -1262,7 +1224,7 @@ type BackupCredentialsProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(new *corev1.Secret) (*corev1.Secret, error)
+	UpdateUnsecured(newSecret *corev1.Secret) (*corev1.Secret, error)
 }
 
 type PrivilegedMLAAdminSettingProvider interface {

@@ -80,8 +80,8 @@ var (
 	}
 )
 
-// ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment
-func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+// ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment.
+func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -105,10 +105,23 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, registryWithOverwrite)
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			var err error
+			if resourceOverride != nil {
+				overridesRequirements := map[string]*corev1.ResourceRequirements{
+					controllerName: resourceOverride.DeepCopy(),
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, overridesRequirements, dep.Annotations)
+			} else {
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -127,8 +140,8 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 	}
 }
 
-// AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment
-func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+// AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment.
+func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -155,9 +168,17 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) re
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			var err error
+			if resourceOverride != nil {
+				overridesRequirements := map[string]*corev1.ResourceRequirements{
+					auditName: resourceOverride.DeepCopy(),
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, overridesRequirements, dep.Annotations)
+			} else {
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
@@ -166,7 +187,6 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) re
 }
 
 func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
-
 	return []corev1.Container{{
 		Name:            controllerName,
 		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
@@ -211,7 +231,7 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 				}},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
 					Port:   intstr.FromInt(healthzPort),
@@ -225,7 +245,7 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
 					Port:   intstr.FromInt(healthzPort),
@@ -254,7 +274,6 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 }
 
 func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
-
 	return []corev1.Container{{
 		Name:            auditName,
 		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
@@ -287,7 +306,7 @@ func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []core
 				}},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
 					Port:   intstr.FromInt(healthzPort),
@@ -301,7 +320,7 @@ func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []core
 			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
 					Port:   intstr.FromInt(healthzPort),

@@ -19,29 +19,13 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-TEMPDIR=_tmp
-DIFFROOT=pkg
-TMP_DIFFROOT="$TEMPDIR/pkg"
-
-cleanup() {
-  rm -rf "$TEMPDIR"
-}
-trap "cleanup" EXIT SIGINT
-
-cleanup
-
-mkdir -p "${TMP_DIFFROOT}"
-cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
-
+# This will update both generated code and the CRDs for *.k8c.io
 ./hack/update-codegen.sh
 
-echodate "Diffing ${DIFFROOT} against freshly generated codegen"
-ret=0
-diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?
-cp -a "${TMP_DIFFROOT}"/* "${DIFFROOT}"
-if [[ $ret -eq 0 ]]; then
-  echodate "${DIFFROOT} up to date."
-else
-  echodate "${DIFFROOT} is out of date. Please run hack/update-codegen.sh"
+echodate "Diffing..."
+if ! git diff --exit-code pkg charts; then
+  echodate "The generated code / CRDs are out of date. Please run hack/update-codegen.sh."
   exit 1
 fi
+
+echodate "Generated code is in-sync."

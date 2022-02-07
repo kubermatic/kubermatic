@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -55,7 +55,7 @@ func newTestRatelimitCortexReconciler(t *testing.T, objects []ctrlruntimeclient.
 }
 
 func TestRatelimitCortexReconcile(t *testing.T) {
-	oldTenantOverride := tenantOverride{
+	oldTenantOverride := TenantOverride{
 		IngestionRate:      utilpointer.Int32(1),
 		MaxSeriesPerMetric: utilpointer.Int32(1),
 		MaxSeriesPerQuery:  utilpointer.Int32(1),
@@ -63,7 +63,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 		IngestionBurstSize: utilpointer.Int32(1),
 		MaxSeriesTotal:     utilpointer.Int32(1),
 	}
-	oldRatelimitConfig := overrides{Overrides: map[string]tenantOverride{"old": oldTenantOverride}}
+	oldRatelimitConfig := Overrides{Overrides: map[string]TenantOverride{"old": oldTenantOverride}}
 	data, err := yaml.Marshal(oldRatelimitConfig)
 	assert.Nil(t, err)
 	oldRatelimitConfigData := string(data)
@@ -71,7 +71,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 		name              string
 		request           types.NamespacedName
 		objects           []ctrlruntimeclient.Object
-		expectedOverrides overrides
+		expectedOverrides Overrides
 		hasFinalizer      bool
 		err               bool
 	}{
@@ -93,14 +93,14 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      runtimeConfigMap,
+						Name:      RuntimeConfigMap,
 						Namespace: "mla",
 					},
-					Data: map[string]string{runtimeConfigFileName: "overrides: {}"},
+					Data: map[string]string{RuntimeConfigFileName: "overrides: {}"},
 				},
 			},
-			expectedOverrides: overrides{
-				Overrides: map[string]tenantOverride{
+			expectedOverrides: Overrides{
+				Overrides: map[string]TenantOverride{
 					"123": {},
 				},
 			},
@@ -133,14 +133,14 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      runtimeConfigMap,
+						Name:      RuntimeConfigMap,
 						Namespace: "mla",
 					},
-					Data: map[string]string{runtimeConfigFileName: "overrides: {}"},
+					Data: map[string]string{RuntimeConfigFileName: "overrides: {}"},
 				},
 			},
-			expectedOverrides: overrides{
-				Overrides: map[string]tenantOverride{
+			expectedOverrides: Overrides{
+				Overrides: map[string]TenantOverride{
 					"123": {
 						IngestionRate:      utilpointer.Int32(1),
 						IngestionBurstSize: utilpointer.Int32(2),
@@ -180,14 +180,14 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      runtimeConfigMap,
+						Name:      RuntimeConfigMap,
 						Namespace: "mla",
 					},
-					Data: map[string]string{runtimeConfigFileName: oldRatelimitConfigData},
+					Data: map[string]string{RuntimeConfigFileName: oldRatelimitConfigData},
 				},
 			},
-			expectedOverrides: overrides{
-				Overrides: map[string]tenantOverride{
+			expectedOverrides: Overrides{
+				Overrides: map[string]TenantOverride{
 					"123": {
 						IngestionRate:      utilpointer.Int32(1),
 						IngestionBurstSize: utilpointer.Int32(2),
@@ -220,14 +220,14 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      runtimeConfigMap,
+						Name:      RuntimeConfigMap,
 						Namespace: "mla",
 					},
-					Data: map[string]string{runtimeConfigFileName: oldRatelimitConfigData},
+					Data: map[string]string{RuntimeConfigFileName: oldRatelimitConfigData},
 				},
 			},
-			expectedOverrides: overrides{
-				Overrides: map[string]tenantOverride{
+			expectedOverrides: Overrides{
+				Overrides: map[string]TenantOverride{
 					"old": {
 						IngestionRate:      nil,
 						IngestionBurstSize: nil,
@@ -261,14 +261,14 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      runtimeConfigMap,
+						Name:      RuntimeConfigMap,
 						Namespace: "mla",
 					},
-					Data: map[string]string{runtimeConfigFileName: oldRatelimitConfigData},
+					Data: map[string]string{RuntimeConfigFileName: oldRatelimitConfigData},
 				},
 			},
-			expectedOverrides: overrides{
-				Overrides: map[string]tenantOverride{},
+			expectedOverrides: Overrides{
+				Overrides: map[string]TenantOverride{},
 			},
 			hasFinalizer: false,
 			err:          false,
@@ -287,11 +287,11 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			}
 			assert.Equal(t, tc.err, err != nil)
 			configMap := &corev1.ConfigMap{}
-			if err := controller.Get(ctx, types.NamespacedName{Namespace: "mla", Name: runtimeConfigMap}, configMap); err != nil {
+			if err := controller.Get(ctx, types.NamespacedName{Namespace: "mla", Name: RuntimeConfigMap}, configMap); err != nil {
 				t.Fatalf("unable to get configMap: %v", err)
 			}
-			actualOverrides := &overrides{}
-			err = yaml.Unmarshal([]byte(configMap.Data[runtimeConfigFileName]), actualOverrides)
+			actualOverrides := &Overrides{}
+			err = yaml.Unmarshal([]byte(configMap.Data[RuntimeConfigFileName]), actualOverrides)
 			assert.Nil(t, err)
 			assert.Equal(t, tc.expectedOverrides, *actualOverrides)
 			mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}

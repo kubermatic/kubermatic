@@ -20,10 +20,13 @@ spec:
     - jsonPath: .status.phase
       name: Phase
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
-        description: EtcdRestore specifies a add-on
+        description: EtcdRestore specifies a add-on.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -38,7 +41,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: EtcdRestoreSpec specifies details of an etcd restore
+            description: EtcdRestoreSpec specifies details of an etcd restore.
             properties:
               backupDownloadCredentialsSecret:
                 description: BackupDownloadCredentialsSecret is the name of a secret

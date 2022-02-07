@@ -4,7 +4,7 @@ This document describes the process of adding support for a new Kubernetes minor
 to KKP.
 
 The single source of truth for the set of Kubernetes versions we ship is defined in
-`pkg/controller/operator/common/defaults.go`. From there, the `kubermatic` Helm chart and the
+`pkg/controller/operator/defaults/defaults.go`. From there, the `kubermatic` Helm chart and the
 example documentation are generated.
 
 ## Adding/Removig Patch Releases

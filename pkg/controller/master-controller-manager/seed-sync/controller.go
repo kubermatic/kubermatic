@@ -22,9 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -46,10 +45,10 @@ const (
 
 	// CleanupFinalizer is put on Seed CRs to facilitate proper
 	// cleanup when a Seed is deleted.
-	CleanupFinalizer = "kubermatic.io/cleanup-seed-sync"
+	CleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-sync"
 )
 
-// Add creates a new Seed-Sync controller and sets up Watches
+// Add creates a new Seed-Sync controller and sets up Watches.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -100,7 +99,7 @@ func Add(
 		return requests
 	}
 
-	if err := c.Watch(&source.Kind{Type: &operatorv1alpha1.KubermaticConfiguration{}}, handler.EnqueueRequestsFromMapFunc(configHandler), nsPredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.KubermaticConfiguration{}}, handler.EnqueueRequestsFromMapFunc(configHandler), nsPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 

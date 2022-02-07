@@ -143,18 +143,18 @@ func main() {
 			},
 			{
 				ResourceName:       "KubermaticConfiguration",
-				ImportAlias:        "operatorv1alpha1",
-				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1",
+				ImportAlias:        "kubermaticv1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1",
 			},
 			{
 				ResourceName:       "Seed",
 				ImportAlias:        "kubermaticv1",
-				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1",
 			},
 			{
 				ResourceName:       "EtcdBackupConfig",
 				ImportAlias:        "kubermaticv1",
-				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1",
 			},
 			{
 				ResourceName:       "ConstraintTemplate",
@@ -335,7 +335,7 @@ func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Conte
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
-			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %v", namespace, name, err)
+			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %w", namespace, name, err)
 		}
 	}
 

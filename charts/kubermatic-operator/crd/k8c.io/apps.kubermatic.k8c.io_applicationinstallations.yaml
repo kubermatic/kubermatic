@@ -1,0 +1,119 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: applicationinstallations.apps.kubermatic.k8c.io
+spec:
+  group: apps.kubermatic.k8c.io
+  names:
+    kind: ApplicationInstallation
+    listKind: ApplicationInstallationList
+    plural: applicationinstallations
+    singular: applicationinstallation
+  scope: Cluster
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: ApplicationInstallation describes a single installation of an
+          Application.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              applicationRef:
+                description: ApplicationRef is a reference to identify which Application
+                  should be deployed
+                properties:
+                  name:
+                    description: Name of the Application
+                    type: string
+                  version:
+                    description: Version of the Application. Must be a valid SemVer
+                      version
+                    pattern: v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
+                    type: string
+                required:
+                - name
+                - version
+                type: object
+              createNamespace:
+                default: true
+                description: CreateNamespace defines whether the namespace should
+                  be created if it does not exist. Defaults to true
+                type: boolean
+              targetNamespace:
+                description: TargetNamespace is the namespace to deploy the Application
+                  into
+                type: string
+              values:
+                description: Values describe overrides for manifest-rendering
+                format: byte
+                type: string
+            required:
+            - applicationRef
+            - createNamespace
+            - targetNamespace
+            type: object
+          status:
+            description: ApplicationInstallationStatus denotes status information
+              about an ApplicationInstallation.
+            properties:
+              conditions:
+                description: Conditions contains conditions an installation is in,
+                  its primary use case is status signaling between controllers or
+                  between controllers and the API
+                items:
+                  properties:
+                    message:
+                      description: Human readable message indicating details about
+                        last transition.
+                      type: string
+                    reason:
+                      description: (brief) reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of cluster condition.
+                      enum:
+                      - ManifestsRetrieved
+                      - ManifestsApplied
+                      - Ready
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              lastUpdated:
+                format: date-time
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// UserSettings UserSettings represent an user settings
+// UserSettings UserSettings represent an user settings.
 //
 // swagger:model UserSettings
 type UserSettings struct {
@@ -33,7 +33,7 @@ type UserSettings struct {
 	SelectProjectTableView bool `json:"selectProjectTableView,omitempty"`
 
 	// selected project ID
-	SelectedProjectID string `json:"selectedProjectId,omitempty"`
+	SelectedProjectID string `json:"selectedProjectID,omitempty"`
 
 	// selected theme
 	SelectedTheme string `json:"selectedTheme,omitempty"`

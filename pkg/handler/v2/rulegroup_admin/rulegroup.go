@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -185,6 +185,7 @@ func convertInternalToAPIRuleGroups(ruleGroups []*kubermaticv1.RuleGroup) []*api
 
 func convertInternalToAPIRuleGroup(ruleGroup *kubermaticv1.RuleGroup) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
+		Name:      ruleGroup.ObjectMeta.Name,
 		Data:      ruleGroup.Spec.Data,
 		Type:      ruleGroup.Spec.RuleGroupType,
 		IsDefault: ruleGroup.Spec.IsDefault,

@@ -26,8 +26,8 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -41,7 +41,7 @@ var serviceAccountGroupsPrefixes = []string{
 	rbac.ProjectManagerGroupNamePrefix,
 }
 
-// CreateEndpoint adds the given service account to the given project
+// CreateEndpoint adds the given service account to the given project.
 func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addReq)
@@ -74,7 +74,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa *apiv1.ServiceAccount) ([]*kubermaticapiv1.User, error) {
+func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, sa *apiv1.ServiceAccount) ([]*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountP
 	return serviceAccountProvider.ListProjectServiceAccount(userInfo, project, options)
 }
 
-func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa apiv1.ServiceAccount) (*kubermaticapiv1.User, error) {
+func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, sa apiv1.ServiceAccount) (*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	return serviceAccountProvider.CreateProjectServiceAccount(userInfo, project, sa.Name, groupName)
 }
 
-// ListEndpoint returns service accounts of the given project
+// ListEndpoint returns service accounts of the given project.
 func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
@@ -160,7 +160,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-// UpdateEndpoint changes the service account group and/or name in the given project
+// UpdateEndpoint changes the service account group and/or name in the given project.
 func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateReq)
@@ -200,7 +200,6 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		currentGroup, err := memberMapper.MapUserToGroup(sa.Spec.Email, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
-
 		}
 
 		newGroup := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
@@ -222,7 +221,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa *kubermaticapiv1.User) (*kubermaticapiv1.User, error) {
+func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, sa *kubermaticv1.User) (*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -239,7 +238,7 @@ func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	return serviceAccountProvider.UpdateProjectServiceAccount(userInfo, sa)
 }
 
-func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string, options *provider.ServiceAccountGetOptions) (*kubermaticapiv1.User, error) {
+func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, serviceAccountID string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -256,7 +255,7 @@ func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountPr
 	return serviceAccountProvider.GetProjectServiceAccount(userInfo, serviceAccountID, options)
 }
 
-// DeleteEndpoint deletes the service account for the given project
+// DeleteEndpoint deletes the service account for the given project.
 func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteReq)
@@ -288,7 +287,7 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, priv
 	}
 }
 
-func deleteSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string) error {
+func deleteSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, serviceAccountID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err
@@ -313,7 +312,7 @@ type addReq struct {
 	Body apiv1.ServiceAccount
 }
 
-// serviceAccountIDReq represents a request that contains service account ID in the path
+// serviceAccountIDReq represents a request that contains service account ID in the path.
 type serviceAccountIDReq struct {
 	// in: path
 	ServiceAccountID string `json:"serviceaccount_id"`
@@ -333,7 +332,7 @@ type deleteReq struct {
 	serviceAccountIDReq
 }
 
-// Validate validates DeleteEndpoint request
+// Validate validates DeleteEndpoint request.
 func (r deleteReq) Validate() error {
 	if len(r.ServiceAccountID) == 0 {
 		return fmt.Errorf("the service account ID cannot be empty")
@@ -341,7 +340,7 @@ func (r deleteReq) Validate() error {
 	return nil
 }
 
-// Validate validates UpdateEndpoint request
+// Validate validates UpdateEndpoint request.
 func (r updateReq) Validate() error {
 	err := r.addReq.Validate()
 	if err != nil {
@@ -353,7 +352,7 @@ func (r updateReq) Validate() error {
 	return nil
 }
 
-// Validate validates addReq request
+// Validate validates addReq request.
 func (r addReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.Body.Name) == 0 || len(r.Body.Group) == 0 {
 		return fmt.Errorf("the name, project ID and group cannot be empty")
@@ -367,14 +366,13 @@ func (r addReq) Validate() error {
 	return fmt.Errorf("invalid group name %s", r.Body.Group)
 }
 
-// DecodeAddReq  decodes an HTTP request into addReq
+// DecodeAddReq  decodes an HTTP request into addReq.
 func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req addReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -385,14 +383,13 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeUpdateReq  decodes an HTTP request into updateReq
+// DecodeUpdateReq  decodes an HTTP request into updateReq.
 func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req updateReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -409,14 +406,13 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeDeleteeReq  decodes an HTTP request into deleteReq
+// DecodeDeleteeReq  decodes an HTTP request into deleteReq.
 func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -441,7 +437,7 @@ func decodeServiceAccountIDReq(_ context.Context, r *http.Request) (serviceAccou
 	return req, nil
 }
 
-func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *apiv1.ServiceAccount {
+func convertInternalServiceAccountToExternal(internal *kubermaticv1.User) *apiv1.ServiceAccount {
 	return &apiv1.ServiceAccount{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internal.Name,
@@ -453,7 +449,7 @@ func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *ap
 	}
 }
 
-func getStatus(serviceAccount *kubermaticapiv1.User) string {
+func getStatus(serviceAccount *kubermaticv1.User) string {
 	if _, ok := serviceAccount.Labels[serviceaccount.ServiceAccountLabelGroup]; ok {
 		return apiv1.ServiceAccountInactive
 	}

@@ -22,15 +22,16 @@ import (
 )
 
 const (
-	// RuleGroupResourceName represents "Resource" defined in Kubernetes
+	// RuleGroupResourceName represents "Resource" defined in Kubernetes.
 	RuleGroupResourceName = "rulegroups"
 
-	// RuleGroupKindName represents "Kind" defined in Kubernetes
+	// RuleGroupKindName represents "Kind" defined in Kubernetes.
 	RuleGroupKindName = "RuleGroup"
 )
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 type RuleGroup struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -40,6 +41,8 @@ type RuleGroup struct {
 }
 
 type RuleGroupSpec struct {
+	// IsDefault indicates whether the ruleGroup is default
+	IsDefault bool `json:"isDefault,omitempty"`
 	// RuleGroupType is the type of this ruleGroup applies to. It can be `Metrics` or `Logs`.
 	RuleGroupType RuleGroupType `json:"ruleGroupType"`
 	// Cluster is the reference to the cluster the ruleGroup should be created in.

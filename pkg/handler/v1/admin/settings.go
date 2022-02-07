@@ -26,13 +26,13 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// KubermaticSettingsEndpoint returns global settings
+// KubermaticSettingsEndpoint returns global settings.
 func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		globalSettings, err := settingsProvider.GetGlobalSettings()
@@ -44,7 +44,7 @@ func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endp
 	}
 }
 
-// KubermaticCustomLinksEndpoint returns custom links
+// KubermaticCustomLinksEndpoint returns custom links.
 func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		globalSettings, err := settingsProvider.GetGlobalSettings()
@@ -56,7 +56,7 @@ func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) e
 	}
 }
 
-// UpdateKubermaticSettingsEndpoint updates global settings
+// UpdateKubermaticSettingsEndpoint updates global settings.
 func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchKubermaticSettingsReq)

@@ -25,7 +25,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -41,7 +41,7 @@ type listProviderVersionsReq struct {
 	Type string `json:"type"`
 }
 
-// Validate validates listProviderVersionsReq request
+// Validate validates listProviderVersionsReq request.
 func (l listProviderVersionsReq) Validate() error {
 	if len(l.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
@@ -49,7 +49,7 @@ func (l listProviderVersionsReq) Validate() error {
 	if len(l.Type) == 0 {
 		return fmt.Errorf("the type field cannot be empty")
 	}
-	if !provider.IsProviderSupported(l.ProviderName) {
+	if !kubermaticv1.IsProviderSupported(l.ProviderName) {
 		return fmt.Errorf("invalid provider name %s", l.ProviderName)
 	}
 
@@ -68,7 +68,7 @@ func DecodeListProviderVersions(ctx context.Context, r *http.Request) (interface
 	}, nil
 }
 
-// ListVersions returns a list of available Kubernetes version for the given provider
+// ListVersions returns a list of available Kubernetes version for the given provider.
 func ListVersions(configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderVersionsReq)

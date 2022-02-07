@@ -30,8 +30,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -50,9 +49,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 		existingKubermaticObjs     []ctrlruntimeclient.Object
 		existingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		apiUser                    apiv1.User
-		versions                   []*semver.Version
-		updates                    []operatorv1alpha1.Update
-		incompatibilities          []operatorv1alpha1.Incompatibility
+		versions                   []k8csemver.Semver
+		updates                    []kubermaticv1.Update
+		incompatibilities          []kubermaticv1.Incompatibility
 		wantUpdates                []*apiv1.MasterVersion
 	}{
 		{
@@ -76,12 +75,12 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semver.MustParse("1.7.0"),
 				},
 			},
-			versions: []*semver.Version{
-				semver.MustParse("1.6.0"),
-				semver.MustParse("1.6.1"),
-				semver.MustParse("1.7.0"),
+			versions: []k8csemver.Semver{
+				*k8csemver.NewSemverOrDie("1.6.0"),
+				*k8csemver.NewSemverOrDie("1.6.1"),
+				*k8csemver.NewSemverOrDie("1.7.0"),
 			},
-			updates: []operatorv1alpha1.Update{
+			updates: []kubermaticv1.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -122,12 +121,12 @@ func TestGetClusterUpgrades(t *testing.T) {
 					RestrictedByKubeletVersion: true,
 				},
 			},
-			versions: []*semver.Version{
-				semver.MustParse("1.6.0"),
-				semver.MustParse("1.6.1"),
-				semver.MustParse("1.7.0"),
+			versions: []k8csemver.Semver{
+				*k8csemver.NewSemverOrDie("1.6.0"),
+				*k8csemver.NewSemverOrDie("1.6.1"),
+				*k8csemver.NewSemverOrDie("1.7.0"),
 			},
-			updates: []operatorv1alpha1.Update{
+			updates: []kubermaticv1.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -145,6 +144,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now(), func(cluster *kubermaticv1.Cluster) {
 					cluster.Spec.Cloud.VSphere = &kubermaticv1.VSphereCloudSpec{}
+					cluster.Spec.Cloud.Fake = nil
 				})
 				c.Labels = map[string]string{"user": test.UserName}
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.21.0")
@@ -159,13 +159,13 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semver.MustParse("1.21.1"),
 				},
 			},
-			versions: []*semver.Version{
-				semver.MustParse("1.21.0"),
-				semver.MustParse("1.21.1"),
-				semver.MustParse("1.22.0"),
-				semver.MustParse("1.22.1"),
+			versions: []k8csemver.Semver{
+				*k8csemver.NewSemverOrDie("1.21.0"),
+				*k8csemver.NewSemverOrDie("1.21.1"),
+				*k8csemver.NewSemverOrDie("1.22.0"),
+				*k8csemver.NewSemverOrDie("1.22.1"),
 			},
-			updates: []operatorv1alpha1.Update{
+			updates: []kubermaticv1.Update{
 				{
 					From:      "1.21.*",
 					To:        "1.21.*",
@@ -182,12 +182,12 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Automatic: pointer.BoolPtr(false),
 				},
 			},
-			incompatibilities: []operatorv1alpha1.Incompatibility{
+			incompatibilities: []kubermaticv1.Incompatibility{
 				{
-					Provider:  kubermaticv1.ProviderVSphere,
+					Provider:  kubermaticv1.VSphereCloudProvider,
 					Version:   "1.22.*",
-					Condition: operatorv1alpha1.AlwaysCondition,
-					Operation: operatorv1alpha1.UpdateOperation,
+					Condition: kubermaticv1.AlwaysCondition,
+					Operation: kubermaticv1.UpdateOperation,
 				},
 			},
 		},
@@ -205,10 +205,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
-			versions: []*semver.Version{
-				semver.MustParse("1.6.0"),
+			versions: []k8csemver.Semver{
+				*k8csemver.NewSemverOrDie("1.6.0"),
 			},
-			updates: []operatorv1alpha1.Update{},
+			updates: []kubermaticv1.Update{},
 		},
 		{
 			name: "the admin John can get available upgrades for Bob cluster",
@@ -232,12 +232,12 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semver.MustParse("1.7.0"),
 				},
 			},
-			versions: []*semver.Version{
-				semver.MustParse("1.6.0"),
-				semver.MustParse("1.6.1"),
-				semver.MustParse("1.7.0"),
+			versions: []k8csemver.Semver{
+				*k8csemver.NewSemverOrDie("1.6.0"),
+				*k8csemver.NewSemverOrDie("1.6.1"),
+				*k8csemver.NewSemverOrDie("1.7.0"),
 			},
-			updates: []operatorv1alpha1.Update{
+			updates: []kubermaticv1.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -253,18 +253,16 @@ func TestGetClusterUpgrades(t *testing.T) {
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
-			dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{
+			dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
 					Namespace: test.KubermaticNamespace,
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
-						Kubernetes: operatorv1alpha1.KubermaticVersioningConfiguration{
-							Versions:                  testStruct.versions,
-							Updates:                   testStruct.updates,
-							ProviderIncompatibilities: testStruct.incompatibilities,
-						},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Versions: kubermaticv1.KubermaticVersioningConfiguration{
+						Versions:                  testStruct.versions,
+						Updates:                   testStruct.updates,
+						ProviderIncompatibilities: testStruct.incompatibilities,
 					},
 				},
 			}
@@ -280,7 +278,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, kubermaticObj, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+				t.Fatalf("failed to create testStruct endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
@@ -394,7 +392,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
 			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -423,8 +421,8 @@ func TestGetNodeUpgrades(t *testing.T) {
 		name                   string
 		controlPlaneVersion    string
 		apiUser                apiv1.User
-		existingUpdates        []operatorv1alpha1.Update
-		existingVersions       []*semver.Version
+		existingUpdates        []kubermaticv1.Update
+		existingVersions       []k8csemver.Semver
 		expectedOutput         []*apiv1.MasterVersion
 		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
@@ -436,7 +434,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultUser(),
 			},
-			existingUpdates: []operatorv1alpha1.Update{
+			existingUpdates: []kubermaticv1.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -448,19 +446,19 @@ func TestGetNodeUpgrades(t *testing.T) {
 					Automatic: pointer.BoolPtr(false),
 				},
 			},
-			existingVersions: []*semver.Version{
-				semver.MustParse("0.0.1"),
-				semver.MustParse("0.1.0"),
-				semver.MustParse("1.0.0"),
-				semver.MustParse("1.4.0"),
-				semver.MustParse("1.4.1"),
-				semver.MustParse("1.5.0"),
-				semver.MustParse("1.5.1"),
-				semver.MustParse("1.6.0"),
-				semver.MustParse("1.6.1"),
-				semver.MustParse("1.7.0"),
-				semver.MustParse("1.7.1"),
-				semver.MustParse("2.0.0"),
+			existingVersions: []k8csemver.Semver{
+				*k8csemver.NewSemverOrDie("0.0.1"),
+				*k8csemver.NewSemverOrDie("0.1.0"),
+				*k8csemver.NewSemverOrDie("1.0.0"),
+				*k8csemver.NewSemverOrDie("1.4.0"),
+				*k8csemver.NewSemverOrDie("1.4.1"),
+				*k8csemver.NewSemverOrDie("1.5.0"),
+				*k8csemver.NewSemverOrDie("1.5.1"),
+				*k8csemver.NewSemverOrDie("1.6.0"),
+				*k8csemver.NewSemverOrDie("1.6.1"),
+				*k8csemver.NewSemverOrDie("1.7.0"),
+				*k8csemver.NewSemverOrDie("1.7.1"),
+				*k8csemver.NewSemverOrDie("2.0.0"),
 			},
 			expectedOutput: []*apiv1.MasterVersion{
 				{
@@ -486,17 +484,15 @@ func TestGetNodeUpgrades(t *testing.T) {
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
-			dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{
+			dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
 					Namespace: test.KubermaticNamespace,
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
-						Kubernetes: operatorv1alpha1.KubermaticVersioningConfiguration{
-							Versions: testStruct.existingVersions,
-							Updates:  testStruct.existingUpdates,
-						},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Versions: kubermaticv1.KubermaticVersioningConfiguration{
+						Versions: testStruct.existingVersions,
+						Updates:  testStruct.existingUpdates,
 					},
 				},
 			}
@@ -505,7 +501,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+				t.Fatalf("failed to create testStruct endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
@@ -529,8 +525,8 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 		name                   string
 		clusterType            string
 		apiUser                apiv1.User
-		existingUpdates        []operatorv1alpha1.Update
-		existingVersions       []*semver.Version
+		existingUpdates        []kubermaticv1.Update
+		existingVersions       []k8csemver.Semver
 		expectedOutput         []*apiv1.MasterVersion
 		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
@@ -539,10 +535,10 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			clusterType:            "",
 			apiUser:                *test.GenDefaultAPIUser(),
 			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenDefaultUser()},
-			existingUpdates:        []operatorv1alpha1.Update{},
-			existingVersions: []*semver.Version{
-				semver.MustParse("1.13.5"),
-				semver.MustParse("3.11.5"),
+			existingUpdates:        []kubermaticv1.Update{},
+			existingVersions: []k8csemver.Semver{
+				*k8csemver.NewSemverOrDie("1.13.5"),
+				*k8csemver.NewSemverOrDie("3.11.5"),
 			},
 			expectedOutput: []*apiv1.MasterVersion{
 				{
@@ -556,17 +552,15 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
-			dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{
+			dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kubermatic",
 					Namespace: test.KubermaticNamespace,
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
-						Kubernetes: operatorv1alpha1.KubermaticVersioningConfiguration{
-							Versions: testStruct.existingVersions,
-							Updates:  testStruct.existingUpdates,
-						},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Versions: kubermaticv1.KubermaticVersioningConfiguration{
+						Versions: testStruct.existingVersions,
+						Updates:  testStruct.existingUpdates,
 					},
 				},
 			}
@@ -578,7 +572,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+				t.Fatalf("failed to create testStruct endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {

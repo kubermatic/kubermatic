@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ImagePullSecretCreator returns a creator function to create a ImagePullSecret
+// ImagePullSecretCreator returns a creator function to create a ImagePullSecret.
 func ImagePullSecretCreator(dockerPullConfigJSON []byte) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return ImagePullSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {

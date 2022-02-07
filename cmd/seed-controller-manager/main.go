@@ -30,10 +30,9 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
@@ -43,9 +42,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
+	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -67,7 +68,7 @@ func main() {
 	logOpts.AddFlags(flag.CommandLine)
 	options, err := newControllerRunOptions()
 	if err != nil {
-		fmt.Printf("Failed to create controller run options due to = %v\n", err)
+		fmt.Printf("Failed to create controller run options: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -85,11 +86,14 @@ func main() {
 		}
 	}()
 
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+
+	// make sure the logging flags actually affect the global (deprecated) logger instance
+	kubermaticlog.Logger = log
+
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, &versions)
-
-	// Set the logger used by sigs.k8s.io/controller-runtime
-	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	electionName := controllerName + "-leader-election"
 	if options.workerName != "" {
@@ -125,13 +129,16 @@ func main() {
 	if err := gatekeeperv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatekeeperv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
-	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", operatorv1alpha1.SchemeGroupVersion), zap.Error(err))
+	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := osmv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1beta2.VerticalPodAutoscalerList{}); err != nil {
-		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
+		if meta.IsNoMatchError(err) {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
 Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
@@ -197,6 +204,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		if err := options.admissionWebhook.Configure(mgr.GetWebhookServer()); err != nil {
 			log.Fatalw("Failed to configure admission webhook server", zap.Error(err))
 		}
+
 		// Register Seed validation admission webhook
 		h, err := seedValidationHandler(rootCtx, mgr.GetClient(), options)
 		if err != nil {
@@ -205,53 +213,25 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 		// Setup the admission handler for kubermatic Seed CRDs
 		h.SetupWebhookWithManager(mgr)
-		// Setup the validation admission handler for kubermatic Cluster CRDs
-		clustervalidation.NewAdmissionHandler(options.featureGates).SetupWebhookWithManager(mgr)
-		// Setup the mutation admission handler for kubermatic Cluster CRDs
-		getter, err := seedGetterFactory(rootCtx, mgr.GetAPIReader(), options)
+
+		seedGetter, err := seedGetterFactory(rootCtx, mgr.GetAPIReader(), options)
 		if err != nil {
 			log.Fatalf("make seed getter with api reader: %v", err)
 		}
-		seed, err := getter()
-		if err != nil {
-			log.Fatalf("could not get seed resource: %v", err)
-		}
 
-		var defaultingTemplate kubermaticv1.ClusterTemplate
+		caPool := options.caBundle.CertPool()
 
-		if seed.Spec.DefaultClusterTemplate == "" {
+		// Setup the validation admission handler for kubermatic Cluster CRDs
+		clustervalidation.NewAdmissionHandler(mgr.GetClient(), seedGetter, options.featureGates, caPool).SetupWebhookWithManager(mgr)
 
-			settings, err := defaultComponentSettings(ctrlCtx.runOptions, seed.Spec.DefaultComponentSettings)
-			if err != nil {
-				log.Fatal(err)
-			}
+		// Setup the mutation admission handler for kubermatic Cluster CRDs
+		clustermutation.NewAdmissionHandler(mgr.GetClient(), ctrlCtx.configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
 
-			defaultingTemplate.Spec.ComponentsOverride = settings
+		// Setup the validation admission handler for OperatingSystemConfig CRDs
+		oscvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
-		} else {
-			err = mgr.GetAPIReader().Get(context.Background(), types.NamespacedName{
-				Namespace: options.namespace,
-				Name:      seed.Spec.DefaultClusterTemplate,
-			}, &defaultingTemplate)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			scope, ok := defaultingTemplate.Labels["scope"]
-			if !ok || scope != kubermaticv1.SeedTemplateScope {
-				log.Fatalf("invalid scope of default cluster template: %s", seed.Spec.DefaultClusterTemplate)
-			}
-
-			settings, err := defaultComponentSettings(ctrlCtx.runOptions, defaultingTemplate.Spec.ComponentsOverride)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			defaultingTemplate.Spec.ComponentsOverride = settings
-
-		}
-
-		clustermutation.NewAdmissionHandler(defaultingTemplate).SetupWebhookWithManager(mgr)
+		// Setup the validation admission handler for OperatingSystemProfile CRDs
+		ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

@@ -19,7 +19,13 @@ import (
 type AWSCloudSpec struct {
 
 	// access key ID
-	AccessKeyID string `json:"accessKeyId,omitempty"`
+	AccessKeyID string `json:"accessKeyID,omitempty"`
+
+	// assume role a r n
+	AssumeRoleARN string `json:"assumeRoleARN,omitempty"`
+
+	// assume role external ID
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
@@ -27,13 +33,16 @@ type AWSCloudSpec struct {
 	// instance profile name
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
+	// node ports allowed IP range
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
+
 	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
 	// can perform the assume-role.
 	// We keep it for backwards compatibility (We use this name for cleanup purpose).
 	RoleName string `json:"roleName,omitempty"`
 
 	// route table ID
-	RouteTableID string `json:"routeTableId,omitempty"`
+	RouteTableID string `json:"routeTableID,omitempty"`
 
 	// secret access key
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
@@ -42,7 +51,7 @@ type AWSCloudSpec struct {
 	SecurityGroupID string `json:"securityGroupID,omitempty"`
 
 	// v p c ID
-	VPCID string `json:"vpcId,omitempty"`
+	VPCID string `json:"vpcID,omitempty"`
 
 	// credentials reference
 	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`

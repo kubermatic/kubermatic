@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,13 +35,13 @@ func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kuberm
 	if etcdBackupRestoreController {
 		backupConfigs := &kubermaticv1.EtcdBackupConfigList{}
 		if err := d.seedClient.List(ctx, backupConfigs, controllerruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to get EtcdBackupConfigs: %v", err)
+			return fmt.Errorf("failed to get EtcdBackupConfigs: %w", err)
 		}
 
 		if len(backupConfigs.Items) > 0 {
 			for _, backupConfig := range backupConfigs.Items {
 				if err := d.seedClient.Delete(ctx, &backupConfig); err != nil {
-					return fmt.Errorf("failed to delete EtcdBackupConfig %q: %v", backupConfig.Name, err)
+					return fmt.Errorf("failed to delete EtcdBackupConfig %q: %w", backupConfig.Name, err)
 				}
 			}
 			return nil

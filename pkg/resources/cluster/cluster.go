@@ -22,8 +22,9 @@ import (
 	"fmt"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
@@ -31,8 +32,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
-func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*kubermaticv1.ClusterSpec, error) {
+// Spec builds ClusterSpec kubermatic Custom Resource from API Cluster.
+// The ClusterTemplate can be nil.
+func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter, config *kubermaticv1.KubermaticConfiguration, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool, features features.FeatureGate) (*kubermaticv1.ClusterSpec, error) {
 	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
 
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
@@ -48,11 +50,14 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		Version:                              apiCluster.Spec.Version,
 		UsePodSecurityPolicyAdmissionPlugin:  apiCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:    apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
+		UseEventRateLimitAdmissionPlugin:     apiCluster.Spec.UseEventRateLimitAdmissionPlugin,
 		EnableUserSSHKeyAgent:                userSSHKeysAgentEnabled,
+		EnableOperatingSystemManager:         apiCluster.Spec.EnableOperatingSystemManager,
 		AuditLogging:                         apiCluster.Spec.AuditLogging,
 		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,
 		OPAIntegration:                       apiCluster.Spec.OPAIntegration,
 		PodNodeSelectorAdmissionPluginConfig: apiCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
+		EventRateLimitConfig:                 apiCluster.Spec.EventRateLimitConfig,
 		ServiceAccount:                       apiCluster.Spec.ServiceAccount,
 		MLA:                                  apiCluster.Spec.MLA,
 		ContainerRuntime:                     apiCluster.Spec.ContainerRuntime,
@@ -63,21 +68,30 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		spec.ClusterNetwork = *apiCluster.Spec.ClusterNetwork
 	}
 
+	cloudProvider, err := CloudProviderForCluster(spec, dc, secretKeyGetter, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := defaulting.DefaultClusterSpec(spec, template, seed, config, cloudProvider); err != nil {
+		return nil, err
+	}
+
+	if errs := validation.ValidateNewClusterSpec(spec, dc, cloudProvider, features, nil).ToAggregate(); errs != nil {
+		return spec, errs
+	}
+
+	return spec, nil
+}
+
+func CloudProviderForCluster(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (provider.CloudProvider, error) {
 	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("invalid cloud spec: %v", err)
+		return nil, fmt.Errorf("invalid cloud spec: %w", err)
 	}
 	if providerName == "" {
-		return nil, errors.New("cluster has no cloudprovider")
-	}
-	cloudProvider, err := cloud.Provider(dc, secretKeyGetter, caBundle)
-	if err != nil {
-		return nil, err
+		return nil, errors.New("cluster has no cloud provider")
 	}
 
-	if err := defaulting.DefaultCreateClusterSpec(spec, cloudProvider); err != nil {
-		return nil, err
-	}
-
-	return spec, validation.ValidateCreateClusterSpec(spec, dc, cloudProvider)
+	return cloud.Provider(dc, secretKeyGetter, caBundle)
 }

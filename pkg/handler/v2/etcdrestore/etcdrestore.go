@@ -27,7 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -283,6 +283,7 @@ func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRe
 			ClusterID:                       er.Spec.Cluster.Name,
 			BackupName:                      er.Spec.BackupName,
 			BackupDownloadCredentialsSecret: er.Spec.BackupDownloadCredentialsSecret,
+			Destination:                     er.Spec.Destination,
 		},
 		Status: apiv2.EtcdRestoreStatus{
 			Phase: er.Status.Phase,
@@ -296,7 +297,6 @@ func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRe
 }
 
 func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestore, error) {
-
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
@@ -306,15 +306,13 @@ func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
-			},
 		},
 		Spec: kubermaticv1.EtcdRestoreSpec{
 			Name:                            name,
 			Cluster:                         *clusterObjectRef,
 			BackupName:                      erSpec.BackupName,
 			BackupDownloadCredentialsSecret: erSpec.BackupDownloadCredentialsSecret,
+			Destination:                     erSpec.Destination,
 		},
 	}, nil
 }
@@ -400,7 +398,6 @@ func getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx context.Context, userInfo
 }
 
 func getUserInfoEtcdRestoreProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdRestoreProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

@@ -28,16 +28,16 @@ func createVMFolder(ctx context.Context, session *Session, fullPath string) erro
 
 	rootFolder, err := session.Finder.Folder(ctx, rootPath)
 	if err != nil {
-		return fmt.Errorf("couldn't find rootpath, see: %v", err)
+		return fmt.Errorf("couldn't find rootpath, see: %w", err)
 	}
 
 	if _, err = session.Finder.Folder(ctx, newFolder); err != nil {
 		if !isNotFound(err) {
-			return fmt.Errorf("failed to get folder %s: %v", fullPath, err)
+			return fmt.Errorf("failed to get folder %s: %w", fullPath, err)
 		}
 
 		if _, err = rootFolder.CreateFolder(ctx, newFolder); err != nil {
-			return fmt.Errorf("failed to create folder %s: %v", fullPath, err)
+			return fmt.Errorf("failed to create folder %s: %w", fullPath, err)
 		}
 	}
 
@@ -51,15 +51,15 @@ func deleteVMFolder(ctx context.Context, session *Session, path string) error {
 		if isNotFound(err) {
 			return nil
 		}
-		return fmt.Errorf("couldn't open folder %q: %v", path, err)
+		return fmt.Errorf("couldn't open folder %q: %w", path, err)
 	}
 
 	task, err := folder.Destroy(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to trigger folder deletion: %v", err)
+		return fmt.Errorf("failed to trigger folder deletion: %w", err)
 	}
 	if err := task.Wait(ctx); err != nil {
-		return fmt.Errorf("failed to wait for deletion of folder: %v", err)
+		return fmt.Errorf("failed to wait for deletion of folder: %w", err)
 	}
 
 	return nil

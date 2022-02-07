@@ -24,8 +24,8 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -37,8 +37,7 @@ import (
 )
 
 const (
-	name = "etcd"
-
+	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 )
 
@@ -68,11 +67,10 @@ type etcdStatefulSetCreatorData interface {
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-// StatefulSetCreator returns the function to reconcile the etcd StatefulSet
+// StatefulSetCreator returns the function to reconcile the etcd StatefulSet.
 func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-
 			replicas := computeReplicas(data, set)
 			set.Name = resources.EtcdStatefulSetName
 			set.Spec.Replicas = resources.Int32(replicas)
@@ -89,7 +87,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -216,7 +214,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						SuccessThreshold:    1,
 						FailureThreshold:    3,
 						InitialDelaySeconds: 5,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							Exec: &corev1.ExecAction{
 								Command: []string{
 									"/usr/local/bin/etcdctl",
@@ -227,7 +225,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/health",
 								Port:   intstr.FromInt(2378),
@@ -270,13 +268,13 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
 				antiAffinities := set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
-				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name))
+				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName))
 				set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
 			}
 
@@ -296,8 +294,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:            "data",
-							OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
+							Name: "data",
 						},
 						Spec: corev1.PersistentVolumeClaimSpec{
 							StorageClassName: resources.String(storageClass),
@@ -364,13 +361,13 @@ func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 }
 
 // ImageTag returns the correct etcd image tag for a given Cluster
-// TODO: Other functions use this function, switch them to getLauncherImage
+// TODO: Other functions use this function, switch them to getLauncherImage.
 func ImageTag(c *kubermaticv1.Cluster) string {
 	if c.Spec.Version.Semver().Minor() < 22 {
 		return "v3.4.3"
 	}
 
-	return "v3.5.0"
+	return "v3.5.1"
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int32 {
@@ -434,7 +431,7 @@ func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabl
 
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
 	}
 
 	tplData := commandTplData{

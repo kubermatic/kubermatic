@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if ne .Cluster.Network.ProxyMode "ebpf" }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -83,4 +82,3 @@ spec:
       - key: CriticalAddonsOnly
         operator: Exists
       - operator: Exists
-{{ end }}

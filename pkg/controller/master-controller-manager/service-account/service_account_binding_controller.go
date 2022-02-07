@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
@@ -58,7 +58,7 @@ func Add(mgr manager.Manager) error {
 	return nil
 }
 
-// reconcileServiceAccountProjectBinding reconciles User objects
+// reconcileServiceAccountProjectBinding reconciles User objects.
 type reconcileServiceAccountProjectBinding struct {
 	client.Client
 }

@@ -21,13 +21,13 @@ import (
 	"strings"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -43,7 +43,7 @@ func TestCreateToken(t *testing.T) {
 		userInfo       *provider.UserInfo
 		saToSync       *kubermaticv1.User
 		projectToSync  string
-		expectedSecret *v1.Secret
+		expectedSecret *corev1.Secret
 		tokenName      string
 		tokenID        string
 		saEmail        string
@@ -56,7 +56,7 @@ func TestCreateToken(t *testing.T) {
 			tokenName:     "test-token",
 			tokenID:       "sa-token-1",
 			saEmail:       "serviceaccount-1@sa.kubermatic.io",
-			expectedSecret: func() *v1.Secret {
+			expectedSecret: func() *corev1.Secret {
 				secret := genSecret("my-first-project-ID", "serviceaccount-1", "test-token", "1")
 				secret.Name = ""
 				secret.ResourceVersion = "1"
@@ -101,8 +101,8 @@ func TestListTokens(t *testing.T) {
 		userInfo       *provider.UserInfo
 		saToSync       *kubermaticv1.User
 		projectToSync  *kubermaticv1.Project
-		secrets        []*v1.Secret
-		expectedTokens []*v1.Secret
+		secrets        []*corev1.Secret
+		expectedTokens []*corev1.Secret
 		tokenName      string
 	}{
 		{
@@ -115,14 +115,14 @@ func TestListTokens(t *testing.T) {
 				return sa
 			}(),
 			projectToSync: genDefaultProject(),
-			secrets: []*v1.Secret{
+			secrets: []*corev1.Secret{
 				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
 				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
 				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
 				genSecret("test-ID", "5", "test-token-1", "4"),
 				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
-			expectedTokens: []*v1.Secret{
+			expectedTokens: []*corev1.Secret{
 				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-1", "1")),
 				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-2", "2")),
 				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-3", "3")),
@@ -138,14 +138,14 @@ func TestListTokens(t *testing.T) {
 				return sa
 			}(),
 			projectToSync: genDefaultProject(),
-			secrets: []*v1.Secret{
+			secrets: []*corev1.Secret{
 				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
 				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
 				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
 				genSecret("test-ID", "5", "test-token-1", "4"),
 				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
-			expectedTokens: []*v1.Secret{
+			expectedTokens: []*corev1.Secret{
 				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-3", "3")),
 			},
 			tokenName: "test-token-3",
@@ -153,7 +153,6 @@ func TestListTokens(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
@@ -207,8 +206,8 @@ func TestGetToken(t *testing.T) {
 		userInfo      *provider.UserInfo
 		saToSync      *kubermaticv1.User
 		projectToSync *kubermaticv1.Project
-		secrets       []*v1.Secret
-		expectedToken *v1.Secret
+		secrets       []*corev1.Secret
+		expectedToken *corev1.Secret
 		tokenToGet    string
 	}{
 		{
@@ -221,7 +220,7 @@ func TestGetToken(t *testing.T) {
 				return sa
 			}(),
 			projectToSync: genDefaultProject(),
-			secrets: []*v1.Secret{
+			secrets: []*corev1.Secret{
 				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
 				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
 				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
@@ -229,7 +228,7 @@ func TestGetToken(t *testing.T) {
 				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			tokenToGet: "sa-token-3",
-			expectedToken: func() *v1.Secret {
+			expectedToken: func() *corev1.Secret {
 				secret := genSecret("my-first-project-ID", "1", "test-token-3", "3")
 				secret.APIVersion = "v1"
 				secret.Kind = "Secret"
@@ -239,7 +238,6 @@ func TestGetToken(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
@@ -281,8 +279,8 @@ func TestUpdateToken(t *testing.T) {
 		userInfo      *provider.UserInfo
 		saToSync      *kubermaticv1.User
 		projectToSync *kubermaticv1.Project
-		secrets       []*v1.Secret
-		expectedToken *v1.Secret
+		secrets       []*corev1.Secret
+		expectedToken *corev1.Secret
 		tokenToUpdate string
 		tokenNewName  string
 	}{
@@ -296,7 +294,7 @@ func TestUpdateToken(t *testing.T) {
 				return sa
 			}(),
 			projectToSync: genDefaultProject(),
-			secrets: []*v1.Secret{
+			secrets: []*corev1.Secret{
 				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
 				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
 				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
@@ -305,7 +303,7 @@ func TestUpdateToken(t *testing.T) {
 			},
 			tokenToUpdate: "sa-token-3",
 			tokenNewName:  "new-updated-name",
-			expectedToken: func() *v1.Secret {
+			expectedToken: func() *corev1.Secret {
 				secret := genSecret("my-first-project-ID", "1", "new-updated-name", "3")
 				secret.APIVersion = "v1"
 				secret.Kind = "Secret"
@@ -316,7 +314,6 @@ func TestUpdateToken(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
@@ -363,7 +360,7 @@ func TestDeleteToken(t *testing.T) {
 		userInfo      *provider.UserInfo
 		saToSync      *kubermaticv1.User
 		projectToSync *kubermaticv1.Project
-		secrets       []*v1.Secret
+		secrets       []*corev1.Secret
 		tokenToDelete string
 	}{
 		{
@@ -376,7 +373,7 @@ func TestDeleteToken(t *testing.T) {
 				return sa
 			}(),
 			projectToSync: test.GenDefaultProject(),
-			secrets: []*v1.Secret{
+			secrets: []*corev1.Secret{
 				test.GenDefaultSaToken("my-first-project-ID", "1", "test-token-1", "1"),
 				test.GenDefaultSaToken("my-first-project-ID", "1", "test-token-2", "2"),
 				test.GenDefaultSaToken("my-first-project-ID", "1", "test-token-3", "3"),
@@ -388,7 +385,6 @@ func TestDeleteToken(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
@@ -429,7 +425,7 @@ func TestDeleteToken(t *testing.T) {
 	}
 }
 
-func rmTokenPrefix(token *v1.Secret) *v1.Secret {
+func rmTokenPrefix(token *corev1.Secret) *corev1.Secret {
 	token.Name = strings.TrimPrefix(token.Name, "sa-token-")
 	return token
 }

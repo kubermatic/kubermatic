@@ -30,7 +30,7 @@ import (
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	vspherecloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
@@ -49,7 +49,7 @@ type configMapCreatorData interface {
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 }
 
-// ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config
+// ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config.
 func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -64,7 +64,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 
 			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
+				return nil, fmt.Errorf("failed to create cloud-config: %w", err)
 			}
 
 			cm.Labels = resources.BaseAppLabels(name, nil)
@@ -106,7 +106,7 @@ func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConf
 	}
 }
 
-// CloudConfig returns the cloud-config for the supplied data
+// CloudConfig returns the cloud-config for the supplied data.
 func CloudConfig(
 	cluster *kubermaticv1.Cluster,
 	dc *kubermaticv1.Datacenter,
@@ -205,12 +205,12 @@ func CloudConfig(
 	case cloud.GCP != nil:
 		b, err := base64.StdEncoding.DecodeString(credentials.GCP.ServiceAccount)
 		if err != nil {
-			return "", fmt.Errorf("error decoding service account: %v", err)
+			return "", fmt.Errorf("error decoding service account: %w", err)
 		}
 		sam := map[string]string{}
 		err = json.Unmarshal(b, &sam)
 		if err != nil {
-			return "", fmt.Errorf("failed unmarshaling service account: %v", err)
+			return "", fmt.Errorf("failed unmarshaling service account: %w", err)
 		}
 		projectID := sam["project_id"]
 		if projectID == "" {
@@ -218,6 +218,11 @@ func CloudConfig(
 		}
 
 		tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
+
+		if len(dc.Spec.GCP.ZoneSuffixes) == 0 {
+			return "", errors.New("empty zone_suffixes")
+		}
+
 		localZone := dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
 
 		// By default, all GCP clusters are assumed to be the in the same zone. If the control plane
@@ -280,7 +285,7 @@ func getVsphereCloudConfig(
 ) (*vsphere.CloudConfig, error) {
 	vspherURL, err := url.Parse(dc.Spec.VSphere.Endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse vsphere endpoint: %v", err)
+		return nil, fmt.Errorf("failed to parse vsphere endpoint: %w", err)
 	}
 	port := "443"
 	if urlPort := vspherURL.Port(); urlPort != "" {

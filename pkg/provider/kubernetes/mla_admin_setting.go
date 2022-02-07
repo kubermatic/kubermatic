@@ -19,7 +19,7 @@ package kubernetes
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -65,7 +65,7 @@ func (p *PrivilegedMLAAdminSettingProvider) DeleteUnsecured(cluster *kubermaticv
 	})
 }
 
-// NewPrivilegedMLAAdminSettingProvider returns a MLAAdminSetting provider
+// NewPrivilegedMLAAdminSettingProvider returns a MLAAdminSetting provider.
 func NewPrivilegedMLAAdminSettingProvider(privilegedClient ctrlruntimeclient.Client) *PrivilegedMLAAdminSettingProvider {
 	return &PrivilegedMLAAdminSettingProvider{
 		privilegedClient: privilegedClient,

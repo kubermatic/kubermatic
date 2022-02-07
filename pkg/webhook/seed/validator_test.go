@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -493,7 +493,6 @@ func TestValidate(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestSingleSeedValidateFunc(t *testing.T) {

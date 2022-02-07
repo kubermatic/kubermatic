@@ -28,28 +28,28 @@ import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"gopkg.in/square/go-jose.v2/jwt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
-	// TestFakeToken signed JWT token with fake data
+	// TestFakeToken signed JWT token with fake data.
 	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
 
-	// TestFakeFinalizer is a dummy finalizer with no special meaning
-	TestFakeFinalizer = "test.kubermatic.io/dummy"
+	// TestFakeFinalizer is a dummy finalizer with no special meaning.
+	TestFakeFinalizer = "test.kubermatic.k8c.io/dummy"
 )
 
 type fakeJWTTokenGenerator struct {
 }
 
-// Generate generates new fake token
+// Generate generates new fake token.
 func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
 	return TestFakeToken, nil
 }
@@ -91,7 +91,7 @@ func createSANoPrefix(name, projectName, group, id string) *kubermaticv1.User {
 	return sa
 }
 
-func sortTokenByName(tokens []*v1.Secret) {
+func sortTokenByName(tokens []*corev1.Secret) {
 	sort.SliceStable(tokens, func(i, j int) bool {
 		mi, mj := tokens[i], tokens[j]
 		return mi.Name < mj.Name
@@ -99,22 +99,19 @@ func sortTokenByName(tokens []*v1.Secret) {
 }
 
 // genUser generates a User resource
-// note if the id is empty then it will be auto generated
+// note if the id is empty then it will be auto generated.
 func genUser(id, name, email string) *kubermaticv1.User {
 	if len(id) == 0 {
 		// the name of the object is derived from the email address and encoded as sha256
 		id = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
 	}
 
-	specID := ""
-	{
-		h := sha512.New512_224()
-		if _, err := io.WriteString(h, email); err != nil {
-			// not nice, better to use t.Error
-			panic("unable to generate a test user due to " + err.Error())
-		}
-		specID = fmt.Sprintf("%x_KUBE", h.Sum(nil))
+	h := sha512.New512_224()
+	if _, err := io.WriteString(h, email); err != nil {
+		// not nice, better to use t.Error
+		panic("unable to generate a test user: " + err.Error())
 	}
+	specID := fmt.Sprintf("%x_KUBE", h.Sum(nil))
 
 	return &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{
@@ -129,18 +126,18 @@ func genUser(id, name, email string) *kubermaticv1.User {
 	}
 }
 
-// genDefaultUser generates a default user
+// genDefaultUser generates a default user.
 func genDefaultUser() *kubermaticv1.User {
 	userEmail := "bob@acme.com"
 	return genUser("", "Bob", userEmail)
 }
 
-// genProject generates new empty project
-func genProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
+// genProject generates new empty project.
+func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Project",
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),
@@ -154,11 +151,11 @@ func genProject(name, phase string, creationTime time.Time, oRef ...metav1.Owner
 	}
 }
 
-// genDefaultProject generates a default project
+// genDefaultProject generates a default project.
 func genDefaultProject() *kubermaticv1.Project {
 	user := genDefaultUser()
 	oRef := metav1.OwnerReference{
-		APIVersion: "kubermatic.io/v1",
+		APIVersion: "kubermatic.k8c.io/v1",
 		Kind:       "User",
 		UID:        user.UID,
 		Name:       user.Name,
@@ -166,12 +163,12 @@ func genDefaultProject() *kubermaticv1.Project {
 	return genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp(), oRef)
 }
 
-// defaultCreationTimestamp returns default test timestamp
+// defaultCreationTimestamp returns default test timestamp.
 func defaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
 }
 
-// genProjectServiceAccount generates a Service Account resource
+// genProjectServiceAccount generates a Service Account resource.
 func genProjectServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
 	user := genUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
@@ -190,7 +187,7 @@ func genProjectServiceAccount(id, name, group, projectName string) *kubermaticv1
 	return user
 }
 
-// genBinding generates a binding
+// genBinding generates a binding.
 func genBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -211,8 +208,8 @@ func genBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding
 	}
 }
 
-func genSecret(projectID, saID, name, id string) *v1.Secret {
-	secret := &v1.Secret{}
+func genSecret(projectID, saID, name, id string) *corev1.Secret {
+	secret := &corev1.Secret{}
 	secret.Name = fmt.Sprintf("sa-token-%s", id)
 	secret.Type = "Opaque"
 	secret.Namespace = "kubermatic"

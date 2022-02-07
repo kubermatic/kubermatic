@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -53,7 +53,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie("1.22.4"),
+			Version: *semver.NewSemverOrDie("1.22.5"),
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "testnamespace",
@@ -160,8 +160,8 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	if secret.OwnerReferences[0].Kind != "Cluster" {
 		t.Errorf("Expected ownerRef.Kind to be 'Cluster' but was %q", secret.OwnerReferences[0].Kind)
 	}
-	if secret.OwnerReferences[0].APIVersion != "kubermatic.k8s.io/v1" {
-		t.Errorf("Expected ownerRef.APIVersion to be 'kubermatic.k8s.io/v1' but was %q", secret.OwnerReferences[0].APIVersion)
+	if secret.OwnerReferences[0].APIVersion != "kubermatic.k8c.io/v1" {
+		t.Errorf("Expected ownerRef.APIVersion to be 'kubermatic.k8c.io/v1' but was %q", secret.OwnerReferences[0].APIVersion)
 	}
 	if secret.OwnerReferences[0].Name != "test-cluster" {
 		t.Errorf("Expected ownerRef.Name to be 'test-cluster' but was %q", secret.OwnerReferences[0].Name)

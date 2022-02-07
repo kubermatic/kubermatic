@@ -17,7 +17,6 @@ limitations under the License.
 package kubernetes
 
 import (
-	kubermaticclientv1 "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -26,19 +25,19 @@ import (
 )
 
 const (
-	// NamespacePrefix is the prefix for the cluster namespace
+	// NamespacePrefix is the prefix for the cluster namespace.
 	NamespacePrefix = "cluster-"
 )
 
-// ImpersonationClient gives runtime controller client that uses user impersonation
+// ImpersonationClient gives runtime controller client that uses user impersonation.
 type ImpersonationClient func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error)
 
-// NamespaceName returns the namespace name for a cluster
+// NamespaceName returns the namespace name for a cluster.
 func NamespaceName(clusterName string) string {
 	return NamespacePrefix + clusterName
 }
 
-// createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation
+// createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation.
 func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient ImpersonationClient) (ctrlruntimeclient.Client, error) {
 	impersonationCfg := restclient.ImpersonationConfig{
 		UserName: userInfo.Email,
@@ -48,20 +47,8 @@ func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, c
 	return createImpersonationClient(impersonationCfg)
 }
 
-// DefaultKubermaticImpersonationClient knows how to create impersonated client set
-type DefaultKubermaticImpersonationClient struct {
-	cfg *restclient.Config
-}
-
-// CreateImpersonatedKubermaticClientSet actually creates impersonated kubermatic client set for the given user.
-func (d *DefaultKubermaticImpersonationClient) CreateImpersonatedKubermaticClientSet(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
-	config := *d.cfg
-	config.Impersonate = impCfg
-	return kubermaticclientv1.NewForConfig(&config)
-}
-
 // NewImpersonationClient creates a new default impersonation client
-// that knows how to create Interface client for a impersonated user
+// that knows how to create Interface client for a impersonated user.
 func NewImpersonationClient(cfg *restclient.Config, restMapper meta.RESTMapper) *DefaultImpersonationClient {
 	return &DefaultImpersonationClient{
 		cfg:        cfg,
@@ -69,7 +56,7 @@ func NewImpersonationClient(cfg *restclient.Config, restMapper meta.RESTMapper) 
 	}
 }
 
-// DefaultImpersonationClient knows how to create impersonated client set
+// DefaultImpersonationClient knows how to create impersonated client set.
 type DefaultImpersonationClient struct {
 	cfg        *restclient.Config
 	restMapper meta.RESTMapper

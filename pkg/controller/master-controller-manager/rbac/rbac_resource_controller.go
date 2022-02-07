@@ -44,7 +44,7 @@ type resourcesController struct {
 	objectType            ctrlruntimeclient.Object
 }
 
-// newResourcesController creates a new controller for managing RBAC for named resources that belong to project
+// newResourcesController creates a new controller for managing RBAC for named resources that belong to project.
 func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, resources []projectResource) ([]*resourcesController, error) {
 	// allControllers := []*resourcesController{mc}
 

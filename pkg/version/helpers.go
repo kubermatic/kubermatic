@@ -22,27 +22,26 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func IsSupported(version *semver.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...operatorv1alpha1.ConditionType) (bool, error) {
-	return checkProviderCompatibility(version, provider, v1.KubernetesClusterType, operatorv1alpha1.SupportOperation, incompatibilities, conditions...)
+func IsSupported(version *semver.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
+	return checkProviderCompatibility(version, provider, v1.KubernetesClusterType, kubermaticv1.SupportOperation, incompatibilities, conditions...)
 }
 
-func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, operation operatorv1alpha1.OperationType, incompatibilities []*ProviderIncompatibility, conditions ...operatorv1alpha1.ConditionType) (bool, error) {
+func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, operation kubermaticv1.OperationType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
 	var compatible = true
 	var err error
 	for _, pi := range incompatibilities {
 		if pi.Provider == provider && pi.Type == clusterType && operation == pi.Operation {
-			if pi.Condition == operatorv1alpha1.AlwaysCondition {
+			if pi.Condition == kubermaticv1.AlwaysCondition {
 				compatible, err = CheckUnconstrained(version, pi.Version)
 				if err != nil {
 					return false, fmt.Errorf("check incompatibility failed")
 				}
 			} else {
 				for _, ic := range conditions {
-					if pi.Condition == ic || ic == operatorv1alpha1.AlwaysCondition || pi.Condition == operatorv1alpha1.AlwaysCondition {
+					if pi.Condition == ic || ic == kubermaticv1.AlwaysCondition || pi.Condition == kubermaticv1.AlwaysCondition {
 						compatible, err = CheckUnconstrained(version, pi.Version)
 						if err != nil {
 							return false, fmt.Errorf("check incompatibility failed")
@@ -64,7 +63,7 @@ func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.P
 func CheckUnconstrained(baseVersion *semver.Version, version string) (bool, error) {
 	c, err := semver.NewConstraint(version)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse to constraint %s: %v", c, err)
+		return false, fmt.Errorf("failed to parse to constraint %s: %w", c, err)
 	}
 
 	return !c.Check(baseVersion), nil

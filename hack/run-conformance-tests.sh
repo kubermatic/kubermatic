@@ -107,7 +107,7 @@ openstack)
   OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
   OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
   extraArgs="-openstack-domain=$OS_DOMAIN
-      -openstack-tenant=$OS_TENANT_NAME
+      -openstack-project=$OS_TENANT_NAME
       -openstack-username=$OS_USERNAME
       -openstack-password=$OS_PASSWORD"
   ;;

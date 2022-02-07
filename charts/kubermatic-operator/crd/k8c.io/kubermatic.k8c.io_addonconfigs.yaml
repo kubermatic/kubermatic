@@ -16,10 +16,14 @@ spec:
     singular: addonconfig
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
-        description: AddonConfig specifies addon configuration
+        description: AddonConfig specifies addon configuration.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +38,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AddonConfigSpec specifies configuration of addon
+            description: AddonConfigSpec specifies configuration of addon.
             properties:
               description:
                 description: Description of the configured addon, it will be displayed
@@ -43,7 +47,7 @@ spec:
               formSpec:
                 description: Controls that can be set for configured addon
                 items:
-                  description: AddonFormControl specifies addon form control
+                  description: AddonFormControl specifies addon form control.
                   properties:
                     displayName:
                       description: DisplayName is visible in the UI
@@ -79,6 +83,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

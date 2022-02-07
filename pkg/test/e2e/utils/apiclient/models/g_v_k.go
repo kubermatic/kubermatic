@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// GVK GVK group version kind of a resource
+// GVK GVK group version kind of a resource.
 //
 // swagger:model GVK
 type GVK struct {

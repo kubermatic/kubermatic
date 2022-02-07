@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -102,6 +102,7 @@ func Add(
 	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 ) error {
 	log = log.Named(ControllerName)
 
@@ -113,6 +114,7 @@ func Add(
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		configGetter:         configGetter,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -127,7 +129,7 @@ func Add(
 
 	seed := &kubermaticv1.Seed{}
 	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", seed, err)
+		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
 	// watch related resources
@@ -157,7 +159,7 @@ func Add(
 
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 

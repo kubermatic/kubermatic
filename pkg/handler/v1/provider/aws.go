@@ -25,7 +25,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -45,6 +45,15 @@ type AWSCommonReq struct {
 	// in: header
 	// name: Credential
 	Credential string
+	// in: header
+	// name: AssumeRoleARN
+	AssumeRoleARN string
+	// in: header
+	// name: ExternalID
+	AssumeRoleExternalID string
+	// in: header
+	// name: VPC
+	VPC string
 }
 
 // AWSSubnetReq represent a request for AWS subnets.
@@ -54,9 +63,6 @@ type AWSSubnetReq struct {
 	// in: path
 	// required: true
 	DC string `json:"dc"`
-	// in: header
-	// name: VPC
-	VPC string `json:"vpc"`
 }
 
 // AWSVPCReq represent a request for AWS vpc's.
@@ -68,7 +74,7 @@ type AWSVPCReq struct {
 	DC string `json:"dc"`
 }
 
-// AWSVPCReq represent a request for AWS Security Group IDs.
+// AWSSecurityGroupsReq represent a request for AWS Security Group IDs.
 // swagger:parameters listAWSSecurityGroups
 type AWSSecurityGroupsReq struct {
 	AWSCommonReq
@@ -89,7 +95,7 @@ type AWSSizeReq struct {
 	Architecture string `json:"architecture,omitempty"`
 }
 
-// DecodeAWSSizesReq decodes the base type for a AWS special endpoint request
+// DecodeAWSSizesReq decodes the base type for a AWS special endpoint request.
 func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSizeReq
 	req.Region = r.Header.Get("Region")
@@ -105,18 +111,21 @@ func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-// DecodeAWSCommonReq decodes the base type for a AWS special endpoint request
+// DecodeAWSCommonReq decodes the base type for a AWS special endpoint request.
 func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSCommonReq
 
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
+	req.AssumeRoleARN = r.Header.Get("AssumeRoleARN")
+	req.AssumeRoleExternalID = r.Header.Get("AssumeRoleExternalID")
 	req.Credential = r.Header.Get("Credential")
+	req.VPC = r.Header.Get("VPC")
 
 	return req, nil
 }
 
-// DecodeAWSSubnetReq decodes a request for a list of AWS subnets
+// DecodeAWSSubnetReq decodes a request for a list of AWS subnets.
 func DecodeAWSSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSubnetReq
 
@@ -132,12 +141,10 @@ func DecodeAWSSubnetReq(c context.Context, r *http.Request) (interface{}, error)
 	}
 	req.DC = dc
 
-	req.VPC = r.Header.Get("VPC")
-
 	return req, nil
 }
 
-// DecodeAWSVPCReq decodes a request for a list of AWS vpc's
+// DecodeAWSVPCReq decodes a request for a list of AWS vpc's.
 func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSVPCReq
 
@@ -156,7 +163,7 @@ func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeAWSVPCReq decodes a request for a list of AWS Security Groups
+// DecodeAWSSecurityGroupsReq decodes a request for a list of AWS Security Groups.
 func DecodeAWSSecurityGroupsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSecurityGroupsReq
 
@@ -195,13 +202,15 @@ func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, priv
 	}
 }
 
-// AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
-func AWSSubnetEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials.
+func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSubnetReq)
 
 		accessKeyID := req.AccessKeyID
 		secretAccessKey := req.SecretAccessKey
+		assumeRoleARN := req.AssumeRoleARN
+		assumeRoleExternalID := req.AssumeRoleExternalID
 		vpcID := req.VPC
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -210,13 +219,15 @@ func AWSSubnetEndpoint(presetsProvider provider.PresetProvider, seedsGetter prov
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credential := preset.Spec.AWS; credential != nil {
 				accessKeyID = credential.AccessKeyID
 				secretAccessKey = credential.SecretAccessKey
+				assumeRoleARN = credential.AssumeRoleARN
+				assumeRoleExternalID = credential.AssumeRoleExternalID
 				vpcID = credential.VPCID
 			}
 		}
@@ -226,7 +237,7 @@ func AWSSubnetEndpoint(presetsProvider provider.PresetProvider, seedsGetter prov
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		subnetList, err := providercommon.ListAWSSubnets(accessKeyID, secretAccessKey, vpcID, dc)
+		subnetList, err := providercommon.ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, vpcID, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -238,17 +249,16 @@ func AWSSubnetEndpoint(presetsProvider provider.PresetProvider, seedsGetter prov
 	}
 }
 
-// AWSSubnetWithClusterCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
+// AWSSubnetWithClusterCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials.
 func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		return providercommon.AWSSubnetNoCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
-
 	}
 }
 
-// AWSVPCEndpoint handles the request to list AWS VPC's, using provided credentials
-func AWSVPCEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// AWSVPCEndpoint handles the request to list AWS VPC's, using provided credentials.
+func AWSVPCEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSVPCReq)
 
@@ -257,7 +267,7 @@ func AWSVPCEndpoint(presetsProvider provider.PresetProvider, seedsGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -267,12 +277,12 @@ func AWSVPCEndpoint(presetsProvider provider.PresetProvider, seedsGetter provide
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return listAWSVPCS(credentials.accessKeyID, credentials.secretAccessKey, datacenter)
+		return listAWSVPCS(credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter)
 	}
 }
 
-// AWSSecurityGroupsEndpoint handles the request to list AWS Security Groups, using provided credentials
-func AWSSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// AWSSecurityGroupsEndpoint handles the request to list AWS Security Groups, using provided credentials.
+func AWSSecurityGroupsEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSecurityGroupsReq)
 
@@ -281,7 +291,7 @@ func AWSSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, seedsGet
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAWSCredentialsFromRequest(ctx, req.AWSCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -291,15 +301,14 @@ func AWSSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, seedsGet
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return listSecurityGroup(credentials.accessKeyID, credentials.secretAccessKey, datacenter.Spec.AWS.Region)
+		return listSecurityGroup(credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter.Spec.AWS.Region, credentials.vpcID)
 	}
 }
 
-func listSecurityGroup(accessKeyID, secretAccessKey, region string) (*apiv1.AWSSecurityGroupList, error) {
-
+func listSecurityGroup(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) (*apiv1.AWSSecurityGroupList, error) {
 	securityGroupList := &apiv1.AWSSecurityGroupList{}
 
-	securityGroups, err := awsprovider.GetSecurityGroups(accessKeyID, secretAccessKey, region)
+	securityGroups, err := awsprovider.GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get Security Groups: %v", err))
 	}
@@ -312,13 +321,19 @@ func listSecurityGroup(accessKeyID, secretAccessKey, region string) (*apiv1.AWSS
 }
 
 type awsCredentials struct {
-	accessKeyID     string
-	secretAccessKey string
+	accessKeyID          string
+	secretAccessKey      string
+	assumeRoleARN        string
+	assumeRoleExternalID string
+	vpcID                string
 }
 
-func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*awsCredentials, error) {
+func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*awsCredentials, error) {
 	accessKeyID := req.AccessKeyID
 	secretAccessKey := req.SecretAccessKey
+	assumeRoleARN := req.AssumeRoleARN
+	assumeRoleExternalID := req.AssumeRoleExternalID
+	vpcID := req.VPC
 
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -326,29 +341,34 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
 		if credential := preset.Spec.AWS; credential != nil {
 			accessKeyID = credential.AccessKeyID
 			secretAccessKey = credential.SecretAccessKey
+			assumeRoleARN = credential.AssumeRoleARN
+			assumeRoleExternalID = credential.AssumeRoleExternalID
+			vpcID = credential.VPCID
 		}
 	}
 
 	return &awsCredentials{
-		accessKeyID:     accessKeyID,
-		secretAccessKey: secretAccessKey,
+		accessKeyID:          accessKeyID,
+		secretAccessKey:      secretAccessKey,
+		assumeRoleARN:        assumeRoleARN,
+		assumeRoleExternalID: assumeRoleExternalID,
+		vpcID:                vpcID,
 	}, nil
 }
 
-func listAWSVPCS(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSVPCList, error) {
-
+func listAWSVPCS(accessKeyID, secretAccessKey string, assumeRoleARN string, assumeRoleExternalID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSVPCList, error) {
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	vpcsResults, err := awsprovider.GetVPCS(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region)
+	vpcsResults, err := awsprovider.GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, datacenter.Spec.AWS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +435,6 @@ func listAWSVPCS(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.D
 			Ipv6CidrBlockAssociationSet: Ipv6CidrBlocList,
 			CidrBlockAssociationSet:     cidrBlockList,
 		})
-
 	}
 
 	return vpcs, err

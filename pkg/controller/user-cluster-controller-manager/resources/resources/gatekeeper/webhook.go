@@ -26,7 +26,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingWebhookConfigurationCreator returns the ValidatingwebhookConfiguration for gatekeeper
+// ValidatingWebhookConfigurationCreator returns the ValidatingwebhookConfiguration for gatekeeper.
 func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return resources.GatekeeperValidatingWebhookConfigurationName, func(validatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {

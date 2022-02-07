@@ -28,9 +28,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type s3Exporter struct {
@@ -38,17 +38,17 @@ type s3Exporter struct {
 	ObjectLastModifiedDate *prometheus.Desc
 	EmptyObjectCount       *prometheus.Desc
 	QuerySuccess           *prometheus.Desc
-	kubermaticClient       kubermaticclientset.Interface
+	client                 ctrlruntimeclient.Reader
 	bucket                 string
 	minioClient            *minio.Client
 	logger                 *zap.SugaredLogger
 }
 
-// MustRun starts a s3 exporter or panic
-func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Interface, bucket, listenAddress string, logger *zap.SugaredLogger) {
+// MustRun starts a s3 exporter or panic.
+func MustRun(minioClient *minio.Client, client ctrlruntimeclient.Reader, bucket, listenAddress string, logger *zap.SugaredLogger) {
 	exporter := s3Exporter{}
 	exporter.minioClient = minioClient
-	exporter.kubermaticClient = kubermaticClient
+	exporter.client = client
 	exporter.bucket = bucket
 	exporter.logger = logger
 
@@ -87,8 +87,8 @@ func (e *s3Exporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
-	clusters, err := e.kubermaticClient.KubermaticV1().Clusters().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
+	var clusterList *kubermaticv1.ClusterList
+	if err := e.client.List(context.Background(), clusterList); err != nil {
 		e.logger.Errorw("Failed to list clusters", zap.Error(err))
 		ch <- prometheus.MustNewConstMetric(
 			e.QuerySuccess,
@@ -115,7 +115,7 @@ func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
 		objects = append(objects, listerObject)
 	}
 
-	for _, cluster := range clusters.Items {
+	for _, cluster := range clusterList.Items {
 		e.setMetricsForCluster(ch, objects, cluster.Name)
 	}
 }

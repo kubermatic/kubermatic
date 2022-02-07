@@ -31,7 +31,7 @@ const (
 	reconcileModeValue  = "Reconcile"
 )
 
-// ConfigMapCreator returns a ConfigMap containing the config for Node Local DNS cache
+// ConfigMapCreator returns a ConfigMap containing the config for Node Local DNS cache.
 func ConfigMapCreator(dnsClusterIP string) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.NodeLocalDNSConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {

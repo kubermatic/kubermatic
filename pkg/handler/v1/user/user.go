@@ -19,6 +19,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,17 +31,17 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// DeleteEndpoint deletes the given user/member from the given project
+// DeleteEndpoint deletes the given user/member from the given project.
 func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DeleteReq)
@@ -104,7 +105,7 @@ func deleteBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return memberProvider.Delete(userInfo, bindingID)
 }
 
-func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, project *kubermaticapiv1.Project, userEmail string) ([]*kubermaticapiv1.UserProjectBinding, error) {
+func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, project *kubermaticv1.Project, userEmail string) ([]*kubermaticv1.UserProjectBinding, error) {
 	skipPrivilegeVerification := true
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -126,10 +127,9 @@ func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	}
 
 	return memberProvider.List(userInfo, project, options)
-
 }
 
-// EditEndpoint changes the group the given user/member belongs in the given project
+// EditEndpoint changes the group the given user/member belongs in the given project.
 func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(EditReq)
@@ -152,8 +152,8 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		memberToUpdate, err := userProvider.UserByEmail(currentMemberFromRequest.Email)
-		if err != nil && err == provider.ErrNotFound {
-			return nil, k8cerrors.NewBadRequest("cannot add the user = %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
+		if err != nil && errors.Is(err, provider.ErrNotFound) {
+			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -183,7 +183,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, projectID string, binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
+func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, projectID string, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -199,7 +199,7 @@ func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return memberProvider.Update(userInfo, binding)
 }
 
-// ListEndpoint returns user/members of the given project
+// ListEndpoint returns user/members of the given project.
 func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
@@ -235,7 +235,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-// AddEndpoint adds the given user to the given group within the given project
+// AddEndpoint adds the given user to the given group within the given project.
 func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddReq)
@@ -251,8 +251,8 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		projectFromRequest := apiUserFromRequest.Projects[0]
 
 		userToInvite, err := userProvider.UserByEmail(apiUserFromRequest.Email)
-		if err != nil && err == provider.ErrNotFound {
-			return nil, k8cerrors.NewBadRequest("cannot add the user = %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
+		if err != nil && errors.Is(err, provider.ErrNotFound) {
+			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -266,7 +266,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(memberList) > 0 {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user = %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
 		}
 
 		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
@@ -281,10 +281,10 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 	}
 }
 
-// LogoutEndpoint
+// LogoutEndpoint.
 func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
 		t := ctx.Value(middleware.RawTokenContextKey)
 		token, ok := t.(string)
@@ -296,11 +296,11 @@ func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 		if !ok {
 			return nil, k8cerrors.NewNotAuthorized()
 		}
-		return nil, userProvider.AddUserTokenToBlacklist(authenticatedUser, token, expiry)
+		return nil, userProvider.InvalidateToken(authenticatedUser, token, expiry)
 	}
 }
 
-func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, project *kubermaticapiv1.Project, email, group string) (*kubermaticapiv1.UserProjectBinding, error) {
+func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, project *kubermaticv1.Project, email, group string) (*kubermaticv1.UserProjectBinding, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -316,10 +316,10 @@ func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return memberProvider.Create(userInfo, project, email, group)
 }
 
-// GetEndpoint returns info about the current user
+// GetEndpoint returns info about the current user.
 func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
 		bindings, err := memberMapper.MappingsFor(authenticatedUser.Spec.Email)
 		if err != nil {
@@ -330,39 +330,39 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	}
 }
 
-// GetSettingsEndpoint returns settings of the current user
+// GetSettingsEndpoint returns settings of the current user.
 func GetSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 		return authenticatedUser.Spec.Settings, nil
 	}
 }
 
-// PatchSettingsEndpoint patches settings of the current user
+// PatchSettingsEndpoint patches settings of the current user.
 func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchSettingsReq)
-		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
 		existingSettings := existingUser.Spec.Settings
 		if existingSettings == nil {
-			existingSettings = &kubermaticapiv1.UserSettings{}
+			existingSettings = &kubermaticv1.UserSettings{}
 		}
 
 		existingSettingsJSON, err := json.Marshal(existingSettings)
 		if err != nil {
-			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
+			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
 		}
 
 		patchedSettingsJSON, err := jsonpatch.MergePatch(existingSettingsJSON, req.Patch)
 		if err != nil {
-			return nil, errors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
+			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
 		}
 
-		var patchedSettings *kubermaticapiv1.UserSettings
+		var patchedSettings *kubermaticv1.UserSettings
 		err = json.Unmarshal(patchedSettingsJSON, &patchedSettings)
 		if err != nil {
-			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
+			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
 		}
 
 		existingUser.Spec.Settings = patchedSettings
@@ -395,7 +395,7 @@ type AddReq struct {
 	Body apiv1.User
 }
 
-// Validate validates AddReq request
+// Validate validates AddReq request.
 func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	if len(r.ProjectID) == 0 {
 		return k8cerrors.NewBadRequest("the name of the project cannot be empty")
@@ -433,14 +433,13 @@ func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	return nil
 }
 
-// DecodeAddReq  decodes an HTTP request into AddReq
+// DecodeAddReq  decodes an HTTP request into AddReq.
 func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AddReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -451,7 +450,7 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// IDReq represents a request that contains userID in the path
+// IDReq represents a request that contains userID in the path.
 type IDReq struct {
 	// in: path
 	UserID string `json:"user_id"`
@@ -476,7 +475,7 @@ type EditReq struct {
 	IDReq
 }
 
-// Validate validates EditUserToProject request
+// Validate validates EditUserToProject request.
 func (r EditReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	err := r.AddReq.Validate(authenticatesUserInfo)
 	if err != nil {
@@ -488,14 +487,13 @@ func (r EditReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	return nil
 }
 
-// DecodeEditReq  decodes an HTTP request into EditReq
+// DecodeEditReq  decodes an HTTP request into EditReq.
 func DecodeEditReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req EditReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
-
 	}
 	req.ProjectReq = prjReq.(common.ProjectReq)
 
@@ -519,7 +517,7 @@ type DeleteReq struct {
 	IDReq
 }
 
-// DecodeDeleteReq  decodes an HTTP request into DeleteReq
+// DecodeDeleteReq  decodes an HTTP request into DeleteReq.
 func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DeleteReq
 
@@ -545,7 +543,7 @@ type PatchSettingsReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchSettingsReq  decodes an HTTP request into PatchSettingsReq
+// DecodePatchSettingsReq  decodes an HTTP request into PatchSettingsReq.
 func DecodePatchSettingsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req PatchSettingsReq
 	var err error

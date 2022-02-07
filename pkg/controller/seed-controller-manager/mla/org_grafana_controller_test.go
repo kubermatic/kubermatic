@@ -35,7 +35,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -75,7 +75,6 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 }
 
 func TestOrgGrafanaReconcile(t *testing.T) {
-
 	var board struct {
 		Dashboard grafanasdk.Board `json:"dashboard"`
 		FolderID  int              `json:"folderId"`
@@ -329,7 +328,6 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			server.Close()
 		})
 	}
-
 }
 
 func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bool) {

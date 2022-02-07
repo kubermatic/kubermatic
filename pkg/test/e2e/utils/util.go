@@ -23,10 +23,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	httptransport "github.com/go-openapi/runtime/client"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -35,7 +35,7 @@ import (
 func NewKubermaticClient(endpointURL string) (*client.KubermaticKubernetesPlatformAPI, error) {
 	parsed, err := url.Parse(endpointURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse URL: %v", err)
+		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	}
 
 	if parsed.Host == "" || parsed.Scheme == "" {
@@ -62,7 +62,7 @@ func KubernetesVersion() string {
 	version := defaults.DefaultKubernetesVersioning.Default
 
 	if v := os.Getenv("VERSION_TO_TEST"); v != "" {
-		version = semver.MustParse(v)
+		version = semver.NewSemverOrDie(v)
 	}
 
 	return "v" + version.String()

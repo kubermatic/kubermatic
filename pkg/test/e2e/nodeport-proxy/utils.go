@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// function used to extract port info
+// function used to extract port info.
 type extractPortFunc func(corev1.ServicePort) int32
 
 func extractPort(svc *corev1.Service, extract extractPortFunc) sets.Int32 {

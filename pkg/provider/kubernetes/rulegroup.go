@@ -19,7 +19,7 @@ package kubernetes
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -38,7 +38,7 @@ type RuleGroupProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// NewRuleGroupProvider returns a ruleGroup provider
+// NewRuleGroupProvider returns a ruleGroup provider.
 func NewRuleGroupProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *RuleGroupProvider {
 	return &RuleGroupProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,

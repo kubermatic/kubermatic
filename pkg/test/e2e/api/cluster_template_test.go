@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -102,7 +102,6 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to create cluster template: %v", getErrorResponse(err))
 				}
-
 			} else {
 				clusterTemplate, err = testClient.CreateClusterTemplate(project.ID, tc.newName, tc.scope, tc.credential, tc.version, tc.location)
 				if err != nil {
@@ -117,7 +116,6 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 			if clusterTemplate.Scope != tc.scope {
 				t.Fatalf("expected scope %v, but got %v", tc.scope, clusterTemplate.Scope)
 			}
-
 		})
 	}
 }

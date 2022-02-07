@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,19 +29,19 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewAdminProvider returns a admin provider
+// NewAdminProvider returns a admin provider.
 func NewAdminProvider(client ctrlruntimeclient.Client) *AdminProvider {
 	return &AdminProvider{
 		client: client,
 	}
 }
 
-// AdminProvider manages admin resources
+// AdminProvider manages admin resources.
 type AdminProvider struct {
 	client ctrlruntimeclient.Client
 }
 
-// GetAdmins return all users with admin rights
+// GetAdmins return all users with admin rights.
 func (a *AdminProvider) GetAdmins(userInfo *provider.UserInfo) ([]kubermaticv1.User, error) {
 	var adminList []kubermaticv1.User
 	if !userInfo.IsAdmin {
@@ -61,7 +61,7 @@ func (a *AdminProvider) GetAdmins(userInfo *provider.UserInfo) ([]kubermaticv1.U
 	return adminList, nil
 }
 
-// SetAdmin set/clear admin rights
+// SetAdmin set/clear admin rights.
 func (a *AdminProvider) SetAdmin(userInfo *provider.UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error) {
 	if !userInfo.IsAdmin {
 		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))

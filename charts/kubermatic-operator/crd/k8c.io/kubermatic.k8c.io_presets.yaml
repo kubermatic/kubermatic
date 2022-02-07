@@ -19,7 +19,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Preset is the type representing a Preset
+        description: Preset is the type representing a Preset.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,8 +34,28 @@ spec:
           metadata:
             type: object
           spec:
-            description: Presets specifies default presets for supported providers
+            description: Presets specifies default presets for supported providers.
             properties:
+              aks:
+                properties:
+                  clientID:
+                    type: string
+                  clientSecret:
+                    type: string
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  subscriptionID:
+                    type: string
+                  tenantID:
+                    type: string
+                required:
+                - clientID
+                - clientSecret
+                - subscriptionID
+                - tenantID
+                type: object
               alibaba:
                 properties:
                   accessKeyID:
@@ -65,6 +85,10 @@ spec:
               aws:
                 properties:
                   accessKeyID:
+                    type: string
+                  assumeRoleARN:
+                    type: string
+                  assumeRoleExternalID:
                     type: string
                   datacenter:
                     type: string
@@ -140,6 +164,23 @@ spec:
                 required:
                 - token
                 type: object
+              eks:
+                properties:
+                  accessKeyID:
+                    type: string
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  region:
+                    type: string
+                  secretAccessKey:
+                    type: string
+                required:
+                - accessKeyID
+                - region
+                - secretAccessKey
+                type: object
               enabled:
                 type: boolean
               fake:
@@ -164,6 +205,17 @@ spec:
                   serviceAccount:
                     type: string
                   subnetwork:
+                    type: string
+                required:
+                - serviceAccount
+                type: object
+              gke:
+                properties:
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  serviceAccount:
                     type: string
                 required:
                 - serviceAccount
@@ -197,6 +249,37 @@ spec:
                     type: string
                 required:
                 - kubeconfig
+                type: object
+              nutanix:
+                properties:
+                  clusterName:
+                    description: ClusterName is the Nutanix cluster to deploy resources
+                      and nodes to.
+                    type: string
+                  datacenter:
+                    type: string
+                  enabled:
+                    type: boolean
+                  password:
+                    description: Password is the password corresponding to the provided
+                      user.
+                    type: string
+                  projectName:
+                    description: ProjectName is the optional Nutanix project to use.
+                      If none is given, no project will be used.
+                    type: string
+                  proxyURL:
+                    description: ProxyURL is used to optionally configure a HTTP proxy
+                      to access Nutanix Prism Central.
+                    type: string
+                  username:
+                    description: Username is the username to access the Nutanix Prism
+                      Central API.
+                    type: string
+                required:
+                - clusterName
+                - password
+                - username
                 type: object
               openstack:
                 properties:
@@ -280,6 +363,8 @@ spec:
                 - username
                 type: object
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

@@ -27,7 +27,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -35,8 +35,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
 
 func TestCredentialEndpoint(t *testing.T) {
 	t.Parallel()
@@ -68,7 +74,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `["PodNodeSelector","PodSecurityPolicy"]`,
+			expectedResponse: `["EventRateLimit","PodNodeSelector","PodSecurityPolicy"]`,
 		},
 		{
 			name:    "test get plugins for version 1.14",
@@ -85,7 +91,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `["FirstPlugin","PodNodeSelector","PodSecurityPolicy"]`,
+			expectedResponse: `["EventRateLimit","FirstPlugin","PodNodeSelector","PodSecurityPolicy"]`,
 		},
 		{
 			name:    "test get plugins for all versions",
@@ -109,20 +115,19 @@ func TestCredentialEndpoint(t *testing.T) {
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `["FirstPlugin","PodNodeSelector","PodSecurityPolicy","SecondPlugin"]`,
+			expectedResponse: `["EventRateLimit","FirstPlugin","PodNodeSelector","PodSecurityPolicy","SecondPlugin"]`,
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/admission/plugins/%s", tc.version), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			apiUser := test.GenDefaultAPIUser()
 			router, err := test.CreateTestEndpoint(*apiUser, nil, tc.plugins, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v\n", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			router.ServeHTTP(res, req)
 

@@ -18,6 +18,7 @@ package vsphere
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -39,7 +40,7 @@ func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo
 
 	datacenterFolders, err := session.Datacenter.Folders(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load the datacenter folders: %v", err)
+		return nil, fmt.Errorf("failed to load the datacenter folders: %w", err)
 	}
 
 	networks, err := session.Finder.NetworkList(ctx, "*")
@@ -49,14 +50,14 @@ func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo
 	for _, network := range networks {
 		if _, err := network.EthernetCardBackingInfo(ctx); err != nil {
 			// Some network devices cannot be used by VM's.
-			if err == object.ErrNotSupported {
+			if errors.Is(err, object.ErrNotSupported) {
 				continue
 			}
 
 			// Just log the error. If we cannot create a backing info, that network device is not suitable for VM's.
 			// Normally we should cover unsupported network devices with the ErrNotSupported above.
 			// This is just a fallback to prevent that a single network device breaks the list operation
-			runtime.HandleError(fmt.Errorf("failed to get network backing info for %q: %v", network.Reference().String(), err))
+			runtime.HandleError(fmt.Errorf("failed to get network backing info for %q: %w", network.Reference().String(), err))
 			continue
 		}
 
@@ -64,7 +65,7 @@ func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo
 		// unless we want to maintain a long switch statement with all kind of types
 		element, err := session.Finder.Element(ctx, network.Reference())
 		if err != nil {
-			return nil, fmt.Errorf("failed to get details for %q: %v", network.Reference().String(), err)
+			return nil, fmt.Errorf("failed to get details for %q: %w", network.Reference().String(), err)
 		}
 
 		info := NetworkInfo{

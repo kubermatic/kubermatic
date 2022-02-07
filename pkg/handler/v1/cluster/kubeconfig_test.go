@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
@@ -147,7 +147,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ExpectedRedirectURI:       testExpectedRedirectURI,
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedExchangeCodePhase: ExpectedKubeconfigResp{
-				BodyResponse: fmt.Sprintf(`{"error":{"code":400,"message":"incorrect value of state parameter = abc"}}%c`, '\n'),
+				BodyResponse: fmt.Sprintf(`{"error":{"code":400,"message":"incorrect value of state parameter: abc"}}%c`, '\n'),
 				HTTPStatus:   http.StatusBadRequest,
 			},
 		},
@@ -212,7 +212,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingObjects, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -317,7 +317,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -347,7 +347,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "viewers"),
 
@@ -377,7 +377,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -408,7 +408,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -441,7 +441,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, tc.ExistingObjects, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -453,7 +453,6 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponseString)
 		})
 	}
-
 }
 
 func genTestKubeconfigKubermaticObjects() []ctrlruntimeclient.Object {
@@ -472,14 +471,12 @@ func genTestKubeconfigKubermaticObjects() []ctrlruntimeclient.Object {
 }
 
 func marshalEncodeState(oidcState handlercommon.OIDCState) (string, error) {
-
 	rawState, err := json.Marshal(oidcState)
 	if err != nil {
 		return "", err
 	}
 	encodedState := base64.StdEncoding.EncodeToString(rawState)
 	return url.QueryEscape(encodedState), nil
-
 }
 
 func unmarshalState(rawState []byte) (handlercommon.OIDCState, error) {

@@ -18,7 +18,6 @@ package featuregates_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,13 +26,12 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -60,19 +58,17 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 		},
 	}
 
-	dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{
+	dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: test.KubermaticNamespace,
 		},
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
-				Kubernetes: operatorv1alpha1.KubermaticVersioningConfiguration{
-					Versions: test.GenDefaultVersions(),
-				},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Versions: test.GenDefaultVersions(),
 			},
-			FeatureGates: map[string]sets.Empty{
-				fmt.Sprintf("%s=true", features.KonnectivityService): {},
+			FeatureGates: map[string]bool{
+				features.KonnectivityService: true,
 			},
 		},
 	}
@@ -84,7 +80,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -94,7 +90,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 			if resp.Code == http.StatusOK {
 				var featureGates v2.FeatureGates
 				if err := json.Unmarshal(resp.Body.Bytes(), &featureGates); err != nil {
-					t.Fatalf("failed to unmarshal response due to: %v", err)
+					t.Fatalf("failed to unmarshal response: %v", err)
 				}
 				if !cmp.Equal(tc.ExpectedResponse, featureGates) {
 					t.Fatalf(cmp.Diff(tc.ExpectedResponse, featureGates))

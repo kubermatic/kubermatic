@@ -17,24 +17,136 @@ limitations under the License.
 package kubermaticmaster
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	"k8c.io/kubermatic/v2/pkg/install/util"
+	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func (*MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
+func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+	var errs []error
+
+	// validation can only happen if KKP was already installed, otherwise the resource types
+	// won't even be known by the kube-apiserver
+	crdsExists, err := util.HasAllReadyCRDs(ctx, opt.KubeClient, []string{
+		"clusters.kubermatic.k8c.io",
+		"seeds.kubermatic.k8c.io",
+	})
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to check for CRDs: %w", err))
+	}
+
+	if !crdsExists {
+		return nil // nothing to do
+	}
+
+	// we need the actual, effective versioning configuration, which most users will
+	// probably not override
+	defaulted, err := defaults.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
+	}
+
+	allSeeds, err := opt.SeedsGetter()
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to list Seeds: %w", err))
+	}
+
+	upgradeConstraints, contraintErrs := getAutoUpdateConstraints(defaulted)
+	if len(contraintErrs) > 0 {
+		return contraintErrs
+	}
+
+	for seedName, seed := range allSeeds {
+		opt.Logger.WithField("seed", seedName).Info("Checking seed cluster…")
+
+		// create client into seed
+		seedClient, err := opt.SeedClientGetter(seed)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to create client for Seed cluster %q: %w", seedName, err))
+			continue
+		}
+
+		// list all userclusters
+		clusters := kubermaticv1.ClusterList{}
+		if err := seedClient.List(ctx, &clusters); err != nil {
+			errs = append(errs, fmt.Errorf("failed to list user clusters on Seed %q: %w", seedName, err))
+			continue
+		}
+
+		// check that each cluster still matches the configured versions
+		for _, cluster := range clusters.Items {
+			clusterVersion := cluster.Spec.Version
+
+			if !clusterVersionIsConfigured(clusterVersion, defaulted, upgradeConstraints) {
+				errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seedName))
+			}
+		}
+	}
+
+	return errs
+}
+
+func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfiguration) ([]*semver.Constraints, []error) {
+	var errs []error
+
+	upgradeConstraints := []*semver.Constraints{}
+
+	for i, update := range defaultedConfig.Spec.Versions.Updates {
+		// only consider automated updates, otherwise we might accept an unsupported
+		// cluster that is never manually updated
+		if update.Automatic == nil || !*update.Automatic {
+			continue
+		}
+
+		from, err := semver.NewConstraint(update.From)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
+			continue
+		}
+
+		upgradeConstraints = append(upgradeConstraints, from)
+	}
+
+	return upgradeConstraints, errs
+}
+
+func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semver.Constraints) bool {
+	// is this version still straight up supported?
+	for _, configured := range defaultedConfig.Spec.Versions.Versions {
+		if configured.Equal(&version) {
+			return true
+		}
+	}
+
+	sversion := version.Semver()
+
+	// is an upgrade path defined from the current version to something else?
+	for _, update := range constraints {
+		if update.Check(sversion) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (*MasterStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
 	kubermaticFailures := validateKubermaticConfiguration(config)
 	for idx, e := range kubermaticFailures {
 		kubermaticFailures[idx] = prefixError("KubermaticConfiguration: ", e)
@@ -48,7 +160,7 @@ func (*MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticCon
 	return config, helmValues, append(kubermaticFailures, helmFailures...)
 }
 
-func validateKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfiguration) []error {
+func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []error {
 	failures := []error{}
 
 	if config.Namespace != KubermaticOperatorNamespace {
@@ -64,10 +176,10 @@ func validateKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfigur
 	failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
 
 	if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
-		failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %v", err))
+		failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
 	}
 
-	if config.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {
+	if config.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
 		failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
 		failures = validateRandomSecret(config, config.Spec.Auth.IssuerCookieKey, "spec.auth.issuerCookieKey", failures)
 	}
@@ -75,7 +187,7 @@ func validateKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfigur
 	return failures
 }
 
-func validateRandomSecret(config *operatorv1alpha1.KubermaticConfiguration, value string, path string, failures []error) []error {
+func validateRandomSecret(config *kubermaticv1.KubermaticConfiguration, value string, path string, failures []error) []error {
 	if value == "" {
 		secret, err := randomString()
 		if err == nil {
@@ -88,7 +200,7 @@ func validateRandomSecret(config *operatorv1alpha1.KubermaticConfiguration, valu
 	return failures
 }
 
-func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
+func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
 	failures := []error{}
 
 	path := yamled.Path{"dex", "ingress", "host"}
@@ -112,7 +224,7 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 
 	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %v", err))
+		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading
 	}
 
@@ -159,7 +271,7 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 }
 
 func prefixError(prefix string, e error) error {
-	return fmt.Errorf("%s%v", prefix, e)
+	return fmt.Errorf("%s%w", prefix, e)
 }
 
 func randomString() (string, error) {

@@ -26,13 +26,13 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// ListAdmissionPluginEndpoint returns admission plugin list
+// ListAdmissionPluginEndpoint returns admission plugin list.
 func ListAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
@@ -52,7 +52,7 @@ func ListAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissi
 	}
 }
 
-// GetAdmissionPluginEndpoint returns the admission plugin
+// GetAdmissionPluginEndpoint returns the admission plugin.
 func GetAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(admissionPluginReq)
@@ -72,7 +72,7 @@ func GetAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissio
 	}
 }
 
-// DeleteAdmissionPluginEndpoint deletes the admission plugin
+// DeleteAdmissionPluginEndpoint deletes the admission plugin.
 func DeleteAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(admissionPluginReq)
@@ -92,7 +92,7 @@ func DeleteAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 	}
 }
 
-// UpdateAdmissionPluginEndpoint updates the admission plugin
+// UpdateAdmissionPluginEndpoint updates the admission plugin.
 func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateAdmissionPluginReq)
@@ -141,7 +141,7 @@ type updateAdmissionPluginReq struct {
 	Body apiv1.AdmissionPlugin
 }
 
-// Validate validates UpdateAdmissionPluginEndpoint request
+// Validate validates UpdateAdmissionPluginEndpoint request.
 func (r updateAdmissionPluginReq) Validate() error {
 	if r.Name != r.Body.Name {
 		return fmt.Errorf("admission plugin name mismatch, you requested to update AdmissionPlugin = %s but body contains AdmissionPlugin = %s", r.Name, r.Body.Name)

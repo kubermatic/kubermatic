@@ -30,6 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
@@ -38,8 +39,6 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/docker"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -47,6 +46,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -127,7 +127,7 @@ func main() {
 
 	// If given, load the KubermaticConfiguration. It's not yet a required
 	// parameter in order to support Helm-based Enterprise setups.
-	var kubermaticConfig *operatorv1alpha1.KubermaticConfiguration
+	var kubermaticConfig *kubermaticv1.KubermaticConfiguration
 	if o.configurationFile != "" {
 		kubermaticConfig, err = loadKubermaticConfiguration(log, o.configurationFile)
 		if err != nil {
@@ -155,7 +155,7 @@ func main() {
 			if kubermaticConfig == nil {
 				log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
 			} else {
-				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.Kubernetes.DockerRepository + ":" + kubermaticVersions.Kubermatic
+				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + kubermaticVersions.Kubermatic
 			}
 		}
 
@@ -208,17 +208,17 @@ func main() {
 func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, imageName string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "imageloader*")
 	if err != nil {
-		return "", fmt.Errorf("failed to create temporary directory: %v", err)
+		return "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 
 	log.Infow("Extracting addon manifests from Docker image", "image", imageName, "temp-directory", tempDir)
 
 	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
-		return tempDir, fmt.Errorf("failed to download addons image: %v", err)
+		return tempDir, fmt.Errorf("failed to download addons image: %w", err)
 	}
 
 	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
-		return tempDir, fmt.Errorf("failed to extract addons: %v", err)
+		return tempDir, fmt.Errorf("failed to extract addons: %w", err)
 	}
 
 	return tempDir, nil
@@ -226,21 +226,21 @@ func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, i
 
 func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
 	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
-		return fmt.Errorf("failed to download all images: %v", err)
+		return fmt.Errorf("failed to download all images: %w", err)
 	}
 
 	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, registry)
 	if err != nil {
-		return fmt.Errorf("failed to re-tag images: %v", err)
+		return fmt.Errorf("failed to re-tag images: %w", err)
 	}
 
 	if err := docker.PushImages(ctx, log, dryRun, retaggedImages); err != nil {
-		return fmt.Errorf("failed to push images: %v", err)
+		return fmt.Errorf("failed to push images: %w", err)
 	}
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
 	templateData, err := getTemplateData(clusterVersion, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -248,23 +248,23 @@ func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversi
 
 	creatorImages, err := getImagesFromCreators(log, templateData, config, kubermaticVersions)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get images from internal creator functions: %v", err)
+		return nil, fmt.Errorf("failed to get images from internal creator functions: %w", err)
 	}
 	images = append(images, creatorImages...)
 
 	addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get images from addons: %v", err)
+		return nil, fmt.Errorf("failed to get images from addons: %w", err)
 	}
 	images = append(images, addonImages...)
 
 	return images, nil
 }
 
-func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, log)
+func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, config, log)
 	if err != nil {
-		return nil, fmt.Errorf("failed to default Seed: %v", err)
+		return nil, fmt.Errorf("failed to default Seed: %w", err)
 	}
 
 	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false, false)
@@ -276,7 +276,7 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, masteroperator.MasterControllerManagerDeploymentCreator(config, "", kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, masteroperator.UIDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, seedoperatorkubermatic.SeedControllerManagerDeploymentCreator("", kubermaticVersions, config, seed))
-	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.EnvoyDeploymentCreator(config, seed, kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.EnvoyDeploymentCreator(config, seed, false, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.UpdaterDeploymentCreator(config, seed, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.AdmissionControllerDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
@@ -461,6 +461,10 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(resources.IPVSStrictArp)}
+	fakeCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+		Type:    kubermaticv1.CNIPluginTypeCanal,
+		Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+	}
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 
 	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
@@ -481,7 +485,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		WithVersions(kubermaticVersions).
 		WithCABundle(caBundle).
 		Build(), nil
-
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {
@@ -498,7 +501,7 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
+func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
 	var versions []*kubermaticversion.Version
 
 	log = log.With("versions-filter", versionFilter)
@@ -527,7 +530,7 @@ func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConf
 	log.Debug("Filtering versions")
 	constraint, err := semver.NewConstraint(versionFilter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version filter %q: %v", versionFilter, err)
+		return nil, fmt.Errorf("failed to parse version filter %q: %w", versionFilter, err)
 	}
 
 	var filteredVersions []*kubermaticversion.Version
@@ -553,7 +556,7 @@ func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []
 			log.Debug("Skipping object because its not known")
 			return nil, nil
 		}
-		return nil, fmt.Errorf("unable to decode object: %v", err)
+		return nil, fmt.Errorf("unable to decode object: %w", err)
 	}
 
 	images := getImagesFromObject(obj)

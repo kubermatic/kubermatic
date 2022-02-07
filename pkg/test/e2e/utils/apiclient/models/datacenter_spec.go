@@ -38,11 +38,8 @@ type DatacenterSpec struct {
 	// It is used for informational purposes.
 	Provider string `json:"provider,omitempty"`
 
-	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
-
-	// required email domains
-	RequiredEmailDomains []string `json:"requiredEmailDomains"`
+	// required emails
+	RequiredEmails []string `json:"requiredEmails"`
 
 	// Name of the seed this datacenter belongs to.
 	Seed string `json:"seed,omitempty"`
@@ -79,6 +76,9 @@ type DatacenterSpec struct {
 
 	// node
 	Node *NodeSettings `json:"node,omitempty"`
+
+	// nutanix
+	Nutanix *DatacenterSpecNutanix `json:"nutanix,omitempty"`
 
 	// openstack
 	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
@@ -131,6 +131,10 @@ func (m *DatacenterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateNode(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNutanix(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -322,6 +326,23 @@ func (m *DatacenterSpec) validateNode(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *DatacenterSpec) validateNutanix(formats strfmt.Registry) error {
+	if swag.IsZero(m.Nutanix) { // not required
+		return nil
+	}
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *DatacenterSpec) validateOpenstack(formats strfmt.Registry) error {
 	if swag.IsZero(m.Openstack) { // not required
 		return nil
@@ -414,6 +435,10 @@ func (m *DatacenterSpec) ContextValidate(ctx context.Context, formats strfmt.Reg
 	}
 
 	if err := m.contextValidateNode(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNutanix(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -567,6 +592,20 @@ func (m *DatacenterSpec) contextValidateNode(ctx context.Context, formats strfmt
 		if err := m.Node.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("node")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpec) contextValidateNutanix(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
 			}
 			return err
 		}

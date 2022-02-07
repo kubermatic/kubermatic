@@ -13,7 +13,7 @@ import (
 )
 
 // ProjectGroup ProjectGroup is a helper data structure that
-// stores the information about a project and a group prefix that a user belongs to
+// stores the information about a project and a group prefix that a user belongs to.
 //
 // swagger:model ProjectGroup
 type ProjectGroup struct {

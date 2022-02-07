@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// KeyHolderSecretCreator  creates key holder secret for the Kubernetes Dashboard
+// KeyHolderSecretCreator  creates key holder secret for the Kubernetes Dashboard.
 func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardKeyHolderSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
@@ -33,7 +33,7 @@ func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 	}
 }
 
-// CsrfTokenSecretCreator  creates the csrf token secret for the Kubernetes Dashboard
+// CsrfTokenSecretCreator  creates the csrf token secret for the Kubernetes Dashboard.
 func CsrfTokenSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardCsrfTokenSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {

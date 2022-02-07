@@ -21,7 +21,7 @@ import (
 	"errors"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +35,7 @@ import (
 
 // There is a good chance someone wants simplify the code
 // and make an if err := r.reconcile(); err != nil {} simplication,
-// accidentally shortcircuiting the workqeue and retrying
+// accidentally shortcircuiting the workqeue and retrying.
 func TestReconcileReturnsError(t *testing.T) {
 	ctx := context.Background()
 	r := &reconciler{

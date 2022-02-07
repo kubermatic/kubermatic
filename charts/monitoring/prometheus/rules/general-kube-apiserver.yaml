@@ -45,26 +45,6 @@ groups:
           severity: critical
           resource: apiserver
           service: kubernetes
-      - alert: KubeAPILatencyHigh
-        annotations:
-          message: The API server has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
-        expr: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
-        for: 10m
-        labels:
-          severity: warning
-          resource: apiserver
-          service: kubernetes
-      - alert: KubeAPILatencyHigh
-        annotations:
-          message: The API server has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
-        expr: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
-        for: 10m
-        labels:
-          severity: critical
-          resource: apiserver
-          service: kubernetes
       - alert: KubeAPIErrorsHigh
         annotations:
           message: API server is returning errors for {{ $value }}% of requests.
@@ -73,6 +53,32 @@ groups:
           sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
             /
           sum(rate(apiserver_request_total{job="apiserver"}[5m])) without(instance, pod) * 100 > 10
+        for: 10m
+        labels:
+          severity: critical
+          resource: apiserver
+          service: kubernetes
+      - alert: KubeAPITerminatedRequests
+        annotations:
+          message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapiterminatedrequests
+        expr: |
+          sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
+            /
+          (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+        for: 5m
+        labels:
+          severity: warning
+          resource: apiserver
+          service: kubernetes
+      - alert: KubeAPITerminatedRequests
+        annotations:
+          message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapiterminatedrequests
+        expr: |
+          sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
+            /
+          (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
         for: 10m
         labels:
           severity: critical

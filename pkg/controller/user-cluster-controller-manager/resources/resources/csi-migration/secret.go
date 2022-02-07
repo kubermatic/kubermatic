@@ -55,7 +55,7 @@ func TLSServingCertificateCreator(ca *triple.KeyPair) reconciling.NamedSecretCre
 			if b, exists := se.Data[resources.CSIMigrationWebhookServingCertCertKeyName]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.CSIMigrationWebhookSecretName, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.CSIMigrationWebhookSecretName, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil
@@ -71,7 +71,7 @@ func TLSServingCertificateCreator(ca *triple.KeyPair) reconciling.NamedSecretCre
 				// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
 				[]string{commonName})
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate serving cert: %v", err)
+				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 			se.Data[resources.CSIMigrationWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
 			se.Data[resources.CSIMigrationWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)

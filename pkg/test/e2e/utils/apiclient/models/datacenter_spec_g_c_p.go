@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecGCP DatacenterSpecGCP describes a GCP datacenter
+// DatacenterSpecGCP DatacenterSpecGCP describes a GCP datacenter.
 //
 // swagger:model DatacenterSpecGCP
 type DatacenterSpecGCP struct {
@@ -28,7 +28,7 @@ type DatacenterSpecGCP struct {
 
 	// List of enabled zones, for example [a, c]. See the link above for the available
 	// zones in your chosen region.
-	ZoneSuffixes []string `json:"zone_suffixes"`
+	ZoneSuffixes []string `json:"zoneSuffixes"`
 }
 
 // Validate validates this datacenter spec g c p

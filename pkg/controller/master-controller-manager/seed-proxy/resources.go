@@ -22,8 +22,10 @@ import (
 	"strings"
 	"text/template"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -152,7 +154,7 @@ func masterSecretCreator(seed *kubermaticv1.Seed, kubeconfig *rest.Config, crede
 			// consuming the credentials becomes easier later on
 			kubeconfig, err := convertServiceAccountToKubeconfig(host, credentials)
 			if err != nil {
-				return s, fmt.Errorf("failed to create kubeconfig: %v", err)
+				return s, fmt.Errorf("failed to create kubeconfig: %w", err)
 			}
 
 			s.Data["kubeconfig"] = kubeconfig
@@ -187,7 +189,7 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) 
 	return clientcmd.Write(*kubeconfig)
 }
 
-func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) reconciling.NamedDeploymentCreatorGetter {
+func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret, getRegistry registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	name := deploymentName(seed)
 
 	return func() (string, reconciling.DeploymentCreator) {
@@ -205,7 +207,7 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 				PeriodSeconds:       10,
 				SuccessThreshold:    1,
 				FailureThreshold:    3,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.Parse("http"),
 					},
@@ -228,7 +230,7 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   "quay.io/kubermatic/util:2.0.0",
+					Image:   getRegistry(resources.RegistryQuay) + "/kubermatic/util:2.0.0",
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
@@ -281,6 +283,12 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 							SecretName: secret.Name,
 						},
 					},
+				},
+			}
+
+			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+				{
+					Name: resources.ImagePullSecretName,
 				},
 			}
 
@@ -341,7 +349,7 @@ func (r *Reconciler) masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv
 
 				config, err := buildGrafanaDatasource(seed)
 				if err != nil {
-					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", seedName, err)
+					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %w", seedName, err)
 				}
 
 				c.Data[filename] = config

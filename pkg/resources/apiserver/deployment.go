@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
@@ -54,7 +54,7 @@ const (
 	name = "apiserver"
 )
 
-// DeploymentCreator returns the function to create and update the API server deployment
+// DeploymentCreator returns the function to create and update the API server deployment.
 func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -90,11 +90,11 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
 
-			// Configure user cluster DNS resolver for this pod.
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
+
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				etcdrunning.Container(etcdEndpoints, data),
@@ -107,12 +107,12 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			if data.IsKonnectivityEnabled() {
 				konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
 				}
 			} else {
 				openvpnSidecar, err = vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
 				}
 
 				dnatControllerSidecar, err = vpnsidecar.DnatControllerContainer(
@@ -121,7 +121,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
 				)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
 				}
 			}
 
@@ -149,7 +149,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/healthz",
 							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
@@ -162,7 +162,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					TimeoutSeconds:   15,
 				},
 				LivenessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/healthz",
 							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
@@ -204,14 +204,14 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			if auditLogEnabled {
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
 						Name:    "audit-logs",
-						Image:   "docker.io/fluent/fluent-bit:1.2.2",
+						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.2.2",
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
 						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
 						VolumeMounts: []corev1.VolumeMount{
@@ -245,7 +245,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
-		return nil, fmt.Errorf("could not get components override flags: %v", err)
+		return nil, fmt.Errorf("could not get components override flags: %w", err)
 	}
 
 	cluster := data.Cluster()
@@ -267,6 +267,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 	if cluster.Spec.UsePodNodeSelectorAdmissionPlugin {
 		admissionPlugins.Insert(resources.PodNodeSelectorAdmissionPlugin)
+	}
+
+	if useEventRateLimitAdmissionPlugin(data) {
+		admissionPlugins.Insert(resources.EventRateLimitAdmissionPlugin)
 	}
 
 	admissionPlugins.Insert(cluster.Spec.AdmissionPlugins...)
@@ -438,7 +442,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 }
 
 // getApiserverOverrideFlags creates all settings that may be overridden by cluster specific componentsOverrideSettings
-// otherwise global overrides or defaults will be set
+// otherwise global overrides or defaults will be set.
 func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APIServerSettings, error) {
 	settings := kubermaticv1.APIServerSettings{
 		NodePortRange: data.ComputedNodePortRange(),
@@ -720,7 +724,6 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 	}
 
 	return vs
-
 }
 
 type kubeAPIServerEnvData interface {
@@ -746,6 +749,8 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: cluster.Spec.Cloud.AWS.AssumeRoleARN})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
 
 	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil

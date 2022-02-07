@@ -28,7 +28,7 @@ import (
 
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -217,7 +217,7 @@ func TestOPAIntegration(t *testing.T) {
 	masterClient.CleanupCluster(t, project.ID, datacenter, apiCluster.ID)
 }
 
-// getErrorResponse converts the client error response to string
+// getErrorResponse converts the client error response to string.
 func getErrorResponse(err error) string {
 	rawData, newErr := json.Marshal(err)
 	if newErr != nil {

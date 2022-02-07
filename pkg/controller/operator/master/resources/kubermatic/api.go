@@ -19,8 +19,8 @@ package kubermatic
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -39,7 +39,7 @@ func apiPodLabels() map[string]string {
 	}
 }
 
-func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return APIDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			probe := corev1.Probe{
@@ -48,7 +48,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				PeriodSeconds:       10,
 				SuccessThreshold:    1,
 				FailureThreshold:    3,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/api/v1/healthz",
 						Scheme: corev1.URISchemeHTTP,
@@ -106,7 +106,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				fmt.Sprintf("-domain=%s", cfg.Spec.Ingress.Domain),
 				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
 				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
-				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),
+				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.API.PProfEndpoint),
 			}
 
@@ -116,7 +116,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				args = append(args, "-v=2")
 			}
 
-			if cfg.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {
+			if cfg.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
 				args = append(
 					args,
 					fmt.Sprintf("-oidc-issuer-redirect-uri=%s", cfg.Spec.Auth.IssuerRedirectURL),
@@ -161,12 +161,18 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 	}
 }
 
-func APIPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func APIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	name := "kubermatic-api"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+			// To prevent the PDB from blocking node rotations, we accept
+			// 0 minAvailable if the replica count is only 1.
+			// NB: The cfg is defaulted, so Replicas==nil cannot happen.
 			min := intstr.FromInt(1)
+			if cfg.Spec.API.Replicas != nil && *cfg.Spec.API.Replicas < 2 {
+				min = intstr.FromInt(0)
+			}
 
 			pdb.Spec.MinAvailable = &min
 			pdb.Spec.Selector = &metav1.LabelSelector{
@@ -178,7 +184,7 @@ func APIPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.Na
 	}
 }
 
-func APIServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
+func APIServiceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return apiServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeNodePort

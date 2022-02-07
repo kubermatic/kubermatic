@@ -28,23 +28,36 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const fakeDC = "fake-dc"
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
+
+const (
+	fakeDC     = "fake-dc"
+	usCentral1 = "us-central1"
+)
+
+var (
+	healthUp = kubermaticv1.HealthStatusUp
+)
 
 func TestDeleteClusterEndpoint(t *testing.T) {
 	t.Parallel()
@@ -75,7 +88,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -91,7 +104,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -124,7 +137,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -140,7 +153,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -160,7 +173,6 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			// validate if deletion was successful
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
@@ -168,7 +180,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -226,7 +238,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -242,7 +254,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -279,7 +291,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -295,7 +307,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -332,7 +344,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -348,7 +360,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -376,7 +388,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 				ep, err = test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 				if err != nil {
-					t.Fatalf("failed to create test endpoint due to %v", err)
+					t.Fatalf("failed to create test endpoint: %v", err)
 				}
 
 				ep.ServeHTTP(res, req)
@@ -444,7 +456,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -462,7 +474,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 						Name: "key-abc-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -489,7 +501,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -540,7 +552,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -573,7 +585,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       "differentProject",
@@ -603,7 +615,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -636,7 +648,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -660,7 +672,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -700,8 +712,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.4","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.4","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"},"exposeStrategy":"NodePort"}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"1.22.5","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated, ProjectToSync: test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -712,7 +724,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -726,7 +738,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
-			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.22.4","cloud":{"version":"1.22.4","fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.22.5","cloud":{"version":"1.22.5","fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -743,7 +755,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 4
 		{
 			Name:             "scenario 4: unable to create a cluster when project is not ready",
-			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":503,"message":"Project is not initialized yet"}}`,
 			HTTPStatus:       http.StatusServiceUnavailable,
 			ExistingProject: func() *kubermaticv1.Project {
@@ -761,7 +773,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 9a: rejected an attempt to create a cluster in email-restricted datacenter - legacy single domain restriction with requiredEmailDomains",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc datacenter due to email requirements"}}`,
 			RewriteClusterID: false,
 			HTTPStatus:       http.StatusForbidden,
@@ -773,7 +785,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 9b: rejected an attempt to create a cluster in email-restricted datacenter - domain array restriction with `requiredEmailDomains`",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"cannot access restricted-fake-dc2 datacenter due to email requirements"}}`,
 			RewriteClusterID: false,
 			HTTPStatus:       http.StatusForbidden,
@@ -785,8 +797,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 10a: create a cluster in email-restricted datacenter, to which the user does have access - legacy single domain restriction with requiredEmailDomains",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc","fake":{}},"version":"1.22.4","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.4","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"1.22.5","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -799,8 +811,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 10b: create a cluster in email-restricted datacenter, to which the user does have access - domain array restriction with `requiredEmailDomains`",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc2","fake":{}},"version":"1.22.4","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.4","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc2"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"restricted-fake-dc2","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"1.22.5","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -813,8 +825,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 11: create a cluster in audit-logging-enforced datacenter, without explicitly enabling audit logging",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"audited-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"audited-dc","fake":{}},"version":"1.22.4","oidc":{},"enableUserSSHKeyAgent":true,"auditLogging":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.4","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"audited-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"audited-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"auditLogging":{"enabled":true},"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"1.22.5","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -827,8 +839,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 12: the admin user can create cluster for any project",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.4","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.4","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.22.4","url":"","externalCCMMigration":"Unsupported"}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"1.22.5","url":"","externalCCMMigration":"Unsupported"}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -842,7 +854,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: "kubermatic.k8s.io/v1",
+								APIVersion: "kubermatic.k8c.io/v1",
 								Kind:       "Project",
 								UID:        "",
 								Name:       test.GenDefaultProject().Name,
@@ -879,16 +891,14 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 	}
 
-	dummyKubermaticConfiguration := operatorv1alpha1.KubermaticConfiguration{
+	dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: test.KubermaticNamespace,
 		},
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			Versions: operatorv1alpha1.KubermaticVersionsConfiguration{
-				Kubernetes: operatorv1alpha1.KubermaticVersioningConfiguration{
-					Versions: test.GenDefaultVersions(),
-				},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Versions: test.GenDefaultVersions(),
 			},
 		},
 	}
@@ -905,7 +915,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, &dummyKubermaticConfiguration, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -946,7 +956,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 1: get existing cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -976,7 +986,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 2: the admin Bob can get John's cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1040,7 +1050,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 4: get existing cluster health status with opa integration enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"gatekeeperController":1,"gatekeeperAudit":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","gatekeeperController":"HealthStatusUp","gatekeeperAudit":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1060,8 +1070,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						GatekeeperAudit:              kubermaticv1.HealthStatusUp.Ptr(),
-						GatekeeperController:         kubermaticv1.HealthStatusUp.Ptr(),
+						GatekeeperAudit:              &healthUp,
+						GatekeeperController:         &healthUp,
 					}
 					cluster.Spec.OPAIntegration = &kubermaticv1.OPAIntegrationSettings{Enabled: true}
 					return cluster
@@ -1073,7 +1083,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 5: get existing cluster health status with MLA Monitoring enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"monitoring":1,"mlaGateway":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","monitoring":"HealthStatusUp","mlaGateway":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1093,8 +1103,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Monitoring:                   kubermaticv1.HealthStatusUp.Ptr(),
-						MLAGateway:                   kubermaticv1.HealthStatusUp.Ptr(),
+						Monitoring:                   &healthUp,
+						MLAGateway:                   &healthUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{MonitoringEnabled: true}
 					return cluster
@@ -1106,7 +1116,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 6: get existing cluster health status with MLA Logging enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"mlaGateway":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp","mlaGateway":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1126,8 +1136,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Logging:                      kubermaticv1.HealthStatusUp.Ptr(),
-						MLAGateway:                   kubermaticv1.HealthStatusUp.Ptr(),
+						Logging:                      &healthUp,
+						MLAGateway:                   &healthUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster
@@ -1139,7 +1149,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 7: get existing cluster health status with MLA Logging enabled and alertmanager config",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"logging":1,"alertmanagerConfig":1,"mlaGateway":1}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp","alertmanagerConfig":"HealthStatusUp","mlaGateway":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1159,9 +1169,9 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
-						Logging:                      kubermaticv1.HealthStatusUp.Ptr(),
-						AlertmanagerConfig:           kubermaticv1.HealthStatusUp.Ptr(),
-						MLAGateway:                   kubermaticv1.HealthStatusUp.Ptr(),
+						Logging:                      &healthUp,
+						AlertmanagerConfig:           &healthUp,
+						MLAGateway:                   &healthUp,
 					}
 					cluster.Spec.MLA = &kubermaticv1.MLASettings{LoggingEnabled: true}
 					return cluster
@@ -1179,7 +1189,7 @@ func TestGetClusterHealth(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -1197,7 +1207,7 @@ func TestPatchCluster(t *testing.T) {
 	t.Parallel()
 
 	cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-	cluster.Spec.Cloud.DatacenterName = "us-central1"
+	cluster.Spec.Cloud.DatacenterName = usCentral1
 
 	testcases := []struct {
 		Name                      string
@@ -1214,7 +1224,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: update the cluster version",
 			Body:             `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1245,7 +1255,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: tried to update cluster with older but compatible nodes",
 			Body:             `{"spec":{"version":"9.11.3"}}`, // kubelet is 9.9.9, maximum compatible master is 9.11.x
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.11.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"9.11.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1274,11 +1284,11 @@ func TestPatchCluster(t *testing.T) {
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
-					seed.Spec.Datacenters["us-central1"] = kubermaticv1.Datacenter{}
+					seed.Spec.Datacenters[usCentral1] = kubermaticv1.Datacenter{}
 				}),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud.DatacenterName = "us-central1"
+					cluster.Spec.Cloud.DatacenterName = usCentral1
 					return cluster
 				}(),
 			),
@@ -1298,11 +1308,11 @@ func TestPatchCluster(t *testing.T) {
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
-					seed.Spec.Datacenters["us-central1"] = kubermaticv1.Datacenter{}
+					seed.Spec.Datacenters[usCentral1] = kubermaticv1.Datacenter{}
 				}),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud.DatacenterName = "us-central1"
+					cluster.Spec.Cloud.DatacenterName = usCentral1
 					return cluster
 				}(),
 			),
@@ -1315,7 +1325,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 6: the admin John can update Bob's cluster version",
 			Body:             `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1360,7 +1370,7 @@ func TestPatchCluster(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, machineObj, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -1391,7 +1401,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: gets cluster with the given name that belongs to the given project",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"private-do1","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"private-do1","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1407,7 +1417,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"tenant","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1427,7 +1437,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: the admin John can get Bob's cluster",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"tenant","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":null},"pods":{"cidrBlocks":null},"dnsDomain":"","proxyMode":""}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.21"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1473,7 +1483,7 @@ func TestGetCluster(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -1514,10 +1524,14 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1541,10 +1555,14 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1570,17 +1588,20 @@ func TestListClusters(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1624,10 +1645,14 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1651,10 +1676,14 @@ func TestListClusters(t *testing.T) {
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1680,17 +1709,20 @@ func TestListClusters(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 					},
 					Status: apiv1.ClusterStatus{
@@ -1727,7 +1759,7 @@ func TestListClusters(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -1772,10 +1804,14 @@ func TestListClustersForProject(t *testing.T) {
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
@@ -1803,15 +1839,18 @@ func TestListClustersForProject(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
@@ -1852,10 +1891,14 @@ func TestListClustersForProject(t *testing.T) {
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
@@ -1883,16 +1926,19 @@ func TestListClustersForProject(t *testing.T) {
 								Network:        "network",
 								RouterID:       "routerID",
 								SecurityGroups: "securityGroups",
-								Project:        "tenant",
-								Tenant:         "tenant",
+								Project:        "project",
 							},
 						},
 						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 						ClusterNetwork: &kubermaticv1.ClusterNetworkingConfig{
-							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: nil},
-							ProxyMode: "",
-							DNSDomain: "",
+							Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"1.2.3.4/8"}},
+							Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"5.6.7.8/8"}},
+							ProxyMode: "ipvs",
+							DNSDomain: "cluster.local",
+						},
+						CNIPlugin: &kubermaticv1.CNIPluginSettings{
+							Type:    kubermaticv1.CNIPluginTypeCanal,
+							Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 						},
 						Version: *semver.NewSemverOrDie("9.9.9"),
 					},
@@ -1927,7 +1973,7 @@ func TestListClustersForProject(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -2004,7 +2050,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// perform test
@@ -2030,7 +2076,6 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGetClusterEventsEndpoint(t *testing.T) {
@@ -2154,7 +2199,7 @@ func TestGetClusterEventsEndpoint(t *testing.T) {
 
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -2344,7 +2389,7 @@ func TestGetClusterMetrics(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -2445,7 +2490,7 @@ func TestListNamespace(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

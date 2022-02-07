@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -37,12 +37,12 @@ import (
 )
 
 const (
-	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
+	CleanupFinalizerName = "kubermatic.k8c.io/controller-manager-rbac-cleanup"
 )
 
 func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {
-	var originalProject kubermaticv1.Project
-	if err := c.client.Get(ctx, key, &originalProject); err != nil {
+	project := &kubermaticv1.Project{}
+	if err := c.client.Get(ctx, key, project); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
@@ -50,41 +50,39 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 		return err
 	}
 
-	project := originalProject.DeepCopy()
-
-	if c.shouldDeleteProject(project) {
+	if project.DeletionTimestamp != nil {
 		if err := c.ensureProjectCleanup(ctx, project); err != nil {
-			return fmt.Errorf("failed to cleanup project: %v", err)
+			return fmt.Errorf("failed to cleanup project: %w", err)
 		}
 		return nil
 	}
 
 	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
-		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %v", err)
+		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %w", err)
 	}
 	if err := c.ensureProjectOwner(ctx, project); err != nil {
-		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %v", err)
+		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %w", err)
 	}
 	if err := ensureClusterRBACRoleForNamedResource(ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
-		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %v", err)
+		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %w", err)
 	}
 	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
-		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %v", err)
+		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %w", err)
 	}
 	if err := c.ensureClusterRBACRoleForResources(ctx); err != nil {
-		return fmt.Errorf("failed to ensure that the RBAC ClusterRoles for the project's resources exists: %v", err)
+		return fmt.Errorf("failed to ensure that the RBAC ClusterRoles for the project's resources exists: %w", err)
 	}
 	if err := c.ensureClusterRBACRoleBindingForResources(ctx, project.Name); err != nil {
-		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBindings for the project's resources exists: %v", err)
+		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBindings for the project's resources exists: %w", err)
 	}
 	if err := c.ensureRBACRoleForResources(ctx); err != nil {
-		return fmt.Errorf("failed to ensure that the RBAC Roles for the project's resources exists: %v", err)
+		return fmt.Errorf("failed to ensure that the RBAC Roles for the project's resources exists: %w", err)
 	}
 	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name); err != nil {
-		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %v", err)
+		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %w", err)
 	}
 	if err := c.ensureProjectIsInActivePhase(ctx, project); err != nil {
-		return fmt.Errorf("failed to ensure that the project is set to active: %v", err)
+		return fmt.Errorf("failed to ensure that the project is set to active: %w", err)
 	}
 
 	return nil
@@ -100,13 +98,14 @@ func (c *projectController) ensureCleanupFinalizerExists(ctx context.Context, pr
 
 func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, project *kubermaticv1.Project) error {
 	if project.Status.Phase == kubermaticv1.ProjectInactive {
+		oldProject := project.DeepCopy()
 		project.Status.Phase = kubermaticv1.ProjectActive
-		return c.client.Update(ctx, project)
+		return c.client.Status().Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 	}
 	return nil
 }
 
-// ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
+// ensureProjectOwner makes sure that the owner of the project is assign to "owners" group.
 func (c *projectController) ensureProjectOwner(ctx context.Context, project *kubermaticv1.Project) error {
 	var sharedOwnerPtrList []*kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
@@ -139,7 +138,6 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 				binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
 				projectOwnerMap.Insert(owner.Spec.Email)
 			}
-
 		}
 	}
 
@@ -191,7 +189,6 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
-
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureClusterRBACRoleForResource(ctx, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
@@ -272,7 +269,6 @@ func ensureClusterRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.C
 	if err := c.Get(ctx, key, &sharedExistingClusterRole); err != nil {
 		if kerrors.IsNotFound(err) {
 			return c.Create(ctx, generatedClusterRole)
-
 		}
 
 		return err
@@ -295,7 +291,6 @@ func ensureClusterRBACRoleBindingForResource(ctx context.Context, c ctrlruntimec
 	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
 		if kerrors.IsNotFound(err) {
 			return c.Create(ctx, generatedClusterRoleBinding)
-
 		}
 
 		return err
@@ -338,7 +333,6 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
-
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureRBACRoleForResource(
@@ -485,7 +479,7 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.C
 // In particular:
 // - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
-// - removes cleanupFinalizer
+// - removes cleanupFinalizer.
 func (c *projectController) ensureProjectCleanup(ctx context.Context, project *kubermaticv1.Project) error {
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
 	for _, seedClient := range c.seedClientMap {
@@ -575,8 +569,9 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 		}
 	}
 
+	oldProject := project.DeepCopy()
 	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
-	return c.client.Update(ctx, project)
+	return c.client.Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 }
 
 func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
@@ -632,10 +627,6 @@ func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, 
 	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 	existingRoleBinding.Subjects = updatedListOfSubjectes
 	return c.Update(ctx, existingRoleBinding)
-}
-
-func (c *projectController) shouldDeleteProject(project *kubermaticv1.Project) bool {
-	return project.DeletionTimestamp != nil && sets.NewString(project.Finalizers...).Has(CleanupFinalizerName)
 }
 
 // for some groups we actually don't create ClusterRole

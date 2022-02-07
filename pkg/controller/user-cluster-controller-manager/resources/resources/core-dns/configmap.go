@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ConfigMapCreator returns a ConfigMap containing the config for the CoreDNS
+// ConfigMapCreator returns a ConfigMap containing the config for the CoreDNS.
 func ConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CoreDNSConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {

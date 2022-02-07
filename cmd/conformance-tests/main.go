@@ -42,9 +42,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -65,7 +65,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
-// Opts represent combination of flags and ENV options
+// Opts represent combination of flags and ENV options.
 type Opts struct {
 	namePrefix                   string
 	providers                    sets.String
@@ -126,10 +126,11 @@ type secrets struct {
 		Token string
 	}
 	OpenStack struct {
-		Domain   string
-		Tenant   string
-		Username string
-		Password string
+		Domain    string
+		Project   string
+		ProjectID string
+		Username  string
+		Password  string
 	}
 	VSphere struct {
 		Username string
@@ -151,6 +152,14 @@ type secrets struct {
 	Alibaba struct {
 		AccessKeyID     string
 		AccessKeySecret string
+	}
+	Nutanix struct {
+		Username    string
+		Password    string
+		ProxyURL    string
+		ClusterName string
+		ProjectName string
+		SubnetName  string
 	}
 	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
@@ -190,7 +199,7 @@ func main() {
 	supportedVersions := getLatestMinorVersions(defaults.DefaultKubernetesVersioning.Versions)
 
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
-	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet,gcp", "comma separated list of providers to test")
+	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet,gcp,nutanix", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.StringVar(&opts.repoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
 	flag.StringVar(&opts.kubermaticEndpoint, "kubermatic-endpoint", "http://localhost:8080", "scheme://host[:port] of the Kubermatic API endpoint to talk to")
@@ -226,7 +235,8 @@ func main() {
 	flag.StringVar(&opts.secrets.Digitalocean.Token, "digitalocean-token", "", "Digitalocean: API Token")
 	flag.StringVar(&opts.secrets.Hetzner.Token, "hetzner-token", "", "Hetzner: API Token")
 	flag.StringVar(&opts.secrets.OpenStack.Domain, "openstack-domain", "", "OpenStack: Domain")
-	flag.StringVar(&opts.secrets.OpenStack.Tenant, "openstack-tenant", "", "OpenStack: Tenant")
+	flag.StringVar(&opts.secrets.OpenStack.Project, "openstack-project", "", "OpenStack: Project")
+	flag.StringVar(&opts.secrets.OpenStack.ProjectID, "openstack-project-id", "", "OpenStack: Project ID")
 	flag.StringVar(&opts.secrets.OpenStack.Username, "openstack-username", "", "OpenStack: Username")
 	flag.StringVar(&opts.secrets.OpenStack.Password, "openstack-password", "", "OpenStack: Password")
 	flag.StringVar(&opts.secrets.VSphere.Username, "vsphere-username", "", "vSphere: Username")
@@ -244,6 +254,12 @@ func main() {
 	flag.StringVar(&kubevirtKubeconfigFile, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig filename")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
+	flag.StringVar(&opts.secrets.Nutanix.Username, "nutanix-username", "", "Nutanix: Username")
+	flag.StringVar(&opts.secrets.Nutanix.Password, "nutanix-password", "", "Nutanix: Password")
+	flag.StringVar(&opts.secrets.Nutanix.ProxyURL, "nutanix-proxy-url", "", "Nutanix: HTTP Proxy URL to access endpoint")
+	flag.StringVar(&opts.secrets.Nutanix.ClusterName, "nutanix-cluster-name", "", "Nutanix: Cluster Name")
+	flag.StringVar(&opts.secrets.Nutanix.ProjectName, "nutanix-project-name", "", "Nutanix: Project Name")
+	flag.StringVar(&opts.secrets.Nutanix.SubnetName, "nutanix-subnet-name", "", "Nutanix: Subnet Name")
 
 	flag.Parse()
 
@@ -485,6 +501,10 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		log.Info("Adding Alibaba scenarios")
 		scenarios = append(scenarios, getAlibabaScenarios(opts.versions)...)
 	}
+	if opts.providers.Has("nutanix") {
+		log.Info("Adding Nutanix scenarios")
+		scenarios = append(scenarios, getNutanixScenarios(opts.versions)...)
+	}
 
 	hasDistribution := func(distribution providerconfig.OperatingSystem) bool {
 		_, ok := opts.distributions[distribution]
@@ -520,7 +540,7 @@ func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 	// We'll set the env-var $HOME to this directory when executing the tests
 	homeDir, err := ioutil.TempDir("/tmp", "e2e-home-")
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to setup temporary home dir: %v", err)
+		return "", nil, fmt.Errorf("failed to setup temporary home dir: %w", err)
 	}
 	log.Infof("Setting up temporary home directory with ssh keys at %s...", homeDir)
 
@@ -594,7 +614,7 @@ func createProject(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 
 	result, err := client.Project.CreateProject(params, bearerToken)
 	if err != nil {
-		return "", fmt.Errorf("failed to create project: %v", err)
+		return "", fmt.Errorf("failed to create project: %w", err)
 	}
 	projectID := result.Payload.ID
 
@@ -611,13 +631,13 @@ func createProject(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 			log.Errorw("Failed to get project", zap.Error(err))
 			return false, nil
 		}
-		if response.Payload.Status != kubermaticv1.ProjectActive {
+		if response.Payload.Status != string(kubermaticv1.ProjectActive) {
 			log.Warnw("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
 		return true, nil
 	}); err != nil {
-		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
+		return "", fmt.Errorf("failed to wait for project to be ready: %w", err)
 	}
 
 	return projectID, nil
@@ -640,21 +660,22 @@ func createSSHKeys(ctx context.Context, client *apiclient.KubermaticKubernetesPl
 		utils.SetupParams(nil, body, 3*time.Second, 1*time.Minute, http.StatusConflict)
 
 		if _, err := client.Project.CreateSSHKey(body, bearerToken); err != nil {
-			return fmt.Errorf("failed to create SSH key: %v", err)
+			return fmt.Errorf("failed to create SSH key: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func getLatestMinorVersions(versions []*semver.Version) []string {
+func getLatestMinorVersions(versions []kubermativsemver.Semver) []string {
 	minorMap := map[uint64]*semver.Version{}
 
-	for i, version := range versions {
-		minor := version.Minor()
+	for _, version := range versions {
+		sversion := version.Semver()
+		minor := sversion.Minor()
 
-		if existing := minorMap[minor]; existing == nil || existing.LessThan(version) {
-			minorMap[minor] = versions[i]
+		if existing := minorMap[minor]; existing == nil || existing.LessThan(sversion) {
+			minorMap[minor] = sversion
 		}
 	}
 

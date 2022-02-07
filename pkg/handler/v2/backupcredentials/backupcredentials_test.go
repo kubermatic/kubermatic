@@ -27,12 +27,12 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/backupcredentials"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -135,7 +135,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 							"s3": {
 								Endpoint:   "aws.s3.com",
 								BucketName: "testbucket",
-								Credentials: &v1.SecretReference{
+								Credentials: &corev1.SecretReference{
 									Name:      "secret",
 									Namespace: "kubermatic",
 								},
@@ -189,7 +189,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 
 			ep, clients, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, tc.ExistingKubeObjects, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -201,7 +201,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 				return
 			}
 
-			secret := &v1.Secret{}
+			secret := &corev1.Secret{}
 			err = clients.FakeClient.Get(context.Background(), types.NamespacedName{
 				Namespace: metav1.NamespaceSystem,
 				Name:      backupcredentials.GenBackupCredentialsSecretName(tc.BackupCredentials.Destination),

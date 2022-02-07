@@ -19,6 +19,7 @@ package promtail
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -50,16 +51,14 @@ const (
 	podVolumeMountPath       = "/var/log/pods"
 	metricsPortName          = "http-metrics"
 
-	promtailNameKey     = "app.kubernetes.io/name"
-	promtailInstanceKey = "app.kubernetes.io/instance"
-
 	inotifyMaxUserInstances = 256
 )
 
 var (
 	controllerLabels = map[string]string{
-		promtailNameKey:     resources.PromtailDaemonSetName,
-		promtailInstanceKey: resources.PromtailDaemonSetName,
+		common.NameLabel:      resources.PromtailDaemonSetName,
+		common.InstanceLabel:  resources.PromtailDaemonSetName,
+		common.ComponentLabel: resources.MLAComponentName,
 	}
 	defaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
@@ -87,6 +86,9 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:  pointer.Int64Ptr(0),
 				RunAsGroup: pointer.Int64Ptr(0),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			}
 			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
@@ -162,7 +164,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 						ReadOnlyRootFilesystem: pointer.BoolPtr(true),
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/ready",
 								Port:   intstr.FromString(metricsPortName),
@@ -181,6 +183,14 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 				{
 					Effect:   corev1.TaintEffectNoSchedule,
 					Key:      "node-role.kubernetes.io/master",
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoExecute,
 					Operator: corev1.TolerationOpExists,
 				},
 			}

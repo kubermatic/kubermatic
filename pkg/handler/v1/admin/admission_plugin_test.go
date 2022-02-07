@@ -24,12 +24,12 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -69,7 +69,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -77,7 +77,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -99,7 +99,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -153,7 +153,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -161,7 +161,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -183,7 +183,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -237,7 +237,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -245,7 +245,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -267,7 +267,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -325,7 +325,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -333,7 +333,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -352,7 +352,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -360,7 +360,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -382,7 +382,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

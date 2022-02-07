@@ -19,7 +19,7 @@ package etcd
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -33,12 +33,11 @@ type serviceCreatorData interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
-// ServiceCreator returns the function to reconcile the etcd service
+// ServiceCreator returns the function to reconcile the etcd service.
 func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.EtcdServiceName
-			se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 			se.Spec.ClusterIP = "None"
 			se.Spec.PublishNotReadyAddresses = true
 			se.Spec.Selector = map[string]string{
@@ -71,7 +70,7 @@ func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGett
 	}
 }
 
-// GetClientEndpoints returns the slice with the etcd endpoints for client communication
+// GetClientEndpoints returns the slice with the etcd endpoints for client communication.
 func GetClientEndpoints(namespace string) []string {
 	var endpoints []string
 	for i := 0; i < 3; i++ {

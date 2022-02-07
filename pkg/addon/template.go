@@ -29,7 +29,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -73,7 +73,7 @@ func NewTemplateData(
 ) (*TemplateData, error) {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
+		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}
 
 	// Ensure IPVS configuration is set
@@ -87,19 +87,13 @@ func NewTemplateData(
 		variables = make(map[string]interface{})
 	}
 
-	var cniPlugin CNIPlugin
 	if cluster.Spec.CNIPlugin == nil {
-		cniPlugin = CNIPlugin{
-			Type: kubermaticv1.CNIPluginTypeCanal.String(),
-			// This is to keep backward compatibility with clusters created before
-			// those settings were introduced.
-			Version: "v3.8",
-		}
-	} else {
-		cniPlugin = CNIPlugin{
-			Type:    cluster.Spec.CNIPlugin.Type.String(),
-			Version: cluster.Spec.CNIPlugin.Version,
-		}
+		return nil, fmt.Errorf("cniPlugin must not be nil")
+	}
+
+	cniPlugin := CNIPlugin{
+		Type:    cluster.Spec.CNIPlugin.Type.String(),
+		Version: cluster.Spec.CNIPlugin.Version,
 	}
 
 	var storagePolicy string
@@ -114,22 +108,20 @@ func NewTemplateData(
 		Variables:      variables,
 		Credentials:    credentials,
 		Cluster: ClusterData{
-			Type:                 ClusterTypeKubernetes,
-			Name:                 cluster.Name,
-			HumanReadableName:    cluster.Spec.HumanReadableName,
-			Namespace:            cluster.Status.NamespaceName,
-			Labels:               cluster.Labels,
-			Annotations:          cluster.Annotations,
-			Kubeconfig:           kubeconfig,
-			OwnerName:            cluster.Status.UserName,
-			OwnerEmail:           cluster.Status.UserEmail,
-			ApiserverExternalURL: cluster.Address.URL,
-			ApiserverInternalURL: fmt.Sprintf("https://%s:%d", cluster.Address.InternalName, cluster.Address.Port),
-			AdminToken:           cluster.Address.AdminToken,
-			CloudProviderName:    providerName,
-			Version:              semver.MustParse(cluster.Spec.Version.String()),
-			MajorMinorVersion:    cluster.Spec.Version.MajorMinor(),
-			Features:             sets.StringKeySet(cluster.Spec.Features),
+			Type:              ClusterTypeKubernetes,
+			Name:              cluster.Name,
+			HumanReadableName: cluster.Spec.HumanReadableName,
+			Namespace:         cluster.Status.NamespaceName,
+			Labels:            cluster.Labels,
+			Annotations:       cluster.Annotations,
+			Kubeconfig:        kubeconfig,
+			OwnerName:         cluster.Status.UserName,
+			OwnerEmail:        cluster.Status.UserEmail,
+			Address:           cluster.Address,
+			CloudProviderName: providerName,
+			Version:           semver.MustParse(cluster.Spec.Version.String()),
+			MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
+			Features:          sets.StringKeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
 				DNSDomain:         cluster.Spec.ClusterNetwork.DNSDomain,
 				DNSClusterIP:      dnsClusterIP,
@@ -175,15 +167,10 @@ type ClusterData struct {
 	// inside the user-cluster. The kubeconfig uses the external URL to reach
 	// the apiserver.
 	Kubeconfig string
-	// ApiserverExternalURL is the full URL to the apiserver service from the
-	// outside, including protocol and port number. It does not contain any
-	// trailing slashes.
-	ApiserverExternalURL string
-	// ApiserverExternalURL is the full URL to the apiserver from within the
-	// seed cluster itself. It does not contain any trailing slashes.
-	ApiserverInternalURL string
-	// AdminToken is the cluster's admin token.
-	AdminToken string
+
+	// ClusterAddress stores access and address information of a cluster.
+	Address kubermaticv1.ClusterAddress
+
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
 	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
@@ -255,17 +242,17 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 
 		fbytes, err := ioutil.ReadFile(filename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 		}
 
 		tpl, err := template.New(info.Name()).Funcs(txtFuncMap(overwriteRegistry)).Parse(string(fbytes))
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to parse file %s: %w", filename, err)
 		}
 
 		bufferAll := bytes.NewBuffer([]byte{})
 		if err := tpl.Execute(bufferAll, data); err != nil {
-			return nil, fmt.Errorf("failed to execute templating on file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to execute templating on file %s: %w", filename, err)
 		}
 
 		sd := strings.TrimSpace(bufferAll.String())
@@ -276,7 +263,7 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 
 		addonManifests, err := yaml.ParseMultipleDocuments(bufio.NewReader(bufferAll))
 		if err != nil {
-			return nil, fmt.Errorf("decoding failed for file %s: %v", filename, err)
+			return nil, fmt.Errorf("decoding failed for file %s: %w", filename, err)
 		}
 		allManifests = append(allManifests, addonManifests...)
 	}

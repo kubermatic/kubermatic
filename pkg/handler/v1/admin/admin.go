@@ -29,7 +29,7 @@ import (
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// GetAdminEndpoint returns list of admin users
+// GetAdminEndpoint returns list of admin users.
 func GetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider provider.AdminProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
@@ -51,7 +51,7 @@ func GetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider prov
 	}
 }
 
-// SetAdminEndpoint allows setting and clearing admin role for users
+// SetAdminEndpoint allows setting and clearing admin role for users.
 func SetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider provider.AdminProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(setAdminReq)
@@ -88,7 +88,7 @@ type setAdminReq struct {
 	Body apiv1.Admin
 }
 
-// Validate setAdminReq request
+// Validate setAdminReq request.
 func (r setAdminReq) Validate() error {
 	if len(r.Body.Email) == 0 {
 		return k8cerrors.NewBadRequest("the email address cannot be empty")
@@ -96,7 +96,7 @@ func (r setAdminReq) Validate() error {
 	return nil
 }
 
-// DecodeSetAdminReq  decodes an HTTP request into setAdminReq
+// DecodeSetAdminReq  decodes an HTTP request into setAdminReq.
 func DecodeSetAdminReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req setAdminReq
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {

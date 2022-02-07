@@ -31,15 +31,15 @@ import (
 )
 
 const (
-	// ClusterResourceName represents "Resource" defined in Kubernetes
+	// ClusterResourceName represents "Resource" defined in Kubernetes.
 	ClusterResourceName = "clusters"
 
-	// ClusterKindName represents "Kind" defined in Kubernetes
+	// ClusterKindName represents "Kind" defined in Kubernetes.
 	ClusterKindName = "Cluster"
 
 	// AnnotationNameClusterAutoscalerEnabled is the name of the annotation that is being
 	// used to determine if the cluster-autoscaler is enabled for this cluster. It is
-	// enabled when this Annotation is set with any value
+	// enabled when this Annotation is set with any value.
 	AnnotationNameClusterAutoscalerEnabled = "kubermatic.io/cluster-autoscaler-enabled"
 
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
@@ -83,7 +83,10 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.userEmail",name="Owner",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Cluster is the object representing a cluster.
 type Cluster struct {
@@ -98,7 +101,7 @@ type Cluster struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// ClusterList specifies a list of clusters
+// ClusterList specifies a list of clusters.
 type ClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -130,8 +133,11 @@ type ClusterSpec struct {
 	// PauseReason is the reason why the cluster is no being managed.
 	PauseReason string `json:"pauseReason,omitempty"`
 
+	// DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
+	DebugLog bool `json:"debugLog,omitempty"`
+
 	// Optional component specific overrides
-	ComponentsOverride ComponentSettings `json:"componentsOverride"`
+	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
 
 	OIDC OIDCSettings `json:"oidc,omitempty"`
 
@@ -144,6 +150,7 @@ type ClusterSpec struct {
 
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 	UsePodNodeSelectorAdmissionPlugin   bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+	UseEventRateLimitAdmissionPlugin    bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
 
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
@@ -151,6 +158,9 @@ type ClusterSpec struct {
 	// the cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled
 	// it cannot be changed after the cluster is being created.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
+
+	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
+	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
@@ -161,7 +171,14 @@ type ClusterSpec struct {
 	//  namespace1: <node-selectors-labels>
 	//  namespace2: <node-selectors-labels>
 	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
-	AdmissionPlugins                     []string          `json:"admissionPlugins,omitempty"`
+
+	// EventRateLimitConfig allows configuring the EventRateLimit admission plugin (if enabled via useEventRateLimitAdmissionPlugin)
+	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing incoming Events
+	// to several configured buckets based on the type of event rate limit.
+	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
+
+	// AdmissionPlugins provides the ability to pass arbitrary names of admission plugins to kube-apiserver
+	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
 
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 
@@ -194,7 +211,7 @@ type CNIPluginSettings struct {
 
 // +kubebuilder:validation:Enum=canal;cilium;none
 
-// CNIPluginType define the type of CNI plugin installed. e.g. Canal
+// CNIPluginType define the type of CNI plugin installed. e.g. Canal.
 type CNIPluginType string
 
 func (c CNIPluginType) String() string {
@@ -206,7 +223,7 @@ const (
 	// Calico for policy enforcement).
 	CNIPluginTypeCanal CNIPluginType = "canal"
 
-	// CNIPluginTypeCilium corresponds to Cilium CNI plugin
+	// CNIPluginTypeCilium corresponds to Cilium CNI plugin.
 	CNIPluginTypeCilium CNIPluginType = "cilium"
 
 	// CNIPluginTypeNone corresponds to no CNI plugin managed by KKP
@@ -224,10 +241,6 @@ const (
 	// The cluster-name flag is often used for naming cloud resources, such as load balancers.
 	ClusterFeatureCCMClusterName = "ccmClusterName"
 
-	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
-	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
-	ClusterFeatureRancherIntegration = "rancherIntegration"
-
 	// ClusterFeatureEtcdLauncher enables features related to the experimental etcd-launcher. This includes user-cluster
 	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
@@ -235,9 +248,13 @@ const (
 	// ApiserverNetworkPolicy enables the deployment of network policies that
 	// restrict the egress traffic from Apiserver pods.
 	ApiserverNetworkPolicy = "apiserverNetworkPolicy"
+
+	// KubeSystemNetworkPolicies enables the deployment of network policies to kube-system namespace that
+	// restrict traffic from all pods in the namespace.
+	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
 )
 
-// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;RancherInitializedSuccessfully;RancherClusterImportedSuccessfully;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
+// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered within
@@ -266,12 +283,9 @@ const (
 	ClusterConditionMLAControllerReconcilingSuccess               ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                            ClusterConditionType = "ClusterInitialized"
 
-	ClusterConditionRancherInitialized     ClusterConditionType = "RancherInitializedSuccessfully"
-	ClusterConditionRancherClusterImported ClusterConditionType = "RancherClusterImportedSuccessfully"
-
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
-	// ClusterConditionNone is a special value indicating that no cluster condition should be set
+	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
 	// This condition is met when a CSI migration is ongoing and the CSI
 	// migration feature gates are activated on the Kubelets of all the nodes.
@@ -411,6 +425,19 @@ type AuditLoggingSettings struct {
 	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
 }
 
+type EventRateLimitConfig struct {
+	Server          *EventRateLimitConfigItem `json:"server,omitempty"`
+	Namespace       *EventRateLimitConfigItem `json:"namespace,omitempty"`
+	User            *EventRateLimitConfigItem `json:"user,omitempty"`
+	SourceAndObject *EventRateLimitConfigItem `json:"sourceAndObject,omitempty"`
+}
+
+type EventRateLimitConfigItem struct {
+	QPS       int32 `json:"qps"`
+	Burst     int32 `json:"burst"`
+	CacheSize int32 `json:"cacheSize,omitempty"`
+}
+
 type OPAIntegrationSettings struct {
 	// Enabled is the flag for enabling OPA integration
 	Enabled bool `json:"enabled,omitempty"`
@@ -422,6 +449,10 @@ type OPAIntegrationSettings struct {
 	WebhookTimeoutSeconds *int32 `json:"webhookTimeoutSeconds,omitempty"`
 	// Enable mutation
 	ExperimentalEnableMutation bool `json:"experimentalEnableMutation,omitempty"`
+	// ControllerResources is the resource requirements for user cluster gatekeeper controller.
+	ControllerResources *corev1.ResourceRequirements `json:"controllerResources,omitempty"`
+	// AuditResources is the resource requirements for user cluster gatekeeper audit.
+	AuditResources *corev1.ResourceRequirements `json:"auditResources,omitempty"`
 }
 
 type ServiceAccountSettings struct {
@@ -575,6 +606,11 @@ type CloudSpec struct {
 	// DatacenterName where the users 'cloud' lives in.
 	DatacenterName string `json:"dc"`
 
+	// ProviderName is the name of the cloud provider used for this cluster.
+	// This must match the given provider spec (e.g. if the providerName is
+	// "aws", then the AWSCloudSpec must be set)
+	ProviderName string `json:"providerName"`
+
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
@@ -588,6 +624,7 @@ type CloudSpec struct {
 	Kubevirt     *KubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaCloudSpec      `json:"alibaba,omitempty"`
 	Anexia       *AnexiaCloudSpec       `json:"anexia,omitempty"`
+	Nutanix      *NutanixCloudSpec      `json:"nutanix,omitempty"`
 }
 
 // KeyCert is a pair of key and cert.
@@ -638,19 +675,20 @@ type AzureCloudSpec struct {
 	ClientID       string `json:"clientID,omitempty"`
 	ClientSecret   string `json:"clientSecret,omitempty"`
 
-	ResourceGroup         string `json:"resourceGroup"`
-	VNetResourceGroup     string `json:"vnetResourceGroup"`
-	VNetName              string `json:"vnet"`
-	SubnetName            string `json:"subnet"`
-	RouteTableName        string `json:"routeTable"`
-	SecurityGroup         string `json:"securityGroup"`
-	AssignAvailabilitySet *bool  `json:"assignAvailabilitySet"`
-	AvailabilitySet       string `json:"availabilitySet"`
+	ResourceGroup           string `json:"resourceGroup"`
+	VNetResourceGroup       string `json:"vnetResourceGroup"`
+	VNetName                string `json:"vnet"`
+	SubnetName              string `json:"subnet"`
+	RouteTableName          string `json:"routeTable"`
+	SecurityGroup           string `json:"securityGroup"`
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
+	AssignAvailabilitySet   *bool  `json:"assignAvailabilitySet,omitempty"`
+	AvailabilitySet         string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
-// VSphereCredentials credentials represents a credential for accessing vSphere
+// VSphereCredentials credentials represents a credential for accessing vSphere.
 type VSphereCredentials struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
@@ -705,14 +743,17 @@ type BringYourOwnCloudSpec struct{}
 type AWSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID     string `json:"accessKeyID,omitempty"`
-	SecretAccessKey string `json:"secretAccessKey,omitempty"`
-	VPCID           string `json:"vpcID"`
+	AccessKeyID          string `json:"accessKeyID,omitempty"`
+	SecretAccessKey      string `json:"secretAccessKey,omitempty"`
+	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
+	VPCID                string `json:"vpcID"`
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
-	ControlPlaneRoleARN string `json:"roleARN"` //nolint:tagliatelle
-	RouteTableID        string `json:"routeTableID"`
-	InstanceProfileName string `json:"instanceProfileName"`
-	SecurityGroupID     string `json:"securityGroupID"`
+	ControlPlaneRoleARN     string `json:"roleARN"` //nolint:tagliatelle
+	RouteTableID            string `json:"routeTableID"`
+	InstanceProfileName     string `json:"instanceProfileName"`
+	SecurityGroupID         string `json:"securityGroupID"`
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
 	// can perform the assume-role.
@@ -727,9 +768,9 @@ type OpenstackCloudSpec struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	// project, formally known as tenant. Tenant is depreciated in Openstack
+	// project, formally known as tenant.
 	Project string `json:"project,omitempty"`
-	// project id, formally known as tenantID. TenantID is depreciated in Openstack
+	// project id, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
 
 	Domain                      string `json:"domain,omitempty"`
@@ -743,8 +784,9 @@ type OpenstackCloudSpec struct {
 	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
 	//
 	// Note that the network is internal if the "External" field is set to false
-	Network        string `json:"network"`
-	SecurityGroups string `json:"securityGroups"`
+	Network                 string `json:"network"`
+	SecurityGroups          string `json:"securityGroups"`
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 	// FloatingIPPool holds the name of the public network
 	// The public network is reachable from the outside world
 	// and should provide the pool of IP addresses to choose from.
@@ -779,9 +821,10 @@ type PacketCloudSpec struct {
 type GCPCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	ServiceAccount string `json:"serviceAccount,omitempty"`
-	Network        string `json:"network"`
-	Subnetwork     string `json:"subnetwork"`
+	ServiceAccount          string `json:"serviceAccount,omitempty"`
+	Network                 string `json:"network"`
+	Subnetwork              string `json:"subnetwork"`
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 }
 
 // KubevirtCloudSpec specifies the access data to Kubevirt.
@@ -804,6 +847,23 @@ type AnexiaCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
 	Token string `json:"token,omitempty"`
+}
+
+// NutanixCloudSpec specifies the access data to Nutanix.
+// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
+type NutanixCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
+	ClusterName string `json:"clusterName"`
+
+	// ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.
+	// +optional
+	ProjectName string `json:"projectName,omitempty"`
+
+	ProxyURL string `json:"proxyURL,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=HealthStatusDown;HealthStatusUp;HealthStatusProvisioning
@@ -835,7 +895,7 @@ type ExtendedClusterHealth struct {
 }
 
 // AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not
-// crucial for cluster functioning
+// crucial for cluster functioning.
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.Etcd == HealthStatusUp &&
 		h.MachineController == HealthStatusUp &&
@@ -922,6 +982,9 @@ func (cluster *Cluster) GetSecretName() string {
 	if cluster.Spec.Cloud.Anexia != nil {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
 	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
+	}
 	return ""
 }
 
@@ -932,5 +995,15 @@ func (cluster *Cluster) GetUserClusterMLAResourceRequirements() map[string]*core
 	return map[string]*corev1.ResourceRequirements{
 		"monitoring": cluster.Spec.MLA.MonitoringResources,
 		"logging":    cluster.Spec.MLA.LoggingResources,
+	}
+}
+
+func (cluster *Cluster) GetUserClusterOPAResourceRequirements() map[string]*corev1.ResourceRequirements {
+	if cluster.Spec.OPAIntegration == nil {
+		return nil
+	}
+	return map[string]*corev1.ResourceRequirements{
+		"controller": cluster.Spec.OPAIntegration.ControllerResources,
+		"audit":      cluster.Spec.OPAIntegration.AuditResources,
 	}
 }

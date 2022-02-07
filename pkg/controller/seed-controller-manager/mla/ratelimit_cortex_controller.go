@@ -24,8 +24,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -42,11 +42,11 @@ import (
 )
 
 const (
-	runtimeConfigMap      = "cortex-runtime-config"
-	runtimeConfigFileName = "runtime-config.yaml"
+	RuntimeConfigMap      = "cortex-runtime-config"
+	RuntimeConfigFileName = "runtime-config.yaml"
 )
 
-type tenantOverride struct {
+type TenantOverride struct {
 	IngestionRate      *int32 `yaml:"ingestion_rate,omitempty"`
 	MaxSeriesPerMetric *int32 `yaml:"max_series_per_metric,omitempty"`
 	MaxSeriesPerQuery  *int32 `yaml:"max_series_per_query,omitempty"`
@@ -55,8 +55,8 @@ type tenantOverride struct {
 	MaxSeriesTotal     *int32 `yaml:"max_series_per_user,omitempty"`
 }
 
-type overrides struct {
-	Overrides map[string]tenantOverride `yaml:"overrides"`
+type Overrides struct {
+	Overrides map[string]TenantOverride `yaml:"overrides"`
 }
 
 // ratelimitCortexReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -160,19 +160,19 @@ func newRatelimitCortexController(
 
 func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSetting *kubermaticv1.MLAAdminSetting) error {
 	configMap := &corev1.ConfigMap{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: runtimeConfigMap}, configMap); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: RuntimeConfigMap}, configMap); err != nil {
 		return fmt.Errorf("unable to get cortex runtime config map: %w", err)
 	}
-	config, ok := configMap.Data[runtimeConfigFileName]
+	config, ok := configMap.Data[RuntimeConfigFileName]
 	if !ok {
 		return errors.New("unable to find runtime config file in configmap")
 	}
-	or := &overrides{}
+	or := &Overrides{}
 	if err := yaml.Unmarshal([]byte(config), or); err != nil {
 		return fmt.Errorf("unable to unmarshal runtime config[%s]: %w", config, err)
 	}
 
-	tenantOr := tenantOverride{}
+	tenantOr := TenantOverride{}
 
 	if mlaAdminSetting.Spec.MonitoringRateLimits != nil {
 		if mlaAdminSetting.Spec.MonitoringRateLimits.IngestionRate > 0 {
@@ -195,14 +195,14 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 		}
 	}
 	if or.Overrides == nil {
-		or.Overrides = make(map[string]tenantOverride)
+		or.Overrides = make(map[string]TenantOverride)
 	}
 	or.Overrides[mlaAdminSetting.Spec.ClusterName] = tenantOr
 	data, err := yaml.Marshal(or)
 	if err != nil {
 		return fmt.Errorf("unable to marshal runtime config[%+v]: %w", or, err)
 	}
-	configMap.Data[runtimeConfigFileName] = string(data)
+	configMap.Data[RuntimeConfigFileName] = string(data)
 	return r.Update(ctx, configMap)
 }
 
@@ -221,14 +221,14 @@ func (r *ratelimitCortexController) cleanUp(ctx context.Context) error {
 
 func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap.SugaredLogger, mlaAdminSetting *kubermaticv1.MLAAdminSetting) error {
 	configMap := &corev1.ConfigMap{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: runtimeConfigMap}, configMap); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: RuntimeConfigMap}, configMap); err != nil {
 		return fmt.Errorf("unable to get cortex runtime config map: %w", err)
 	}
-	config, ok := configMap.Data[runtimeConfigFileName]
+	config, ok := configMap.Data[RuntimeConfigFileName]
 	if !ok {
 		return errors.New("unable to find runtime config file in configmap")
 	}
-	or := &overrides{}
+	or := &Overrides{}
 	if err := yaml.Unmarshal([]byte(config), or); err != nil {
 		return fmt.Errorf("unable to unmarshal runtime config[%s]: %w", config, err)
 	}
@@ -238,15 +238,16 @@ func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap
 		if err != nil {
 			return fmt.Errorf("unable to marshal runtime config[%+v]: %w", or, err)
 		}
-		configMap.Data[runtimeConfigFileName] = string(data)
+		configMap.Data[RuntimeConfigFileName] = string(data)
 		if err := r.Update(ctx, configMap); err != nil {
 			return fmt.Errorf("unable to update configmap: %w", err)
 		}
 	}
 	if kubernetes.HasFinalizer(mlaAdminSetting, mlaFinalizer) {
+		oldSetting := mlaAdminSetting.DeepCopy()
 		kubernetes.RemoveFinalizer(mlaAdminSetting, mlaFinalizer)
-		if err := r.Update(ctx, mlaAdminSetting); err != nil {
-			return fmt.Errorf("updating mlaAdminSetting: %w", err)
+		if err := r.Patch(ctx, mlaAdminSetting, ctrlruntimeclient.MergeFrom(oldSetting)); err != nil {
+			return fmt.Errorf("failed to update mlaAdminSetting: %w", err)
 		}
 	}
 	return nil

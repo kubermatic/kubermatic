@@ -27,7 +27,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/validation"
@@ -91,12 +91,12 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	if nd.Spec.DynamicConfig != nil && *nd.Spec.DynamicConfig {
 		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
 		}
 
 		md.Spec.Template.Spec.ConfigSource = &corev1.NodeConfigSource{
 			ConfigMap: &corev1.ConfigMapNodeConfigSource{
-				Namespace:        "kube-system",
+				Namespace:        resources.KubeSystemNamespaceName,
 				Name:             fmt.Sprintf("kubelet-config-%d.%d", kubeletVersion.Major(), kubeletVersion.Minor()),
 				KubeletConfigKey: "kubelet",
 			},
@@ -231,6 +231,12 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
+	case nd.Spec.Template.Cloud.Nutanix != nil:
+		config.CloudProvider = providerconfig.CloudProviderNutanix
+		cloudExt, err = getNutanixProviderSpec(c, nd.Spec.Template, dc)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("unknown cloud provider")
 	}
@@ -298,14 +304,15 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 		nd.Spec.Template.Cloud.GCP == nil &&
 		nd.Spec.Template.Cloud.Kubevirt == nil &&
 		nd.Spec.Template.Cloud.Alibaba == nil &&
-		nd.Spec.Template.Cloud.Anexia == nil {
+		nd.Spec.Template.Cloud.Anexia == nil &&
+		nd.Spec.Template.Cloud.Nutanix == nil {
 		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 
 	if nd.Spec.Template.Versions.Kubelet != "" {
 		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
 		}
 
 		if err = nodeupdate.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {

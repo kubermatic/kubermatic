@@ -49,7 +49,7 @@ const (
 	name = "scheduler"
 )
 
-// DeploymentCreator returns the function to create and update the scheduler deployment
+// DeploymentCreator returns the function to create and update the scheduler deployment.
 func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.SchedulerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -94,7 +94,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -108,7 +108,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				},
 			}
 
-			// Configure user cluster DNS resolver for this pod.
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
@@ -137,7 +136,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 					VolumeMounts: volumeMounts,
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: healthAction,
 						},
 						FailureThreshold: 3,
@@ -147,7 +146,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 8,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: healthAction,
 						},
 						InitialDelaySeconds: 15,
@@ -164,7 +163,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
 				}
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
@@ -172,14 +171,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 

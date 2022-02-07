@@ -61,7 +61,7 @@ func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygrou
 	return secGroups, nil
 }
 
-// NetworkWithExternalExt is a struct that implements all networks
+// NetworkWithExternalExt is a struct that implements all networks.
 type NetworkWithExternalExt struct {
 	osnetworks.Network
 	osextnetwork.NetworkExternalExt
@@ -88,9 +88,9 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExter
 	}
 
 	candidates := []*NetworkWithExternalExt{}
-	for _, n := range existingNetworks {
+	for i, n := range existingNetworks {
 		if n.External == isExternal {
-			candidates = append(candidates, &n)
+			candidates = append(candidates, &existingNetworks[i])
 		}
 	}
 
@@ -123,7 +123,7 @@ func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityG
 	for _, sg := range securityGroups {
 		results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sg})
 		if err != nil {
-			return fmt.Errorf("failed to get security group: %v", err)
+			return fmt.Errorf("failed to get security group: %w", err)
 		}
 		if len(results) == 0 {
 			return fmt.Errorf("specified security group %s not found", sg)
@@ -152,16 +152,17 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 }
 
 type createKubermaticSecurityGroupRequest struct {
-	clusterName string
-	lowPort     int
-	highPort    int
+	clusterName             string
+	lowPort                 int
+	highPort                int
+	nodePortsAllowedIPRange string
 }
 
 func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req createKubermaticSecurityGroupRequest) (string, error) {
 	secGroupName := resourceNamePrefix + req.clusterName
 	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: secGroupName})
 	if err != nil {
-		return "", fmt.Errorf("failed to get security groups: %v", err)
+		return "", fmt.Errorf("failed to get security groups: %w", err)
 	}
 
 	var securityGroupID string
@@ -211,22 +212,24 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 			Protocol:     ossecuritygrouprules.ProtocolTCP,
 		},
 		{
-			// Allows nodePorts from external
-			Direction:    ossecuritygrouprules.DirIngress,
-			EtherType:    ossecuritygrouprules.EtherType4,
-			SecGroupID:   securityGroupID,
-			PortRangeMin: req.lowPort,
-			PortRangeMax: req.highPort,
-			Protocol:     ossecuritygrouprules.ProtocolTCP,
+			// Allows TCP traffic to nodePorts from external
+			Direction:      ossecuritygrouprules.DirIngress,
+			EtherType:      ossecuritygrouprules.EtherType4,
+			SecGroupID:     securityGroupID,
+			PortRangeMin:   req.lowPort,
+			PortRangeMax:   req.highPort,
+			Protocol:       ossecuritygrouprules.ProtocolTCP,
+			RemoteIPPrefix: req.nodePortsAllowedIPRange,
 		},
 		{
-			// Allows nodePorts from external
-			Direction:    ossecuritygrouprules.DirIngress,
-			EtherType:    ossecuritygrouprules.EtherType4,
-			SecGroupID:   securityGroupID,
-			PortRangeMin: req.lowPort,
-			PortRangeMax: req.highPort,
-			Protocol:     ossecuritygrouprules.ProtocolUDP,
+			// Allows UDP traffic to nodePorts from external
+			Direction:      ossecuritygrouprules.DirIngress,
+			EtherType:      ossecuritygrouprules.EtherType4,
+			SecGroupID:     securityGroupID,
+			PortRangeMin:   req.lowPort,
+			PortRangeMax:   req.highPort,
+			Protocol:       ossecuritygrouprules.ProtocolUDP,
+			RemoteIPPrefix: req.nodePortsAllowedIPRange,
 		},
 		{
 			// Allows ICMP traffic
@@ -248,13 +251,14 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 	reiterate:
 		rres := ossecuritygrouprules.Create(netClient, opts)
 		if rres.Err != nil {
-			if e, ok := rres.Err.(gophercloud.ErrUnexpectedResponseCode); ok && e.Actual == http.StatusConflict {
+			var unexpected gophercloud.ErrUnexpectedResponseCode
+			if errors.As(rres.Err, &unexpected) && unexpected.Actual == http.StatusConflict {
 				// already exists
 				continue
 			}
 
-			if _, ok := rres.Err.(gophercloud.ErrDefault400); ok && opts.Protocol == ossecuritygrouprules.ProtocolIPv6ICMP {
-				// workaround for old versions of Opnestack with different protocol name,
+			if errors.As(rres.Err, &gophercloud.ErrDefault400{}) && opts.Protocol == ossecuritygrouprules.ProtocolIPv6ICMP {
+				// workaround for old versions of Openstack with different protocol name,
 				// from before https://review.opendev.org/#/c/252155/
 				opts.Protocol = "icmpv6"
 				goto reiterate // I'm very sorry, but this was really the cleanest way.
@@ -338,7 +342,7 @@ func createKubermaticSubnet(netClient *gophercloud.ServiceClient, clusterName, n
 func createKubermaticRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkName string) (*osrouters.Router, error) {
 	extNetwork, err := getNetworkByName(netClient, extNetworkName, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get external network %q: %v", extNetworkName, err)
+		return nil, fmt.Errorf("failed to get external network %q: %w", extNetworkName, err)
 	}
 
 	iTrue := true
@@ -383,16 +387,14 @@ func detachSubnetFromRouter(netClient *gophercloud.ServiceClient, subnetID, rout
 func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflavors.Flavor, error) {
 	computeClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
 	if err != nil {
-		// this is special case for  services that span only one region.
-		//nolint:gosimple
-		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
-		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
+		// this is special case for services that span only one region.
+		if isEndpointNotFoundErr(err) {
 			computeClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
 			if err != nil {
-				return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+				return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
 			}
 		} else {
-			return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+			return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
 		}
 	}
 
@@ -416,34 +418,32 @@ func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflav
 func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osprojects.Project, error) {
 	sc, err := goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
-		// this is special case for  services that span only one region.
-		//nolint:gosimple
-		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
-		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
+		// this is special case for services that span only one region.
+		if isEndpointNotFoundErr(err) {
 			sc, err = goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{})
 			if err != nil {
-				return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+				return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
 			}
 		} else {
-			return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+			return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
 		}
 	}
 
 	// We need to fetch the token to get more details - here we're just fetching the user object from the token response
 	user, err := ostokens.Get(sc, sc.Token()).ExtractUser()
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get user from token: %v", err)
+		return nil, fmt.Errorf("couldn't get user from token: %w", err)
 	}
 
 	// We cannot list all projects - instead we must list projects of a given user
 	allPages, err := osusers.ListProjects(sc, user.ID).AllPages()
 	if err != nil {
-		return nil, fmt.Errorf("couldn't list tenants: %v", err)
+		return nil, fmt.Errorf("couldn't list tenants: %w", err)
 	}
 
 	allProjects, err := osprojects.ExtractProjects(allPages)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't extract tenants: %v", err)
+		return nil, fmt.Errorf("couldn't extract tenants: %w", err)
 	}
 
 	return allProjects, nil
@@ -454,7 +454,7 @@ func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkIDOrName s
 
 	networks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: networkIDOrName})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list networks: %v", err)
+		return nil, fmt.Errorf("failed to list networks: %w", err)
 	}
 
 	networkID := networkIDOrName
@@ -478,16 +478,18 @@ func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkIDOrName s
 
 func isNotFoundErr(err error) bool {
 	var errNotFound gophercloud.ErrDefault404
-	if errors.As(err, &errNotFound) || strings.Contains(err.Error(), "not found") {
-		return true
-	}
-	return false
+
+	return errors.As(err, &errNotFound) || strings.Contains(err.Error(), "not found")
+}
+
+func isEndpointNotFoundErr(err error) bool {
+	return errors.As(err, &gophercloud.ErrEndpointNotFound{})
 }
 
 func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID string) (string, error) {
 	ports, err := getAllNetworkPorts(netClient, subnetID)
 	if err != nil {
-		return "", fmt.Errorf("failed to list ports for subnet: %v", err)
+		return "", fmt.Errorf("failed to list ports for subnet: %w", err)
 	}
 
 	for _, port := range ports {

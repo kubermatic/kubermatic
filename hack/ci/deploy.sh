@@ -33,7 +33,6 @@ if [[ ! -f "$2" ]]; then
 fi
 
 VALUES_FILE="$(realpath "$2")"
-DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 
 cd $(dirname "$0")/../..
@@ -122,32 +121,26 @@ kubermatic)
   fi
 
   # Kubermatic
-  if [[ "${1}" = "master" ]]; then
-    echodate "Running Kubermatic Installer..."
+  clusterType="$1"
 
-    # --force must be given because the Chart versions have not necessarily changed.
-    ./_build/kubermatic-installer deploy \
-      --storageclass copy-default \
-      --config "$KUBERMATIC_CONFIG" \
-      --helm-values "$VALUES_FILE" \
-      --force
+  echodate "Running Kubermatic Installer..."
 
-    # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
-    # We hack around this by grepping for a string that is mandatory in the values file of IAP
-    # to determine if its configured, because am empty chart leads to Helm doing weird things
-    if grep -q discovery_url ${VALUES_FILE}; then
+  # --force must be given because the Chart versions have not necessarily changed.
+  ./_build/kubermatic-installer deploy "kubermatic-$clusterType" \
+    --storageclass copy-default \
+    --config "$KUBERMATIC_CONFIG" \
+    --helm-values "$VALUES_FILE" \
+    --migrate-upstream-cert-manager \
+    --force
+
+  if [[ "$clusterType" = "master" ]]; then
+    # We might have not configured IAP, which results in nothing being deployed. This triggers
+    # https://github.com/helm/helm/issues/4295 and marks this as failed.
+    if [ $(yq read "$VALUES_FILE" --length 'iap.deployments') -gt 0 ]; then
       deploy "iap" "iap" charts/iap/
     else
-      echodate "Skipping IAP deployment because discovery_url is unset in values file"
+      echodate "Skipping IAP chart because no deployments are defined in Helm values file."
     fi
-  else
-    echodate "Installing Kubermatic CRDs into seed cluster..."
-    retry 3 kubectl apply --filename charts/kubermatic-operator/crd/
-  fi
-
-  if [[ "${DEPLOY_MINIO}" = true ]]; then
-    deploy "minio" "minio" charts/minio/
-    deploy "s3-exporter" "kube-system" charts/s3-exporter/
   fi
   ;;
 esac

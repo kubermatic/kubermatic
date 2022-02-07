@@ -56,7 +56,7 @@ elif [[ $provider == "hetzner" ]]; then
   EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}"
 elif [[ $provider == "openstack" ]]; then
   EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}"
 elif [[ $provider == "vsphere" ]]; then
@@ -69,6 +69,13 @@ elif [[ $provider == "kubevirt" ]]; then
 elif [[ $provider == "alibaba" ]]; then
   EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
+elif [[ $provider == "nutanix" ]]; then
+  EXTRA_ARGS="-nutanix-username=${NUTANIX_E2E_USERNAME}
+    -nutanix-password=${NUTANIX_E2E_PASSWORD}
+    -nutanix-proxy-url=http://${NUTANIX_E2E_PROXY_USERNAME}:${NUTANIX_E2E_PROXY_PASSWORD}@10.240.20.100:${NUTANIX_E2E_PROXY_PORT}/
+    -nutanix-cluster-name=${NUTANIX_E2E_CLUSTER_NAME}
+    -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
+    -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
 fi
 
 timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \

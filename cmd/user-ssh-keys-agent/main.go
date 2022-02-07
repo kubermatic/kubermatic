@@ -44,6 +44,7 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
 
 	cli.Hello(log, "User SSH-Key Agent", logOpts.Debug, nil)
 
@@ -53,9 +54,11 @@ func main() {
 	}
 
 	ctx := signals.SetupSignalHandler()
-	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
-	mgr, err := manager.New(cfg, manager.Options{Namespace: metav1.NamespaceSystem})
+	mgr, err := manager.New(cfg, manager.Options{
+		Namespace: metav1.NamespaceSystem,
+		NewCache:  usersshkeys.NewCacheFunc(),
+	})
 	if err != nil {
 		log.Fatalw("Failed creating user ssh key controller", zap.Error(err))
 	}
@@ -77,7 +80,7 @@ func availableUsersPaths() ([]string, error) {
 	var paths []string
 	users, err := availableHomeUsers()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get users in the home dir: %v", err)
+		return nil, fmt.Errorf("failed to get users in the home dir: %w", err)
 	}
 
 	for _, user := range users {
@@ -91,7 +94,7 @@ func availableUsersPaths() ([]string, error) {
 				continue
 			}
 
-			return nil, fmt.Errorf("failed describing file info: %v", err)
+			return nil, fmt.Errorf("failed describing file info: %w", err)
 		}
 
 		uid := fileInfo.Sys().(*syscall.Stat_t).Uid
@@ -120,15 +123,15 @@ func createDirIfNotExist(path string, uid, gid int) error {
 	}
 
 	if !os.IsNotExist(err) {
-		return fmt.Errorf("failed describing file info: %v", err)
+		return fmt.Errorf("failed describing file info: %w", err)
 	}
 
 	if err := os.Mkdir(path, 0700); err != nil {
-		return fmt.Errorf("failed creating .ssh dir in %s: %v", path, err)
+		return fmt.Errorf("failed creating .ssh dir in %s: %w", path, err)
 	}
 
 	if err := os.Chown(path, uid, gid); err != nil {
-		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %w", path, err)
 	}
 
 	return nil
@@ -141,19 +144,19 @@ func createFileIfNotExist(path string, uid, gid int) error {
 	}
 
 	if !os.IsNotExist(err) {
-		return fmt.Errorf("failed describing file info: %v", err)
+		return fmt.Errorf("failed describing file info: %w", err)
 	}
 
 	if _, err := os.Create(path); err != nil {
-		return fmt.Errorf("failed creating authorized_keys file in %s: %v", path, err)
+		return fmt.Errorf("failed creating authorized_keys file in %s: %w", path, err)
 	}
 
 	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
-		return fmt.Errorf("failed changing file mode for authorized_keys file in %s: %v", path, err)
+		return fmt.Errorf("failed changing file mode for authorized_keys file in %s: %w", path, err)
 	}
 
 	if err := os.Chown(path, uid, gid); err != nil {
-		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %w", path, err)
 	}
 
 	return nil

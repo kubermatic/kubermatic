@@ -16,10 +16,14 @@ spec:
     singular: kubermaticsetting
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
-        description: KubermaticSetting is the type representing a KubermaticSetting
+        description: KubermaticSetting is the type representing a KubermaticSetting.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -156,6 +160,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

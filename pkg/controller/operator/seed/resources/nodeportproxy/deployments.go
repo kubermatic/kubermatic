@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"strconv"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -44,7 +44,7 @@ const (
 	EnvoyTunnelingPort    = 8088
 )
 
-func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func EnvoyDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(3)
@@ -95,7 +95,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 				"-envoy-admin-port=9001",
 				fmt.Sprintf("-envoy-stats-port=%d", EnvoyPort),
 			}
-			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
+			if cfg.Spec.FeatureGates[features.TunnelingExposeStrategy] {
 				args = append(args,
 					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
 					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))
@@ -152,7 +152,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 						SuccessThreshold: 1,
 						TimeoutSeconds:   1,
 						PeriodSeconds:    3,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Port:   intstr.FromInt(EnvoyPort),
 								Scheme: corev1.URISchemeHTTP,
@@ -161,7 +161,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 						},
 					},
 					Lifecycle: &corev1.Lifecycle{
-						PreStop: &corev1.Handler{
+						PreStop: &corev1.LifecycleHandler{
 							Exec: &corev1.ExecAction{
 								Command: []string{
 									"wget",
@@ -173,6 +173,12 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 					},
 					Resources: seed.Spec.NodeportProxy.Envoy.Resources,
 				},
+			}
+			d.Spec.Template.Spec.Affinity = HostnameAntiAffinity(EnvoyDeploymentName)
+			if supportsFailureDomainZoneAntiAffinity {
+				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(EnvoyDeploymentName))
+				d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
 			}
 
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -186,6 +192,31 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 
 			return d, nil
 		}
+	}
+}
+
+func HostnameAntiAffinity(app string) *corev1.Affinity {
+	return &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: hostnameAntiAffinity(app),
+		},
+	}
+}
+
+func hostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
+	return []corev1.WeightedPodAffinityTerm{
+		// Avoid that we schedule multiple same-kind pods of a cluster on a single node
+		{
+			Weight: 10,
+			PodAffinityTerm: corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: app,
+					},
+				},
+				TopologyKey: resources.TopologyKeyHostname,
+			},
+		},
 	}
 }
 
@@ -204,7 +235,7 @@ func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	}
 }
 
-func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return UpdaterDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -225,7 +256,7 @@ func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, see
 				"-lb-namespace=$(NAMESPACE)",
 				fmt.Sprintf("-lb-name=%s", ServiceName),
 			}
-			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
+			if cfg.Spec.FeatureGates[features.TunnelingExposeStrategy] {
 				args = append(args,
 					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
 					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))

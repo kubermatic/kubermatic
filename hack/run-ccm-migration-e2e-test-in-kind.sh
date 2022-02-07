@@ -32,7 +32,6 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.21.1}"
 KIND_PORT="${KIND_PORT-31000}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
 USER_CLUSTER_NAME="${USER_CLUSTER_NAME-$(head -3 /dev/urandom | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' | cut -c -10)}"
@@ -55,7 +54,7 @@ appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-  start_docker_daemon
+  start_docker_daemon_ci
 fi
 
 cat << EOF > kind-config.yaml
@@ -72,7 +71,6 @@ EOF
 # setup Kind cluster
 time retry 5 kind create cluster \
   --name="${KIND_CLUSTER_NAME}" \
-  --image=kindest/node:"${KIND_NODE_VERSION}" \
   --config=kind-config.yaml
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
@@ -127,7 +125,7 @@ echo "Config dir: ${TMPDIR}"
 KUBERMATIC_CONFIG="${TMPDIR}/kubermatic.yaml"
 
 cat << EOF > ${KUBERMATIC_CONFIG}
-apiVersion: operator.kubermatic.io/v1alpha1
+apiVersion: kubermatic.k8c.io/v1
 kind: KubermaticConfiguration
 metadata:
   name: e2e
@@ -142,7 +140,7 @@ spec:
     replicas: 0
     debugLog: true
   featureGates:
-    TunnelingExposeStrategy: {}
+    TunnelingExposeStrategy: true
   ui:
     replicas: 0
   # Dex integration
@@ -195,7 +193,7 @@ data:
 
 ---
 kind: Seed
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 metadata:
   name: "${SEED_NAME}"
   namespace: kubermatic
@@ -215,27 +213,27 @@ spec:
       node: {}
       spec:
         openstack:
-          auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
-          availability_zone: dbl1
-          dns_servers:
+          authURL: https://api.cbk.cloud.syseleven.net:5000/v3
+          availabilityZone: dbl1
+          dnsServers:
           - 37.123.105.116
           - 37.123.105.117
-          enabled_flavors: null
-          enforce_floating_ip: true
-          ignore_volume_az: false
+          enabledFlavors: null
+          enforceFloatingIP: true
+          ignoreVolumeAZ: false
           images:
             centos: kubermatic-e2e-centos
             coreos: kubermatic-e2e-coreos
             flatcar: flatcar
             ubuntu: kubermatic-e2e-ubuntu
-          manage_security_groups: null
-          node_size_requirements:
-            minimum_memory: 0
-            minimum_vcpus: 0
+          manageSecurityGroups: null
+          nodeSizeRequirements:
+            minimumMemory: 0
+            minimumVCPUs: 0
           region: dbl
-          trust_device_path: null
-          use_octavia: null
-  expose_strategy: Tunneling
+          trustDevicePath: null
+          useOctavia: null
+  exposeStrategy: Tunneling
 EOF
 
 retry 3 kubectl apply -f $SEED_MANIFEST
@@ -266,7 +264,7 @@ EOF
 time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
 
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
     -openstack-auth-url=${OS_AUTH_URL}
@@ -281,7 +279,7 @@ appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
 if [ -x "$(command -v ginkgo)" ]; then
-  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
+  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
     -r \
     --randomizeAllSpecs \
     --randomizeSuites \
@@ -290,17 +288,19 @@ if [ -x "$(command -v ginkgo)" ]; then
     --trace \
     --race \
     --progress \
+    -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
     --user-cluster-name="${USER_CLUSTER_NAME}" \
-    --datacenter="${OS_DATACENTER}"
+    --datacenter="${OS_DATACENTER}" $EXTRA_ARGS
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \
+    --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \

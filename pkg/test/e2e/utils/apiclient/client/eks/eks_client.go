@@ -28,28 +28,28 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListEKSClusters(params *ListEKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClustersOK, error)
+	ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
-  ListEKSClusters Lists EKS clusters
+  ValidateEKSCredentials Validates EKS credentials
 */
-func (a *Client) ListEKSClusters(params *ListEKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClustersOK, error) {
+func (a *Client) ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListEKSClustersParams()
+		params = NewValidateEKSCredentialsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listEKSClusters",
+		ID:                 "validateEKSCredentials",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/eks/clusters",
+		PathPattern:        "/api/v2/providers/eks/validatecredentials",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListEKSClustersReader{formats: a.formats},
+		Reader:             &ValidateEKSCredentialsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -62,12 +62,12 @@ func (a *Client) ListEKSClusters(params *ListEKSClustersParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListEKSClustersOK)
+	success, ok := result.(*ValidateEKSCredentialsOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListEKSClustersDefault)
+	unexpectedSuccess := result.(*ValidateEKSCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

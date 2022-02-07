@@ -58,6 +58,12 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 		}
 		var nodesV1 []*apiv2.ExternalClusterNode
 
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
+
+		if apiCluster.Status.State != apiv2.RUNNING {
+			return nodesV1, nil
+		}
+
 		nodes, err := clusterProvider.ListNodes(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -66,7 +72,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 		for _, n := range nodes.Items {
 			outNode, err := outputNode(n)
 			if err != nil {
-				return nil, fmt.Errorf("failed to output node %s: %v", n.Name, err)
+				return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
 			}
 			nodesV1 = append(nodesV1, outNode)
 		}
@@ -98,6 +104,12 @@ func getClusterNodesMetrics(ctx context.Context, userInfoGetter provider.UserInf
 	cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, clusterID)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
+
+	if apiCluster.Status.State != apiv2.RUNNING {
+		return nodeMetrics, nil
 	}
 
 	isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
@@ -163,7 +175,7 @@ func DecodeListNodesReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req listNodesReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -217,6 +229,10 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 
 		var machineDeployments []apiv2.ExternalClusterMachineDeployment
 		machineDeployments = make([]apiv2.ExternalClusterMachineDeployment, 0)
+		apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
+		if apiCluster.Status.State != apiv2.RUNNING {
+			return machineDeployments, nil
+		}
 
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
@@ -231,6 +247,13 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 			}
 			if cloud.EKS != nil {
 				np, err := getEKSNodeGroups(cluster, secretKeySelector, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				machineDeployments = np
+			}
+			if cloud.AKS != nil {
+				np, err := getAKSNodePools(ctx, cluster, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -265,7 +288,10 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 
 	var nodes []apiv2.ExternalClusterNode
 	nodes = make([]apiv2.ExternalClusterNode, 0)
-
+	apiCluster := convertClusterToAPIWithStatus(ctx, clusterProvider, privilegedClusterProvider, cluster)
+	if apiCluster.Status.State != apiv2.RUNNING {
+		return nodes, nil
+	}
 	cloud := cluster.Spec.CloudSpec
 	if cloud != nil {
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
@@ -279,6 +305,13 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 		}
 		if cloud.EKS != nil {
 			n, err := getEKSNodes(cluster, machineDeploymentID, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodes = n
+		}
+		if cloud.AKS != nil {
+			n, err := getAKSNodes(cluster, machineDeploymentID, clusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -321,6 +354,12 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 			}
+			if cloud.AKS != nil {
+				err := deleteAKSNodeGroup(ctx, cluster.Spec.CloudSpec, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
 		}
 
 		return nil, nil
@@ -355,7 +394,7 @@ func ListMachineDeploymentMetricsEndpoint(userInfoGetter provider.UserInfoGetter
 	}
 }
 
-// Validate validates getMachineDeploymentReq request
+// Validate validates getMachineDeploymentReq request.
 func (req machineDeploymentReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -429,7 +468,7 @@ type listMachineDeploymentsReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-// Validate validates ListMachineDeploymentEndpoint request
+// Validate validates ListMachineDeploymentEndpoint request.
 func (req listMachineDeploymentsReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -490,7 +529,7 @@ func DecodeGetNodeReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
+// Validate validates CreateEndpoint request.
 func (req getNodeReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -606,6 +645,13 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 				}
 				machineDeployment = *np
 			}
+			if cloud.AKS != nil {
+				np, err := getAKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				machineDeployment = *np
+			}
 		}
 
 		return machineDeployment, nil
@@ -635,7 +681,6 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
-
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 			mdToPatch := apiv2.ExternalClusterMachineDeployment{}
 			patchedMD := apiv2.ExternalClusterMachineDeployment{}
@@ -661,6 +706,17 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 					return nil, err
 				}
 				return patchGKEMachineDeployment(ctx, &mdToPatch, &patchedMD, cluster, secretKeySelector, cloud.GKE.CredentialsReference)
+			}
+			if cloud.AKS != nil {
+				md, err := getAKSNodePool(ctx, cluster, req.MachineDeploymentID, secretKeySelector, cloud.AKS.CredentialsReference, clusterProvider)
+				if err != nil {
+					return nil, err
+				}
+				mdToPatch.NodeDeployment = md.NodeDeployment
+				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+					return nil, err
+				}
+				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cluster.Spec.CloudSpec)
 			}
 		}
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
@@ -690,6 +746,9 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 			if cloud.GKE != nil {
 				return createGKENodePool(ctx, cluster, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
 			}
+			if cloud.AKS != nil {
+				return createAKSNodePool(ctx, cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
+			}
 		}
 
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")
@@ -697,7 +756,6 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 }
 
 func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patchJson json.RawMessage) error {
-
 	existingMDJSON, err := json.Marshal(mdToPatch)
 	if err != nil {
 		return errors.NewBadRequest("cannot decode existing md: %v", err)
@@ -761,7 +819,7 @@ type createMachineDeploymentsReq struct {
 	Body apiv2.ExternalClusterMachineDeployment
 }
 
-// Validate validates CreateMachineDeploymentEndpoint request
+// Validate validates CreateMachineDeploymentEndpoint request.
 func (req createMachineDeploymentsReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")

@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// ImageList ImageList defines a map of operating system and the image to use
+// ImageList ImageList defines a map of operating system and the image to use.
 //
 // swagger:model ImageList
 type ImageList map[string]string

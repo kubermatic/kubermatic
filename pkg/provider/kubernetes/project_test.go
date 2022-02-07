@@ -21,7 +21,7 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
@@ -219,7 +219,6 @@ func TestGetUnsecuredProjects(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			kubermaticObjects := []ctrlruntimeclient.Object{}
 			for _, binding := range tc.existingProjects {
 				kubermaticObjects = append(kubermaticObjects, binding)

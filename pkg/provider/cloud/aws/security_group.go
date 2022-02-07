@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -120,10 +120,15 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 		groupID = *out.GroupId
 	}
 
+	nodePortsAllowedIPRange := cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange
+	if nodePortsAllowedIPRange == "" {
+		nodePortsAllowedIPRange = "0.0.0.0/0"
+	}
+
 	// Iterate over the permissions and add them one by one, because if an error occurs
 	// (e.g., one permission already exists) none of them would be created
 	lowPort, highPort := getNodePortRange(cluster)
-	permissions := getSecurityGroupPermissions(groupID, lowPort, highPort)
+	permissions := getSecurityGroupPermissions(groupID, lowPort, highPort, nodePortsAllowedIPRange)
 
 	for _, perm := range permissions {
 		// try to add permission
@@ -134,7 +139,8 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 			},
 		})
 		if err != nil {
-			if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
+			var awsErr awserr.Error
+			if !errors.As(err, &awsErr) || awsErr.Code() != "InvalidPermission.Duplicate" {
 				return cluster, fmt.Errorf("failed to authorize security group %s with id %s: %w", groupName, groupID, err)
 			}
 		}
@@ -153,7 +159,7 @@ func getNodePortRange(cluster *kubermaticv1.Cluster) (int, int) {
 		NodePorts()
 }
 
-func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int) []*ec2.IpPermission {
+func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int, nodePortsAllowedIPRange string) []*ec2.IpPermission {
 	return []*ec2.IpPermission{
 		// all protocols from within the sg
 		{
@@ -199,7 +205,7 @@ func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int) 
 			FromPort:   aws.Int64(int64(lowPort)),
 			ToPort:     aws.Int64(int64(highPort)),
 			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("0.0.0.0/0"),
+				CidrIp: aws.String(nodePortsAllowedIPRange),
 			}},
 		},
 
@@ -209,7 +215,7 @@ func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int) 
 			FromPort:   aws.Int64(int64(lowPort)),
 			ToPort:     aws.Int64(int64(highPort)),
 			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("0.0.0.0/0"),
+				CidrIp: aws.String(nodePortsAllowedIPRange),
 			}},
 		},
 	}

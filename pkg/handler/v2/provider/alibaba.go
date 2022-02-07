@@ -38,7 +38,7 @@ type alibabaNoCredentialReq struct {
 	Region string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req alibabaNoCredentialReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

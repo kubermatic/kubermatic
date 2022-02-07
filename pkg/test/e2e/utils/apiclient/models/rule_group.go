@@ -24,6 +24,9 @@ type RuleGroup struct {
 	// IsDefault indicates whether the ruleGroup is default
 	IsDefault bool `json:"isDefault,omitempty"`
 
+	// name
+	Name string `json:"name,omitempty"`
+
 	// type
 	Type RuleGroupType `json:"type,omitempty"`
 }

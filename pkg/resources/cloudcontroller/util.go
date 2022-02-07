@@ -19,8 +19,7 @@ package cloudcontroller
 import (
 	"net/url"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -47,10 +46,10 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
 
 	case cluster.Spec.Cloud.Hetzner != nil:
-		return dc.Spec.Hetzner.Network != ""
+		return cluster.Spec.Cloud.Hetzner.Network != "" || dc.Spec.Hetzner.Network != ""
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.ProviderVSphere, incompatibilities, operatorv1alpha1.ExternalCloudProviderCondition)
+		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}
@@ -87,7 +86,7 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.ProviderVSphere, incompatibilities, operatorv1alpha1.ExternalCloudProviderCondition)
+		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}

@@ -25,9 +25,10 @@
 package metering
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ const (
 )
 
 // deploymentCreator creates a new metering tool deployment per seed cluster.
-func deploymentCreator(seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
+func deploymentCreator(seed *kubermaticv1.Seed, getRegistry registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		//TODO: Add custom values for the metering deployment fields such as seed, interval and output-rotation.
 		return meteringToolName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -65,7 +66,7 @@ func deploymentCreator(seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreat
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:    "s3fetch",
-					Image:   "docker.io/minio/mc:RELEASE.2021-07-27T06-46-19Z",
+					Image:   getMinioImage(getRegistry),
 					Command: []string{"/bin/sh"},
 					Args: []string{
 						"-c",
@@ -140,11 +141,11 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"--seed",
 						seed.Name,
 					},
-					Image:           "quay.io/kubermatic/metering:v0.6",
+					Image:           getMeteringImage(getRegistry),
 					ImagePullPolicy: corev1.PullAlways,
 					LivenessProbe: &corev1.Probe{
 						InitialDelaySeconds: 15,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(8081),
@@ -158,7 +159,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 					},
 					ReadinessProbe: &corev1.Probe{
 						InitialDelaySeconds: 5,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
 								Port:   intstr.FromInt(8081),
@@ -199,7 +200,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 mc mb --ignore-existing s3/$S3_BUCKET
 while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; done`,
 					},
-					Image:           "docker.io/minio/mc:RELEASE.2021-07-27T06-46-19Z",
+					Image:           getMinioImage(getRegistry),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Env: []corev1.EnvVar{
 						{

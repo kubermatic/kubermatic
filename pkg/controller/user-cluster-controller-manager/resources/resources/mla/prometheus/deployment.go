@@ -19,6 +19,7 @@ package prometheus
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -46,16 +47,14 @@ const (
 	storagePath            = "/data"
 	certificatesVolumeName = "certificates"
 
-	prometheusNameKey     = "app.kubernetes.io/name"
-	prometheusInstanceKey = "app.kubernetes.io/instance"
-
 	containerPort = 9090
 )
 
 var (
 	controllerLabels = map[string]string{
-		prometheusNameKey:     resources.UserClusterPrometheusDeploymentName,
-		prometheusInstanceKey: resources.UserClusterPrometheusDeploymentName,
+		common.NameLabel:      resources.UserClusterPrometheusDeploymentName,
+		common.InstanceLabel:  resources.UserClusterPrometheusDeploymentName,
+		common.ComponentLabel: resources.MLAComponentName,
 	}
 
 	defaultResourceRequirements = corev1.ResourceRequirements{
@@ -73,7 +72,7 @@ var (
 func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-			deployment.Labels = resources.BaseAppLabels(appName, nil)
+			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
 
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
@@ -89,6 +88,9 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 				RunAsGroup:   pointer.Int64Ptr(65534),
 				FSGroup:      pointer.Int64Ptr(65534),
 				RunAsNonRoot: pointer.BoolPtr(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			}
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -131,7 +133,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 						FailureThreshold:    3,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/healthy",
 								Port:   intstr.FromInt(containerPort),
@@ -145,7 +147,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 						FailureThreshold:    3,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/ready",
 								Port:   intstr.FromInt(containerPort),

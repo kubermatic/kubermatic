@@ -62,17 +62,23 @@ type ListAWSSubnetsParams struct {
 	// AccessKeyID.
 	AccessKeyID *string
 
+	// AssumeRoleARN.
+	AssumeRoleARN *string
+
+	// AssumeRoleExternalID.
+	AssumeRoleExternalID *string
+
 	// Credential.
 	Credential *string
 
 	// SecretAccessKey.
 	SecretAccessKey *string
 
+	// VPC.
+	VPC *string
+
 	// Dc.
 	DC string
-
-	// Vpc.
-	VPC *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -138,6 +144,28 @@ func (o *ListAWSSubnetsParams) SetAccessKeyID(accessKeyID *string) {
 	o.AccessKeyID = accessKeyID
 }
 
+// WithAssumeRoleARN adds the assumeRoleARN to the list a w s subnets params
+func (o *ListAWSSubnetsParams) WithAssumeRoleARN(assumeRoleARN *string) *ListAWSSubnetsParams {
+	o.SetAssumeRoleARN(assumeRoleARN)
+	return o
+}
+
+// SetAssumeRoleARN adds the assumeRoleARN to the list a w s subnets params
+func (o *ListAWSSubnetsParams) SetAssumeRoleARN(assumeRoleARN *string) {
+	o.AssumeRoleARN = assumeRoleARN
+}
+
+// WithAssumeRoleExternalID adds the assumeRoleExternalID to the list a w s subnets params
+func (o *ListAWSSubnetsParams) WithAssumeRoleExternalID(assumeRoleExternalID *string) *ListAWSSubnetsParams {
+	o.SetAssumeRoleExternalID(assumeRoleExternalID)
+	return o
+}
+
+// SetAssumeRoleExternalID adds the assumeRoleExternalId to the list a w s subnets params
+func (o *ListAWSSubnetsParams) SetAssumeRoleExternalID(assumeRoleExternalID *string) {
+	o.AssumeRoleExternalID = assumeRoleExternalID
+}
+
 // WithCredential adds the credential to the list a w s subnets params
 func (o *ListAWSSubnetsParams) WithCredential(credential *string) *ListAWSSubnetsParams {
 	o.SetCredential(credential)
@@ -160,6 +188,17 @@ func (o *ListAWSSubnetsParams) SetSecretAccessKey(secretAccessKey *string) {
 	o.SecretAccessKey = secretAccessKey
 }
 
+// WithVPC adds the vPC to the list a w s subnets params
+func (o *ListAWSSubnetsParams) WithVPC(vPC *string) *ListAWSSubnetsParams {
+	o.SetVPC(vPC)
+	return o
+}
+
+// SetVPC adds the vPC to the list a w s subnets params
+func (o *ListAWSSubnetsParams) SetVPC(vPC *string) {
+	o.VPC = vPC
+}
+
 // WithDC adds the dc to the list a w s subnets params
 func (o *ListAWSSubnetsParams) WithDC(dc string) *ListAWSSubnetsParams {
 	o.SetDC(dc)
@@ -169,17 +208,6 @@ func (o *ListAWSSubnetsParams) WithDC(dc string) *ListAWSSubnetsParams {
 // SetDC adds the dc to the list a w s subnets params
 func (o *ListAWSSubnetsParams) SetDC(dc string) {
 	o.DC = dc
-}
-
-// WithVPC adds the vpc to the list a w s subnets params
-func (o *ListAWSSubnetsParams) WithVPC(vpc *string) *ListAWSSubnetsParams {
-	o.SetVPC(vpc)
-	return o
-}
-
-// SetVPC adds the vpc to the list a w s subnets params
-func (o *ListAWSSubnetsParams) SetVPC(vpc *string) {
-	o.VPC = vpc
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -194,6 +222,22 @@ func (o *ListAWSSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 
 		// header param AccessKeyID
 		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
+			return err
+		}
+	}
+
+	if o.AssumeRoleARN != nil {
+
+		// header param AssumeRoleARN
+		if err := r.SetHeaderParam("AssumeRoleARN", *o.AssumeRoleARN); err != nil {
+			return err
+		}
+	}
+
+	if o.AssumeRoleExternalID != nil {
+
+		// header param AssumeRoleExternalID
+		if err := r.SetHeaderParam("AssumeRoleExternalID", *o.AssumeRoleExternalID); err != nil {
 			return err
 		}
 	}
@@ -214,17 +258,17 @@ func (o *ListAWSSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		}
 	}
 
+	if o.VPC != nil {
+
+		// header param VPC
+		if err := r.SetHeaderParam("VPC", *o.VPC); err != nil {
+			return err
+		}
+	}
+
 	// path param dc
 	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
-	}
-
-	if o.VPC != nil {
-
-		// header param vpc
-		if err := r.SetHeaderParam("vpc", *o.VPC); err != nil {
-			return err
-		}
 	}
 
 	if len(res) > 0 {

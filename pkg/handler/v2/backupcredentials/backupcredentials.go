@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -86,7 +86,7 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 				return nil, errors.NewBadRequest("backup destination %q in seed %q not found", req.Body.BackupCredentials.Destination, req.SeedName)
 			}
 
-			backupDest.Credentials = &v1.SecretReference{
+			backupDest.Credentials = &corev1.SecretReference{
 				Name:      bc.Name,
 				Namespace: bc.Namespace,
 			}
@@ -136,8 +136,8 @@ func DecodeBackupCredentialsReq(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secret {
-	return &v1.Secret{
+func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *corev1.Secret {
+	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      GenBackupCredentialsSecretName(bc.Destination),
 			Namespace: metav1.NamespaceSystem,
@@ -149,7 +149,7 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *v1.Secr
 	}
 }
 
-// GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret
+// GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret.
 func GenBackupCredentialsSecretName(destination string) string {
 	if len(destination) != 0 {
 		return fmt.Sprintf("%s-etcd-backup-credentials", destination)

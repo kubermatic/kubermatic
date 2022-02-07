@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -119,7 +119,7 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	}
 
 	if err := r.userGrafanaController.ensureGrafanaUser(ctx, user); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to add grafana user : %w", err)
+		return reconcile.Result{}, fmt.Errorf("unable to add grafana user: %w", err)
 	}
 	return reconcile.Result{}, nil
 }
@@ -142,7 +142,6 @@ func newUserGrafanaController(
 	grafanaURL string,
 	grafanaHeader string,
 ) *userGrafanaController {
-
 	return &userGrafanaController{
 		Client:        client,
 		grafanaClient: grafanaClient,
@@ -180,16 +179,17 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 		}
 	}
 	if kubernetes.HasFinalizer(user, mlaFinalizer) {
+		oldUser := user.DeepCopy()
 		kubernetes.RemoveFinalizer(user, mlaFinalizer)
-		if err := r.Update(ctx, user); err != nil {
-			return fmt.Errorf("updating User: %w", err)
+		if err := r.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+			return fmt.Errorf("failed to update User: %w", err)
 		}
 	}
 	return nil
 }
 
 func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User) error {
-	req, err := http.NewRequest("GET", r.grafanaURL+"/api/user", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", r.grafanaURL+"/api/user", nil)
 	if err != nil {
 		return err
 	}
@@ -201,8 +201,11 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	grafanaUser := &grafanasdk.User{}
 	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(grafanaUser); err != nil || grafanaUser.ID == 0 {
-		return fmt.Errorf("unable to decode response : %w", err)
+	if err := decoder.Decode(grafanaUser); err != nil {
+		return fmt.Errorf("unable to decode response: %w", err)
+	}
+	if grafanaUser.ID == 0 {
+		return fmt.Errorf("user %q was not found", user.Spec.Email)
 	}
 
 	// delete user from default org

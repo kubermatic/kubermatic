@@ -24,15 +24,16 @@ import (
 
 const (
 
-	// ConstraintResourceName represents "Resource" defined in Kubernetes
+	// ConstraintResourceName represents "Resource" defined in Kubernetes.
 	ConstraintResourceName = "constraints"
 
-	// ConstraintKind represents "Kind" defined in Kubernetes
+	// ConstraintKind represents "Kind" defined in Kubernetes.
 	ConstraintKind = "Constraint"
 )
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Constraint specifies a kubermatic wrapper for the gatekeeper constraints.
 type Constraint struct {
@@ -71,7 +72,7 @@ type ConstraintSpec struct {
 
 type Parameters map[string]json.RawMessage
 
-// ConstraintSelector is the object holding the cluster selection filters
+// ConstraintSelector is the object holding the cluster selection filters.
 type ConstraintSelector struct {
 	// Providers is a list of cloud providers to which the Constraint applies to. Empty means all providers are selected.
 	Providers []string `json:"providers,omitempty"`
@@ -79,7 +80,7 @@ type ConstraintSelector struct {
 	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
 
-// Match contains the constraint to resource matching data
+// Match contains the constraint to resource matching data.
 type Match struct {
 	// Kinds accepts a list of objects with apiGroups and kinds fields that list the groups/kinds of objects to which
 	// the constraint will apply. If multiple groups/kinds objects are specified, only one match is needed for the resource to be in scope
@@ -97,7 +98,7 @@ type Match struct {
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
-// Kind specifies the resource Kind and APIGroup
+// Kind specifies the resource Kind and APIGroup.
 type Kind struct {
 	// Kinds specifies the kinds of the resources
 	Kinds []string `json:"kinds,omitempty"`
@@ -108,7 +109,7 @@ type Kind struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// ConstraintList specifies a list of constraints
+// ConstraintList specifies a list of constraints.
 type ConstraintList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

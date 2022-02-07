@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +33,7 @@ import (
 // running application (e.g. the seed-controller-manager). It's an error
 // if there are none or more than one KubermaticConfiguration objects in
 // a single namespace.
-type KubermaticConfigurationGetter = func(ctx context.Context) (*operatorv1alpha1.KubermaticConfiguration, error)
+type KubermaticConfigurationGetter = func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error)
 
 // DynamicKubermaticConfigurationGetterFactory returns a dynamic KubermaticConfigurationGetter,
 // which will list all Configurations in the given namespace and return the found config or
@@ -43,8 +43,8 @@ func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader
 		return nil, fmt.Errorf("a namespace must be provided")
 	}
 
-	return func(ctx context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
-		configList := operatorv1alpha1.KubermaticConfigurationList{}
+	return func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
+		configList := kubermaticv1.KubermaticConfigurationList{}
 		if err := client.List(ctx, &configList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
 			return nil, fmt.Errorf("failed to list KubermaticConfigurations in namespace %q: %w", namespace, err)
 		}
@@ -70,12 +70,17 @@ func DynamicKubermaticConfigurationGetterFactory(client ctrlruntimeclient.Reader
 // returns the same Configuration on every call. This is mostly used for local development
 // in order to provide an easy to modify configuration file. Actual production use will use
 // the dynamic getter instead.
-func StaticKubermaticConfigurationGetterFactory(config *operatorv1alpha1.KubermaticConfiguration) (KubermaticConfigurationGetter, error) {
+func StaticKubermaticConfigurationGetterFactory(config *kubermaticv1.KubermaticConfiguration) (KubermaticConfigurationGetter, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
 
-	return func(ctx context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
-		return config, nil
+	return func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
+		defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply default values: %w", err)
+		}
+
+		return defaulted, nil
 	}, nil
 }

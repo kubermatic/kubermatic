@@ -27,7 +27,7 @@ const (
 	Name = "prometheus"
 )
 
-// ClusterRoleCreator returns the func to create/update the ClusterRole for Prometheus
+// ClusterRoleCreator returns the func to create/update the ClusterRole for Prometheus.
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.PrometheusClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {

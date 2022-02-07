@@ -19,9 +19,8 @@ package kubermatic
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -40,7 +39,7 @@ func seedControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func SeedControllerManagerDeploymentCreator(workerName string, versions kubermatic.Versions, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
+func SeedControllerManagerDeploymentCreator(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = cfg.Spec.SeedController.Replicas
@@ -70,28 +69,23 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-seed-name=%s", seed.Name),
 				fmt.Sprintf("-etcd-disk-size=%s", cfg.Spec.UserCluster.EtcdVolumeSize),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
-				fmt.Sprintf("-nodeport-range=%s", cfg.Spec.UserCluster.NodePortRange),
 				fmt.Sprintf("-worker-name=%s", workerName),
 				fmt.Sprintf("-kubermatic-image=%s", cfg.Spec.UserCluster.KubermaticDockerRepository),
 				fmt.Sprintf("-dnatcontroller-image=%s", cfg.Spec.UserCluster.DNATControllerDockerRepository),
 				fmt.Sprintf("-etcd-launcher-image=%s", cfg.Spec.UserCluster.EtcdLauncherDockerRepository),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
-				fmt.Sprintf("-apiserver-default-replicas=%d", *cfg.Spec.UserCluster.APIServerReplicas),
-				fmt.Sprintf("-controller-manager-default-replicas=%d", 1),
-				fmt.Sprintf("-scheduler-default-replicas=%d", 1),
 				fmt.Sprintf("-max-parallel-reconcile=%d", cfg.Spec.SeedController.MaximumParallelReconciles),
-				fmt.Sprintf("-apiserver-reconciling-disabled-by-default=%v", cfg.Spec.UserCluster.DisableAPIServerEndpointReconciling),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
 				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
 			}
 
-			if seed.Spec.BackupRestore == nil {
+			if seed.Spec.BackupRestore == nil && seed.Spec.EtcdBackupRestore == nil {
 				args = append(args, fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey))
 			} else if !cfg.Spec.SeedController.BackupRestore.Enabled || cfg.Spec.SeedController.BackupCleanupContainer != "" {
 				args = append(args, fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey))
 			}
 
-			if cfg.Spec.SeedController.BackupRestore.Enabled || seed.Spec.BackupRestore != nil {
+			if cfg.Spec.SeedController.BackupRestore.Enabled || seed.Spec.BackupRestore != nil || seed.Spec.EtcdBackupRestore != nil {
 				args = append(args, "-enable-etcd-backups-restores")
 				args = append(args, fmt.Sprintf("-backup-delete-container=/opt/backup/%s", deleteContainerKey))
 			}
@@ -195,7 +189,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				})
 			}
 
-			if cfg.Spec.FeatureGates.Has(features.OpenIDAuthPlugin) {
+			if cfg.Spec.FeatureGates[features.OpenIDAuthPlugin] {
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
@@ -205,7 +199,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				createAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
+				createAddonsInitContainer(cfg.Spec.UserCluster.Addons, sharedAddonVolume, versions.Kubermatic),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -231,7 +225,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 	}
 }
 
-func createAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
+func createAddonsInitContainer(cfg kubermaticv1.KubermaticAddonsConfiguration, addonVolume string, version string) corev1.Container {
 	return corev1.Container{
 		Name:    "copy-addons",
 		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
@@ -249,7 +243,7 @@ func createAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration
 	}
 }
 
-func getAddonDockerTag(cfg operatorv1alpha1.KubermaticAddonConfiguration, version string) string {
+func getAddonDockerTag(cfg kubermaticv1.KubermaticAddonsConfiguration, version string) string {
 	if cfg.DockerTagSuffix != "" {
 		version = fmt.Sprintf("%s-%s", version, cfg.DockerTagSuffix)
 	}
@@ -257,12 +251,18 @@ func getAddonDockerTag(cfg operatorv1alpha1.KubermaticAddonConfiguration, versio
 	return version
 }
 
-func SeedControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func SeedControllerManagerPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	name := "kubermatic-seed-controller-manager"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+			// To prevent the PDB from blocking node rotations, we accept
+			// 0 minAvailable if the replica count is only 1.
+			// NB: The cfg is defaulted, so Replicas==nil cannot happen.
 			min := intstr.FromInt(1)
+			if cfg.Spec.SeedController.Replicas != nil && *cfg.Spec.SeedController.Replicas < 2 {
+				min = intstr.FromInt(0)
+			}
 
 			pdb.Spec.MinAvailable = &min
 			pdb.Spec.Selector = &metav1.LabelSelector{

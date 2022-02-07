@@ -21,15 +21,16 @@ import (
 )
 
 const (
-	// MLAAdminSettingResourceName represents "Resource" defined in Kubernetes
+	// MLAAdminSettingResourceName represents "Resource" defined in Kubernetes.
 	MLAAdminSettingResourceName = "mlaadminsettings"
 
-	// MLAAdminSettingKindName represents "Kind" defined in Kubernetes
+	// MLAAdminSettingKindName represents "Kind" defined in Kubernetes.
 	MLAAdminSettingKindName = "MLAAdminSetting"
 )
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // MLAAdminSetting is the object representing cluster-specific administrator settings
 // for KKP user cluster MLA (monitoring, logging & alerting) stack.
@@ -89,7 +90,7 @@ type LoggingRateLimitSettings struct {
 // +kubebuilder:object:root=true
 
 // MLAAdminSettingList specifies a list of administrtor settings for KKP
-// user cluster MLA (monitoring, logging & alerting) stack
+// user cluster MLA (monitoring, logging & alerting) stack.
 type MLAAdminSettingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

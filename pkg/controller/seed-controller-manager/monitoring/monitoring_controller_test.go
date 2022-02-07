@@ -20,8 +20,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,8 +87,8 @@ func seed() (*kubermaticv1.Seed, error) {
 	}, nil
 }
 
-func kubermaticConfiguration(_ context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
-	return &operatorv1alpha1.KubermaticConfiguration{
+func kubermaticConfiguration(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
+	return &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: "kubermatic",

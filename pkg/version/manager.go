@@ -23,8 +23,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
@@ -34,7 +33,7 @@ var (
 	errNoDefaultVersion = errors.New("no default version configured")
 )
 
-// Manager is a object to handle versions & updates from a predefined config
+// Manager is a object to handle versions & updates from a predefined config.
 type Manager struct {
 	versions                  []*Version
 	updates                   []*Update
@@ -42,11 +41,11 @@ type Manager struct {
 }
 
 type ProviderIncompatibility struct {
-	Provider  kubermaticv1.ProviderType      `json:"provider"`
-	Version   string                         `json:"version"`
-	Condition operatorv1alpha1.ConditionType `json:"condition"`
-	Operation operatorv1alpha1.OperationType `json:"operation"`
-	Type      string                         `json:"type,omitempty"`
+	Provider  kubermaticv1.ProviderType  `json:"provider"`
+	Version   string                     `json:"version"`
+	Condition kubermaticv1.ConditionType `json:"condition"`
+	Operation kubermaticv1.OperationType `json:"operation"`
+	Type      string                     `json:"type,omitempty"`
 }
 
 // Version is the object representing a Kubernetes version.
@@ -56,7 +55,7 @@ type Version struct {
 	Type    string          `json:"type,omitempty"`
 }
 
-// Update represents an update option for a cluster
+// Update represents an update option for a cluster.
 type Update struct {
 	From                string `json:"from"`
 	To                  string `json:"to"`
@@ -65,7 +64,7 @@ type Update struct {
 	Type                string `json:"type,omitempty"`
 }
 
-// New returns a instance of Manager
+// New returns a instance of Manager.
 func New(versions []*Version, updates []*Update, providerIncompatibilities []*ProviderIncompatibility) *Manager {
 	return &Manager{
 		updates:                   updates,
@@ -76,17 +75,17 @@ func New(versions []*Version, updates []*Update, providerIncompatibilities []*Pr
 
 // NewFromConfiguration converts the configured versions/updates into the datatypes used by
 // this package and returns a version.Manager on success.
-func NewFromConfiguration(config *operatorv1alpha1.KubermaticConfiguration) *Manager {
+func NewFromConfiguration(config *kubermaticv1.KubermaticConfiguration) *Manager {
 	updates := []*Update{}
 	versions := []*Version{}
 	incompatibilities := []*ProviderIncompatibility{}
 
-	k8s := config.Spec.Versions.Kubernetes
+	k8s := config.Spec.Versions
 
-	for i := range k8s.Versions {
+	for _, k8sVersion := range k8s.Versions {
 		versions = append(versions, &Version{
-			Version: k8s.Versions[i],
-			Default: k8s.Default != nil && k8s.Versions[i].Equal(k8s.Default),
+			Version: k8sVersion.Semver(),
+			Default: k8s.Default != nil && k8sVersion.Equal(k8s.Default),
 			Type:    v1.KubernetesClusterType,
 		})
 	}
@@ -114,7 +113,7 @@ func NewFromConfiguration(config *operatorv1alpha1.KubermaticConfiguration) *Man
 	return New(versions, updates, incompatibilities)
 }
 
-// GetDefault returns the default version
+// GetDefault returns the default version.
 func (m *Manager) GetDefault() (*Version, error) {
 	for _, v := range m.versions {
 		if v.Default {
@@ -124,11 +123,11 @@ func (m *Manager) GetDefault() (*Version, error) {
 	return nil, errNoDefaultVersion
 }
 
-// GetVersion returns the Versions for s
+// GetVersion returns the Versions for s.
 func (m *Manager) GetVersion(s, t string) (*Version, error) {
 	sv, err := semver.NewVersion(s)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", s, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", s, err)
 	}
 
 	for _, v := range m.versions {
@@ -139,7 +138,7 @@ func (m *Manager) GetVersion(s, t string) (*Version, error) {
 	return nil, errVersionNotFound
 }
 
-// GetVersions returns all Versions which don't result in automatic updates
+// GetVersions returns all Versions which don't result in automatic updates.
 func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 	var masterVersions []*Version
 	for _, v := range m.versions {
@@ -158,8 +157,8 @@ func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 	return masterVersions, nil
 }
 
-// GetVersionsV2 returns all Versions which don't result in automatic updates
-func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...operatorv1alpha1.ConditionType) ([]*Version, error) {
+// GetVersionsV2 returns all Versions which don't result in automatic updates.
+func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
 	var masterVersions []*Version
 	for _, v := range m.versions {
 		if v.Type == clusterType {
@@ -171,7 +170,7 @@ func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.Provid
 			if autoUpdate != nil {
 				continue
 			}
-			compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, operatorv1alpha1.CreateOperation, m.providerIncompatibilities, conditions...)
+			compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, kubermaticv1.CreateOperation, m.providerIncompatibilities, conditions...)
 			if err != nil {
 				return nil, err
 			}
@@ -183,7 +182,7 @@ func (m *Manager) GetVersionsV2(clusterType string, provider kubermaticv1.Provid
 	return masterVersions, nil
 }
 
-// AutomaticNodeUpdate returns an automatic node update or nil
+// AutomaticNodeUpdate returns an automatic node update or nil.
 func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneVersion string) (*Version, error) {
 	version, err := m.automaticUpdate(fromVersionRaw, clusterType, true)
 	if err != nil || version == nil {
@@ -191,7 +190,7 @@ func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneV
 	}
 	controlPlaneSemver, err := semver.NewVersion(controlPlaneVersion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse controlplane version: %v", err)
+		return nil, fmt.Errorf("failed to parse controlplane version: %w", err)
 	}
 
 	if err := nodeupdate.EnsureVersionCompatible(controlPlaneSemver, version.Version); err != nil {
@@ -202,7 +201,7 @@ func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneV
 }
 
 // AutomaticControlplaneUpdate returns a version if an automatic update can be found for the version
-// passed in
+// passed in.
 func (m *Manager) AutomaticControlplaneUpdate(fromVersionRaw, clusterType string) (*Version, error) {
 	return m.automaticUpdate(fromVersionRaw, clusterType, false)
 }
@@ -210,7 +209,7 @@ func (m *Manager) AutomaticControlplaneUpdate(fromVersionRaw, clusterType string
 func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode bool) (*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
 	}
 
 	isAutomatic := func(u *Update) bool {
@@ -232,7 +231,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 
 		uFrom, err := semver.NewConstraint(u.From)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
+			return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
 		}
 		if !uFrom.Check(from) {
 			continue
@@ -240,7 +239,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 
 		// Automatic updates must not be a constraint. They must be version.
 		if _, err = semver.NewVersion(u.To); err != nil {
-			return nil, fmt.Errorf("failed to parse to version %s: %v", u.To, err)
+			return nil, fmt.Errorf("failed to parse to version %s: %w", u.To, err)
 		}
 		toVersions = append(toVersions, u.To)
 	}
@@ -255,16 +254,16 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 
 	version, err := m.GetVersion(toVersions[0], clusterType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Version for %s: %v", toVersions[0], err)
+		return nil, fmt.Errorf("failed to get Version for %s: %w", toVersions[0], err)
 	}
 	return version, nil
 }
 
-// GetPossibleUpdates returns possible updates for the version passed in
-func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...operatorv1alpha1.ConditionType) ([]*Version, error) {
+// GetPossibleUpdates returns possible updates for the version passed in.
+func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
 	}
 	var possibleVersions []*Version
 
@@ -273,7 +272,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 		if u.Type == clusterType {
 			uFrom, err := semver.NewConstraint(u.From)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
+				return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
 			}
 			if !uFrom.Check(from) {
 				continue
@@ -281,7 +280,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 
 			uTo, err := semver.NewConstraint(u.To)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse to constraint %s: %v", u.To, err)
+				return nil, fmt.Errorf("failed to parse to constraint %s: %w", u.To, err)
 			}
 			toConstraints = append(toConstraints, uTo)
 		}
@@ -290,7 +289,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string, provide
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
 			if c.Check(v.Version) && !from.Equal(v.Version) && v.Type == clusterType {
-				compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, operatorv1alpha1.UpdateOperation, m.providerIncompatibilities, conditions...)
+				compatible, err := checkProviderCompatibility(v.Version, provider, clusterType, kubermaticv1.UpdateOperation, m.providerIncompatibilities, conditions...)
 				if err != nil {
 					return nil, err
 				}

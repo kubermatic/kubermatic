@@ -19,7 +19,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: AdmissionPlugin is the type representing a AdmissionPlugin
+        description: AdmissionPlugin is the type representing a AdmissionPlugin.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

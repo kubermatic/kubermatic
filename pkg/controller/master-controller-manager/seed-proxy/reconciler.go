@@ -22,9 +22,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -50,6 +51,7 @@ type Reconciler struct {
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	seedClientGetter     provider.SeedClientGetter
+	configGetter         provider.KubermaticConfigurationGetter
 
 	recorder record.EventRecorder
 }
@@ -68,12 +70,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, seedName string, log *zap.SugaredLogger) error {
 	seeds, err := r.seedsGetter()
 	if err != nil {
-		return fmt.Errorf("failed to get seeds: %v", err)
+		return fmt.Errorf("failed to get seeds: %w", err)
 	}
 
 	log.Debug("garbage-collecting orphaned resources...")
 	if err := r.garbageCollect(ctx, seeds, log); err != nil {
-		return fmt.Errorf("failed to garbage collect: %v", err)
+		return fmt.Errorf("failed to garbage collect: %w", err)
 	}
 
 	seed, found := seeds[seedName]
@@ -83,13 +85,13 @@ func (r *Reconciler) reconcile(ctx context.Context, seedName string, log *zap.Su
 
 	client, err := r.seedClientGetter(seed)
 	if err != nil {
-		return fmt.Errorf("failed to get seed client: %v", err)
+		return fmt.Errorf("failed to get seed client: %w", err)
 	}
 
 	err = client.Get(ctx, types.NamespacedName{Name: seed.Namespace}, &corev1.Namespace{})
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to check for namespace %s in seed cluster: %v", seed.Namespace, err)
+			return fmt.Errorf("failed to check for namespace %s in seed cluster: %w", seed.Namespace, err)
 		}
 
 		log.Debug("skipping because seed namespace does not exist", "namespace", seed.Namespace)
@@ -98,12 +100,12 @@ func (r *Reconciler) reconcile(ctx context.Context, seedName string, log *zap.Su
 
 	log.Debug("reconciling seed cluster...")
 	if err := r.reconcileSeedProxy(ctx, seed, client, log); err != nil {
-		return fmt.Errorf("failed to reconcile: %v", err)
+		return fmt.Errorf("failed to reconcile: %w", err)
 	}
 
 	log.Debug("reconciling Grafana provisioning...")
 	if err := r.reconcileMasterGrafanaProvisioning(ctx, seeds, log); err != nil {
-		return fmt.Errorf("failed to reconcile Grafana: %v", err)
+		return fmt.Errorf("failed to reconcile Grafana: %w", err)
 	}
 
 	log.Debug("successfully reconciled")
@@ -123,7 +125,7 @@ func (r *Reconciler) garbageCollect(ctx context.Context, seeds map[string]*kuber
 	}
 
 	if err := r.List(ctx, list, options); err != nil {
-		return fmt.Errorf("failed to list Secrets: %v", err)
+		return fmt.Errorf("failed to list Secrets: %w", err)
 	}
 
 	for _, item := range list.Items {
@@ -132,7 +134,7 @@ func (r *Reconciler) garbageCollect(ctx context.Context, seeds map[string]*kuber
 		if _, exists := seeds[seed]; !exists {
 			log.Debugw("deleting orphaned Secret referencing non-existing seed", "secret", item, "seed", seed)
 			if err := r.Delete(ctx, &item); err != nil {
-				return fmt.Errorf("failed to delete Secret: %v", err)
+				return fmt.Errorf("failed to delete Secret: %w", err)
 			}
 		}
 	}
@@ -148,22 +150,22 @@ func (r *Reconciler) reconcileSeedProxy(ctx context.Context, seed *kubermaticv1.
 
 	log.Debug("reconciling ServiceAccounts...")
 	if err := r.reconcileSeedServiceAccounts(ctx, seed, client, log); err != nil {
-		return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
+		return fmt.Errorf("failed to ensure ServiceAccount: %w", err)
 	}
 
 	log.Debug("reconciling RBAC...")
 	if err := r.reconcileSeedRBAC(ctx, seed, client, log); err != nil {
-		return fmt.Errorf("failed to ensure RBAC: %v", err)
+		return fmt.Errorf("failed to ensure RBAC: %w", err)
 	}
 
 	log.Debug("fetching ServiceAccount details from seed cluster...")
 	serviceAccountSecret, err := r.fetchServiceAccountSecret(ctx, seed, client, log)
 	if err != nil {
-		return fmt.Errorf("failed to fetch ServiceAccount: %v", err)
+		return fmt.Errorf("failed to fetch ServiceAccount: %w", err)
 	}
 
 	if err := r.reconcileMaster(ctx, seed, cfg, serviceAccountSecret, log); err != nil {
-		return fmt.Errorf("failed to reconcile master: %v", err)
+		return fmt.Errorf("failed to reconcile master: %w", err)
 	}
 
 	return nil
@@ -175,11 +177,11 @@ func (r *Reconciler) reconcileSeedServiceAccounts(ctx context.Context, seed *kub
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, seed.Namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", seed.Namespace, err)
+		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", seed.Namespace, err)
 	}
 
 	if err := r.deleteResource(ctx, client, SeedServiceAccountName, metav1.NamespaceSystem, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("failed to cleanup ServiceAccount: %v", err)
+		return fmt.Errorf("failed to cleanup ServiceAccount: %w", err)
 	}
 
 	return nil
@@ -191,11 +193,11 @@ func (r *Reconciler) reconcileSeedRoles(ctx context.Context, seed *kubermaticv1.
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, SeedMonitoringNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", SeedMonitoringNamespace, err)
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", SeedMonitoringNamespace, err)
 	}
 
 	if err := r.deleteResource(ctx, client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.Role{}); err != nil {
-		return fmt.Errorf("failed to cleanup Role: %v", err)
+		return fmt.Errorf("failed to cleanup Role: %w", err)
 	}
 
 	return nil
@@ -207,11 +209,11 @@ func (r *Reconciler) reconcileSeedRoleBindings(ctx context.Context, seed *kuberm
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, SeedMonitoringNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %v", SeedMonitoringNamespace, err)
+		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %w", SeedMonitoringNamespace, err)
 	}
 
 	if err := r.deleteResource(ctx, client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.RoleBinding{}); err != nil {
-		return fmt.Errorf("failed to cleanup RoleBinding: %v", err)
+		return fmt.Errorf("failed to cleanup RoleBinding: %w", err)
 	}
 
 	return nil
@@ -225,17 +227,17 @@ func (r *Reconciler) reconcileSeedRBAC(ctx context.Context, seed *kubermaticv1.S
 			return nil
 		}
 
-		return fmt.Errorf("failed to check for namespace %s: %v", SeedMonitoringNamespace, err)
+		return fmt.Errorf("failed to check for namespace %s: %w", SeedMonitoringNamespace, err)
 	}
 
 	log.Debug("reconciling Roles...")
 	if err := r.reconcileSeedRoles(ctx, seed, client, log); err != nil {
-		return fmt.Errorf("failed to ensure Role: %v", err)
+		return fmt.Errorf("failed to ensure Role: %w", err)
 	}
 
 	log.Debug("reconciling RoleBindings...")
 	if err := r.reconcileSeedRoleBindings(ctx, seed, client, log); err != nil {
-		return fmt.Errorf("failed to ensure RoleBinding: %v", err)
+		return fmt.Errorf("failed to ensure RoleBinding: %w", err)
 	}
 
 	return nil
@@ -273,17 +275,17 @@ func (r *Reconciler) reconcileMaster(ctx context.Context, seed *kubermaticv1.See
 	log.Debug("reconciling Secrets...")
 	secret, err := r.reconcileMasterSecrets(ctx, seed, kubeconfig, credentials)
 	if err != nil {
-		return fmt.Errorf("failed to ensure Secrets: %v", err)
+		return fmt.Errorf("failed to ensure Secrets: %w", err)
 	}
 
 	log.Debug("reconciling Deployments...")
 	if err := r.reconcileMasterDeployments(ctx, seed, secret); err != nil {
-		return fmt.Errorf("failed to ensure Deployments: %v", err)
+		return fmt.Errorf("failed to ensure Deployments: %w", err)
 	}
 
 	log.Debug("reconciling Services...")
 	if err := r.reconcileMasterServices(ctx, seed, secret); err != nil {
-		return fmt.Errorf("failed to ensure Services: %v", err)
+		return fmt.Errorf("failed to ensure Services: %w", err)
 	}
 
 	return nil
@@ -295,7 +297,7 @@ func (r *Reconciler) reconcileMasterSecrets(ctx context.Context, seed *kubermati
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, seed.Namespace, r.Client); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Secrets in the namespace %s: %v", seed.Namespace, err)
+		return nil, fmt.Errorf("failed to reconcile Secrets in the namespace %s: %w", seed.Namespace, err)
 	}
 
 	secret := &corev1.Secret{}
@@ -312,12 +314,17 @@ func (r *Reconciler) reconcileMasterSecrets(ctx context.Context, seed *kubermati
 }
 
 func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kubermaticv1.Seed, secret *corev1.Secret) error {
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve KubermaticConfiguration: %w", err)
+	}
+
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(seed, secret),
+		masterDeploymentCreator(seed, secret, registry.GetOverwriteFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %v", seed.Namespace, err)
+		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %w", seed.Namespace, err)
 	}
 
 	return nil
@@ -329,7 +336,7 @@ func (r *Reconciler) reconcileMasterServices(ctx context.Context, seed *kubermat
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, seed.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Services in the namespace %s: %v", seed.Namespace, err)
+		return fmt.Errorf("failed to reconcile Services in the namespace %s: %w", seed.Namespace, err)
 	}
 
 	return nil
@@ -339,7 +346,7 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 	err := r.Get(ctx, types.NamespacedName{Name: MasterGrafanaNamespace}, &corev1.Namespace{})
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to check for namespace %s: %v", MasterGrafanaNamespace, err)
+			return fmt.Errorf("failed to check for namespace %s: %w", MasterGrafanaNamespace, err)
 		}
 
 		log.Debugw("skipping Grafana setup because namespace does not exist in master", "namespace", MasterGrafanaNamespace)
@@ -351,7 +358,7 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %v", MasterGrafanaNamespace, err)
+		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %w", MasterGrafanaNamespace, err)
 	}
 
 	return nil
@@ -362,14 +369,14 @@ func (r *Reconciler) deleteResource(ctx context.Context, client ctrlruntimeclien
 
 	if err := client.Get(ctx, key, obj); err != nil {
 		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to probe for %s: %v", key, err)
+			return fmt.Errorf("failed to probe for %s: %w", key, err)
 		}
 
 		return nil
 	}
 
 	if err := client.Delete(ctx, obj); err != nil {
-		return fmt.Errorf("failed to delete %s: %v", key, err)
+		return fmt.Errorf("failed to delete %s: %w", key, err)
 	}
 
 	return nil

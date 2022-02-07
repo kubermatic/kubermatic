@@ -28,7 +28,7 @@ import (
 	utilpointer "k8s.io/utils/pointer"
 )
 
-// Returns a matrix of (version x operating system)
+// Returns a matrix of (version x operating system).
 func getKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {

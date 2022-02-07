@@ -17,23 +17,15 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"testing"
 
 	"code.cloudfoundry.org/go-pubsub"
-
-	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-
-	"k8s.io/client-go/kubernetes/scheme"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"go.uber.org/zap"
 )
 
 func TestNewUserWatcher(t *testing.T) {
-	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
-	runtimeClient := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
-
-	userProvider := kubernetes.NewUserProvider(runtimeClient, nil, kubermaticClient)
-	userWatcher, err := NewUserWatcher(userProvider)
+	userWatcher, err := NewUserWatcher(context.Background(), zap.NewNop().Sugar())
 	if err != nil {
 		t.Fatal("cannot create user watcher")
 	}

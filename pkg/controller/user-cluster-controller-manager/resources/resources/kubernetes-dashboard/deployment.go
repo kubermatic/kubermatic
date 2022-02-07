@@ -52,7 +52,7 @@ const (
 	scraperTag       = "v1.0.7"
 )
 
-// DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment
+// DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment.
 func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -73,10 +73,16 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			dep.Spec.Template.Spec.Containers = getContainers(registryWithOverwrite)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = scraperName
+
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 
 			return dep, nil
 		}

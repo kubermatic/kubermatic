@@ -97,7 +97,7 @@ type openstackNoCredentialsReq struct {
 	cluster.GetClusterReq
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req openstackNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -129,7 +129,7 @@ type openstackSubnetNoCredentialsReq struct {
 	NetworkID string `json:"network_id,omitempty"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req openstackSubnetNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

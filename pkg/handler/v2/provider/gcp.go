@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -43,7 +44,7 @@ type gcpTypesNoCredentialReq struct {
 	Zone string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req gcpTypesNoCredentialReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -62,7 +63,7 @@ type gcpSubnetworksNoCredentialReq struct {
 	Network string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req gcpSubnetworksNoCredentialReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -155,8 +156,32 @@ type GKECommonReq struct {
 	Credential string
 }
 
-// GKETypesReq represent a request for GKE types.
+// GKEClusterListReq represent a request for GKE cluster list.
 // swagger:parameters listGKEClusters
+type GKEClusterListReq struct {
+	common.ProjectReq
+	GKECommonReq
+}
+
+func DecodeGKEClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKEClusterListReq
+
+	commonReq, err := DecodeGKECommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GKECommonReq = commonReq.(GKECommonReq)
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
+// GKETypesReq represent a request for GKE types.
+// swagger:parameters validateGKECredentials
 type GKETypesReq struct {
 	GKECommonReq
 }
@@ -182,7 +207,50 @@ func DecodeGKETypesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func GKEClustersEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GKEClusterListReq)
+		sa := req.ServiceAccount
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GKE; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
+		}
+		return gke.ListGKEClusters(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterProvider, req.ProjectID, sa)
+	}
+}
+
+func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GKEImagesReq)
+
+		sa := req.ServiceAccount
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GKE; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
+		}
+		return gke.ListGKEImages(ctx, sa, req.Zone)
+	}
+}
+
+func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GKETypesReq)
 
@@ -192,14 +260,38 @@ func GKEClustersEndpoint(presetsProvider provider.PresetProvider, userInfoGetter
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
-			if credentials := preset.Spec.GCP; credentials != nil {
+			if credentials := preset.Spec.GKE; credentials != nil {
 				sa = credentials.ServiceAccount
 			}
 		}
-		return providercommon.ListGKEClusters(ctx, sa)
+		return nil, gke.ValidateGKECredentials(ctx, sa)
 	}
+}
+
+// GKEImagesReq represent a request for GKE images.
+// swagger:parameters listGKEImages
+type GKEImagesReq struct {
+	GKECommonReq
+	// The zone name
+	// in: header
+	// name: Zone
+	Zone string
+}
+
+func DecodeGKEImagesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKEImagesReq
+
+	commonReq, err := DecodeGKECommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GKECommonReq = commonReq.(GKECommonReq)
+
+	req.Zone = r.Header.Get("Zone")
+
+	return req, nil
 }

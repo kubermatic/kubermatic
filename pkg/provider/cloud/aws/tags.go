@@ -24,7 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
@@ -136,10 +136,12 @@ func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 	}
 
 	// remove tag
-	_, err = client.DeleteTags(&ec2.DeleteTagsInput{
-		Resources: resourceIDs,
-		Tags:      []*ec2.Tag{tag},
-	})
+	if len(resourceIDs) > 0 {
+		_, err = client.DeleteTags(&ec2.DeleteTagsInput{
+			Resources: resourceIDs,
+			Tags:      []*ec2.Tag{tag},
+		})
+	}
 
 	return err
 }

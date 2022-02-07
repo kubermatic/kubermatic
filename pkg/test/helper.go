@@ -22,6 +22,9 @@ import (
 	"testing"
 
 	"github.com/pmezard/go-difflib/difflib"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {
@@ -57,5 +60,23 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 
 	if diffStr != "" {
 		t.Errorf("got diff between expected and actual result: \n%s\n", diffStr)
+	}
+}
+
+func NewSeedGetter(seed *kubermaticv1.Seed) provider.SeedGetter {
+	return func() (*kubermaticv1.Seed, error) {
+		return seed, nil
+	}
+}
+
+func NewSeedsGetter(seeds ...*kubermaticv1.Seed) provider.SeedsGetter {
+	result := map[string]*kubermaticv1.Seed{}
+
+	for i, seed := range seeds {
+		result[seed.Name] = seeds[i]
+	}
+
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		return result, nil
 	}
 }

@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -26,15 +27,109 @@ type OPAIntegrationSettings struct {
 	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
 	// By default 10 seconds.
 	WebhookTimeoutSeconds int32 `json:"webhookTimeoutSeconds,omitempty"`
+
+	// audit resources
+	AuditResources *ResourceRequirements `json:"auditResources,omitempty"`
+
+	// controller resources
+	ControllerResources *ResourceRequirements `json:"controllerResources,omitempty"`
 }
 
 // Validate validates this o p a integration settings
 func (m *OPAIntegrationSettings) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateAuditResources(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateControllerResources(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this o p a integration settings based on context it is used
+func (m *OPAIntegrationSettings) validateAuditResources(formats strfmt.Registry) error {
+	if swag.IsZero(m.AuditResources) { // not required
+		return nil
+	}
+
+	if m.AuditResources != nil {
+		if err := m.AuditResources.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("auditResources")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *OPAIntegrationSettings) validateControllerResources(formats strfmt.Registry) error {
+	if swag.IsZero(m.ControllerResources) { // not required
+		return nil
+	}
+
+	if m.ControllerResources != nil {
+		if err := m.ControllerResources.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("controllerResources")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this o p a integration settings based on the context it is used
 func (m *OPAIntegrationSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateAuditResources(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateControllerResources(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *OPAIntegrationSettings) contextValidateAuditResources(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AuditResources != nil {
+		if err := m.AuditResources.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("auditResources")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *OPAIntegrationSettings) contextValidateControllerResources(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ControllerResources != nil {
+		if err := m.ControllerResources.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("controllerResources")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

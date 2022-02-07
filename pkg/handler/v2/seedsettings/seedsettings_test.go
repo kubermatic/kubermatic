@@ -25,7 +25,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -82,7 +82,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			existingAPIUser:    test.GenDefaultAPIUser(),
 			expectedHTTPStatus: http.StatusOK,
 			expectedResponse: apiv2.SeedSettings{
-				Metering: kubermaticv1.MeteringConfigurations{
+				Metering: kubermaticv1.MeteringConfiguration{
 					Enabled:          true,
 					StorageClassName: "fast",
 					StorageSize:      "100Gi",
@@ -99,7 +99,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			existingAPIUser:    test.GenDefaultAPIUser(),
 			expectedHTTPStatus: http.StatusOK,
 			expectedResponse: apiv2.SeedSettings{
-				Metering: kubermaticv1.MeteringConfigurations{
+				Metering: kubermaticv1.MeteringConfiguration{
 					Enabled:          false,
 					StorageClassName: "",
 					StorageSize:      "",
@@ -114,7 +114,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			resp := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -144,7 +144,7 @@ func genMLASeed(mlaEnabled bool) *kubermaticv1.Seed {
 
 func genMeteringSeed(enabled bool) *kubermaticv1.Seed {
 	seed := test.GenTestSeed()
-	seed.Spec.Metering = &kubermaticv1.MeteringConfigurations{
+	seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
 		Enabled:          enabled,
 		StorageClassName: "fast",
 		StorageSize:      "100Gi",

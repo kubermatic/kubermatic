@@ -29,11 +29,11 @@ import (
 	"github.com/gorilla/websocket"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,7 +43,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 	testcases := []struct {
 		name                string
 		userToUpdate        string
-		userSettingsUpdate  *v1.UserSettings
+		userSettingsUpdate  *kubermaticv1.UserSettings
 		userUpdate          *apiv1.User
 		existingAPIUser     *apiv1.User
 		existingUsers       []*apiv1.User
@@ -52,7 +52,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 		{
 			name:         "should be able to watch and notice user setting change on its own user",
 			userToUpdate: test.GenDefaultAPIUser().Name,
-			userSettingsUpdate: &v1.UserSettings{
+			userSettingsUpdate: &kubermaticv1.UserSettings{
 				CollapseSidenav: true,
 			},
 			existingAPIUser:     test.GenDefaultAPIUser(),
@@ -62,7 +62,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 		{
 			name:         "should be able to watch and but not notice the user setting change on a different user",
 			userToUpdate: test.GenAPIUser("john", "john@acme.com").Name,
-			userSettingsUpdate: &v1.UserSettings{
+			userSettingsUpdate: &kubermaticv1.UserSettings{
 				CollapseSidenav: true,
 			},
 			existingAPIUser:     test.GenDefaultAPIUser(),
@@ -83,7 +83,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 			ep, cli, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, nil,
 				runtimeObjectUsers, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			server := httptest.NewServer(ep)
 			defer server.Close()
@@ -119,14 +119,14 @@ func TestUserWatchEndpoint(t *testing.T) {
 			// can happen when there are changes to the watched user right after the ws connection is established.
 			// Without this the test is flaky.
 			time.Sleep(time.Second)
-			userToUpdate, err := cli.FakeKubermaticClient.KubermaticV1().Users().Get(ctx, tc.userToUpdate, metav1.GetOptions{})
-			if err != nil {
+
+			var internalUser *kubermaticv1.User
+			if err := cli.FakeClient.Get(ctx, types.NamespacedName{Name: tc.userToUpdate}, internalUser); err != nil {
 				t.Fatalf("error getting user to update: %v", err)
 			}
-			userToUpdate.Spec.Settings = tc.userSettingsUpdate
+			internalUser.Spec.Settings = tc.userSettingsUpdate
 
-			_, err = cli.FakeKubermaticClient.KubermaticV1().Users().Update(ctx, userToUpdate, metav1.UpdateOptions{})
-			if err != nil {
+			if err := cli.FakeClient.Update(ctx, internalUser); err != nil {
 				t.Fatalf("error updating user: %v", err)
 			}
 
@@ -138,6 +138,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 				}
 			case wsMsg = <-ch:
 			}
+
 			if wsMsg.err != nil {
 				t.Fatalf("error reading ws message: %v", err)
 			}
@@ -166,7 +167,7 @@ type wsMessage struct {
 func createWSClient(url string) (chan wsMessage, error) {
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize websocket dialer: %v", err)
+		return nil, fmt.Errorf("failed to initialize websocket dialer: %w", err)
 	}
 
 	ch := make(chan wsMessage, 5)

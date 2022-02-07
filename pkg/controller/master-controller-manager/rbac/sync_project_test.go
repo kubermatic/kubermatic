@@ -26,9 +26,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -125,7 +125,7 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedProject: func() *kubermaticv1.Project {
 				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				project.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				project.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				return project
 			}(),
 		},
@@ -650,7 +650,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 }
 
 // TestEnsureClusterResourcesCleanup test if cluster resources for the given
-// project were removed from all physical locations
+// project were removed from all physical locations.
 func TestEnsureClusterResourcesCleanup(t *testing.T) {
 	tests := []struct {
 		name                string
@@ -1412,7 +1412,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 			existingUser:           test.CreateUser("James Bond"),
 			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding.ObjectMeta.Name = ""
 				binding.ResourceVersion = ""
 				return []kubermaticv1.UserProjectBinding{*binding}
@@ -1473,11 +1473,11 @@ func TestEnsureProjectOwner(t *testing.T) {
 			existingUser: test.CreateUser("James Bond"),
 			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding.ObjectMeta.Name = ""
 				binding.ResourceVersion = ""
 				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
-				binding2.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding2.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding2.ObjectMeta.Name = ""
 				binding2.ResourceVersion = ""
 				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
@@ -1532,11 +1532,11 @@ func TestEnsureProjectOwner(t *testing.T) {
 			existingUser: test.CreateUser("James Bond"),
 			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding.ObjectMeta.Name = ""
 				binding.ResourceVersion = ""
 				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
-				binding2.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding2.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding2.ObjectMeta.Name = ""
 				binding2.ResourceVersion = ""
 				return []kubermaticv1.UserProjectBinding{*binding, *binding2}

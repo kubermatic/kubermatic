@@ -31,7 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	// This controller duplicate roles with label component=userClusterRole for all namespaces
+	// This controller duplicate roles with label component=userClusterRole for all namespaces.
 	controllerName = "clone_role_controller"
 )
 
@@ -68,15 +68,15 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	// Watch for changes to Roles and Namespaces
 	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, enqueueTemplateRoles(mgr.GetClient())); err != nil {
-		return fmt.Errorf("failed to establish watch for the Roles %v", err)
+		return fmt.Errorf("failed to establish watch for the Roles %w", err)
 	}
 	if err = c.Watch(&source.Kind{Type: &corev1.Namespace{}}, enqueueTemplateRoles(mgr.GetClient())); err != nil {
-		return fmt.Errorf("failed to establish watch for the Namespace %v", err)
+		return fmt.Errorf("failed to establish watch for the Namespace %w", err)
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("role not found, returning")
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get role: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get role: %w", err)
 	}
 
 	err = r.reconcile(ctx, log, role)
@@ -115,12 +115,12 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 	namespaces := []string{}
 	namespaceList := &corev1.NamespaceList{}
 	if err := r.client.List(ctx, namespaceList); err != nil {
-		return fmt.Errorf("failed to get namespaces: %v", err)
+		return fmt.Errorf("failed to get namespaces: %w", err)
 	}
 
 	for _, n := range namespaceList.Items {
 		// This NS is the authoritative source of roles we configure
-		if n.Name == v1.NamespaceSystem {
+		if n.Name == metav1.NamespaceSystem {
 			continue
 		}
 		// No point in trying to create something in a deleted namespace
@@ -141,7 +141,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 		}
 		for _, namespace := range namespaces {
 			if err := r.client.Delete(ctx, &rbacv1.Role{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      oldRole.Name,
 					Namespace: namespace,
 				},
@@ -149,13 +149,13 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 				if kerrors.IsNotFound(err) {
 					continue
 				}
-				return fmt.Errorf("failed to delete role: %v", err)
+				return fmt.Errorf("failed to delete role: %w", err)
 			}
 		}
 
 		kuberneteshelper.RemoveFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer)
 		if err := r.client.Update(ctx, oldRole); err != nil {
-			return fmt.Errorf("failed to update role: %v", err)
+			return fmt.Errorf("failed to update role: %w", err)
 		}
 		return nil
 	}
@@ -163,7 +163,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 	if !kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
 		kuberneteshelper.AddFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer)
 		if err := r.client.Update(ctx, oldRole); err != nil {
-			return fmt.Errorf("failed to update role: %v", err)
+			return fmt.Errorf("failed to update role: %w", err)
 		}
 	}
 
@@ -178,7 +178,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 			if kerrors.IsNotFound(err) {
 				log.Debug("role not found, creating")
 				newRole := &rbacv1.Role{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      oldRole.Name,
 						Namespace: namespace,
 						Labels:    oldRole.Labels,
@@ -186,11 +186,11 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 					Rules: oldRole.Rules,
 				}
 				if err := r.client.Create(ctx, newRole); err != nil {
-					return fmt.Errorf("failed to create role: %v", err)
+					return fmt.Errorf("failed to create role: %w", err)
 				}
 				wasCreated = true
 			} else {
-				return fmt.Errorf("failed to get role: %v", err)
+				return fmt.Errorf("failed to get role: %w", err)
 			}
 		}
 
@@ -200,22 +200,21 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 				log.Debug("Role was changed, updating")
 				role.Rules = oldRole.Rules
 				if err := r.client.Update(ctx, role); err != nil {
-					return fmt.Errorf("failed to update role: %v", err)
+					return fmt.Errorf("failed to update role: %w", err)
 				}
 			}
 		}
-
 	}
 
 	return nil
 }
 
-// enqueueTemplateRoles enqueues the roles from kube-system namespace and special label component=userClusterRole
+// enqueueTemplateRoles enqueues the roles from kube-system namespace and special label component=userClusterRole.
 func enqueueTemplateRoles(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(v1.NamespaceSystem)); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %v", err))
+		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %w", err))
 			return []reconcile.Request{}
 		}
 

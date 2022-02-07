@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -45,7 +45,7 @@ type ClusterTemplateInstanceProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// ClusterTemplateInstanceProvider returns provider
+// ClusterTemplateInstanceProvider returns provider.
 func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {
 	return &ClusterTemplateInstanceProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
@@ -83,7 +83,6 @@ func (r ClusterTemplateInstanceProvider) Create(userInfo *provider.UserInfo, tem
 }
 
 func (r ClusterTemplateInstanceProvider) CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
-
 	instance := createClusterTemplateInstance(template, project, replicas)
 
 	err := r.privilegedClient.Create(context.Background(), instance)

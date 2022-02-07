@@ -22,7 +22,7 @@ import (
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -62,7 +62,7 @@ func TestGetRuleGroup(t *testing.T) {
 			name:          "ruleGroup is not found",
 			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
-			expectedError: "rulegroups.kubermatic.k8s.io \"test-rule-group\" not found",
+			expectedError: "rulegroups.kubermatic.k8c.io \"test-rule-group\" not found",
 		},
 	}
 
@@ -228,7 +228,7 @@ func TestCreateRuleGroup(t *testing.T) {
 			userInfo:          &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:           genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
 			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
-			expectedError:     "rulegroups.kubermatic.k8s.io \"test-rule-group\" already exists",
+			expectedError:     "rulegroups.kubermatic.k8c.io \"test-rule-group\" already exists",
 		},
 	}
 
@@ -289,7 +289,7 @@ func TestUpdateRuleGroup(t *testing.T) {
 			userInfo:          &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:           genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
 			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
-			expectedError:     "rulegroups.kubermatic.k8s.io \"test-rule-group\" not found",
+			expectedError:     "rulegroups.kubermatic.k8c.io \"test-rule-group\" not found",
 		},
 	}
 
@@ -354,7 +354,7 @@ func TestDeleteRuleGroup(t *testing.T) {
 			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
 			ruleGroupName: testRuleGroupName,
-			expectedError: "rulegroups.kubermatic.k8s.io \"test-rule-group\" not found",
+			expectedError: "rulegroups.kubermatic.k8c.io \"test-rule-group\" not found",
 		},
 	}
 

@@ -44,6 +44,7 @@ var providerNames = []string{
 	"kubevirt",
 	"alibaba",
 	"anexia",
+	"nutanix",
 }
 
 // providerReq represents a request for provider name
@@ -56,8 +57,8 @@ type providerReq struct {
 	Datacenter string `json:"datacenter,omitempty"`
 }
 
-// CredentialEndpoint returns custom credential list name for the provider
-func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// CredentialEndpoint returns custom credential list name for the provider.
+func CredentialEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(providerReq)
 		if !ok {
@@ -77,7 +78,7 @@ func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		presets, err := presetsProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -96,6 +97,7 @@ func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 			//	Kubevirt     Kubevirt
 			//	Alibaba      Alibaba
 			//  Anexia       Anexia
+			//  Nutanix      Nutanix
 			// }
 			providersRaw := reflect.ValueOf(preset.Spec)
 			if providersRaw.Kind() == reflect.Struct {
@@ -139,7 +141,7 @@ func DecodeProviderReq(c context.Context, r *http.Request) (interface{}, error) 
 	}, nil
 }
 
-// Validate validates providerReq request
+// Validate validates providerReq request.
 func (r providerReq) Validate() error {
 	if len(r.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")

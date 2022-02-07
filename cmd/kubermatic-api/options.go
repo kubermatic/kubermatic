@@ -25,9 +25,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -53,7 +52,7 @@ type serverRunOptions struct {
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
-	kubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration
+	kubermaticConfiguration *kubermaticv1.KubermaticConfiguration
 
 	// OIDC configuration
 	oidcURL                        string
@@ -129,7 +128,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 	cabundle, err := certificates.NewCABundleFromFile(caBundleFile)
 	if err != nil {
-		return s, fmt.Errorf("failed to read CA bundle file '%s': %v", caBundleFile, err)
+		return s, fmt.Errorf("failed to read CA bundle file '%s': %w", caBundleFile, err)
 	}
 
 	s.caBundle = cabundle
@@ -140,7 +139,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 func (o serverRunOptions) validate() error {
 	if err := serviceaccount.ValidateKey([]byte(o.serviceAccountSigningKey)); err != nil {
-		return fmt.Errorf("the service-account-signing-key is incorrect due to error: %v", err)
+		return fmt.Errorf("the service-account-signing-key is incorrect: %w", err)
 	}
 
 	return nil
@@ -193,20 +192,20 @@ type providers struct {
 	seedProvider                            provider.SeedProvider
 }
 
-func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
 	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return nil, fmt.Errorf("failed to process: %v", err)
+		return nil, fmt.Errorf("failed to process: %w", err)
 	}
 
 	return defaulted, nil

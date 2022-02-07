@@ -19,6 +19,7 @@ package nodelocaldns
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -61,9 +62,24 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 
 			ds.Spec.Template.Spec.ServiceAccountName = resources.NodeLocalDNSServiceAccountName
 			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
 			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)
+			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoExecute,
+					Operator: corev1.TolerationOpExists,
+				},
+			}
 
 			patchTolerations(&ds.Spec.Template.Spec)
 
@@ -75,7 +91,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",
-						"169.254.20.10",
+						kubesystem.NodeLocalDNSCacheAddress,
 						"-conf",
 						"/etc/coredns/Corefile",
 					},
@@ -113,9 +129,9 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					},
 
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Host:   "169.254.20.10",
+								Host:   kubesystem.NodeLocalDNSCacheAddress,
 								Scheme: corev1.URISchemeHTTP,
 								Path:   "/health",
 								Port:   intstr.FromInt(8080),

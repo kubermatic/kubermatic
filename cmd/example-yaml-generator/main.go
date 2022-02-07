@@ -29,14 +29,12 @@ import (
 	"gopkg.in/yaml.v3"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/pointer"
 )
@@ -58,20 +56,13 @@ func main() {
 	}
 
 	// find all .go files in kubermatic/v1
-	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/crd/kubermatic/v1/*.go"))
-	if err != nil {
-		log.Fatalf("Failed to find go files: %v", err)
-	}
-
-	// find all .go files in operator/v1alpha1
-	operatorFiles, err := filepath.Glob(filepath.Join(root, "pkg/crd/operator/v1alpha1/*.go"))
+	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
 	var files []string
 	files = append(files, kubermaticFiles...)
-	files = append(files, operatorFiles...)
 	files = append(files, filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"))
 
 	cm, err := genyaml.NewCommentMap(files...)
@@ -79,9 +70,11 @@ func main() {
 		log.Fatalf("Failed to create comment map: %v", err)
 	}
 
+	config := createExampleKubermaticConfiguration()
+
 	examples := map[string]runtime.Object{
-		"seed":                    createExampleSeed(),
-		"kubermaticConfiguration": createExampleKubermaticConfiguration(),
+		"kubermaticConfiguration": config,
+		"seed":                    createExampleSeed(config),
 	}
 
 	for name, data := range examples {
@@ -104,7 +97,7 @@ func main() {
 	}
 }
 
-func createExampleSeed() *kubermaticv1.Seed {
+func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
@@ -118,7 +111,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 
 	seed := &kubermaticv1.Seed{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kubermatic.k8s.io/v1",
+			APIVersion: "kubermatic.k8c.io/v1",
 			Kind:       "Seed",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -165,11 +158,16 @@ func createExampleSeed() *kubermaticv1.Seed {
 							DNSConfig: &corev1.PodDNSConfig{},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
+						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},
+						Nutanix: &kubermaticv1.DatacenterSpecNutanix{
+							Images: imageList,
+							Port:   pointer.Int32(9440),
+						},
 					},
 				},
 			},
 			ProxySettings: &proxySettings,
-			Metering: &kubermaticv1.MeteringConfigurations{
+			Metering: &kubermaticv1.MeteringConfiguration{
 				Enabled:          false,
 				StorageClassName: "kubermatic-fast",
 				StorageSize:      "100Gi",
@@ -178,7 +176,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 		},
 	}
 
-	defaulted, err := defaults.DefaultSeed(seed, zap.NewNop().Sugar())
+	defaulted, err := defaults.DefaultSeed(seed, config, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default Seed: %v", err)
 	}
@@ -190,22 +188,22 @@ func createExampleSeed() *kubermaticv1.Seed {
 	return defaulted
 }
 
-func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfiguration {
-	cfg := &operatorv1alpha1.KubermaticConfiguration{
+func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguration {
+	cfg := &kubermaticv1.KubermaticConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: operatorv1alpha1.SchemeGroupVersion.String(),
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       "KubermaticConfiguration",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "<<mykubermatic>>",
 			Namespace: "kubermatic",
 		},
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
 				Domain: "example.com",
 			},
-			FeatureGates: sets.NewString(),
-			API: operatorv1alpha1.KubermaticAPIConfiguration{
+			FeatureGates: map[string]bool{},
+			API: kubermaticv1.KubermaticAPIConfiguration{
 				AccessibleAddons: []string{},
 			},
 		},
@@ -218,7 +216,7 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 
 	// ensure that all fields for updates are documented, even though we explicitly
 	// omit them in all but the first array item
-	setUpdateDefaults := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration) {
+	setUpdateDefaults := func(cfg *kubermaticv1.KubermaticVersioningConfiguration) {
 		if len(cfg.Updates) > 0 {
 			if cfg.Updates[0].Automatic == nil {
 				cfg.Updates[0].Automatic = pointer.BoolPtr(false)
@@ -230,7 +228,7 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 		}
 	}
 
-	setUpdateDefaults(&defaulted.Spec.Versions.Kubernetes)
+	setUpdateDefaults(&defaulted.Spec.Versions)
 	return defaulted
 }
 

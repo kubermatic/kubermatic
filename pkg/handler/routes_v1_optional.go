@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 )
 
-// RegisterV1Optional declares all router paths for v1
+// RegisterV1Optional declares all router paths for v1.
 func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg common.OIDCConfiguration, mainMux *mux.Router) {
 	// if enabled exposes defines an endpoint for generating kubeconfig for a cluster that will contain OIDC tokens
 	if oidcKubeConfEndpoint {

@@ -24,7 +24,7 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// Returns a matrix of (version x operating system)
+// Returns a matrix of (version x operating system).
 func getOpenStackScenarios(versions []*semver.Semver) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {
@@ -65,7 +65,8 @@ func (s *openStackScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpe
 					DatacenterName: "syseleven-dbl1",
 					Openstack: &apimodels.OpenstackCloudSpec{
 						Domain:         secrets.OpenStack.Domain,
-						Tenant:         secrets.OpenStack.Tenant,
+						Project:        secrets.OpenStack.Project,
+						ProjectID:      secrets.OpenStack.ProjectID,
 						Username:       secrets.OpenStack.Username,
 						Password:       secrets.OpenStack.Password,
 						FloatingIPPool: "ext-net",

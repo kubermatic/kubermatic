@@ -28,7 +28,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,7 +46,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 	return func() (map[string]*kubermaticv1.Seed, error) {
 		seeds := &kubermaticv1.SeedList{}
 		if err := client.List(ctx, seeds, listOpts); err != nil {
-			return nil, fmt.Errorf("failed to list the seeds: %v", err)
+			return nil, fmt.Errorf("failed to list the seeds: %w", err)
 		}
 		seedMap := map[string]*kubermaticv1.Seed{}
 		for idx, seed := range seeds.Items {
@@ -58,14 +58,14 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 
 type EESeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
 
-// Ensures that SeedKubeconfigGetter implements EESeedKubeconfigGetter
+// Ensures that SeedKubeconfigGetter implements EESeedKubeconfigGetter.
 var _ EESeedKubeconfigGetter = SeedKubeconfigGetter
 
 // SeedKubeconfigGetter implements provider.SeedKubeconfigGetter.
 func SeedKubeconfigGetter(seed *kubermaticv1.Seed) (*rest.Config, error) {
 	cfg, err := ctrlruntimeconfig.GetConfigWithContext(seed.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seed.Name, err)
+		return nil, fmt.Errorf("failed to get restConfig for seed %q: %w", seed.Name, err)
 	}
 	return cfg, nil
 }

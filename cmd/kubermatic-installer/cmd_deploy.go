@@ -28,14 +28,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -90,6 +90,14 @@ var (
 		Name:  "migrate-cert-manager",
 		Usage: "enable the migration for cert-manager CRDs from v1alpha2 to v1",
 	}
+	enableCertManagerUpstreamMigrationFlag = cli.BoolFlag{
+		Name:  "migrate-upstream-cert-manager",
+		Usage: "enable the migration for cert-manager to chart version 2.1.0+",
+	}
+	enableNginxIngressMigrationFlag = cli.BoolFlag{
+		Name:  "migrate-upstream-nginx-ingress",
+		Usage: "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)",
+	}
 	migrateOpenstackCSIdriversFlag = cli.BoolFlag{
 		Name:  "migrate-openstack-csidrivers",
 		Usage: "(kubermatic-seed STACK only) enable the data migration of CSIDriver of openstack user-clusters",
@@ -120,6 +128,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployHelmBinaryFlag,
 			deployStorageClassFlag,
 			enableCertManagerV2MigrationFlag,
+			enableCertManagerUpstreamMigrationFlag,
+			enableNginxIngressMigrationFlag,
 			migrateOpenstackCSIdriversFlag,
 			migrateLogrotateFlag,
 			disableTelemetryFlag,
@@ -145,12 +155,12 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		helmClient, err := helm.NewCLI(helmBinary, kubeconfig, kubeContext, helmTimeout, logger)
 		if err != nil {
-			return fmt.Errorf("failed to create Helm client: %v", err)
+			return fmt.Errorf("failed to create Helm client: %w", err)
 		}
 
 		helmVersion, err := helmClient.Version()
 		if err != nil {
-			return fmt.Errorf("failed to check Helm version: %v", err)
+			return fmt.Errorf("failed to check Helm version: %w", err)
 		}
 
 		if helmVersion.LessThan(minHelmVersion) {
@@ -175,7 +185,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("unknown stack %q specified", stackName)
 		}
 
-		logger.WithFields(fields).Info("🛫 Initializing installer…")
+		logger.WithFields(fields).Info("🚀 Initializing installer…")
 
 		// load config files
 		if len(kubeconfig) == 0 {
@@ -184,26 +194,28 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(ctx.String(deployConfigFlag.Name))
 		if err != nil {
-			return fmt.Errorf("failed to load KubermaticConfiguration: %v", err)
+			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
 		helmValues, err := loadHelmValues(ctx.String(deployHelmValuesFlag.Name))
 		if err != nil {
-			return fmt.Errorf("failed to load Helm values: %v", err)
+			return fmt.Errorf("failed to load Helm values: %w", err)
 		}
 
 		opt := stack.DeployOptions{
-			HelmClient:                        helmClient,
-			HelmValues:                        helmValues,
-			KubermaticConfiguration:           kubermaticConfig,
-			RawKubermaticConfiguration:        rawKubermaticConfig,
-			StorageClassProvider:              ctx.String(deployStorageClassFlag.Name),
-			ForceHelmReleaseUpgrade:           ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:                   ctx.GlobalString(chartsDirectoryFlag.Name),
-			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
-			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
-			EnableLogrotateMigration:          ctx.Bool(migrateLogrotateFlag.Name),
-			DisableTelemetry:                  ctx.Bool(disableTelemetryFlag.Name),
+			HelmClient:                         helmClient,
+			HelmValues:                         helmValues,
+			KubermaticConfiguration:            kubermaticConfig,
+			RawKubermaticConfiguration:         rawKubermaticConfig,
+			StorageClassProvider:               ctx.String(deployStorageClassFlag.Name),
+			ForceHelmReleaseUpgrade:            ctx.Bool(deployForceFlag.Name),
+			ChartsDirectory:                    ctx.GlobalString(chartsDirectoryFlag.Name),
+			EnableCertManagerV2Migration:       ctx.Bool(enableCertManagerV2MigrationFlag.Name),
+			EnableCertManagerUpstreamMigration: ctx.Bool(enableCertManagerUpstreamMigrationFlag.Name),
+			EnableNginxIngressMigration:        ctx.Bool(enableNginxIngressMigrationFlag.Name),
+			EnableOpenstackCSIDriverMigration:  ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
+			EnableLogrotateMigration:           ctx.Bool(migrateLogrotateFlag.Name),
+			DisableTelemetry:                   ctx.Bool(disableTelemetryFlag.Name),
 		}
 
 		// validate the configuration
@@ -227,7 +239,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		// prepapre Kubernetes and Helm clients
 		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(kubeContext)
 		if err != nil {
-			return fmt.Errorf("failed to get config: %v", err)
+			return fmt.Errorf("failed to get config: %w", err)
 		}
 
 		mgr, err := manager.New(ctrlConfig, manager.Options{
@@ -235,7 +247,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			HealthProbeBindAddress: "0",
 		})
 		if err != nil {
-			return fmt.Errorf("failed to construct mgr: %v", err)
+			return fmt.Errorf("failed to construct mgr: %w", err)
 		}
 
 		// start the manager in its own goroutine
@@ -257,27 +269,50 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		kubeClient := mgr.GetClient()
 
 		if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
+			return fmt.Errorf("failed to add scheme: %w", err)
 		}
 
 		if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
-		}
-
-		if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
+			return fmt.Errorf("failed to add scheme: %w", err)
 		}
 
 		if err := certmanagerv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %v", err)
+			return fmt.Errorf("failed to add scheme: %w", err)
+		}
+
+		// prepare seed access components
+		seedsGetter, err := seedsGetterFactory(appContext, kubeClient)
+		if err != nil {
+			return fmt.Errorf("failed to create Seeds getter: %w", err)
+		}
+
+		seedKubeconfigGetter, err := seedKubeconfigGetterFactory(appContext, kubeClient)
+		if err != nil {
+			return fmt.Errorf("failed to create Seed kubeconfig getter: %w", err)
 		}
 
 		opt.KubermaticConfiguration = kubermaticConfig
 		opt.HelmValues = helmValues
 		opt.KubeClient = kubeClient
 		opt.Logger = subLogger
+		opt.SeedsGetter = seedsGetter
+		opt.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
+		logger.Info("🚦 Validating existing installation…")
+
+		if errs := kubermaticStack.ValidateState(appContext, opt); errs != nil {
+			logger.Error("⛔ Cannot proceed with the installation:")
+
+			for _, e := range errs {
+				subLogger.Errorf("%v", e)
+			}
+
+			return errors.New("preflight checks have failed")
+		}
+
+		logger.Info("✅ Existing installation is valid.")
+
+		logger.Infof("🛫 Deploying %s…", kubermaticStack.Name())
 
 		if err := kubermaticStack.Deploy(appContext, opt); err != nil {
 			return err

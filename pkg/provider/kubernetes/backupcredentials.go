@@ -19,7 +19,7 @@ package kubernetes
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -30,12 +30,12 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// BackupCredentialsProvider struct that holds required components in order manage backup credentials
+// BackupCredentialsProvider struct that holds required components in order manage backup credentials.
 type BackupCredentialsProvider struct {
 	clientPrivileged ctrlruntimeclient.Client
 }
 
-// NewBackupCredentialsProvider returns a  backup credential provider
+// NewBackupCredentialsProvider returns a  backup credential provider.
 func NewBackupCredentialsProvider(client ctrlruntimeclient.Client) *BackupCredentialsProvider {
 	return &BackupCredentialsProvider{
 		clientPrivileged: client,
@@ -70,7 +70,7 @@ func (p *BackupCredentialsProvider) GetUnsecured() (*corev1.Secret, error) {
 	return credentials, err
 }
 
-func (p *BackupCredentialsProvider) UpdateUnsecured(new *corev1.Secret) (*corev1.Secret, error) {
-	err := p.clientPrivileged.Update(context.Background(), new)
-	return new, err
+func (p *BackupCredentialsProvider) UpdateUnsecured(newSecret *corev1.Secret) (*corev1.Secret, error) {
+	err := p.clientPrivileged.Update(context.Background(), newSecret)
+	return newSecret, err
 }

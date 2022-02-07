@@ -21,15 +21,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-07-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -120,7 +118,7 @@ type AzureClientSet interface {
 func (s *azureClientSetImpl) ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error) {
 	skuList, err := s.skusClient.List(ctx, location, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to list SKU resource: %v", err)
+		return nil, fmt.Errorf("failed to list SKU resource: %w", err)
 	}
 	return skuList.Values(), nil
 }
@@ -128,7 +126,7 @@ func (s *azureClientSetImpl) ListSKU(ctx context.Context, location string) ([]co
 func (s *azureClientSetImpl) ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error) {
 	sizesResult, err := s.vmSizeClient.List(ctx, location)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list sizes: %v", err)
+		return nil, fmt.Errorf("failed to list sizes: %w", err)
 	}
 	return *sizesResult.Value, nil
 }
@@ -136,7 +134,7 @@ func (s *azureClientSetImpl) ListVMSize(ctx context.Context, location string) ([
 func (s *azureClientSetImpl) ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error) {
 	securityGroups, err := s.securityGroupsClient.List(ctx, resourceGroupName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list security groups: %v", err)
+		return nil, fmt.Errorf("failed to list security groups: %w", err)
 	}
 	return securityGroups.Values(), nil
 }
@@ -144,37 +142,33 @@ func (s *azureClientSetImpl) ListSecurityGroups(ctx context.Context, resourceGro
 func (s *azureClientSetImpl) ListRouteTables(ctx context.Context, resourceGroupName string) ([]network.RouteTable, error) {
 	routeTables, err := s.routeTablesClient.List(ctx, resourceGroupName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list resource groups: %v", err)
+		return nil, fmt.Errorf("failed to list resource groups: %w", err)
 	}
 	return routeTables.Values(), nil
-
 }
 
 func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resources.Group, error) {
 	resourceGroups, err := s.resourceGroupsClient.List(ctx, "", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list resource groups: %v", err)
+		return nil, fmt.Errorf("failed to list resource groups: %w", err)
 	}
 	return resourceGroups.Values(), nil
-
 }
 
 func (s *azureClientSetImpl) ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]network.Subnet, error) {
 	subnets, err := s.subnetsClient.List(ctx, resourceGroupName, virtualNetworkName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list subnets: %v", err)
+		return nil, fmt.Errorf("failed to list subnets: %w", err)
 	}
 	return subnets.Values(), nil
-
 }
 
 func (s *azureClientSetImpl) ListVnets(ctx context.Context, resourceGroupName string) ([]network.VirtualNetwork, error) {
 	vnets, err := s.vnetClient.List(ctx, resourceGroupName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list vnets: %v", err)
+		return nil, fmt.Errorf("failed to list vnets: %w", err)
 	}
 	return vnets.Values(), nil
-
 }
 
 func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
@@ -278,9 +272,8 @@ func isLocation(sku compute.ResourceSku, location string) bool {
 	return false
 }
 
-// isValidVM checks all constrains for VM
+// isValidVM checks all constrains for VM.
 func isValidVM(sku compute.ResourceSku, location string) bool {
-
 	if !isLocation(sku, location) {
 		return false
 	}
@@ -312,12 +305,12 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 func AzureSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
 	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer for size client: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for size client: %w", err)
 	}
 
 	skuList, err := sizesClient.ListSKU(ctx, location)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list SKU resource: %v", err)
+		return nil, fmt.Errorf("failed to list SKU resource: %w", err)
 	}
 
 	// prepare set of valid VM size types from SKU resources
@@ -331,7 +324,7 @@ func AzureSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResour
 	// get all available VM size types for given location
 	listVMSize, err := sizesClient.ListVMSize(ctx, location)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list sizes: %v", err)
+		return nil, fmt.Errorf("failed to list sizes: %w", err)
 	}
 
 	var sizeList apiv1.AzureSizeList
@@ -391,12 +384,12 @@ func filterAzureByQuota(instances apiv1.AzureSizeList, quota kubermaticv1.Machin
 func AzureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, skuName string) (*apiv1.AzureAvailabilityZonesList, error) {
 	azSKUClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer for sku client: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for sku client: %w", err)
 	}
 
 	skuList, err := azSKUClient.ListSKU(ctx, location)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list sku resource: %v", err)
+		return nil, fmt.Errorf("failed to list sku resource: %w", err)
 	}
 
 	var azZones = &apiv1.AzureAvailabilityZonesList{}
@@ -419,12 +412,12 @@ func AzureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, cl
 func AzureSecurityGroupEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, resourceGroup string) (*apiv1.AzureSecurityGroupsList, error) {
 	securityGroupsClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer for security groups client: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for security groups client: %w", err)
 	}
 
 	securityGroupList, err := securityGroupsClient.ListSecurityGroups(ctx, resourceGroup)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list security group resources: %v", err)
+		return nil, fmt.Errorf("failed to list security group resources: %w", err)
 	}
 
 	apiSecurityGroups := &apiv1.AzureSecurityGroupsList{}
@@ -440,12 +433,12 @@ func AzureSecurityGroupEndpoint(ctx context.Context, subscriptionID, clientID, c
 func AzureResourceGroupEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (*apiv1.AzureResourceGroupsList, error) {
 	securityGroupsClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer for security groups client: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for security groups client: %w", err)
 	}
 
 	resourceGroupList, err := securityGroupsClient.ListResourceGroups(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list security group resources: %v", err)
+		return nil, fmt.Errorf("failed to list security group resources: %w", err)
 	}
 
 	apiResourceGroups := &apiv1.AzureResourceGroupsList{}
@@ -461,12 +454,12 @@ func AzureResourceGroupEndpoint(ctx context.Context, subscriptionID, clientID, c
 func AzureRouteTableEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, resourceGroup string) (*apiv1.AzureRouteTablesList, error) {
 	routeTableClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer for security groups client: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for security groups client: %w", err)
 	}
 
 	routeTableList, err := routeTableClient.ListRouteTables(ctx, resourceGroup)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list route table resources: %v", err)
+		return nil, fmt.Errorf("failed to list route table resources: %w", err)
 	}
 
 	apiRouteTables := &apiv1.AzureRouteTablesList{}
@@ -482,12 +475,12 @@ func AzureRouteTableEndpoint(ctx context.Context, subscriptionID, clientID, clie
 func AzureVnetEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, resourceGroup string) (*apiv1.AzureVirtualNetworksList, error) {
 	vnetClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer for virtual network client: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for virtual network client: %w", err)
 	}
 
 	vnetList, err := vnetClient.ListVnets(ctx, resourceGroup)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list virtual network resources: %v", err)
+		return nil, fmt.Errorf("failed to list virtual network resources: %w", err)
 	}
 
 	vnets := &apiv1.AzureVirtualNetworksList{}
@@ -503,12 +496,12 @@ func AzureVnetEndpoint(ctx context.Context, subscriptionID, clientID, clientSecr
 func AzureSubnetEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, resourceGroup, virtualNetwork string) (*apiv1.AzureSubnetsList, error) {
 	subnetClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer for subnet client: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for subnet client: %w", err)
 	}
 
 	subnetList, err := subnetClient.ListSubnets(ctx, resourceGroup, virtualNetwork)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list virtual network resources: %v", err)
+		return nil, fmt.Errorf("failed to list virtual network resources: %w", err)
 	}
 
 	subnets := &apiv1.AzureSubnetsList{}
@@ -517,30 +510,4 @@ func AzureSubnetEndpoint(ctx context.Context, subscriptionID, clientID, clientSe
 	}
 
 	return subnets, nil
-}
-
-type AzureCredential struct {
-	TenantID       string
-	SubscriptionID string
-	ClientID       string
-	ClientSecret   string
-}
-
-func ListAKSClusters(ctx context.Context, cred AzureCredential) (apiv2.AKSClusterList, error) {
-	clusters := apiv2.AKSClusterList{}
-	var err error
-	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %s", err.Error())
-	}
-	clusterList, err := aksClient.List(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list AKS clusters: %v, tenannt %v subs %v, clientid %v secret %v", err, cred.TenantID, cred.SubscriptionID, cred.ClientID, cred.ClientSecret)
-	}
-
-	for _, f := range clusterList.Values() {
-		clusters = append(clusters, apiv2.AKSCluster{Name: *f.Name})
-	}
-	return clusters, nil
 }

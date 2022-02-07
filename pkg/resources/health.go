@@ -19,7 +19,7 @@ package resources
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,7 +27,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// HealthyDeployment tells if the deployment has a minimum of minReady replicas in Ready status
+// HealthyDeployment tells if the deployment has a minimum of minReady replicas in Ready status.
 func HealthyDeployment(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
 	deployment := &appsv1.Deployment{}
 	if err := client.Get(ctx, nn, deployment); err != nil {
@@ -47,7 +47,7 @@ func HealthyDeployment(ctx context.Context, client ctrlruntimeclient.Client, nn 
 	return kubermaticv1.HealthStatusUp, nil
 }
 
-// HealthyStatefulSet tells if the deployment has a minimum of minReady replicas in Ready status
+// HealthyStatefulSet tells if the deployment has a minimum of minReady replicas in Ready status.
 func HealthyStatefulSet(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
 	statefulSet := &appsv1.StatefulSet{}
 	if err := client.Get(ctx, nn, statefulSet); err != nil {
@@ -66,7 +66,7 @@ func HealthyStatefulSet(ctx context.Context, client ctrlruntimeclient.Client, nn
 	return kubermaticv1.HealthStatusUp, nil
 }
 
-// HealthyDaemonSet tells if the minReady nodes have one Ready pod
+// HealthyDaemonSet tells if the minReady nodes have one Ready pod.
 func HealthyDaemonSet(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
 	daemonSet := &appsv1.DaemonSet{}
 	if err := client.Get(ctx, nn, daemonSet); err != nil {

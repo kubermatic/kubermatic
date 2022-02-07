@@ -38,20 +38,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	utilpointer "k8s.io/utils/pointer"
 )
 
 // AllControllers stores the list of all controllers that we want to run,
 // each entry holds the name of the controller and the corresponding
-// start function that will essentially run the controller
+// start function that will essentially run the controller.
 var AllControllers = map[string]controllerCreator{
 	kubernetescontroller.ControllerName:           createKubernetesController,
 	updatecontroller.ControllerName:               createUpdateController,
@@ -63,7 +60,6 @@ var AllControllers = map[string]controllerCreator{
 	monitoring.ControllerName:                     createMonitoringController,
 	cloudcontroller.ControllerName:                createCloudController,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
-	rancher.ControllerName:                        createRancherController,
 	pvwatcher.ControllerName:                      createPvWatcherController,
 	seedconstraintsynchronizer.ControllerName:     createConstraintController,
 	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
@@ -77,7 +73,7 @@ type controllerCreator func(*controllerContext) error
 func createAllControllers(ctrlCtx *controllerContext) error {
 	for name, create := range AllControllers {
 		if err := create(ctrlCtx); err != nil {
-			return fmt.Errorf("failed to create %q controller: %v", name, err)
+			return fmt.Errorf("failed to create %q controller: %w", name, err)
 		}
 	}
 	return nil
@@ -94,65 +90,6 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func defaultComponentSettings(runOptions controllerRunOptions, defaultComponentSettings kubermaticv1.ComponentSettings) (kubermaticv1.ComponentSettings, error) {
-	// Copy default settings.
-	settings := defaultComponentSettings
-
-	if replicas := runOptions.apiServerDefaultReplicas; replicas != 0 {
-		if settings.Apiserver.Replicas != nil && replicas != int(*settings.Apiserver.Replicas) {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option api-server-default-replicas (%v) and field Seed.spec.defaultComponentSettings.apiserver.replicas (%v) do not match",
-				replicas,
-				*settings.Apiserver.Replicas,
-			)
-		}
-
-		settings.Apiserver.Replicas = utilpointer.Int32Ptr(int32(replicas))
-	}
-
-	if reconcilingDisabled := runOptions.apiServerEndpointReconcilingDisabled; reconcilingDisabled {
-		settings.Apiserver.EndpointReconcilingDisabled = &reconcilingDisabled
-	}
-
-	if nodePortRange := runOptions.nodePortRange; nodePortRange != "" {
-		if settings.Apiserver.NodePortRange != "" && settings.Apiserver.NodePortRange != nodePortRange {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option nodeport-range (%v) and field Seed.spec.defaultComponentSettings.apiserver.nodePortRange (%v) do not match",
-				nodePortRange,
-				settings.Apiserver.NodePortRange,
-			)
-		}
-
-		settings.Apiserver.NodePortRange = nodePortRange
-	}
-
-	if replicas := runOptions.controllerManagerDefaultReplicas; replicas != 0 {
-		if settings.ControllerManager.Replicas != nil && replicas != int(*settings.ControllerManager.Replicas) {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option controller-manager-default-replicas (%v) and field Seed.spec.defaultComponentSettings.controllerManager.replicas (%v) do not match",
-				replicas,
-				*settings.ControllerManager.Replicas,
-			)
-		}
-
-		settings.ControllerManager.Replicas = utilpointer.Int32Ptr(int32(replicas))
-	}
-
-	if replicas := runOptions.schedulerDefaultReplicas; replicas != 0 {
-		if settings.Scheduler.Replicas != nil && replicas != int(*settings.Scheduler.Replicas) {
-			return settings, fmt.Errorf(
-				"conflicting settings, cli option schedular-default-replicas (%v) and field Seed.spec.defaultComponentSettings.schedular.replicas (%v) do not match",
-				replicas,
-				*settings.Scheduler.Replicas,
-			)
-		}
-
-		settings.Scheduler.Replicas = utilpointer.Int32Ptr(int32(replicas))
-	}
-
-	return settings, nil
-}
-
 func createCloudController(ctrlCtx *controllerContext) error {
 	cloudcontroller.MustRegisterMetrics(prometheus.DefaultRegisterer)
 
@@ -165,7 +102,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle.CertPool(),
 	); err != nil {
-		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
+		return fmt.Errorf("failed to add cloud controller to mgr: %w", err)
 	}
 	return nil
 }
@@ -173,7 +110,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 func createKubernetesController(ctrlCtx *controllerContext) error {
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
+		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
 	}
 
 	return kubernetescontroller.Add(
@@ -186,7 +123,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.configGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
 		userClusterMLAEnabled(ctrlCtx),
@@ -247,6 +183,7 @@ func createEtcdBackupController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle,
+		ctrlCtx.seedGetter,
 	)
 }
 
@@ -268,7 +205,7 @@ func createBackupController(ctrlCtx *controllerContext) error {
 	}
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
+		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
 	}
 	return backupcontroller.Add(
 		ctrlCtx.log,
@@ -295,6 +232,7 @@ func createEtcdRestoreController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
+		ctrlCtx.seedGetter,
 	)
 }
 
@@ -308,12 +246,12 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedGetter,
 		ctrlCtx.configGetter,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		monitoring.Features{
-			VPA: ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
+			VPA:          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
+			Konnectivity: ctrlCtx.runOptions.featureGates.Enabled(features.KonnectivityService),
 		},
 		ctrlCtx.versions,
 	)
@@ -381,15 +319,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.configGetter,
-		ctrlCtx.versions,
-	)
-}
-
-func createRancherController(ctrlCtx *controllerContext) error {
-	return rancher.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.clientProvider,
 		ctrlCtx.versions,
 	)
 }

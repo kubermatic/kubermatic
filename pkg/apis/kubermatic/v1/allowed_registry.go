@@ -19,10 +19,10 @@ package v1
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 const (
-	// AllowedRegistryResourceName represents "Resource" defined in Kubernetes
+	// AllowedRegistryResourceName represents "Resource" defined in Kubernetes.
 	AllowedRegistryResourceName = "allowedregistry"
 
-	// AllowedRegistryKindName represents "Kind" defined in Kubernetes
+	// AllowedRegistryKindName represents "Kind" defined in Kubernetes.
 	AllowedRegistryKindName = "AllowedRegistry"
 )
 
@@ -30,6 +30,7 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.registryPrefix",name="RegistryPrefix",type="string",description="RegistryPrefix contains the prefix of the registry which will be allowed. User clusters will be able to deploy only images which are prefixed with one of the allowed image registry prefixes."
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // AllowedRegistry is the object representing an allowed registry.
 type AllowedRegistry struct {
@@ -49,7 +50,7 @@ type AllowedRegistrySpec struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// AllowedRegistryList specifies a list of allowed registries
+// AllowedRegistryList specifies a list of allowed registries.
 type AllowedRegistryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

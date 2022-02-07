@@ -27,13 +27,14 @@ import (
 	"strings"
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -119,7 +120,7 @@ spec:
 )
 
 var (
-	// testManifest1 & testManifest3 have a linebreak at the end, testManifest2 not
+	// testManifest1 & testManifest3 have a linebreak at the end, testManifest2 not.
 	combinedTestManifest = fmt.Sprintf("%s---\n%s\n---\n%s", testManifests[0], testManifests[1], testManifests[2])
 )
 
@@ -161,6 +162,7 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 						cidrBlock,
 					},
 				},
+
 				Pods: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{
 						"172.25.0.0/16",
@@ -168,6 +170,10 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 				},
 				DNSDomain: "cluster.local",
 				ProxyMode: resources.IPVSProxyMode,
+			},
+			CNIPlugin: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 			},
 			Cloud: kubermaticv1.CloudSpec{
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
@@ -371,7 +377,6 @@ func TestController_getAddonManifests(t *testing.T) {
 			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Raw))
 		}
 	}
-
 }
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {
@@ -404,7 +409,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
-	clusterVersion := defaults.DefaultKubernetesVersioning.Default
+	clusterVersion := defaults.DefaultKubernetesVersioning.Default.Semver()
 
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
 	if err != nil {

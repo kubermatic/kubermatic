@@ -30,8 +30,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	allowedregistry "k8c.io/kubermatic/v2/pkg/handler/v2/allowed_registry"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/backupcredentials"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/backupdestinations"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	clustertemplate "k8c.io/kubermatic/v2/pkg/handler/v2/cluster_template"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/cniversion"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
@@ -51,34 +53,53 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/version"
 )
 
-// RegisterV2 declares all router paths for v2
+// RegisterV2 declares all router paths for v2.
 func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
-
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
-		Path("/providers/gke/clusters").
-		Handler(r.listGKEClusters())
+		Path("/providers/gke/images").
+		Handler(r.listGKEImages())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/gke/validatecredentials").
+		Handler(r.validateGKECredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/validatecredentials").
+		Handler(r.validateEKSCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/aks/validatecredentials").
+		Handler(r.validateAKSCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/featuregates").
 		Handler(r.getFeatureGates())
 
+	// Defines a set of HTTP endpoints for interacting with KubeVirt clusters
 	mux.Methods(http.MethodGet).
-		Path("/providers/aws/regions").
-		Handler(r.listAWSRegions())
+		Path("/providers/kubevirt/vmflavors").
+		Handler(r.listKubeVirtVMIPresets())
 
-	// Defines a set of HTTP endpoints for interacting with EKS clusters
 	mux.Methods(http.MethodGet).
-		Path("/providers/eks/clusters").
-		Handler(r.listEKSClusters())
-
-	// Defines a set of HTTP endpoints for interacting with AKS clusters
-	mux.Methods(http.MethodGet).
-		Path("/providers/aks/clusters").
-		Handler(r.listAKSClusters())
+		Path("/providers/kubevirt/storageclasses").
+		Handler(r.listKubevirtStorageClasses())
 
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/gke/clusters").
+		Handler(r.listGKEClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/eks/clusters").
+		Handler(r.listEKSClusters())
+
+	// Defines a set of HTTP endpoints for cluster that belong to a project.
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/providers/aks/clusters").
+		Handler(r.listAKSClusters())
+
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters").
 		Handler(r.createCluster())
@@ -550,6 +571,18 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/anexia/templates").
 		Handler(r.listAnexiaTemplatesNoCredentials())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmflavors").
+		Handler(r.listKubeVirtVMIPresetsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses").
+		Handler(r.listKubevirtStorageClassesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets").
+		Handler(r.listNutanixSubnetsNoCredentials())
+
 	// Defines a set of kubernetes-dashboard-specific endpoints
 	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
 		Handler(r.kubernetesDashboardProxy())
@@ -580,14 +613,34 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/vsphere/datastores").
 		Handler(r.listVSphereDatastores())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/clusters").
+		Handler(r.listNutanixClusters())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/projects").
+		Handler(r.listNutanixProjects())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/{cluster_name}/subnets").
+		Handler(r.listNutanixSubnets())
+
 	// Define a set of endpoints for preset management
 	mux.Methods(http.MethodGet).
 		Path("/presets").
 		Handler(r.listPresets())
 
+	mux.Methods(http.MethodDelete).
+		Path("/presets/{preset_name}").
+		Handler(r.deletePreset())
+
 	mux.Methods(http.MethodPut).
 		Path("/presets/{preset_name}/status").
 		Handler(r.updatePresetStatus())
+
+	mux.Methods(http.MethodDelete).
+		Path("/presets/{preset_name}/provider/{provider_name}").
+		Handler(r.deletePresetProvider())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets").
@@ -603,7 +656,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	mux.Methods(http.MethodDelete).
 		Path("/providers/{provider_name}/presets/{preset_name}").
-		Handler(r.deletePreset())
+		Handler(r.deleteProviderPreset())
 
 	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/settings").
@@ -766,6 +819,38 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/seeds/{seed_name}/rulegroups/{rulegroup_id}").
 		Handler(r.deleteAdminRuleGroup())
+
+	// Defines a set of HTTP endpoints for various cloud providers
+	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images").
+		Handler(r.listGKEClusterImages())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones").
+		Handler(r.listGKEClusterZones())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes").
+		Handler(r.listGKEClusterSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes").
+		Handler(r.listGKEClusterDiskTypes())
+
+	// Define an endpoint for getting seed backup destination names for a cluster
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/backupdestinations").
+		Handler(r.getBackupDestinationNames())
+
+	// Defines endpoints for CNI versionsS
+	mux.Methods(http.MethodGet).
+		Path("/cni/{cni_plugin_type}/versions").
+		Handler(r.listVersionsByCNIPlugin())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/cniversions").
+		Handler(r.listCNIPluginVersionsForCluster())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -791,7 +876,7 @@ func (r Routing) createCluster() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
-			r.presetsProvider, r.exposeStrategy, r.userInfoGetter, r.settingsProvider, r.caBundle, r.kubermaticConfigGetter)),
+			r.presetProvider, r.exposeStrategy, r.userInfoGetter, r.settingsProvider, r.caBundle, r.kubermaticConfigGetter, r.features)),
 		cluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -894,7 +979,7 @@ func (r Routing) patchCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.PatchEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.caBundle, r.kubermaticConfigGetter)),
+		)(cluster.PatchEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.caBundle, r.kubermaticConfigGetter, r.features)),
 		cluster.DecodePatchReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1247,7 +1332,7 @@ func (r Routing) createExternalCluster() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider, r.presetsProvider)),
+		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider, r.presetProvider)),
 		externalcluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -1296,7 +1381,7 @@ func (r Routing) listExternalClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.settingsProvider)),
+		)(externalcluster.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		externalcluster.DecodeListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3510,6 +3595,78 @@ func (r Routing) listAnexiaTemplatesNoCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/vmflavors kubevirt listKubeVirtVMIPresetsNoCredentials
+//
+// Lists available VirtualMachineInstancePreset
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: VirtualMachineInstancePresetList
+func (r Routing) listKubeVirtVMIPresetsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.KubeVirtVMIPresetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/kubevirt/storageclasses kubevirt listKubevirtStorageClassesNoCredentials
+//
+// List Storage Classes
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: StorageClassList
+func (r Routing) listKubevirtStorageClassesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.KubeVirtStorageClassesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets nutanix listNutanixSubnetsNoCredentials
+//
+// Lists available Nutanix Subnets
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NutanixSubnetList
+func (r Routing) listNutanixSubnetsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.NutanixSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy
 //
 //    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
@@ -3551,7 +3708,7 @@ func (r Routing) listAzureSecurityGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureSecurityGroupsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureSecurityGroupsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureSecurityGroupsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3573,7 +3730,7 @@ func (r Routing) listAzureResourceGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureResourceGroupsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureResourceGroupsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureResourceGroupsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3595,7 +3752,7 @@ func (r Routing) listAzureRouteTables() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureRouteTablesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureRouteTablesEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureRouteTablesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3617,7 +3774,7 @@ func (r Routing) listAzureVnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureVirtualNetworksEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureVirtualNetworksEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureVirtualNetworksReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3639,7 +3796,7 @@ func (r Routing) listVSphereDatastores() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.VsphereDatastoreEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter, r.caBundle)),
+		)(provider.VsphereDatastoreEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
 		provider.DecodeVSphereDatastoresReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3661,8 +3818,74 @@ func (r Routing) listAzureSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureSubnetsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AzureSubnetsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAzureSubnetsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/clusters nutanix listNutanixClusters
+//
+// List clusters from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixClusterList
+func (r Routing) listNutanixClusters() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixClusterEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/projects nutanix listNutanixProjects
+//
+// List projects from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixProjectList
+func (r Routing) listNutanixProjects() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixProjectEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/{cluster_name}/subnets nutanix listNutanixSubnets
+//
+// List subnets from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixSubnetList
+func (r Routing) listNutanixSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixSubnetReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3686,7 +3909,7 @@ func (r Routing) listPresets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.ListPresets(r.presetsProvider, r.userInfoGetter)),
+		)(preset.ListPresets(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeListPresets,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3714,8 +3937,64 @@ func (r Routing) updatePresetStatus() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.UpdatePresetStatus(r.presetsProvider, r.userInfoGetter)),
+		)(preset.UpdatePresetStatus(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePresetStatus,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/presets/{preset_name} preset deletePreset
+//
+//     Removes preset.
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+//       404: empty
+func (r Routing) deletePreset() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.DeletePreset(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeDeletePreset,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/presets/{preset_name}/provider/{provider_name} preset deletePresetProvider
+//
+//     Removes selected preset's provider.
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+//       404: empty
+func (r Routing) deletePresetProvider() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.DeletePresetProvider(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeDeletePresetProvider,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3739,7 +4018,7 @@ func (r Routing) listProviderPresets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.ListProviderPresets(r.presetsProvider, r.userInfoGetter)),
+		)(preset.ListProviderPresets(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeListProviderPresets,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3766,7 +4045,7 @@ func (r Routing) createPreset() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.CreatePreset(r.presetsProvider, r.userInfoGetter)),
+		)(preset.CreatePreset(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeCreatePreset,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -3793,16 +4072,18 @@ func (r Routing) updatePreset() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
+		)(preset.UpdatePreset(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route DELETE /api/v2/providers/{provider_name}/presets/{preset_name} preset deletePreset
+// swagger:route DELETE /api/v2/providers/{provider_name}/presets/{preset_name} preset deleteProviderPreset
 //
-//	   Deletes provider preset
+//	   Deletes provider preset.
+//
+//     This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
 //
 //     Consumes:
 //	   - application/json
@@ -3810,18 +4091,20 @@ func (r Routing) updatePreset() http.Handler {
 //     Produces:
 //     - application/json
 //
+//     Deprecated: true
+//
 //     Responses:
 //       default: errorResponse
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) deletePreset() http.Handler {
+func (r Routing) deleteProviderPreset() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.DeletePreset(r.presetsProvider, r.userInfoGetter)),
-		preset.DecodeDeletePreset,
+		)(preset.DeleteProviderPreset(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeDeleteProviderPreset,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3988,7 +4271,7 @@ func (r Routing) createClusterTemplate() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.seedsGetter, r.presetsProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter)),
+		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter, r.features)),
 		clustertemplate.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -4901,9 +5184,9 @@ func (r Routing) getFeatureGates() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/gke/clusters gke listGKEClusters
+// swagger:route GET /api/v2/projects/{project_id}/providers/gke/clusters project listGKEClusters
 //
-// Lists GKE clusters
+// Lists GKE clusters.
 //
 //     Produces:
 //     - application/json
@@ -4916,14 +5199,102 @@ func (r Routing) listGKEClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GKEClustersEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.GKEClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		provider.DecodeGKEClusterListReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/images gke listGKEImages
+//
+// Lists GKE image types
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEImageList
+func (r Routing) listGKEImages() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEImagesEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeGKEImagesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/gke/validatecredentials gke validateGKECredentials
+//
+// Validates GKE credentials
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+func (r Routing) validateGKECredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GKEValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeGKETypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/clusters eks listEKSClusters
+// swagger:route GET /api/v2/providers/eks/validatecredentials eks validateEKSCredentials
+//
+// Validates EKS credentials
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+func (r Routing) validateEKSCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.EKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/aks/validatecredentials aks validateAKSCredentials
+//
+// Validates AKS credentials
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+func (r Routing) validateAKSCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeAKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/providers/eks/clusters project listEKSClusters
 //
 // Lists EKS clusters
 //
@@ -4938,14 +5309,14 @@ func (r Routing) listEKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
-		provider.DecodeEKSTypesReq,
+		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		provider.DecodeEKSClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v2/providers/aks/clusters aks listAKSClusters
+// swagger:route GET /api/v2/projects/{project_id}/providers/aks/clusters project listAKSClusters
 //
 // Lists AKS clusters
 //
@@ -4960,33 +5331,52 @@ func (r Routing) listAKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.presetsProvider)),
-		provider.DecodeAKSTypesReq,
+		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		provider.DecodeAKSClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v2/providers/aws/regions regions listAWSRegions
+// swagger:route GET /api/v2/providers/kubevirt/vmflavors kubevirt listKubeVirtVMIPresets
 //
-//     List AWS regions.
-//
+// Lists available KubeVirt VirtualMachineInstancePreset.
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: []Regions
-//       401: empty
-//       403: empty
-func (r Routing) listAWSRegions() http.Handler {
+//       200: VirtualMachineInstancePresetList
+func (r Routing) listKubeVirtVMIPresets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAWSRegionsEndpoint(r.userInfoGetter, r.presetsProvider)),
-		provider.DecodeAWSCommonReq,
+		)(provider.KubeVirtVMIPresetsEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/kubevirt/storageclasses kubevirt listKubevirtStorageClasses
+//
+// Lists available K8s StorageClasses in the Kubevirt cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: StorageClassList
+func (r Routing) listKubevirtStorageClasses() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.KubeVirtStorageClassesEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeKubeVirtGenericReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5265,6 +5655,182 @@ func (r Routing) listExternalClusterMachineDeploymentMetrics() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListMachineDeploymentMetricsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeGetMachineDeploymentReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images gke listGKEClusterImages
+//
+//     Gets GKE cluster images.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEImageList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterImages() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEImagesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/zones gke listGKEClusterZones
+//
+//     Gets GKE cluster zones.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GKEZoneList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEZonesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes gke listGKEClusterSizes
+//
+//     Gets GKE cluster machine sizes.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPMachineSizeList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKESizesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes gke listGKEClusterDiskTypes
+//
+//     Gets GKE cluster machine disk types.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPDiskTypeList
+//       401: empty
+//       403: empty
+func (r Routing) listGKEClusterDiskTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GKEDiskTypesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations project getBackupDestinationNames
+//
+//    Gets possible backup destination names for a cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: BackupDestinationNames
+//       401: empty
+//       403: empty
+func (r Routing) getBackupDestinationNames() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(backupdestinations.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		backupdestinations.DecodeGetBackupDestinationNamesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/cni/{cni_plugin_type}/versions cniversion listVersionsByCNIPlugin
+//
+// Lists all CNI Plugin versions that are supported for a given CNI plugin type
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: CNIVersions
+//       401: empty
+//       403: empty
+func (r Routing) listVersionsByCNIPlugin() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(cniversion.ListVersions()),
+		cniversion.DecodeListCNIPluginVersions,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/cniversions project listCNIPluginVersionsForCluster
+//
+// Lists CNI plugin versions for a given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: CNIVersions
+//       401: empty
+//       403: empty
+func (r Routing) listCNIPluginVersionsForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cniversion.ListVersionsForCluster(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		cniversion.DecodeListCNIPluginVersionsForClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

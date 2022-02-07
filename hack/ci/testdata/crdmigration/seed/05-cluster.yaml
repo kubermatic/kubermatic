@@ -70,7 +70,7 @@ spec:
   oidc: {}
   opaIntegration: {}
   pause: false
-  version: 1.21.7
+  version: 1.21.8
 status:
   cloudMigrationRevision: 2
   conditions:

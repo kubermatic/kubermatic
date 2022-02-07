@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
@@ -32,15 +32,15 @@ const (
 
 	regionAnnotationKey = "kubermatic.io/aws-region"
 
-	cleanupFinalizer = "kubermatic.io/cleanup-aws"
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-aws"
 
 	// The individual finalizers are deprecated and not used for newly reconciled
 	// clusters, where the single cleanupFinalizer is enough.
 
-	securityGroupCleanupFinalizer    = "kubermatic.io/cleanup-aws-security-group"
-	instanceProfileCleanupFinalizer  = "kubermatic.io/cleanup-aws-instance-profile"
-	controlPlaneRoleCleanupFinalizer = "kubermatic.io/cleanup-aws-control-plane-role"
-	tagCleanupFinalizer              = "kubermatic.io/cleanup-aws-tags"
+	securityGroupCleanupFinalizer    = "kubermatic.k8c.io/cleanup-aws-security-group"
+	instanceProfileCleanupFinalizer  = "kubermatic.k8c.io/cleanup-aws-instance-profile"
+	controlPlaneRoleCleanupFinalizer = "kubermatic.k8c.io/cleanup-aws-control-plane-role"
+	tagCleanupFinalizer              = "kubermatic.k8c.io/cleanup-aws-tags"
 
 	authFailure = "AuthFailure"
 )
@@ -72,12 +72,12 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 		return a.clientSet, nil
 	}
 
-	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
+	accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	return GetClientSet(accessKeyID, secretAccessKey, a.dc.Region)
+	return GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, a.dc.Region)
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -93,7 +93,7 @@ func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	client, err := a.getClientSet(spec)
 	if err != nil {
-		return fmt.Errorf("failed to get API client: %v", err)
+		return fmt.Errorf("failed to get API client: %w", err)
 	}
 
 	// Some settings require the vpc to be set
@@ -119,7 +119,7 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
@@ -138,7 +138,7 @@ func (a *AmazonEC2) ReconcileCluster(cluster *kubermaticv1.Cluster, update provi
 func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, setTags bool) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
+		return nil, fmt.Errorf("failed to get API client: %w", err)
 	}
 
 	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {

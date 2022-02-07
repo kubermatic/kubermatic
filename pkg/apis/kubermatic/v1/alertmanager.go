@@ -22,16 +22,17 @@ import (
 )
 
 const (
-	// AlertmanagerResourceName represents "Resource" defined in Kubernetes
+	// AlertmanagerResourceName represents "Resource" defined in Kubernetes.
 	AlertmanagerResourceName = "alertmanagers"
 
-	// AlertmanagerKindName represents "Kind" defined in Kubernetes
+	// AlertmanagerKindName represents "Kind" defined in Kubernetes.
 	AlertmanagerKindName = "Alertmanager"
 )
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 type Alertmanager struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -57,12 +58,12 @@ type AlertmanagerList struct {
 	Items []Alertmanager `json:"items"`
 }
 
-// AlertmanagerStatus stores status information about the AlertManager
+// AlertmanagerStatus stores status information about the AlertManager.
 type AlertmanagerStatus struct {
 	ConfigStatus AlertmanagerConfigurationStatus `json:"configStatus,omitempty"`
 }
 
-// AlertmanagerConfigurationStatus stores status information about the AlertManager configuration
+// AlertmanagerConfigurationStatus stores status information about the AlertManager configuration.
 type AlertmanagerConfigurationStatus struct {
 	// LastUpdated stores the last successful time when the configuration was successfully applied
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`

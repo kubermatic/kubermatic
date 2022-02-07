@@ -22,11 +22,10 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -85,7 +84,7 @@ func Add(
 	}
 	c, err := controller.New(ControllerName, masterManager, ctrlOpts)
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
@@ -110,9 +109,9 @@ func Add(
 		return requests
 	})
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", config, err)
+		return fmt.Errorf("failed to create watcher for %T: %w", config, err)
 	}
 
 	// watch for changes to the global CA bundle ConfigMap and replicate it into each Seed
@@ -163,13 +162,13 @@ func Add(
 
 	configMap := &corev1.ConfigMap{}
 	if err := c.Watch(&source.Kind{Type: configMap}, configMapEventHandler, namespacePredicate, versionChangedPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", configMap, err)
+		return fmt.Errorf("failed to create watcher for %T: %w", configMap, err)
 	}
 
 	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
 	seed := &kubermaticv1.Seed{}
 	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate, versionChangedPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", seed, err)
+		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
 	// watch all resources we manage inside all configured seeds
@@ -178,7 +177,7 @@ func Add(
 		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
 
 		if err := createSeedWatches(c, key, manager, namespace); err != nil {
-			return fmt.Errorf("failed to setup watches for seed %s: %v", key, err)
+			return fmt.Errorf("failed to setup watches for seed %s: %w", key, err)
 		}
 	}
 
@@ -200,11 +199,11 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		seedTypeWatch := &source.Kind{Type: t}
 
 		if err := seedTypeWatch.InjectCache(cache); err != nil {
-			return fmt.Errorf("failed to inject cache into watch for %T: %v", t, err)
+			return fmt.Errorf("failed to inject cache into watch for %T: %w", t, err)
 		}
 
 		if err := controller.Watch(seedTypeWatch, eventHandler, preds...); err != nil {
-			return fmt.Errorf("failed to watch %T: %v", t, err)
+			return fmt.Errorf("failed to watch %T: %w", t, err)
 		}
 
 		return nil
@@ -276,15 +275,15 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	return nil
 }
 
-func getKubermaticConfigurationForNamespace(ctx context.Context, client ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func getKubermaticConfigurationForNamespace(ctx context.Context, client ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) (*kubermaticv1.KubermaticConfiguration, error) {
 	// find the owning KubermaticConfiguration
-	configList := &operatorv1alpha1.KubermaticConfigurationList{}
+	configList := &kubermaticv1.KubermaticConfigurationList{}
 	listOpts := &ctrlruntimeclient.ListOptions{
 		Namespace: namespace,
 	}
 
 	if err := client.List(ctx, configList, listOpts); err != nil {
-		return nil, fmt.Errorf("failed to find KubermaticConfigurations: %v", err)
+		return nil, fmt.Errorf("failed to find KubermaticConfigurations: %w", err)
 	}
 
 	if len(configList.Items) == 0 {

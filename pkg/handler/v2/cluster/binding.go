@@ -94,7 +94,7 @@ func ListClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, pr
 	}
 }
 
-// Validate validates roleUserReq request
+// Validate validates roleUserReq request.
 func (req roleUserReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -122,7 +122,7 @@ type roleUserReq struct {
 	Body apiv1.RoleUser
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req roleUserReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -171,7 +171,7 @@ type listBindingReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req listBindingReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -195,7 +195,7 @@ func DecodeListBindingReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-// Validate validates clusterRoleUserReq request
+// Validate validates clusterRoleUserReq request.
 func (req clusterRoleUserReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
@@ -221,7 +221,7 @@ type clusterRoleUserReq struct {
 	Body apiv1.ClusterRoleUser
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req clusterRoleUserReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

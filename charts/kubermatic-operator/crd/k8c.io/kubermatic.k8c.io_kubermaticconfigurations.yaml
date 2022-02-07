@@ -16,7 +16,11 @@ spec:
     singular: kubermaticconfiguration
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: KubermaticConfiguration is the configuration required for running
@@ -515,10 +519,9 @@ spec:
                     type: string
                   overwriteRegistry:
                     description: OverwriteRegistry specifies a custom Docker registry
-                      which will be used for all images used inside user clusters
-                      (user cluster control plane + addons). This also applies to
-                      the KubermaticDockerRepository and DNATControllerDockerRepository
-                      fields.
+                      which will be used for all images used for user clusters (user
+                      cluster control plane + addons). This also applies to the KubermaticDockerRepository
+                      and DNATControllerDockerRepository fields.
                     type: string
                 type: object
               versions:
@@ -533,7 +536,7 @@ spec:
                       version incompatibilities
                     items:
                       description: Incompatibility represents a version incompatibility
-                        for a user cluster
+                        for a user cluster.
                       properties:
                         condition:
                           description: Condition is the cluster or datacenter condition
@@ -563,6 +566,7 @@ spec:
                           - packet
                           - gcp
                           - kubevirt
+                          - nutanix
                           - alibaba
                           - anexia
                           - fake
@@ -603,8 +607,9 @@ spec:
                             allowed. Wildcards are allowed, e.g. "1.18.*".
                           type: string
                         to:
-                          description: From is the version to which an update is allowed.
-                            Wildcards are allowed, e.g. "1.18.*".
+                          description: To is the version to which an update is allowed.
+                            Must be a valid version if `automatic` is set to true,
+                            e.g. "1.20.13". Can be a wildcard otherwise, e.g. "1.20.*".
                           type: string
                       type: object
                     type: array
@@ -612,7 +617,7 @@ spec:
                     description: Versions lists the available versions.
                     items:
                       description: Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version
-                        struct so it can be used in our API
+                        struct so it can be used in our API.
                       type: string
                     type: array
                 type: object
@@ -731,6 +736,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

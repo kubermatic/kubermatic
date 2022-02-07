@@ -23,7 +23,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -38,7 +38,7 @@ type cronJobCreatorData interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
-// CronJobCreator returns the func to create/update the etcd defragger cronjob
+// CronJobCreator returns the func to create/update the etcd defragger cronjob.
 func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
@@ -48,7 +48,6 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 			}
 
 			job.Name = resources.EtcdDefragCronJobName
-			job.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 			job.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 			var historyLimit int32
 			job.Spec.SuccessfulJobsHistoryLimit = &historyLimit
@@ -97,7 +96,7 @@ type defraggerCommandTplData struct {
 func defraggerCommand(data cronJobCreatorData) ([]string, error) {
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(defraggerCommandTpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
 	}
 
 	tplData := defraggerCommandTplData{

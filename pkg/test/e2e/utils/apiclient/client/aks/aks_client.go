@@ -28,28 +28,28 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error)
+	ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
-  ListAKSClusters Lists AKS clusters
+  ValidateAKSCredentials Validates AKS credentials
 */
-func (a *Client) ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error) {
+func (a *Client) ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListAKSClustersParams()
+		params = NewValidateAKSCredentialsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listAKSClusters",
+		ID:                 "validateAKSCredentials",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/aks/clusters",
+		PathPattern:        "/api/v2/providers/aks/validatecredentials",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListAKSClustersReader{formats: a.formats},
+		Reader:             &ValidateAKSCredentialsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -62,12 +62,12 @@ func (a *Client) ListAKSClusters(params *ListAKSClustersParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListAKSClustersOK)
+	success, ok := result.(*ValidateAKSCredentialsOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListAKSClustersDefault)
+	unexpectedSuccess := result.(*ValidateAKSCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

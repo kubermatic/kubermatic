@@ -86,7 +86,7 @@ type Listener struct {
 	Authority   string
 }
 
-// ConfigMapCreator returns a ConfigMap containing the config for the Envoy agent
+// ConfigMapCreator returns a ConfigMap containing the config for the Envoy agent.
 func ConfigMapCreator(cfg Config) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.EnvoyAgentConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -99,7 +99,7 @@ func ConfigMapCreator(cfg Config) reconciling.NamedConfigMapCreatorGetter {
 			if err != nil {
 				return nil, err
 			}
-			cm.Data["envoy.yaml"] = b.String()
+			cm.Data[resources.EnvoyAgentConfigFileName] = b.String()
 
 			return cm, nil
 		}

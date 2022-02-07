@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// Semver Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API
+// Semver Semver is a type that encapsulates github.com/Masterminds/semver/v3.Version struct so it can be used in our API.
 //
 // swagger:model Semver
 type Semver string

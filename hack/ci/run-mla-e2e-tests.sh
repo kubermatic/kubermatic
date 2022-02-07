@@ -36,7 +36,7 @@ source hack/ci/setup-kubermatic-mla-in-kind.sh
 
 echodate "Creating UI DigitalOcean preset..."
 cat << EOF > preset-digitalocean.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-digitalocean
@@ -49,7 +49,7 @@ retry 2 kubectl apply -f preset-digitalocean.yaml
 
 echodate "Creating roxy2 user..."
 cat << EOF > user.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
   name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3

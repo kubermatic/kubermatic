@@ -28,21 +28,18 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	knet "k8s.io/apimachinery/pkg/util/net"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 )
@@ -52,38 +49,33 @@ type controllerRunOptions struct {
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 
-	externalURL                          string
-	seedName                             string
-	workerName                           string
-	workerCount                          int
-	overwriteRegistry                    string
-	nodePortRange                        string
-	nodeAccessNetwork                    string
-	addonsPath                           string
-	backupContainerFile                  string
-	backupDeleteContainerFile            string
-	cleanupContainerFile                 string
-	backupContainerImage                 string
-	backupInterval                       string
-	etcdDiskSize                         resource.Quantity
-	dockerPullConfigJSONFile             string
-	kubermaticImage                      string
-	etcdLauncherImage                    string
-	enableEtcdBackupRestoreController    bool
-	dnatControllerImage                  string
-	namespace                            string
-	apiServerDefaultReplicas             int
-	apiServerEndpointReconcilingDisabled bool
-	controllerManagerDefaultReplicas     int
-	schedulerDefaultReplicas             int
-	admissionWebhook                     webhook.Options
-	concurrentClusterUpdate              int
-	addonEnforceInterval                 int
-	caBundle                             *certificates.CABundle
+	externalURL                       string
+	seedName                          string
+	workerName                        string
+	workerCount                       int
+	overwriteRegistry                 string
+	nodeAccessNetwork                 string
+	addonsPath                        string
+	backupContainerFile               string
+	backupDeleteContainerFile         string
+	cleanupContainerFile              string
+	backupContainerImage              string
+	backupInterval                    string
+	etcdDiskSize                      resource.Quantity
+	dockerPullConfigJSONFile          string
+	kubermaticImage                   string
+	etcdLauncherImage                 string
+	enableEtcdBackupRestoreController bool
+	dnatControllerImage               string
+	namespace                         string
+	admissionWebhook                  webhook.Options
+	concurrentClusterUpdate           int
+	addonEnforceInterval              int
+	caBundle                          *certificates.CABundle
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
-	kubermaticConfiguration *operatorv1alpha1.KubermaticConfiguration
+	kubermaticConfiguration *kubermaticv1.KubermaticConfiguration
 
 	// OIDC configuration
 	oidcIssuerURL          string
@@ -131,7 +123,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&c.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
-	flag.StringVar(&c.nodePortRange, "nodeport-range", resources.DefaultNodePortRange, "Deprecated: configure defaultComponentSettings on Seed resource. NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
@@ -150,10 +141,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.BoolVar(&c.enableEtcdBackupRestoreController, "enable-etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaults.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for Seed resources")
-	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "Deprecated: configure defaultComponentSettings on Seed resource. The default number of replicas for usercluster api servers")
-	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-reconciling-disabled-by-default", false, "Deprecated: configure defaultComponentSettings on Seed resource. Whether to disable reconciling for the apiserver endpoints by default")
-	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "Deprecated: configure defaultComponentSettings on Seed resource. The default number of replicas for usercluster controller managers")
-	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "Deprecated: configure defaultComponentSettings on Seed resource. The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
@@ -174,12 +161,12 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.Parse()
 
 	if err := c.admissionWebhook.Validate(); err != nil {
-		return c, fmt.Errorf("invalid admission webhook configuration: %v", err)
+		return c, fmt.Errorf("invalid admission webhook configuration: %w", err)
 	}
 
 	etcdDiskSize, err := resource.ParseQuantity(rawEtcdDiskSize)
 	if err != nil {
-		return c, fmt.Errorf("failed to parse value of flag etcd-disk-size (%q): %v", rawEtcdDiskSize, err)
+		return c, fmt.Errorf("failed to parse value of flag etcd-disk-size (%q): %w", rawEtcdDiskSize, err)
 	}
 	c.etcdDiskSize = etcdDiskSize
 
@@ -195,7 +182,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
 	if err != nil {
-		return c, fmt.Errorf("invalid CA bundle file (%q): %v", caBundleFile, err)
+		return c, fmt.Errorf("invalid CA bundle file (%q): %w", caBundleFile, err)
 	}
 	c.caBundle = caBundle
 
@@ -209,7 +196,7 @@ func (o controllerRunOptions) validate() error {
 		}
 
 		if _, err := url.Parse(o.oidcIssuerURL); err != nil {
-			return fmt.Errorf("wrong format of \"oidc-issuer-url\" flag, err = %v", err)
+			return fmt.Errorf("wrong format of \"oidc-issuer-url\" flag: %w", err)
 		}
 
 		if len(o.oidcIssuerClientID) == 0 {
@@ -233,29 +220,11 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("backup-container is undefined")
 	}
 
-	if o.apiServerDefaultReplicas < 1 {
-		return fmt.Errorf("--apiserver-default-replicas must be > 0 (was %d)", o.apiServerDefaultReplicas)
-	}
-	if o.controllerManagerDefaultReplicas < 1 {
-		return fmt.Errorf("--controller-manager-default-replicas must be > 0 (was %d)", o.controllerManagerDefaultReplicas)
-	}
-	if o.schedulerDefaultReplicas < 1 {
-		return fmt.Errorf("--scheduler-default-replicas must be > 0 (was %d)", o.schedulerDefaultReplicas)
-	}
-	if o.concurrentClusterUpdate < 1 {
-		return fmt.Errorf("--max-parallel-reconcile must be > 0 (was %d)", o.concurrentClusterUpdate)
-	}
-
-	// Validate node-port range
-	if _, err := knet.ParsePortRange(o.nodePortRange); err != nil {
-		return fmt.Errorf("failed to parse nodePortRange: %v", err)
-	}
-
 	return nil
 }
 
 // controllerContext holds all controllerRunOptions plus everything that
-// needs to be initialized first
+// needs to be initialized first.
 type controllerContext struct {
 	ctx                  context.Context
 	runOptions           controllerRunOptions
@@ -268,20 +237,20 @@ type controllerContext struct {
 	versions             kubermatic.Versions
 }
 
-func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
+	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
 	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return nil, fmt.Errorf("failed to process: %v", err)
+		return nil, fmt.Errorf("failed to process: %w", err)
 	}
 
 	return defaulted, nil

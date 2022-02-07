@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +36,7 @@ const (
 	saPrefix                      = "serviceaccount-"
 )
 
-// NewServiceAccountProvider returns a service account provider
+// NewServiceAccountProvider returns a service account provider.
 func NewServiceAccountProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client, domain string) *ServiceAccountProvider {
 	return &ServiceAccountProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -45,7 +45,7 @@ func NewServiceAccountProvider(createMasterImpersonatedClient ImpersonationClien
 	}
 }
 
-// ServiceAccountProvider manages service account resources
+// ServiceAccountProvider manages service account resources.
 type ServiceAccountProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
@@ -57,7 +57,7 @@ type ServiceAccountProvider struct {
 	domain string
 }
 
-// CreateProjectServiceAccount creates a new service account for the project
+// CreateProjectServiceAccount creates a new service account for the project.
 func (p *ServiceAccountProvider) CreateProjectServiceAccount(userInfo *provider.UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
 	if project == nil {
 		return nil, kerrors.NewBadRequest("Project cannot be nil")
@@ -83,7 +83,7 @@ func (p *ServiceAccountProvider) CreateProjectServiceAccount(userInfo *provider.
 // CreateUnsecuredProjectServiceAccount creates a new service accounts
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to create the resources
+// is unsafe in a sense that it uses privileged account to create the resources.
 func (p *ServiceAccountProvider) CreateUnsecuredProjectServiceAccount(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
 	if project == nil {
 		return nil, kerrors.NewBadRequest("Project cannot be nil")
@@ -123,7 +123,7 @@ func genProjectServiceAccount(project *kubermaticv1.Project, name, group, domain
 	return sa
 }
 
-// ListProjectServiceAccount gets service accounts for the project
+// ListProjectServiceAccount gets service accounts for the project.
 func (p *ServiceAccountProvider) ListProjectServiceAccount(userInfo *provider.UserInfo, project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
@@ -143,7 +143,6 @@ func (p *ServiceAccountProvider) ListProjectServiceAccount(userInfo *provider.Us
 	// Note:
 	// After we get the list of SA we try to get at least one item using unprivileged account to see if the user have read access
 	if len(resultList) > 0 {
-
 		masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 		if err != nil {
 			return nil, err
@@ -154,7 +153,6 @@ func (p *ServiceAccountProvider) ListProjectServiceAccount(userInfo *provider.Us
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	for _, sa := range resultList {
@@ -180,7 +178,7 @@ func (p *ServiceAccountProvider) ListProjectServiceAccount(userInfo *provider.Us
 // If you want to filter the result please take a look at ServiceAccountListOptions
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to get the resources
+// is unsafe in a sense that it uses privileged account to get the resources.
 func (p *ServiceAccountProvider) ListUnsecuredProjectServiceAccount(project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if project == nil {
 		return nil, kerrors.NewBadRequest("project cannot be nil")
@@ -232,7 +230,7 @@ func (p *ServiceAccountProvider) listProjectSA(project *kubermaticv1.Project) ([
 	return resultList, nil
 }
 
-// GetProjectServiceAccount method returns project service account with given name
+// GetProjectServiceAccount method returns project service account with given name.
 func (p *ServiceAccountProvider) GetProjectServiceAccount(userInfo *provider.UserInfo, name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
@@ -264,7 +262,7 @@ func (p *ServiceAccountProvider) GetProjectServiceAccount(userInfo *provider.Use
 // GetUnsecuredProjectServiceAccount gets the project service account
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to get the resource
+// is unsafe in a sense that it uses privileged account to get the resource.
 func (p *ServiceAccountProvider) GetUnsecuredProjectServiceAccount(name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	if len(name) == 0 {
 		return nil, kerrors.NewBadRequest("service account name cannot be empty")
@@ -285,7 +283,7 @@ func (p *ServiceAccountProvider) GetUnsecuredProjectServiceAccount(name string, 
 	return serviceAccount, nil
 }
 
-// UpdateProjectServiceAccount simply updates the given project service account
+// UpdateProjectServiceAccount simply updates the given project service account.
 func (p *ServiceAccountProvider) UpdateProjectServiceAccount(userInfo *provider.UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
@@ -311,7 +309,7 @@ func (p *ServiceAccountProvider) UpdateProjectServiceAccount(userInfo *provider.
 // UpdateUnsecuredProjectServiceAccount updated the project service account
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to update the resource
+// is unsafe in a sense that it uses privileged account to update the resource.
 func (p *ServiceAccountProvider) UpdateUnsecuredProjectServiceAccount(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
 	if serviceAccount == nil {
 		return nil, kerrors.NewBadRequest("service account name cannot be nil")
@@ -326,7 +324,7 @@ func (p *ServiceAccountProvider) UpdateUnsecuredProjectServiceAccount(serviceAcc
 	return serviceAccount, nil
 }
 
-// DeleteProjectServiceAccount simply deletes the given project service account
+// DeleteProjectServiceAccount simply deletes the given project service account.
 func (p *ServiceAccountProvider) DeleteProjectServiceAccount(userInfo *provider.UserInfo, name string) error {
 	if userInfo == nil {
 		return kerrors.NewBadRequest("userInfo cannot be nil")
@@ -347,7 +345,7 @@ func (p *ServiceAccountProvider) DeleteProjectServiceAccount(userInfo *provider.
 // DeleteUnsecuredProjectServiceAccount deletes project service account
 //
 // Note that this function:
-// is unsafe in a sense that it uses privileged account to delete the resource
+// is unsafe in a sense that it uses privileged account to delete the resource.
 func (p *ServiceAccountProvider) DeleteUnsecuredProjectServiceAccount(name string) error {
 	if len(name) == 0 {
 		return kerrors.NewBadRequest("service account name cannot be empty")
@@ -360,19 +358,19 @@ func (p *ServiceAccountProvider) DeleteUnsecuredProjectServiceAccount(name strin
 }
 
 // IsProjectServiceAccount determines whether the given email address
-// belongs to a project service account
+// belongs to a project service account.
 func IsProjectServiceAccount(email string) bool {
 	return hasProjectSAPrefix(email)
 }
 
 // removeProjectSAPrefix removes "serviceaccount-" from a SA's ID,
-// for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
+// for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb".
 func removeProjectSAPrefix(id string) string {
 	return strings.TrimPrefix(id, saPrefix)
 }
 
 // addProjectSAPrefix adds "serviceaccount-" prefix to a SA's ID,
-// for example given "7d4b5695vb" it returns "serviceaccount-7d4b5695vb"
+// for example given "7d4b5695vb" it returns "serviceaccount-7d4b5695vb".
 func addProjectSAPrefix(id string) string {
 	if !hasProjectSAPrefix(id) {
 		return fmt.Sprintf("%s%s", saPrefix, id)
@@ -380,7 +378,7 @@ func addProjectSAPrefix(id string) string {
 	return id
 }
 
-// hasProjectSAPrefix checks if the given id has "serviceaccount-" prefix
+// hasProjectSAPrefix checks if the given id has "serviceaccount-" prefix.
 func hasProjectSAPrefix(sa string) bool {
 	return strings.HasPrefix(sa, saPrefix)
 }

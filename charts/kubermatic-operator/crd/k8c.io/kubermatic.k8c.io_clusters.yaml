@@ -26,9 +26,18 @@ spec:
     - jsonPath: .spec.version
       name: Version
       type: string
+    - jsonPath: .spec.cloud.providerName
+      name: Provider
+      type: string
+    - jsonPath: .spec.cloud.dc
+      name: Datacenter
+      type: string
     - jsonPath: .spec.pause
       name: Paused
       type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
@@ -83,6 +92,8 @@ spec:
             description: ClusterSpec specifies the data for a new cluster.
             properties:
               admissionPlugins:
+                description: AdmissionPlugins provides the ability to pass arbitrary
+                  names of admission plugins to kube-apiserver
                 items:
                   type: string
                 type: array
@@ -201,6 +212,10 @@ spec:
                     properties:
                       accessKeyID:
                         type: string
+                      assumeRoleARN:
+                        type: string
+                      assumeRoleExternalID:
+                        type: string
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
                           use v1.SecretKeySelector because it is not cross namespace
@@ -242,6 +257,8 @@ spec:
                             type: string
                         type: object
                       instanceProfileName:
+                        type: string
+                      nodePortsAllowedIPRange:
                         type: string
                       roleARN:
                         description: The IAM role, the control plane will use. The
@@ -328,6 +345,8 @@ spec:
                         - standard
                         - basic
                         type: string
+                      nodePortsAllowedIPRange:
+                        type: string
                       resourceGroup:
                         type: string
                       routeTable:
@@ -345,7 +364,6 @@ spec:
                       vnetResourceGroup:
                         type: string
                     required:
-                    - assignAvailabilitySet
                     - availabilitySet
                     - loadBalancerSKU
                     - resourceGroup
@@ -459,6 +477,8 @@ spec:
                         type: object
                       network:
                         type: string
+                      nodePortsAllowedIPRange:
+                        type: string
                       serviceAccount:
                         type: string
                       subnetwork:
@@ -569,6 +589,67 @@ spec:
                       kubeconfig:
                         type: string
                     type: object
+                  nutanix:
+                    description: NutanixCloudSpec specifies the access data to Nutanix.
+                      NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
+                    properties:
+                      clusterName:
+                        description: ClusterName is the Nutanix cluster that this
+                          user cluster will be deployed to.
+                        type: string
+                      credentialsReference:
+                        description: GlobalObjectKeySelector is needed as we can not
+                          use v1.SecretKeySelector because it is not cross namespace
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          fieldPath:
+                            description: 'If referring to a piece of an object instead
+                              of an entire object, this string should contain a valid
+                              JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                              For example, if the object reference is to a container
+                              within a pod, this would take on a value like: "spec.containers{name}"
+                              (where "name" refers to the name of the container that
+                              triggered the event) or if no container name is specified
+                              "spec.containers[2]" (container with index 2 in this
+                              pod). This syntax is chosen only to have some well-defined
+                              way of referencing a part of an object. TODO: this design
+                              is not final and this field is subject to change in
+                              the future.'
+                            type: string
+                          key:
+                            type: string
+                          kind:
+                            description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          namespace:
+                            description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                            type: string
+                          resourceVersion:
+                            description: 'Specific resourceVersion to which this reference
+                              is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                            type: string
+                          uid:
+                            description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                            type: string
+                        type: object
+                      password:
+                        type: string
+                      projectName:
+                        description: ProjectName is the project that this cluster
+                          is deployed into. If none is given, no project will be used.
+                        type: string
+                      proxyURL:
+                        type: string
+                      username:
+                        type: string
+                    required:
+                    - clusterName
+                    type: object
                   openstack:
                     description: OpenstackCloudSpec specifies access data to an OpenStack
                       cloud.
@@ -634,15 +715,15 @@ spec:
                           be created \n Note that the network is internal if the \"External\"
                           field is set to false"
                         type: string
+                      nodePortsAllowedIPRange:
+                        type: string
                       password:
                         type: string
                       project:
-                        description: project, formally known as tenant. Tenant is
-                          depreciated in Openstack
+                        description: project, formally known as tenant.
                         type: string
                       projectID:
-                        description: project id, formally known as tenantID. TenantID
-                          is depreciated in Openstack
+                        description: project id, formally known as tenantID.
                         type: string
                       routerID:
                         type: string
@@ -725,6 +806,12 @@ spec:
                     required:
                     - billingCycle
                     type: object
+                  providerName:
+                    description: ProviderName is the name of the cloud provider used
+                      for this cluster. This must match the given provider spec (e.g.
+                      if the providerName is "aws", then the AWSCloudSpec must be
+                      set)
+                    type: string
                   vsphere:
                     description: VSphereCloudSpec specifies access data to VSphere
                       cloud.
@@ -815,6 +902,7 @@ spec:
                     type: object
                 required:
                 - dc
+                - providerName
                 type: object
               clusterNetwork:
                 description: ClusterNetworkingConfig specifies the different networking
@@ -884,7 +972,7 @@ spec:
                 properties:
                   type:
                     description: CNIPluginType define the type of CNI plugin installed.
-                      e.g. Canal
+                      e.g. Canal.
                     enum:
                     - canal
                     - cilium
@@ -1301,6 +1389,13 @@ spec:
                 - docker
                 - containerd
                 type: string
+              debugLog:
+                description: DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
+                type: boolean
+              enableOperatingSystemManager:
+                description: EnableOperatingSystemManager enables OSM which in-turn
+                  is responsible for creating and managing worker node configuration
+                type: boolean
               enableUserSSHKeyAgent:
                 description: EnableUserSSHKeyAgent control whether the UserSSHKeyAgent
                   will be deployed in the user cluster or not. If it was enabled,
@@ -1311,6 +1406,74 @@ spec:
                   Once the agent is enabled/disabled it cannot be changed after the
                   cluster is being created.
                 type: boolean
+              eventRateLimitConfig:
+                description: EventRateLimitConfig allows configuring the EventRateLimit
+                  admission plugin (if enabled via useEventRateLimitAdmissionPlugin)
+                  to create limits on Kubernetes event generation. The EventRateLimit
+                  plugin is capable of comparing incoming Events to several configured
+                  buckets based on the type of event rate limit.
+                properties:
+                  namespace:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                  server:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                  sourceAndObject:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                  user:
+                    properties:
+                      burst:
+                        format: int32
+                        type: integer
+                      cacheSize:
+                        format: int32
+                        type: integer
+                      qps:
+                        format: int32
+                        type: integer
+                    required:
+                    - burst
+                    - qps
+                    type: object
+                type: object
               exposeStrategy:
                 description: ExposeStrategy is the approach we use to expose this
                   cluster, either via NodePort or via a dedicated LoadBalancer
@@ -1447,6 +1610,60 @@ spec:
                   gatekeeper and its resources to be deployed on the user cluster.
                   By default it is disabled.
                 properties:
+                  auditResources:
+                    description: AuditResources is the resource requirements for user
+                      cluster gatekeeper audit.
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
+                  controllerResources:
+                    description: ControllerResources is the resource requirements
+                      for user cluster gatekeeper controller.
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
                   enabled:
                     description: Enabled is the flag for enabling OPA integration
                     type: boolean
@@ -1507,6 +1724,8 @@ spec:
                   start:
                     type: string
                 type: object
+              useEventRateLimitAdmissionPlugin:
+                type: boolean
               usePodNodeSelectorAdmissionPlugin:
                 type: boolean
               usePodSecurityPolicyAdmissionPlugin:
@@ -1517,7 +1736,6 @@ spec:
             required:
             - cloud
             - clusterNetwork
-            - componentsOverride
             - exposeStrategy
             - humanReadableName
             - pause
@@ -1600,8 +1818,6 @@ spec:
                       - MachineDeploymentReconciledSuccessfully
                       - MLAControllerReconciledSuccessfully
                       - ClusterInitialized
-                      - RancherInitializedSuccessfully
-                      - RancherClusterImportedSuccessfully
                       - EtcdClusterInitialized
                       - CSIKubeletMigrationCompleted
                       - ClusterUpdateSuccessful

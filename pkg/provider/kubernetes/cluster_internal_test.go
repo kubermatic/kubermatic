@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,7 +50,7 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 				name := types.NamespacedName{Name: "cluster"}
 				cluster := &kubermaticv1.Cluster{}
 				if err := seedClient.Get(context.Background(), name, cluster); err != nil {
-					return fmt.Errorf("failed to fetch cluster: %v", err)
+					return fmt.Errorf("failed to fetch cluster: %w", err)
 				}
 				if cluster.Address.AdminToken == "123" {
 					return errors.New("expected admin token to get updated, was unchanged")

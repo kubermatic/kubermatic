@@ -30,7 +30,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -149,7 +149,7 @@ func getConstraintStatus(uc *unstructured.Unstructured) (*apiv2.ConstraintStatus
 	return constraintStatus, nil
 }
 
-func convertInternalToAPIConstraint(c *v1.Constraint) *apiv2.Constraint {
+func convertInternalToAPIConstraint(c *kubermaticv1.Constraint) *apiv2.Constraint {
 	return &apiv2.Constraint{
 		Name:   c.Name,
 		Labels: c.Labels,
@@ -157,8 +157,8 @@ func convertInternalToAPIConstraint(c *v1.Constraint) *apiv2.Constraint {
 	}
 }
 
-func convertAPIToInternalConstraint(name, namespace string, spec v1.ConstraintSpec) *v1.Constraint {
-	return &v1.Constraint{
+func convertAPIToInternalConstraint(name, namespace string, spec kubermaticv1.ConstraintSpec) *kubermaticv1.Constraint {
+	return &kubermaticv1.Constraint{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -251,8 +251,8 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 }
 
 func deleteConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider, cluster *v1.Cluster, projectID, constraintName string) error {
-
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, cluster *kubermaticv1.Cluster, projectID, constraintName string,
+) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err
@@ -324,8 +324,8 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 }
 
 func createConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *v1.Constraint) (*v1.Constraint, error) {
-
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *kubermaticv1.Constraint,
+) (*kubermaticv1.Constraint, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -355,7 +355,7 @@ type constraintBody struct {
 	Name string `json:"name"`
 
 	// Spec is the constraint specification
-	Spec v1.ConstraintSpec
+	Spec kubermaticv1.ConstraintSpec
 }
 
 func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -373,7 +373,7 @@ func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func validateConstraint(constraintTemplateProvider provider.ConstraintTemplateProvider, constraint *v1.Constraint) error {
+func validateConstraint(constraintTemplateProvider provider.ConstraintTemplateProvider, constraint *kubermaticv1.Constraint) error {
 	ct, err := constraintTemplateProvider.Get(strings.ToLower(constraint.Spec.ConstraintType))
 	if err != nil {
 		return utilerrors.NewBadRequest("Validation failed, constraint needs to have an existing constraint template: %v", err)
@@ -381,7 +381,6 @@ func validateConstraint(constraintTemplateProvider provider.ConstraintTemplatePr
 
 	// Validate parameters
 	if ct.Spec.CRD.Spec.Validation != nil && ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema != nil {
-
 		// Set up the validator
 		rawOpenAPISpec, err := json.Marshal(ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema)
 		if err != nil {
@@ -504,8 +503,8 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 }
 
 func updateConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *v1.Constraint) (*v1.Constraint, error) {
-
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *kubermaticv1.Constraint,
+) (*kubermaticv1.Constraint, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -530,7 +529,7 @@ type patchConstraintReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchConstraintReq decodes http request into patchConstraintReq
+// DecodePatchConstraintReq decodes http request into patchConstraintReq.
 func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchConstraintReq
 
@@ -569,7 +568,7 @@ func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		constraint := &v1.Constraint{
+		constraint := &kubermaticv1.Constraint{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: req.Body.Name,
 			},
@@ -596,7 +595,7 @@ type defaultConstraintReq struct {
 	Name string `json:"constraint_name"`
 }
 
-// Validate validates defaultConstraint request
+// Validate validates defaultConstraint request.
 func (req defaultConstraintReq) Validate() error {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("the default constraint name cannot be empty")
@@ -738,7 +737,7 @@ func PatchDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 		}
 
 		// restore ResourceVersion to make patching safer and tests work more easily
-		patchedDC := &v1.Constraint{
+		patchedDC := &kubermaticv1.Constraint{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            originalDC.Name,
 				ResourceVersion: originalDC.ResourceVersion,

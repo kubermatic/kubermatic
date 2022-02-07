@@ -26,8 +26,8 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,14 +42,14 @@ type cleaner interface {
 
 const (
 	ControllerName     = "kubermatic_mla_controller"
-	mlaFinalizer       = "kubermatic.io/mla"
+	mlaFinalizer       = "kubermatic.k8c.io/mla"
 	defaultOrgID       = 1
 	GrafanaUserKey     = "admin-user"
 	GrafanaPasswordKey = "admin-password"
 )
 
 var (
-	// groupToRole map kubermatic groups to grafana roles
+	// groupToRole map kubermatic groups to grafana roles.
 	groupToRole = map[string]grafanasdk.RoleType{
 		rbac.OwnerGroupNamePrefix:  grafanasdk.ROLE_EDITOR, // we assign the editor (not admin) role to project owners, to make sure they cannot edit datasources in Grafana
 		rbac.EditorGroupNamePrefix: grafanasdk.ROLE_EDITOR,
@@ -67,7 +67,7 @@ var (
 // * rule group controller - manager rule groups that will be used to generate alerts.
 // * dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
 // * ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
-// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller
+// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -101,7 +101,7 @@ func Add(
 		if !mlaEnabled {
 			return nil // do not return an error if MLA is disabled (e.g. if MLA is not installed in Seed)
 		}
-		return fmt.Errorf("failed to get Grafana Secret: %v", err)
+		return fmt.Errorf("failed to get Grafana Secret: %w", err)
 	}
 	adminName, ok := secret.Data[GrafanaUserKey]
 	if !ok {

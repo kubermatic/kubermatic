@@ -25,7 +25,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"gopkg.in/yaml.v2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -58,7 +58,7 @@ type configTemplateData struct {
 	ScrapingAnnotationPrefix string
 }
 
-// ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data
+// ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data.
 func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.PrometheusConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -103,12 +103,12 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			// prepare tls_config stanza
 			etcdTLSYaml, err := yaml.Marshal(etcdTLS)
 			if err != nil {
-				return nil, fmt.Errorf("failed to encode etcd TLS config as YAML: %v", err)
+				return nil, fmt.Errorf("failed to encode etcd TLS config as YAML: %w", err)
 			}
 
 			apiserverTLSYaml, err := yaml.Marshal(apiserverTLS)
 			if err != nil {
-				return nil, fmt.Errorf("failed to encode apiserver TLS config as YAML: %v", err)
+				return nil, fmt.Errorf("failed to encode apiserver TLS config as YAML: %w", err)
 			}
 
 			// prepare config template
@@ -123,7 +123,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 
 			config, err := renderTemplate(prometheusConfig, configData)
 			if err != nil {
-				return nil, fmt.Errorf("failed to render Prometheus config: %v", err)
+				return nil, fmt.Errorf("failed to render Prometheus config: %w", err)
 			}
 
 			// update ConfigMap
@@ -139,6 +139,12 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 				delete(cm.Data, "rules.yaml")
 			} else {
 				cm.Data["rules.yaml"] = prometheusRules
+
+				// deploy DNSResolverDownAlert rule only if Konnectivity is disabled
+				// (custom DNS resolver in not deployed in Konnectivity setup)
+				if !data.IsKonnectivityEnabled() {
+					cm.Data["rules.yaml"] += prometheusRuleDNSResolverDownAlert
+				}
 			}
 
 			if customRules == "" {
@@ -160,12 +166,12 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 func renderTemplate(tpl string, data interface{}) (string, error) {
 	t, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(tpl)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse as Go template: %v", err)
+		return "", fmt.Errorf("failed to parse as Go template: %w", err)
 	}
 
 	output := bytes.Buffer{}
 	if err := t.Execute(&output, data); err != nil {
-		return "", fmt.Errorf("failed to render template: %v", err)
+		return "", fmt.Errorf("failed to render template: %w", err)
 	}
 
 	return strings.TrimSpace(output.String()), nil

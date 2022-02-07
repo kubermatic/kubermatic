@@ -19,7 +19,7 @@ package clusterautoscaler
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -53,7 +53,7 @@ type clusterautoscalerData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// DeploymentCreator returns the function to create and update the cluster-autoscaler deployment
+// DeploymentCreator returns the function to create and update the cluster-autoscaler deployment.
 func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ClusterAutoscalerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -83,7 +83,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 			podLabels, err := data.GetPodTemplateLabels(resources.ClusterAutoscalerDeploymentName,
 				volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -115,7 +115,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 						// -v=4 --scale-down-delay-after-failure=1s --scale-down-delay-after-add=1s
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/health-check",
 								Port:   intstr.FromInt(8085),
@@ -142,12 +142,12 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 			// for details on how we want to fix this: https://github.com/kubermatic/kubermatic/issues/3568
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(resources.ClusterAutoscalerDeploymentName))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -158,7 +158,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 
 // getTag returns the correct tag for the cluster version. We need to have a distinct CA
 // version for each Kubernetes version, because the CA imports the scheduler code and the
-// behaviour of that imported code has to match with what the actual scheduler does
+// behaviour of that imported code has to match with what the actual scheduler does.
 func getTag(cluster *kubermaticv1.Cluster) string {
 	switch cluster.Spec.Version.Semver().Minor() {
 	case 14:

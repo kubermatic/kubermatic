@@ -23,21 +23,21 @@ import (
 	"net/http"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ClusterTemplateProvider struct that holds required components in order manage cluster templates
+// ClusterTemplateProvider struct that holds required components in order manage cluster templates.
 type ClusterTemplateProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 }
 
-// NewClusterTemplateProvider returns a cluster template provider
+// NewClusterTemplateProvider returns a cluster template provider.
 func NewClusterTemplateProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ClusterTemplateProvider, error) {
 	return &ClusterTemplateProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -70,7 +70,6 @@ func (p *ClusterTemplateProvider) New(userInfo *provider.UserInfo, newClusterTem
 	}
 
 	return p.createTemplate(newClusterTemplate)
-
 }
 
 func (p *ClusterTemplateProvider) createTemplate(newClusterTemplate *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error) {

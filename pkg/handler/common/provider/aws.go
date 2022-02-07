@@ -22,14 +22,11 @@ import (
 	"net/http"
 	"strings"
 
-	ec2service "github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/eks"
 	ec2 "github.com/cristim/ec2-instances-info"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -50,10 +47,6 @@ var data *ec2.InstanceData
 func init() {
 	data, _ = ec2.Data()
 }
-
-// Region value will instruct the SDK where to make service API requests to.
-// Region must be provided before a service client request is made.
-const RegionEndpoint = "eu-central-1"
 
 func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -79,12 +72,12 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+	accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetList, err := ListAWSSubnets(accessKeyID, secretAccessKey, cluster.Spec.Cloud.AWS.VPCID, dc)
+	subnetList, err := ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, cluster.Spec.Cloud.AWS.VPCID, dc)
 	if err != nil {
 		return nil, err
 	}
@@ -132,15 +125,14 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 	return AWSSizes(dc.Spec.AWS.Region, architecture, settings.Spec.MachineDeploymentVMResourceQuota)
 }
 
-func ListAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
-
+func ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, datacenter.Spec.AWS.Region, vpcID)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get subnets: %v", err)
+		return nil, fmt.Errorf("couldn't get subnets: %w", err)
 	}
 
 	subnets := apiv1.AWSSubnetList{}
@@ -178,7 +170,6 @@ func ListAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kube
 			AvailableIPAddressCount: *s.AvailableIpAddressCount,
 			DefaultForAz:            *s.DefaultForAz,
 		})
-
 	}
 
 	return subnets, nil
@@ -203,7 +194,7 @@ func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList,
 	for _, md := range machineDeployments.Items {
 		cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
+			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %w", err)
 		}
 		if cloudSpec.AWS == nil {
 			return nil, errors.NewBadRequest("cloud spec missing")
@@ -324,91 +315,8 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 }
 
 type AWSCredential struct {
-	AccessKeyID     string
-	SecretAccessKey string
-}
-
-func ListAWSRegions(ctx context.Context, credential AWSCredential) (apiv2.Regions, error) {
-	regionInput := &ec2service.DescribeRegionsInput{}
-
-	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
-	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, RegionEndpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	// Retrieves all regions/endpoints that work with EC2
-	regionOutput, err := client.EC2.DescribeRegions(regionInput)
-	if err != nil {
-		return nil, fmt.Errorf("cannot list regions: %w", err)
-	}
-
-	var regionList []string
-	for _, region := range regionOutput.Regions {
-		regionList = append(regionList, *region.RegionName)
-	}
-	return regionList, nil
-}
-
-type listClusters func(AWSCredential, string) (apiv2.EKSClusterList, error)
-
-func listEKSClusters(credential AWSCredential, region string) (apiv2.EKSClusterList, error) {
-	clusters := apiv2.EKSClusterList{}
-	client, err := awsprovider.GetClientSet(credential.AccessKeyID, credential.SecretAccessKey, region)
-	if err != nil {
-		return clusters, err
-	}
-
-	clusterList, err := client.EKS.ListClusters(&eks.ListClustersInput{})
-	if err != nil {
-		return clusters, fmt.Errorf("cannot list clusters in region=%s: %w", region, err)
-	}
-
-	for _, clusterName := range clusterList.Clusters {
-		eksCluster := apiv2.EKSCluster{
-			Name:   *clusterName,
-			Region: region,
-		}
-		clusters = append(clusters, eksCluster)
-	}
-	return clusters, nil
-}
-
-func mapClusters(credential AWSCredential, fn listClusters, list []string) (apiv2.EKSClusterList, error) {
-	var clusterList apiv2.EKSClusterList
-
-	for _, region := range list {
-		clusters, err := fn(credential, region)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list regions: %w", err)
-		}
-		clusterList = append(clusterList, clusters...)
-	}
-	return clusterList, nil
-}
-
-func ListEKSClusters(ctx context.Context, cred AWSCredential, region string) (apiv2.EKSClusterList, error) {
-
-	var err error
-	var clusterList apiv2.EKSClusterList
-
-	// list EKS clusters for user specified region
-	if region != "" {
-		clusterList, err = listEKSClusters(cred, region)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list clusters: %w", err)
-		}
-	} else {
-		// list EKS clusters for all regions
-		regions, err := ListAWSRegions(ctx, cred)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list regions: %w", err)
-		}
-		clusterList, err = mapClusters(cred, listEKSClusters, regions)
-		if err != nil {
-			return nil, fmt.Errorf("cannot list clusters: %w", err)
-		}
-	}
-	return clusterList, nil
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }

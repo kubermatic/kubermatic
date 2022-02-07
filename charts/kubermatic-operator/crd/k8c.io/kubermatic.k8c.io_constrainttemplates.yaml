@@ -16,7 +16,11 @@ spec:
     singular: constrainttemplate
   scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: ConstraintTemplate is the object representing a kubermatic wrapper
@@ -36,7 +40,7 @@ spec:
             type: object
           spec:
             description: ConstraintTemplateSpec is the object representing the gatekeeper
-              constraint template spec and kubermatic related spec
+              constraint template spec and kubermatic related spec.
             properties:
               crd:
                 properties:
@@ -66,7 +70,7 @@ spec:
                 type: object
               selector:
                 description: ConstraintTemplateSelector is the object holding the
-                  cluster selection filters
+                  cluster selection filters.
                 properties:
                   labelSelector:
                     description: LabelSelector selects the Clusters to which the Constraint
@@ -138,6 +142,7 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}
 status:
   acceptedNames:
     kind: ""

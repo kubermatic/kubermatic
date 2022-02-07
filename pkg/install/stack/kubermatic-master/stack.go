@@ -25,7 +25,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -73,33 +73,35 @@ func NewStack() stack.Stack {
 	return &MasterStack{}
 }
 
+var _ stack.Stack = &MasterStack{}
+
 func (*MasterStack) Name() string {
 	return "KKP master stack"
 }
 
-func (*MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy StorageClass: %v", err)
+		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
 
 	if err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy nginx-ingress-controller: %v", err)
+		return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
 	}
 
 	if err := deployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy cert-manager: %v", err)
+		return fmt.Errorf("failed to deploy cert-manager: %w", err)
 	}
 
 	if err := deployDex(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Dex: %v", err)
+		return fmt.Errorf("failed to deploy Dex: %w", err)
 	}
 
-	if err := deployKubermaticOperator(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Kubermatic Operator: %v", err)
+	if err := s.deployKubermaticOperator(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy Kubermatic Operator: %w", err)
 	}
 
 	if err := applyKubermaticConfiguration(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to apply Kubermatic Configuration: %v", err)
+		return fmt.Errorf("failed to apply Kubermatic Configuration: %w", err)
 	}
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -122,20 +124,20 @@ func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "telemetry"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, TelemetryNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, TelemetryNamespace, TelemetryReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, TelemetryNamespace, TelemetryReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -164,7 +166,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	}
 
 	if !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for StorageClass %s: %v", StorageClassName, err)
+		return fmt.Errorf("failed to check for StorageClass %s: %w", StorageClassName, err)
 	}
 
 	if opt.StorageClassProvider == "" {
@@ -177,45 +179,16 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 
 	factory, err := common.StorageClassCreator(opt.StorageClassProvider)
 	if err != nil {
-		return fmt.Errorf("invalid StorageClass provider: %v", err)
+		return fmt.Errorf("invalid StorageClass provider: %w", err)
 	}
 
 	sc, err := factory(ctx, sublogger, kubeClient, StorageClassName)
 	if err != nil {
-		return fmt.Errorf("failed to define StorageClass: %v", err)
+		return fmt.Errorf("failed to define StorageClass: %w", err)
 	}
 
 	if err := kubeClient.Create(ctx, &sc); err != nil {
-		return fmt.Errorf("failed to create StorageClass: %v", err)
-	}
-
-	logger.Info("✅ Success.")
-
-	return nil
-}
-
-func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	logger.Info("📦 Deploying nginx-ingress-controller…")
-	sublogger := log.Prefix(logger, "   ")
-
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "nginx-ingress-controller"))
-	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
-	}
-
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, NginxIngressControllerNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
-	}
-
-	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, NginxIngressControllerNamespace, NginxIngressControllerReleaseName)
-	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
-	}
-
-	// do not perform an atomic installation, as this will make Helm wait for the LoadBalancer to
-	// get an IP and this can require manual intervention based on the target environment
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NginxIngressControllerNamespace, NginxIngressControllerReleaseName, opt.HelmValues, false, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to create StorageClass: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -229,20 +202,20 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "oauth"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, DexNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, DexNamespace, DexReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, DexNamespace, DexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
@@ -250,35 +223,51 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	return nil
 }
 
-func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying Kubermatic Operator…")
 	sublogger := log.Prefix(logger, "   ")
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "kubermatic-operator"))
 	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
+		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
 	sublogger.Info("Deploying Custom Resource Definitions…")
-	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")); err != nil {
-		return fmt.Errorf("failed to deploy CRDs: %v", err)
+	if err := s.InstallKubermaticCRDs(ctx, kubeClient, sublogger, opt); err != nil {
+		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	sublogger.Info("Deploying Helm chart…")
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, KubermaticOperatorNamespace, KubermaticOperatorReleaseName)
 	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
+		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KubermaticOperatorNamespace, KubermaticOperatorReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
+
+	return nil
+}
+
+func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
+
+	// install KKP CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io")); err != nil {
+		return err
+	}
+
+	// install VPA CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io")); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -286,7 +275,7 @@ func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeCli
 func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	logger.Info("📝 Applying Kubermatic Configuration…")
 
-	existingConfig := &operatorv1alpha1.KubermaticConfiguration{}
+	existingConfig := &kubermaticv1.KubermaticConfiguration{}
 	name := types.NamespacedName{
 		Name:      opt.KubermaticConfiguration.Name,
 		Namespace: opt.KubermaticConfiguration.Namespace,
@@ -294,7 +283,7 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 
 	err := kubeClient.Get(ctx, name, existingConfig)
 	if err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for existing KubermaticConfiguration: %v", err)
+		return fmt.Errorf("failed to check for existing KubermaticConfiguration: %w", err)
 	}
 
 	if err == nil {
@@ -357,7 +346,7 @@ func (t nginxTargetPod) prefererdTarget() string {
 func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	logger.Debugf("Listing nginx-ingress-controller pods…")
 
-	podList := v1.PodList{}
+	podList := corev1.PodList{}
 	err := kubeClient.List(ctx, &podList, &ctrlruntimeclient.ListOptions{
 		Namespace: NginxIngressControllerNamespace,
 	})
@@ -377,7 +366,7 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 		return
 	}
 
-	nodeList := v1.NodeList{}
+	nodeList := corev1.NodeList{}
 	err = kubeClient.List(ctx, &nodeList)
 	if err != nil {
 		logger.Warnf("Failed to retrieve nodes: %v", err)
@@ -396,9 +385,9 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 
 			for _, address := range node.Status.Addresses {
 				switch address.Type {
-				case v1.NodeExternalIP:
+				case corev1.NodeExternalIP:
 					externalIP = address.Address
-				case v1.NodeExternalDNS:
+				case corev1.NodeExternalDNS:
 					externalDNS = address.Address
 				}
 
@@ -464,9 +453,9 @@ func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kube
 
 	logger.Debugf("Waiting for %q to be ready…", svcName)
 
-	var ingresses []v1.LoadBalancerIngress
+	var ingresses []corev1.LoadBalancerIngress
 	err := wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
-		svc := v1.Service{}
+		svc := corev1.Service{}
 		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
 			return false, err
 		}

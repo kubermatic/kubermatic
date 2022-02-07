@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strconv"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -57,7 +57,7 @@ func AdmissionControllerServiceAccountCreator() reconciling.NamedServiceAccountC
 	}
 }
 
-func AdmissionControllerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return AdmissionControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -169,12 +169,12 @@ func AdmissionControllerServingCertCreator() reconciling.NamedSecretCreatorGette
 
 			ca, err := triple.NewCA(AdmissionControllerName)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create CA: %v", err)
+				return nil, fmt.Errorf("failed to create CA: %w", err)
 			}
 
 			key, err := triple.NewPrivateKey()
 			if err != nil {
-				return nil, fmt.Errorf("unable to create a server private key: %v", err)
+				return nil, fmt.Errorf("unable to create a server private key: %w", err)
 			}
 
 			config := certutil.Config{
@@ -185,7 +185,7 @@ func AdmissionControllerServingCertCreator() reconciling.NamedSecretCreatorGette
 
 			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
 			se.Data[AdmissionControllerServingCertKeyName] = triple.EncodePrivateKeyPEM(key)

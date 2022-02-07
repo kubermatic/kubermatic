@@ -19,14 +19,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,7 +42,7 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 	// check if usercluster-controller was deployed on seed cluster
 	deployment := &appsv1.Deployment{}
 	if err := seedClusterClient.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: resources.UserClusterControllerDeploymentName}, deployment); err != nil {
-		return fmt.Errorf("failed to get Deployment: %s, error: %v", resources.UserClusterControllerDeploymentName, err)
+		return fmt.Errorf("failed to get Deployment: %s, error: %w", resources.UserClusterControllerDeploymentName, err)
 	}
 
 	if deployment.Status.AvailableReplicas == 0 {
@@ -52,12 +54,12 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 		log.Info("Getting a Cluster Role: ", resourceName)
 		clusterRole := &rbacv1.ClusterRole{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Name: resourceName}, clusterRole); err != nil {
-			return fmt.Errorf("failed to get Cluster Role: %s, error: %v", clusterRole, err)
+			return fmt.Errorf("failed to get Cluster Role: %s, error: %w", clusterRole, err)
 		}
 
 		defaultClusterRole, err := rbacusercluster.GenerateRBACClusterRole(resourceName)
 		if err != nil {
-			return fmt.Errorf("failed to generate default Cluster Role: %s, error: %v", resourceName, err)
+			return fmt.Errorf("failed to generate default Cluster Role: %s, error: %w", resourceName, err)
 		}
 
 		if !equality.Semantic.DeepEqual(clusterRole.Rules, defaultClusterRole.Rules) {
@@ -67,12 +69,12 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 		log.Info("Getting a Cluster Role Binding: ", resourceName)
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Name: resourceName}, clusterRoleBinding); err != nil {
-			return fmt.Errorf("failed to get Cluster Role Binding: %s, error: %v", resourceName, err)
+			return fmt.Errorf("failed to get Cluster Role Binding: %s, error: %w", resourceName, err)
 		}
 
 		defaultClusterRoleBinding, err := rbacusercluster.GenerateRBACClusterRoleBinding(resourceName)
 		if err != nil {
-			return fmt.Errorf("failed to generate default Cluster Role Binding: %s, error: %v", resourceName, err)
+			return fmt.Errorf("failed to generate default Cluster Role Binding: %s, error: %w", resourceName, err)
 		}
 
 		if !equality.Semantic.DeepEqual(clusterRoleBinding.RoleRef, defaultClusterRoleBinding.RoleRef) {
@@ -84,6 +86,72 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 	}
 
 	return nil
+}
+
+func (r *testRunner) testUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
+	pods := &corev1.PodList{}
+
+	errors := []string{}
+
+	// get all Pods running on the cluster
+	if err := userClusterClient.List(ctx, pods, &ctrlruntimeclient.ListOptions{Namespace: ""}); err != nil {
+		return fmt.Errorf("failed to list Pods in user cluster: %w", err)
+	}
+
+	for _, pod := range pods.Items {
+		// we only check for a couple of namespaces
+		if pod.Namespace != "kube-system" && pod.Namespace != "mla-system" && pod.Namespace != "gatekeeper-system" && pod.Namespace != "kubernetes-dashboard" {
+			continue
+		}
+
+		var privilegedContainers int
+		for _, container := range pod.Spec.Containers {
+			if container.SecurityContext != nil && container.SecurityContext.Privileged != nil && *container.SecurityContext.Privileged {
+				privilegedContainers++
+			}
+		}
+
+		// all containers in the Pod are running as privileged, we can skip the Pod; privileged mode disables any seccomp profile
+		if len(pod.Spec.Containers) == privilegedContainers {
+			continue
+		}
+
+		// no security context means no seccomp profile
+		if pod.Spec.SecurityContext == nil {
+			errors = append(
+				errors,
+				fmt.Sprintf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name),
+			)
+			continue
+		}
+
+		// no seccomp profile means no profile is applied to the containers
+		if pod.Spec.SecurityContext.SeccompProfile == nil {
+			errors = append(
+				errors,
+				fmt.Sprintf("expected seccomp profile on Pod %s/%s, got none", pod.Namespace, pod.Name),
+			)
+			continue
+		}
+
+		// the 'unconfined' profile disables any seccomp filtering
+		if pod.Spec.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeUnconfined {
+			errors = append(
+				errors,
+				fmt.Sprintf(
+					"seccomp profile of Pod %s/%s is '%s', should be '%s' or '%s'", pod.Namespace, pod.Name,
+					corev1.SeccompProfileTypeUnconfined, corev1.SeccompProfileTypeRuntimeDefault, corev1.SeccompProfileTypeLocalhost,
+				),
+			)
+			continue
+		}
+	}
+
+	if len(errors) == 0 {
+		return nil
+	}
+
+	return fmt.Errorf(strings.Join(errors, "\n"))
 }
 
 func rbacResourceNames() []string {

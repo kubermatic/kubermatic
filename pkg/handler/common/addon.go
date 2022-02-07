@@ -20,7 +20,7 @@ import (
 	"context"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -184,7 +184,7 @@ func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) 
 	return convertInternalAddonConfigsToExternal(list)
 }
 
-func deleteAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, projectID, addonID string) error {
+func deleteAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, addonID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err
@@ -201,7 +201,7 @@ func deleteAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	return addonProvider.Delete(userInfo, cluster, addonID)
 }
 
-func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, addon *kubermaticapiv1.Addon, projectID string) (*kubermaticapiv1.Addon, error) {
+func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon, projectID string) (*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -218,7 +218,7 @@ func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	return addonProvider.Update(userInfo, cluster, addon)
 }
 
-func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, rawVars *runtime.RawExtension, labels map[string]string, projectID, name string) (*kubermaticapiv1.Addon, error) {
+func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, rawVars *runtime.RawExtension, labels map[string]string, projectID, name string) (*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -233,10 +233,9 @@ func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
 	return addonProvider.New(userInfo, cluster, name, rawVars, labels)
-
 }
 
-func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, projectID, addonID string) (*kubermaticapiv1.Addon, error) {
+func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, addonID string) (*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -253,7 +252,7 @@ func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, clust
 	return addonProvider.Get(userInfo, cluster, addonID)
 }
 
-func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, projectID string) ([]*kubermaticapiv1.Addon, error) {
+func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) ([]*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -270,7 +269,7 @@ func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, clu
 	return addonProvider.List(userInfo, cluster)
 }
 
-func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv1.Addon, error) {
+func convertInternalAddonToExternal(internalAddon *kubermaticv1.Addon) (*apiv1.Addon, error) {
 	result := &apiv1.Addon{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalAddon.Name,
@@ -300,7 +299,7 @@ func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv
 	return result, nil
 }
 
-func convertInternalAddonsToExternal(internalAddons []*kubermaticapiv1.Addon) ([]*apiv1.Addon, error) {
+func convertInternalAddonsToExternal(internalAddons []*kubermaticv1.Addon) ([]*apiv1.Addon, error) {
 	result := []*apiv1.Addon{}
 
 	for _, addon := range internalAddons {
@@ -314,7 +313,7 @@ func convertInternalAddonsToExternal(internalAddons []*kubermaticapiv1.Addon) ([
 	return result, nil
 }
 
-func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticapiv1.AddonConfig) (*apiv1.AddonConfig, error) {
+func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticv1.AddonConfig) (*apiv1.AddonConfig, error) {
 	return &apiv1.AddonConfig{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalAddonConfig.Name,
@@ -332,7 +331,7 @@ func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticapiv1.A
 	}, nil
 }
 
-func convertInternalAddonConfigsToExternal(internalAddonConfigs *kubermaticapiv1.AddonConfigList) ([]*apiv1.AddonConfig, error) {
+func convertInternalAddonConfigsToExternal(internalAddonConfigs *kubermaticv1.AddonConfigList) ([]*apiv1.AddonConfig, error) {
 	result := []*apiv1.AddonConfig{}
 
 	for _, internalAddonConfig := range internalAddonConfigs.Items {

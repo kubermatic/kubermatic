@@ -34,7 +34,7 @@ import (
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -54,7 +54,6 @@ import (
 const testNamespace = "kubermatic"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                  string
 		allowedRegistry       []*kubermaticv1.AllowedRegistry
@@ -251,7 +250,7 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
-	jsonRegSet, _ := json.Marshal(registrySet)
+	jsonRegSet, _ := json.Marshal(registrySet.List())
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: allowedregistrycontroller.AllowedRegistryCTName,

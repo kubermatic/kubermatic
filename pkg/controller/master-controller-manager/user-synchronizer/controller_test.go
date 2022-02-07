@@ -23,8 +23,7 @@ import (
 	"time"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -32,16 +31,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
+
 const userName = "user-test"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name         string
 		requestName  string
@@ -136,6 +140,6 @@ func generateUser(name string, deleted bool) *kubermaticv1.User {
 // Skip problematic fields from the comparison such as `LastSeen` Time field
 // as even DeepCopy does not result in equal internal location field value.
 func sanitize(user *kubermaticv1.User) *kubermaticv1.User {
-	user.Spec.LastSeen = nil
+	user.Status.LastSeen = nil
 	return user
 }

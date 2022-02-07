@@ -140,12 +140,12 @@ func (c *cli) ListReleases(namespace string) ([]Release, error) {
 
 	output, err := c.run(namespace, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list releases: %v", err)
+		return nil, fmt.Errorf("failed to list releases: %w", err)
 	}
 
 	releases := []Release{}
 	if err := json.NewDecoder(bytes.NewReader(output)).Decode(&releases); err != nil {
-		return nil, fmt.Errorf("failed to parse Helm output: %v", err)
+		return nil, fmt.Errorf("failed to parse Helm output: %w", err)
 	}
 
 	for idx, release := range releases {

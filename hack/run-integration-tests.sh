@@ -39,7 +39,9 @@ LOCALSTACK_IMAGE="${LOCALSTACK_IMAGE:-localstack/localstack:$LOCALSTACK_TAG}"
 if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   echodate "Setting up localstack container, set \$SKIP_AWS_PROVIDER to skip..."
 
-  start_docker_daemon
+  if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
+    start_docker_daemon_ci
+  fi
 
   containerName=kkp-localstack
 
@@ -72,7 +74,9 @@ echodate "Running integration tests..."
 # * Finding all files that contain the build tag via grep
 # * Extracting the dirname as the `go test` command doesn't play well with individual files as args
 # * Prefixing them with `./` as that's needed by `go test` as well
+# * Temporarily disabling vsphere tests until the test env is available again
 grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ |
   xargs dirname |
   sort -u |
+  grep -v vsphere |
   xargs -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./^

@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
@@ -37,19 +37,19 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConfiguration, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
+func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
 	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
 	}
 
 	chartPaths, err := findHelmCharts(chartsPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Helm charts: %v", err)
+		return nil, fmt.Errorf("failed to find Helm charts: %w", err)
 	}
 
 	helmClient, err := getHelmClient(helmBinary)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Helm client: %v", err)
+		return nil, fmt.Errorf("failed to create Helm client: %w", err)
 	}
 
 	images := []string{}
@@ -71,18 +71,18 @@ func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config 
 
 		rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil)
 		if err != nil {
-			return nil, fmt.Errorf("failed to render Helm chart %q: %v", chartName, err)
+			return nil, fmt.Errorf("failed to render Helm chart %q: %w", chartName, err)
 		}
 
 		manifests, err := yamlutil.ParseMultipleDocuments(bytes.NewReader(rendered))
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode YAML: %v", err)
+			return nil, fmt.Errorf("failed to decode YAML: %w", err)
 		}
 
 		for _, manifest := range manifests {
 			manifestImages, err := getImagesFromManifest(log, serializer, manifest.Raw)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse manifests: %v", err)
+				return nil, fmt.Errorf("failed to parse manifests: %w", err)
 			}
 
 			images = append(images, manifestImages...)
@@ -95,12 +95,12 @@ func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config 
 func getHelmClient(binary string) (helm.Client, error) {
 	helmClient, err := helm.NewCLI(binary, "", "", 10*time.Second, logrus.New())
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Helm client: %v", err)
+		return nil, fmt.Errorf("failed to create Helm client: %w", err)
 	}
 
 	helmVersion, err := helmClient.Version()
 	if err != nil {
-		return nil, fmt.Errorf("failed to check Helm version: %v", err)
+		return nil, fmt.Errorf("failed to check Helm version: %w", err)
 	}
 
 	if helmVersion.LessThan(semver.MustParse("3.0.0")) {

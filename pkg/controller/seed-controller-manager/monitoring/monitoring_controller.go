@@ -23,10 +23,10 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -46,23 +46,24 @@ import (
 
 const (
 	// The monitoring controller waits for the cluster to become healthy,
-	// before adding the monitoring components to the clusters
+	// before adding the monitoring components to the clusters.
 	healthCheckPeriod = 5 * time.Second
 
 	ControllerName = "kubermatic_monitoring_controller"
 )
 
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
 type userClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
-// Features describes the enabled features for the monitoring controller
+// Features describes the enabled features for the monitoring controller.
 type Features struct {
-	VPA bool
+	VPA          bool
+	Konnectivity bool
 }
 
-// Reconciler stores all components required for monitoring
+// Reconciler stores all components required for monitoring.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
@@ -74,7 +75,6 @@ type Reconciler struct {
 	seedGetter               provider.SeedGetter
 	configGetter             provider.KubermaticConfigurationGetter
 	overwriteRegistry        string
-	nodePortRange            string
 	nodeAccessNetwork        string
 	dockerPullConfigJSON     []byte
 	concurrentClusterUpdates int
@@ -84,7 +84,7 @@ type Reconciler struct {
 }
 
 // Add creates a new Monitoring controller that is responsible for
-// operating the monitoring components for all managed user clusters
+// operating the monitoring components for all managed user clusters.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
@@ -95,7 +95,6 @@ func Add(
 	seedGetter provider.SeedGetter,
 	configGetter provider.KubermaticConfigurationGetter,
 	overwriteRegistry string,
-	nodePortRange string,
 	nodeAccessNetwork string,
 	dockerPullConfigJSON []byte,
 	concurrentClusterUpdates int,
@@ -114,7 +113,6 @@ func Add(
 		recorder:                mgr.GetEventRecorderFor(ControllerName),
 
 		overwriteRegistry:        overwriteRegistry,
-		nodePortRange:            nodePortRange,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		dockerPullConfigJSON:     dockerPullConfigJSON,
 		concurrentClusterUpdates: concurrentClusterUpdates,
@@ -145,7 +143,7 @@ func Add(
 
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 
@@ -161,7 +159,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if kubeapierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
 	log = log.With("cluster", cluster.Name)

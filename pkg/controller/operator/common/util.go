@@ -18,13 +18,13 @@ package common
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -48,6 +49,10 @@ const (
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
+
+	// helmReleaseAnnotation is the indicator for the ownership modifier to
+	// not touch the object.
+	helmReleaseAnnotation = "meta.helm.sh/release-name"
 )
 
 var (
@@ -69,7 +74,7 @@ var (
 )
 
 func isKubermaticConfiguration(ref metav1.OwnerReference) bool {
-	return ref.APIVersion == operatorv1alpha1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
+	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
 }
 
 func isSeed(ref metav1.OwnerReference) bool {
@@ -77,14 +82,17 @@ func isSeed(ref metav1.OwnerReference) bool {
 }
 
 // StringifyFeatureGates takes a set of enabled features and returns a comma-separated
-// key=value list like "featureA=true,featureB=true,...".
-func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
-	features := make([]string, 0)
-	for _, feature := range cfg.Spec.FeatureGates.List() {
-		features = append(features, fmt.Sprintf("%s=true", feature))
+// key=value list like "featureA=true,featureB=true,...". The list of feature gates is
+// sorted, so the output of this function is stable.
+func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
+	// use a set to ensure that the result is sorted, otherwise reconciling code that
+	// uses this will end up in endless loops
+	features := sets.NewString()
+	for feature, enabled := range cfg.Spec.FeatureGates {
+		features.Insert(fmt.Sprintf("%s=%v", feature, enabled))
 	}
 
-	return strings.Join(features, ",")
+	return strings.Join(features.List(), ",")
 }
 
 // OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
@@ -102,13 +110,24 @@ func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) recon
 				return obj, nil
 			}
 
+			// Sometimes, the KKP operator needs to deal with objects that are owned by Helm
+			// and then re-appropriated by KKP. This will however interfere with Helm's own
+			// ownership concept. Also, reconciling resources owned by Helm will just lead to
+			// increased resourceVersions, which might then trigger Deployments to be reconciled
+			// due to the VolumeVersion annotations.
+			// To prevent this, if an object is already owned by Helm, we never touch it.
+			if _, exists := o.GetAnnotations()[helmReleaseAnnotation]; exists {
+				return obj, nil
+			}
+
 			// try to set an owner reference; on shared resources this would fail to set
 			// the second owner ref, we ignore this error and rely on the existing
 			// KubermaticConfiguration ownership
 			err = controllerutil.SetControllerReference(owner, o, scheme)
 			if err != nil {
-				if _, ok := err.(*controllerutil.AlreadyOwnedError); !ok {
-					return obj, fmt.Errorf("failed to set owner reference: %v", err)
+				var cerr *controllerutil.AlreadyOwnedError // do not use errors.Is() on this error type
+				if !errors.As(err, &cerr) {
+					return obj, fmt.Errorf("failed to set owner reference: %w", err)
 				}
 			}
 
@@ -142,7 +161,7 @@ func VolumeRevisionLabelsModifierFactory(ctx context.Context, client ctrlruntime
 
 			volumeLabels, err := resources.VolumeRevisionLabels(ctx, client, deployment.Namespace, deployment.Spec.Template.Spec.Volumes)
 			if err != nil {
-				return obj, fmt.Errorf("failed to determine revision labels for volumes: %v", err)
+				return obj, fmt.Errorf("failed to determine revision labels for volumes: %w", err)
 			}
 
 			// switch to a new map in case the deployment used the same map for selector.matchLabels and labels
@@ -179,20 +198,20 @@ func CleanupClusterResource(client ctrlruntimeclient.Client, obj ctrlruntimeclie
 
 	if err := client.Get(ctx, key, obj); err != nil {
 		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to probe for %s: %v", key, err)
+			return fmt.Errorf("failed to probe for %s: %w", key, err)
 		}
 
 		return nil
 	}
 
 	if err := client.Delete(ctx, obj); err != nil {
-		return fmt.Errorf("failed to delete %s: %v", key, err)
+		return fmt.Errorf("failed to delete %s: %w", key, err)
 	}
 
 	return nil
 }
 
-func ProxyEnvironmentVars(cfg *operatorv1alpha1.KubermaticConfiguration) []corev1.EnvVar {
+func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.EnvVar {
 	result := []corev1.EnvVar{}
 	settings := cfg.Spec.Proxy
 

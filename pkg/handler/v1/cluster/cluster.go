@@ -29,13 +29,13 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -53,25 +53,22 @@ func CreateEndpoint(
 	settingsProvider provider.SettingsProvider,
 	caBundle *x509.CertPool,
 	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
-		globalSettings, err := settingsProvider.GetGlobalSettings()
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
 		config, err := configGetter(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, version.NewFromConfiguration(config))
+		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter)
+		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
 	}
 }
 
@@ -83,15 +80,15 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 }
 
 func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
+	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		return handlercommon.PatchEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Patch, seedsGetter,
-			projectProvider, privilegedProjectProvider, caBundle, configGetter)
+			projectProvider, privilegedProjectProvider, caBundle, configGetter, features)
 	}
 }
 
-// ListEndpoint list clusters within the given datacenter
+// ListEndpoint list clusters within the given datacenter.
 func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListReq)
@@ -104,7 +101,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-// ListAllEndpoint list clusters for the given project in all datacenters
+// ListAllEndpoint list clusters for the given project in all datacenters.
 func ListAllEndpoint(
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -243,8 +240,8 @@ type CreateReq struct {
 	Body apiv1.CreateClusterSpec
 }
 
-// Validate validates CreateEndpoint request
-func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
+// Validate validates CreateEndpoint request.
+func (r CreateReq) Validate(updateManager common.UpdateManager) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")
 	}
@@ -256,21 +253,17 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 		return fmt.Errorf("invalid cluster type %s", r.Body.Cluster.Type)
 	}
 
-	if clusterType != kubermaticv1.ClusterTypeAll && clusterType != apiv1.ToInternalClusterType(r.Body.Cluster.Type) {
-		return fmt.Errorf("disabled cluster type %s", r.Body.Cluster.Type)
-	}
-
 	if r.Body.Cluster.Spec.Version.Semver() == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
 
-	providerName, err := resources.GetCloudProviderName(r.Body.Cluster.Spec.Cloud)
+	providerName, err := provider.ClusterCloudProviderName(r.Body.Cluster.Spec.Cloud)
 	if err != nil {
-		return fmt.Errorf("failed to get the cloud provider name: %v", err)
+		return fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}
 	versions, err := updateManager.GetVersionsV2(r.Body.Cluster.Type, kubermaticv1.ProviderType(providerName))
 	if err != nil {
-		return fmt.Errorf("failed to get available cluster versions: %v", err)
+		return fmt.Errorf("failed to get available cluster versions: %w", err)
 	}
 	for _, availableVersion := range versions {
 		if r.Body.Cluster.Spec.Version.Semver().Equal(availableVersion.Version) {
@@ -552,8 +545,8 @@ func GetClusterProviderFromRequest(
 	request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
-
+	userInfoGetter provider.UserInfoGetter,
+) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 	req, ok := request.(common.GetClusterReq)
 	if !ok {
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")

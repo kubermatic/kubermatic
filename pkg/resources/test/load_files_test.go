@@ -32,11 +32,11 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
@@ -188,21 +188,23 @@ func TestLoadFiles(t *testing.T) {
 		},
 		"aws": {
 			AWS: &kubermaticv1.AWSCloudSpec{
-				AccessKeyID:         "aws-access-key-id",
-				SecretAccessKey:     "aws-secret-access-key",
-				InstanceProfileName: "aws-instance-profile-name",
-				RoleName:            "aws-role-name",
-				RouteTableID:        "aws-route-table-id",
-				SecurityGroupID:     "aws-security-group",
-				VPCID:               "aws-vpn-id",
-				ControlPlaneRoleARN: "aws-role-arn",
+				AccessKeyID:          "aws-access-key-id",
+				SecretAccessKey:      "aws-secret-access-key",
+				AssumeRoleARN:        "aws-assume-role-arn",
+				AssumeRoleExternalID: "aws-assume-role-external-id",
+				InstanceProfileName:  "aws-instance-profile-name",
+				RoleName:             "aws-role-name",
+				RouteTableID:         "aws-route-table-id",
+				SecurityGroupID:      "aws-security-group",
+				VPCID:                "aws-vpn-id",
+				ControlPlaneRoleARN:  "aws-role-arn",
 			},
 		},
 		"openstack": {
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				SubnetID:       "openstack-subnet-id",
 				Username:       "openstack-username",
-				Tenant:         "openstack-tenant",
+				Project:        "openstack-project",
 				Domain:         "openstack-domain",
 				FloatingIPPool: "openstack-floating-ip-pool",
 				Network:        "openstack-network",
@@ -260,10 +262,10 @@ func TestLoadFiles(t *testing.T) {
 	kubermaticVersions := kubermatic.NewFakeVersions()
 	caBundle := certificates.NewFakeCABundle()
 
-	config := &operatorv1alpha1.KubermaticConfiguration{
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			UserCluster: operatorv1alpha1.KubermaticUserClusterConfiguration{
-				Monitoring: operatorv1alpha1.KubermaticUserClusterMonitoringConfiguration{
+	config := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+				Monitoring: kubermaticv1.KubermaticUserClusterMonitoringConfiguration{
 					ScrapeAnnotationPrefix: defaults.DefaultUserClusterScrapeAnnotationPrefix,
 					CustomScrapingConfigs: `
 - job_name: custom-test-config
@@ -780,7 +782,7 @@ func TestLoadFiles(t *testing.T) {
 						checkTestResult(t, fixturePath, res)
 					}
 
-					for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data) {
+					for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data, test.GenTestSeed()) {
 						_, create := creatorGetter()
 						res, err := create(&kubermaticv1.EtcdBackupConfig{})
 						if err != nil {

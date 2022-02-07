@@ -27,9 +27,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	kubernetesVersion = "v1.22.4"
+	kubernetesVersion = "v1.22.5"
 	datacenterName    = "testdc"
 	projectID         = "testproject"
 )
@@ -105,12 +105,12 @@ func TestReconcile(t *testing.T) {
 				// cluster should now have its special condition
 				name := kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess
 
-				if _, cond := helper.GetClusterCondition(cluster, name); cond == nil {
+				if _, cond := kubermaticv1helper.GetClusterCondition(cluster, name); cond == nil {
 					return fmt.Errorf("cluster should have %v condition, but does not", name)
 				}
 
 				if reconcileErr != nil {
-					return fmt.Errorf("reconciling should not have produced an error, but returned: %v", reconcileErr)
+					return fmt.Errorf("reconciling should not have produced an error, but returned: %w", reconcileErr)
 				}
 
 				return nil
@@ -152,7 +152,7 @@ func TestReconcile(t *testing.T) {
 			}(),
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
-					return fmt.Errorf("reconciling should not have caused an error, but did: %v", reconcileErr)
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
 				if ann, ok := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]; ok {
@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 
 				machineDeployments := clusterv1alpha1.MachineDeploymentList{}
 				if err := userClusterClient.List(context.Background(), &machineDeployments); err != nil {
-					return fmt.Errorf("failed to list MachineDeployments in user cluster: %v", err)
+					return fmt.Errorf("failed to list MachineDeployments in user cluster: %w", err)
 				}
 
 				if len(machineDeployments.Items) == 0 {

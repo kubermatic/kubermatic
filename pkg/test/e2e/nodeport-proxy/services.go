@@ -146,7 +146,7 @@ func (n *ServiceJig) newRCFromService(svc *corev1.Service, https bool, replicas 
 							Args:  args,
 							ReadinessProbe: &corev1.Probe{
 								PeriodSeconds: 3,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Port:   port,
 										Path:   "/",

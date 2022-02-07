@@ -25,7 +25,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -49,7 +49,7 @@ func DecodeGetSeedSettingsReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-// GetSeedSettingsEndpoint returns SeedSettings for a Seed cluster
+// GetSeedSettingsEndpoint returns SeedSettings for a Seed cluster.
 func GetSeedSettingsEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(getSeedSettingsReq)
@@ -79,6 +79,10 @@ func convertSeedToSeedSettings(seed *kubermaticv1.Seed) *apiv2.SeedSettings {
 		seedSettings.Metering.Enabled = seed.Spec.Metering.Enabled
 		seedSettings.Metering.StorageClassName = seed.Spec.Metering.StorageClassName
 		seedSettings.Metering.StorageSize = seed.Spec.Metering.StorageSize
+	}
+
+	if len(seed.Spec.SeedDNSOverwrite) > 0 {
+		seedSettings.SeedDNSOverwrite = seed.Spec.SeedDNSOverwrite
 	}
 
 	return seedSettings

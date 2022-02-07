@@ -26,11 +26,13 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -39,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -51,10 +54,11 @@ const (
 	ControllerName = "external_cluster_controller"
 )
 
-// Reconciler is a controller which is responsible for managing clusters
+// Reconciler is a controller which is responsible for managing clusters.
 type Reconciler struct {
 	ctrlruntimeclient.Client
-	log *zap.SugaredLogger
+	log      *zap.SugaredLogger
+	recorder record.EventRecorder
 }
 
 // Add creates a cluster controller.
@@ -63,8 +67,9 @@ func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger) error {
 	reconciler := &Reconciler{
-		log:    log.Named(ControllerName),
-		Client: mgr.GetClient(),
+		log:      log.Named(ControllerName),
+		Client:   mgr.GetClient(),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -76,7 +81,6 @@ func Add(
 		return err
 	}
 	return nil
-
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -113,37 +117,78 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
 	cloud := cluster.Spec.CloudSpec
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
 	if cloud == nil {
 		return reconcile.Result{}, nil
 	}
 	if cloud.GKE != nil {
 		r.log.Debugf("reconcile GKE cluster")
-		err := r.createOrUpdateGKEKubeconfig(ctx, cluster)
+		status, err := gke.GetGKEClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.log.Debugf("failed to get GKE cluster status %v", err)
+			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		// the kubeconfig token is valid 1h, it will update token every 30min
-		return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
+		if status.State == apiv2.PROVISIONING {
+			// repeat after some time to get/store kubeconfig
+			return reconcile.Result{RequeueAfter: time.Second * 10}, err
+		}
+		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+			err = r.createOrUpdateGKEKubeconfig(ctx, cluster)
+			if err != nil {
+				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+				return reconcile.Result{}, err
+			}
+			// the kubeconfig token is valid 1h, it will update token every 30min
+			return reconcile.Result{RequeueAfter: time.Minute * 30}, nil
+		}
 	}
 	if cloud.EKS != nil {
 		r.log.Debugf("reconcile EKS cluster %v", cluster.Name)
-		err := r.createOrUpdateEKSKubeconfig(ctx, cluster)
+		status, err := eks.GetEKSClusterStatus(secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.log.Debugf("failed to get EKS cluster status %v", err)
+			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		// the kubeconfig token is valid 14min, it will update token every 10min
-		return reconcile.Result{RequeueAfter: time.Minute * 10}, nil
+		if status.State == apiv2.PROVISIONING {
+			// repeat after some time to get/store kubeconfig
+			return reconcile.Result{RequeueAfter: time.Second * 10}, err
+		}
+		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+			err = r.createOrUpdateEKSKubeconfig(ctx, cluster)
+			if err != nil {
+				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+				return reconcile.Result{}, err
+			}
+			// the kubeconfig token is valid 14min, it will update token every 10min
+			return reconcile.Result{RequeueAfter: time.Minute * 10}, nil
+		}
 	}
 	if cloud.AKS != nil {
 		r.log.Debugf("reconcile AKS cluster %v", cluster.Name)
-		err := r.createOrUpdateAKSKubeconfig(ctx, cluster)
+		status, err := aks.GetAKSClusterStatus(ctx, secretKeySelector, cloud)
 		if err != nil {
-			r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+			r.log.Debugf("failed to get AKS cluster status %v", err)
+			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, nil
+		if status.State == apiv2.PROVISIONING {
+			// repeat after some time to get/store kubeconfig
+			return reconcile.Result{RequeueAfter: time.Second * 10}, err
+		}
+		if status.State == apiv2.RUNNING || status.State == apiv2.RECONCILING {
+			err = r.createOrUpdateAKSKubeconfig(ctx, cluster)
+			if err != nil {
+				r.log.Errorf("failed to create or update kubeconfig secret %v", err)
+				r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+				return reconcile.Result{}, err
+			}
+		}
+		// reconcile to update kubeconfig for cases like starting a stopped cluster
+		return reconcile.Result{RequeueAfter: time.Minute * 2}, nil
 	}
 	return reconcile.Result{}, nil
 }
@@ -183,11 +228,11 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 
 	// Something failed while loading the secret
 	if err != nil {
-		return fmt.Errorf("failed to get Secret %q: %v", name.String(), err)
+		return fmt.Errorf("failed to get Secret %q: %w", name.String(), err)
 	}
 
 	if err := r.Delete(ctx, secret); err != nil {
-		return fmt.Errorf("failed to delete Secret %q: %v", name.String(), err)
+		return fmt.Errorf("failed to delete Secret %q: %w", name.String(), err)
 	}
 
 	// We successfully deleted the secret
@@ -205,7 +250,7 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 		Data: secretData,
 	}
 	if err := client.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig secret: %v", err)
+		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
 	}
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
@@ -217,11 +262,11 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 
 func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetGCPGKECredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetGKECredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := gcp.GetGKECLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
+	config, err := gke.GetCLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
 	if err != nil {
 		return err
 	}
@@ -234,11 +279,11 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 
 func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetAWSEKSCredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetEKSCredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := aws.GetEKSClusterConfig(ctx, cred.AccessKeyID, cred.SecretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
+	config, err := eks.GetClusterConfig(ctx, cred.AccessKeyID, cred.SecretAccessKey, cloud.EKS.Name, cloud.EKS.Region)
 	if err != nil {
 		return err
 	}
@@ -251,11 +296,11 @@ func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *k
 
 func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetAzureAKSCredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetAKSCredentials(ctx, r.Client, cluster)
 	if err != nil {
 		return err
 	}
-	config, err := azure.GetAKSCLusterConfig(ctx, cred.TenantID, cred.SubscriptionID, cred.ClientID, cred.ClientSecret, cloud.AKS.Name, cloud.AKS.ResourceGroup)
+	config, err := aks.GetCLusterConfig(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup)
 	if err != nil {
 		return err
 	}
@@ -267,7 +312,6 @@ func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *k
 }
 
 func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Config, cluster *kubermaticv1.ExternalCluster) error {
-
 	kubeconfigSecretName := cluster.GetKubeconfigSecretName()
 	kubeconfig, err := clientcmd.Write(*config)
 	if err != nil {
@@ -283,7 +327,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 
 	existingSecret := &corev1.Secret{}
 	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to probe for secret %v: %v", namespacedName, err)
+		return fmt.Errorf("failed to probe for secret %v: %w", namespacedName, err)
 	}
 
 	secretData := map[string][]byte{

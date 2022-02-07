@@ -22,10 +22,9 @@ import (
 	"context"
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -83,7 +82,10 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed to register vertical pod autoscaler resources to scheme: %v", err)
 	}
 	crdInstallOpts := envtest.CRDInstallOptions{
-		Paths:              []string{"../../../../charts/kubermatic-operator/crd"},
+		Paths: []string{
+			"../../../../charts/kubermatic-operator/crd/k8s.io",
+			"../../../../charts/kubermatic-operator/crd/k8c.io",
+		},
 		ErrorIfPathMissing: true,
 	}
 	if _, err := envtest.InstallCRDs(cfg, crdInstallOpts); err != nil {
@@ -124,27 +126,23 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				DatacenterName: "my-dc",
 				Fake:           &kubermaticv1.FakeCloudSpec{},
 			},
-			Version: *semver.NewSemverOrDie("1.22.4"),
-		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: "cluster-test-cluster",
-			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-				CloudProviderInfrastructure: kubermaticv1.HealthStatusUp,
-			},
+			Version: *semver.NewSemverOrDie("1.22.5"),
 		},
 	}
+
+	clusterNamespace := "cluster-test-cluster"
 
 	// This is used as basis to sync the clusters address which we in turn do
 	// before creating any deployments.
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: testCluster.Status.NamespaceName,
+			Name: clusterNamespace,
 		},
 	}
 
 	lbService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testCluster.Status.NamespaceName,
+			Namespace: clusterNamespace,
 			Name:      resources.FrontLoadBalancerServiceName,
 		},
 		Spec: corev1.ServiceSpec{
@@ -155,7 +153,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 
 	caBundleConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testCluster.Status.NamespaceName,
+			Namespace: clusterNamespace,
 			Name:      resources.CABundleConfigMapName,
 		},
 		Data: map[string]string{
@@ -166,14 +164,44 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err := mgr.GetClient().Create(ctx, namespace); err != nil {
 		t.Fatalf("failed to create namespace: %v", err)
 	}
-	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
-		t.Fatalf("failed to create testcluster: %v", err)
-	}
 	if err := mgr.GetClient().Create(ctx, lbService); err != nil {
 		t.Fatalf("failed to create the loadbalancer service: %v", err)
 	}
 	if err := mgr.GetClient().Create(ctx, caBundleConfigMap); err != nil {
 		t.Fatalf("failed to create the CA bundle: %v", err)
+	}
+
+	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
+		t.Fatalf("failed to create testcluster: %v", err)
+	}
+
+	testCluster.Status = kubermaticv1.ClusterStatus{
+		UserEmail:              "test@example.com",
+		CloudMigrationRevision: 2,
+		NamespaceName:          clusterNamespace,
+		KubermaticVersion:      "1.2.3",
+		ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+			Apiserver:                    kubermaticv1.HealthStatusUp,
+			Scheduler:                    kubermaticv1.HealthStatusUp,
+			Controller:                   kubermaticv1.HealthStatusUp,
+			MachineController:            kubermaticv1.HealthStatusUp,
+			Etcd:                         kubermaticv1.HealthStatusUp,
+			OpenVPN:                      kubermaticv1.HealthStatusUp,
+			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
+			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+		},
+	}
+
+	if err := mgr.GetClient().Status().Update(ctx, testCluster); err != nil {
+		t.Fatalf("failed to update testcluster: %v", err)
+	}
+
+	// explicitly set TypeMeta because we need them for setting owner references
+	// and in a real-life scenario, the type meta is always set;
+	// set this *afte* the Create() call, which would remove the TypeMeta for some reason.
+	namespace.TypeMeta = metav1.TypeMeta{
+		Kind:       "Namespace",
+		APIVersion: "v1",
 	}
 
 	// Status must be set *after* the Service has been created, because
@@ -209,18 +237,18 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				},
 			}, nil
 		},
-		configGetter: func(_ context.Context) (*operatorv1alpha1.KubermaticConfiguration, error) {
-			return &operatorv1alpha1.KubermaticConfiguration{}, nil
+		configGetter: func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
+			return &kubermaticv1.KubermaticConfiguration{}, nil
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
 	}
 
-	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
+	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {
 		t.Fatalf("Initial resource deployment failed, this indicates that some resources are invalid. Error: %v", err)
 	}
 
-	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
+	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {
 		t.Fatalf("The second resource reconciliation failed, indicating we don't properly default some fields. Check the `Object differs from generated one` error for the object for which we timed out. Original error: %v", err)
 	}
 

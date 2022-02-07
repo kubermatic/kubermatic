@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if ne .Cluster.Network.ProxyMode "ebpf" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -66,7 +65,7 @@ data:
     clusters:
     - cluster:
         certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        server: {{ .Cluster.ApiserverExternalURL }}
+        server: {{ .Cluster.Address.URL }}
       name: default
     contexts:
     - context:
@@ -79,4 +78,3 @@ data:
     - name: default
       user:
         tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-{{ end }}

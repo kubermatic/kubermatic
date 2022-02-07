@@ -34,7 +34,7 @@ LDFLAGS += -extldflags '-static' \
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
-GOBUILDIMAGE ?= golang:1.17.1
+GOBUILDIMAGE ?= golang:1.17.5
 DOCKER_BIN := $(shell which docker)
 
 .PHONY: all
@@ -162,6 +162,7 @@ run-master-controller-manager:
 .PHONY: verify
 verify:
 	./hack/verify-codegen.sh
+	./hack/verify-import-order.sh
 	./hack/verify-swagger.sh
 	./hack/verify-api-client.sh
 

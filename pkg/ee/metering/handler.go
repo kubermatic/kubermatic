@@ -32,8 +32,7 @@ import (
 	"fmt"
 	"net/http"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -69,7 +68,7 @@ func (m configurationReq) Validate() error {
 		}
 
 		if _, err := resource.ParseQuantity(m.StorageSize); err != nil {
-			return fmt.Errorf("inapproperiate storageClass size: %v", err)
+			return fmt.Errorf("inapproperiate storageClass size: %w", err)
 		}
 	}
 
@@ -87,10 +86,13 @@ func DecodeMeteringConfigurationsReq(r *http.Request) (interface{}, error) {
 
 // CreateOrUpdateConfigurations creates or updates the metering tool configurations.
 func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
-
 	req, ok := request.(configurationReq)
 	if !ok {
 		return k8cerrors.NewBadRequest("invalid request")
+	}
+	err := req.Validate()
+	if err != nil {
+		return k8cerrors.NewBadRequest(err.Error())
 	}
 
 	seedList := &kubermaticv1.SeedList{}
@@ -100,23 +102,22 @@ func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, mast
 
 	for _, seed := range seedList.Items {
 		if err := updateSeedMeteringConfiguration(ctx, req, &seed, masterClient); err != nil {
-			return fmt.Errorf("failed to create or update metering tool credentials: %v", err)
+			return fmt.Errorf("failed to create or update metering tool credentials: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *v1.Seed, masterClient ctrlruntimeclient.Client) error {
-
-	seed.Spec.Metering = &v1.MeteringConfigurations{
+func updateSeedMeteringConfiguration(ctx context.Context, meteringCfg configurationReq, seed *kubermaticv1.Seed, masterClient ctrlruntimeclient.Client) error {
+	seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
 		Enabled:          meteringCfg.Enabled,
 		StorageClassName: meteringCfg.StorageClassName,
 		StorageSize:      meteringCfg.StorageSize,
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
-		return fmt.Errorf("failed to update seed %q: %v", seed.Name, err)
+		return fmt.Errorf("failed to update seed %q: %w", seed.Name, err)
 	}
 
 	return nil
@@ -164,7 +165,7 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 
 	seeds, err := getSeeds(seedsGetter, seedClientGetter)
 	if err != nil {
-		return fmt.Errorf("failed to gety seed clients: %v", err)
+		return fmt.Errorf("failed to gety seed clients: %w", err)
 	}
 
 	data := map[string][]byte{
@@ -176,7 +177,7 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 
 	for _, client := range seeds {
 		if err := createOrUpdateMeteringToolSecret(ctx, client, data); err != nil {
-			return fmt.Errorf("failed to create or update metering tool credentials: %v", err)
+			return fmt.Errorf("failed to create or update metering tool credentials: %w", err)
 		}
 	}
 
@@ -184,10 +185,9 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 }
 
 func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, secretData map[string][]byte) error {
-
 	existingSecret := &corev1.Secret{}
 	if err := seedClient.Get(ctx, secretNamespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to probe for secret %q: %v", SecretName, err)
+		return fmt.Errorf("failed to probe for secret %q: %w", SecretName, err)
 	}
 
 	if existingSecret.Name == "" {
@@ -201,7 +201,7 @@ func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntim
 		}
 
 		if err := seedClient.Create(ctx, secret); err != nil {
-			return fmt.Errorf("failed to create credential secret: %v", err)
+			return fmt.Errorf("failed to create credential secret: %w", err)
 		}
 	} else {
 		if existingSecret.Data == nil {
@@ -220,7 +220,7 @@ func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntim
 		if requiresUpdate {
 			existingSecret.Data = secretData
 			if err := seedClient.Update(ctx, existingSecret); err != nil {
-				return fmt.Errorf("failed to update credential secret: %v", err)
+				return fmt.Errorf("failed to update credential secret: %w", err)
 			}
 		}
 	}
@@ -228,18 +228,18 @@ func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntim
 	return nil
 }
 
-func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (map[*v1.Seed]ctrlruntimeclient.Client, error) {
+func getSeeds(seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (map[*kubermaticv1.Seed]ctrlruntimeclient.Client, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get seeds: %v", err)
+		return nil, fmt.Errorf("failed to get seeds: %w", err)
 	}
 
-	var seedClients = make(map[*v1.Seed]ctrlruntimeclient.Client, len(seeds))
+	var seedClients = make(map[*kubermaticv1.Seed]ctrlruntimeclient.Client, len(seeds))
 
 	for _, seed := range seeds {
 		seedClient, err := seedClientGetter(seed)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get seed client for seed %q: %v", seed.Name, err)
+			return nil, fmt.Errorf("failed to get seed client for seed %q: %w", seed.Name, err)
 		}
 
 		seedClients[seed] = seedClient

@@ -264,7 +264,7 @@
       ],
       "targets": [
         {
-          "expr": "count by (namespace, pod, version) (go_info)",
+          "expr": "count by (namespace, pod, version) (go_info{namespace!=\"\"})",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,

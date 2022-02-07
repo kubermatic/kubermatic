@@ -23,7 +23,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -78,7 +78,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	}
 
 	lowPort, highPort := getNodePortRange(cluster)
-	permissions := getSecurityGroupPermissions(*group.GroupId, lowPort, highPort)
+	permissions := getSecurityGroupPermissions(*group.GroupId, lowPort, highPort, "0.0.0.0/0")
 
 	stringPermissions := sets.NewString()
 	for _, perm := range permissions {

@@ -62,11 +62,20 @@ type ListAWSVPCSParams struct {
 	// AccessKeyID.
 	AccessKeyID *string
 
+	// AssumeRoleARN.
+	AssumeRoleARN *string
+
+	// AssumeRoleExternalID.
+	AssumeRoleExternalID *string
+
 	// Credential.
 	Credential *string
 
 	// SecretAccessKey.
 	SecretAccessKey *string
+
+	// VPC.
+	VPC *string
 
 	// Dc.
 	DC string
@@ -135,6 +144,28 @@ func (o *ListAWSVPCSParams) SetAccessKeyID(accessKeyID *string) {
 	o.AccessKeyID = accessKeyID
 }
 
+// WithAssumeRoleARN adds the assumeRoleARN to the list a w s v p c s params
+func (o *ListAWSVPCSParams) WithAssumeRoleARN(assumeRoleARN *string) *ListAWSVPCSParams {
+	o.SetAssumeRoleARN(assumeRoleARN)
+	return o
+}
+
+// SetAssumeRoleARN adds the assumeRoleARN to the list a w s v p c s params
+func (o *ListAWSVPCSParams) SetAssumeRoleARN(assumeRoleARN *string) {
+	o.AssumeRoleARN = assumeRoleARN
+}
+
+// WithAssumeRoleExternalID adds the assumeRoleExternalID to the list a w s v p c s params
+func (o *ListAWSVPCSParams) WithAssumeRoleExternalID(assumeRoleExternalID *string) *ListAWSVPCSParams {
+	o.SetAssumeRoleExternalID(assumeRoleExternalID)
+	return o
+}
+
+// SetAssumeRoleExternalID adds the assumeRoleExternalId to the list a w s v p c s params
+func (o *ListAWSVPCSParams) SetAssumeRoleExternalID(assumeRoleExternalID *string) {
+	o.AssumeRoleExternalID = assumeRoleExternalID
+}
+
 // WithCredential adds the credential to the list a w s v p c s params
 func (o *ListAWSVPCSParams) WithCredential(credential *string) *ListAWSVPCSParams {
 	o.SetCredential(credential)
@@ -155,6 +186,17 @@ func (o *ListAWSVPCSParams) WithSecretAccessKey(secretAccessKey *string) *ListAW
 // SetSecretAccessKey adds the secretAccessKey to the list a w s v p c s params
 func (o *ListAWSVPCSParams) SetSecretAccessKey(secretAccessKey *string) {
 	o.SecretAccessKey = secretAccessKey
+}
+
+// WithVPC adds the vPC to the list a w s v p c s params
+func (o *ListAWSVPCSParams) WithVPC(vPC *string) *ListAWSVPCSParams {
+	o.SetVPC(vPC)
+	return o
+}
+
+// SetVPC adds the vPC to the list a w s v p c s params
+func (o *ListAWSVPCSParams) SetVPC(vPC *string) {
+	o.VPC = vPC
 }
 
 // WithDC adds the dc to the list a w s v p c s params
@@ -184,6 +226,22 @@ func (o *ListAWSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		}
 	}
 
+	if o.AssumeRoleARN != nil {
+
+		// header param AssumeRoleARN
+		if err := r.SetHeaderParam("AssumeRoleARN", *o.AssumeRoleARN); err != nil {
+			return err
+		}
+	}
+
+	if o.AssumeRoleExternalID != nil {
+
+		// header param AssumeRoleExternalID
+		if err := r.SetHeaderParam("AssumeRoleExternalID", *o.AssumeRoleExternalID); err != nil {
+			return err
+		}
+	}
+
 	if o.Credential != nil {
 
 		// header param Credential
@@ -196,6 +254,14 @@ func (o *ListAWSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 		// header param SecretAccessKey
 		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
+
+	if o.VPC != nil {
+
+		// header param VPC
+		if err := r.SetHeaderParam("VPC", *o.VPC); err != nil {
 			return err
 		}
 	}

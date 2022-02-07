@@ -32,7 +32,7 @@ type tlsServingCertCreatorData interface {
 	GetOpenVPNCA() (*resources.ECDSAKeyPair, error)
 }
 
-// TLSServingCertificateCreator returns a function to create/update a secret with the openvpn server tls certificate
+// TLSServingCertificateCreator returns a function to create/update a secret with the openvpn server tls certificate.
 func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.OpenVPNServerCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
@@ -42,13 +42,13 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 
 			ca, err := data.GetOpenVPNCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn ca: %v", err)
+				return nil, fmt.Errorf("failed to get openvpn ca: %w", err)
 			}
 			altNames := certutil.AltNames{}
 			if b, exists := se.Data[resources.OpenVPNServerCertSecretKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.OpenVPNServerCertSecretKey, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.OpenVPNServerCertSecretKey, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], "openvpn-server", altNames, ca.Cert) {
 					return se, nil
@@ -61,7 +61,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			}
 			cert, key, err := certificates.GetSignedECDSACertAndKey(certificates.Duration365d, config, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
 			se.Data[resources.OpenVPNServerCertSecretKey] = cert
@@ -72,7 +72,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 	}
 }
 
-// CACreator returns a function to create the ECDSA-based CA to be used for OpenVPN
+// CACreator returns a function to create the ECDSA-based CA to be used for OpenVPN.
 func CACreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.OpenVPNCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
@@ -83,7 +83,7 @@ func CACreator() reconciling.NamedSecretCreatorGetter {
 			if data, exists := se.Data[resources.OpenVPNCACertKey]; exists {
 				certs, err := certutil.ParseCertsPEM(data)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %v",
+					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %w",
 						resources.OpenVPNCACertKey, resources.OpenVPNCASecretName, err)
 				}
 				if !resources.CertWillExpireSoon(certs[0]) {
@@ -93,7 +93,7 @@ func CACreator() reconciling.NamedSecretCreatorGetter {
 
 			cert, key, err := certificates.GetECDSACACertAndKey()
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate OpenVPN CA: %v", err)
+				return nil, fmt.Errorf("failed to generate OpenVPN CA: %w", err)
 			}
 			se.Data[resources.OpenVPNCACertKey] = cert
 			se.Data[resources.OpenVPNCAKeyKey] = key

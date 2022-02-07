@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -57,11 +57,11 @@ func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Clust
 
 	// Something failed while loading the secret
 	if err != nil {
-		return fmt.Errorf("failed to get Secret %q: %v", name.String(), err)
+		return fmt.Errorf("failed to get Secret %q: %w", name.String(), err)
 	}
 
 	if err := d.seedClient.Delete(ctx, secret); err != nil {
-		return fmt.Errorf("failed to delete Secret %q: %v", name.String(), err)
+		return fmt.Errorf("failed to delete Secret %q: %w", name.String(), err)
 	}
 
 	// We successfully deleted the secret

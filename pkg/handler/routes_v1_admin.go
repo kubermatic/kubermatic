@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 )
 
-// RegisterV1Admin declares all router paths for the admin users
+// RegisterV1Admin declares all router paths for the admin users.
 func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	//
 	// Defines a set of HTTP endpoints for the admin users
@@ -86,6 +86,10 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.deleteSeed())
 
+	mux.Methods(http.MethodDelete).
+		Path("/admin/seeds/{seed_name}/backupdestinations/{backup_destination}").
+		Handler(r.deleteBackupDestination())
+
 	// Defines a set of HTTP endpoints for metering tool
 	mux.Methods(http.MethodPut).
 		Path("/admin/metering/credentials").
@@ -102,7 +106,6 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/admin/metering/reports/{report_name}").
 		Handler(r.getMeteringReport())
-
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -419,6 +422,30 @@ func (r Routing) deleteSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
 		admin.DecodeSeedReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/admin/seeds/{seed_name}/backupdestinations/{backup_destination} admin deleteBackupDestination
+//
+//     Deletes a backup destination from the Seed.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteBackupDestination() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.DeleteBackupDestinationEndpoint(r.userInfoGetter, r.seedsGetter, r.masterClient)),
+		admin.DecodeBackupDestinationReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

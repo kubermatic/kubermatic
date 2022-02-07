@@ -21,10 +21,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// RolebindingAuthReaderCreator returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API
-func RolebindingAuthReaderCreator() reconciling.NamedRoleBindingCreatorGetter {
+// RolebindingAuthReaderCreator returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API.
+func RolebindingAuthReaderCreator(isKonnectivityEnabled bool) reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.MetricsServerAuthReaderRoleName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(Name, nil)
@@ -34,12 +35,24 @@ func RolebindingAuthReaderCreator() reconciling.NamedRoleBindingCreatorGetter {
 				Kind:     "Role",
 				APIGroup: rbacv1.GroupName,
 			}
-			rb.Subjects = []rbacv1.Subject{
-				{
-					Kind:     "User",
-					Name:     resources.MetricsServerCertUsername,
-					APIGroup: rbacv1.GroupName,
-				},
+			if isKonnectivityEnabled {
+				// metrics server running in the user cluster - ServiceAccount
+				rb.Subjects = []rbacv1.Subject{
+					{
+						Kind:      rbacv1.ServiceAccountKind,
+						Name:      resources.MetricsServerServiceAccountName,
+						Namespace: metav1.NamespaceSystem,
+					},
+				}
+			} else {
+				// metrics server running in the seed cluster - User
+				rb.Subjects = []rbacv1.Subject{
+					{
+						Kind:     rbacv1.UserKind,
+						Name:     resources.MetricsServerCertUsername,
+						APIGroup: rbacv1.GroupName,
+					},
+				}
 			}
 			return rb, nil
 		}

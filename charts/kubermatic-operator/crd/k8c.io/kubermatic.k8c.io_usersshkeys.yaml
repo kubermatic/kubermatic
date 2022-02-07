@@ -23,10 +23,13 @@ spec:
     - jsonPath: .spec.owner
       name: Owner
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
-        description: UserSSHKey specifies a users UserSSHKey
+        description: UserSSHKey specifies a users UserSSHKey.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

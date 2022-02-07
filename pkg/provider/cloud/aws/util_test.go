@@ -22,10 +22,10 @@ import (
 	"os"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
@@ -39,7 +39,7 @@ func getTestClientSet(t *testing.T) *ClientSet {
 		t.Skip("Skipping because $AWS_TEST_ENDPOINT is not set.")
 	}
 
-	cs, err := getClientSet(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), os.Getenv(awsRegionEnvName), endpoint)
+	cs, err := getClientSet(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), "", "", os.Getenv(awsRegionEnvName), endpoint)
 	if err != nil {
 		t.Fatalf("Failed to create AWS ClientSet: %v", err)
 	}
@@ -53,7 +53,7 @@ func getTestClientSet(t *testing.T) *ClientSet {
 // test env in between every test).
 func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: rand.String(10),
 		},
 		Spec: kubermaticv1.ClusterSpec{

@@ -22,9 +22,10 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -70,6 +71,9 @@ func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Anexia != nil {
 		return createOrUpdateAnexiaSecret(ctx, seedClient, cluster)
 	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return createOrUpdateNutanixSecret(ctx, seedClient, cluster)
+	}
 	return nil
 }
 
@@ -79,7 +83,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
 	if err := seedClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 	}
 
 	if existingSecret.Name == "" {
@@ -101,7 +105,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 		}
 
 		if err := seedClient.Create(ctx, secret); err != nil {
-			return nil, fmt.Errorf("failed to create credential secret: %v", err)
+			return nil, fmt.Errorf("failed to create credential secret: %w", err)
 		}
 	} else {
 		if existingSecret.Data == nil {
@@ -120,7 +124,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 		if requiresUpdate {
 			existingSecret.Data = secretData
 			if err := seedClient.Update(ctx, existingSecret); err != nil {
-				return nil, fmt.Errorf("failed to update credential secret: %v", err)
+				return nil, fmt.Errorf("failed to update credential secret: %w", err)
 			}
 		}
 	}
@@ -270,7 +274,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	spec := cluster.Spec.Cloud.Openstack
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
+	if spec.Username == "" && spec.Password == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
 		return nil
 	}
 
@@ -279,10 +283,10 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	if err != nil {
 		return err
 	}
-	if spec.GetProject() == "" {
+	if spec.Project == "" {
 		spec.Project = oldCred.Project
 	}
-	if spec.GetProjectId() == "" {
+	if spec.ProjectID == "" {
 		spec.ProjectID = oldCred.ProjectID
 	}
 	if spec.Domain == "" {
@@ -302,8 +306,8 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
 		resources.OpenstackUsername:                    []byte(spec.Username),
 		resources.OpenstackPassword:                    []byte(spec.Password),
-		resources.OpenstackProject:                     []byte(spec.GetProject()),
-		resources.OpenstackProjectID:                   []byte(spec.GetProjectId()),
+		resources.OpenstackProject:                     []byte(spec.Project),
+		resources.OpenstackProjectID:                   []byte(spec.ProjectID),
 		resources.OpenstackDomain:                      []byte(spec.Domain),
 		resources.OpenstackApplicationCredentialID:     []byte(spec.ApplicationCredentialID),
 		resources.OpenstackApplicationCredentialSecret: []byte(spec.ApplicationCredentialSecret),
@@ -319,8 +323,6 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	// clean old inline credentials
 	cluster.Spec.Cloud.Openstack.Username = ""
 	cluster.Spec.Cloud.Openstack.Password = ""
-	cluster.Spec.Cloud.Openstack.Tenant = ""
-	cluster.Spec.Cloud.Openstack.TenantID = ""
 	cluster.Spec.Cloud.Openstack.Project = ""
 	cluster.Spec.Cloud.Openstack.ProjectID = ""
 	cluster.Spec.Cloud.Openstack.Domain = ""
@@ -360,15 +362,25 @@ func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclien
 
 func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	spec := cluster.Spec.Cloud.Kubevirt
-
 	// already migrated
 	if spec.Kubeconfig == "" {
 		return nil
 	}
 
+	// ensure that CSI driver on user cluster will have an access to KubeVirt cluster
+	r, err := kubevirt.NewReconciler(spec.Kubeconfig, cluster.Name)
+	if err != nil {
+		return err
+	}
+	csiKubeconfig, err := r.ReconcileCSIAccess(ctx)
+	if err != nil {
+		return err
+	}
+
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
-		resources.KubevirtKubeConfig: []byte(spec.Kubeconfig),
+		resources.KubevirtKubeConfig:    []byte(spec.Kubeconfig),
+		resources.KubevirtCSIKubeConfig: csiKubeconfig,
 	})
 	if err != nil {
 		return err
@@ -462,6 +474,39 @@ func createOrUpdateAnexiaSecret(ctx context.Context, seedClient ctrlruntimeclien
 
 	// clean old inline credentials
 	cluster.Spec.Cloud.Anexia.Token = ""
+
+	return nil
+}
+
+func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Nutanix
+
+	// already migrated
+	if spec.Username == "" && spec.Password == "" && spec.ProxyURL == "" {
+		return nil
+	}
+
+	secretData := map[string][]byte{
+		resources.NutanixUsername: []byte(spec.Username),
+		resources.NutanixPassword: []byte(spec.Password),
+	}
+
+	if spec.ProxyURL != "" {
+		secretData[resources.NutanixProxyURL] = []byte(spec.ProxyURL)
+	}
+
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, secretData)
+	if err != nil {
+		return err
+	}
+
+	// add secret key reference to cluster object
+	cluster.Spec.Cloud.Nutanix.CredentialsReference = credentialRef
+
+	// clean old inline credentials
+	cluster.Spec.Cloud.Nutanix.Username = ""
+	cluster.Spec.Cloud.Nutanix.Password = ""
+	cluster.Spec.Cloud.Nutanix.ProxyURL = ""
 
 	return nil
 }

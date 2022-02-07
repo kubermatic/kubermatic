@@ -21,6 +21,9 @@ type GCPCloudSpec struct {
 	// network
 	Network string `json:"network,omitempty"`
 
+	// node ports allowed IP range
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
+
 	// service account
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 

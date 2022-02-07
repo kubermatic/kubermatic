@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecPacket DatacenterSpecPacket describes a Packet datacenter
+// DatacenterSpecPacket DatacenterSpecPacket describes a Packet datacenter.
 //
 // swagger:model DatacenterSpecPacket
 type DatacenterSpecPacket struct {

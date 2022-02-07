@@ -21,6 +21,11 @@ type CloudSpec struct {
 	// DatacenterName where the users 'cloud' lives in.
 	DatacenterName string `json:"dc,omitempty"`
 
+	// ProviderName is the name of the cloud provider used for this cluster.
+	// This must match the given provider spec (e.g. if the providerName is
+	// "aws", then the AWSCloudSpec must be set)
+	ProviderName string `json:"providerName,omitempty"`
+
 	// alibaba
 	Alibaba *AlibabaCloudSpec `json:"alibaba,omitempty"`
 
@@ -50,6 +55,9 @@ type CloudSpec struct {
 
 	// kubevirt
 	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
+
+	// nutanix
+	Nutanix *NutanixCloudSpec `json:"nutanix,omitempty"`
 
 	// openstack
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
@@ -98,6 +106,10 @@ func (m *CloudSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubevirt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNutanix(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -272,6 +284,23 @@ func (m *CloudSpec) validateKubevirt(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *CloudSpec) validateNutanix(formats strfmt.Registry) error {
+	if swag.IsZero(m.Nutanix) { // not required
+		return nil
+	}
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *CloudSpec) validateOpenstack(formats strfmt.Registry) error {
 	if swag.IsZero(m.Openstack) { // not required
 		return nil
@@ -360,6 +389,10 @@ func (m *CloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry
 	}
 
 	if err := m.contextValidateKubevirt(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNutanix(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -499,6 +532,20 @@ func (m *CloudSpec) contextValidateKubevirt(ctx context.Context, formats strfmt.
 		if err := m.Kubevirt.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubevirt")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *CloudSpec) contextValidateNutanix(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
 			}
 			return err
 		}

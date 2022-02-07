@@ -23,9 +23,9 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -73,13 +73,13 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	// Watch for changes to Constraints
 	if err = c.Watch(
 		&source.Kind{Type: &kubermaticv1.Constraint{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
-		return fmt.Errorf("failed to establish watch for the Constraints %v", err)
+		return fmt.Errorf("failed to establish watch for the Constraints: %w", err)
 	}
 
 	return nil
@@ -103,7 +103,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("constraint not found, returning")
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get constraint: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get constraint: %w", err)
 	}
 
 	err = r.reconcile(ctx, constraint, log)
@@ -122,7 +122,7 @@ func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermati
 	}
 
 	if err := reconciling.ReconcileUnstructureds(ctx, constraintCreatorGetters, "", r.userClient); err != nil {
-		return fmt.Errorf("failed to reconcile constraint: %v", err)
+		return fmt.Errorf("failed to reconcile constraint: %w", err)
 	}
 	log.Debugw("constraint created")
 	return nil
@@ -141,7 +141,7 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermat
 	toDelete.SetName(constraint.Name)
 
 	if err := r.userClient.Delete(ctx, toDelete); err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete constraint: %v", err)
+		return fmt.Errorf("failed to delete constraint: %w", err)
 	}
 	log.Debugw("constraint deleted")
 	return nil
@@ -156,11 +156,11 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 
 				rawParams, err := json.Marshal(constraint.Spec.Parameters)
 				if err != nil {
-					return nil, fmt.Errorf("error marshalling constraint parameters: %v", err)
+					return nil, fmt.Errorf("error marshalling constraint parameters: %w", err)
 				}
 
 				if err := json.Unmarshal(rawParams, &params); err != nil {
-					return nil, fmt.Errorf("error unmarshalling constraint parameters: %v", err)
+					return nil, fmt.Errorf("error unmarshalling constraint parameters: %w", err)
 				}
 
 				// To keep backwards compatibility for Constraints that still use rawJSON. Support for this should be removed for 2.19
@@ -172,13 +172,13 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 					}
 					err := json.Unmarshal([]byte(rawJson), &rawJsonParams)
 					if err != nil {
-						return nil, fmt.Errorf("error unmarshalling raw json parameters: %v", err)
+						return nil, fmt.Errorf("error unmarshalling raw json parameters: %w", err)
 					}
 					params = rawJsonParams
 				}
 
 				if err := unstructured.SetNestedField(u.Object, params, spec, parametersField); err != nil {
-					return nil, fmt.Errorf("error setting constraint nested parameters: %v", err)
+					return nil, fmt.Errorf("error setting constraint nested parameters: %w", err)
 				}
 			}
 
@@ -190,7 +190,7 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 
 			err = unstructured.SetNestedField(u.Object, matchMap, spec, matchField)
 			if err != nil {
-				return nil, fmt.Errorf("error setting constraint nested spec: %v", err)
+				return nil, fmt.Errorf("error setting constraint nested spec: %w", err)
 			}
 
 			return u, nil
@@ -201,12 +201,12 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 func unmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
 	raw, err := json.Marshal(object)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling: %v", err)
+		return nil, fmt.Errorf("error marshalling: %w", err)
 	}
 	result := make(map[string]interface{})
 	err = json.Unmarshal(raw, &result)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling: %v", err)
+		return nil, fmt.Errorf("error unmarshalling: %w", err)
 	}
 
 	return result, nil

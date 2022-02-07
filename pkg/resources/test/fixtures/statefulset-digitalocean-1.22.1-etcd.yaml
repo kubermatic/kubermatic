@@ -95,7 +95,7 @@ spec:
           value: /etc/etcd/pki/client/apiserver-etcd-client.crt
         - name: ETCDCTL_KEY
           value: /etc/etcd/pki/client/apiserver-etcd-client.key
-        image: gcr.io/etcd-development/etcd:v3.5.0
+        image: gcr.io/etcd-development/etcd:v3.5.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -171,13 +171,6 @@ spec:
   - metadata:
       creationTimestamp: null
       name: data
-      ownerReferences:
-      - apiVersion: kubermatic.k8s.io/v1
-        blockOwnerDeletion: true
-        controller: true
-        kind: Cluster
-        name: de-test-01
-        uid: "1234567890"
     spec:
       accessModes:
       - ReadWriteOnce
@@ -187,4 +180,5 @@ spec:
       storageClassName: kubermatic-fast
     status: {}
 status:
+  availableReplicas: 0
   replicas: 0

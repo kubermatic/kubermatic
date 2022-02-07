@@ -27,11 +27,7 @@ import (
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.KonnectivityServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			// TODO(pratik): these labels, why?
-			sa.Labels = map[string]string{
-				"kubernetes.io/cluster-service":   "true",
-				"addonmanager.kubernetes.io/mode": "Reconcile",
-			}
+			sa.Labels = resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
 			return sa, nil
 		}
 	}

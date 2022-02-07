@@ -25,32 +25,33 @@ import (
 
 // +kubebuilder:validation:Enum=always;externalCloudProvider
 
-// ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version
+// ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version.
 type ConditionType string
 
 const (
-	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities
+	// AlwaysCondition represent an always true matching condition used while checking provider incompatibilities.
 	AlwaysCondition ConditionType = "always"
-	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider
+	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
 	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
 )
 
 // +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
 
-// OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE)
+// OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE).
 type OperationType string
 
 const (
-	// CreateOperation represents the creation of a new cluster
+	// CreateOperation represents the creation of a new cluster.
 	CreateOperation OperationType = "CREATE"
-	// UpdateOperation represents the update of an existing cluster
+	// UpdateOperation represents the update of an existing cluster.
 	UpdateOperation OperationType = "UPGRADE"
-	// SupportOperation represents the possibility to enable a new feature on an existing cluster
+	// SupportOperation represents the possibility to enable a new feature on an existing cluster.
 	SupportOperation OperationType = "SUPPORT"
 )
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticConfiguration is the configuration required for running Kubermatic.
 type KubermaticConfiguration struct {
@@ -197,7 +198,7 @@ type KubermaticUserClusterConfiguration struct {
 	// etcd-launcher image.
 	EtcdLauncherDockerRepository string `json:"etcdLauncherDockerRepository,omitempty"`
 	// OverwriteRegistry specifies a custom Docker registry which will be used for all images
-	// used inside user clusters (user cluster control plane + addons). This also applies to
+	// used for user clusters (user cluster control plane + addons). This also applies to
 	// the KubermaticDockerRepository and DNATControllerDockerRepository fields.
 	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.
@@ -237,7 +238,7 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	ScrapeAnnotationPrefix string `json:"scrapeAnnotationPrefix,omitempty"`
 }
 
-// MachineControllerConfiguration configures Machine Controller
+// MachineControllerConfiguration configures Machine Controller.
 type MachineControllerConfiguration struct {
 	// ImageRepository is used to override the Machine Controller image repository.
 	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
@@ -315,7 +316,7 @@ type KubermaticVersioningConfiguration struct {
 	// Versions lists the available versions.
 	Versions []semver.Semver `json:"versions,omitempty"`
 	// Default is the default version to offer users.
-	Default semver.Semver `json:"default,omitempty"`
+	Default *semver.Semver `json:"default,omitempty"`
 
 	// Updates is a list of available and automatic upgrades.
 	// All 'to' versions must be configured in the version list for this orchestrator.
@@ -336,7 +337,9 @@ type KubermaticVersioningConfiguration struct {
 type Update struct {
 	// From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
 	From string `json:"from,omitempty"`
-	// From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+	// To is the version to which an update is allowed.
+	// Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
+	// Can be a wildcard otherwise, e.g. "1.20.*".
 	To string `json:"to,omitempty"`
 	// Automatic controls whether this update is executed automatically
 	// for the control plane of all matching user clusters.
@@ -352,7 +355,7 @@ type Update struct {
 	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
 }
 
-// Incompatibility represents a version incompatibility for a user cluster
+// Incompatibility represents a version incompatibility for a user cluster.
 type Incompatibility struct {
 	// Provider to which to apply the compatibility check
 	Provider ProviderType `json:"provider,omitempty"`

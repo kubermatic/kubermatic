@@ -23,12 +23,15 @@ import (
 	"io/ioutil"
 	"os/exec"
 
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -45,99 +48,109 @@ func main() {
 		klog.Fatal(err)
 	}
 
-	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
-	client := kubernetes.NewForConfigOrDie(config)
-	ctx := context.Background()
-
-	clusterList, err := kubermaticClient.KubermaticV1().Clusters().List(ctx, metav1.ListOptions{})
+	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
 		klog.Fatal(err)
 	}
 
+	ctx := context.Background()
+
+	var clusterList *kubermaticv1.ClusterList
+	if err := client.List(context.Background(), clusterList); err != nil {
+		klog.Fatal(err)
+	}
+
 	for _, cluster := range clusterList.Items {
-		ns, err := client.CoreV1().Namespaces().Get(ctx, cluster.Status.NamespaceName, metav1.GetOptions{})
-		if err != nil {
-			klog.Fatal(err)
-		}
-		ns.OwnerReferences = []metav1.OwnerReference{}
-		if _, err := client.CoreV1().Namespaces().Update(ctx, ns, metav1.UpdateOptions{}); err != nil {
+		var ns *corev1.Namespace
+		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns); err != nil {
 			klog.Fatal(err)
 		}
 
-		secretList, err := client.CoreV1().Secrets(cluster.Status.NamespaceName).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		ns.OwnerReferences = []metav1.OwnerReference{}
+		if err := client.Update(ctx, ns); err != nil {
 			klog.Fatal(err)
 		}
+
+		var secretList *corev1.SecretList
+		if err := client.List(ctx, secretList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+			klog.Fatal(err)
+		}
+
 		for _, secret := range secretList.Items {
 			secret.OwnerReferences = []metav1.OwnerReference{}
-			if _, err := client.CoreV1().Secrets(cluster.Status.NamespaceName).Update(ctx, &secret, metav1.UpdateOptions{}); err != nil {
+			if err := client.Update(ctx, &secret); err != nil {
 				klog.Fatal(err)
 			}
 		}
 
-		configMapList, err := client.CoreV1().ConfigMaps(cluster.Status.NamespaceName).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		var configMapList *corev1.ConfigMapList
+		if err := client.List(ctx, configMapList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
+
 		for _, configMap := range configMapList.Items {
 			configMap.OwnerReferences = []metav1.OwnerReference{}
-			if _, err := client.CoreV1().ConfigMaps(cluster.Status.NamespaceName).Update(ctx, &configMap, metav1.UpdateOptions{}); err != nil {
+			if err := client.Update(ctx, &configMap); err != nil {
 				klog.Fatal(err)
 			}
 		}
 
-		serviceList, err := client.CoreV1().Services(cluster.Status.NamespaceName).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		var serviceList *corev1.ServiceList
+		if err := client.List(ctx, serviceList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
+
 		for _, service := range serviceList.Items {
 			service.OwnerReferences = []metav1.OwnerReference{}
-			if _, err := client.CoreV1().Services(cluster.Status.NamespaceName).Update(ctx, &service, metav1.UpdateOptions{}); err != nil {
+			if err := client.Update(ctx, &service); err != nil {
 				klog.Fatal(err)
 			}
 		}
 
-		pvcList, err := client.CoreV1().PersistentVolumeClaims(cluster.Status.NamespaceName).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		var pvcList *corev1.PersistentVolumeClaimList
+		if err := client.List(ctx, pvcList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
+
 		for _, pvc := range pvcList.Items {
 			pvc.OwnerReferences = []metav1.OwnerReference{}
-
-			if _, err := client.CoreV1().PersistentVolumeClaims(cluster.Status.NamespaceName).Update(ctx, &pvc, metav1.UpdateOptions{}); err != nil {
+			if err := client.Update(ctx, &pvc); err != nil {
 				klog.Fatal(err)
 			}
 		}
 
-		deploymentList, err := client.AppsV1().Deployments(cluster.Status.NamespaceName).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		var deploymentList *appsv1.DeploymentList
+		if err := client.List(ctx, deploymentList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
+
 		for _, deployment := range deploymentList.Items {
 			deployment.OwnerReferences = []metav1.OwnerReference{}
-			if _, err := client.AppsV1().Deployments(cluster.Status.NamespaceName).Update(ctx, &deployment, metav1.UpdateOptions{}); err != nil {
+			if err := client.Update(ctx, &deployment); err != nil {
 				klog.Fatal(err)
 			}
 		}
 
-		statefulSetList, err := client.AppsV1().StatefulSets(cluster.Status.NamespaceName).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		var statefulSetList *appsv1.StatefulSetList
+		if err := client.List(ctx, statefulSetList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
+
 		for _, statefulSet := range statefulSetList.Items {
 			statefulSet.OwnerReferences = []metav1.OwnerReference{}
-			if _, err := client.AppsV1().StatefulSets(cluster.Status.NamespaceName).Update(ctx, &statefulSet, metav1.UpdateOptions{}); err != nil {
+			if err := client.Update(ctx, &statefulSet); err != nil {
 				klog.Fatal(err)
 			}
 		}
 
-		addonList, err := kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		var addonList *kubermaticv1.AddonList
+		if err := client.List(ctx, addonList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
 			klog.Fatal(err)
 		}
+
 		for _, addon := range addonList.Items {
 			addon.OwnerReferences = []metav1.OwnerReference{}
-			if _, err := kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Update(ctx, &addon, metav1.UpdateOptions{}); err != nil {
+			if err := client.Update(ctx, &addon); err != nil {
 				klog.Fatal(err)
 			}
 		}

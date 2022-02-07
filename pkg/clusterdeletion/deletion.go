@@ -23,14 +23,14 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
+	deletedLBAnnotationName = "kubermatic.k8c.io/cleaned-up-loadbalancers"
 )
 
 func New(seedClient ctrlruntimeclient.Client, userClusterClientGetter func() (ctrlruntimeclient.Client, error), etcdBackupRestoreController bool) *Deletion {
@@ -119,7 +119,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	if shouldDeleteLBs {
 		deletedSomeLBs, err := d.cleanupLBs(ctx, log, cluster)
 		if err != nil {
-			return fmt.Errorf("failed to cleanup LBs: %v", err)
+			return fmt.Errorf("failed to cleanup LBs: %w", err)
 		}
 		deletedSomeResource = deletedSomeResource || deletedSomeLBs
 	}
@@ -127,7 +127,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	if shouldDeletePVs {
 		deletedSomeVolumes, err := d.cleanupVolumes(ctx, cluster)
 		if err != nil {
-			return fmt.Errorf("failed to cleanup PVs: %v", err)
+			return fmt.Errorf("failed to cleanup PVs: %w", err)
 		}
 		deletedSomeResource = deletedSomeResource || deletedSomeVolumes
 	}
@@ -144,7 +144,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	lbsAreGone, err := d.checkIfAllLoadbalancersAreGone(ctx, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to check if all Loadbalancers are gone: %v", err)
+		return fmt.Errorf("failed to check if all Loadbalancers are gone: %w", err)
 	}
 	// Return so we check again later
 	if !lbsAreGone {
@@ -152,7 +152,6 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	}
 
 	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
+	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer, kubermaticapiv1.InClusterPVCleanupFinalizer)
 	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

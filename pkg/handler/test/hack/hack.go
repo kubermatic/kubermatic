@@ -23,7 +23,8 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -41,7 +42,7 @@ import (
 )
 
 // NewTestRouting is a hack that helps us avoid circular imports
-// for example handler package uses v1/dc and v1/dc needs handler for testing
+// for example handler package uses v1/dc and v1/dc needs handler for testing.
 func NewTestRouting(
 	adminProvider provider.AdminProvider,
 	settingsProvider provider.SettingsProvider,
@@ -70,7 +71,7 @@ func NewTestRouting(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	presetsProvider provider.PresetProvider,
+	presetProvider provider.PresetProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
 	settingsWatcher watcher.SettingsWatcher,
 	userWatcher watcher.UserWatcher,
@@ -93,10 +94,11 @@ func NewTestRouting(
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
 	masterClient client.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
-	seedProvider provider.SeedProvider) http.Handler {
+	seedProvider provider.SeedProvider,
+	features features.FeatureGate) http.Handler {
 	routingParams := handler.RoutingParams{
 		Log:                                     kubermaticlog.Logger,
-		PresetsProvider:                         presetsProvider,
+		PresetProvider:                          presetProvider,
 		SeedsGetter:                             seedsGetter,
 		SeedsClientGetter:                       seedClientGetter,
 		KubermaticConfigurationGetter:           configGetter,
@@ -149,6 +151,7 @@ func NewTestRouting(
 		SeedProvider:                            seedProvider,
 		Versions:                                kubermaticVersions,
 		CABundle:                                certificates.NewFakeCABundle().CertPool(),
+		Features:                                features,
 	}
 
 	r := handler.NewRouting(routingParams, masterClient)
@@ -170,7 +173,7 @@ func NewTestRouting(
 	return mainRouter
 }
 
-// generateDefaultOicdCfg creates test configuration for OpenID clients
+// generateDefaultOicdCfg creates test configuration for OpenID clients.
 func generateDefaultOicdCfg() *common.OIDCConfiguration {
 	return &common.OIDCConfiguration{
 		URL:                  test.IssuerURL,
@@ -184,7 +187,7 @@ func generateDefaultMetrics() common.ServerMetrics {
 	return common.ServerMetrics{
 		InitNodeDeploymentFailures: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: "kubermatic_api_init_node_deployment_failures",
+				Name: "kubermatic_api_failed_init_node_deployment_total",
 				Help: "The number of times initial node deployment couldn't be created within the timeout",
 			},
 			[]string{"cluster", "datacenter"},

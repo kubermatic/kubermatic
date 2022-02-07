@@ -24,10 +24,9 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	features "k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -37,7 +36,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,13 +72,18 @@ func (d *Deployer) SetUp() error {
 	d.Namespace = ns.Name
 	d.resources = append(d.resources, ns)
 
-	cfg := &operatorv1alpha1.KubermaticConfiguration{
+	cfg := &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: d.Namespace,
 		},
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			FeatureGates: sets.NewString(features.TunnelingExposeStrategy),
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			FeatureGates: map[string]bool{
+				features.TunnelingExposeStrategy: true,
+			},
+			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+				EtcdVolumeSize: "500Mi",
+			},
 		},
 	}
 
@@ -96,7 +99,7 @@ func (d *Deployer) SetUp() error {
 		}
 	}
 
-	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, d.Log)
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, cfg, d.Log)
 	if err != nil {
 		return errors.Wrap(err, "failed to default seed")
 	}
@@ -139,7 +142,7 @@ func (d *Deployer) SetUp() error {
 	}
 	if err := reconciling.ReconcileDeployments(context.TODO(),
 		[]reconciling.NamedDeploymentCreatorGetter{
-			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, d.Versions),
+			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, false, d.Versions),
 			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, d.Versions),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile Kubermatic Deployments")

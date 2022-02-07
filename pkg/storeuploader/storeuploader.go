@@ -34,18 +34,18 @@ import (
 // prefix separator separates the prefix
 // from the file name. This is required to not have
 // the storeuploader manage all files when prefix
-// is an empty string
+// is an empty string.
 const prefixSeparator = "storeuploader"
 
 // StoreUploader is the configuration
-// for the StoreUploader
+// for the StoreUploader.
 type StoreUploader struct {
 	// client is a pointer to an initialized client
 	client *minio.Client
 	logger *zap.SugaredLogger
 }
 
-// New returns a new instance of the StoreUploader
+// New returns a new instance of the StoreUploader.
 func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, logger *zap.SugaredLogger, rootCAs *x509.CertPool) (*StoreUploader, error) {
 	client, err := minio.New(endpoint, accessKeyID, secretAccessKey, secure)
 	if err != nil {
@@ -66,7 +66,7 @@ func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, logg
 	}, nil
 }
 
-// Store uploads the given file to S3
+// Store uploads the given file to S3.
 func (u *StoreUploader) Store(file, bucket, prefix string, createBucket bool) error {
 	if len(prefix) == 0 {
 		return errors.New("prefix cannot be empty")
@@ -99,7 +99,7 @@ func (u *StoreUploader) Store(file, bucket, prefix string, createBucket bool) er
 	return err
 }
 
-// DeleteOldBackups deletes revisions of all files of the given prefix which are older than max-revisions
+// DeleteOldBackups deletes revisions of all files of the given prefix which are older than max-revisions.
 func (u *StoreUploader) DeleteOldBackups(bucket, prefix string, revisionsToKeep int) error {
 	if len(prefix) == 0 {
 		return errors.New("prefix cannot be empty")
@@ -132,7 +132,7 @@ func (u *StoreUploader) DeleteOldBackups(bucket, prefix string, revisionsToKeep 
 	return nil
 }
 
-// DeleteAll deletes all revisions of all files matching the given prefix
+// DeleteAll deletes all revisions of all files matching the given prefix.
 func (u *StoreUploader) DeleteAll(bucket, prefix string) error {
 	if len(prefix) == 0 {
 		return errors.New("prefix cannot be empty")

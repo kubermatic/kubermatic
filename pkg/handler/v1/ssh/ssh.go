@@ -26,7 +26,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -126,7 +126,6 @@ func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-
 			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 

@@ -19,7 +19,7 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -75,12 +75,11 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			if err != nil {
 				return nil, err
 			}
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			version, err := getVsphereCPIVersion(data.Cluster().Spec.Version)
-			if err != nil {
-				return nil, err
-			}
+			version := getVsphereCPIVersion(data.Cluster().Spec.Version)
+
 			container := getCPIContainer(version, data)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				container,
@@ -89,7 +88,7 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			if !data.IsKonnectivityEnabled() {
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
 				}
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 			}
@@ -127,6 +126,9 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 	c := corev1.Container{
 		Name:  ccmContainerName,
 		Image: controllerManagerImage,
+		SecurityContext: &corev1.SecurityContext{
+			RunAsUser: pointer.Int64(1001),
+		},
 		Command: []string{
 			"/bin/vsphere-cloud-controller-manager",
 		},
@@ -162,17 +164,16 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 	return c
 }
 
-const latestVsphereCPIVersion = "1.21.0"
-
-func getVsphereCPIVersion(version semver.Semver) (string, error) {
+func getVsphereCPIVersion(version semver.Semver) string {
 	switch version.Semver().Minor() {
 	case 20:
-		return "1.20.0", nil
+		return "1.20.0"
 	case 21:
-		fallthrough
+		return "1.21.1"
 	case 22:
 		fallthrough
+	//	By default return latest version
 	default:
-		return latestVsphereCPIVersion, nil
+		return "1.22.4"
 	}
 }

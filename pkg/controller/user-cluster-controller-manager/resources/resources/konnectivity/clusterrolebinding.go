@@ -23,14 +23,11 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding for konnectivity
+// ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding for konnectivity.
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.KonnectivityClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.ObjectMeta.Labels = map[string]string{
-				"kubernetes.io/cluster-service":   "true",
-				"addonmanager.kubernetes.io/mode": "Reconcile",
-			}
+			crb.ObjectMeta.Labels = resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,

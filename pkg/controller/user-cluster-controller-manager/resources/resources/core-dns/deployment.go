@@ -50,7 +50,7 @@ var (
 	}
 )
 
-// DeploymentCreator returns the function to create and update the CoreDNS deployment
+// DeploymentCreator returns the function to create and update the CoreDNS deployment.
 func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -87,6 +87,11 @@ func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite 
 
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
@@ -94,7 +99,7 @@ func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite 
 			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion, registryWithOverwrite)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.CoreDNSServiceAccountName
@@ -159,7 +164,7 @@ func getContainers(
 			},
 
 			LivenessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/health",
 						Port:   intstr.FromInt(8080),
@@ -174,7 +179,7 @@ func getContainers(
 			},
 
 			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/health",
 						Port:   intstr.FromInt(8080),

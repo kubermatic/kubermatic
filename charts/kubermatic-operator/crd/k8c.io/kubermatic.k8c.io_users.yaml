@@ -23,10 +23,13 @@ spec:
     - jsonPath: .spec.name
       name: Name
       type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
     name: v1
     schema:
       openAPIV3Schema:
-        description: User specifies a user
+        description: User specifies a user.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -41,7 +44,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: UserSpec specifies a user
+            description: UserSpec specifies a user.
             properties:
               admin:
                 type: boolean
@@ -94,7 +97,7 @@ spec:
               name:
                 type: string
               settings:
-                description: UserSettings represent an user settings
+                description: UserSettings represent an user settings.
                 properties:
                   collapseSidenav:
                     type: boolean
@@ -117,10 +120,18 @@ spec:
             - id
             - name
             type: object
+          status:
+            description: UserStatus stores status information about a user.
+            properties:
+              lastSeen:
+                format: date-time
+                type: string
+            type: object
         type: object
     served: true
     storage: true
-    subresources: {}
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

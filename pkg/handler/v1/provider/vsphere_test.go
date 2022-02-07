@@ -23,7 +23,7 @@ import (
 
 	"github.com/vmware/govmomi/simulator"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -97,7 +97,7 @@ func TestVsphereEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenter(), []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(apiUser)}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -108,7 +108,6 @@ func TestVsphereEndpoint(t *testing.T) {
 			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
-
 }
 
 func (v *vSphereMock) buildVSphereDatacenter() provider.SeedsGetter {
