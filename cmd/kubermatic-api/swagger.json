@@ -20986,7 +20986,7 @@
       "type": "object",
       "title": "DatacenterSpecNutanix describes a Nutanix datacenter.",
       "properties": {
-        "allowInsecure": {
+        "allow_insecure": {
           "description": "Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)",
           "type": "boolean",
           "x-go-name": "AllowInsecure"
@@ -21006,7 +21006,7 @@
           "x-go-name": "Port"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecOpenstack": {
       "description": "DatacenterSpecOpenstack describes an OpenStack datacenter",
