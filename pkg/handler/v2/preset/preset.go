@@ -600,7 +600,7 @@ func DecodeDeleteProviderPreset(_ context.Context, r *http.Request) (interface{}
 }
 
 // DeleteProviderPreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted.
-// Deprecated: This function has been deprecated in favour of DeletePreset and DeletePresetProvider.
+// Deprecated: This function has been deprecated; use DeletePreset or DeletePresetProvider.
 func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteProviderPresetReq)

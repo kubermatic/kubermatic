@@ -126,7 +126,7 @@ func (a *Client) DeletePreset(params *DeletePresetParams, authInfo runtime.Clien
 /*
   DeleteProviderPreset deletes provider preset
 
-  This endpoint has been deprecated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
+  This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
 */
 func (a *Client) DeleteProviderPreset(params *DeleteProviderPresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProviderPresetOK, error) {
 	// TODO: Validate the params before sending

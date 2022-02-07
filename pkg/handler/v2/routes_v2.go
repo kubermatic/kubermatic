@@ -4083,7 +4083,7 @@ func (r Routing) updatePreset() http.Handler {
 //
 //	   Deletes provider preset.
 //
-//     This endpoint has been deprecated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
+//     This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
 //
 //     Consumes:
 //	   - application/json

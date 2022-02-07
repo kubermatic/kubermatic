@@ -17659,7 +17659,7 @@
     },
     "/api/v2/providers/{provider_name}/presets/{preset_name}": {
       "delete": {
-        "description": "This endpoint has been deprecated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.",
+        "description": "This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.",
         "consumes": [
           "application/json"
         ],
