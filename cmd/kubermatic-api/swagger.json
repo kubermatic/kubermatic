@@ -18061,6 +18061,9 @@
           "type": "string",
           "x-go-name": "ClientSecret"
         },
+        "clusterSpec": {
+          "$ref": "#/definitions/AKSClusterSpec"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -18107,22 +18110,38 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "AKSClusterSpec": {
+      "type": "object",
+      "title": "AKSClusterSpec Azure Kubernetes Service cluster.",
+      "properties": {
+        "kubernetesVersion": {
+          "description": "KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -\u003e 1.15.x or 1.15.x -\u003e 1.16.x are allowed, however 1.14.x -\u003e 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.",
+          "type": "string",
+          "x-go-name": "KubernetesVersion"
+        },
+        "location": {
+          "description": "Location - Resource location",
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "machineDeploymentSpec": {
+          "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AKSMachineDeploymentCloudSpec": {
       "type": "object",
       "properties": {
-        "basics": {
+        "basicsSettings": {
           "$ref": "#/definitions/AgentPoolBasics"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
         },
         "optionalSettings": {
           "$ref": "#/definitions/AgentPoolOptionalSettings"
-        },
-        "tags": {
-          "description": "Tags - The tags to be persisted on the agent pool virtual machine scale set.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Tags"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -18780,7 +18799,7 @@
           "x-go-name": "AvailabilityZones"
         },
         "count": {
-          "description": "Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.",
+          "description": "Required: Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.",
           "type": "integer",
           "format": "int32",
           "x-go-name": "Count"
@@ -18812,13 +18831,14 @@
           "type": "string",
           "x-go-name": "OrchestratorVersion"
         },
-        "osType": {
-          "description": "OsType - Possible values include: 'Linux', 'Windows'",
-          "type": "string",
-          "x-go-name": "OsType"
+        "osDiskSizeGB": {
+          "description": "The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "OsDiskSizeGB"
         },
         "vmSize": {
-          "description": "VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
+          "description": "Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
           "type": "string",
           "x-go-name": "VMSize"
         }
@@ -18828,17 +18848,6 @@
     "AgentPoolOptionalSettings": {
       "type": "object",
       "properties": {
-        "enableNodePublicIP": {
-          "description": "EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.",
-          "type": "boolean",
-          "x-go-name": "EnableNodePublicIP"
-        },
-        "maxPods": {
-          "description": "MaxPods - The maximum number of pods that can run on a node.",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MaxPods"
-        },
         "nodeLabels": {
           "description": "NodeLabels - The node labels to be persisted across all nodes in agent pool.",
           "type": "object",
@@ -18848,26 +18857,12 @@
           "x-go-name": "NodeLabels"
         },
         "nodeTaints": {
-          "description": "NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.",
+          "description": "NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.\nPlacing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail",
           "type": "array",
           "items": {
             "type": "string"
           },
           "x-go-name": "NodeTaints"
-        },
-        "upgradeSettings": {
-          "$ref": "#/definitions/AgentPoolUpgradeSettings"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "AgentPoolUpgradeSettings": {
-      "type": "object",
-      "properties": {
-        "maxSurge": {
-          "description": "MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade",
-          "type": "string",
-          "x-go-name": "MaxSurge"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

@@ -20,7 +20,7 @@ type AgentPoolBasics struct {
 	// AvailabilityZones - The list of Availability zones to use for nodes. This can only be specified if the AgentPoolType property is 'VirtualMachineScaleSets'.
 	AvailabilityZones []string `json:"availabilityZones"`
 
-	// Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
+	// Required: Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
 	Count int32 `json:"count,omitempty"`
 
 	// EnableAutoScaling - Whether to enable auto-scaler
@@ -38,10 +38,10 @@ type AgentPoolBasics struct {
 	// OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).
 	OrchestratorVersion string `json:"orchestratorVersion,omitempty"`
 
-	// OsType - Possible values include: 'Linux', 'Windows'
-	OsType string `json:"osType,omitempty"`
+	// The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.
+	OsDiskSizeGB int32 `json:"osDiskSizeGB,omitempty"`
 
-	// VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
+	// Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
 	VMSize string `json:"vmSize,omitempty"`
 }
 
