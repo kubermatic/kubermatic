@@ -18,11 +18,11 @@ import (
 // swagger:model AKSMachineDeploymentCloudSpec
 type AKSMachineDeploymentCloudSpec struct {
 
-	// Tags - The tags to be persisted on the agent pool virtual machine scale set.
-	Tags map[string]string `json:"tags,omitempty"`
+	// name
+	Name string `json:"name,omitempty"`
 
-	// basics
-	Basics *AgentPoolBasics `json:"basics,omitempty"`
+	// basics settings
+	BasicsSettings *AgentPoolBasics `json:"basicsSettings,omitempty"`
 
 	// optional settings
 	OptionalSettings *AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
@@ -32,7 +32,7 @@ type AKSMachineDeploymentCloudSpec struct {
 func (m *AKSMachineDeploymentCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateBasics(formats); err != nil {
+	if err := m.validateBasicsSettings(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -46,15 +46,15 @@ func (m *AKSMachineDeploymentCloudSpec) Validate(formats strfmt.Registry) error 
 	return nil
 }
 
-func (m *AKSMachineDeploymentCloudSpec) validateBasics(formats strfmt.Registry) error {
-	if swag.IsZero(m.Basics) { // not required
+func (m *AKSMachineDeploymentCloudSpec) validateBasicsSettings(formats strfmt.Registry) error {
+	if swag.IsZero(m.BasicsSettings) { // not required
 		return nil
 	}
 
-	if m.Basics != nil {
-		if err := m.Basics.Validate(formats); err != nil {
+	if m.BasicsSettings != nil {
+		if err := m.BasicsSettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("basics")
+				return ve.ValidateName("basicsSettings")
 			}
 			return err
 		}
@@ -84,7 +84,7 @@ func (m *AKSMachineDeploymentCloudSpec) validateOptionalSettings(formats strfmt.
 func (m *AKSMachineDeploymentCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateBasics(ctx, formats); err != nil {
+	if err := m.contextValidateBasicsSettings(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -98,12 +98,12 @@ func (m *AKSMachineDeploymentCloudSpec) ContextValidate(ctx context.Context, for
 	return nil
 }
 
-func (m *AKSMachineDeploymentCloudSpec) contextValidateBasics(ctx context.Context, formats strfmt.Registry) error {
+func (m *AKSMachineDeploymentCloudSpec) contextValidateBasicsSettings(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.Basics != nil {
-		if err := m.Basics.ContextValidate(ctx, formats); err != nil {
+	if m.BasicsSettings != nil {
+		if err := m.BasicsSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("basics")
+				return ve.ValidateName("basicsSettings")
 			}
 			return err
 		}
