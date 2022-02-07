@@ -501,13 +501,21 @@ type EKSClusterList []EKSCluster
 // swagger:model Regions
 type Regions []string
 
-// EKSSubnetIDList represents an array of EKS availability subnetIDs.
+// EKSSubnetIDList represents an array of EKS subnetID.
 // swagger:model EKSSubnetIDList
 type EKSSubnetIDList []EKSSubnetID
 
-// EKSSubnetID represents a object of EKS availability subnetID.
+// EKSSubnetID represents a object of EKS subnetID.
 // swagger:model EKSSubnetID
 type EKSSubnetID string
+
+// EKSVpcIdList represents an array of EKS VpcId.
+// swagger:model EKSVpcIdList
+type EKSVpcIdList []EKSVpcId
+
+// EKSVpcId represents a object of EKS VpcId.
+// swagger:model EKSVpcId
+type EKSVpcId string
 
 // AKSCluster represents a object of AKS cluster.
 // swagger:model AKSCluster

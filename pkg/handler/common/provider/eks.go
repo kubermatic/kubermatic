@@ -123,3 +123,17 @@ func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (ap
 	}
 	return subnetIDs, nil
 }
+
+func ListEKSVpcIds(ctx context.Context, cred EKSCredential) (apiv2.EKSVpcIdList, error) {
+	vpcIDs := apiv2.EKSVpcIdList{}
+
+	vpcResults, err := awsprovider.GetVPCS(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get vpcs: %w", err)
+	}
+
+	for _, v := range vpcResults {
+		vpcIDs = append(vpcIDs, apiv2.EKSVpcId(*v.VpcId))
+	}
+	return vpcIDs, nil
+}

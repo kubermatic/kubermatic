@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// EKSSubnetID EKSSubnetID represents a object of EKS availability subnetID.
+// EKSSubnetID EKSSubnetID represents a object of EKS subnetID.
 //
 // swagger:model EKSSubnetID
 type EKSSubnetID string

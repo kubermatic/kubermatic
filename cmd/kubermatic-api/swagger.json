@@ -17086,6 +17086,32 @@
         }
       }
     },
+    "/api/v2/providers/eks/vpcIDs": {
+      "get": {
+        "description": "Lists EKS vpcID list",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "operationId": "listEKSVpcIds",
+        "responses": {
+          "200": {
+            "description": "EKSVpcIdList",
+            "schema": {
+              "$ref": "#/definitions/EKSVpcIdList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/gke/images": {
       "get": {
         "description": "Lists GKE image types",
@@ -21612,14 +21638,27 @@
     },
     "EKSSubnetID": {
       "type": "string",
-      "title": "EKSSubnetID represents a object of EKS availability subnetID.",
+      "title": "EKSSubnetID represents a object of EKS subnetID.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "EKSSubnetIDList": {
       "type": "array",
-      "title": "EKSSubnetIDList represents an array of EKS availability subnetIDs.",
+      "title": "EKSSubnetIDList represents an array of EKS subnetID.",
       "items": {
         "$ref": "#/definitions/EKSSubnetID"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSVpcId": {
+      "type": "string",
+      "title": "EKSVpcId represents a object of EKS VpcId.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSVpcIdList": {
+      "type": "array",
+      "title": "EKSVpcIdList represents an array of EKS VpcId.",
+      "items": {
+        "$ref": "#/definitions/EKSVpcId"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

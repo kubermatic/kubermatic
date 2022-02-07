@@ -13,13 +13,13 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// EKSSubnetIDList EKSSubnetIDList represents an array of EKS subnetID.
+// EKSVpcIDList EKSVpcIdList represents an array of EKS VpcId.
 //
-// swagger:model EKSSubnetIDList
-type EKSSubnetIDList []EKSSubnetID
+// swagger:model EKSVpcIdList
+type EKSVpcIDList []EKSVpcID
 
-// Validate validates this e k s subnet ID list
-func (m EKSSubnetIDList) Validate(formats strfmt.Registry) error {
+// Validate validates this e k s vpc Id list
+func (m EKSVpcIDList) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
@@ -39,8 +39,8 @@ func (m EKSSubnetIDList) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this e k s subnet ID list based on the context it is used
-func (m EKSSubnetIDList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this e k s vpc Id list based on the context it is used
+func (m EKSVpcIDList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
