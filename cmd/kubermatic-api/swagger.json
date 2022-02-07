@@ -9387,7 +9387,23 @@
           "preset"
         ],
         "summary": "Removes selected preset's provider.",
-        "operationId": "updatePresetProviders",
+        "operationId": "deletePresetProvider",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"

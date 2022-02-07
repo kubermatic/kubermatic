@@ -3972,7 +3972,7 @@ func (r Routing) deletePreset() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v2/presets/{preset_name}/provider/{provider_name} preset updatePresetProviders
+// swagger:route DELETE /api/v2/presets/{preset_name}/provider/{provider_name} preset deletePresetProvider
 //
 //     Removes selected preset's provider.
 //

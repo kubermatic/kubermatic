@@ -484,7 +484,7 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 	}
 }
 
-// deletePresetProvidersReq represents a request to delete preset provider
+// deletePresetProviderReq represents a request to delete preset provider
 // swagger:parameters deletePresetProvider
 type deletePresetProviderReq struct {
 	// in: path
@@ -492,7 +492,7 @@ type deletePresetProviderReq struct {
 	PresetName string `json:"preset_name"`
 	// in: path
 	// required: true
-	ProviderName string `json:"provider,omitempty"`
+	ProviderName string `json:"provider_name,omitempty"`
 }
 
 func DecodeDeletePresetProvider(_ context.Context, r *http.Request) (interface{}, error) {

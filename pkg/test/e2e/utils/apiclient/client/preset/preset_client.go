@@ -32,6 +32,8 @@ type ClientService interface {
 
 	DeletePreset(params *DeletePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePresetOK, error)
 
+	DeletePresetProvider(params *DeletePresetProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePresetProviderOK, error)
+
 	DeleteProviderPreset(params *DeleteProviderPresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProviderPresetOK, error)
 
 	ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error)
@@ -39,8 +41,6 @@ type ClientService interface {
 	ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error)
 
 	UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetOK, error)
-
-	UpdatePresetProviders(params *UpdatePresetProvidersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetProvidersOK, error)
 
 	UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetStatusOK, error)
 
@@ -120,6 +120,44 @@ func (a *Client) DeletePreset(params *DeletePresetParams, authInfo runtime.Clien
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeletePresetDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeletePresetProvider removes selected preset s provider
+*/
+func (a *Client) DeletePresetProvider(params *DeletePresetProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePresetProviderOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeletePresetProviderParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deletePresetProvider",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/presets/{preset_name}/provider/{provider_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeletePresetProviderReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeletePresetProviderOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeletePresetProviderDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -274,44 +312,6 @@ func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.Clien
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UpdatePresetDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  UpdatePresetProviders removes selected preset s provider
-*/
-func (a *Client) UpdatePresetProviders(params *UpdatePresetProvidersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetProvidersOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewUpdatePresetProvidersParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "updatePresetProviders",
-		Method:             "DELETE",
-		PathPattern:        "/api/v2/presets/{preset_name}/provider/{provider_name}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &UpdatePresetProvidersReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*UpdatePresetProvidersOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdatePresetProvidersDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
