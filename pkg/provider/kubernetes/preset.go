@@ -206,7 +206,7 @@ func (m *PresetProvider) GetPreset(userInfo *provider.UserInfo, name string) (*k
 	return nil, errors.NewNotFound(kubermaticv1.Resource("preset"), name)
 }
 
-// DeletePreset delete Preset
+// DeletePreset delete Preset.
 func (m *PresetProvider) DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 	return m.deleter(preset)
 }

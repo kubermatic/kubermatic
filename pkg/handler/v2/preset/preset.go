@@ -447,7 +447,7 @@ func DecodeDeletePreset(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-// DeletePreset deletes preset
+// DeletePreset deletes preset.
 func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deletePresetReq)
@@ -559,7 +559,7 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 		preset = kubermaticv1helper.RemoveProvider(preset, providerName)
 		_, err = presetProvider.UpdatePreset(preset)
 
-		return preset, nil
+		return preset, err
 	}
 }
 
@@ -600,7 +600,7 @@ func DecodeDeleteProviderPreset(_ context.Context, r *http.Request) (interface{}
 }
 
 // DeleteProviderPreset deletes the given provider from the preset AND if there is only one provider left, the preset gets deleted.
-// This function has been deprecated in favour of DeletePreset and DeletePresetProvider.
+// Deprecated: This function has been deprecated in favour of DeletePreset and DeletePresetProvider.
 func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteProviderPresetReq)
