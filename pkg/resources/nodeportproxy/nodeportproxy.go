@@ -345,7 +345,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					MountPath: "/etc/envoy",
 				}},
 			}}
-			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
+			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), d.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
