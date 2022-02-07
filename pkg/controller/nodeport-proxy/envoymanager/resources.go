@@ -42,6 +42,7 @@ import (
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
@@ -168,7 +169,7 @@ func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *c
 
 // build returns a new Snapshot from the resources derived by the Services
 // provided so far.
-func (sb *snapshotBuilder) build(version string) envoycachev3.Snapshot {
+func (sb *snapshotBuilder) build(version string) (envoycachev3.Snapshot, error) {
 	l, c := sb.makeInitialResources()
 
 	l = append(l, sb.listeners...)
@@ -675,14 +676,12 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 	return upsServers
 }
 
-func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) envoycachev3.Snapshot {
+func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) (envoycachev3.Snapshot, error) {
 	return envoycachev3.NewSnapshot(
 		version,
-		nil,       // endpoints
-		clusters,  // clusters
-		nil,       // routes
-		listeners, // listeners
-		nil,       // runtimes
-		nil,       // secrets
+		map[envoyresourcev3.Type][]envoycachetype.Resource{
+			envoyresourcev3.ClusterType:  clusters,
+			envoyresourcev3.ListenerType: listeners,
+		},
 	)
 }
