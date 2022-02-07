@@ -17304,7 +17304,7 @@
         }
       }
     },
-    "/api/v2/providers/nutanix/{dc}/{cluster_name}/subnets": {
+    "/api/v2/providers/nutanix/{dc}/subnets": {
       "get": {
         "description": "List subnets from Nutanix",
         "produces": [
