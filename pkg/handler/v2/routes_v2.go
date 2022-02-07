@@ -3862,7 +3862,7 @@ func (r Routing) listNutanixProjects() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/nutanix/{dc}/{cluster_name}/subnets nutanix listNutanixSubnets
+// swagger:route GET /api/v2/providers/nutanix/{dc}/subnets nutanix listNutanixSubnets
 //
 // List subnets from Nutanix
 //
