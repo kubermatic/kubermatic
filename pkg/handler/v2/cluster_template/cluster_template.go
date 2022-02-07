@@ -467,6 +467,18 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 	}
 
 	ct := &apiv2.ClusterTemplate{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                template.Name,
+			Name:              template.Spec.HumanReadableName,
+			CreationTimestamp: apiv1.NewTime(template.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if template.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(template.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
+		},
 		Name:      template.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey],
 		ID:        template.Name,
 		ProjectID: template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey],
