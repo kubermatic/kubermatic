@@ -41,7 +41,6 @@ type serverRunOptions struct {
 	internalAddr   string
 	prometheusURL  string
 	workerName     string
-	presetsFile    string
 	swaggerFile    string
 	domain         string
 	exposeStrategy kubermaticv1.ExposeStrategy
@@ -87,7 +86,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&s.prometheusURL, "prometheus-url", "http://prometheus.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
-	flag.StringVar(&s.presetsFile, "presets", "", "The optional file path for a file containing presets")
 	flag.StringVar(&s.swaggerFile, "swagger", "./cmd/kubermatic-api/swagger.json", "The swagger.json file path")
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")

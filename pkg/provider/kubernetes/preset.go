@@ -17,19 +17,14 @@ limitations under the License.
 package kubernetes
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/email"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 // presetsGetter is a function to retrieve preset list.
@@ -44,37 +39,7 @@ type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, er
 // presetDeleter is a function to delete a preset.
 type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-// LoadPresets loads the custom presets for supported providers.
-func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
-	s := struct {
-		Presets *kubermaticv1.PresetList `json:"presets"`
-	}{}
-
-	err := yaml.UnmarshalStrict(yamlContent, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.Presets, nil
-}
-
-// LoadPresetsFromFile loads the custom presets for supported providers.
-func LoadPresetsFromFile(path string) (*kubermaticv1.PresetList, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
-	if err != nil {
-		return nil, err
-	}
-
-	return LoadPresets(bytes)
-}
-
-func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (presetsGetter, error) {
+func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetsGetter, error) {
 	if dynamicPresets {
 		return func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
 			presetList := &kubermaticv1.PresetList{}
@@ -85,14 +50,6 @@ func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 		}, nil
 	}
 	var presets *kubermaticv1.PresetList
-	var err error
-
-	if presetsFile != "" {
-		presets, err = LoadPresetsFromFile(presetsFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load presets from %s: %w", presetsFile, err)
-		}
-	}
 
 	if presets == nil {
 		presets = &kubermaticv1.PresetList{Items: []kubermaticv1.Preset{}}
@@ -154,8 +111,8 @@ type PresetProvider struct {
 	deleter presetDeleter
 }
 
-func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (*PresetProvider, error) {
-	getter, err := presetsGetterFactory(ctx, client, presetsFile, dynamicPresets)
+func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (*PresetProvider, error) {
+	getter, err := presetsGetterFactory(ctx, client, dynamicPresets)
 	if err != nil {
 		return nil, err
 	}
