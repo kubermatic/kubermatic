@@ -18065,7 +18065,6 @@
           "$ref": "#/definitions/AKSClusterSpec"
         },
         "name": {
-          "description": "The unique name to give to your cluster.\nName is a required field",
           "type": "string",
           "x-go-name": "Name"
         },

@@ -24,8 +24,7 @@ type AKSCloudSpec struct {
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
 
-	// The unique name to give to your cluster.
-	// Name is a required field
+	// name
 	Name string `json:"name,omitempty"`
 
 	// resource group

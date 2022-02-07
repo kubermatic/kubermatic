@@ -424,8 +424,8 @@ type GKECloudSpec struct {
 
 type EKSCloudSpec struct {
 	Name            string          `json:"name" required:"true"`
-	AccessKeyID     string          `json:"accessKeyID" required:"true"`
-	SecretAccessKey string          `json:"secretAccessKey" required:"true"`
+	AccessKeyID     string          `json:"accessKeyID,omitempty" required:"true"`
+	SecretAccessKey string          `json:"secretAccessKey,omitempty" required:"true"`
 	Region          string          `json:"region" required:"true"`
 	ClusterSpec     *EKSClusterSpec `json:"clusterSpec,omitempty"`
 }
