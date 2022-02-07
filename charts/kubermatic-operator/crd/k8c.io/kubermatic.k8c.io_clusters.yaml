@@ -1413,7 +1413,6 @@ spec:
                 - apiserver
                 - controllerManager
                 - etcd
-                - nodePortProxyEnvoy
                 - prometheus
                 - scheduler
                 type: object
