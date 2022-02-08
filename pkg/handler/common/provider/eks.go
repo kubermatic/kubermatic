@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 
-	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -164,4 +164,18 @@ func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, 
 		regionList = append(regionList, *region.RegionName)
 	}
 	return regionList, nil
+}
+
+func ListEKSSecurityGroupIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
+	securityGroupID := apiv2.EKSSecurityGroupIDList{}
+
+	securityGroups, err := awsprovider.GetSecurityGroupsByVPC(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get security groups: %w", err)
+	}
+
+	for _, group := range securityGroups {
+		securityGroupID = append(securityGroupID, apiv2.EKSSecurityGroupID(*group.GroupId))
+	}
+	return securityGroupID, nil
 }

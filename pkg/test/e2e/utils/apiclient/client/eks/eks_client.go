@@ -28,6 +28,10 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error)
+
+	ListEKSSecurityGroupIDs(params *ListEKSSecurityGroupIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupIDsOK, error)
+
 	ListEKSSubnetIDs(params *ListEKSSubnetIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetIDsOK, error)
 
 	ListEKSVpcIds(params *ListEKSVpcIdsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVpcIdsOK, error)
@@ -35,6 +39,82 @@ type ClientService interface {
 	ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListEKSRegions lists e k s regions
+*/
+func (a *Client) ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSRegionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSRegions",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/eks/regions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSRegionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSRegionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSRegionsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListEKSSecurityGroupIDs lists e k s regions
+*/
+func (a *Client) ListEKSSecurityGroupIDs(params *ListEKSSecurityGroupIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupIDsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSSecurityGroupIDsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSSecurityGroupIDs",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/eks/securityGroupIDs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSSecurityGroupIDsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSSecurityGroupIDsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSSecurityGroupIDsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

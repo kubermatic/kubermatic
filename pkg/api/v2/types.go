@@ -509,6 +509,14 @@ type EKSSubnetIDList []EKSSubnetID
 // swagger:model EKSSubnetID
 type EKSSubnetID string
 
+// EKSSecurityGroupIDList represents an array of EKS securityGroupID.
+// swagger:model EKSSecurityGroupIDList
+type EKSSecurityGroupIDList []EKSSecurityGroupID
+
+// EKSSecurityGroupID represents a object of EKS securityGroupID.
+// swagger:model EKSSecurityGroupID
+type EKSSecurityGroupID string
+
 // EKSVpcIdList represents an array of EKS VpcId.
 // swagger:model EKSVpcIdList
 type EKSVpcIdList []EKSVpcId

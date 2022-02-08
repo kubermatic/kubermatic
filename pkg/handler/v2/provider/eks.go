@@ -111,11 +111,11 @@ func (req EKSSubnetIDsReq) Validate() error {
 func DecodeEKSClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req EKSClusterListReq
 
-	commonReq, err := DecodeEKSCommonReq(c, r)
+	typesReq, err := DecodeEKSTypesReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.EKSCommonReq = commonReq.(EKSCommonReq)
+	req.EKSTypesReq = typesReq.(EKSTypesReq)
 	pr, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
@@ -169,6 +169,22 @@ func ListEKSSubnetIDsEndpoint(userInfoGetter provider.UserInfoGetter, presetProv
 		}
 
 		return providercommon.ListEKSSubnetIDs(ctx, *credential, req.VpcId)
+	}
+}
+
+func ListEKSSecurityGroupIDsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(EKSSubnetIDsReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		credential, err := getEKSCredentialsFromReq(ctx, req.EKSTypesReq, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		return providercommon.ListEKSSecurityGroupIDs(ctx, *credential, req.VpcId)
 	}
 }
 

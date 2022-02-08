@@ -16994,7 +16994,7 @@
           "application/json"
         ],
         "tags": [
-          "regions"
+          "eks"
         ],
         "summary": "List EKS regions.",
         "operationId": "listEKSRegions",
@@ -17006,6 +17006,38 @@
               "items": {
                 "$ref": "#/definitions/EKSRegions"
               }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/eks/securityGroupIDs": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "List EKS regions.",
+        "operationId": "listEKSSecurityGroupIDs",
+        "responses": {
+          "200": {
+            "description": "EKSSubnetIDList",
+            "schema": {
+              "$ref": "#/definitions/EKSSubnetIDList"
             }
           },
           "401": {
@@ -21676,6 +21708,19 @@
       "title": "Regions represents an list of EKS regions.",
       "items": {
         "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSecurityGroupID": {
+      "type": "string",
+      "title": "EKSSecurityGroupID represents a object of EKS securityGroupID.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSecurityGroupIDList": {
+      "type": "array",
+      "title": "EKSSecurityGroupIDList represents an array of EKS securityGroupID.",
+      "items": {
+        "$ref": "#/definitions/EKSSecurityGroupID"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

@@ -78,6 +78,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listEKSSubnetIDs())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/eks/securityGroupIDs").
+		Handler(r.listEKSSecurityGroupIDs())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/eks/regions").
 		Handler(r.listEKSRegions())
 
@@ -5304,7 +5308,32 @@ func (r Routing) listEKSSubnetIDs() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/regions regions listEKSRegions
+// swagger:route GET /api/v2/providers/eks/securityGroupIDs eks listEKSSecurityGroupIDs
+//
+//     List EKS regions.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSSubnetIDList
+//       401: empty
+//       403: empty
+func (r Routing) listEKSSecurityGroupIDs() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSSecurityGroupIDsEndpoint(r.userInfoGetter, r.presetProvider)),
+		provider.DecodeEKSSubnetIDsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/regions eks listEKSRegions
 //
 //     List EKS regions.
 //
