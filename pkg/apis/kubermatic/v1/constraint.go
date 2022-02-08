@@ -51,6 +51,9 @@ type ConstraintSpec struct {
 	Disabled bool `json:"disabled,omitempty"`
 	// Match contains the constraint to resource matching data
 	Match Match `json:"match,omitempty"`
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:pruning:PreserveUnknownFields
+	//
 	// Parameters specifies the parameters used by the constraint template REGO.
 	// It supports both the legacy rawJSON parameters, in which all the parameters are set in a JSON string, and regular
 	// parameters like in Gatekeeper Constraints.
