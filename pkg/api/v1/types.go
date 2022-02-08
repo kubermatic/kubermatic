@@ -494,6 +494,13 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 			ID:                internalUser.Name,
 			Name:              internalUser.Spec.Name,
 			CreationTimestamp: NewTime(internalUser.CreationTimestamp.Time),
+			DeletionTimestamp: func() *Time {
+				if internalUser.DeletionTimestamp != nil {
+					deletionTimestamp := NewTime(internalUser.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
 		},
 		Email:   internalUser.Spec.Email,
 		IsAdmin: internalUser.Spec.IsAdmin,
