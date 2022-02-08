@@ -537,9 +537,9 @@ const (
 
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"
-	// NutanixCSIConfigSecretKey is the secret key for nutanix csi secret
+	// NutanixCSIConfigSecretKey is the secret key for nutanix csi secret.
 	NutanixCSIConfigSecretKey = "key"
-	// NutanixCSIConfigSecretName is the secret key for nutanix csi secret
+	// NutanixCSIConfigSecretName is the secret key for nutanix csi secret.
 	NutanixCSIConfigSecretName = "ntnx-secret"
 )
 
