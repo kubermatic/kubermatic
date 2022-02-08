@@ -19,6 +19,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/email"
@@ -39,35 +40,17 @@ type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, er
 // presetDeleter is a function to delete a preset.
 type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetsGetter, error) {
-	if dynamicPresets {
-		return func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-			presetList := &kubermaticv1.PresetList{}
-			if err := client.List(ctx, presetList); err != nil {
-				return nil, fmt.Errorf("failed to get presets: %w", err)
-			}
-			return filterOutPresets(userInfo, presetList)
-		}, nil
-	}
-	var presets *kubermaticv1.PresetList
-
-	if presets == nil {
-		presets = &kubermaticv1.PresetList{Items: []kubermaticv1.Preset{}}
-	}
-
+func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetsGetter, error) {
 	return func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-		return filterOutPresets(userInfo, presets)
+		presetList := &kubermaticv1.PresetList{}
+		if err := client.List(ctx, presetList); err != nil {
+			return nil, fmt.Errorf("failed to get presets: %w", err)
+		}
+		return filterOutPresets(userInfo, presetList)
 	}, nil
 }
 
-func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetCreator, error) {
-	// Do not support preset creation if dynamic presets are not enabled
-	if !dynamicPresets {
-		return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-			return nil, fmt.Errorf("preset creation not supported when dynamic presets feature is disabled")
-		}, nil
-	}
-
+func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetCreator, error) {
 	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 		if err := client.Create(ctx, preset); err != nil {
 			return nil, err
@@ -77,14 +60,7 @@ func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	}, nil
 }
 
-func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetUpdater, error) {
-	// Do not support preset update if dynamic presets are not enabled
-	if !dynamicPresets {
-		return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-			return nil, fmt.Errorf("preset update not supported when dynamic presets feature is disabled")
-		}, nil
-	}
-
+func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetUpdater, error) {
 	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 		if err := client.Update(ctx, preset); err != nil {
 			return nil, err
@@ -111,18 +87,18 @@ type PresetProvider struct {
 	deleter presetDeleter
 }
 
-func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (*PresetProvider, error) {
-	getter, err := presetsGetterFactory(ctx, client, dynamicPresets)
+func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client) (*PresetProvider, error) {
+	getter, err := presetsGetterFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}
 
-	creator, err := presetCreatorFactory(ctx, client, dynamicPresets)
+	creator, err := presetCreatorFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}
 
-	patcher, err := presetUpdaterFactory(ctx, client, dynamicPresets)
+	patcher, err := presetUpdaterFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}

@@ -44,7 +44,6 @@ type serverRunOptions struct {
 	swaggerFile    string
 	domain         string
 	exposeStrategy kubermaticv1.ExposeStrategy
-	dynamicPresets bool
 	namespace      string
 	log            kubermaticlog.Options
 	caBundle       *certificates.CABundle
@@ -101,7 +100,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
-	flag.BoolVar(&s.dynamicPresets, "dynamic-presets", false, "Whether to enable dynamic presets")
 	flag.StringVar(&s.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	addFlags(flag.CommandLine)
