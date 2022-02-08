@@ -52,7 +52,7 @@ func TLSServingCertificateCreator(ca *triple.KeyPair) reconciling.NamedSecretCre
 					fmt.Sprintf("%s.%s.svc.", resources.CSIMigrationWebhookName, metav1.NamespaceSystem),
 				},
 			}
-			if b, exists := se.Data[resources.CSIMigrationWebhookServingCertCertKeyName]; exists {
+			if b, exists := se.Data[resources.CSIWebhookServingCertCertKeyName]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
 					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.CSIMigrationWebhookSecretName, err)
@@ -73,8 +73,8 @@ func TLSServingCertificateCreator(ca *triple.KeyPair) reconciling.NamedSecretCre
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
-			se.Data[resources.CSIMigrationWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.CSIMigrationWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
+			se.Data[resources.CSIWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
+			se.Data[resources.CSIWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
 			// Include the CA for simplicity
 			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 			se.Data[resources.CSIMigrationWebhookConfig] = []byte(webhookConfig)

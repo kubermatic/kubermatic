@@ -20,8 +20,8 @@ spec:
         image: {{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-validation-webhook:v4.2.1
         imagePullPolicy: IfNotPresent
         args:
-          - --tls-cert-file=/etc/snapshot-validation-webhook/certs/tls.crt
-          - --tls-private-key-file=/etc/snapshot-validation-webhook/certs/tls.key
+          - --tls-cert-file=/etc/snapshot-validation-webhook/certs/cert.pem
+          - --tls-private-key-file=/etc/snapshot-validation-webhook/certs/key.pem
           - --v=2
           - --port=8443
         ports:
@@ -40,7 +40,7 @@ spec:
       volumes:
         - name: snapshot-validation-webhook-certs
           secret:
-            secretName: nutanix-webhook-certs
+            secretName: csi-webhook-certs
       nodeSelector:
         node-role.kubernetes.io/master: ""
       priorityClassName: system-cluster-critical

@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi"
 	csimigration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
@@ -759,7 +760,8 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 
 	if data.csiCloudConfig != nil && r.cloudProvider == kubermaticv1.NutanixCloudProvider {
-		creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig))
+		creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
+			csi.TLSServingCertificateCreator(resources.NutanixCSIWebhookName, data.caCert))
 	}
 
 	if r.userSSHKeyAgent {
