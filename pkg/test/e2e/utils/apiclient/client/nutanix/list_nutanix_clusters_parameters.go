@@ -65,11 +65,11 @@ type ListNutanixClustersParams struct {
 	// NutanixPassword.
 	NutanixPassword *string
 
+	// NutanixProxyURL.
+	NutanixProxyURL *string
+
 	// NutanixUsername.
 	NutanixUsername *string
-
-	// ProxyURL.
-	ProxyURL *string
 
 	/* Dc.
 
@@ -152,6 +152,17 @@ func (o *ListNutanixClustersParams) SetNutanixPassword(nutanixPassword *string) 
 	o.NutanixPassword = nutanixPassword
 }
 
+// WithNutanixProxyURL adds the nutanixProxyURL to the list nutanix clusters params
+func (o *ListNutanixClustersParams) WithNutanixProxyURL(nutanixProxyURL *string) *ListNutanixClustersParams {
+	o.SetNutanixProxyURL(nutanixProxyURL)
+	return o
+}
+
+// SetNutanixProxyURL adds the nutanixProxyUrl to the list nutanix clusters params
+func (o *ListNutanixClustersParams) SetNutanixProxyURL(nutanixProxyURL *string) {
+	o.NutanixProxyURL = nutanixProxyURL
+}
+
 // WithNutanixUsername adds the nutanixUsername to the list nutanix clusters params
 func (o *ListNutanixClustersParams) WithNutanixUsername(nutanixUsername *string) *ListNutanixClustersParams {
 	o.SetNutanixUsername(nutanixUsername)
@@ -161,17 +172,6 @@ func (o *ListNutanixClustersParams) WithNutanixUsername(nutanixUsername *string)
 // SetNutanixUsername adds the nutanixUsername to the list nutanix clusters params
 func (o *ListNutanixClustersParams) SetNutanixUsername(nutanixUsername *string) {
 	o.NutanixUsername = nutanixUsername
-}
-
-// WithProxyURL adds the proxyURL to the list nutanix clusters params
-func (o *ListNutanixClustersParams) WithProxyURL(proxyURL *string) *ListNutanixClustersParams {
-	o.SetProxyURL(proxyURL)
-	return o
-}
-
-// SetProxyURL adds the proxyUrl to the list nutanix clusters params
-func (o *ListNutanixClustersParams) SetProxyURL(proxyURL *string) {
-	o.ProxyURL = proxyURL
 }
 
 // WithDC adds the dc to the list nutanix clusters params
@@ -209,18 +209,18 @@ func (o *ListNutanixClustersParams) WriteToRequest(r runtime.ClientRequest, reg 
 		}
 	}
 
-	if o.NutanixUsername != nil {
+	if o.NutanixProxyURL != nil {
 
-		// header param NutanixUsername
-		if err := r.SetHeaderParam("NutanixUsername", *o.NutanixUsername); err != nil {
+		// header param NutanixProxyURL
+		if err := r.SetHeaderParam("NutanixProxyURL", *o.NutanixProxyURL); err != nil {
 			return err
 		}
 	}
 
-	if o.ProxyURL != nil {
+	if o.NutanixUsername != nil {
 
-		// header param ProxyURL
-		if err := r.SetHeaderParam("ProxyURL", *o.ProxyURL); err != nil {
+		// header param NutanixUsername
+		if err := r.SetHeaderParam("NutanixUsername", *o.NutanixUsername); err != nil {
 			return err
 		}
 	}

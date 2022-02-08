@@ -17318,7 +17318,7 @@
           },
           {
             "type": "string",
-            "name": "ProxyURL",
+            "name": "NutanixProxyURL",
             "in": "header"
           },
           {
@@ -17374,7 +17374,7 @@
           },
           {
             "type": "string",
-            "name": "ProxyURL",
+            "name": "NutanixProxyURL",
             "in": "header"
           },
           {
@@ -17430,7 +17430,7 @@
           },
           {
             "type": "string",
-            "name": "ProxyURL",
+            "name": "NutanixProxyURL",
             "in": "header"
           },
           {
