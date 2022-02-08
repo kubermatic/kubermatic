@@ -528,6 +528,14 @@ type AKSCluster struct {
 // swagger:model AKSClusterList
 type AKSClusterList []AKSCluster
 
+// AKSVMSizeList represents an array of AKS VM sizes.
+// swagger:model AKSVMSizeList
+type AKSVMSizeList []AKSVMSize
+
+// AKSVMSize is the object representing Azure VM sizes.
+// swagger:model AKSVMSize
+type AKSVMSize string
+
 // FeatureGates represents an object holding feature gate settings
 // swagger:model FeatureGates
 type FeatureGates struct {

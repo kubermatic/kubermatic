@@ -74,6 +74,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.validateAKSCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/aks/vmsizes").
+		Handler(r.listAKSVMSizes())
+
+	mux.Methods(http.MethodGet).
 		Path("/featuregates").
 		Handler(r.getFeatureGates())
 
@@ -5289,6 +5293,28 @@ func (r Routing) validateAKSCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeAKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/aks/vmsizes aks listAKSVMSizes
+//
+// List AKS VM Sizes
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSVMSizeList
+func (r Routing) listAKSVMSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListAKSVMSizesEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeAKSVMSizesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -159,3 +159,51 @@ func ValidateAKSCredentials(ctx context.Context, cred resources.AKSCredentials) 
 
 	return err
 }
+
+func ListAKSVMSizes(ctx context.Context, cred resources.AKSCredentials, location string) (apiv2.AKSVMSizeList, error) {
+	vmSizes, err := AKSAzureSize(ctx, cred.SubscriptionID, cred.ClientID, cred.ClientSecret, cred.TenantID, location)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get vmsizes: %w", err)
+	}
+
+	return vmSizes, nil
+}
+
+func AKSAzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv2.AKSVMSizeList, error) {
+	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for size client: %w", err)
+	}
+
+	skuList, err := sizesClient.ListSKU(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list SKU resource: %w", err)
+	}
+
+	// prepare set of valid VM size types from SKU resources
+	validSKUSet := make(map[string]struct{}, len(skuList))
+	for _, v := range skuList {
+		if isValidVM(v, location) {
+			validSKUSet[*v.Name] = struct{}{}
+		}
+	}
+
+	// get all available VM size types for given location
+	listVMSize, err := sizesClient.ListVMSize(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sizes: %w", err)
+	}
+
+	var sizeList apiv2.AKSVMSizeList
+	for _, v := range listVMSize {
+		if v.Name != nil {
+			vmName := *v.Name
+			_, okSKU := validSKUSet[vmName]
+			if okSKU {
+				sizeList = append(sizeList, apiv2.AKSVMSize(vmName))
+			}
+		}
+	}
+
+	return sizeList, nil
+}

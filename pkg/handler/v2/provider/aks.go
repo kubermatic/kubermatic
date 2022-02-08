@@ -56,6 +56,27 @@ type AKSCommonReq struct {
 	Credential string
 }
 
+// AKSVMSizesReq represent a request for AKS VM Sizes list.
+// swagger:parameters listAKSVMSizes
+type AKSVMSizesReq struct {
+	AKSTypesReq
+	// Location - Resource location
+	// in: header
+	// name: Location
+	Location string
+}
+
+// Validate validates aksCommonReq request.
+func (req AKSVMSizesReq) Validate() error {
+	if len(req.Credential) == 0 && len(req.TenantID) == 0 && len(req.SubscriptionID) == 0 && len(req.ClientID) == 0 && len(req.ClientSecret) == 0 {
+		return fmt.Errorf("AKS credentials cannot be empty")
+	}
+	if len(req.Location) == 0 {
+		return fmt.Errorf("AKS Location cannot be empty")
+	}
+	return nil
+}
+
 // Validate validates aksCommonReq request.
 func (req AKSCommonReq) Validate() error {
 	if len(req.Credential) == 0 && len(req.TenantID) == 0 && len(req.SubscriptionID) == 0 && len(req.ClientID) == 0 && len(req.ClientSecret) == 0 {
@@ -84,6 +105,19 @@ func DecodeAKSTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 		return nil, err
 	}
 	req.AKSCommonReq = commonReq.(AKSCommonReq)
+
+	return req, nil
+}
+
+func DecodeAKSVMSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AKSVMSizesReq
+
+	typesReq, err := DecodeAKSTypesReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.AKSTypesReq = typesReq.(AKSTypesReq)
+	req.Location = r.Header.Get("Location")
 
 	return req, nil
 }
@@ -138,6 +172,22 @@ func AKSValidateCredentialsEndpoint(presetProvider provider.PresetProvider, user
 		}
 
 		return nil, providercommon.ValidateAKSCredentials(ctx, *cred)
+	}
+}
+
+func ListAKSVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AKSVMSizesReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		cred, err := getAKSCredentialsFromReq(ctx, req.AKSCommonReq, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		return providercommon.ListAKSVMSizes(ctx, *cred, req.Location)
 	}
 }
 
