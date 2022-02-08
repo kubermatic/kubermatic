@@ -41,11 +41,9 @@ type serverRunOptions struct {
 	internalAddr   string
 	prometheusURL  string
 	workerName     string
-	presetsFile    string
 	swaggerFile    string
 	domain         string
 	exposeStrategy kubermaticv1.ExposeStrategy
-	dynamicPresets bool
 	namespace      string
 	log            kubermaticlog.Options
 	caBundle       *certificates.CABundle
@@ -87,7 +85,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&s.prometheusURL, "prometheus-url", "http://prometheus.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
-	flag.StringVar(&s.presetsFile, "presets", "", "The optional file path for a file containing presets")
 	flag.StringVar(&s.swaggerFile, "swagger", "./cmd/kubermatic-api/swagger.json", "The swagger.json file path")
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
@@ -103,7 +100,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
-	flag.BoolVar(&s.dynamicPresets, "dynamic-presets", false, "Whether to enable dynamic presets")
 	flag.StringVar(&s.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	addFlags(flag.CommandLine)

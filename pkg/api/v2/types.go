@@ -174,6 +174,8 @@ type MLA struct {
 // ClusterTemplate represents a ClusterTemplate object
 // swagger:model ClusterTemplate
 type ClusterTemplate struct {
+	apiv1.ObjectMeta
+
 	Name string `json:"name"`
 	ID   string `json:"id"`
 
@@ -297,6 +299,8 @@ type EtcdBackupConfigSpec struct {
 // EtcdRestore represents an object holding the configuration for etcd backup restore
 // swagger:model EtcdRestore
 type EtcdRestore struct {
+	apiv1.ObjectMeta
+
 	Name string `json:"name"`
 
 	Spec   EtcdRestoreSpec   `json:"spec"`

@@ -86,8 +86,12 @@ func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlrunti
 		Options: opts,
 		cache:   cache,
 	}
+	s, err := newSnapshotBuilder(log, portHostMappingFromAnnotation, opts).build("0.0.0")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to build snapshot: %w", err)
+	}
 
-	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshotBuilder(log, portHostMappingFromAnnotation, opts).build("0.0.0")); err != nil {
+	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to set initial Envoy cache snapshot")
 	}
 	return &r, cache, nil
@@ -151,7 +155,11 @@ func (r *Reconciler) sync(ctx context.Context) error {
 	currSnapshot, err := r.cache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
 		r.log.Debugf("setting first snapshot: %v", err)
-		if err := r.cache.SetSnapshot(r.EnvoyNodeName, sb.build("0.0.0")); err != nil {
+		s, err := sb.build("0.0.0")
+		if err != nil {
+			return fmt.Errorf("failed to build the first snapshot: %w", err)
+		}
+		if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
 			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 		}
 		return nil
@@ -162,21 +170,29 @@ func (r *Reconciler) sync(ctx context.Context) error {
 		return errors.Wrap(err, "failed to parse version from last snapshot")
 	}
 
+	s, err := sb.build(lastUsedVersion.String())
+	if err != nil {
+		return fmt.Errorf("failed to build snapshot: %w", err)
+	}
+
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	if reflect.DeepEqual(currSnapshot, sb.build(lastUsedVersion.String())) {
+	if reflect.DeepEqual(currSnapshot, s) {
 		r.log.Debug("no changes detected")
 		return nil
 	}
 
 	newVersion := lastUsedVersion.IncMajor()
 	r.log.Infow("detected a change. Updating the Envoy config cache...", "version", newVersion.String())
-	newSnapshot := sb.build(newVersion.String())
+	newSnapshot, err := sb.build(newVersion.String())
+	if err != nil {
+		return fmt.Errorf("failed to build snapshot: %w", err)
+	}
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
 	}
 
-	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot); err != nil {
+	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, newSnapshot); err != nil {
 		return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 	}
 

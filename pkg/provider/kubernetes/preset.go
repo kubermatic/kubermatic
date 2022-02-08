@@ -17,11 +17,8 @@ limitations under the License.
 package kubernetes
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -29,7 +26,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 // presetsGetter is a function to retrieve preset list.
@@ -44,73 +40,17 @@ type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, er
 // presetDeleter is a function to delete a preset.
 type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-// LoadPresets loads the custom presets for supported providers.
-func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
-	s := struct {
-		Presets *kubermaticv1.PresetList `json:"presets"`
-	}{}
-
-	err := yaml.UnmarshalStrict(yamlContent, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.Presets, nil
-}
-
-// LoadPresetsFromFile loads the custom presets for supported providers.
-func LoadPresetsFromFile(path string) (*kubermaticv1.PresetList, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
-	if err != nil {
-		return nil, err
-	}
-
-	return LoadPresets(bytes)
-}
-
-func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (presetsGetter, error) {
-	if dynamicPresets {
-		return func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-			presetList := &kubermaticv1.PresetList{}
-			if err := client.List(ctx, presetList); err != nil {
-				return nil, fmt.Errorf("failed to get presets: %w", err)
-			}
-			return filterOutPresets(userInfo, presetList)
-		}, nil
-	}
-	var presets *kubermaticv1.PresetList
-	var err error
-
-	if presetsFile != "" {
-		presets, err = LoadPresetsFromFile(presetsFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load presets from %s: %w", presetsFile, err)
-		}
-	}
-
-	if presets == nil {
-		presets = &kubermaticv1.PresetList{Items: []kubermaticv1.Preset{}}
-	}
-
+func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetsGetter, error) {
 	return func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-		return filterOutPresets(userInfo, presets)
+		presetList := &kubermaticv1.PresetList{}
+		if err := client.List(ctx, presetList); err != nil {
+			return nil, fmt.Errorf("failed to get presets: %w", err)
+		}
+		return filterOutPresets(userInfo, presetList)
 	}, nil
 }
 
-func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetCreator, error) {
-	// Do not support preset creation if dynamic presets are not enabled
-	if !dynamicPresets {
-		return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-			return nil, fmt.Errorf("preset creation not supported when dynamic presets feature is disabled")
-		}, nil
-	}
-
+func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetCreator, error) {
 	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 		if err := client.Create(ctx, preset); err != nil {
 			return nil, err
@@ -120,14 +60,7 @@ func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	}, nil
 }
 
-func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetUpdater, error) {
-	// Do not support preset update if dynamic presets are not enabled
-	if !dynamicPresets {
-		return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-			return nil, fmt.Errorf("preset update not supported when dynamic presets feature is disabled")
-		}, nil
-	}
-
+func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetUpdater, error) {
 	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 		if err := client.Update(ctx, preset); err != nil {
 			return nil, err
@@ -154,18 +87,18 @@ type PresetProvider struct {
 	deleter presetDeleter
 }
 
-func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (*PresetProvider, error) {
-	getter, err := presetsGetterFactory(ctx, client, presetsFile, dynamicPresets)
+func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client) (*PresetProvider, error) {
+	getter, err := presetsGetterFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}
 
-	creator, err := presetCreatorFactory(ctx, client, dynamicPresets)
+	creator, err := presetCreatorFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}
 
-	patcher, err := presetUpdaterFactory(ctx, client, dynamicPresets)
+	patcher, err := presetUpdaterFactory(ctx, client)
 	if err != nil {
 		return nil, err
 	}

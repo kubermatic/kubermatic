@@ -32,6 +32,13 @@ func ConvertInternalSSHKeysToExternal(internalKeys []*kubermaticv1.UserSSHKey) [
 				ID:                key.Name,
 				Name:              key.Spec.Name,
 				CreationTimestamp: apiv1.NewTime(key.CreationTimestamp.Time),
+				DeletionTimestamp: func() *apiv1.Time {
+					if key.DeletionTimestamp != nil {
+						deletionTimestamp := apiv1.NewTime(key.DeletionTimestamp.Time)
+						return &deletionTimestamp
+					}
+					return nil
+				}(),
 			},
 			Spec: apiv1.SSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,

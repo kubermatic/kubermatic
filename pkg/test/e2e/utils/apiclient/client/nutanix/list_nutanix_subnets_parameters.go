@@ -62,29 +62,29 @@ type ListNutanixSubnetsParams struct {
 	// Credential.
 	Credential *string
 
-	// Password.
-	Password *string
+	// NutanixCluster.
+	NutanixCluster string
 
-	// ProxyURL.
-	ProxyURL *string
+	// NutanixPassword.
+	NutanixPassword *string
 
-	// Username.
-	Username *string
+	/* NutanixProject.
 
-	// ClusterName.
-	ClusterName string
+	   Project query parameter. Can be omitted to query subnets without project scope
+	*/
+	NutanixProject *string
+
+	// NutanixProxyURL.
+	NutanixProxyURL *string
+
+	// NutanixUsername.
+	NutanixUsername *string
 
 	/* Dc.
 
 	   KKP Datacenter to use for endpoint
 	*/
 	DC string
-
-	/* ProjectName.
-
-	   Project query parameter. Can be omitted to query subnets without project scope
-	*/
-	ProjectName *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -150,48 +150,59 @@ func (o *ListNutanixSubnetsParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
-// WithPassword adds the password to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) WithPassword(password *string) *ListNutanixSubnetsParams {
-	o.SetPassword(password)
+// WithNutanixCluster adds the nutanixCluster to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) WithNutanixCluster(nutanixCluster string) *ListNutanixSubnetsParams {
+	o.SetNutanixCluster(nutanixCluster)
 	return o
 }
 
-// SetPassword adds the password to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) SetPassword(password *string) {
-	o.Password = password
+// SetNutanixCluster adds the nutanixCluster to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) SetNutanixCluster(nutanixCluster string) {
+	o.NutanixCluster = nutanixCluster
 }
 
-// WithProxyURL adds the proxyURL to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) WithProxyURL(proxyURL *string) *ListNutanixSubnetsParams {
-	o.SetProxyURL(proxyURL)
+// WithNutanixPassword adds the nutanixPassword to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) WithNutanixPassword(nutanixPassword *string) *ListNutanixSubnetsParams {
+	o.SetNutanixPassword(nutanixPassword)
 	return o
 }
 
-// SetProxyURL adds the proxyUrl to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) SetProxyURL(proxyURL *string) {
-	o.ProxyURL = proxyURL
+// SetNutanixPassword adds the nutanixPassword to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) SetNutanixPassword(nutanixPassword *string) {
+	o.NutanixPassword = nutanixPassword
 }
 
-// WithUsername adds the username to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) WithUsername(username *string) *ListNutanixSubnetsParams {
-	o.SetUsername(username)
+// WithNutanixProject adds the nutanixProject to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) WithNutanixProject(nutanixProject *string) *ListNutanixSubnetsParams {
+	o.SetNutanixProject(nutanixProject)
 	return o
 }
 
-// SetUsername adds the username to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) SetUsername(username *string) {
-	o.Username = username
+// SetNutanixProject adds the nutanixProject to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) SetNutanixProject(nutanixProject *string) {
+	o.NutanixProject = nutanixProject
 }
 
-// WithClusterName adds the clusterName to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) WithClusterName(clusterName string) *ListNutanixSubnetsParams {
-	o.SetClusterName(clusterName)
+// WithNutanixProxyURL adds the nutanixProxyURL to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) WithNutanixProxyURL(nutanixProxyURL *string) *ListNutanixSubnetsParams {
+	o.SetNutanixProxyURL(nutanixProxyURL)
 	return o
 }
 
-// SetClusterName adds the clusterName to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) SetClusterName(clusterName string) {
-	o.ClusterName = clusterName
+// SetNutanixProxyURL adds the nutanixProxyUrl to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) SetNutanixProxyURL(nutanixProxyURL *string) {
+	o.NutanixProxyURL = nutanixProxyURL
+}
+
+// WithNutanixUsername adds the nutanixUsername to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) WithNutanixUsername(nutanixUsername *string) *ListNutanixSubnetsParams {
+	o.SetNutanixUsername(nutanixUsername)
+	return o
+}
+
+// SetNutanixUsername adds the nutanixUsername to the list nutanix subnets params
+func (o *ListNutanixSubnetsParams) SetNutanixUsername(nutanixUsername *string) {
+	o.NutanixUsername = nutanixUsername
 }
 
 // WithDC adds the dc to the list nutanix subnets params
@@ -203,17 +214,6 @@ func (o *ListNutanixSubnetsParams) WithDC(dc string) *ListNutanixSubnetsParams {
 // SetDC adds the dc to the list nutanix subnets params
 func (o *ListNutanixSubnetsParams) SetDC(dc string) {
 	o.DC = dc
-}
-
-// WithProjectName adds the projectName to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) WithProjectName(projectName *string) *ListNutanixSubnetsParams {
-	o.SetProjectName(projectName)
-	return o
-}
-
-// SetProjectName adds the projectName to the list nutanix subnets params
-func (o *ListNutanixSubnetsParams) SetProjectName(projectName *string) {
-	o.ProjectName = projectName
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -232,55 +232,46 @@ func (o *ListNutanixSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg s
 		}
 	}
 
-	if o.Password != nil {
-
-		// header param Password
-		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
-			return err
-		}
-	}
-
-	if o.ProxyURL != nil {
-
-		// header param ProxyURL
-		if err := r.SetHeaderParam("ProxyURL", *o.ProxyURL); err != nil {
-			return err
-		}
-	}
-
-	if o.Username != nil {
-
-		// header param Username
-		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
-			return err
-		}
-	}
-
-	// path param cluster_name
-	if err := r.SetPathParam("cluster_name", o.ClusterName); err != nil {
+	// header param NutanixCluster
+	if err := r.SetHeaderParam("NutanixCluster", o.NutanixCluster); err != nil {
 		return err
+	}
+
+	if o.NutanixPassword != nil {
+
+		// header param NutanixPassword
+		if err := r.SetHeaderParam("NutanixPassword", *o.NutanixPassword); err != nil {
+			return err
+		}
+	}
+
+	if o.NutanixProject != nil {
+
+		// header param NutanixProject
+		if err := r.SetHeaderParam("NutanixProject", *o.NutanixProject); err != nil {
+			return err
+		}
+	}
+
+	if o.NutanixProxyURL != nil {
+
+		// header param NutanixProxyURL
+		if err := r.SetHeaderParam("NutanixProxyURL", *o.NutanixProxyURL); err != nil {
+			return err
+		}
+	}
+
+	if o.NutanixUsername != nil {
+
+		// header param NutanixUsername
+		if err := r.SetHeaderParam("NutanixUsername", *o.NutanixUsername); err != nil {
+			return err
+		}
 	}
 
 	// path param dc
 	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
-	}
-
-	if o.ProjectName != nil {
-
-		// query param project_name
-		var qrProjectName string
-
-		if o.ProjectName != nil {
-			qrProjectName = *o.ProjectName
-		}
-		qProjectName := qrProjectName
-		if qProjectName != "" {
-
-			if err := r.SetQueryParam("project_name", qProjectName); err != nil {
-				return err
-			}
-		}
 	}
 
 	if len(res) > 0 {

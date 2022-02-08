@@ -443,6 +443,13 @@ func convertInternalServiceAccountToExternal(internal *kubermaticv1.User) *apiv1
 			ID:                internal.Name,
 			Name:              internal.Spec.Name,
 			CreationTimestamp: apiv1.NewTime(internal.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if internal.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(internal.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
 		},
 		Group:  internal.Labels[serviceaccount.ServiceAccountLabelGroup],
 		Status: getStatus(internal),
