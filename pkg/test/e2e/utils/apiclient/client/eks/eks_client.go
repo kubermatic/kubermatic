@@ -34,7 +34,7 @@ type ClientService interface {
 
 	ListEKSSubnetIDs(params *ListEKSSubnetIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetIDsOK, error)
 
-	ListEKSVpcIds(params *ListEKSVpcIdsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVpcIdsOK, error)
+	ListEKSVPCS(params *ListEKSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVPCSOK, error)
 
 	ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error)
 
@@ -156,22 +156,22 @@ func (a *Client) ListEKSSubnetIDs(params *ListEKSSubnetIDsParams, authInfo runti
 }
 
 /*
-  ListEKSVpcIds Lists EKS vpcID list
+  ListEKSVPCS Lists EKS vpc's
 */
-func (a *Client) ListEKSVpcIds(params *ListEKSVpcIdsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVpcIdsOK, error) {
+func (a *Client) ListEKSVPCS(params *ListEKSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVPCSOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListEKSVpcIdsParams()
+		params = NewListEKSVPCSParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listEKSVpcIds",
+		ID:                 "listEKSVPCS",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/eks/vpcIDs",
+		PathPattern:        "/api/v2/providers/eks/vpcs",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListEKSVpcIdsReader{formats: a.formats},
+		Reader:             &ListEKSVPCSReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -184,12 +184,12 @@ func (a *Client) ListEKSVpcIds(params *ListEKSVpcIdsParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListEKSVpcIdsOK)
+	success, ok := result.(*ListEKSVPCSOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListEKSVpcIdsDefault)
+	unexpectedSuccess := result.(*ListEKSVPCSDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -517,13 +517,16 @@ type EKSSecurityGroupIDList []EKSSecurityGroupID
 // swagger:model EKSSecurityGroupID
 type EKSSecurityGroupID string
 
-// EKSVpcIdList represents an array of EKS VpcId.
-// swagger:model EKSVpcIdList
-type EKSVpcIdList []EKSVpcId
+// EKSVPCList represents an array of EKS VPC.
+// swagger:model EKSVPCList
+type EKSVPCList []EKSVPC
 
-// EKSVpcId represents a object of EKS VpcId.
-// swagger:model EKSVpcId
-type EKSVpcId string
+// EKSVPC represents a object of EKS VpcId.
+// swagger:model EKSVPC
+type EKSVPC struct {
+	ID        string `json:"id"`
+	IsDefault bool   `json:"default"`
+}
 
 // AKSCluster represents a object of AKS cluster.
 // swagger:model AKSCluster

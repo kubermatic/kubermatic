@@ -140,7 +140,7 @@ func ListEKSClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProv
 	}
 }
 
-func ListEKSVpcIdsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSVPCEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(EKSTypesReq)
 		if err := req.Validate(); err != nil {
@@ -152,7 +152,7 @@ func ListEKSVpcIdsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvide
 			return nil, err
 		}
 
-		return providercommon.ListEKSVpcIds(ctx, *credential)
+		return providercommon.ListEKSVPC(ctx, *credential)
 	}
 }
 

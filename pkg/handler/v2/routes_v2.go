@@ -70,8 +70,8 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.validateEKSCredentials())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/eks/vpcIDs").
-		Handler(r.listEKSVpcIds())
+		Path("/providers/eks/vpcs").
+		Handler(r.listEKSVPCS())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/eks/subnetIDs").
@@ -5264,22 +5264,22 @@ func (r Routing) listEKSClusters() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/vpcIDs eks listEKSVpcIds
+// swagger:route GET /api/v2/providers/eks/vpcs eks listEKSVPCS
 //
-// Lists EKS vpcID list
+// Lists EKS vpc's
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSVpcIdList
-func (r Routing) listEKSVpcIds() http.Handler {
+//       200: EKSVPCList
+func (r Routing) listEKSVPCS() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSVpcIdsEndpoint(r.userInfoGetter, r.presetProvider)),
+		)(provider.ListEKSVPCEndpoint(r.userInfoGetter, r.presetProvider)),
 		provider.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

@@ -17153,21 +17153,21 @@
         }
       }
     },
-    "/api/v2/providers/eks/vpcIDs": {
+    "/api/v2/providers/eks/vpcs": {
       "get": {
-        "description": "Lists EKS vpcID list",
+        "description": "Lists EKS vpc's",
         "produces": [
           "application/json"
         ],
         "tags": [
           "eks"
         ],
-        "operationId": "listEKSVpcIds",
+        "operationId": "listEKSVPCS",
         "responses": {
           "200": {
-            "description": "EKSVpcIdList",
+            "description": "EKSVPCList",
             "schema": {
-              "$ref": "#/definitions/EKSVpcIdList"
+              "$ref": "#/definitions/EKSVPCList"
             }
           },
           "default": {
@@ -21737,16 +21737,26 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "EKSVpcId": {
-      "type": "string",
-      "title": "EKSVpcId represents a object of EKS VpcId.",
+    "EKSVPC": {
+      "type": "object",
+      "title": "EKSVPC represents a object of EKS VpcId.",
+      "properties": {
+        "default": {
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "EKSVpcIdList": {
+    "EKSVPCList": {
       "type": "array",
-      "title": "EKSVpcIdList represents an array of EKS VpcId.",
+      "title": "EKSVPCList represents an array of EKS VPC.",
       "items": {
-        "$ref": "#/definitions/EKSVpcId"
+        "$ref": "#/definitions/EKSVPC"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
