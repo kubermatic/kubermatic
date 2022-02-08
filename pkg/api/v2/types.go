@@ -497,9 +497,9 @@ type EKSCluster struct {
 // swagger:model EKSClusterList
 type EKSClusterList []EKSCluster
 
-// Regions represents an list of AWS regions.
-// swagger:model Regions
-type Regions []string
+// Regions represents an list of EKS regions.
+// swagger:model EKSRegions
+type EKSRegions []string
 
 // EKSSubnetIDList represents an array of EKS subnetID.
 // swagger:model EKSSubnetIDList

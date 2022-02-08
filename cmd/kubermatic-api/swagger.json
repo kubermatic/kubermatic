@@ -16988,6 +16988,41 @@
         }
       }
     },
+    "/api/v2/providers/eks/regions": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "regions"
+        ],
+        "summary": "List EKS regions.",
+        "operationId": "listEKSRegions",
+        "responses": {
+          "200": {
+            "description": "EKSRegions",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EKSRegions"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/eks/subnetIDs": {
       "get": {
         "description": "Lists EKS subnetID list",
@@ -21633,6 +21668,14 @@
       "title": "EKSClusterList represents an list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSRegions": {
+      "type": "array",
+      "title": "Regions represents an list of EKS regions.",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -26367,14 +26410,6 @@
         }
       },
       "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Regions": {
-      "type": "array",
-      "title": "Regions represents an list of AWS regions.",
-      "items": {
-        "type": "string"
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ResourceLabelMap": {
       "type": "object",

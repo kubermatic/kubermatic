@@ -22,6 +22,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/eks"
 
+	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -29,6 +30,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
+
+// Region value will instruct the SDK where to make service API requests to.
+// Region must be provided before a service client request is made.
+const RegionEndpoint = "eu-central-1"
 
 type EKSCredential struct {
 	AccessKeyID     string
@@ -136,4 +141,27 @@ func ListEKSVpcIds(ctx context.Context, cred EKSCredential) (apiv2.EKSVpcIdList,
 		vpcIDs = append(vpcIDs, apiv2.EKSVpcId(*v.VpcId))
 	}
 	return vpcIDs, nil
+}
+
+func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, error) {
+	regionInput := &ec2service.DescribeRegionsInput{}
+
+	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
+	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", RegionEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieves all regions/endpoints that work with EC2
+	regionOutput, err := client.EC2.DescribeRegions(regionInput)
+	if err != nil {
+		return nil, fmt.Errorf("cannot list regions: %w", err)
+	}
+
+	var regionList []string
+	for _, region := range regionOutput.Regions {
+		regionList = append(regionList, *region.RegionName)
+	}
+	return regionList, nil
 }
