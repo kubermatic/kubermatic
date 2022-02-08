@@ -96,7 +96,6 @@ func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName 
 				"-logtostderr",
 				"-address=0.0.0.0:8080",
 				"-internal-address=0.0.0.0:8085",
-				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
