@@ -79,6 +79,12 @@ func (p *TokenVerifierPlugins) Verify(ctx context.Context, token string) (TokenC
 		if err == nil {
 			return claims, err
 		}
+		// don't check another verifier when the token expired error is discovered
+		var expired *TokenExpiredError
+		if errors.As(err, &expired) {
+			return TokenClaims{}, err
+		}
+
 		errList = append(errList, err)
 	}
 	return TokenClaims{}, k8cerrors.NewAggregate(errList)

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc"
@@ -130,7 +131,7 @@ func NewOpenIDClient(issuer, clientID, clientSecret, redirectURI string, extract
 	}, nil
 }
 
-// Extractor knows how to extract the ID token from the request.
+// Extract knows how to extract the ID token from the request.
 func (o *OpenIDClient) Extract(rq *http.Request) (string, error) {
 	return o.tokenExtractor.Extract(rq)
 }
@@ -144,6 +145,9 @@ func (o *OpenIDClient) Verify(ctx context.Context, token string) (TokenClaims, e
 
 	idToken, err := o.verifier.Verify(ctx, token)
 	if err != nil {
+		if strings.Contains(err.Error(), "oidc: token is expired") {
+			return TokenClaims{}, &TokenExpiredError{msg: err.Error()}
+		}
 		return TokenClaims{}, err
 	}
 

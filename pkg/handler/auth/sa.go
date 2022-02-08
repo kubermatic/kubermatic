@@ -54,9 +54,10 @@ func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (To
 		return TokenClaims{}, err
 	}
 
+	tokenExpiredMsg := fmt.Sprintf("sa: the token %s has been revoked for %s", customClaims.TokenID, customClaims.Email)
 	tokenList, err := s.saTokenProvider.ListUnsecured(&provider.ServiceAccountTokenListOptions{TokenID: customClaims.TokenID})
 	if kerrors.IsNotFound(err) {
-		return TokenClaims{}, fmt.Errorf("sa: the token %s has been revoked for %s", customClaims.TokenID, customClaims.Email)
+		return TokenClaims{}, &TokenExpiredError{msg: tokenExpiredMsg}
 	}
 	if len(tokenList) > 1 {
 		return TokenClaims{}, fmt.Errorf("sa: found more than one token with the given id %s", customClaims.TokenID)
@@ -67,7 +68,7 @@ func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (To
 		return TokenClaims{}, fmt.Errorf("sa: cannot verify the token (%s) because the corresponding token in the database is invalid", customClaims.TokenID)
 	}
 	if string(tokenFromDB) != token {
-		return TokenClaims{}, fmt.Errorf("sa: the token %s has been revoked for %s", customClaims.TokenID, customClaims.Email)
+		return TokenClaims{}, &TokenExpiredError{msg: tokenExpiredMsg}
 	}
 
 	return TokenClaims{
