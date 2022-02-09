@@ -15,7 +15,9 @@
 kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic"
-    tag: "__KUBERMATIC_TAG__"
+    # this field gets updated by set_helm_charts_version() during
+    # a release prowjob
+    tag: "v9.9.9-dev"
 
   imagePullSecret: |
     {

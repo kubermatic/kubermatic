@@ -86,9 +86,7 @@ function deploy {
 # silence complaints by Helm
 chmod 600 "$KUBECONFIG"
 
-# Helm requires semvers for the chart versions
-sed -i "s/__KUBERMATIC_TAG__/v9.9.9-${GIT_HEAD_HASH}/g" charts/*/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/v9.9.9-${GIT_HEAD_HASH}/g" charts/*/*/*.yaml
+set_helm_charts_version "v9.9.9-${GIT_HEAD_HASH}" "${GIT_HEAD_HASH}"
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in

@@ -14,14 +14,14 @@
 
 apiVersion: v1
 name: grafana
-version: '__KUBERMATIC_TAG__'
+version: v9.9.9-dev
 appVersion: 8.1.2
 description: Grafana for Kubermatic
 keywords:
-- kubermatic
-- monitoring
-- grafana
+  - kubermatic
+  - monitoring
+  - grafana
 home: https://grafana.com/
 maintainers:
-- name: The Kubermatic Kubernetes Platform contributors
-  email: support@kubermatic.com
+  - name: The Kubermatic Kubernetes Platform contributors
+    email: support@kubermatic.com

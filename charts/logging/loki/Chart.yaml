@@ -14,15 +14,15 @@
 
 apiVersion: "v1"
 name: loki
-version: '__KUBERMATIC_TAG__'
+version: v9.9.9-dev
 appVersion: v2.8.1
 description: "Loki: like Prometheus, but for logs."
 keywords:
-- kubermatic
-- logging
-- grafana
-- loki
-- promtail
+  - kubermatic
+  - logging
+  - grafana
+  - loki
+  - promtail
 home: https://grafana.com/loki
 sources:
   - https://github.com/grafana/loki

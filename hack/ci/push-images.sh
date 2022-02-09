@@ -80,10 +80,9 @@ if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
   TEST_NAME="Build and push docker images"
   echodate "Building and pushing quay images"
 
-  # prepare Helm charts
-  chartVersion="${GIT_HEAD_TAG:-v9.9.9-$GIT_HEAD_HASH}"
-  sed -i "s/__KUBERMATIC_TAG__/${chartVersion}/g" charts/*/*.yaml
-  sed -i "s/__KUBERMATIC_TAG__/${chartVersion}/g" charts/*/*/*.yaml
+  # prepare Helm charts, do not use $KUBERMATICDOCKERTAG for the chart version,
+  # as it could just be a git hash and we need to ensure a proper semver version
+  set_helm_charts_version "${GIT_HEAD_TAG:-v9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCKERTAG"
 
   set -f # prevent globbing, do word splitting
   # shellcheck disable=SC2086

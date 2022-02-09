@@ -14,22 +14,21 @@
 
 apiVersion: v1
 name: promtail
-version: '__KUBERMATIC_TAG__'
+version: v9.9.9-dev
 appVersion: v2.1.0
 description: "Responsible for gathering logs and sending them to Loki"
 keywords:
-- kubermatic
-- logging
-- grafana
-- loki
-- promtail
+  - kubermatic
+  - logging
+  - grafana
+  - loki
+  - promtail
 home: https://grafana.com/loki
 sources:
-- https://github.com/grafana/loki
+  - https://github.com/grafana/loki
 maintainers:
-- name: The Kubermatic Kubernetes Platform contributors
-  email: support@kubermatic.com
-
+  - name: The Kubermatic Kubernetes Platform contributors
+    email: support@kubermatic.com
 dependencies:
   - name: promtail
     version: "3.8.1"
