@@ -75,11 +75,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/eks/subnets").
-		Handler(r.listEKSSubnetIDs())
+		Handler(r.listEKSSubnets())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/eks/securitygroups").
-		Handler(r.listEKSSecurityGroupIDs())
+		Handler(r.listEKSSecurityGroups())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/eks/regions").
@@ -5354,9 +5354,9 @@ func (r Routing) listEKSVPCS() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/subnets eks listEKSSubnetIDs
+// swagger:route GET /api/v2/providers/eks/subnets eks listEKSSubnets
 //
-// Lists EKS subnetID list
+// Lists EKS subnet's ID list.
 //
 //     Produces:
 //     - application/json
@@ -5364,21 +5364,21 @@ func (r Routing) listEKSVPCS() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: EKSSubnetIDList
-func (r Routing) listEKSSubnetIDs() http.Handler {
+func (r Routing) listEKSSubnets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSSubnetIDsEndpoint(r.userInfoGetter, r.presetProvider)),
+		)(provider.ListEKSSubnetsEndpoint(r.userInfoGetter, r.presetProvider)),
 		provider.DecodeEKSSubnetIDsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/securitygroups eks listEKSSecurityGroupIDs
+// swagger:route GET /api/v2/providers/eks/securitygroups eks listEKSSecurityGroups
 //
-//     List EKS regions.
+//     List EKS securitygroup's ID list.
 //
 //
 //     Produces:
@@ -5386,15 +5386,15 @@ func (r Routing) listEKSSubnetIDs() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: EKSSubnetIDList
+//       200: EKSSecurityGroupIDList
 //       401: empty
 //       403: empty
-func (r Routing) listEKSSecurityGroupIDs() http.Handler {
+func (r Routing) listEKSSecurityGroups() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSSecurityGroupIDsEndpoint(r.userInfoGetter, r.presetProvider)),
+		)(provider.ListEKSSecurityGroupsEndpoint(r.userInfoGetter, r.presetProvider)),
 		provider.DecodeEKSSubnetIDsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

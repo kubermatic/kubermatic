@@ -30,9 +30,9 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error)
 
-	ListEKSSecurityGroupIDs(params *ListEKSSecurityGroupIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupIDsOK, error)
+	ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupsOK, error)
 
-	ListEKSSubnetIDs(params *ListEKSSubnetIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetIDsOK, error)
+	ListEKSSubnets(params *ListEKSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsOK, error)
 
 	ListEKSVPCS(params *ListEKSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVPCSOK, error)
 
@@ -80,22 +80,22 @@ func (a *Client) ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.C
 }
 
 /*
-  ListEKSSecurityGroupIDs lists e k s regions
+  ListEKSSecurityGroups lists e k s securitygroup s ID list
 */
-func (a *Client) ListEKSSecurityGroupIDs(params *ListEKSSecurityGroupIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupIDsOK, error) {
+func (a *Client) ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListEKSSecurityGroupIDsParams()
+		params = NewListEKSSecurityGroupsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listEKSSecurityGroupIDs",
+		ID:                 "listEKSSecurityGroups",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/eks/securitygroups",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListEKSSecurityGroupIDsReader{formats: a.formats},
+		Reader:             &ListEKSSecurityGroupsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -108,32 +108,32 @@ func (a *Client) ListEKSSecurityGroupIDs(params *ListEKSSecurityGroupIDsParams, 
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListEKSSecurityGroupIDsOK)
+	success, ok := result.(*ListEKSSecurityGroupsOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListEKSSecurityGroupIDsDefault)
+	unexpectedSuccess := result.(*ListEKSSecurityGroupsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-  ListEKSSubnetIDs Lists EKS subnetID list
+  ListEKSSubnets lists e k s subnet s ID list
 */
-func (a *Client) ListEKSSubnetIDs(params *ListEKSSubnetIDsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetIDsOK, error) {
+func (a *Client) ListEKSSubnets(params *ListEKSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListEKSSubnetIDsParams()
+		params = NewListEKSSubnetsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listEKSSubnetIDs",
+		ID:                 "listEKSSubnets",
 		Method:             "GET",
 		PathPattern:        "/api/v2/providers/eks/subnets",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListEKSSubnetIDsReader{formats: a.formats},
+		Reader:             &ListEKSSubnetsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -146,12 +146,12 @@ func (a *Client) ListEKSSubnetIDs(params *ListEKSSubnetIDsParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListEKSSubnetIDsOK)
+	success, ok := result.(*ListEKSSubnetsOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListEKSSubnetIDsDefault)
+	unexpectedSuccess := result.(*ListEKSSubnetsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -17126,13 +17126,13 @@
         "tags": [
           "eks"
         ],
-        "summary": "List EKS regions.",
-        "operationId": "listEKSSecurityGroupIDs",
+        "summary": "List EKS securitygroup's ID list.",
+        "operationId": "listEKSSecurityGroups",
         "responses": {
           "200": {
-            "description": "EKSSubnetIDList",
+            "description": "EKSSecurityGroupIDList",
             "schema": {
-              "$ref": "#/definitions/EKSSubnetIDList"
+              "$ref": "#/definitions/EKSSecurityGroupIDList"
             }
           },
           "401": {
@@ -17152,41 +17152,14 @@
     },
     "/api/v2/providers/eks/subnets": {
       "get": {
-        "description": "Lists EKS subnetID list",
         "produces": [
           "application/json"
         ],
         "tags": [
           "eks"
         ],
-        "operationId": "listEKSSubnetIDs",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "AccessKeyID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "SecretAccessKey",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "Credential",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "VpcId",
-            "in": "header"
-          }
-        ],
+        "summary": "Lists EKS subnet's ID list.",
+        "operationId": "listEKSSubnets",
         "responses": {
           "200": {
             "description": "EKSSubnetIDList",

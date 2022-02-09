@@ -156,7 +156,7 @@ func ListEKSVPCEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider p
 	}
 }
 
-func ListEKSSubnetIDsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSSubnetsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(EKSSubnetIDsReq)
 		if err := req.Validate(); err != nil {
@@ -172,7 +172,7 @@ func ListEKSSubnetIDsEndpoint(userInfoGetter provider.UserInfoGetter, presetProv
 	}
 }
 
-func ListEKSSecurityGroupIDsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func ListEKSSecurityGroupsEndpoint(userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(EKSSubnetIDsReq)
 		if err := req.Validate(); err != nil {
