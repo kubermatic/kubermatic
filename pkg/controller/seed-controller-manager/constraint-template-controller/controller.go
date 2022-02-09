@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -139,7 +139,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		}
 
 		err := r.syncAllClusters(ctx, log, constraintTemplate, func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-			err := userClusterClient.Delete(ctx, &v1beta1.ConstraintTemplate{
+			err := userClusterClient.Delete(ctx, &v1.ConstraintTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: constraintTemplate.Name,
 				},
@@ -220,9 +220,9 @@ func (r *reconciler) syncAllClusters(
 
 func constraintTemplateCreatorGetter(kubeCT *kubermaticv1.ConstraintTemplate) reconciling.NamedConstraintTemplateCreatorGetter {
 	return func() (string, reconciling.ConstraintTemplateCreator) {
-		return kubeCT.Name, func(ct *v1beta1.ConstraintTemplate) (*v1beta1.ConstraintTemplate, error) {
+		return kubeCT.Name, func(ct *v1.ConstraintTemplate) (*v1.ConstraintTemplate, error) {
 			ct.Name = kubeCT.Name
-			ct.Spec = v1beta1.ConstraintTemplateSpec{
+			ct.Spec = v1.ConstraintTemplateSpec{
 				CRD:     kubeCT.Spec.CRD,
 				Targets: kubeCT.Spec.Targets,
 			}

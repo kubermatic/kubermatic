@@ -57,10 +57,10 @@ spec:
                         type: object
                       validation:
                         default:
-                          legacySchema: true
+                          legacySchema: false
                         properties:
                           legacySchema:
-                            default: true
+                            default: false
                             type: boolean
                           openAPIV3Schema:
                             type: object

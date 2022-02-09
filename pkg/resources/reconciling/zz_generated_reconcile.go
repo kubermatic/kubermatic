@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -879,7 +879,7 @@ func ReconcileEtcdBackupConfigs(ctx context.Context, namedGetters []NamedEtcdBac
 }
 
 // ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
-type ConstraintTemplateCreator = func(existing *gatekeeperv1beta1.ConstraintTemplate) (*gatekeeperv1beta1.ConstraintTemplate, error)
+type ConstraintTemplateCreator = func(existing *gatekeeperv1.ConstraintTemplate) (*gatekeeperv1.ConstraintTemplate, error)
 
 // NamedConstraintTemplateCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedConstraintTemplateCreatorGetter = func() (name string, create ConstraintTemplateCreator)
@@ -889,9 +889,9 @@ type NamedConstraintTemplateCreatorGetter = func() (name string, create Constrai
 func ConstraintTemplateObjectWrapper(create ConstraintTemplateCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*gatekeeperv1beta1.ConstraintTemplate))
+			return create(existing.(*gatekeeperv1.ConstraintTemplate))
 		}
-		return create(&gatekeeperv1beta1.ConstraintTemplate{})
+		return create(&gatekeeperv1.ConstraintTemplate{})
 	}
 }
 
@@ -907,7 +907,7 @@ func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConst
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &gatekeeperv1beta1.ConstraintTemplate{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &gatekeeperv1.ConstraintTemplate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %w", namespace, name, err)
 		}
 	}

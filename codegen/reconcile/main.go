@@ -158,8 +158,8 @@ func main() {
 			},
 			{
 				ResourceName:       "ConstraintTemplate",
-				ImportAlias:        "gatekeeperv1beta1",
-				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1",
+				ImportAlias:        "gatekeeperv1",
+				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1",
 			},
 			{
 				ResourceName:     "ConstraintTemplate",
