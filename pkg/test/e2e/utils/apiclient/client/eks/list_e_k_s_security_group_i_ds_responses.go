@@ -67,7 +67,7 @@ type ListEKSSecurityGroupIDsOK struct {
 }
 
 func (o *ListEKSSecurityGroupIDsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/securityGroupIDs][%d] listEKSSecurityGroupIDsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupIDsOK  %+v", 200, o.Payload)
 }
 func (o *ListEKSSecurityGroupIDsOK) GetPayload() models.EKSSubnetIDList {
 	return o.Payload
@@ -96,7 +96,7 @@ type ListEKSSecurityGroupIDsUnauthorized struct {
 }
 
 func (o *ListEKSSecurityGroupIDsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/securityGroupIDs][%d] listEKSSecurityGroupIDsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupIDsUnauthorized ", 401)
 }
 
 func (o *ListEKSSecurityGroupIDsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -117,7 +117,7 @@ type ListEKSSecurityGroupIDsForbidden struct {
 }
 
 func (o *ListEKSSecurityGroupIDsForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/securityGroupIDs][%d] listEKSSecurityGroupIDsForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupIDsForbidden ", 403)
 }
 
 func (o *ListEKSSecurityGroupIDsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -148,7 +148,7 @@ func (o *ListEKSSecurityGroupIDsDefault) Code() int {
 }
 
 func (o *ListEKSSecurityGroupIDsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/securityGroupIDs][%d] listEKSSecurityGroupIDs default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/eks/securitygroups][%d] listEKSSecurityGroupIDs default  %+v", o._statusCode, o.Payload)
 }
 func (o *ListEKSSecurityGroupIDsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

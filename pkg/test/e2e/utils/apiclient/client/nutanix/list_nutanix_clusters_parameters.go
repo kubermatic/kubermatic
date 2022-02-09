@@ -62,14 +62,14 @@ type ListNutanixClustersParams struct {
 	// Credential.
 	Credential *string
 
-	// Password.
-	Password *string
+	// NutanixPassword.
+	NutanixPassword *string
 
-	// ProxyURL.
-	ProxyURL *string
+	// NutanixProxyURL.
+	NutanixProxyURL *string
 
-	// Username.
-	Username *string
+	// NutanixUsername.
+	NutanixUsername *string
 
 	/* Dc.
 
@@ -141,37 +141,37 @@ func (o *ListNutanixClustersParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
-// WithPassword adds the password to the list nutanix clusters params
-func (o *ListNutanixClustersParams) WithPassword(password *string) *ListNutanixClustersParams {
-	o.SetPassword(password)
+// WithNutanixPassword adds the nutanixPassword to the list nutanix clusters params
+func (o *ListNutanixClustersParams) WithNutanixPassword(nutanixPassword *string) *ListNutanixClustersParams {
+	o.SetNutanixPassword(nutanixPassword)
 	return o
 }
 
-// SetPassword adds the password to the list nutanix clusters params
-func (o *ListNutanixClustersParams) SetPassword(password *string) {
-	o.Password = password
+// SetNutanixPassword adds the nutanixPassword to the list nutanix clusters params
+func (o *ListNutanixClustersParams) SetNutanixPassword(nutanixPassword *string) {
+	o.NutanixPassword = nutanixPassword
 }
 
-// WithProxyURL adds the proxyURL to the list nutanix clusters params
-func (o *ListNutanixClustersParams) WithProxyURL(proxyURL *string) *ListNutanixClustersParams {
-	o.SetProxyURL(proxyURL)
+// WithNutanixProxyURL adds the nutanixProxyURL to the list nutanix clusters params
+func (o *ListNutanixClustersParams) WithNutanixProxyURL(nutanixProxyURL *string) *ListNutanixClustersParams {
+	o.SetNutanixProxyURL(nutanixProxyURL)
 	return o
 }
 
-// SetProxyURL adds the proxyUrl to the list nutanix clusters params
-func (o *ListNutanixClustersParams) SetProxyURL(proxyURL *string) {
-	o.ProxyURL = proxyURL
+// SetNutanixProxyURL adds the nutanixProxyUrl to the list nutanix clusters params
+func (o *ListNutanixClustersParams) SetNutanixProxyURL(nutanixProxyURL *string) {
+	o.NutanixProxyURL = nutanixProxyURL
 }
 
-// WithUsername adds the username to the list nutanix clusters params
-func (o *ListNutanixClustersParams) WithUsername(username *string) *ListNutanixClustersParams {
-	o.SetUsername(username)
+// WithNutanixUsername adds the nutanixUsername to the list nutanix clusters params
+func (o *ListNutanixClustersParams) WithNutanixUsername(nutanixUsername *string) *ListNutanixClustersParams {
+	o.SetNutanixUsername(nutanixUsername)
 	return o
 }
 
-// SetUsername adds the username to the list nutanix clusters params
-func (o *ListNutanixClustersParams) SetUsername(username *string) {
-	o.Username = username
+// SetNutanixUsername adds the nutanixUsername to the list nutanix clusters params
+func (o *ListNutanixClustersParams) SetNutanixUsername(nutanixUsername *string) {
+	o.NutanixUsername = nutanixUsername
 }
 
 // WithDC adds the dc to the list nutanix clusters params
@@ -201,26 +201,26 @@ func (o *ListNutanixClustersParams) WriteToRequest(r runtime.ClientRequest, reg 
 		}
 	}
 
-	if o.Password != nil {
+	if o.NutanixPassword != nil {
 
-		// header param Password
-		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+		// header param NutanixPassword
+		if err := r.SetHeaderParam("NutanixPassword", *o.NutanixPassword); err != nil {
 			return err
 		}
 	}
 
-	if o.ProxyURL != nil {
+	if o.NutanixProxyURL != nil {
 
-		// header param ProxyURL
-		if err := r.SetHeaderParam("ProxyURL", *o.ProxyURL); err != nil {
+		// header param NutanixProxyURL
+		if err := r.SetHeaderParam("NutanixProxyURL", *o.NutanixProxyURL); err != nil {
 			return err
 		}
 	}
 
-	if o.Username != nil {
+	if o.NutanixUsername != nil {
 
-		// header param Username
-		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+		// header param NutanixUsername
+		if err := r.SetHeaderParam("NutanixUsername", *o.NutanixUsername); err != nil {
 			return err
 		}
 	}

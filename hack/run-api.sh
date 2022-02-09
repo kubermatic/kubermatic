@@ -31,10 +31,6 @@ echodate "Compiling API..."
 make kubermatic-api
 
 API_EXTRA_ARGS=""
-if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-  API_EXTRA_ARGS="-dynamic-presets"
-fi
-
 if [ -n "${CONFIG_FILE:-}" ]; then
   API_EXTRA_ARGS="-kubermatic-configuration-file=$CONFIG_FILE"
 fi

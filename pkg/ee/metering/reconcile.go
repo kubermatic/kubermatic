@@ -42,7 +42,7 @@ import (
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
-	return overwriter(resources.RegistryQuay) + "/kubermatic/metering:v0.6"
+	return overwriter(resources.RegistryQuay) + "/kubermatic/metering:v0.7"
 }
 
 func getMinioImage(overwriter registry.WithOverwriteFunc) string {

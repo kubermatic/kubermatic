@@ -239,7 +239,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
 	clusterProviderGetter := clusterProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, seedClientGetter, options)
 
-	presetProvider, err := kubernetesprovider.NewPresetProvider(ctx, client, options.presetsFile, options.dynamicPresets)
+	presetProvider, err := kubernetesprovider.NewPresetProvider(ctx, client)
 	if err != nil {
 		return providers{}, err
 	}

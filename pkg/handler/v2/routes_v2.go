@@ -638,7 +638,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listNutanixProjects())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/nutanix/{dc}/{cluster_name}/subnets").
+		Path("/providers/nutanix/{dc}/subnets").
 		Handler(r.listNutanixSubnets())
 
 	// Define a set of endpoints for preset management
@@ -646,9 +646,17 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/presets").
 		Handler(r.listPresets())
 
+	mux.Methods(http.MethodDelete).
+		Path("/presets/{preset_name}").
+		Handler(r.deletePreset())
+
 	mux.Methods(http.MethodPut).
 		Path("/presets/{preset_name}/status").
 		Handler(r.updatePresetStatus())
+
+	mux.Methods(http.MethodDelete).
+		Path("/presets/{preset_name}/provider/{provider_name}").
+		Handler(r.deletePresetProvider())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets").
@@ -664,7 +672,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	mux.Methods(http.MethodDelete).
 		Path("/providers/{provider_name}/presets/{preset_name}").
-		Handler(r.deletePreset())
+		Handler(r.deleteProviderPreset())
 
 	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/settings").
@@ -3877,7 +3885,7 @@ func (r Routing) listNutanixProjects() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/nutanix/{dc}/{cluster_name}/subnets nutanix listNutanixSubnets
+// swagger:route GET /api/v2/providers/nutanix/{dc}/subnets nutanix listNutanixSubnets
 //
 // List subnets from Nutanix
 //
@@ -3947,6 +3955,62 @@ func (r Routing) updatePresetStatus() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.UpdatePresetStatus(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePresetStatus,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/presets/{preset_name} preset deletePreset
+//
+//     Removes preset.
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+//       404: empty
+func (r Routing) deletePreset() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.DeletePreset(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeDeletePreset,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/presets/{preset_name}/provider/{provider_name} preset deletePresetProvider
+//
+//     Removes selected preset's provider.
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+//       404: empty
+func (r Routing) deletePresetProvider() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.DeletePresetProvider(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeDeletePresetProvider,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -4031,9 +4095,11 @@ func (r Routing) updatePreset() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v2/providers/{provider_name}/presets/{preset_name} preset deletePreset
+// swagger:route DELETE /api/v2/providers/{provider_name}/presets/{preset_name} preset deleteProviderPreset
 //
-//	   Deletes provider preset
+//	   Deletes provider preset.
+//
+//     This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
 //
 //     Consumes:
 //	   - application/json
@@ -4041,18 +4107,20 @@ func (r Routing) updatePreset() http.Handler {
 //     Produces:
 //     - application/json
 //
+//     Deprecated: true
+//
 //     Responses:
 //       default: errorResponse
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) deletePreset() http.Handler {
+func (r Routing) deleteProviderPreset() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(preset.DeletePreset(r.presetProvider, r.userInfoGetter)),
-		preset.DecodeDeletePreset,
+		)(preset.DeleteProviderPreset(r.presetProvider, r.userInfoGetter)),
+		preset.DecodeDeleteProviderPreset,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

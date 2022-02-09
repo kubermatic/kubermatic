@@ -15,7 +15,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kube-multus-ds-amd64
+  name: kube-multus-ds
   namespace: kube-system
   labels:
     tier: node
@@ -35,18 +35,18 @@ spec:
         name: multus
     spec:
       hostNetwork: true
-      nodeSelector:
-        kubernetes.io/arch: amd64
       tolerations:
       - operator: Exists
         effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
       serviceAccountName: multus
       containers:
       - name: kube-multus
-        image: '{{ Registry "docker.io" }}/nfvpe/multus:v3.6'
+        image: '{{ Registry "ghcr.io" }}/k8snetworkplumbingwg/multus-cni:v3.8.1'
         command: ["/entrypoint.sh"]
         args:
-        - "--multus-conf-file=/tmp/multus-conf/00-multus.conflist"
+        - "--multus-conf-file=auto"
         - "--cni-version=0.3.1"
         resources:
           requests:
@@ -62,8 +62,23 @@ spec:
           mountPath: /host/etc/cni/net.d
         - name: cnibin
           mountPath: /host/opt/cni/bin
-        - name: multus-cfg
-          mountPath: /tmp/multus-conf
+      initContainers:
+        - name: install-multus-binary
+          image: '{{ Registry "ghcr.io" }}/k8snetworkplumbingwg/multus-cni:v3.8.1'
+          command:
+            - "cp"
+            - "/usr/src/multus-cni/bin/multus"
+            - "/host/opt/cni/bin/multus"
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "15Mi"
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: cnibin
+              mountPath: /host/opt/cni/bin
+              mountPropagation: Bidirectional
       terminationGracePeriodSeconds: 10
       volumes:
         - name: cni
@@ -72,9 +87,3 @@ spec:
         - name: cnibin
           hostPath:
             path: /opt/cni/bin
-        - name: multus-cfg
-          configMap:
-            name: multus-cni-config
-            items:
-            - key: cni-conf.json
-              path: 00-multus.conflist

@@ -55,7 +55,7 @@ type ListEKSSubnetIDsOK struct {
 }
 
 func (o *ListEKSSubnetIDsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/subnetIDs][%d] listEKSSubnetIDsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/eks/subnets][%d] listEKSSubnetIDsOK  %+v", 200, o.Payload)
 }
 func (o *ListEKSSubnetIDsOK) GetPayload() models.EKSSubnetIDList {
 	return o.Payload
@@ -94,7 +94,7 @@ func (o *ListEKSSubnetIDsDefault) Code() int {
 }
 
 func (o *ListEKSSubnetIDsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/providers/eks/subnetIDs][%d] listEKSSubnetIDs default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/providers/eks/subnets][%d] listEKSSubnetIDs default  %+v", o._statusCode, o.Payload)
 }
 func (o *ListEKSSubnetIDsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

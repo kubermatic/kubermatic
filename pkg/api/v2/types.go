@@ -174,6 +174,8 @@ type MLA struct {
 // ClusterTemplate represents a ClusterTemplate object
 // swagger:model ClusterTemplate
 type ClusterTemplate struct {
+	apiv1.ObjectMeta
+
 	Name string `json:"name"`
 	ID   string `json:"id"`
 
@@ -295,6 +297,8 @@ type EtcdBackupConfigSpec struct {
 // EtcdRestore represents an object holding the configuration for etcd backup restore
 // swagger:model EtcdRestore
 type EtcdRestore struct {
+	apiv1.ObjectMeta
+
 	Name string `json:"name"`
 
 	Spec   EtcdRestoreSpec   `json:"spec"`
@@ -398,13 +402,13 @@ const (
 // ExternalClusterStatus defines the external cluster status.
 type ExternalClusterStatus struct {
 	State         ExternalClusterState `json:"state"`
-	StatusMessage string               `json:"statusMessage"`
+	StatusMessage string               `json:"statusMessage,omitempty"`
 }
 
 // ExternalClusterSpec defines the external cluster specification.
 type ExternalClusterSpec struct {
 	// Version desired version of the kubernetes master components
-	Version ksemver.Semver `json:"version"`
+	Version ksemver.Semver `json:"version,omitempty"`
 }
 
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
@@ -423,19 +427,78 @@ type GKECloudSpec struct {
 }
 
 type EKSCloudSpec struct {
-	Name            string `json:"name"`
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
-	Region          string `json:"region"`
+	Name            string          `json:"name" required:"true"`
+	AccessKeyID     string          `json:"accessKeyID,omitempty" required:"true"`
+	SecretAccessKey string          `json:"secretAccessKey,omitempty" required:"true"`
+	Region          string          `json:"region" required:"true"`
+	ClusterSpec     *EKSClusterSpec `json:"clusterSpec,omitempty"`
+}
+
+type EKSClusterSpec struct {
+	// The VPC configuration used by the cluster control plane. Amazon EKS VPC resources
+	// have specific requirements to work properly with Kubernetes. For more information,
+	// see Cluster VPC Considerations (https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html)
+	// and Cluster Security Group Considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
+	// in the Amazon EKS User Guide. You must specify at least two subnets. You
+	// can specify up to five security groups, but we recommend that you use a dedicated
+	// security group for your cluster control plane.
+	//
+	// ResourcesVpcConfig is a required field
+
+	ResourcesVpcConfig VpcConfigRequest `json:"vpcConfigRequest" required:"true"`
+
+	// The desired Kubernetes version for your cluster. If you don't specify a value
+	// here, the latest version available in Amazon EKS is used.
+	Version string `json:"version"`
+
+	// The Amazon Resource Name (ARN) of the IAM role that provides permissions
+	// for the Kubernetes control plane to make calls to AWS API operations on your
+	// behalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)
+	// in the Amazon EKS User Guide .
+	//
+	// RoleArn is a required field
+	RoleArn string `json:"roleArn" required:"true"`
 }
 
 type AKSCloudSpec struct {
-	Name           string `json:"name"`
-	TenantID       string `json:"tenantID"`
-	SubscriptionID string `json:"subscriptionID"`
-	ClientID       string `json:"clientID"`
-	ClientSecret   string `json:"clientSecret"`
-	ResourceGroup  string `json:"resourceGroup"`
+	Name           string          `json:"name" required:"true"`
+	TenantID       string          `json:"tenantID,omitempty" required:"true"`
+	SubscriptionID string          `json:"subscriptionID,omitempty" required:"true"`
+	ClientID       string          `json:"clientID,omitempty" required:"true"`
+	ClientSecret   string          `json:"clientSecret,omitempty" required:"true"`
+	ResourceGroup  string          `json:"resourceGroup" required:"true"`
+	ClusterSpec    *AKSClusterSpec `json:"clusterSpec,omitempty"`
+}
+
+// AKSClusterSpec Azure Kubernetes Service cluster.
+type AKSClusterSpec struct {
+	// Location - Resource location
+	Location string `json:"location" required:"true"`
+	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
+	KubernetesVersion string `json:"kubernetesVersion"`
+	// MachineDeploymentSpec - The agent pool properties.
+	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
+}
+
+type VpcConfigRequest struct {
+	// Specify one or more security groups for the cross-account elastic network
+	// interfaces that Amazon EKS creates to use to allow communication between
+	// your nodes and the Kubernetes control plane. If you don't specify any security
+	// groups, then familiarize yourself with the difference between Amazon EKS
+	// defaults for clusters deployed with Kubernetes:
+	//
+	//    * 1.14 Amazon EKS platform version eks.2 and earlier
+	//
+	//    * 1.14 Amazon EKS platform version eks.3 and later
+	//
+	// For more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
+	// in the Amazon EKS User Guide .
+	SecurityGroupIds []*string `json:"securityGroupIds" required:"true"`
+
+	// Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account
+	// elastic network interfaces in these subnets to allow communication between
+	// your nodes and the Kubernetes control plane.
+	SubnetIds []*string `json:"subnetIds" required:"true"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
@@ -554,51 +617,40 @@ type ExternalClusterMachineDeploymentCloudSpec struct {
 }
 
 type AKSMachineDeploymentCloudSpec struct {
-	// Basics - Settings for creating the agentpool
-	Basics *AgentPoolBasics `json:"basics,omitempty"`
-	// OptionalSettings - Optional Settings for creating the agentpool
-	OptionalSettings *AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
-	// Tags - The tags to be persisted on the agent pool virtual machine scale set.
-	Tags map[string]*string `json:"tags"`
+	Name string `json:"name" required:"true"`
+	// Basics - Settings for creating the AKS agentpool
+	Basics AgentPoolBasics `json:"basicsSettings"`
+	// OptionalSettings - Optional Settings for creating the AKS agentpool
+	OptionalSettings AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
 }
 
 type AgentPoolBasics struct {
+	// Required: Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
+	Count int32 `json:"count" required:"true"`
+	// Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
+	VMSize string `json:"vmSize" required:"true"`
 	// Mode - Possible values include: 'System', 'User'
 	Mode string `json:"mode,omitempty"`
-	// OsType - Possible values include: 'Linux', 'Windows'
-	OsType string `json:"osType,omitempty"`
 	// OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).
-	OrchestratorVersion *string `json:"orchestratorVersion,omitempty"`
+	OrchestratorVersion string `json:"orchestratorVersion,omitempty"`
+	// The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.
+	OsDiskSizeGB int32 `json:"osDiskSizeGB,omitempty"`
 	// AvailabilityZones - The list of Availability zones to use for nodes. This can only be specified if the AgentPoolType property is 'VirtualMachineScaleSets'.
-	AvailabilityZones *[]string `json:"availabilityZones,omitempty"`
-	// VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
-	VMSize *string `json:"vmSize,omitempty"`
+	AvailabilityZones []string `json:"availabilityZones,omitempty"`
 	// EnableAutoScaling - Whether to enable auto-scaler
-	EnableAutoScaling *bool `json:"enableAutoScaling,omitempty"`
+	EnableAutoScaling bool `json:"enableAutoScaling,omitempty"`
 	// MaxCount - The maximum number of nodes for auto-scaling
-	MaxCount *int32 `json:"maxCount,omitempty"`
+	MaxCount int32 `json:"maxCount,omitempty"`
 	// MinCount - The minimum number of nodes for auto-scaling
-	MinCount *int32 `json:"minCount,omitempty"`
-	// Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
-	Count *int32 `json:"count,omitempty"`
+	MinCount int32 `json:"minCount,omitempty"`
 }
 
 type AgentPoolOptionalSettings struct {
-	// MaxPods - The maximum number of pods that can run on a node.
-	MaxPods *int32 `json:"maxPods,omitempty"`
-	// EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.
-	EnableNodePublicIP *bool `json:"enableNodePublicIP,omitempty"`
-	// UpgradeSettings - Settings for upgrading the agentpool
-	UpgradeSettings *AgentPoolUpgradeSettings `json:"upgradeSettings,omitempty"`
 	// NodeLabels - The node labels to be persisted across all nodes in agent pool.
-	NodeLabels map[string]*string `json:"nodeLabels"`
+	NodeLabels map[string]*string `json:"nodeLabels,omitempty"`
 	// NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.
-	NodeTaints *[]string `json:"nodeTaints,omitempty"`
-}
-
-type AgentPoolUpgradeSettings struct {
-	// MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade
-	MaxSurge *string `json:"maxSurge,omitempty"`
+	// Placing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail
+	NodeTaints []string `json:"nodeTaints,omitempty"`
 }
 
 // GKEMachineDeploymentCloudSpec represents an object holding GKE machine deployment cloud details.

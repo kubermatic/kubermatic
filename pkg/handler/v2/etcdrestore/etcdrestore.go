@@ -278,6 +278,18 @@ func DecodeListProjectEtcdRestoreReq(c context.Context, r *http.Request) (interf
 
 func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRestore {
 	etcdRestore := &apiv2.EtcdRestore{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name:              er.Spec.Name,
+			Annotations:       er.Annotations,
+			CreationTimestamp: apiv1.NewTime(er.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if er.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(er.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
+		},
 		Name: er.Name,
 		Spec: apiv2.EtcdRestoreSpec{
 			ClusterID:                       er.Spec.Cluster.Name,

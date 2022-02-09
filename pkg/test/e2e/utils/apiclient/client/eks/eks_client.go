@@ -90,7 +90,7 @@ func (a *Client) ListEKSSecurityGroupIDs(params *ListEKSSecurityGroupIDsParams, 
 	op := &runtime.ClientOperation{
 		ID:                 "listEKSSecurityGroupIDs",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/eks/securityGroupIDs",
+		PathPattern:        "/api/v2/providers/eks/securitygroups",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -128,7 +128,7 @@ func (a *Client) ListEKSSubnetIDs(params *ListEKSSubnetIDsParams, authInfo runti
 	op := &runtime.ClientOperation{
 		ID:                 "listEKSSubnetIDs",
 		Method:             "GET",
-		PathPattern:        "/api/v2/providers/eks/subnetIDs",
+		PathPattern:        "/api/v2/providers/eks/subnets",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

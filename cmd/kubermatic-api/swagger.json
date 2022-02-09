@@ -9331,6 +9331,101 @@
         }
       }
     },
+    "/api/v2/presets/{preset_name}": {
+      "delete": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "summary": "Removes preset.",
+        "operationId": "deletePreset",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "404": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/presets/{preset_name}/provider/{provider_name}": {
+      "delete": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "summary": "Removes selected preset's provider.",
+        "operationId": "deletePresetProvider",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "404": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/presets/{preset_name}/status": {
       "put": {
         "consumes": [
@@ -17023,7 +17118,7 @@
         }
       }
     },
-    "/api/v2/providers/eks/securityGroupIDs": {
+    "/api/v2/providers/eks/securitygroups": {
       "get": {
         "produces": [
           "application/json"
@@ -17055,7 +17150,7 @@
         }
       }
     },
-    "/api/v2/providers/eks/subnetIDs": {
+    "/api/v2/providers/eks/subnets": {
       "get": {
         "description": "Lists EKS subnetID list",
         "produces": [
@@ -17359,17 +17454,17 @@
           },
           {
             "type": "string",
-            "name": "Username",
+            "name": "NutanixUsername",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "Password",
+            "name": "NutanixPassword",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "ProxyURL",
+            "name": "NutanixProxyURL",
             "in": "header"
           },
           {
@@ -17415,17 +17510,17 @@
           },
           {
             "type": "string",
-            "name": "Username",
+            "name": "NutanixUsername",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "Password",
+            "name": "NutanixPassword",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "ProxyURL",
+            "name": "NutanixProxyURL",
             "in": "header"
           },
           {
@@ -17450,7 +17545,7 @@
         }
       }
     },
-    "/api/v2/providers/nutanix/{dc}/{cluster_name}/subnets": {
+    "/api/v2/providers/nutanix/{dc}/subnets": {
       "get": {
         "description": "List subnets from Nutanix",
         "produces": [
@@ -17471,17 +17566,17 @@
           },
           {
             "type": "string",
-            "name": "Username",
+            "name": "NutanixUsername",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "Password",
+            "name": "NutanixPassword",
             "in": "header"
           },
           {
             "type": "string",
-            "name": "ProxyURL",
+            "name": "NutanixProxyURL",
             "in": "header"
           },
           {
@@ -17491,17 +17586,15 @@
           },
           {
             "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster_name",
-            "in": "path",
+            "name": "NutanixCluster",
+            "in": "header",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ProjectName",
             "description": "Project query parameter. Can be omitted to query subnets without project scope",
-            "name": "project_name",
-            "in": "query"
+            "name": "NutanixProject",
+            "in": "header"
           }
         ],
         "responses": {
@@ -17726,7 +17819,7 @@
     },
     "/api/v2/providers/{provider_name}/presets/{preset_name}": {
       "delete": {
-        "description": "Deletes provider preset",
+        "description": "This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.",
         "consumes": [
           "application/json"
         ],
@@ -17736,7 +17829,9 @@
         "tags": [
           "preset"
         ],
-        "operationId": "deletePreset",
+        "summary": "Deletes provider preset.",
+        "operationId": "deleteProviderPreset",
+        "deprecated": true,
         "parameters": [
           {
             "type": "string",
@@ -18207,6 +18302,9 @@
           "type": "string",
           "x-go-name": "ClientSecret"
         },
+        "clusterSpec": {
+          "$ref": "#/definitions/AKSClusterSpec"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -18253,22 +18351,38 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "AKSClusterSpec": {
+      "type": "object",
+      "title": "AKSClusterSpec Azure Kubernetes Service cluster.",
+      "properties": {
+        "kubernetesVersion": {
+          "description": "KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -\u003e 1.15.x or 1.15.x -\u003e 1.16.x are allowed, however 1.14.x -\u003e 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.",
+          "type": "string",
+          "x-go-name": "KubernetesVersion"
+        },
+        "location": {
+          "description": "Location - Resource location",
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "machineDeploymentSpec": {
+          "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AKSMachineDeploymentCloudSpec": {
       "type": "object",
       "properties": {
-        "basics": {
+        "basicsSettings": {
           "$ref": "#/definitions/AgentPoolBasics"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
         },
         "optionalSettings": {
           "$ref": "#/definitions/AgentPoolOptionalSettings"
-        },
-        "tags": {
-          "description": "Tags - The tags to be persisted on the agent pool virtual machine scale set.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Tags"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -18926,7 +19040,7 @@
           "x-go-name": "AvailabilityZones"
         },
         "count": {
-          "description": "Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.",
+          "description": "Required: Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.",
           "type": "integer",
           "format": "int32",
           "x-go-name": "Count"
@@ -18958,13 +19072,14 @@
           "type": "string",
           "x-go-name": "OrchestratorVersion"
         },
-        "osType": {
-          "description": "OsType - Possible values include: 'Linux', 'Windows'",
-          "type": "string",
-          "x-go-name": "OsType"
+        "osDiskSizeGB": {
+          "description": "The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "OsDiskSizeGB"
         },
         "vmSize": {
-          "description": "VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
+          "description": "Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
           "type": "string",
           "x-go-name": "VMSize"
         }
@@ -18974,17 +19089,6 @@
     "AgentPoolOptionalSettings": {
       "type": "object",
       "properties": {
-        "enableNodePublicIP": {
-          "description": "EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.",
-          "type": "boolean",
-          "x-go-name": "EnableNodePublicIP"
-        },
-        "maxPods": {
-          "description": "MaxPods - The maximum number of pods that can run on a node.",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MaxPods"
-        },
         "nodeLabels": {
           "description": "NodeLabels - The node labels to be persisted across all nodes in agent pool.",
           "type": "object",
@@ -18994,26 +19098,12 @@
           "x-go-name": "NodeLabels"
         },
         "nodeTaints": {
-          "description": "NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.",
+          "description": "NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.\nPlacing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail",
           "type": "array",
           "items": {
             "type": "string"
           },
           "x-go-name": "NodeTaints"
-        },
-        "upgradeSettings": {
-          "$ref": "#/definitions/AgentPoolUpgradeSettings"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "AgentPoolUpgradeSettings": {
-      "type": "object",
-      "properties": {
-        "maxSurge": {
-          "description": "MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade",
-          "type": "string",
-          "x-go-name": "MaxSurge"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -20424,14 +20514,36 @@
       "description": "ClusterTemplate represents a ClusterTemplate object",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
         "cluster": {
           "$ref": "#/definitions/Cluster"
         },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
         "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
           "type": "string",
           "x-go-name": "ID"
         },
         "name": {
+          "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
         },
@@ -21661,6 +21773,9 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
+        "clusterSpec": {
+          "$ref": "#/definitions/EKSClusterSpec"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -21700,6 +21815,25 @@
       "title": "EKSClusterList represents an list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSClusterSpec": {
+      "type": "object",
+      "properties": {
+        "roleArn": {
+          "description": "The Amazon Resource Name (ARN) of the IAM role that provides permissions\nfor the Kubernetes control plane to make calls to AWS API operations on your\nbehalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)\nin the Amazon EKS User Guide .\n\nRoleArn is a required field",
+          "type": "string",
+          "x-go-name": "RoleArn"
+        },
+        "version": {
+          "description": "The desired Kubernetes version for your cluster. If you don't specify a value\nhere, the latest version available in Amazon EKS is used.",
+          "type": "string",
+          "x-go-name": "Version"
+        },
+        "vpcConfigRequest": {
+          "$ref": "#/definitions/VpcConfigRequest"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -21945,7 +22079,33 @@
       "description": "EtcdRestore represents an object holding the configuration for etcd backup restore",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
         "name": {
+          "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
         },
@@ -27814,6 +27974,28 @@
       "type": "string",
       "title": "VolumeBindingMode indicates how PersistentVolumeClaims should be bound.",
       "x-go-package": "k8s.io/api/storage/v1"
+    },
+    "VpcConfigRequest": {
+      "type": "object",
+      "properties": {
+        "securityGroupIds": {
+          "description": "Specify one or more security groups for the cross-account elastic network\ninterfaces that Amazon EKS creates to use to allow communication between\nyour nodes and the Kubernetes control plane. If you don't specify any security\ngroups, then familiarize yourself with the difference between Amazon EKS\ndefaults for clusters deployed with Kubernetes:\n\n1.14 Amazon EKS platform version eks.2 and earlier\n\n1.14 Amazon EKS platform version eks.3 and later\n\nFor more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)\nin the Amazon EKS User Guide .",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "SecurityGroupIds"
+        },
+        "subnetIds": {
+          "description": "Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account\nelastic network interfaces in these subnets to allow communication between\nyour nodes and the Kubernetes control plane.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "SubnetIds"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Watchdog": {
       "type": "object",
