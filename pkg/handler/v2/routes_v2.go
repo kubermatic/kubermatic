@@ -74,11 +74,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listEKSVPCS())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/eks/subnetIDs").
+		Path("/providers/eks/subnets").
 		Handler(r.listEKSSubnetIDs())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/eks/securityGroupIDs").
+		Path("/providers/eks/securitygroups").
 		Handler(r.listEKSSecurityGroupIDs())
 
 	mux.Methods(http.MethodGet).
@@ -5286,7 +5286,7 @@ func (r Routing) listEKSVPCS() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/subnetIDs eks listEKSSubnetIDs
+// swagger:route GET /api/v2/providers/eks/subnets eks listEKSSubnetIDs
 //
 // Lists EKS subnetID list
 //
@@ -5308,7 +5308,7 @@ func (r Routing) listEKSSubnetIDs() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/eks/securityGroupIDs eks listEKSSecurityGroupIDs
+// swagger:route GET /api/v2/providers/eks/securitygroups eks listEKSSecurityGroupIDs
 //
 //     List EKS regions.
 //
