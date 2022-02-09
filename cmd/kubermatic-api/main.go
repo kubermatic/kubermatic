@@ -40,12 +40,14 @@ limitations under the License.
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -697,4 +699,13 @@ func (rl *responseLogger) Write(data []byte) (int, error) {
 func (rl *responseLogger) WriteHeader(statusCode int) {
 	rl.statusCode = statusCode
 	rl.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (rl *responseLogger) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := rl.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+
+	return h.Hijack()
 }
