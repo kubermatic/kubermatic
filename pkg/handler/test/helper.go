@@ -1867,7 +1867,7 @@ func GenClusterTemplateInstance(projectID, templateID string, replicas int64) *k
 	}
 }
 
-func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType) *kubermaticv1.RuleGroup {
+func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType, isDefault bool) *kubermaticv1.RuleGroup {
 	return &kubermaticv1.RuleGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -1879,6 +1879,7 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroupType,
+			IsDefault:     isDefault,
 			Cluster: corev1.ObjectReference{
 				Kind:       kubermaticv1.ClusterKindName,
 				Namespace:  "",
@@ -1910,11 +1911,12 @@ func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGr
 	}
 }
 
-func GenAPIRuleGroup(name string, ruleGroupType kubermaticv1.RuleGroupType) *apiv2.RuleGroup {
+func GenAPIRuleGroup(name string, ruleGroupType kubermaticv1.RuleGroupType, isDefault bool) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
-		Name: name,
-		Data: GenerateTestRuleGroupData(name),
-		Type: ruleGroupType,
+		Name:      name,
+		IsDefault: isDefault,
+		Data:      GenerateTestRuleGroupData(name),
+		Type:      ruleGroupType,
 	}
 }
 

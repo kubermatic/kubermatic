@@ -168,6 +168,8 @@ func convertAPIToInternalRuleGroup(ruleGroup *apiv2.RuleGroup, ruleGroupID strin
 				Kind: kubermaticv1.ClusterKindName,
 			},
 			Data: ruleGroup.Data,
+			// all rule group created here should be default
+			IsDefault: true,
 		},
 	}
 	return internalRuleGroup, nil
@@ -183,9 +185,10 @@ func convertInternalToAPIRuleGroups(ruleGroups []*kubermaticv1.RuleGroup) []*api
 
 func convertInternalToAPIRuleGroup(ruleGroup *kubermaticv1.RuleGroup) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
-		Name: ruleGroup.ObjectMeta.Name,
-		Data: ruleGroup.Spec.Data,
-		Type: ruleGroup.Spec.RuleGroupType,
+		Name:      ruleGroup.ObjectMeta.Name,
+		Data:      ruleGroup.Spec.Data,
+		Type:      ruleGroup.Spec.RuleGroupType,
+		IsDefault: ruleGroup.Spec.IsDefault,
 	}
 }
 
