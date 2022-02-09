@@ -640,6 +640,26 @@ func validateNutanixCloudSpec(spec *kubermaticv1.NutanixCloudSpec) error {
 		}
 	}
 
+	if spec.PeUsername == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no prism element username or credentials reference specified")
+		}
+
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.NutanixPeUsername); err != nil {
+			return err
+		}
+	}
+
+	if spec.PePassword == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no prism element password or credentials reference specified")
+		}
+
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.NutanixPePassword); err != nil {
+			return err
+		}
+	}
+
 	if spec.ClusterName == "" {
 		return errors.New("no cluster name specified")
 	}
