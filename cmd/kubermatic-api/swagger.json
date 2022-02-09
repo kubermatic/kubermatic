@@ -21627,6 +21627,9 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
+        "clusterSpec": {
+          "$ref": "#/definitions/EKSClusterSpec"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -21666,6 +21669,25 @@
       "title": "EKSClusterList represents an list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSClusterSpec": {
+      "type": "object",
+      "properties": {
+        "roleArn": {
+          "description": "The Amazon Resource Name (ARN) of the IAM role that provides permissions\nfor the Kubernetes control plane to make calls to AWS API operations on your\nbehalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)\nin the Amazon EKS User Guide .\n\nRoleArn is a required field",
+          "type": "string",
+          "x-go-name": "RoleArn"
+        },
+        "version": {
+          "description": "The desired Kubernetes version for your cluster. If you don't specify a value\nhere, the latest version available in Amazon EKS is used.",
+          "type": "string",
+          "x-go-name": "Version"
+        },
+        "vpcConfigRequest": {
+          "$ref": "#/definitions/VpcConfigRequest"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -27757,6 +27779,28 @@
       "type": "string",
       "title": "VolumeBindingMode indicates how PersistentVolumeClaims should be bound.",
       "x-go-package": "k8s.io/api/storage/v1"
+    },
+    "VpcConfigRequest": {
+      "type": "object",
+      "properties": {
+        "securityGroupIds": {
+          "description": "Specify one or more security groups for the cross-account elastic network\ninterfaces that Amazon EKS creates to use to allow communication between\nyour nodes and the Kubernetes control plane. If you don't specify any security\ngroups, then familiarize yourself with the difference between Amazon EKS\ndefaults for clusters deployed with Kubernetes:\n\n1.14 Amazon EKS platform version eks.2 and earlier\n\n1.14 Amazon EKS platform version eks.3 and later\n\nFor more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)\nin the Amazon EKS User Guide .",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "SecurityGroupIds"
+        },
+        "subnetIds": {
+          "description": "Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account\nelastic network interfaces in these subnets to allow communication between\nyour nodes and the Kubernetes control plane.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "SubnetIds"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Watchdog": {
       "type": "object",
