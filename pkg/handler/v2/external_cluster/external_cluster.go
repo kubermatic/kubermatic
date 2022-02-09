@@ -356,7 +356,16 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		if apiCluster.Status.State != apiv2.RUNNING {
 			return apiCluster, nil
 		}
-
+		cloud := cluster.Spec.CloudSpec
+		if cloud != nil {
+			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+			if cloud.AKS != nil {
+				apiCluster, err = getAKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 		// get version for running cluster
 		version, err := clusterProvider.GetVersion(cluster)
 		if err != nil {

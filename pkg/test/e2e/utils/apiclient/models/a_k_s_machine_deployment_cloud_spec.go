@@ -24,6 +24,9 @@ type AKSMachineDeploymentCloudSpec struct {
 	// basics settings
 	BasicsSettings *AgentPoolBasics `json:"basicsSettings,omitempty"`
 
+	// configuration
+	Configuration *AgentPoolConfig `json:"configuration,omitempty"`
+
 	// optional settings
 	OptionalSettings *AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
 }
@@ -33,6 +36,10 @@ func (m *AKSMachineDeploymentCloudSpec) Validate(formats strfmt.Registry) error 
 	var res []error
 
 	if err := m.validateBasicsSettings(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateConfiguration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -55,6 +62,23 @@ func (m *AKSMachineDeploymentCloudSpec) validateBasicsSettings(formats strfmt.Re
 		if err := m.BasicsSettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("basicsSettings")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AKSMachineDeploymentCloudSpec) validateConfiguration(formats strfmt.Registry) error {
+	if swag.IsZero(m.Configuration) { // not required
+		return nil
+	}
+
+	if m.Configuration != nil {
+		if err := m.Configuration.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("configuration")
 			}
 			return err
 		}
@@ -88,6 +112,10 @@ func (m *AKSMachineDeploymentCloudSpec) ContextValidate(ctx context.Context, for
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateConfiguration(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOptionalSettings(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -104,6 +132,20 @@ func (m *AKSMachineDeploymentCloudSpec) contextValidateBasicsSettings(ctx contex
 		if err := m.BasicsSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("basicsSettings")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AKSMachineDeploymentCloudSpec) contextValidateConfiguration(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Configuration != nil {
+		if err := m.Configuration.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("configuration")
 			}
 			return err
 		}

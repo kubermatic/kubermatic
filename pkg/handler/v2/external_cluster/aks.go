@@ -300,12 +300,24 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 		MaxCount:            to.Int32(nodePool.MaxCount),
 		MinCount:            to.Int32(nodePool.MinCount),
 		Count:               to.Int32(nodePool.Count),
+		OsDiskSizeGB:        to.Int32(nodePool.OsDiskSizeGB),
+	}
+	md.Cloud.AKS.Configuration = apiv2.AgentPoolConfig{
+		OsType:             string(nodePool.OsType),
+		OsDiskType:         string(nodePool.OsDiskType),
+		VnetSubnetID:       to.String(nodePool.VnetSubnetID),
+		PodSubnetID:        to.String(nodePool.VnetSubnetID),
+		MaxPods:            to.Int32(nodePool.MaxPods),
+		EnableNodePublicIP: to.Bool(nodePool.EnableNodePublicIP),
 	}
 	md.Cloud.AKS.OptionalSettings = apiv2.AgentPoolOptionalSettings{
 		NodeLabels: nodePool.NodeLabels,
 		NodeTaints: to.StringSlice(nodePool.NodeTaints),
 	}
-
+	if nodePool.UpgradeSettings == nil {
+		return md
+	}
+	md.Cloud.AKS.Configuration.MaxSurge = to.String(nodePool.UpgradeSettings.MaxSurge)
 	return md
 }
 
@@ -500,4 +512,46 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 	}
 
 	return &machineDeployment, nil
+}
+
+func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
+	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+	aksClient, err := aks.GetAKSClusterClient(cred)
+	if err != nil {
+		return nil, err
+	}
+	aksCluster, err := aks.GetAKSCluster(ctx, aksClient, cloud)
+	if err != nil {
+		return nil, err
+	}
+	apiCluster.Cloud.AKS.ClusterSpec = &apiv2.AKSClusterSpec{
+		Location:          to.String(aksCluster.Location),
+		KubernetesVersion: to.String(aksCluster.KubernetesVersion),
+		EnableRBAC:        to.Bool(aksCluster.EnableRBAC),
+		DNSPrefix:         to.String(aksCluster.DNSPrefix),
+		NodeResourceGroup: to.String(aksCluster.NodeResourceGroup),
+	}
+	apiCluster.Cloud.AKS.NetworkProfile = &apiv2.AKSNetworkProfile{
+		FqdnSubdomain: to.String(aksCluster.FqdnSubdomain),
+		Fqdn:          to.String(aksCluster.Fqdn),
+		PrivateFQDN:   to.String(aksCluster.PrivateFQDN),
+	}
+	if aksCluster.ManagedClusterProperties == nil || aksCluster.ManagedClusterProperties.NetworkProfile == nil {
+		return apiCluster, nil
+	}
+	networkProfile := aksCluster.ManagedClusterProperties.NetworkProfile
+	apiCluster.Cloud.AKS.NetworkProfile.PodCidr = to.String(networkProfile.PodCidr)
+	apiCluster.Cloud.AKS.NetworkProfile.ServiceCidr = to.String(networkProfile.ServiceCidr)
+	apiCluster.Cloud.AKS.NetworkProfile.DNSServiceIP = to.String(networkProfile.DNSServiceIP)
+	apiCluster.Cloud.AKS.NetworkProfile.DockerBridgeCidr = to.String(networkProfile.DockerBridgeCidr)
+
+	if aksCluster.AadProfile == nil {
+		return apiCluster, nil
+	}
+	apiCluster.Cloud.AKS.ClusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
+
+	return apiCluster, nil
 }

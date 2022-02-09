@@ -18,11 +18,23 @@ import (
 // swagger:model AKSClusterSpec
 type AKSClusterSpec struct {
 
+	// DNSPrefix - This cannot be updated once the Managed Cluster has been created.
+	DNSPrefix string `json:"dnsPrefix,omitempty"`
+
+	// EnableRBAC - Whether Kubernetes Role-Based Access Control Enabled.
+	EnableRBAC bool `json:"enableRBAC,omitempty"`
+
 	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
 	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 
 	// Location - Resource location
 	Location string `json:"location,omitempty"`
+
+	// ManagedAAD - Whether The Azure Active Directory configuration Enabled.
+	ManagedAAD bool `json:"managedAAD,omitempty"`
+
+	// NodeResourceGroup - The name of the resource group containing agent pool nodes.
+	NodeResourceGroup string `json:"nodeResourceGroup,omitempty"`
 
 	// machine deployment spec
 	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`

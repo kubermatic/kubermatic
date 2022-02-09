@@ -38,6 +38,9 @@ type AKSCloudSpec struct {
 
 	// cluster spec
 	ClusterSpec *AKSClusterSpec `json:"clusterSpec,omitempty"`
+
+	// network profile
+	NetworkProfile *AKSNetworkProfile `json:"networkProfile,omitempty"`
 }
 
 // Validate validates this a k s cloud spec
@@ -45,6 +48,10 @@ func (m *AKSCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateClusterSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNetworkProfile(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -71,11 +78,32 @@ func (m *AKSCloudSpec) validateClusterSpec(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AKSCloudSpec) validateNetworkProfile(formats strfmt.Registry) error {
+	if swag.IsZero(m.NetworkProfile) { // not required
+		return nil
+	}
+
+	if m.NetworkProfile != nil {
+		if err := m.NetworkProfile.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("networkProfile")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this a k s cloud spec based on the context it is used
 func (m *AKSCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateClusterSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNetworkProfile(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -91,6 +119,20 @@ func (m *AKSCloudSpec) contextValidateClusterSpec(ctx context.Context, formats s
 		if err := m.ClusterSpec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("clusterSpec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AKSCloudSpec) contextValidateNetworkProfile(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NetworkProfile != nil {
+		if err := m.NetworkProfile.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("networkProfile")
 			}
 			return err
 		}
