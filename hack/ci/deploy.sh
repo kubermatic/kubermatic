@@ -86,6 +86,10 @@ function deploy {
 # silence complaints by Helm
 chmod 600 "$KUBECONFIG"
 
+# Helm requires semvers for the chart versions
+sed -i "s/__KUBERMATIC_TAG__/v9.9.9-${GIT_HEAD_HASH}/g" charts/*/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/v9.9.9-${GIT_HEAD_HASH}/g" charts/*/*/*.yaml
+
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
 monitoring)
@@ -114,7 +118,6 @@ logging)
   ;;
 
 kubermatic)
-  sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/kubermatic-operator/*.yaml
 
   if [ -n "${DOCKER_CONFIG:-}" ]; then
     yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $DOCKER_CONFIG)"
