@@ -45,17 +45,21 @@ func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
+func ValidateCredentials(token string) error {
+	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
+
+	_, _, err := client.Regions.List(context.Background(), nil)
+	return err
+}
+
 func (do *digitalocean) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	token, err := GetCredentialsForCluster(spec, do.secretKeySelector)
 	if err != nil {
 		return err
 	}
 
-	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
-
-	_, _, err = client.Regions.List(context.Background(), nil)
-	return err
+	return ValidateCredentials(token)
 }
 
 func (do *digitalocean) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {

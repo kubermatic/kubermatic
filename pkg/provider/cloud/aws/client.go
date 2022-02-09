@@ -41,6 +41,17 @@ type ClientSet struct {
 	IAM iamiface.IAMAPI
 }
 
+func ValidateCredentials(accessKeyID, secretAccessKey string) error {
+	config := aws.NewConfig().WithRegion("us-east-2").WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")).WithMaxRetries(3)
+	awsSession, err := session.NewSession(config)
+	if err != nil {
+		return err
+	}
+	client := ec2.New(awsSession)
+	_, err = client.DescribeRegions(&ec2.DescribeRegionsInput{})
+	return err
+}
+
 func GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) (*ClientSet, error) {
 	return getClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, "")
 }

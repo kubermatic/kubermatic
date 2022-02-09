@@ -198,6 +198,19 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 	return cluster, nil
 }
 
+func ValidateCredentials(serviceAccount string) error {
+	ctx := context.Background()
+	svc, project, err := ConnectToComputeService(serviceAccount)
+	if err != nil {
+		return err
+	}
+	req := svc.Regions.List(project)
+	err = req.Pages(ctx, func(list *compute.RegionList) error {
+		return nil
+	})
+	return err
+}
+
 // ConnectToComputeService establishes a service connection to the Compute Engine.
 func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
 	ctx := context.Background()
