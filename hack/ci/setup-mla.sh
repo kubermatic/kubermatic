@@ -40,8 +40,8 @@ git clone "$URL" "$tempdir"
   cd "$tempdir"
   helm --namespace mla upgrade --atomic --create-namespace --install mla-secrets charts/mla-secrets --values config/mla-secrets/values.yaml
   helm --namespace mla upgrade --atomic --create-namespace --install minio charts/minio --values config/minio/values.yaml
-  helm --namespace mla upgrade --atomic --create-namespace --install grafana charts/grafana --values config/grafana/values.yaml
   kubectl apply -f dashboards/
+  helm --namespace mla upgrade --atomic --create-namespace --install grafana charts/grafana --values config/grafana/values.yaml
   kubectl create -n mla configmap cortex-runtime-config --from-file=config/cortex/runtime-config.yaml || true
   helm dependency update charts/cortex # need that to store memcached in charts directory
   helm --namespace mla upgrade --atomic --create-namespace --install consul charts/consul --values config/consul/values.yaml
