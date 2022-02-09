@@ -178,6 +178,10 @@ func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) erro
 				},
 			})
 
+			if err != nil {
+				return err
+			}
+
 			// no results mean it is safe to clean up this category value.
 			if len(query.Results) == 0 {
 				if err = client.Prism.V3.DeleteCategoryValue(ProjectCategoryName, projectID); err != nil {
