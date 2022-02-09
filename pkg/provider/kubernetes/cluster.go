@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -113,23 +113,26 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
-	newCluster := genAPICluster(project, cluster, userInfo.Email, p.workerName, p.versions)
-	newStatus := newCluster.Status.DeepCopy()
+	ctx := context.Background()
+
+	newCluster := genAPICluster(project, cluster, p.workerName, p.versions)
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	if err := seedImpersonatedClient.Create(context.Background(), newCluster); err != nil {
+	if err := seedImpersonatedClient.Create(ctx, newCluster); err != nil {
 		return nil, err
 	}
 
 	// regular users are not allowed to update the status subresource, so we use the admin client
-	oldNewCluster := newCluster.DeepCopy()
-	newCluster.Status = *newStatus
-	if err := p.client.Status().Patch(context.Background(), newCluster, ctrlruntimeclient.MergeFrom(oldNewCluster)); err != nil {
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, p.client, newCluster, func(c *kubermaticv1.Cluster) {
+		c.Status.UserEmail = userInfo.Email
+	})
+	if err != nil {
 		return nil, err
 	}
+
 	return newCluster, nil
 }
 
@@ -145,24 +148,25 @@ func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *k
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
-	newCluster := genAPICluster(project, cluster, userEmail, p.workerName, p.versions)
-	newStatus := newCluster.Status.DeepCopy()
+	ctx := context.Background()
+	newCluster := genAPICluster(project, cluster, p.workerName, p.versions)
 
-	err := p.client.Create(context.Background(), newCluster)
+	err := p.client.Create(ctx, newCluster)
 	if err != nil {
 		return nil, err
 	}
 
-	oldNewCluster := newCluster.DeepCopy()
-	newCluster.Status = *newStatus
-	if err := p.client.Status().Patch(context.Background(), newCluster, ctrlruntimeclient.MergeFrom(oldNewCluster)); err != nil {
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, p.client, newCluster, func(c *kubermaticv1.Cluster) {
+		c.Status.UserEmail = userEmail
+	})
+	if err != nil {
 		return nil, err
 	}
 
 	return newCluster, nil
 }
 
-func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, email, workerName string, versions kubermatic.Versions) *kubermaticv1.Cluster {
+func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, workerName string, versions kubermatic.Versions) *kubermaticv1.Cluster {
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
 	var name string
@@ -179,23 +183,7 @@ func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster,
 			Labels:      getClusterLabels(cluster.Labels, project.Name, workerName),
 			Name:        name,
 		},
-		Spec: cluster.Spec,
-		Status: kubermaticv1.ClusterStatus{
-			UserEmail:              email,
-			NamespaceName:          NamespaceName(name),
-			CloudMigrationRevision: cloud.CurrentMigrationRevision,
-			KubermaticVersion:      versions.Kubermatic,
-			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-				Apiserver:                    kubermaticv1.HealthStatusProvisioning,
-				Scheduler:                    kubermaticv1.HealthStatusProvisioning,
-				Controller:                   kubermaticv1.HealthStatusProvisioning,
-				MachineController:            kubermaticv1.HealthStatusProvisioning,
-				Etcd:                         kubermaticv1.HealthStatusProvisioning,
-				OpenVPN:                      kubermaticv1.HealthStatusProvisioning,
-				CloudProviderInfrastructure:  kubermaticv1.HealthStatusProvisioning,
-				UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
-			},
-		},
+		Spec:    cluster.Spec,
 		Address: kubermaticv1.ClusterAddress{},
 	}
 }
@@ -302,7 +290,6 @@ func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provid
 		return nil, err
 	}
 
-	newCluster.Status.KubermaticVersion = p.versions.Kubermatic
 	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, "") // Do not update worker name.
 	if err := seedImpersonatedClient.Update(context.Background(), newCluster); err != nil {
 		return nil, err
@@ -460,7 +447,6 @@ func (p *ClusterProvider) UpdateUnsecured(project *kubermaticv1.Project, cluster
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
-	cluster.Status.KubermaticVersion = p.versions.Kubermatic
 	cluster.Labels = getClusterLabels(cluster.Labels, project.Name, "") // Do not update worker name.
 	err := p.client.Update(context.Background(), cluster)
 	if err != nil {

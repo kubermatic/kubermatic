@@ -61,6 +61,11 @@ func main() {
 	}
 
 	for _, cluster := range clusterList.Items {
+		if cluster.Status.NamespaceName == "" {
+			klog.V(4).Infof("Skipping cluster %s because no namespaceName is set.", cluster.Name)
+			continue
+		}
+
 		var ns *corev1.Namespace
 		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns); err != nil {
 			klog.Fatal(err)

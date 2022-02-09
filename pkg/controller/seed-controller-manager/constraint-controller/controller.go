@@ -328,6 +328,11 @@ func (r *reconciler) syncAllClustersNS(
 			continue
 		}
 
+		if userCluster.Status.NamespaceName == "" {
+			log.Debugw("Cluster has no namespace name yet, skipping", "cluster", clusterName)
+			continue
+		}
+
 		if !userCluster.DeletionTimestamp.IsZero() {
 			log.Debugw("Cluster deletion in progress, skipping", "cluster", clusterName)
 			continue

@@ -831,7 +831,7 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 			Email: email,
 		},
 		Status: kubermaticv1.UserStatus{
-			LastSeen: &[]metav1.Time{metav1.NewTime(UserLastSeen)}[0],
+			LastSeen: metav1.NewTime(UserLastSeen),
 		},
 	}
 }
@@ -1046,7 +1046,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 				CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			},
-			NamespaceName: "cluster-" + id,
+			NamespaceName: kubernetes.NamespaceName(id),
 		},
 	}
 
@@ -1871,7 +1871,7 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 	return &kubermaticv1.RuleGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "cluster-" + clusterName,
+			Namespace: kubernetes.NamespaceName(clusterName),
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       kubermaticv1.RuleGroupKindName,
@@ -2048,7 +2048,7 @@ func GenMLAAdminSetting(name, clusterName string, value int32) *kubermaticv1.MLA
 	return &kubermaticv1.MLAAdminSetting{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "cluster-" + clusterName,
+			Namespace: kubernetes.NamespaceName(clusterName),
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       kubermaticv1.MLAAdminSettingKindName,

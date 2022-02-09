@@ -159,6 +159,9 @@ func namedProjectClientWithLabels(name string, labels map[string]string) ctrlrun
 			Name:   name,
 			Labels: labels,
 		},
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectActive,
+		},
 	}).Build()
 }
 

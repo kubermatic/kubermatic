@@ -1812,10 +1812,7 @@ spec:
                   potentially costly migrations
                 type: integer
               conditions:
-                description: Conditions contains conditions the cluster is in, its
-                  primary use case is status signaling between controllers or between
-                  controllers and the API
-                items:
+                additionalProperties:
                   properties:
                     kubermaticVersion:
                       description: KubermaticVersion current kubermatic version.
@@ -1839,34 +1836,15 @@ spec:
                     status:
                       description: Status of the condition, one of True, False, Unknown.
                       type: string
-                    type:
-                      description: Type of cluster condition.
-                      enum:
-                      - ""
-                      - SeedResourcesUpToDate
-                      - ClusterControllerReconciledSuccessfully
-                      - AddonControllerReconciledSuccessfully
-                      - AddonInstallerControllerReconciledSuccessfully
-                      - BackupControllerReconciledSuccessfully
-                      - CloudControllerReconcilledSuccessfully
-                      - UpdateControllerReconciledSuccessfully
-                      - MonitoringControllerReconciledSuccessfully
-                      - MachineDeploymentReconciledSuccessfully
-                      - MLAControllerReconciledSuccessfully
-                      - ClusterInitialized
-                      - EtcdClusterInitialized
-                      - CSIKubeletMigrationCompleted
-                      - ClusterUpdateSuccessful
-                      - ClusterUpdateInProgress
-                      - CSIKubeletMigrationSuccess
-                      - CSIKubeletMigrationInProgress
-                      type: string
                   required:
                   - kubermaticVersion
+                  - lastHeartbeatTime
                   - status
-                  - type
                   type: object
-                type: array
+                description: Conditions contains conditions the cluster is in, its
+                  primary use case is status signaling between controllers or between
+                  controllers and the API
+                type: object
               errorMessage:
                 description: ErrorMessage contains a default error message in case
                   the controller encountered an error. Will be reset if the error
@@ -1968,15 +1946,6 @@ spec:
                     - HealthStatusUp
                     - HealthStatusProvisioning
                     type: string
-                required:
-                - apiserver
-                - cloudProviderInfrastructure
-                - controller
-                - etcd
-                - machineController
-                - openvpn
-                - scheduler
-                - userClusterControllerManager
                 type: object
               inheritedLabels:
                 additionalProperties:
@@ -2038,11 +2007,6 @@ spec:
               userName:
                 description: UserName contains the name of the owner of this cluster
                 type: string
-            required:
-            - cloudMigrationRevision
-            - kubermaticVersion
-            - namespaceName
-            - userEmail
             type: object
         type: object
     served: true

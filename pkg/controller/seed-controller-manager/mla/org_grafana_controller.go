@@ -154,7 +154,7 @@ func newOrgGrafanaController(
 	}
 }
 
-func (r *orgGrafanaController) cleanUp(ctx context.Context) error {
+func (r *orgGrafanaController) CleanUp(ctx context.Context) error {
 	projectList := &kubermaticv1.ProjectList{}
 	if err := r.List(ctx, projectList); err != nil {
 		return err

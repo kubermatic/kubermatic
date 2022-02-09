@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +68,7 @@ func TestCreateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
 					},
 					Spec: kubermaticv1.AddonSpec{
@@ -86,7 +87,7 @@ func TestCreateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
@@ -109,10 +110,9 @@ func TestCreateAddon(t *testing.T) {
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver: kubermaticv1.HealthStatusUp,
 					},
-					NamespaceName: "cluster-" + name,
+					NamespaceName: kubernetes.NamespaceName(name),
 				},
 			},
 		},
@@ -192,7 +192,7 @@ func TestUpdateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
 					},
 					Spec: kubermaticv1.AddonSpec{
@@ -213,7 +213,7 @@ func TestUpdateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
 					},
 					Spec: kubermaticv1.AddonSpec{
@@ -232,7 +232,7 @@ func TestUpdateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
 						ResourceVersion: "2",
@@ -255,10 +255,9 @@ func TestUpdateAddon(t *testing.T) {
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver: kubermaticv1.HealthStatusUp,
 					},
-					NamespaceName: "cluster-" + name,
+					NamespaceName: kubernetes.NamespaceName(name),
 				},
 			},
 		},
@@ -272,7 +271,7 @@ func TestUpdateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "to-be-deleted",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
 					},
 					Spec: kubermaticv1.AddonSpec{
@@ -293,7 +292,7 @@ func TestUpdateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
 					},
 					Spec: kubermaticv1.AddonSpec{
@@ -312,7 +311,7 @@ func TestUpdateAddon(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
 						ResourceVersion: "1",
@@ -335,10 +334,9 @@ func TestUpdateAddon(t *testing.T) {
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver: kubermaticv1.HealthStatusUp,
 					},
-					NamespaceName: "cluster-" + name,
+					NamespaceName: kubernetes.NamespaceName(name),
 				},
 			},
 		},

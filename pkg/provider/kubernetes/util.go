@@ -17,6 +17,8 @@ limitations under the License.
 package kubernetes
 
 import (
+	"strings"
+
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -35,6 +37,15 @@ type ImpersonationClient func(impCfg restclient.ImpersonationConfig) (ctrlruntim
 // NamespaceName returns the namespace name for a cluster.
 func NamespaceName(clusterName string) string {
 	return NamespacePrefix + clusterName
+}
+
+// ClusterNameFromNamespace returns name of a cluster from the cluster namespace.
+func ClusterNameFromNamespace(namespace string) string {
+	if !strings.HasPrefix(namespace, NamespacePrefix) {
+		return ""
+	}
+
+	return strings.TrimPrefix(namespace, NamespacePrefix)
 }
 
 // createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation.

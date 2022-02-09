@@ -153,7 +153,7 @@ func newRuleGroupSyncController(
 	}
 }
 
-func (r *ruleGroupSyncController) cleanUp(ctx context.Context) error {
+func (r *ruleGroupSyncController) CleanUp(ctx context.Context) error {
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
 	if err := r.List(ctx, ruleGroupList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return err
