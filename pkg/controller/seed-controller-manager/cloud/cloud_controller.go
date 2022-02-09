@@ -211,7 +211,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		// reconcile if the lastTime isn't set (= first time init or a forced reconciliation) or too long ago
-		if last == nil || (interval.Duration > 0 && time.Since(last.Time) >= interval.Duration) {
+		if last.IsZero() || (interval.Duration > 0 && time.Since(last.Time) >= interval.Duration) {
 			log.Info("Reconciling cloud provider for cluster")
 
 			// update metrics
@@ -226,8 +226,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 			// remember that we reconciled
 			err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-				now := metav1.Now()
-				c.Status.LastProviderReconciliation = &now
+				c.Status.LastProviderReconciliation = metav1.Now()
 			})
 			if err != nil {
 				return nil, fmt.Errorf("failed to set last reconcile timestamp: %w", err)

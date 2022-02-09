@@ -318,7 +318,7 @@ type ClusterCondition struct {
 	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
 	// Last time the condition transit from one status to another.
 	// +optional
-	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	// +optional
 	Reason string `json:"reason,omitempty"`
@@ -330,7 +330,7 @@ type ClusterCondition struct {
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	// +optional
-	LastUpdated *metav1.Time `json:"lastUpdated,omitempty"`
+	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// ExtendedHealth exposes information about the current health state.
 	// Extends standard health status for new states.
 	// +optional
@@ -339,7 +339,7 @@ type ClusterStatus struct {
 	// were last fully reconciled (during normal cluster reconciliation, KKP does
 	// not re-check things like security groups, networks etc.).
 	// +optional
-	LastProviderReconciliation *metav1.Time `json:"lastProviderReconciliation,omitempty"`
+	LastProviderReconciliation metav1.Time `json:"lastProviderReconciliation,omitempty"`
 	// KubermaticVersion is the current kubermatic version in a cluster.
 	// +optional
 	KubermaticVersion string `json:"kubermaticVersion"`

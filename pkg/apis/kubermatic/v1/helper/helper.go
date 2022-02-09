@@ -125,10 +125,7 @@ func SetClusterCondition(
 
 		// Reset the times before comparing
 		conditionCopy.LastHeartbeatTime.Reset()
-
-		if conditionCopy.LastTransitionTime != nil {
-			conditionCopy.LastTransitionTime.Reset()
-		}
+		conditionCopy.LastTransitionTime.Reset()
 
 		if apiequality.Semantic.DeepEqual(*conditionCopy, newCondition) {
 			return
@@ -139,7 +136,7 @@ func SetClusterCondition(
 	newCondition.LastHeartbeatTime = now
 	newCondition.LastTransitionTime = oldCondition.LastTransitionTime
 	if hadCondition && oldCondition.Status != status {
-		newCondition.LastTransitionTime = &now
+		newCondition.LastTransitionTime = now
 	}
 
 	if c.Status.Conditions == nil {

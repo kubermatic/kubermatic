@@ -51,7 +51,8 @@ type User struct {
 
 // UserStatus stores status information about a user.
 type UserStatus struct {
-	LastSeen *metav1.Time `json:"lastSeen,omitempty"`
+	// +optional
+	LastSeen metav1.Time `json:"lastSeen,omitempty"`
 }
 
 // UserSpec specifies a user.
@@ -62,7 +63,8 @@ type UserSpec struct {
 	IsAdmin                bool                                    `json:"admin"`
 	Settings               *UserSettings                           `json:"settings,omitempty"`
 	InvalidTokensReference *providerconfig.GlobalSecretKeySelector `json:"invalidTokensReference,omitempty"`
-	LastSeen               *metav1.Time                            `json:"lastSeen,omitempty"`
+	// +optional
+	LastSeen metav1.Time `json:"lastSeen,omitempty"`
 }
 
 // UserSettings represent an user settings.

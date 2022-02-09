@@ -610,7 +610,7 @@ func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditio
 
 	condition, exists := a.Status.Conditions[condType]
 	if exists && condition.Status != status {
-		condition.LastTransitionTime = &now
+		condition.LastTransitionTime = now
 	}
 
 	condition.Status = status

@@ -97,5 +97,5 @@ type AddonCondition struct {
 	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
 	// Last time the condition transit from one status to another.
 	// +optional
-	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }

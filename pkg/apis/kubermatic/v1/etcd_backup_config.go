@@ -99,16 +99,21 @@ type BackupStatusPhase string
 
 type BackupStatus struct {
 	// ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
-	ScheduledTime      *metav1.Time      `json:"scheduledTime,omitempty"`
-	BackupName         string            `json:"backupName,omitempty"`
-	JobName            string            `json:"jobName,omitempty"`
-	BackupStartTime    *metav1.Time      `json:"backupStartTime,omitempty"`
-	BackupFinishedTime *metav1.Time      `json:"backupFinishedTime,omitempty"`
+	// +optional
+	ScheduledTime metav1.Time `json:"scheduledTime,omitempty"`
+	BackupName    string      `json:"backupName,omitempty"`
+	JobName       string      `json:"jobName,omitempty"`
+	// +optional
+	BackupStartTime metav1.Time `json:"backupStartTime,omitempty"`
+	// +optional
+	BackupFinishedTime metav1.Time       `json:"backupFinishedTime,omitempty"`
 	BackupPhase        BackupStatusPhase `json:"backupPhase,omitempty"`
 	BackupMessage      string            `json:"backupMessage,omitempty"`
 	DeleteJobName      string            `json:"deleteJobName,omitempty"`
-	DeleteStartTime    *metav1.Time      `json:"deleteStartTime,omitempty"`
-	DeleteFinishedTime *metav1.Time      `json:"deleteFinishedTime,omitempty"`
+	// +optional
+	DeleteStartTime metav1.Time `json:"deleteStartTime,omitempty"`
+	// +optional
+	DeleteFinishedTime metav1.Time       `json:"deleteFinishedTime,omitempty"`
 	DeletePhase        BackupStatusPhase `json:"deletePhase,omitempty"`
 	DeleteMessage      string            `json:"deleteMessage,omitempty"`
 }
@@ -120,7 +125,7 @@ type EtcdBackupConfigCondition struct {
 	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
 	// Last time the condition transit from one status to another.
 	// +optional
-	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	// +optional
 	Reason string `json:"reason,omitempty"`

@@ -831,7 +831,7 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 			Email: email,
 		},
 		Status: kubermaticv1.UserStatus{
-			LastSeen: &[]metav1.Time{metav1.NewTime(UserLastSeen)}[0],
+			LastSeen: metav1.NewTime(UserLastSeen),
 		},
 	}
 }
