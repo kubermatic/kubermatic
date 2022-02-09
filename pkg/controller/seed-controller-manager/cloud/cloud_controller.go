@@ -225,7 +225,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 
 			// remember that we reconciled
-			cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+			cluster, err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
 				now := metav1.Now()
 				c.Status.LastProviderReconciliation = &now
 			})

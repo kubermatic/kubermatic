@@ -19,6 +19,8 @@ package gcp
 import (
 	"fmt"
 	"net/http"
+	"reflect"
+	"strings"
 
 	"go.uber.org/zap"
 	"google.golang.org/api/compute/v1"
@@ -28,16 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
-
-var allowedProtocols = []string{
-	"tcp",
-	"udp",
-	"icmp",
-	"esp",
-	"ah",
-	"sctp",
-	"ipip",
-}
 
 func reconcileFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, svc *compute.Service, projectID string) error {
 	// Retrieve nodePort range from cluster
@@ -58,124 +50,124 @@ func reconcileFirewallRules(cluster *kubermaticv1.Cluster, update provider.Clust
 	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
 	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
 
-	// enforce that the firewall rules exists, as well as all the needed allowedProtocols
-	protocolsToAdd := []string{}
-	firewallObject, err := firewallService.Get(projectID, selfRuleName).Do()
+	//
+	var allowedProtocols = []*compute.FirewallAllowed{
+		{
+			IPProtocol: "tcp",
+		},
+		{
+			IPProtocol: "udp",
+		},
+		{
+			IPProtocol: "icmp",
+		},
+		{
+			IPProtocol: "esp",
+		},
+		{
+			IPProtocol: "ah",
+		},
+		{
+			IPProtocol: "sctp",
+		},
+		{
+			IPProtocol: "ipip",
+		},
+	}
+	err := createOrPatchFirewall(firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, "", update, cluster, firewallSelfCleanupFinalizer)
+	if err != nil {
+		return err
+	}
+
+	allowedProtocols = []*compute.FirewallAllowed{
+		{
+			IPProtocol: "icmp",
+		},
+	}
+	err = createOrPatchFirewall(firewallService, projectID, icmpRuleName, tag, "", allowedProtocols, "0.0.0.0/0", update, cluster, firewallICMPCleanupFinalizer)
+	if err != nil {
+		return err
+	}
+
+	allowedProtocols = []*compute.FirewallAllowed{
+		{
+			IPProtocol: "tcp",
+			Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
+		},
+		{
+			IPProtocol: "udp",
+			Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
+		},
+	}
+	err = createOrPatchFirewall(firewallService, projectID, nodePortRuleName, tag, "", allowedProtocols, nodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createOrPatchFirewall(firewallService *compute.FirewallsService,
+	projectID string,
+	firewallName string,
+	targetTag string,
+	sourceTag string,
+	protocols []*compute.FirewallAllowed,
+	allowedIPRange string,
+	update provider.ClusterUpdater,
+	cluster *kubermaticv1.Cluster,
+	finalizer string) error {
+	firewall := &compute.Firewall{
+		Name:       firewallName,
+		Network:    cluster.Spec.Cloud.GCP.Network,
+		TargetTags: []string{targetTag},
+		Allowed:    protocols,
+	}
+	if sourceTag != "" {
+		firewall.SourceTags = []string{sourceTag}
+	}
+	if allowedIPRange != "" {
+		firewall.SourceRanges = []string{allowedIPRange}
+	}
+
+	existingFirewall, err := firewallService.Get(projectID, firewallName).Do()
 	switch {
 	case isHTTPError(err, http.StatusNotFound):
-		allowed := []*compute.FirewallAllowed{}
-		for _, protocol := range allowedProtocols {
-			allowed = append(allowed, &compute.FirewallAllowed{
-				IPProtocol: protocol,
-			})
-		}
-		if _, err = firewallService.Insert(projectID, &compute.Firewall{
-			Name:       selfRuleName,
-			Network:    cluster.Spec.Cloud.GCP.Network,
-			Allowed:    allowed,
-			TargetTags: []string{tag},
-			SourceTags: []string{tag},
-		}).Do(); err != nil {
-			return fmt.Errorf("failed to create new firewall %s for cluster %s, %w", selfRuleName, cluster.Name, err)
+		if _, err = firewallService.Insert(projectID, firewall).Do(); err != nil {
+			return fmt.Errorf("failed to create new firewall %s for cluster %s, %w", firewallName, cluster.Name, err)
 		}
 	case err == nil:
-		for _, pToAdd := range allowedProtocols {
-			toBeAdded := true
-			for _, allowed := range firewallObject.Allowed {
-				if allowed.IPProtocol == pToAdd {
-					toBeAdded = false
-					break
-				}
-			}
-			if toBeAdded {
-				protocolsToAdd = append(protocolsToAdd, pToAdd)
+		if !reflect.DeepEqual(existingFirewall.Allowed, firewall.Allowed) ||
+			!strings.HasSuffix(existingFirewall.Network, firewall.Network) ||
+			!reflect.DeepEqual(existingFirewall.TargetTags, firewall.TargetTags) ||
+			!reflect.DeepEqual(existingFirewall.SourceTags, firewall.SourceTags) ||
+			!reflect.DeepEqual(existingFirewall.SourceRanges, firewall.SourceRanges) {
+			_, err = firewallService.Patch(projectID, firewallName, firewall).Do()
+			if err != nil {
+				return fmt.Errorf("failed to patch firewall %s for cluster %s, %w", firewallName, cluster.Name, err)
 			}
 		}
 	default:
-		return fmt.Errorf("failed to get firewall %s for cluster %s, %w", selfRuleName, cluster.Name, err)
+		return fmt.Errorf("failed to get firewall %s for cluster %s, %w", firewallName, cluster.Name, err)
 	}
 
-	// allow traffic within the same cluster
-	if len(protocolsToAdd) > 0 {
-		allowed := []*compute.FirewallAllowed{}
-		for _, protocol := range allowedProtocols {
-			allowed = append(allowed, &compute.FirewallAllowed{
-				IPProtocol: protocol,
-			})
+	var toPatch = true
+	for _, f := range cluster.Finalizers {
+		if f == finalizer {
+			toPatch = false
 		}
-		_, err = firewallService.Patch(projectID, selfRuleName, &compute.Firewall{
-			Name:       selfRuleName,
-			Network:    cluster.Spec.Cloud.GCP.Network,
-			Allowed:    allowed,
-			TargetTags: []string{tag},
-			SourceTags: []string{tag},
-		}).Do()
-		if err != nil {
-			return fmt.Errorf("failed to patch firewall %s for cluster %s, %w", selfRuleName, cluster.Name, err)
-		}
-
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(cluster, firewallSelfCleanupFinalizer)
+	}
+	if toPatch {
+		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, finalizer)
 		})
 		if err != nil {
-			return fmt.Errorf("failed to add %s finalizer: %w", firewallSelfCleanupFinalizer, err)
+			return fmt.Errorf("failed to add %s finalizer: %w", finalizer, err)
 		}
+		*cluster = *newCluster
 	}
 
-	_, err = firewallService.Insert(projectID, &compute.Firewall{
-		Name:    icmpRuleName,
-		Network: cluster.Spec.Cloud.GCP.Network,
-		Allowed: []*compute.FirewallAllowed{
-			{
-				IPProtocol: "icmp",
-			},
-		},
-		TargetTags: []string{tag},
-	}).Do()
-	// we ignore a Google API "already exists" error
-	if err != nil && !isHTTPError(err, http.StatusConflict) {
-		return fmt.Errorf("failed to create firewall rule %s: %w", icmpRuleName, err)
-	}
-
-	newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, firewallICMPCleanupFinalizer)
-	})
-	if err != nil {
-		return fmt.Errorf("failed to add %s finalizer: %w", firewallICMPCleanupFinalizer, err)
-	}
-	*cluster = *newCluster
-
-	// open nodePorts for TCP and UDP
-	_, err = firewallService.Insert(projectID, &compute.Firewall{
-		Name:    nodePortRuleName,
-		Network: cluster.Spec.Cloud.GCP.Network,
-		Allowed: []*compute.FirewallAllowed{
-			{
-				IPProtocol: "tcp",
-				Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
-			},
-			{
-				IPProtocol: "udp",
-				Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
-			},
-		},
-		TargetTags:   []string{tag},
-		SourceRanges: []string{nodePortsAllowedIPRange},
-	}).Do()
-	// we ignore a Google API "already exists" error
-	if err != nil && !isHTTPError(err, http.StatusConflict) {
-		return fmt.Errorf("failed to create firewall rule %s: %w", nodePortRuleName, err)
-	}
-
-	newCluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, firewallNodePortCleanupFinalizer)
-	})
-	if err != nil {
-		return fmt.Errorf("failed to add %s finalizer: %w", firewallNodePortCleanupFinalizer, err)
-	}
-	*cluster = *newCluster
-
-	return err
+	return nil
 }
 
 func deleteFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, log *zap.SugaredLogger, svc *compute.Service, projectID string) (*kubermaticv1.Cluster, error) {
