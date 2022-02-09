@@ -776,6 +776,12 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 		return fmt.Errorf("failed to get security group %q: %v", azure.SecurityGroup, err)
 	}
 
+	// we do not want to add IMCP rules to a NSG we do not own;
+	// which is the case when a pre-provisioned NSG is configured.
+	if !hasOwnershipTag(sg.Tags, cluster) {
+		return nil
+	}
+
 	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool
 	if sg.SecurityRules != nil {
 		for _, rule := range *sg.SecurityRules {
