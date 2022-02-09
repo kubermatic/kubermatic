@@ -46,8 +46,8 @@ type NutanixCommonReq struct {
 	NutanixPassword string
 
 	// in: header
-	// name: ProxyURL
-	ProxyURL string
+	// name: NutanixProxyURL
+	NutanixProxyURL string
 
 	// in: header
 	// name: Credential
@@ -93,7 +93,7 @@ func DecodeNutanixCommonReq(c context.Context, r *http.Request) (interface{}, er
 
 	req.NutanixUsername = r.Header.Get("NutanixUsername")
 	req.NutanixPassword = r.Header.Get("NutanixPassword")
-	req.ProxyURL = r.Header.Get("NutanixProxyURL")
+	req.NutanixProxyURL = r.Header.Get("NutanixProxyURL")
 	req.Credential = r.Header.Get("Credential")
 
 	dc, ok := mux.Vars(r)["dc"]
@@ -143,7 +143,7 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 		req := request.(NutanixCommonReq)
 
 		creds := providercommon.NutanixCredentials{
-			ProxyURL: req.ProxyURL,
+			ProxyURL: req.NutanixProxyURL,
 			Username: req.NutanixUsername,
 			Password: req.NutanixPassword,
 		}
@@ -192,7 +192,7 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 		req := request.(NutanixCommonReq)
 
 		creds := providercommon.NutanixCredentials{
-			ProxyURL: req.ProxyURL,
+			ProxyURL: req.NutanixProxyURL,
 			Username: req.NutanixUsername,
 			Password: req.NutanixPassword,
 		}
@@ -241,7 +241,7 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 		req := request.(NutanixSubnetReq)
 
 		creds := providercommon.NutanixCredentials{
-			ProxyURL: req.ProxyURL,
+			ProxyURL: req.NutanixProxyURL,
 			Username: req.NutanixUsername,
 			Password: req.NutanixPassword,
 		}
