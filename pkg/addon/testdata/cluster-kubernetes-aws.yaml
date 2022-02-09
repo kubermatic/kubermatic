@@ -82,63 +82,63 @@ spec:
 status:
   cloudMigrationRevision: 2
   conditions:
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:14:26Z"
-    lastTransitionTime: "2020-04-01T23:14:26Z"
-    status: "True"
-    type: AddonControllerReconciledSuccessfully
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:19:25Z"
-    lastTransitionTime: "2020-04-01T23:19:25Z"
-    status: "True"
-    type: AddonInstallerControllerReconciledSuccessfully
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:13:34Z"
-    status: "True"
-    type: BackupControllerReconciledSuccessfully
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:13:48Z"
-    status: "True"
-    type: CloudControllerReconcilledSuccessfully
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:14:20Z"
-    lastTransitionTime: "2020-04-01T23:14:20Z"
-    status: "True"
-    type: ClusterControllerReconciledSuccessfully
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:14:49Z"
-    message: Cluster has been initialized successfully
-    status: "True"
-    type: ClusterInitialized
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:14:20Z"
-    status: "True"
-    type: ComponentDefaulterReconciledSuccessfully
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:14:34Z"
-    status: "True"
-    type: MonitoringControllerReconciledSuccessfully
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:28:13Z"
-    lastTransitionTime: "2020-04-01T23:28:13Z"
-    message: Some control plane components did not finish updating
-    reason: ClusterUpdateSuccessful
-    status: "False"
-    type: SeedResourcesUpToDate
-  - kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
-    lastHeartbeatTime: "2020-04-01T23:19:14Z"
-    lastTransitionTime: "2020-04-01T23:19:14Z"
-    status: "True"
-    type: UpdateControllerReconciledSuccessfully
-  extendedHealth:
-    apiserver: HealthStatusDown
-    cloudProviderInfrastructure: HealthStatusDown
-    controller: HealthStatusDown
-    etcd: HealthStatusUp
-    machineController: HealthStatusDown
-    openvpn: HealthStatusDown
-    scheduler: HealthStatusDown
-    userClusterControllerManager: HealthStatusDown
+    AddonControllerReconciledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:14:26Z"
+      lastTransitionTime: "2020-04-01T23:14:26Z"
+      status: "True"
+    AddonInstallerControllerReconciledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:19:25Z"
+      lastTransitionTime: "2020-04-01T23:19:25Z"
+      status: "True"
+    BackupControllerReconciledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:13:34Z"
+      status: "True"
+    CloudControllerReconcilledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:13:48Z"
+      status: "True"
+    ClusterControllerReconciledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:14:20Z"
+      lastTransitionTime: "2020-04-01T23:14:20Z"
+      status: "True"
+    ClusterInitialized:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:14:49Z"
+      message: Cluster has been initialized successfully
+      status: "True"
+    ComponentDefaulterReconciledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:14:20Z"
+      status: "True"
+    MonitoringControllerReconciledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:14:34Z"
+      status: "True"
+    SeedResourcesUpToDate:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:28:13Z"
+      lastTransitionTime: "2020-04-01T23:28:13Z"
+      message: Some control plane components did not finish updating
+      reason: ClusterUpdateSuccessful
+      status: "False"
+    UpdateControllerReconciledSuccessfully:
+      kubermaticVersion: weekly-2019-46-346-g1d08a9926-1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+      lastHeartbeatTime: "2020-04-01T23:19:14Z"
+      lastTransitionTime: "2020-04-01T23:19:14Z"
+      status: "True"
+    extendedHealth:
+      apiserver: HealthStatusDown
+      cloudProviderInfrastructure: HealthStatusDown
+      controller: HealthStatusDown
+      etcd: HealthStatusUp
+      machineController: HealthStatusDown
+      openvpn: HealthStatusDown
+      scheduler: HealthStatusDown
+      userClusterControllerManager: HealthStatusDown
   kubermaticVersion: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
   lastUpdated: null
   namespaceName: cluster-bbc8sc24wb

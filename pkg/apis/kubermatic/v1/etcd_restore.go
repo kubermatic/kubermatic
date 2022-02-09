@@ -88,6 +88,7 @@ type EtcdRestoreList struct {
 }
 
 type EtcdRestoreStatus struct {
-	Phase       EtcdRestorePhase `json:"phase"`
-	RestoreTime *metav1.Time     `json:"restoreTime,omitempty"`
+	Phase EtcdRestorePhase `json:"phase"`
+	// +optional
+	RestoreTime metav1.Time `json:"restoreTime,omitempty"`
 }

@@ -34,6 +34,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -162,7 +163,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "cluster-" + test.ClusterID,
+						Namespace: kubernetes.NamespaceName(test.ClusterID),
 						Name:      "admin-kubeconfig",
 					},
 					Data: map[string][]byte{
@@ -188,7 +189,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "cluster-" + test.ClusterID,
+						Namespace: kubernetes.NamespaceName(test.ClusterID),
 						Name:      "admin-kubeconfig",
 					},
 					Data: map[string][]byte{

@@ -64,6 +64,9 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 								Name:              "test_cluster_1",
 								DeletionTimestamp: &deletionTimestamp,
 							},
+							Status: kubermaticv1.ClusterStatus{
+								NamespaceName: "cluster-test_cluster_1",
+							},
 						},
 					).Build(),
 				},

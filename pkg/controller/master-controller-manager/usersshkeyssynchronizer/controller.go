@@ -161,6 +161,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return fmt.Errorf("failed to get cluster %s from seed %s: %w", cluster.Name, request.Namespace, err)
 	}
 
+	if cluster.Status.NamespaceName == "" {
+		log.Debug("Skipping cluster reconciling because no namespaceName was yet set")
+		return nil
+	}
+
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		log.Debugw(
 			"Skipping because the cluster has a different worker name set",
@@ -208,7 +213,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	oldCluster := cluster.DeepCopy()
 	if !kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
 		kubernetes.AddFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-		if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
+		if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("failed adding %s finalizer: %w", UserSSHKeysClusterIDsCleanupFinalizer, err)
 		}
 	}

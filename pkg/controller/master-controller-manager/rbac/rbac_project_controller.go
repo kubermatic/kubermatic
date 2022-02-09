@@ -51,7 +51,7 @@ type projectController struct {
 // managing RBAC roles for project's
 
 // The controller will also set proper ownership chain through OwnerReferences
-// so that whenever a project is deleted dependants object will be garbage collected.
+// so that whenever a project is deleted dependent object will be garbage collected.
 func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, resources []projectResource, workerPredicate predicate.Predicate) error {
 	seedClientMap := make(map[string]ctrlruntimeclient.Client)
 	for k, v := range seedManagerMap {
@@ -73,7 +73,7 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 		return err
 	}
 
-	// Watch for changes to UserProjectBinding
+	// Watch for changes to Projects
 	err = cc.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, workerPredicate)
 	if err != nil {
 		return err

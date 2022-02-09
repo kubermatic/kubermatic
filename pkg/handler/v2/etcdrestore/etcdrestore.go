@@ -289,7 +289,7 @@ func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRe
 			Phase: er.Status.Phase,
 		},
 	}
-	if er.Status.RestoreTime != nil {
+	if !er.Status.RestoreTime.IsZero() {
 		restoreTime := apiv1.NewTime(er.Status.RestoreTime.Time)
 		etcdRestore.Status.RestoreTime = &restoreTime
 	}

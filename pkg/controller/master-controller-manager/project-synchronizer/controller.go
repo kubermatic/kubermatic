@@ -100,6 +100,11 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
+	if project.Status.Phase == "" {
+		log.Debug("Project has no phase set in its status, skipping reconciling")
+		return reconcile.Result{}, nil
+	}
+
 	if !project.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, log, project); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
@@ -142,6 +147,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.recorder.Eventf(project, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("reconciled project: %s: %w", project.Name, err)
 	}
+
 	return reconcile.Result{}, nil
 }
 

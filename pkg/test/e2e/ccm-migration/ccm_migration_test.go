@@ -30,7 +30,6 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	machinecontrollertypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -147,10 +146,8 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				if err := clusterJig.SeedClient.Get(context.TODO(), types.NamespacedName{Name: clusterJig.Cluster.Name}, migratingCluster); err != nil {
 					return false, err
 				}
-				if kubermaticv1helper.ClusterConditionHasStatus(migratingCluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-					return true, nil
-				}
-				return false, nil
+
+				return migratingCluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue, nil
 			})).NotTo(gomega.HaveOccurred())
 		})
 	})

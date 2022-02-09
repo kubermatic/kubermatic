@@ -28,11 +28,11 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -105,8 +105,8 @@ func TestReconcile(t *testing.T) {
 				// cluster should now have its special condition
 				name := kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess
 
-				if _, cond := kubermaticv1helper.GetClusterCondition(cluster, name); cond == nil {
-					return fmt.Errorf("cluster should have %v condition, but does not", name)
+				if cond := cluster.Status.Conditions[name]; cond.Status != corev1.ConditionTrue {
+					return fmt.Errorf("cluster should have %v=%s condition, but does not", name, corev1.ConditionTrue)
 				}
 
 				if reconcileErr != nil {
