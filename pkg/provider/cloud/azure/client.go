@@ -17,6 +17,7 @@ limitations under the License.
 package azure
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network/networkapi"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources/resourcesapi"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2021-01-01/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
@@ -156,6 +158,18 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
 	}, nil
+}
+
+func ValidateCredentials(credentials Credentials) error {
+	var err error
+	groupsClient := subscriptions.NewClient()
+	groupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
+	if err != nil {
+		return fmt.Errorf("failed to create authorizer: %w", err)
+	}
+	_, err = groupsClient.ListLocations(context.Background(), credentials.SubscriptionID, nil)
+
+	return err
 }
 
 func getGroupsClient(cloud kubermaticv1.CloudSpec, credentials Credentials) (*resources.GroupsClient, error) {
