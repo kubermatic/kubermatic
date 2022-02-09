@@ -196,6 +196,10 @@ if [[ ! -z "${NUTANIX_E2E_ENDPOINT:-}" ]]; then
   sed -i "s/__NUTANIX_ENDPOINT__/$NUTANIX_E2E_ENDPOINT/g" $SEED_MANIFEST
 fi
 
+if [[ ! -z "${$NUTANIX_E2E_PE_ENDPOINT:-}" ]]; then
+  sed -i "s/__NUTANIX_PE_ENDPOINT__/$NUTANIX_E2E_PE_ENDPOINT/g" $SEED_MANIFEST
+fi
+
 retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"
 

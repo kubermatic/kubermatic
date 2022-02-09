@@ -26,6 +26,12 @@ type NutanixCloudSpec struct {
 	// password
 	Password string `json:"password,omitempty"`
 
+	// pe password
+	PePassword string `json:"pePassword,omitempty"`
+
+	// Prism Element credentials, required for csi driver
+	PeUsername string `json:"peUsername,omitempty"`
+
 	// ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.
 	// +optional
 	ProjectName string `json:"projectName,omitempty"`

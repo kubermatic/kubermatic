@@ -67,6 +67,8 @@ func (s *nutanixScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 					Nutanix: &apimodels.NutanixCloudSpec{
 						Username:    secrets.Nutanix.Username,
 						Password:    secrets.Nutanix.Password,
+						PeUsername:  secrets.Nutanix.PeUsername,
+						PePassword:  secrets.Nutanix.PePassword,
 						ProxyURL:    secrets.Nutanix.ProxyURL,
 						ClusterName: secrets.Nutanix.ClusterName,
 						ProjectName: secrets.Nutanix.ProjectName,
