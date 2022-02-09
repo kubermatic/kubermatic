@@ -163,8 +163,42 @@ func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) erro
 			if nutanixError.Code != http.StatusNotFound {
 				return err
 			}
-		} else if err = client.Prism.V3.DeleteCategoryValue(ProjectCategoryName, projectID); err != nil {
-			return err
+		} else {
+			// we need to make sure that no resources are attached
+			// to the project category before trying to delete it.
+			query, err := client.Prism.V3.GetCategoryQuery(&nutanixv3.CategoryQueryInput{
+				UsageType:        pointer.String("APPLIED_TO"),
+				GroupMemberCount: pointer.Int64(0),
+				CategoryFilter: &nutanixv3.CategoryFilter{
+					Type:     pointer.String("CATEGORIES_MATCH_ANY"),
+					KindList: []*string{},
+					Params: map[string][]string{
+						ProjectCategoryName: {projectID},
+					},
+				},
+			})
+
+			// no results mean it is safe to clean up this category value.
+			if len(query.Results) == 0 {
+				if err = client.Prism.V3.DeleteCategoryValue(ProjectCategoryName, projectID); err != nil {
+					return err
+				}
+			} else {
+				// we will loop over the results and see if any of them match our category for the cluster.
+				// if we hit a matching resource, an error is returned, as there is some leftover resource.
+				// other entities not linked to our cluster are fine and can be ignored.
+				for _, result := range query.Results {
+					if result != nil {
+						for _, entity := range result.EntityAnyReferenceList {
+							if entity != nil {
+								if val, ok := entity.Categories[ClusterCategoryName]; ok && val == CategoryValue(cluster.Name) {
+									return fmt.Errorf("entities associated with category '%s=%s' still exist", ClusterCategoryName, CategoryValue(cluster.Name))
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
