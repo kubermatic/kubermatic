@@ -19,12 +19,15 @@ package externalcluster
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
+	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/go-kit/kit/endpoint"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -500,4 +503,65 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 	}
 
 	return &machineDeployment, nil
+}
+
+func AKSMDVersionsNoCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cloud := cluster.Spec.CloudSpec
+		resourceGroup := cloud.AKS.ResourceGroup
+		resourceName := cloud.AKS.Name
+		availableVersions := make([]*apiv1.MasterVersion, 0)
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		agentPoolClient, err := getAKSNodePoolClient(cred)
+		if err != nil {
+			return nil, err
+		}
+
+		agentPoolAvailableVersions, err := agentPoolClient.GetAvailableAgentPoolVersions(ctx, resourceGroup, resourceName)
+		if err != nil {
+			return nil, err
+		}
+
+		agentPoolAvailableVersionsProperties := agentPoolAvailableVersions.AgentPoolAvailableVersionsProperties
+		if agentPoolAvailableVersionsProperties == nil || agentPoolAvailableVersionsProperties.AgentPoolVersions == nil {
+			return availableVersions, nil
+		}
+
+		for _, version := range *agentPoolAvailableVersionsProperties.AgentPoolVersions {
+			if version.KubernetesVersion != nil {
+				kubernetesVersion, err := semverlib.NewVersion(to.String(version.KubernetesVersion))
+				if err != nil {
+					return nil, err
+				}
+				availableVersions = append(availableVersions, &apiv1.MasterVersion{Version: kubernetesVersion, Default: to.Bool(version.Default)})
+			}
+		}
+
+		return availableVersions, nil
+	}
 }
