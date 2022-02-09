@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: karma
-version: 0.0.18
+version: '__KUBERMATIC_TAG__'
 appVersion: v0.89
 description: Dashboard for Prometheus Alertmanager
 keywords:

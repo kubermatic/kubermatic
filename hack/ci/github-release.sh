@@ -215,6 +215,7 @@ fi
 
 # prepare source for archiving
 sed --in-place "s/__KUBERMATIC_TAG__/$GIT_TAG/g" charts/*/*.yaml
+sed --in-place "s/__KUBERMATIC_TAG__/$GIT_TAG/g" charts/*/*/*.yaml
 
 mkdir -p _dist
 

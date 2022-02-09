@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: promtail
-version: 1.0.0
+version: '__KUBERMATIC_TAG__'
 appVersion: v2.1.0
 description: "Responsible for gathering logs and sending them to Loki"
 keywords:
