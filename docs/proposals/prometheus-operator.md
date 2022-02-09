@@ -39,7 +39,7 @@ Implementation consists of multiple parts:
 3. Rewriting resource management logic in seed-controller-manager to manage the operator's custom resources, e.g. `Prometheus` instead of `StatefulSet`, `PrometheusRule` instead of some `ConfigMap`s).
    1. Manage `Prometheus` CRs instead of StatefulSets
    2. Manage `PrometheusRule`s instead of `ConfigMaps`
-   3. Use `PodMonitor` spanning all `cluster-xxxxxx` namespaces instead of federation services.
+   3. Use a single `PodMonitor` object targetting each other Prometheus instance in all `cluster-xxxxxx` namespaces. Instead of federation services, configuration would be handled once.
 4. Define plan for migrating the data between old and new Prometheus instances.
 
 
