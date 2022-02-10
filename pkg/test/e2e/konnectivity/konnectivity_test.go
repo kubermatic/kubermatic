@@ -125,8 +125,9 @@ func TestKonnectivity(t *testing.T) {
 				t.Logf("failed to get nodes list: %s", err)
 				return false, nil
 			}
-			if len(nodes.Items) != 1 {
-				t.Logf(fmt.Sprintf("node count: %d", len(nodes.Items)))
+
+			if len(nodes.Items) < 1 {
+				t.Logf("no nodes found, at least one node is needed for the test")
 				return false, nil
 			}
 
@@ -286,6 +287,7 @@ func TestKonnectivity(t *testing.T) {
 
 		for _, pod := range pods {
 			lines := strings.TrimSpace(getPodLogs(ctx, userClient, pod))
+			t.Logf("Lines: %s", lines)
 			if n := len(strings.Split(lines, "\n")); n != tailLines {
 				t.Fatalf("expected 5 lines got: %d", n)
 			}
