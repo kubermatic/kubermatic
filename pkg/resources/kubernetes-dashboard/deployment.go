@@ -182,7 +182,16 @@ func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
 	// check the GitHub releases for find compat info on the dashboard:
 	// https://github.com/kubernetes/dashboard/releases
 
-	// v2.4.0 is the latest version and supports Kubernetes 1.20/1.21;
-	// there is no official release to support 1.22+ yet.
-	return "v2.4.0", nil
+	switch clusterVersion.MajorMinor() {
+	case "1.20":
+		return "v2.4.0", nil
+	case "1.21":
+		return "v2.4.0", nil
+	case "1.22":
+		return "v2.5.0", nil
+	case "1.23":
+		return "v2.5.0", nil
+	default:
+		return "", fmt.Errorf("no compatible version defined for Kubernetes %q", clusterVersion.MajorMinor())
+	}
 }
