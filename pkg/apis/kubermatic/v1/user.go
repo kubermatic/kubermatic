@@ -63,8 +63,6 @@ type UserSpec struct {
 	IsAdmin                bool                                    `json:"admin"`
 	Settings               *UserSettings                           `json:"settings,omitempty"`
 	InvalidTokensReference *providerconfig.GlobalSecretKeySelector `json:"invalidTokensReference,omitempty"`
-	// +optional
-	LastSeen metav1.Time `json:"lastSeen,omitempty"`
 }
 
 // UserSettings represent an user settings.
