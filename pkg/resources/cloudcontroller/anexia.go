@@ -63,10 +63,11 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:0.1.0",
+					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:1.1.3-kubermatic",
 					Command: []string{
 						"/app/ccm",
 						"--cloud-provider=anexia",
+						fmt.Sprintf("--cluster-name=%s", data.Cluster().Spec.HumanReadableName),
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 					},
 					Env: []corev1.EnvVar{
