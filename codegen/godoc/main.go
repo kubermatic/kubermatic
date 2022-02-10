@@ -23,6 +23,7 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
+	"io/ioutil"
 	"log"
 	"reflect"
 	"strings"
@@ -30,15 +31,28 @@ import (
 	"golang.org/x/tools/go/packages"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
+	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
 )
 
 var packageCache = map[string]*packages.Package{}
 
 func main() {
-	t := addon.TemplateData{}
-	snippets := generateDocumentation([]string{}, reflect.ValueOf(t))
+	// document addon template data
+	if err := generate("zz_generated.addondata.go.txt", addon.TemplateData{}); err != nil {
+		log.Fatalf("Failed to create documentation: %v", err)
+	}
 
-	fmt.Println(strings.Join(snippets, "\n\n"))
+	// document Prometheus custom rule template data
+	if err := generate("zz_generated.prometheusdata.go.txt", prometheus.CustomizationData{}); err != nil {
+		log.Fatalf("Failed to create documentation: %v", err)
+	}
+}
+
+func generate(filename string, i interface{}) error {
+	snippets := generateDocumentation([]string{}, reflect.ValueOf(i))
+	code := strings.Join(snippets, "\n\n") + "\n"
+
+	return ioutil.WriteFile(filename, []byte(code), 0644)
 }
 
 func generateDocumentation(docs []string, v reflect.Value) []string {

@@ -78,6 +78,8 @@ func main() {
 	}
 
 	for name, data := range examples {
+		log.Printf("Creating example YAML for %s resources...", name)
+
 		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.yaml", name))
 
 		f, err := os.Create(filename)
@@ -130,6 +132,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						ProviderReconciliationInterval: &metav1.Duration{Duration: defaults.DefaultCloudProviderReconciliationInterval},
 						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
+						RequiredEmails:                 []string{},
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Images: imageList,
 						},
