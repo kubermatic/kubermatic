@@ -63,13 +63,8 @@ func WebhookRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.N
 		return WebhookRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{"kubermatic.k8s.io"},
-					Resources: []string{"seeds"},
-					Verbs:     []string{"get", "list", "watch"},
-				},
-				{
-					APIGroups: []string{"operator.kubermatic.io"},
-					Resources: []string{"kubermaticconfigurations"},
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"seeds", "kubermaticconfigurations"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 				{
