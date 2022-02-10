@@ -276,25 +276,35 @@ func TestKonnectivity(t *testing.T) {
 
 	t.Log("check if we can get logs from pods")
 	{
-		pods, err := getPods(ctx, userClient, "metrics-server")
-		if err != nil {
-			t.Errorf("failed to get metrics-server pods: %s", err)
-		}
-
-		if len(pods) != 2 {
-			t.Errorf("expected 2 metrics-server pods got: %d", len(pods))
-		}
-
-		for _, pod := range pods {
-			s, err := getPodLogs(ctx, userClient, pod)
+		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+			pods, err := getPods(ctx, userClient, "metrics-server")
 			if err != nil {
-				t.Fatalf("failed to get %s pod logs: %v", pod.Name, err)
+				t.Logf("failed to get metrics-server pods: %s", err)
+				return false, nil
 			}
-			lines := strings.TrimSpace(s)
-			t.Logf("Lines: %s", lines)
-			if n := len(strings.Split(lines, "\n")); n != tailLines {
-				t.Fatalf("expected 5 lines got: %d", n)
+
+			if len(pods) != 2 {
+				t.Logf("expected 2 metrics-server pods got: %d", len(pods))
+				return false, nil
 			}
+
+			for _, pod := range pods {
+				s, err := getPodLogs(ctx, userClient, pod)
+				if err != nil {
+					t.Logf("failed to get %s pod logs: %v", pod.Name, err)
+					return false, nil
+				}
+				lines := strings.TrimSpace(s)
+				t.Logf("Lines: %s", lines)
+				if n := len(strings.Split(lines, "\n")); n != tailLines {
+					t.Logf("expected 5 lines got: %d", n)
+					return false, nil
+				}
+			}
+			return true, nil
+		})
+		if err != nil {
+			t.Fatalf("failed to get logs after multiple attempts: %v", err)
 		}
 	}
 
