@@ -430,7 +430,7 @@ func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string,
 }
 
 // CreateAWSCluster creates cluster for AWS provider.
-func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
+func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32, konnectivityEnabled bool) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
@@ -450,6 +450,12 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 			},
 			Version: models.Semver(version),
 		},
+	}
+
+	if konnectivityEnabled {
+		clusterSpec.Cluster.Spec.ClusterNetwork = &models.ClusterNetworkingConfig{
+			KonnectivityEnabled: true,
+		}
 	}
 
 	if replicas > 0 {
