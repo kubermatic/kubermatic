@@ -19,12 +19,14 @@ package externalcluster
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
-
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -366,4 +368,46 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 		return err
 	}
 	return nil
+}
+
+func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeployment) error {
+	eksMD := machineDeployment.Cloud.EKS
+	if eksMD == nil {
+		return fmt.Errorf("EKS MachineDeployment Spec cannot be nil")
+	}
+	fields := reflect.ValueOf(eksMD).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
+		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
+			return errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
+		}
+	}
+	return nil
+}
+
+func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+	if err := checkCreatePoolReqValid(machineDeployment); err != nil {
+		return nil, err
+	}
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	createInput := &eks.CreateNodegroupInput{
+		ClusterName:   aws.String(cloudSpec.EKS.Name),
+		NodegroupName: aws.String(machineDeployment.Name),
+		Subnets:       machineDeployment.Cloud.EKS.Subnets,
+		NodeRole:      aws.String(machineDeployment.Cloud.EKS.NodeRole),
+	}
+	_, err := client.EKS.CreateNodegroup(createInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return &machineDeployment, nil
 }

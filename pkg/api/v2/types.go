@@ -539,6 +539,107 @@ type FeatureGates struct {
 type ExternalClusterMachineDeploymentCloudSpec struct {
 	GKE *GKEMachineDeploymentCloudSpec `json:"gke,omitempty"`
 	AKS *AKSMachineDeploymentCloudSpec `json:"aks,omitempty"`
+	EKS *EKSMachineDeploymentCloudSpec `json:"aks,omitempty"`
+}
+
+type EKSMachineDeploymentCloudSpec struct {
+	// The unique name to give your node group.
+	Name string `json:"name"`
+
+	// The subnets to use for the Auto Scaling group that is created for your node
+	// group. These subnets must have the tag key kubernetes.io/cluster/CLUSTER_NAME
+	// with a value of shared, where CLUSTER_NAME is replaced with the name of your
+	// cluster. If you specify launchTemplate, then don't specify SubnetId (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkInterface.html)
+	// in your launch template, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	//
+	// Subnets is a required field
+	Subnets []*string `json:"subnets" required:"true"`
+
+	// The Amazon Resource Name (ARN) of the IAM role to associate with your node
+	// group. The Amazon EKS worker node kubelet daemon makes calls to AWS APIs
+	// on your behalf. Nodes receive permissions for these API calls through an
+	// IAM instance profile and associated policies. Before you can launch nodes
+	// and register them into a cluster, you must create an IAM role for those nodes
+	// to use when they are launched. For more information, see Amazon EKS node
+	// IAM role (https://docs.aws.amazon.com/eks/latest/userguide/worker_node_IAM_role.html)
+	// in the Amazon EKS User Guide . If you specify launchTemplate, then don't
+	// specify IamInstanceProfile (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_IamInstanceProfile.html)
+	// in your launch template, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	//
+	// NodeRole is a required field
+	NodeRole string `json:"nodeRole" required:"true"`
+
+	// The AMI type for your node group. GPU instance types should use the AL2_x86_64_GPU
+	// AMI type. Non-GPU instances should use the AL2_x86_64 AMI type. Arm instances
+	// should use the AL2_ARM_64 AMI type. All types use the Amazon EKS optimized
+	// Amazon Linux 2 AMI. If you specify launchTemplate, and your launch template
+	// uses a custom AMI, then don't specify amiType, or the node group deployment
+	// will fail. For more information about using launch templates with Amazon
+	// EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	AmiType string `json:"amiType,omitempty"`
+
+	// The capacity type for your node group.
+	CapacityType string `json:"capacityType,omitempty"`
+
+	// The root device disk size (in GiB) for your node group instances. The default
+	// disk size is 20 GiB. If you specify launchTemplate, then don't specify diskSize,
+	// or the node group deployment will fail. For more information about using
+	// launch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	DiskSize int64 `json:"diskSize,omitempty"`
+
+	// Specify the instance types for a node group. If you specify a GPU instance
+	// type, be sure to specify AL2_x86_64_GPU with the amiType parameter. If you
+	// specify launchTemplate, then you can specify zero or one instance type in
+	// your launch template or you can specify 0-20 instance types for instanceTypes.
+	// If however, you specify an instance type in your launch template and specify
+	// any instanceTypes, the node group deployment will fail. If you don't specify
+	// an instance type in a launch template or for instanceTypes, then t3.medium
+	// is used, by default. If you specify Spot for capacityType, then we recommend
+	// specifying multiple values for instanceTypes. For more information, see Managed
+	// node group capacity types (https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types)
+	// and Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	InstanceTypes []*string `json:"instanceTypes,omitempty"`
+
+	// The Kubernetes labels to be applied to the nodes in the node group when they
+	// are created.
+	Labels map[string]*string `json:"labels,omitempty"`
+
+	// The scaling configuration details for the Auto Scaling group that is created
+	// for your node group.
+	ScalingConfig NodegroupScalingConfig `json:"scalingConfig,omitempty"`
+
+	// The Kubernetes version to use for your managed nodes. By default, the Kubernetes
+	// version of the cluster is used, and this is the only accepted specified value.
+	// If you specify launchTemplate, and your launch template uses a custom AMI,
+	// then don't specify version, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	Version string `json:"version,omitempty"`
+}
+
+type NodegroupScalingConfig struct {
+	// The current number of nodes that the managed node group should maintain.
+	DesiredSize int64 `json:"desiredSize,omitempty"`
+
+	// The maximum number of nodes that the managed node group can scale out to.
+	// For information about the maximum number that you can specify, see Amazon
+	// EKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)
+	// in the Amazon EKS User Guide.
+	MaxSize int64 `json:"maxSize,omitempty"`
+
+	// The minimum number of nodes that the managed node group can scale in to.
+	// This number must be greater than zero.
+	MinSize int64 `json:"minSize,omitempty"`
 }
 
 type AKSMachineDeploymentCloudSpec struct {
