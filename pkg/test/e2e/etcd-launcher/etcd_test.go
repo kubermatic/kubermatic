@@ -138,6 +138,8 @@ func TestBackup(t *testing.T) {
 	}
 	t.Log("restored etcd backup")
 
+	waitForQuorum(t)
+
 	// check if resource was restored
 	restoredNamespace := &corev1.Namespace{}
 	err = userClient.Get(ctx, types.NamespacedName{Name: namespaceName}, restoredNamespace)
