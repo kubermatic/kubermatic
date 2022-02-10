@@ -56,9 +56,10 @@ spec:
     skipTokenIssuerTLSVerify: true
     tokenIssuer: https://cluster.example.dev/dex
 
-    # this must match the secret configured for the kubermatic client from
-    # the values.yaml.
-    issuerClientSecret: <dex-kubermatic-oauth-secret-here>
+    # This must match the secret configured for the kubermaticIssuer client from
+    # the dex clients in values.yaml.
+    # Needed if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting
+    issuerClientSecret: <dex-kubermatic-issuer-oauth-secret-here>
 
     # these need to be randomly generated. Those can be generated on the
     # shell using:
