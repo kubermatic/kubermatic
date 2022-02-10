@@ -342,7 +342,7 @@ spec:
             - --csi-address=$(ADDRESS)
             - --timeout=60s
             - --leader-election=false
-            # NTNX CSI dirver supports online volume expansion.
+            # NTNX CSI driver supports online volume expansion.
             - --handle-volume-inuse-error=false
             - --http-endpoint=:9810
           env:
