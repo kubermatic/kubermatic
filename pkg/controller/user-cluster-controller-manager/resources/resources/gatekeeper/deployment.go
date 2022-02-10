@@ -35,7 +35,7 @@ const (
 	controllerName = resources.GatekeeperControllerDeploymentName
 	auditName      = resources.GatekeeperAuditDeploymentName
 	imageName      = "openpolicyagent/gatekeeper"
-	tag            = "v3.5.2"
+	tag            = "v3.6.0"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
