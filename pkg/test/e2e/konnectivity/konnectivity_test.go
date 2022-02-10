@@ -286,7 +286,11 @@ func TestKonnectivity(t *testing.T) {
 		}
 
 		for _, pod := range pods {
-			lines := strings.TrimSpace(getPodLogs(ctx, userClient, pod))
+			s, err := getPodLogs(ctx, userClient, pod)
+			if err != nil {
+				t.Fatalf("failed to get %s pod logs: %v", pod.Name, err)
+			}
+			lines := strings.TrimSpace(s)
 			t.Logf("Lines: %s", lines)
 			if n := len(strings.Split(lines, "\n")); n != tailLines {
 				t.Fatalf("expected 5 lines got: %d", n)
@@ -396,7 +400,7 @@ func (p *PodExec) PodCopyFile(src string, dst string, containername string) erro
 }
 
 // gets logs from pod.
-func getPodLogs(ctx context.Context, cli *kubernetes.Clientset, pod corev1.Pod) string {
+func getPodLogs(ctx context.Context, cli *kubernetes.Clientset, pod corev1.Pod) (string, error) {
 	podLogOpts := corev1.PodLogOptions{
 		TailLines: pointer.Int64(tailLines),
 	}
@@ -404,18 +408,18 @@ func getPodLogs(ctx context.Context, cli *kubernetes.Clientset, pod corev1.Pod) 
 	req := cli.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
 	podLogs, err := req.Stream(ctx)
 	if err != nil {
-		return "error in opening stream"
+		return "", fmt.Errorf("error in opening stream: %w", err)
 	}
 	defer podLogs.Close()
 
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, podLogs)
 	if err != nil {
-		return "error in copy information from podLogs to buf"
+		return "", fmt.Errorf("error in copy information from podLogs to buf: %w", err)
 	}
 	str := buf.String()
 
-	return str
+	return str, nil
 }
 
 // creates a usercluster on aws.
