@@ -80,9 +80,8 @@ func TestExternalCCMMigration(t *testing.T) {
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
+					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
+						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
 						},
 					},
@@ -142,9 +141,8 @@ func TestExternalCCMMigration(t *testing.T) {
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
+					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
+						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionFalse,
 						},
 					},

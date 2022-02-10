@@ -29,7 +29,6 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
@@ -253,25 +252,14 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 
 	cluster.Labels = labels
 	cluster.Name = name
-	cluster.Status = kubermaticv1.ClusterStatus{
-		UserEmail:              userEmail,
-		NamespaceName:          fmt.Sprintf("cluster-%s", name),
-		CloudMigrationRevision: cloud.CurrentMigrationRevision,
-	}
 	cluster.Address = kubermaticv1.ClusterAddress{}
 	cluster.Finalizers = []string{TestFakeFinalizer}
-	cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
-		Apiserver:                    kubermaticv1.HealthStatusProvisioning,
-		Scheduler:                    kubermaticv1.HealthStatusProvisioning,
-		Controller:                   kubermaticv1.HealthStatusProvisioning,
-		MachineController:            kubermaticv1.HealthStatusProvisioning,
-		Etcd:                         kubermaticv1.HealthStatusProvisioning,
-		OpenVPN:                      kubermaticv1.HealthStatusProvisioning,
-		CloudProviderInfrastructure:  kubermaticv1.HealthStatusProvisioning,
-		UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
+	cluster.Spec = *genClusterSpec(name)
+	cluster.Status = kubermaticv1.ClusterStatus{
+		UserEmail:     userEmail,
+		NamespaceName: kubernetes.NamespaceName(name),
 	}
 
-	cluster.Spec = *genClusterSpec(name)
 	return cluster
 }
 

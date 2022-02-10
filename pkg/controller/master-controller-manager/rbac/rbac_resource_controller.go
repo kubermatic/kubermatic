@@ -46,8 +46,6 @@ type resourcesController struct {
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project.
 func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, resources []projectResource) ([]*resourcesController, error) {
-	// allControllers := []*resourcesController{mc}
-
 	klog.V(4).Infof("considering master cluster provider for resources")
 	for _, resource := range resources {
 		clonedObject := resource.object.DeepCopyObject()
@@ -108,8 +106,6 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 				return nil, err
 			}
 		}
-
-		// allControllers = append(allControllers, c)
 	}
 
 	return []*resourcesController{}, nil

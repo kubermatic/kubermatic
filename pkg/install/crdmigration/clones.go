@@ -763,13 +763,13 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 		}
 
 		newObject.Status = newv1.ClusterStatus{
-			KubermaticVersion:          oldObject.Status.KubermaticVersion,
-			NamespaceName:              oldObject.Status.NamespaceName,
-			CloudMigrationRevision:     oldObject.Status.CloudMigrationRevision,
-			LastUpdated:                oldObject.Status.LastUpdated,
-			UserName:                   oldObject.Status.UserName,
-			UserEmail:                  oldObject.Status.UserEmail,
-			LastProviderReconciliation: oldObject.Status.LastProviderReconciliation,
+			KubermaticVersion:      oldObject.Status.KubermaticVersion,
+			NamespaceName:          oldObject.Status.NamespaceName,
+			CloudMigrationRevision: oldObject.Status.CloudMigrationRevision,
+			LastUpdated:            oldObject.Status.LastUpdated,
+			UserName:               oldObject.Status.UserName,
+			UserEmail:              oldObject.Status.UserEmail,
+			InheritedLabels:        oldObject.Status.InheritedLabels,
 			ExtendedHealth: newv1.ExtendedClusterHealth{
 				Apiserver:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Apiserver),
 				Scheduler:                    convertHealthStatus(oldObject.Status.ExtendedHealth.Scheduler),
@@ -786,6 +786,26 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 				AlertmanagerConfig:           convertHealthStatusPtr(oldObject.Status.ExtendedHealth.AlertmanagerConfig),
 				MLAGateway:                   convertHealthStatusPtr(oldObject.Status.ExtendedHealth.MLAGateway),
 			},
+		}
+
+		if oldObject.Status.LastProviderReconciliation != nil {
+			newObject.Status.LastProviderReconciliation = *oldObject.Status.LastProviderReconciliation
+		}
+
+		for _, condition := range oldObject.Status.Conditions {
+			if newObject.Status.Conditions == nil {
+				newObject.Status.Conditions = map[newv1.ClusterConditionType]newv1.ClusterCondition{}
+			}
+
+			conditionType := newv1.ClusterConditionType(condition.Type)
+			newObject.Status.Conditions[conditionType] = newv1.ClusterCondition{
+				Status:             condition.Status,
+				KubermaticVersion:  condition.KubermaticVersion,
+				LastHeartbeatTime:  condition.LastHeartbeatTime,
+				LastTransitionTime: condition.LastTransitionTime,
+				Reason:             condition.Reason,
+				Message:            condition.Message,
+			}
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
@@ -1035,12 +1055,15 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 		}
 
 		for _, condition := range oldObject.Status.Conditions {
-			newObject.Status.Conditions = append(newObject.Status.Conditions, newv1.AddonCondition{
-				Type:               newv1.AddonConditionType(condition.Type),
+			if newObject.Status.Conditions == nil {
+				newObject.Status.Conditions = map[newv1.AddonConditionType]newv1.AddonCondition{}
+			}
+
+			newObject.Status.Conditions[newv1.AddonConditionType(condition.Type)] = newv1.AddonCondition{
 				Status:             condition.Status,
 				LastHeartbeatTime:  condition.LastHeartbeatTime,
 				LastTransitionTime: condition.LastTransitionTime,
-			})
+			}
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
@@ -1354,31 +1377,48 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 		}
 
 		for _, condition := range oldObject.Status.Conditions {
-			newObject.Status.Conditions = append(newObject.Status.Conditions, newv1.EtcdBackupConfigCondition{
-				Type:               newv1.EtcdBackupConfigConditionType(condition.Type),
+			if newObject.Status.Conditions == nil {
+				newObject.Status.Conditions = map[newv1.EtcdBackupConfigConditionType]newv1.EtcdBackupConfigCondition{}
+			}
+
+			conditionType := newv1.EtcdBackupConfigConditionType(condition.Type)
+			newObject.Status.Conditions[conditionType] = newv1.EtcdBackupConfigCondition{
 				Status:             condition.Status,
 				LastHeartbeatTime:  condition.LastHeartbeatTime,
 				LastTransitionTime: condition.LastTransitionTime,
 				Reason:             condition.Reason,
 				Message:            condition.Message,
-			})
+			}
 		}
 
 		for _, backup := range oldObject.Status.CurrentBackups {
-			newObject.Status.CurrentBackups = append(newObject.Status.CurrentBackups, newv1.BackupStatus{
-				ScheduledTime:      backup.ScheduledTime,
-				BackupName:         backup.BackupName,
-				JobName:            backup.JobName,
-				BackupStartTime:    backup.BackupStartTime,
-				BackupFinishedTime: backup.BackupFinishedTime,
-				BackupPhase:        newv1.BackupStatusPhase(backup.BackupPhase),
-				BackupMessage:      backup.BackupMessage,
-				DeleteJobName:      backup.DeleteJobName,
-				DeleteStartTime:    backup.DeleteStartTime,
-				DeleteFinishedTime: backup.DeleteFinishedTime,
-				DeletePhase:        newv1.BackupStatusPhase(backup.DeletePhase),
-				DeleteMessage:      backup.DeleteMessage,
-			})
+			newBackup := newv1.BackupStatus{
+				BackupName:    backup.BackupName,
+				JobName:       backup.JobName,
+				BackupPhase:   newv1.BackupStatusPhase(backup.BackupPhase),
+				BackupMessage: backup.BackupMessage,
+				DeleteJobName: backup.DeleteJobName,
+				DeletePhase:   newv1.BackupStatusPhase(backup.DeletePhase),
+				DeleteMessage: backup.DeleteMessage,
+			}
+
+			if backup.ScheduledTime != nil {
+				newBackup.ScheduledTime = *backup.ScheduledTime
+			}
+			if backup.BackupStartTime != nil {
+				newBackup.BackupStartTime = *backup.BackupStartTime
+			}
+			if backup.BackupFinishedTime != nil {
+				newBackup.BackupFinishedTime = *backup.BackupFinishedTime
+			}
+			if backup.DeleteStartTime != nil {
+				newBackup.DeleteStartTime = *backup.DeleteStartTime
+			}
+			if backup.DeleteFinishedTime != nil {
+				newBackup.DeleteFinishedTime = *backup.DeleteFinishedTime
+			}
+
+			newObject.Status.CurrentBackups = append(newObject.Status.CurrentBackups, newBackup)
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {
@@ -1418,8 +1458,11 @@ func cloneEtcdRestoreResourcesInCluster(ctx context.Context, logger logrus.Field
 		}
 
 		newObject.Status = newv1.EtcdRestoreStatus{
-			Phase:       newv1.EtcdRestorePhase(oldObject.Status.Phase),
-			RestoreTime: oldObject.Status.RestoreTime,
+			Phase: newv1.EtcdRestorePhase(oldObject.Status.Phase),
+		}
+
+		if oldObject.Status.RestoreTime != nil {
+			newObject.Status.RestoreTime = *oldObject.Status.RestoreTime
 		}
 
 		if newObject.Status.Phase == "" {
@@ -2172,8 +2215,9 @@ func cloneUserResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 
-		newObject.Status = newv1.UserStatus{
-			LastSeen: oldObject.Status.LastSeen,
+		newObject.Status = newv1.UserStatus{}
+		if oldObject.Status.LastSeen != nil {
+			newObject.Status.LastSeen = *oldObject.Status.LastSeen
 		}
 
 		if err := client.Status().Update(ctx, &newObject); err != nil {

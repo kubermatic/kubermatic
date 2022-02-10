@@ -113,7 +113,7 @@ spec:
           status:
             properties:
               conditions:
-                items:
+                additionalProperties:
                   properties:
                     lastHeartbeatTime:
                       description: Last time we got an update on a given condition.
@@ -127,16 +127,11 @@ spec:
                     status:
                       description: Status of the condition, one of True, False, Unknown.
                       type: string
-                    type:
-                      description: Type of addon condition.
-                      enum:
-                      - AddonResourcesCreatedSuccessfully
-                      type: string
                   required:
+                  - lastHeartbeatTime
                   - status
-                  - type
                   type: object
-                type: array
+                type: object
             type: object
         type: object
     served: true

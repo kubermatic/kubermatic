@@ -22,7 +22,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,7 +31,7 @@ import (
 )
 
 func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ExtendedClusterHealth, error) {
-	ns := kubernetes.NamespaceName(cluster.Name)
+	ns := cluster.Status.NamespaceName
 	extendedHealth := cluster.Status.ExtendedHealth.DeepCopy()
 
 	type depInfo struct {
@@ -75,19 +74,13 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	if err != nil {
 		return err
 	}
-	if cluster.Status.ExtendedHealth != *extendedHealth {
-		err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.ExtendedHealth = *extendedHealth
-		})
-	}
 
-	if err != nil {
-		return err
-	}
-	// set ClusterConditionEtcdClusterInitialized, this should be done only once
-	// when etcd becomes healthy for the first time.
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) && extendedHealth.Etcd == kubermaticv1.HealthStatusUp {
-		if err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth = *extendedHealth
+
+		// set ClusterConditionEtcdClusterInitialized, this should be done only once
+		// when etcd becomes healthy for the first time.
+		if extendedHealth.Etcd == kubermaticv1.HealthStatusUp {
 			kubermaticv1helper.SetClusterCondition(
 				c,
 				r.versions,
@@ -96,13 +89,9 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 				"",
 				"Etcd Cluster has been initialized successfully",
 			)
-		}); err != nil {
-			return fmt.Errorf("failed to sec cluster %s condition: %w", kubermaticv1.ClusterConditionEtcdClusterInitialized, err)
 		}
-	}
 
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
-		err = r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		if kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
 				r.versions,
@@ -111,10 +100,8 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 				"",
 				"Cluster has been initialized successfully",
 			)
-		})
-	}
-
-	return err
+		}
+	})
 }
 
 func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {

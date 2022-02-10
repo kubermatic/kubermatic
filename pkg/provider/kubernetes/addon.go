@@ -18,6 +18,7 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -90,7 +91,10 @@ func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 		return nil, err
 	}
 
-	addon := genAddon(cluster, addonName, variables, labels)
+	addon, err := genAddon(cluster, addonName, variables, labels)
+	if err != nil {
+		return nil, err
+	}
 
 	if err = seedImpersonatedClient.Create(context.Background(), addon); err != nil {
 		return nil, err
@@ -108,7 +112,10 @@ func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName st
 		return nil, err
 	}
 
-	addon := genAddon(cluster, addonName, variables, labels)
+	addon, err := genAddon(cluster, addonName, variables, labels)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := p.clientPrivileged.Create(context.Background(), addon); err != nil {
 		return nil, err
@@ -117,7 +124,11 @@ func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName st
 	return addon, nil
 }
 
-func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) *kubermaticv1.Addon {
+func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
+	if cluster.Status.NamespaceName == "" {
+		return nil, errors.New("cluster has no namespace name assigned yet")
+	}
+
 	if labels == nil {
 		labels = map[string]string{}
 	}
@@ -138,7 +149,7 @@ func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtim
 			},
 			Variables: *variables,
 		},
-	}
+	}, nil
 }
 
 // Get returns the given addon, it uses the projectInternalName to determine the group the user belongs to.

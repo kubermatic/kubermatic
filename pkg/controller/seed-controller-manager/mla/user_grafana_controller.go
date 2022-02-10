@@ -153,7 +153,7 @@ func newUserGrafanaController(
 	}
 }
 
-func (r *userGrafanaController) cleanUp(ctx context.Context) error {
+func (r *userGrafanaController) CleanUp(ctx context.Context) error {
 	userList := &kubermaticv1.UserList{}
 	if err := r.List(ctx, userList); err != nil {
 		return err

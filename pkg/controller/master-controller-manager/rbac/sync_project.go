@@ -50,6 +50,11 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 		return err
 	}
 
+	if project.Status.Phase == "" {
+		klog.V(4).Info("Not reconciling project because status.phase has not been set yet.")
+		return nil
+	}
+
 	if project.DeletionTimestamp != nil {
 		if err := c.ensureProjectCleanup(ctx, project); err != nil {
 			return fmt.Errorf("failed to cleanup project: %w", err)
