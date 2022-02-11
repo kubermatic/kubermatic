@@ -57,47 +57,61 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 
 	clusterSpec := aksCloudSpec.ClusterSpec
 	agentPoolProfiles := clusterSpec.MachineDeploymentSpec
-	if agentPoolProfiles == nil || agentPoolProfiles.Basics.Mode != AgentPoolModeSystem {
-		return fmt.Errorf("Must define at least one system pool!")
-	}
-	basicSettings := agentPoolProfiles.Basics
+	basicSettings := agentPoolProfiles.BasicSettings
 	optionalSettings := agentPoolProfiles.OptionalSettings
+	clusterToCreate := containerservice.ManagedCluster{
+		Name:     to.StringPtr(aksCloudSpec.Name),
+		Location: to.StringPtr(clusterSpec.Location),
+		ManagedClusterProperties: &containerservice.ManagedClusterProperties{
+			DNSPrefix:         to.StringPtr(aksCloudSpec.Name),
+			KubernetesVersion: to.StringPtr(clusterSpec.KubernetesVersion),
+			ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
+				ClientID: to.StringPtr(aksCloudSpec.ClientID),
+				Secret:   to.StringPtr(aksCloudSpec.ClientSecret),
+			},
+		},
+	}
+	agentPoolProfilesToBeCreated := containerservice.ManagedClusterAgentPoolProfile{
+		Name:              to.StringPtr(agentPoolProfiles.Name),
+		VMSize:            to.StringPtr(basicSettings.VMSize),
+		Count:             to.Int32Ptr(basicSettings.Count),
+		Mode:              (containerservice.AgentPoolMode)(basicSettings.Mode),
+		OsDiskSizeGB:      to.Int32Ptr(basicSettings.OsDiskSizeGB),
+		AvailabilityZones: &basicSettings.AvailabilityZones,
+		EnableAutoScaling: to.BoolPtr(basicSettings.EnableAutoScaling),
+		MaxCount:          to.Int32Ptr(basicSettings.ScalingConfig.MaxCount),
+		MinCount:          to.Int32Ptr(basicSettings.ScalingConfig.MinCount),
+		NodeLabels:        optionalSettings.NodeLabels,
+	}
+
+	clusterToCreate.AgentPoolProfiles = &[]containerservice.ManagedClusterAgentPoolProfile{agentPoolProfilesToBeCreated}
+
 	_, err = aksClient.CreateOrUpdate(
 		ctx,
 		aksCloudSpec.ResourceGroup,
 		aksCloudSpec.Name,
-		containerservice.ManagedCluster{
-			Name:     to.StringPtr(aksCloudSpec.Name),
-			Location: to.StringPtr(clusterSpec.Location),
-			ManagedClusterProperties: &containerservice.ManagedClusterProperties{
-				DNSPrefix:         to.StringPtr(aksCloudSpec.Name),
-				KubernetesVersion: to.StringPtr(clusterSpec.KubernetesVersion),
-				AgentPoolProfiles: &[]containerservice.ManagedClusterAgentPoolProfile{
-					{
-						Name:              to.StringPtr(agentPoolProfiles.Name),
-						VMSize:            to.StringPtr(basicSettings.VMSize),
-						Count:             to.Int32Ptr(basicSettings.Count),
-						Mode:              (containerservice.AgentPoolMode)(basicSettings.Mode),
-						OsDiskSizeGB:      to.Int32Ptr(basicSettings.OsDiskSizeGB),
-						AvailabilityZones: &basicSettings.AvailabilityZones,
-						EnableAutoScaling: to.BoolPtr(basicSettings.EnableAutoScaling),
-						MaxCount:          to.Int32Ptr(basicSettings.MaxCount),
-						MinCount:          to.Int32Ptr(basicSettings.MinCount),
-						NodeLabels:        optionalSettings.NodeLabels,
-					},
-				},
-				ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
-					ClientID: to.StringPtr(aksCloudSpec.ClientID),
-					Secret:   to.StringPtr(aksCloudSpec.ClientSecret),
-				},
-			},
-		},
+		clusterToCreate,
 	)
-
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func checkCreateClusterReqValid(aksCloudSpec *apiv2.AKSCloudSpec) error {
+	agentPoolProfiles := aksCloudSpec.ClusterSpec.MachineDeploymentSpec
+	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
+		return fmt.Errorf("Must define at least one system pool!")
+	}
+	basicSettings := agentPoolProfiles.BasicSettings
+	if basicSettings.EnableAutoScaling {
+		maxCount := basicSettings.ScalingConfig.MaxCount
+		minCount := basicSettings.ScalingConfig.MinCount
+		if maxCount == 0 || minCount == 0 {
+			return fmt.Errorf("MaxCount or MinCount config for nodepool autoscaling cannot be nil")
+		}
+	}
 	return nil
 }
 
@@ -111,6 +125,9 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 	}
 
 	if cloud.AKS.ClusterSpec != nil {
+		if err := checkCreateClusterReqValid(cloud.AKS); err != nil {
+			return nil, err
+		}
 		if err := createNewAKSCluster(ctx, cloud.AKS); err != nil {
 			return nil, err
 		}
@@ -291,16 +308,18 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 	}
 
 	md.Cloud.AKS.Name = name
-	md.Cloud.AKS.Basics = apiv2.AgentPoolBasics{
+	md.Cloud.AKS.BasicSettings = apiv2.AgentPoolBasics{
 		Mode:                string(nodePool.Mode),
 		AvailabilityZones:   to.StringSlice(nodePool.AvailabilityZones),
 		OrchestratorVersion: to.String(nodePool.OrchestratorVersion),
 		VMSize:              to.String(nodePool.VMSize),
 		EnableAutoScaling:   to.Bool(nodePool.EnableAutoScaling),
-		MaxCount:            to.Int32(nodePool.MaxCount),
-		MinCount:            to.Int32(nodePool.MinCount),
 		Count:               to.Int32(nodePool.Count),
 		OsDiskSizeGB:        to.Int32(nodePool.OsDiskSizeGB),
+	}
+	if md.Cloud.AKS.BasicSettings.EnableAutoScaling {
+		md.Cloud.AKS.BasicSettings.ScalingConfig.MaxCount = to.Int32(nodePool.MaxCount)
+		md.Cloud.AKS.BasicSettings.ScalingConfig.MinCount = to.Int32(nodePool.MinCount)
 	}
 	md.Cloud.AKS.Configuration = apiv2.AgentPoolConfig{
 		OsType:             string(nodePool.OsType),
@@ -317,7 +336,7 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 	if nodePool.UpgradeSettings == nil {
 		return md
 	}
-	md.Cloud.AKS.Configuration.MaxSurge = to.String(nodePool.UpgradeSettings.MaxSurge)
+	md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	return md
 }
 
@@ -461,6 +480,22 @@ func deleteAKSNodeGroup(ctx context.Context, cloud *kubermaticv1.ExternalCluster
 	return nil
 }
 
+func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeployment) error {
+	aksMD := machineDeployment.Cloud.AKS
+	if aksMD == nil {
+		return fmt.Errorf("AKS MachineDeploymentSpec cannot be nil")
+	}
+	basicSettings := aksMD.BasicSettings
+	if basicSettings.EnableAutoScaling {
+		maxCount := basicSettings.ScalingConfig.MaxCount
+		minCount := basicSettings.ScalingConfig.MinCount
+		if maxCount == 0 || minCount == 0 {
+			return fmt.Errorf("MaxCount or MinCount config for nodepool autoscaling cannot be nil")
+		}
+	}
+	return nil
+}
+
 func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
 	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 	if err != nil {
@@ -472,25 +507,17 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 		return nil, err
 	}
 
-	if machineDeployment.Cloud.AKS == nil {
-		return nil, fmt.Errorf("AKS cloud spec cannot be empty")
-	}
-
 	nodePool := &containerservice.AgentPool{
 		Name: &machineDeployment.Name,
 	}
-	property := containerservice.ManagedClusterAgentPoolProfileProperties{
-		Count:               &machineDeployment.Spec.Replicas,
-		OrchestratorVersion: &machineDeployment.Spec.Template.Versions.Kubelet,
-	}
 
-	aks := machineDeployment.Cloud.AKS
-	if aks == nil {
-		return nil, fmt.Errorf("AKS MachineDeploymentSpec cannot be nil")
+	aksMD := machineDeployment.Cloud.AKS
+	if err := checkCreatePoolReqValid(machineDeployment); err != nil {
+		return nil, err
 	}
-	basicSettings := aks.Basics
-	optionalSettings := aks.OptionalSettings
-	property = containerservice.ManagedClusterAgentPoolProfileProperties{
+	basicSettings := aksMD.BasicSettings
+	optionalSettings := aksMD.OptionalSettings
+	property := containerservice.ManagedClusterAgentPoolProfileProperties{
 		VMSize:              to.StringPtr(basicSettings.VMSize),
 		Count:               to.Int32Ptr(basicSettings.Count),
 		OrchestratorVersion: to.StringPtr(basicSettings.OrchestratorVersion),
@@ -498,12 +525,13 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 		OsDiskSizeGB:        to.Int32Ptr(basicSettings.OsDiskSizeGB),
 		AvailabilityZones:   &basicSettings.AvailabilityZones,
 		EnableAutoScaling:   to.BoolPtr(basicSettings.EnableAutoScaling),
-		MaxCount:            to.Int32Ptr(basicSettings.MaxCount),
-		MinCount:            to.Int32Ptr(basicSettings.MinCount),
 		NodeLabels:          optionalSettings.NodeLabels,
 		NodeTaints:          &optionalSettings.NodeTaints,
 	}
-
+	if basicSettings.EnableAutoScaling {
+		property.MaxCount = to.Int32Ptr(basicSettings.ScalingConfig.MaxCount)
+		property.MinCount = to.Int32Ptr(basicSettings.ScalingConfig.MinCount)
+	}
 	nodePool.ManagedClusterAgentPoolProfileProperties = &property
 
 	_, err = agentPoolClient.CreateOrUpdate(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, *nodePool.Name, *nodePool)
@@ -527,31 +555,42 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	apiCluster.Cloud.AKS.ClusterSpec = &apiv2.AKSClusterSpec{
+	clusterSpec := apiv2.AKSClusterSpec{}
+	aksClusterProperties := aksCluster.ManagedClusterProperties
+	if aksClusterProperties == nil {
+		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
+		return apiCluster, nil
+	}
+	clusterSpec = apiv2.AKSClusterSpec{
 		Location:          to.String(aksCluster.Location),
-		KubernetesVersion: to.String(aksCluster.KubernetesVersion),
-		EnableRBAC:        to.Bool(aksCluster.EnableRBAC),
 		DNSPrefix:         to.String(aksCluster.DNSPrefix),
-		NodeResourceGroup: to.String(aksCluster.NodeResourceGroup),
+		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),
+		EnableRBAC:        to.Bool(aksClusterProperties.EnableRBAC),
+		NodeResourceGroup: to.String(aksClusterProperties.NodeResourceGroup),
+		FqdnSubdomain:     to.String(aksClusterProperties.FqdnSubdomain),
+		Fqdn:              to.String(aksClusterProperties.Fqdn),
+		PrivateFQDN:       to.String(aksClusterProperties.PrivateFQDN),
 	}
-	apiCluster.Cloud.AKS.NetworkProfile = &apiv2.AKSNetworkProfile{
-		FqdnSubdomain: to.String(aksCluster.FqdnSubdomain),
-		Fqdn:          to.String(aksCluster.Fqdn),
-		PrivateFQDN:   to.String(aksCluster.PrivateFQDN),
-	}
-	if aksCluster.ManagedClusterProperties == nil || aksCluster.ManagedClusterProperties.NetworkProfile == nil {
+	networkProfile := aksClusterProperties.NetworkProfile
+	if networkProfile == nil {
+		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
 		return apiCluster, nil
 	}
-	networkProfile := aksCluster.ManagedClusterProperties.NetworkProfile
-	apiCluster.Cloud.AKS.NetworkProfile.PodCidr = to.String(networkProfile.PodCidr)
-	apiCluster.Cloud.AKS.NetworkProfile.ServiceCidr = to.String(networkProfile.ServiceCidr)
-	apiCluster.Cloud.AKS.NetworkProfile.DNSServiceIP = to.String(networkProfile.DNSServiceIP)
-	apiCluster.Cloud.AKS.NetworkProfile.DockerBridgeCidr = to.String(networkProfile.DockerBridgeCidr)
-
+	clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
+		NetworkPlugin:    string(networkProfile.NetworkPlugin),
+		NetworkPolicy:    string(networkProfile.NetworkPolicy),
+		NetworkMode:      string(networkProfile.NetworkMode),
+		PodCidr:          to.String(networkProfile.PodCidr),
+		ServiceCidr:      to.String(networkProfile.ServiceCidr),
+		DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
+		DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
+	}
 	if aksCluster.AadProfile == nil {
+		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
 		return apiCluster, nil
 	}
-	apiCluster.Cloud.AKS.ClusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
+	clusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
+	apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
 
 	return apiCluster, nil
 }

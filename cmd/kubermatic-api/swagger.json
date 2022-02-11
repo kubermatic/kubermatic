@@ -13095,13 +13095,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13113,6 +13106,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -18163,9 +18163,6 @@
           "type": "string",
           "x-go-name": "Name"
         },
-        "networkProfile": {
-          "$ref": "#/definitions/AKSNetworkProfile"
-        },
         "resourceGroup": {
           "type": "string",
           "x-go-name": "ResourceGroup"
@@ -18222,6 +18219,16 @@
           "type": "boolean",
           "x-go-name": "EnableRBAC"
         },
+        "fqdn": {
+          "description": "Fqdn - READ-ONLY; The FQDN of the master pool.",
+          "type": "string",
+          "x-go-name": "Fqdn"
+        },
+        "fqdnSubdomain": {
+          "description": "FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.",
+          "type": "string",
+          "x-go-name": "FqdnSubdomain"
+        },
         "kubernetesVersion": {
           "description": "KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -\u003e 1.15.x or 1.15.x -\u003e 1.16.x are allowed, however 1.14.x -\u003e 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.",
           "type": "string",
@@ -18240,10 +18247,18 @@
           "type": "boolean",
           "x-go-name": "ManagedAAD"
         },
+        "networkProfile": {
+          "$ref": "#/definitions/AKSNetworkProfile"
+        },
         "nodeResourceGroup": {
           "description": "NodeResourceGroup - The name of the resource group containing agent pool nodes.",
           "type": "string",
           "x-go-name": "NodeResourceGroup"
+        },
+        "privateFQDN": {
+          "description": "PrivateFQDN - READ-ONLY; The FQDN of private cluster.",
+          "type": "string",
+          "x-go-name": "PrivateFQDN"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -18251,7 +18266,7 @@
     "AKSMachineDeploymentCloudSpec": {
       "type": "object",
       "properties": {
-        "basicsSettings": {
+        "basicSettings": {
           "$ref": "#/definitions/AgentPoolBasics"
         },
         "configuration": {
@@ -18280,16 +18295,6 @@
           "description": "DockerBridgeCidr - A CIDR notation IP range assigned to the Docker bridge network. It must not overlap with any Subnet IP ranges or the Kubernetes service address range.",
           "type": "string",
           "x-go-name": "DockerBridgeCidr"
-        },
-        "fqdn": {
-          "description": "Fqdn - READ-ONLY; The FQDN of the master pool.",
-          "type": "string",
-          "x-go-name": "Fqdn"
-        },
-        "fqdnSubdomain": {
-          "description": "FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.",
-          "type": "string",
-          "x-go-name": "FqdnSubdomain"
         },
         "loadBalancerSku": {
           "description": "LoadBalancerSku - The default is 'standard'. See [Azure Load Balancer SKUs](https://docs.microsoft.com/azure/load-balancer/skus) for more information about the differences between load balancer SKUs. Possible values include: 'LoadBalancerSkuStandard', 'LoadBalancerSkuBasic'",
@@ -18320,11 +18325,6 @@
           "description": "PodCidr - A CIDR notation IP range from which to assign pod IPs when kubenet is used.",
           "type": "string",
           "x-go-name": "PodCidr"
-        },
-        "privateFQDN": {
-          "description": "PrivateFQDN - READ-ONLY; The FQDN of private cluster.",
-          "type": "string",
-          "x-go-name": "PrivateFQDN"
         },
         "serviceCidr": {
           "description": "ServiceCidr - A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges.",
@@ -18997,20 +18997,8 @@
           "type": "boolean",
           "x-go-name": "EnableAutoScaling"
         },
-        "maxCount": {
-          "description": "MaxCount - The maximum number of nodes for auto-scaling",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MaxCount"
-        },
-        "minCount": {
-          "description": "MinCount - The minimum number of nodes for auto-scaling",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MinCount"
-        },
         "mode": {
-          "description": "Mode - Possible values include: 'System', 'User'",
+          "description": "Mode - Possible values include: 'System', 'User'.",
           "type": "string",
           "x-go-name": "Mode"
         },
@@ -19024,6 +19012,9 @@
           "type": "integer",
           "format": "int32",
           "x-go-name": "OsDiskSizeGB"
+        },
+        "scalingConfig": {
+          "$ref": "#/definitions/NodegroupScalingConfig"
         },
         "vmSize": {
           "description": "Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
@@ -19048,9 +19039,9 @@
           "x-go-name": "MaxPods"
         },
         "maxSurge": {
-          "description": "MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade",
+          "description": "MaxSurgeUpgradeSetting - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade",
           "type": "string",
-          "x-go-name": "MaxSurge"
+          "x-go-name": "MaxSurgeUpgradeSetting"
         },
         "osDiskType": {
           "description": "OsDiskType - Possible values include: 'Managed', 'Ephemeral'",
@@ -25139,6 +25130,24 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NodegroupScalingConfig": {
+      "type": "object",
+      "properties": {
+        "maxCount": {
+          "description": "MaxCount - The maximum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxCount"
+        },
+        "minCount": {
+          "description": "MinCount - The minimum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MinCount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "NodesMetric": {
       "description": "NodesMetric defines a metric for a group of nodes",

@@ -434,24 +434,43 @@ type EKSCloudSpec struct {
 }
 
 type AKSCloudSpec struct {
-	Name           string             `json:"name" required:"true"`
-	TenantID       string             `json:"tenantID,omitempty" required:"true"`
-	SubscriptionID string             `json:"subscriptionID,omitempty" required:"true"`
-	ClientID       string             `json:"clientID,omitempty" required:"true"`
-	ClientSecret   string             `json:"clientSecret,omitempty" required:"true"`
-	ResourceGroup  string             `json:"resourceGroup" required:"true"`
-	ClusterSpec    *AKSClusterSpec    `json:"clusterSpec,omitempty"`
-	NetworkProfile *AKSNetworkProfile `json:"networkProfile,omitempty"`
+	Name           string          `json:"name" required:"true"`
+	TenantID       string          `json:"tenantID,omitempty" required:"true"`
+	SubscriptionID string          `json:"subscriptionID,omitempty" required:"true"`
+	ClientID       string          `json:"clientID,omitempty" required:"true"`
+	ClientSecret   string          `json:"clientSecret,omitempty" required:"true"`
+	ResourceGroup  string          `json:"resourceGroup" required:"true"`
+	ClusterSpec    *AKSClusterSpec `json:"clusterSpec,omitempty"`
 }
 
-// AKS NetworkProfile profile of network configuration.
-type AKSNetworkProfile struct {
+// AKSClusterSpec Azure Kubernetes Service cluster.
+type AKSClusterSpec struct {
+	// Location - Resource location
+	Location string `json:"location" required:"true"`
+	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
+	KubernetesVersion string `json:"kubernetesVersion"`
+	// NodeResourceGroup - The name of the resource group containing agent pool nodes.
+	NodeResourceGroup string `json:"nodeResourceGroup,omitempty"`
+	// EnableRBAC - Whether Kubernetes Role-Based Access Control Enabled.
+	EnableRBAC bool `json:"enableRBAC,omitempty"`
+	// ManagedAAD - Whether The Azure Active Directory configuration Enabled.
+	ManagedAAD bool `json:"managedAAD,omitempty"`
+	// DNSPrefix - This cannot be updated once the Managed Cluster has been created.
+	DNSPrefix string `json:"dnsPrefix,omitempty"`
 	// FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.
 	FqdnSubdomain string `json:"fqdnSubdomain,omitempty"`
 	// Fqdn - READ-ONLY; The FQDN of the master pool.
 	Fqdn string `json:"fqdn,omitempty"`
 	// PrivateFQDN - READ-ONLY; The FQDN of private cluster.
 	PrivateFQDN string `json:"privateFQDN,omitempty"`
+	// MachineDeploymentSpec - The agent pool properties.
+	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
+	// NetworkProfile - The network configuration profile.
+	NetworkProfile AKSNetworkProfile `json:"networkProfile,omitempty"`
+}
+
+// AKS NetworkProfile profile of network configuration.
+type AKSNetworkProfile struct {
 	// PodCidr - A CIDR notation IP range from which to assign pod IPs when kubenet is used.
 	PodCidr string `json:"podCidr,omitempty"`
 	// ServiceCidr - A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges.
@@ -470,24 +489,6 @@ type AKSNetworkProfile struct {
 	OutboundType string `json:"outboundType,omitempty"`
 	// LoadBalancerSku - The default is 'standard'. See [Azure Load Balancer SKUs](https://docs.microsoft.com/azure/load-balancer/skus) for more information about the differences between load balancer SKUs. Possible values include: 'LoadBalancerSkuStandard', 'LoadBalancerSkuBasic'
 	LoadBalancerSku string `json:"loadBalancerSku,omitempty"`
-}
-
-// AKSClusterSpec Azure Kubernetes Service cluster.
-type AKSClusterSpec struct {
-	// Location - Resource location
-	Location string `json:"location" required:"true"`
-	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
-	KubernetesVersion string `json:"kubernetesVersion"`
-	// DNSPrefix - This cannot be updated once the Managed Cluster has been created.
-	DNSPrefix string `json:"dnsPrefix,omitempty"`
-	// NodeResourceGroup - The name of the resource group containing agent pool nodes.
-	NodeResourceGroup string `json:"nodeResourceGroup,omitempty"`
-	// EnableRBAC - Whether Kubernetes Role-Based Access Control Enabled.
-	EnableRBAC bool `json:"enableRBAC,omitempty"`
-	// ManagedAAD - Whether The Azure Active Directory configuration Enabled.
-	ManagedAAD bool `json:"managedAAD,omitempty"`
-	// MachineDeploymentSpec - The agent pool properties.
-	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
@@ -580,30 +581,12 @@ type ExternalClusterMachineDeploymentCloudSpec struct {
 
 type AKSMachineDeploymentCloudSpec struct {
 	Name string `json:"name" required:"true"`
-	// Basics - Settings for creating the AKS agentpool
-	Basics AgentPoolBasics `json:"basicsSettings"`
+	// BasicSettings - Settings for creating the AKS agentpool
+	BasicSettings AgentPoolBasics `json:"basicSettings"`
 	// OptionalSettings - Optional Settings for creating the AKS agentpool
 	OptionalSettings AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
 	// Configuration - Configuration of created AKS agentpool
 	Configuration AgentPoolConfig `json:"configuration,omitempty"`
-}
-
-type AgentPoolConfig struct {
-	// OsDiskType - Possible values include: 'Managed', 'Ephemeral'
-	OsDiskType string `json:"osDiskType,omitempty"`
-	// MaxPods - The maximum number of pods that can run on a node.
-	MaxPods int32 `json:"maxPods,omitempty"`
-	// OsType - Possible values include: 'Linux', 'Windows'. The default value is 'Linux'.
-	//  Windows node pools are not supported on kubenet clusters
-	OsType string `json:"osType,omitempty"`
-	// EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.
-	EnableNodePublicIP bool `json:"enableNodePublicIP,omitempty"`
-	// MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade
-	MaxSurge string `json:"maxSurge,omitempty"`
-	// VnetSubnetID - If this is not specified, a VNET and subnet will be generated and used. If no podSubnetID is specified, this applies to nodes and pods, otherwise it applies to just nodes. This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
-	VnetSubnetID string `json:"vnetSubnetID,omitempty"`
-	// PodSubnetID - If omitted, pod IPs are statically assigned on the node subnet (see vnetSubnetID for more details). This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
-	PodSubnetID string `json:"podSubnetID,omitempty"`
 }
 
 type AgentPoolBasics struct {
@@ -611,7 +594,7 @@ type AgentPoolBasics struct {
 	Count int32 `json:"count" required:"true"`
 	// Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
 	VMSize string `json:"vmSize" required:"true"`
-	// Mode - Possible values include: 'System', 'User'
+	// Mode - Possible values include: 'System', 'User'.
 	Mode string `json:"mode,omitempty"`
 	// OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).
 	OrchestratorVersion string `json:"orchestratorVersion,omitempty"`
@@ -619,12 +602,18 @@ type AgentPoolBasics struct {
 	AvailabilityZones []string `json:"availabilityZones,omitempty"`
 	// EnableAutoScaling - Whether to enable auto-scaler
 	EnableAutoScaling bool `json:"enableAutoScaling,omitempty"`
+	// The scaling configuration details for the Auto Scaling group that is created
+	// for your node group.
+	ScalingConfig NodegroupScalingConfig `json:"scalingConfig,omitempty"`
+	// The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.
+	OsDiskSizeGB int32 `json:"osDiskSizeGB,omitempty"`
+}
+
+type NodegroupScalingConfig struct {
 	// MaxCount - The maximum number of nodes for auto-scaling
 	MaxCount int32 `json:"maxCount,omitempty"`
 	// MinCount - The minimum number of nodes for auto-scaling
 	MinCount int32 `json:"minCount,omitempty"`
-	// The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.
-	OsDiskSizeGB int32 `json:"osDiskSizeGB,omitempty"`
 }
 
 type AgentPoolOptionalSettings struct {
@@ -633,6 +622,24 @@ type AgentPoolOptionalSettings struct {
 	// NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.
 	// Placing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail
 	NodeTaints []string `json:"nodeTaints,omitempty"`
+}
+
+type AgentPoolConfig struct {
+	// OsDiskType - Possible values include: 'Managed', 'Ephemeral'
+	OsDiskType string `json:"osDiskType,omitempty"`
+	// MaxPods - The maximum number of pods that can run on a node.
+	MaxPods int32 `json:"maxPods,omitempty"`
+	// OsType - Possible values include: 'Linux', 'Windows'. The default value is 'Linux'.
+	// Windows node pools are not supported on kubenet clusters
+	OsType string `json:"osType,omitempty"`
+	// EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.
+	EnableNodePublicIP bool `json:"enableNodePublicIP,omitempty"`
+	// MaxSurgeUpgradeSetting - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade
+	MaxSurgeUpgradeSetting string `json:"maxSurge,omitempty"`
+	// VnetSubnetID - If this is not specified, a VNET and subnet will be generated and used. If no podSubnetID is specified, this applies to nodes and pods, otherwise it applies to just nodes. This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
+	VnetSubnetID string `json:"vnetSubnetID,omitempty"`
+	// PodSubnetID - If omitted, pod IPs are statically assigned on the node subnet (see vnetSubnetID for more details). This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
+	PodSubnetID string `json:"podSubnetID,omitempty"`
 }
 
 // GKEMachineDeploymentCloudSpec represents an object holding GKE machine deployment cloud details.

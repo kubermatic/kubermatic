@@ -23,8 +23,8 @@ type AgentPoolConfig struct {
 	// MaxPods - The maximum number of pods that can run on a node.
 	MaxPods int32 `json:"maxPods,omitempty"`
 
-	// MaxSurge - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade
-	MaxSurge string `json:"maxSurge,omitempty"`
+	// MaxSurgeUpgradeSetting - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade
+	MaxSurgeUpgradeSetting string `json:"maxSurge,omitempty"`
 
 	// OsDiskType - Possible values include: 'Managed', 'Ephemeral'
 	OsDiskType string `json:"osDiskType,omitempty"`

@@ -23,12 +23,6 @@ type AKSNetworkProfile struct {
 	// DockerBridgeCidr - A CIDR notation IP range assigned to the Docker bridge network. It must not overlap with any Subnet IP ranges or the Kubernetes service address range.
 	DockerBridgeCidr string `json:"dockerBridgeCidr,omitempty"`
 
-	// Fqdn - READ-ONLY; The FQDN of the master pool.
-	Fqdn string `json:"fqdn,omitempty"`
-
-	// FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.
-	FqdnSubdomain string `json:"fqdnSubdomain,omitempty"`
-
 	// LoadBalancerSku - The default is 'standard'. See [Azure Load Balancer SKUs](https://docs.microsoft.com/azure/load-balancer/skus) for more information about the differences between load balancer SKUs. Possible values include: 'LoadBalancerSkuStandard', 'LoadBalancerSkuBasic'
 	LoadBalancerSku string `json:"loadBalancerSku,omitempty"`
 
@@ -46,9 +40,6 @@ type AKSNetworkProfile struct {
 
 	// PodCidr - A CIDR notation IP range from which to assign pod IPs when kubenet is used.
 	PodCidr string `json:"podCidr,omitempty"`
-
-	// PrivateFQDN - READ-ONLY; The FQDN of private cluster.
-	PrivateFQDN string `json:"privateFQDN,omitempty"`
 
 	// ServiceCidr - A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges.
 	ServiceCidr string `json:"serviceCidr,omitempty"`
