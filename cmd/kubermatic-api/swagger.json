@@ -18328,6 +18328,26 @@
       "type": "object",
       "title": "AKSClusterSpec Azure Kubernetes Service cluster.",
       "properties": {
+        "dnsPrefix": {
+          "description": "DNSPrefix - This cannot be updated once the Managed Cluster has been created.",
+          "type": "string",
+          "x-go-name": "DNSPrefix"
+        },
+        "enableRBAC": {
+          "description": "EnableRBAC - Whether Kubernetes Role-Based Access Control Enabled.",
+          "type": "boolean",
+          "x-go-name": "EnableRBAC"
+        },
+        "fqdn": {
+          "description": "Fqdn - READ-ONLY; The FQDN of the master pool.",
+          "type": "string",
+          "x-go-name": "Fqdn"
+        },
+        "fqdnSubdomain": {
+          "description": "FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.",
+          "type": "string",
+          "x-go-name": "FqdnSubdomain"
+        },
         "kubernetesVersion": {
           "description": "KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -\u003e 1.15.x or 1.15.x -\u003e 1.16.x are allowed, however 1.14.x -\u003e 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.",
           "type": "string",
@@ -18340,6 +18360,24 @@
         },
         "machineDeploymentSpec": {
           "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"
+        },
+        "managedAAD": {
+          "description": "ManagedAAD - Whether The Azure Active Directory configuration Enabled.",
+          "type": "boolean",
+          "x-go-name": "ManagedAAD"
+        },
+        "networkProfile": {
+          "$ref": "#/definitions/AKSNetworkProfile"
+        },
+        "nodeResourceGroup": {
+          "description": "NodeResourceGroup - The name of the resource group containing agent pool nodes.",
+          "type": "string",
+          "x-go-name": "NodeResourceGroup"
+        },
+        "privateFQDN": {
+          "description": "PrivateFQDN - READ-ONLY; The FQDN of private cluster.",
+          "type": "string",
+          "x-go-name": "PrivateFQDN"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -18347,15 +18385,71 @@
     "AKSMachineDeploymentCloudSpec": {
       "type": "object",
       "properties": {
-        "basicsSettings": {
+        "basicSettings": {
           "$ref": "#/definitions/AgentPoolBasics"
         },
+        "configuration": {
+          "$ref": "#/definitions/AgentPoolConfig"
+        },
         "name": {
+          "description": "Name - Node pool name must contain only lowercase letters and numbers. For Linux node pools must be 12 or fewer characters.",
           "type": "string",
           "x-go-name": "Name"
         },
         "optionalSettings": {
           "$ref": "#/definitions/AgentPoolOptionalSettings"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSNetworkProfile": {
+      "type": "object",
+      "title": "AKS NetworkProfile profile of network configuration.",
+      "properties": {
+        "dnsServiceIP": {
+          "description": "DNSServiceIP - An IP address assigned to the Kubernetes DNS service. It must be within the Kubernetes service address range specified in serviceCidr.",
+          "type": "string",
+          "x-go-name": "DNSServiceIP"
+        },
+        "dockerBridgeCidr": {
+          "description": "DockerBridgeCidr - A CIDR notation IP range assigned to the Docker bridge network. It must not overlap with any Subnet IP ranges or the Kubernetes service address range.",
+          "type": "string",
+          "x-go-name": "DockerBridgeCidr"
+        },
+        "loadBalancerSku": {
+          "description": "LoadBalancerSku - The default is 'standard'. See [Azure Load Balancer SKUs](https://docs.microsoft.com/azure/load-balancer/skus) for more information about the differences between load balancer SKUs. Possible values include: 'LoadBalancerSkuStandard', 'LoadBalancerSkuBasic'",
+          "type": "string",
+          "x-go-name": "LoadBalancerSku"
+        },
+        "networkMode": {
+          "description": "NetworkMode - This cannot be specified if networkPlugin is anything other than 'azure'. Possible values include: 'Transparent', 'Bridge'",
+          "type": "string",
+          "x-go-name": "NetworkMode"
+        },
+        "networkPlugin": {
+          "description": "NetworkPlugin - Network plugin used for building the Kubernetes network. Possible values include: 'Azure', 'Kubenet'",
+          "type": "string",
+          "x-go-name": "NetworkPlugin"
+        },
+        "networkPolicy": {
+          "description": "NetworkPolicy - Network policy used for building the Kubernetes network. Possible values include: 'Calico', 'Azure'",
+          "type": "string",
+          "x-go-name": "NetworkPolicy"
+        },
+        "outboundType": {
+          "description": "OutboundType - This can only be set at cluster creation time and cannot be changed later. For more information see [egress outbound type](https://docs.microsoft.com/azure/aks/egress-outboundtype). Possible values include: 'OutboundTypeLoadBalancer', 'OutboundTypeUserDefinedRouting', 'OutboundTypeManagedNATGateway', 'OutboundTypeUserAssignedNATGateway'",
+          "type": "string",
+          "x-go-name": "OutboundType"
+        },
+        "podCidr": {
+          "description": "PodCidr - A CIDR notation IP range from which to assign pod IPs when kubenet is used.",
+          "type": "string",
+          "x-go-name": "PodCidr"
+        },
+        "serviceCidr": {
+          "description": "ServiceCidr - A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges.",
+          "type": "string",
+          "x-go-name": "ServiceCidr"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -19023,20 +19117,8 @@
           "type": "boolean",
           "x-go-name": "EnableAutoScaling"
         },
-        "maxCount": {
-          "description": "MaxCount - The maximum number of nodes for auto-scaling",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MaxCount"
-        },
-        "minCount": {
-          "description": "MinCount - The minimum number of nodes for auto-scaling",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MinCount"
-        },
         "mode": {
-          "description": "Mode - Possible values include: 'System', 'User'",
+          "description": "Mode - Possible values include: 'System', 'User'.",
           "type": "string",
           "x-go-name": "Mode"
         },
@@ -19051,10 +19133,55 @@
           "format": "int32",
           "x-go-name": "OsDiskSizeGB"
         },
+        "scalingConfig": {
+          "$ref": "#/definitions/NodegroupScalingConfig"
+        },
         "vmSize": {
           "description": "Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
           "type": "string",
           "x-go-name": "VMSize"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AgentPoolConfig": {
+      "type": "object",
+      "properties": {
+        "enableNodePublicIP": {
+          "description": "EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.",
+          "type": "boolean",
+          "x-go-name": "EnableNodePublicIP"
+        },
+        "maxPods": {
+          "description": "MaxPods - The maximum number of pods that can run on a node.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxPods"
+        },
+        "maxSurge": {
+          "description": "MaxSurgeUpgradeSetting - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade",
+          "type": "string",
+          "x-go-name": "MaxSurgeUpgradeSetting"
+        },
+        "osDiskType": {
+          "description": "OsDiskType - Possible values include: 'Managed', 'Ephemeral'",
+          "type": "string",
+          "x-go-name": "OsDiskType"
+        },
+        "osType": {
+          "description": "OsType - Possible values include: 'Linux', 'Windows'. The default value is 'Linux'.\nWindows node pools are not supported on kubenet clusters",
+          "type": "string",
+          "x-go-name": "OsType"
+        },
+        "podSubnetID": {
+          "description": "PodSubnetID - If omitted, pod IPs are statically assigned on the node subnet (see vnetSubnetID for more details). This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}",
+          "type": "string",
+          "x-go-name": "PodSubnetID"
+        },
+        "vnetSubnetID": {
+          "description": "VnetSubnetID - If this is not specified, a VNET and subnet will be generated and used. If no podSubnetID is specified, this applies to nodes and pods, otherwise it applies to just nodes. This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}",
+          "type": "string",
+          "x-go-name": "VnetSubnetID"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -25202,6 +25329,24 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NodegroupScalingConfig": {
+      "type": "object",
+      "properties": {
+        "maxCount": {
+          "description": "MaxCount - The maximum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxCount"
+        },
+        "minCount": {
+          "description": "MinCount - The minimum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MinCount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "NodesMetric": {
       "description": "NodesMetric defines a metric for a group of nodes",
