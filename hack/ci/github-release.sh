@@ -40,7 +40,7 @@ export GIT_TAG="${GIT_TAG:-$(git describe --tags --exact-match)}"
 export GIT_BRANCH="${GIT_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
 export GIT_HEAD="${GIT_HEAD:-$(git rev-parse HEAD)}"
 export GIT_REPO="${GIT_REPO:-kubermatic/kubermatic}"
-export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 windows-amd64}"
+export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 darwin-arm64 windows-amd64}"
 
 # By default, this script is used to released tagged revisions,
 # for which a matching tag must exist in the dashboard repository.

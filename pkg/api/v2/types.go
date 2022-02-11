@@ -632,7 +632,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// in the Amazon EKS User Guide.
 	AmiType string `json:"amiType,omitempty"`
 
-	// The capacity type for your node group.
+	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
 	CapacityType string `json:"capacityType,omitempty"`
 
 	// The root device disk size (in GiB) for your node group instances. The default

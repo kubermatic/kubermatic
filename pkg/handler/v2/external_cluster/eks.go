@@ -24,9 +24,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -43,9 +43,52 @@ const (
 	EKSNodeGroupNameLabel = "eks.amazonaws.com/nodegroup"
 )
 
-func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
-	if cloud.EKS.Name == "" || cloud.EKS.Region == "" || cloud.EKS.AccessKeyID == "" || cloud.EKS.SecretAccessKey == "" {
-		return nil, errors.NewBadRequest("the EKS cluster name, region or credentials can not be empty")
+func createNewEKSCluster(ctx context.Context, eksCloudSpec *apiv2.EKSCloudSpec) error {
+	client, err := awsprovider.GetClientSet(eksCloudSpec.AccessKeyID, eksCloudSpec.SecretAccessKey, "", "", eksCloudSpec.Region)
+	if err != nil {
+		return err
+	}
+
+	clusterSpec := eksCloudSpec.ClusterSpec
+
+	fields := reflect.ValueOf(clusterSpec).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
+		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
+			return fmt.Errorf("required field is missing %v", fields.Type().Field(i).Tag)
+		}
+	}
+	input := &eks.CreateClusterInput{
+		Name: aws.String(eksCloudSpec.Name),
+		ResourcesVpcConfig: &eks.VpcConfigRequest{
+			SecurityGroupIds: clusterSpec.ResourcesVpcConfig.SecurityGroupIds,
+			SubnetIds:        clusterSpec.ResourcesVpcConfig.SubnetIds,
+		},
+		RoleArn: aws.String(clusterSpec.RoleArn),
+		Version: aws.String(clusterSpec.Version),
+	}
+	_, err = client.EKS.CreateCluster(input)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	fields := reflect.ValueOf(cloud.EKS).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
+		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
+			return nil, errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
+		}
+	}
+
+	if cloud.EKS.ClusterSpec != nil {
+		if err := createNewEKSCluster(ctx, cloud.EKS); err != nil {
+			return nil, err
+		}
 	}
 
 	newCluster := genExternalCluster(name, project.Name)
@@ -55,6 +98,7 @@ func createEKSCluster(ctx context.Context, name string, userInfoGetter provider.
 			Region: cloud.EKS.Region,
 		},
 	}
+
 	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -195,26 +239,48 @@ func getEKSMachineDeployment(client *awsprovider.ClientSet, cluster *kubermaticv
 }
 
 func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
-	return apiv2.ExternalClusterMachineDeployment{
+	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
-				ID:   *nodeGroup.NodegroupName,
-				Name: *nodeGroup.NodegroupName,
+				ID:   aws.StringValue(nodeGroup.NodegroupName),
+				Name: aws.StringValue(nodeGroup.NodegroupName),
 			},
 			Spec: apiv1.NodeDeploymentSpec{
-				Replicas: int32(*nodeGroup.ScalingConfig.DesiredSize),
 				Template: apiv1.NodeSpec{
 					Versions: apiv1.NodeVersionInfo{
-						Kubelet: *nodeGroup.Version,
+						Kubelet: aws.StringValue(nodeGroup.Version),
 					},
 				},
 			},
 			Status: clusterv1alpha1.MachineDeploymentStatus{
-				Replicas:      int32(*nodeGroup.ScalingConfig.DesiredSize),
 				ReadyReplicas: readyReplicas,
 			},
 		},
+		Cloud: &apiv2.ExternalClusterMachineDeploymentCloudSpec{},
 	}
+	md.Cloud.EKS = &apiv2.EKSMachineDeploymentCloudSpec{
+		Subnets:       nodeGroup.Subnets,
+		NodeRole:      aws.StringValue(nodeGroup.NodeRole),
+		AmiType:       aws.StringValue(nodeGroup.AmiType),
+		CapacityType:  aws.StringValue(nodeGroup.CapacityType),
+		DiskSize:      aws.Int64Value(nodeGroup.DiskSize),
+		InstanceTypes: nodeGroup.InstanceTypes,
+		Labels:        nodeGroup.Labels,
+		Version:       aws.StringValue(nodeGroup.Version),
+	}
+	scalingConfig := nodeGroup.ScalingConfig
+	if nodeGroup.ScalingConfig == nil {
+		return md
+	}
+	md.Spec.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
+	md.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
+	md.Cloud.EKS.ScalingConfig = apiv2.NodegroupScalingConfig{
+		DesiredSize: aws.Int64Value(scalingConfig.DesiredSize),
+		MaxSize:     aws.Int64Value(scalingConfig.MaxSize),
+		MinSize:     aws.Int64Value(scalingConfig.MinSize),
+	}
+
+	return md
 }
 
 func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cluster *kubermaticv1.ExternalCluster) (*apiv2.ExternalClusterMachineDeployment, error) {
