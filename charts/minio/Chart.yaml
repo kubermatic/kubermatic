@@ -14,17 +14,17 @@
 
 apiVersion: v1
 name: minio
-version: 1.0.28
+version: v9.9.9-dev
 appVersion: RELEASE.2021-08-20T18-32-01Z
 description: minio
 keywords:
-- kubermatic
-- minio
-- s3
+  - kubermatic
+  - minio
+  - s3
 home: https://www.minio.io/kubernetes.html
 sources:
-- https://www.minio.io/kubernetes.html
-- https://github.com/helm/charts/tree/master/stable/minio
+  - https://www.minio.io/kubernetes.html
+  - https://github.com/helm/charts/tree/master/stable/minio
 maintainers:
-- name: The Kubermatic Kubernetes Platform contributors
-  email: support@kubermatic.com
+  - name: The Kubermatic Kubernetes Platform contributors
+    email: support@kubermatic.com

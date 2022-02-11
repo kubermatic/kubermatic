@@ -310,15 +310,12 @@ var AllClusterConditionTypes = []ClusterConditionType{
 }
 
 type ClusterCondition struct {
-	// Type of cluster condition.
-	Type ClusterConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
 	// KubermaticVersion current kubermatic version.
 	KubermaticVersion string `json:"kubermaticVersion"`
 	// Last time we got an update on a given condition.
-	// +optional
-	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
 	// Last time the condition transit from one status to another.
 	// +optional
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
@@ -332,48 +329,65 @@ type ClusterCondition struct {
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
+	// +optional
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// ExtendedHealth exposes information about the current health state.
 	// Extends standard health status for new states.
+	// +optional
 	ExtendedHealth ExtendedClusterHealth `json:"extendedHealth,omitempty"`
 	// LastProviderReconciliation is the time when the cloud provider resources
 	// were last fully reconciled (during normal cluster reconciliation, KKP does
 	// not re-check things like security groups, networks etc.).
-	LastProviderReconciliation *metav1.Time `json:"lastProviderReconciliation,omitempty"`
+	// +optional
+	LastProviderReconciliation metav1.Time `json:"lastProviderReconciliation,omitempty"`
 	// KubermaticVersion is the current kubermatic version in a cluster.
+	// +optional
 	KubermaticVersion string `json:"kubermaticVersion"`
 	// Deprecated
+	// +optional
 	RootCA *KeyCert `json:"rootCA,omitempty"` //nolint:tagliatelle
 	// Deprecated
+	// +optional
 	ApiserverCert *KeyCert `json:"apiserverCert,omitempty"`
 	// Deprecated
+	// +optional
 	KubeletCert *KeyCert `json:"kubeletCert,omitempty"`
 	// Deprecated
+	// +optional
 	ApiserverSSHKey *RSAKeys `json:"apiserverSSHKey,omitempty"`
 	// Deprecated
+	// +optional
 	ServiceAccountKey Bytes `json:"serviceAccountKey,omitempty"`
 	// NamespaceName defines the namespace the control plane of this cluster is deployed in
+	// +optional
 	NamespaceName string `json:"namespaceName"`
 
 	// UserName contains the name of the owner of this cluster
+	// +optional
 	UserName string `json:"userName,omitempty"`
 	// UserEmail contains the email of the owner of this cluster
+	// +optional
 	UserEmail string `json:"userEmail"`
 
 	// ErrorReason contains a error reason in case the controller encountered an error. Will be reset if the error was resolved
+	// +optional
 	ErrorReason *ClusterStatusError `json:"errorReason,omitempty"`
 	// ErrorMessage contains a default error message in case the controller encountered an error. Will be reset if the error was resolved
+	// +optional
 	ErrorMessage *string `json:"errorMessage,omitempty"`
 
 	// Conditions contains conditions the cluster is in, its primary use case is status signaling between controllers or between
 	// controllers and the API
-	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	// +optional
+	Conditions map[ClusterConditionType]ClusterCondition `json:"conditions,omitempty"`
 
 	// CloudMigrationRevision describes the latest version of the migration that has been done
 	// It is used to avoid redundant and potentially costly migrations
-	CloudMigrationRevision int `json:"cloudMigrationRevision"`
+	// +optional
+	CloudMigrationRevision int `json:"cloudMigrationRevision,omitempty"`
 
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
+	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
 }
 
@@ -381,13 +395,12 @@ type ClusterStatus struct {
 // It does not verify that the condition has been set by a certain Kubermatic version, it just checks
 // the existence.
 func (cs *ClusterStatus) HasConditionValue(conditionType ClusterConditionType, conditionStatus corev1.ConditionStatus) bool {
-	for _, clusterCondition := range cs.Conditions {
-		if clusterCondition.Type == conditionType {
-			return clusterCondition.Status == conditionStatus
-		}
+	condition, exists := cs.Conditions[conditionType]
+	if !exists {
+		return false
 	}
 
-	return false
+	return condition.Status == conditionStatus
 }
 
 // +kubebuilder:validation:Enum=InvalidConfiguration;UnsupportedChange;ReconcileError
@@ -879,14 +892,14 @@ const (
 
 // ExtendedClusterHealth stores health information of a cluster.
 type ExtendedClusterHealth struct {
-	Apiserver                    HealthStatus  `json:"apiserver"`
-	Scheduler                    HealthStatus  `json:"scheduler"`
-	Controller                   HealthStatus  `json:"controller"`
-	MachineController            HealthStatus  `json:"machineController"`
-	Etcd                         HealthStatus  `json:"etcd"`
-	OpenVPN                      HealthStatus  `json:"openvpn"`
-	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure"`
-	UserClusterControllerManager HealthStatus  `json:"userClusterControllerManager"`
+	Apiserver                    HealthStatus  `json:"apiserver,omitempty"`
+	Scheduler                    HealthStatus  `json:"scheduler,omitempty"`
+	Controller                   HealthStatus  `json:"controller,omitempty"`
+	MachineController            HealthStatus  `json:"machineController,omitempty"`
+	Etcd                         HealthStatus  `json:"etcd,omitempty"`
+	OpenVPN                      HealthStatus  `json:"openvpn,omitempty"`
+	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure,omitempty"`
+	UserClusterControllerManager HealthStatus  `json:"userClusterControllerManager,omitempty"`
 	GatekeeperController         *HealthStatus `json:"gatekeeperController,omitempty"`
 	GatekeeperAudit              *HealthStatus `json:"gatekeeperAudit,omitempty"`
 	Monitoring                   *HealthStatus `json:"monitoring,omitempty"`

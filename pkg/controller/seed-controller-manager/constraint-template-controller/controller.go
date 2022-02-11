@@ -195,6 +195,11 @@ func (r *reconciler) syncAllClusters(
 	}
 
 	for _, userCluster := range clusterList.Items {
+		if userCluster.Status.NamespaceName == "" {
+			log.Debugw("Cluster has no namespace name yet, skipping", "cluster", userCluster.Spec.HumanReadableName)
+			continue
+		}
+
 		if userCluster.Spec.Pause {
 			log.Debugw("Cluster paused, skipping", "cluster", userCluster.Spec.HumanReadableName)
 			continue

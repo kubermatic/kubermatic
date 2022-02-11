@@ -149,18 +149,42 @@ func (c *cli) ListReleases(namespace string) ([]Release, error) {
 	}
 
 	for idx, release := range releases {
-		nameParts := strings.Split(release.Chart, "-")
-		tail := nameParts[len(nameParts)-1]
-
-		version, err := semver.NewVersion(tail)
-		if err == nil {
-			releases[idx].Version = version
+		version, chart, err := guessChartName(release.Chart)
+		if err != nil {
+			return nil, fmt.Errorf("failed to determine version of release %s: %w", release.Name, err)
 		}
 
-		releases[idx].Chart = strings.Join(nameParts[:len(nameParts)-1], "-")
+		releases[idx].Chart = chart
+		releases[idx].Version = version
 	}
 
 	return releases, nil
+}
+
+func guessChartName(fullChart string) (*semver.Version, string, error) {
+	parts := strings.Split(fullChart, "-")
+	if len(parts) == 1 {
+		return nil, "", fmt.Errorf("%q is too short to be <chart>-<version>", fullChart)
+	}
+
+	chartName := parts[0]
+	parts = parts[1:]
+
+	for len(parts) > 0 {
+		versionString := strings.Join(parts, "-")
+
+		// have we found a valid version?
+		version, err := semver.NewVersion(versionString)
+		if err == nil {
+			return version, chartName, nil
+		}
+
+		// not a valid version, treat the first part as part of the chart name
+		chartName = fmt.Sprintf("%s-%s", chartName, parts[0])
+		parts = parts[1:]
+	}
+
+	return nil, "", fmt.Errorf("cannot determine chart and release from %q", fullChart)
 }
 
 func (c *cli) UninstallRelease(namespace string, name string) error {

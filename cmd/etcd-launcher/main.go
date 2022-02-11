@@ -39,6 +39,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -645,6 +646,11 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger, unwantedMembers 
 }
 
 func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cCluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	if k8cCluster.Status.NamespaceName == "" {
+		log.Warn("Skipping cluster restore check because no namespaceName is set.")
+		return nil
+	}
+
 	restoreList := &kubermaticv1.EtcdRestoreList{}
 	if err := client.List(ctx, restoreList, &ctrlruntimeclient.ListOptions{Namespace: k8cCluster.Status.NamespaceName}); err != nil {
 		return fmt.Errorf("failed to list EtcdRestores: %w", err)
@@ -704,7 +710,7 @@ func closeClient(c io.Closer, log *zap.SugaredLogger) {
 }
 
 func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	k8cCluster, err := getK8cCluster(clusterClient, strings.ReplaceAll(e.namespace, "cluster-", ""), log)
+	k8cCluster, err := getK8cCluster(clusterClient, kubernetes.ClusterNameFromNamespace(e.namespace), log)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster: %w", err)
 	}

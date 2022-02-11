@@ -74,6 +74,7 @@ issues:
   - cyclomatic complexity [0-9]+ of func `\(\*Provider\)\.InitializeCloudProvider` is high
   - cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.ensureResourcesAreDeployed` is high
   - cyclomatic complexity [0-9]+ of func `GetAPIV2NodeCloudSpec` is high
+  - cyclomatic complexity [0-9]+ of func `TestKonnectivity` is high
   # gocritic
   - singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
 

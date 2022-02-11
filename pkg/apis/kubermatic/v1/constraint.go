@@ -65,6 +65,8 @@ type ConstraintSpec struct {
 	// parameters:
 	//   labels: ["gatekeeper"]
 	//
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Parameters Parameters `json:"parameters,omitempty"`
 	// Selector specifies the cluster selection filters
 	Selector ConstraintSelector `json:"selector,omitempty"`

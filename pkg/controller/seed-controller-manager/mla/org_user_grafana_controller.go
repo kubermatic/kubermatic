@@ -142,7 +142,7 @@ func newOrgUserGrafanaController(client ctrlruntimeclient.Client, log *zap.Sugar
 	}
 }
 
-func (r *orgUserGrafanaController) cleanUp(ctx context.Context) error {
+func (r *orgUserGrafanaController) CleanUp(ctx context.Context) error {
 	userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
 	if err := r.List(ctx, userProjectBindingList); err != nil {
 		return err

@@ -177,6 +177,7 @@ func (r *reconciler) syncAllSeeds(
 	constraintTemplate *kubermaticv1.ConstraintTemplate,
 	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error,
 ) error {
+	// TODO: Use a regular SeedsGetter here
 	seedList := &kubermaticv1.SeedList{}
 	if err := r.masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}); err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)

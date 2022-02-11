@@ -389,6 +389,8 @@ func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterCloudSpec, machine
 	if err := checkCreatePoolReqValid(machineDeployment); err != nil {
 		return nil, err
 	}
+	eksMD := machineDeployment.Cloud.EKS
+
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -401,10 +403,20 @@ func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterCloudSpec, machine
 	createInput := &eks.CreateNodegroupInput{
 		ClusterName:   aws.String(cloudSpec.EKS.Name),
 		NodegroupName: aws.String(machineDeployment.Name),
-		Subnets:       machineDeployment.Cloud.EKS.Subnets,
-		NodeRole:      aws.String(machineDeployment.Cloud.EKS.NodeRole),
+		Subnets:       eksMD.Subnets,
+		NodeRole:      aws.String(eksMD.NodeRole),
+		AmiType:       aws.String(eksMD.AmiType),
+		CapacityType:  aws.String(eksMD.CapacityType),
+		DiskSize:      aws.Int64(eksMD.DiskSize),
+		InstanceTypes: eksMD.InstanceTypes,
+		Labels:        eksMD.Labels,
+		ScalingConfig: &eks.NodegroupScalingConfig{
+			DesiredSize: aws.Int64(eksMD.ScalingConfig.DesiredSize),
+			MaxSize:     aws.Int64(eksMD.ScalingConfig.MaxSize),
+			MinSize:     aws.Int64(eksMD.ScalingConfig.MinSize),
+		},
 	}
-	_, err := client.EKS.CreateNodegroup(createInput)
+	_, err = client.EKS.CreateNodegroup(createInput)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -96,12 +97,10 @@ func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, addon *kuber
 	clusterName := parts[1]
 
 	notCreated := 1
-	for _, cond := range addon.Status.Conditions {
-		if cond.Type == kubermaticv1.AddonResourcesCreated {
-			notCreated = 0
-			break
-		}
+	if addon.Status.Conditions[kubermaticv1.AddonResourcesCreated].Status == corev1.ConditionTrue {
+		notCreated = 0
 	}
+
 	ch <- prometheus.MustNewConstMetric(
 		cc.addonReconcileFail,
 		prometheus.GaugeValue,

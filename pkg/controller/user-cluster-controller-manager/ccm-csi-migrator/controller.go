@@ -124,11 +124,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldCluster *kubermaticv1.Cluster) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	machines := &v1alpha1.MachineList{}
 	if err := r.userClient.List(ctx, machines); err != nil {
-		log.Debugw("error while listing machines in user oldCluster", zap.Error(err))
-		return err
+		return fmt.Errorf("failed to list machines in user cluster: %w", err)
 	}
 
 	// check all the machines have been migrated
@@ -141,44 +140,23 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldC
 		}
 	}
 
-	// if the cluster condition status has changed, update it accordingly
-	newCluster := oldCluster.DeepCopy()
-	if toPatch := r.ensureMigrationConditionStatus(migrated, newCluster); toPatch {
-		if err := r.seedClient.Status().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to update cluster: %w", err)
+	// update cluster condition
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+		conditionType := kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted
+		newStatus := corev1.ConditionFalse
+		reason := kubermaticv1.ReasonClusterCCMMigrationInProgress
+		message := "migrating to external CCM"
+
+		if migrated {
+			newStatus = corev1.ConditionTrue
+			reason = kubermaticv1.ReasonClusterCSIKubeletMigrationCompleted
+			message = "external CCM/CSI migration completed"
 		}
+
+		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, newStatus, reason, message)
+	}); err != nil {
+		return fmt.Errorf("failed to update cluster: %w", err)
 	}
 
 	return nil
-}
-
-func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *kubermaticv1.Cluster) bool {
-	var (
-		newStatus corev1.ConditionStatus
-		reason    string
-		message   string
-	)
-
-	if migrated {
-		newStatus = corev1.ConditionTrue
-		reason = kubermaticv1.ReasonClusterCSIKubeletMigrationCompleted
-		message = "external CCM/CSI migration completed"
-	} else {
-		newStatus = corev1.ConditionFalse
-		reason = kubermaticv1.ReasonClusterCCMMigrationInProgress
-		message = "migrating to external CCM"
-	}
-
-	toPatch := !kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, newStatus)
-	if toPatch {
-		kubermaticv1helper.SetClusterCondition(
-			cluster,
-			r.versions,
-			kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
-			newStatus,
-			reason,
-			message,
-		)
-	}
-	return toPatch
 }

@@ -750,7 +750,7 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 				return createAKSNodePool(ctx, cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
 			}
 			if cloud.EKS != nil {
-				return createEKSNodePool(ctx, cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
+				return createEKSNodePool(cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)
 			}
 		}
 

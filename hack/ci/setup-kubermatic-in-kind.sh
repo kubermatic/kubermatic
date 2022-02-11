@@ -39,6 +39,7 @@ fi
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way
 export SEED_NAME=kubermatic
+export KUBERMATIC_YAML="${KUBERMATIC_YAML:-hack/ci/testdata/kubermatic.yaml}"
 
 # This defines the Kubermatic API endpoint the e2e tests will communicate with.
 # The api service is kubectl-proxied later on.
@@ -135,7 +136,7 @@ KUBERMATIC_CONFIG="$(mktemp)"
 IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | base64 --decode | jq --compact-output --monochrome-output '.')"
 KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
-cp hack/ci/testdata/kubermatic.yaml $KUBERMATIC_CONFIG
+cp $KUBERMATIC_YAML $KUBERMATIC_CONFIG
 
 sed -i "s;__SERVICE_ACCOUNT_KEY__;$SERVICE_ACCOUNT_KEY;g" $KUBERMATIC_CONFIG
 sed -i "s;__IMAGE_PULL_SECRET__;$IMAGE_PULL_SECRET_INLINE;g" $KUBERMATIC_CONFIG
