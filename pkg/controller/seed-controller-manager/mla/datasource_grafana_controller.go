@@ -118,6 +118,11 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
+	if cluster.Address.ExternalName == "" {
+		log.Debug("Skipping cluster reconciling because it has no external name yet")
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
