@@ -47,7 +47,7 @@ func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 
 func ValidateCredentials(ctx context.Context, token string) error {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
+	client := godo.NewClient(oauth2.NewClient(ctx, static))
 
 	_, _, err := client.Regions.List(ctx, nil)
 	return err
