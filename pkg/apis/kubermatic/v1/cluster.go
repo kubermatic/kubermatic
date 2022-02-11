@@ -117,8 +117,6 @@ type ClusterSpec struct {
 
 	// Version defines the wanted version of the control plane
 	Version semver.Semver `json:"version"`
-	// MasterVersion is Deprecated
-	MasterVersion string `json:"masterVersion,omitempty"`
 
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
@@ -340,24 +338,6 @@ type ClusterStatus struct {
 	// not re-check things like security groups, networks etc.).
 	// +optional
 	LastProviderReconciliation metav1.Time `json:"lastProviderReconciliation,omitempty"`
-	// KubermaticVersion is the current kubermatic version in a cluster.
-	// +optional
-	KubermaticVersion string `json:"kubermaticVersion"`
-	// Deprecated
-	// +optional
-	RootCA *KeyCert `json:"rootCA,omitempty"` //nolint:tagliatelle
-	// Deprecated
-	// +optional
-	ApiserverCert *KeyCert `json:"apiserverCert,omitempty"`
-	// Deprecated
-	// +optional
-	KubeletCert *KeyCert `json:"kubeletCert,omitempty"`
-	// Deprecated
-	// +optional
-	ApiserverSSHKey *RSAKeys `json:"apiserverSSHKey,omitempty"`
-	// Deprecated
-	// +optional
-	ServiceAccountKey Bytes `json:"serviceAccountKey,omitempty"`
 	// NamespaceName defines the namespace the control plane of this cluster is deployed in
 	// +optional
 	NamespaceName string `json:"namespaceName"`
@@ -640,20 +620,6 @@ type CloudSpec struct {
 	Nutanix      *NutanixCloudSpec      `json:"nutanix,omitempty"`
 }
 
-// KeyCert is a pair of key and cert.
-type KeyCert struct {
-	Key  Bytes `json:"key"`
-	Cert Bytes `json:"cert"`
-}
-
-// RSAKeys is a pair of private and public key where the key is not published to the API client.
-type RSAKeys struct {
-	PrivateKey Bytes `json:"privateKey"`
-	PublicKey  Bytes `json:"publicKey"`
-}
-
-type Bytes []byte
-
 // FakeCloudSpec specifies access data for a fake cloud.
 type FakeCloudSpec struct {
 	Token string `json:"token,omitempty"`
@@ -767,11 +733,6 @@ type AWSCloudSpec struct {
 	InstanceProfileName     string `json:"instanceProfileName"`
 	SecurityGroupID         string `json:"securityGroupID"`
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-
-	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
-	// can perform the assume-role.
-	// We keep it for backwards compatibility (We use this name for cleanup purpose).
-	RoleName string `json:"roleName,omitempty"`
 }
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.
@@ -918,6 +879,8 @@ func (h *ExtendedClusterHealth) AllHealthy() bool {
 		h.CloudProviderInfrastructure == HealthStatusUp &&
 		h.UserClusterControllerManager == HealthStatusUp
 }
+
+type Bytes []byte
 
 // MarshalJSON adds base64 json encoding to the Bytes type.
 func (bs Bytes) MarshalJSON() ([]byte, error) {

@@ -179,7 +179,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		UserEmail:              "test@example.com",
 		CloudMigrationRevision: 2,
 		NamespaceName:          clusterNamespace,
-		KubermaticVersion:      "1.2.3",
 		ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 			Apiserver:                    kubermaticv1.HealthStatusUp,
 			Scheduler:                    kubermaticv1.HealthStatusUp,

@@ -125,7 +125,6 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 						SecretAccessKey:     valueToBeFiltered,
 						SecurityGroupID:     "secuirtyGroupID",
 						InstanceProfileName: "instanceProfileName",
-						RoleName:            "roleName",
 						RouteTableID:        "routeTableID",
 						VPCID:               "vpcID",
 					},
