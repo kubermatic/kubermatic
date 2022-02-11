@@ -18486,11 +18486,6 @@
           "type": "string",
           "x-go-name": "ControlPlaneRoleARN"
         },
-        "roleName": {
-          "description": "DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane\ncan perform the assume-role.\nWe keep it for backwards compatibility (We use this name for cleanup purpose).",
-          "type": "string",
-          "x-go-name": "RoleName"
-        },
         "routeTableID": {
           "type": "string",
           "x-go-name": "RouteTableID"
