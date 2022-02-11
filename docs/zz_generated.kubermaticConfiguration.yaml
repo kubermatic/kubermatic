@@ -491,7 +491,7 @@ spec:
   verticalPodAutoscaler:
     admissionController:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: gcr.io/google_containers/vpa-admission-controller
+      dockerRepository: k8s.gcr.io/autoscaling/vpa-admission-controller
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
@@ -508,7 +508,7 @@ spec:
           memory: 32Mi
     recommender:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: gcr.io/google_containers/vpa-recommender
+      dockerRepository: k8s.gcr.io/autoscaling/vpa-recommender
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
@@ -525,7 +525,7 @@ spec:
           memory: 512Mi
     updater:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: gcr.io/google_containers/vpa-updater
+      dockerRepository: k8s.gcr.io/autoscaling/vpa-updater
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
