@@ -562,9 +562,36 @@ type EKSCluster struct {
 // swagger:model EKSClusterList
 type EKSClusterList []EKSCluster
 
-// Regions represents an list of AWS regions.
-// swagger:model Regions
-type Regions []string
+// Regions represents an list of EKS regions.
+// swagger:model EKSRegions
+type EKSRegions []string
+
+// EKSSubnetIDList represents an array of EKS subnetID.
+// swagger:model EKSSubnetIDList
+type EKSSubnetIDList []EKSSubnetID
+
+// EKSSubnetID represents a object of EKS subnetID.
+// swagger:model EKSSubnetID
+type EKSSubnetID string
+
+// EKSSecurityGroupIDList represents an array of EKS securityGroupID.
+// swagger:model EKSSecurityGroupIDList
+type EKSSecurityGroupIDList []EKSSecurityGroupID
+
+// EKSSecurityGroupID represents a object of EKS securityGroupID.
+// swagger:model EKSSecurityGroupID
+type EKSSecurityGroupID string
+
+// EKSVPCList represents an array of EKS VPC.
+// swagger:model EKSVPCList
+type EKSVPCList []EKSVPC
+
+// EKSVPC represents a object of EKS VpcId.
+// swagger:model EKSVPC
+type EKSVPC struct {
+	ID        string `json:"id"`
+	IsDefault bool   `json:"default"`
+}
 
 // AKSCluster represents a object of AKS cluster.
 // swagger:model AKSCluster

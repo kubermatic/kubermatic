@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	ec2service "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -29,6 +30,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
+
+// Region value will instruct the SDK where to make service API requests to.
+// Region must be provided before a service client request is made.
+const RegionEndpoint = "eu-central-1"
 
 type EKSCredential struct {
 	AccessKeyID     string
@@ -108,4 +113,73 @@ func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error
 	_, err = client.EKS.ListClusters(&eks.ListClustersInput{})
 
 	return err
+}
+
+func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
+	subnetIDs := apiv2.EKSSubnetIDList{}
+
+	subnetResults, err := awsprovider.GetSubnets(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get subnets: %w", err)
+	}
+
+	for _, subnet := range subnetResults {
+		subnetIDs = append(subnetIDs, apiv2.EKSSubnetID(*subnet.SubnetId))
+	}
+	return subnetIDs, nil
+}
+
+func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, error) {
+	vpcs := apiv2.EKSVPCList{}
+
+	vpcResults, err := awsprovider.GetVPCS(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get vpcs: %w", err)
+	}
+
+	for _, v := range vpcResults {
+		vpc := apiv2.EKSVPC{
+			ID:        *v.VpcId,
+			IsDefault: *v.IsDefault,
+		}
+		vpcs = append(vpcs, vpc)
+	}
+	return vpcs, nil
+}
+
+func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, error) {
+	regionInput := &ec2service.DescribeRegionsInput{}
+
+	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
+	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
+	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", RegionEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieves all regions/endpoints that work with EC2
+	regionOutput, err := client.EC2.DescribeRegions(regionInput)
+	if err != nil {
+		return nil, fmt.Errorf("cannot list regions: %w", err)
+	}
+
+	var regionList []string
+	for _, region := range regionOutput.Regions {
+		regionList = append(regionList, *region.RegionName)
+	}
+	return regionList, nil
+}
+
+func ListEKSSecurityGroupIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
+	securityGroupID := apiv2.EKSSecurityGroupIDList{}
+
+	securityGroups, err := awsprovider.GetSecurityGroupsByVPC(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get security groups: %w", err)
+	}
+
+	for _, group := range securityGroups {
+		securityGroupID = append(securityGroupID, apiv2.EKSSecurityGroupID(*group.GroupId))
+	}
+	return securityGroupID, nil
 }

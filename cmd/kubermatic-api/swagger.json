@@ -17083,6 +17083,99 @@
         }
       }
     },
+    "/api/v2/providers/eks/regions": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "List EKS regions.",
+        "operationId": "listEKSRegions",
+        "responses": {
+          "200": {
+            "description": "EKSRegions",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EKSRegions"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/eks/securitygroups": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "List EKS securitygroup's ID list.",
+        "operationId": "listEKSSecurityGroups",
+        "responses": {
+          "200": {
+            "description": "EKSSecurityGroupIDList",
+            "schema": {
+              "$ref": "#/definitions/EKSSecurityGroupIDList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/eks/subnets": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Lists EKS subnet's ID list.",
+        "operationId": "listEKSSubnets",
+        "responses": {
+          "200": {
+            "description": "EKSSubnetIDList",
+            "schema": {
+              "$ref": "#/definitions/EKSSubnetIDList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/eks/validatecredentials": {
       "get": {
         "description": "Validates EKS credentials",
@@ -17118,6 +17211,32 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/eks/vpcs": {
+      "get": {
+        "description": "Lists EKS vpc's",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "operationId": "listEKSVPCS",
+        "responses": {
+          "200": {
+            "description": "EKSVPCList",
+            "schema": {
+              "$ref": "#/definitions/EKSVPCList"
+            }
           },
           "default": {
             "description": "errorResponse",
@@ -21688,6 +21807,63 @@
         "vpcConfigRequest": {
           "$ref": "#/definitions/VpcConfigRequest"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSRegions": {
+      "type": "array",
+      "title": "Regions represents an list of EKS regions.",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSecurityGroupID": {
+      "type": "string",
+      "title": "EKSSecurityGroupID represents a object of EKS securityGroupID.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSecurityGroupIDList": {
+      "type": "array",
+      "title": "EKSSecurityGroupIDList represents an array of EKS securityGroupID.",
+      "items": {
+        "$ref": "#/definitions/EKSSecurityGroupID"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSubnetID": {
+      "type": "string",
+      "title": "EKSSubnetID represents a object of EKS subnetID.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSSubnetIDList": {
+      "type": "array",
+      "title": "EKSSubnetIDList represents an array of EKS subnetID.",
+      "items": {
+        "$ref": "#/definitions/EKSSubnetID"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSVPC": {
+      "type": "object",
+      "title": "EKSVPC represents a object of EKS VpcId.",
+      "properties": {
+        "default": {
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSVPCList": {
+      "type": "array",
+      "title": "EKSVPCList represents an array of EKS VPC.",
+      "items": {
+        "$ref": "#/definitions/EKSVPC"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -26422,14 +26598,6 @@
         }
       },
       "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Regions": {
-      "type": "array",
-      "title": "Regions represents an list of AWS regions.",
-      "items": {
-        "type": "string"
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ResourceLabelMap": {
       "type": "object",
