@@ -21440,11 +21440,6 @@
           "type": "boolean",
           "x-go-name": "AllowInsecure"
         },
-        "cluster": {
-          "description": "Optional: The name of the vSphere cluster to use.\nCluster is deprecated and may be removed in future releases as it is\ncurrently ignored.\nThe cluster hosting the VMs will be the same VM used as a template is\nlocated.",
-          "type": "string",
-          "x-go-name": "Cluster"
-        },
         "datacenter": {
           "description": "The name of the datacenter to use.",
           "type": "string",
