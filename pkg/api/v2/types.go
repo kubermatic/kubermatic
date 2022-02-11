@@ -593,9 +593,6 @@ type ExternalClusterMachineDeploymentCloudSpec struct {
 }
 
 type EKSMachineDeploymentCloudSpec struct {
-	// The unique name to give your node group.
-	Name string `json:"name"`
-
 	// The subnets to use for the Auto Scaling group that is created for your node
 	// group. These subnets must have the tag key kubernetes.io/cluster/CLUSTER_NAME
 	// with a value of shared, where CLUSTER_NAME is replaced with the name of your
