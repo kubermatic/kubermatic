@@ -228,10 +228,16 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	// CustomRules can be used to inject custom recording and alerting rules. This field
 	// must be a YAML-formatted string with a `group` element at its root, as documented
 	// on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
+	// This value is treated as a Go template, which allows to inject dynamic values like
+	// the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
+	// and the documentation for more information on the available fields.
 	CustomRules string `json:"customRules,omitempty"`
 	// CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
 	// YAML-formatted string containing an array of scrape configurations as documented
 	// on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
+	// This value is treated as a Go template, which allows to inject dynamic values like
+	// the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
+	// and the documentation for more information on the available fields.
 	CustomScrapingConfigs string `json:"customScrapingConfigs,omitempty"`
 	// ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
 	// inside the user clusters.

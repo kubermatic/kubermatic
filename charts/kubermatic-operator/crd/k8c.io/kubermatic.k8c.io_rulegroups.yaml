@@ -79,6 +79,9 @@ spec:
                 description: 'Data contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group'
                 format: byte
                 type: string
+              isDefault:
+                description: IsDefault indicates whether the ruleGroup is default
+                type: boolean
               ruleGroupType:
                 description: RuleGroupType is the type of this ruleGroup applies to.
                   It can be `Metrics` or `Logs`.

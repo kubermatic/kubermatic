@@ -21,7 +21,10 @@ source hack/lib.sh
 
 CONTAINERIZE_IMAGE=golang:1.17.5 containerize ./hack/update-docs.sh
 
-go run cmd/addon-godoc-generator/main.go > docs/zz_generated.addondata.go.txt
+(
+  cd docs
+  go run ../codegen/godoc/main.go
+)
 
 dummy=kubermaticNoOmitPlease
 
@@ -37,7 +40,7 @@ $sed -i "s/,omitempty/,$dummy/g" pkg/apis/kubermatic/v1/*.go vendor/k8s.io/api/c
 # there are some fields that we do actually want to ignore
 $sed -i 's/omitgenyaml/omitempty/g' pkg/apis/kubermatic/v1/*.go
 
-go run cmd/example-yaml-generator/main.go . docs
+go run codegen/example-yaml/main.go . docs
 
 # revert our changes
 $sed -i 's/omitempty/omitgenyaml/g' pkg/apis/kubermatic/v1/*.go

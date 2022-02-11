@@ -143,7 +143,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 				}
 			}
 
-			createdCluster, err := createEKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportEKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}

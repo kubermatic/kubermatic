@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
@@ -378,19 +379,19 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 		backupFinishedTime := apiv1.Time{}
 		deleteStartTime := apiv1.Time{}
 		deleteFinishedTime := apiv1.Time{}
-		if backupStatus.ScheduledTime != nil {
+		if !backupStatus.ScheduledTime.IsZero() {
 			scheduledTime = apiv1.NewTime(backupStatus.ScheduledTime.Time)
 		}
-		if backupStatus.BackupStartTime != nil {
+		if !backupStatus.BackupStartTime.IsZero() {
 			backupStartTime = apiv1.NewTime(backupStatus.BackupStartTime.Time)
 		}
-		if backupStatus.BackupFinishedTime != nil {
+		if !backupStatus.BackupFinishedTime.IsZero() {
 			backupFinishedTime = apiv1.NewTime(backupStatus.BackupFinishedTime.Time)
 		}
-		if backupStatus.DeleteStartTime != nil {
+		if !backupStatus.DeleteStartTime.IsZero() {
 			deleteStartTime = apiv1.NewTime(backupStatus.DeleteStartTime.Time)
 		}
-		if backupStatus.DeleteFinishedTime != nil {
+		if !backupStatus.DeleteFinishedTime.IsZero() {
 			deleteFinishedTime = apiv1.NewTime(backupStatus.DeleteFinishedTime.Time)
 		}
 
@@ -411,12 +412,12 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 		etcdBackupConfig.Status.CurrentBackups = append(etcdBackupConfig.Status.CurrentBackups, apiBackupStatus)
 	}
 
-	for _, condition := range ebc.Status.Conditions {
+	for conditionType, condition := range ebc.Status.Conditions {
 		lastHeartbeatTime := apiv1.NewTime(condition.LastHeartbeatTime.Time)
 		lastTransitionTime := apiv1.NewTime(condition.LastTransitionTime.Time)
 
 		apiCondition := apiv2.EtcdBackupConfigCondition{
-			Type:               condition.Type,
+			Type:               conditionType,
 			Status:             condition.Status,
 			LastHeartbeatTime:  lastHeartbeatTime,
 			LastTransitionTime: lastTransitionTime,
@@ -425,6 +426,11 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 		}
 		etcdBackupConfig.Status.Conditions = append(etcdBackupConfig.Status.Conditions, apiCondition)
 	}
+
+	// ensure a stable sorting order
+	sort.Slice(etcdBackupConfig.Status.Conditions, func(i, j int) bool {
+		return etcdBackupConfig.Status.Conditions[i].Type < etcdBackupConfig.Status.Conditions[j].Type
+	})
 
 	return etcdBackupConfig
 }

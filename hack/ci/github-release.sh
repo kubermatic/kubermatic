@@ -214,7 +214,7 @@ if ! $DRY_RUN; then
 fi
 
 # prepare source for archiving
-sed --in-place "s/__KUBERMATIC_TAG__/$GIT_TAG/g" charts/*/*.yaml
+set_helm_charts_version "$GIT_TAG"
 
 mkdir -p _dist
 

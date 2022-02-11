@@ -201,6 +201,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	if cluster.Status.NamespaceName == "" {
+		log.Debug("Cluster has no namespace name yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	seed, err := r.seedGetter()
 	if err != nil {
 		return reconcile.Result{}, err
@@ -380,7 +385,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		}
 		backupConfig.Status.CurrentBackups = []kubermaticv1.BackupStatus{{}}
 		backupToSchedule = &backupConfig.Status.CurrentBackups[0]
-		backupToSchedule.ScheduledTime = &metav1.Time{Time: r.clock.Now()}
+		backupToSchedule.ScheduledTime = metav1.NewTime(r.clock.Now())
 		backupToSchedule.BackupName = backupConfig.Name
 		requeueAfter = 0
 	} else {
@@ -413,7 +418,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 
 		backupConfig.Status.CurrentBackups = append(backupConfig.Status.CurrentBackups, kubermaticv1.BackupStatus{})
 		backupToSchedule = &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
-		backupToSchedule.ScheduledTime = &metav1.Time{Time: pendingBackupTime}
+		backupToSchedule.ScheduledTime = metav1.NewTime(pendingBackupTime)
 		backupToSchedule.BackupName = fmt.Sprintf("%s-%s", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
 		requeueAfter = nextBackupTime.Sub(now)
 	}
@@ -444,28 +449,28 @@ func (r *Reconciler) limitNameLength(name string) string {
 	return name[0:63-len(randomness)] + randomness
 }
 
-// set a condition on a backupConfig, return true iff the condition's status was changed.
+// set a condition on a backupConfig, return true if the condition's status was changed.
 func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBackupConfig, conditionType kubermaticv1.EtcdBackupConfigConditionType, status corev1.ConditionStatus, reason, message string) bool {
-	newCond := kubermaticv1.EtcdBackupConfigCondition{
-		Type:               conditionType,
-		Status:             status,
-		LastTransitionTime: metav1.Time{Time: r.clock.Now()},
-		Reason:             reason,
-		Message:            message,
-	}
-	for i := range backupConfig.Status.Conditions {
-		cond := &backupConfig.Status.Conditions[i]
-		if cond.Type == conditionType {
-			if cond.Status == status {
-				return false
-			}
-			*cond = newCond
-			return true
-		}
+	now := metav1.Now()
+	statusChanged := false
+
+	condition, exists := backupConfig.Status.Conditions[conditionType]
+	if exists && condition.Status != status {
+		condition.LastTransitionTime = now
+		statusChanged = true
 	}
 
-	backupConfig.Status.Conditions = append(backupConfig.Status.Conditions, newCond)
-	return true
+	condition.Status = status
+	condition.LastHeartbeatTime = now
+	condition.Reason = reason
+	condition.Message = message
+
+	if backupConfig.Status.Conditions == nil {
+		backupConfig.Status.Conditions = map[kubermaticv1.EtcdBackupConfigConditionType]kubermaticv1.EtcdBackupConfigCondition{}
+	}
+	backupConfig.Status.Conditions[conditionType] = condition
+
+	return !exists || statusChanged
 }
 
 // create any backup jobs that can be created, i.e. that don't exist yet while their scheduled time has arrived
@@ -487,16 +492,16 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 					// job not found. Apparently deleted externally.
 					backup.BackupPhase = kubermaticv1.BackupStatusPhaseFailed
 					backup.BackupMessage = "backup job deleted externally"
-					backup.BackupFinishedTime = &metav1.Time{Time: r.clock.Now()}
+					backup.BackupFinishedTime = metav1.NewTime(r.clock.Now())
 				} else {
 					if cond := getJobConditionIfTrue(job, batchv1.JobComplete); cond != nil {
 						backup.BackupPhase = kubermaticv1.BackupStatusPhaseCompleted
 						backup.BackupMessage = cond.Message
-						backup.BackupFinishedTime = &cond.LastTransitionTime
+						backup.BackupFinishedTime = cond.LastTransitionTime
 					} else if cond := getJobConditionIfTrue(job, batchv1.JobFailed); cond != nil {
 						backup.BackupPhase = kubermaticv1.BackupStatusPhaseFailed
 						backup.BackupMessage = cond.Message
-						backup.BackupFinishedTime = &cond.LastTransitionTime
+						backup.BackupFinishedTime = cond.LastTransitionTime
 					} else {
 						// job still running
 						returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: assumedJobRuntime})
@@ -594,7 +599,7 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 	} else {
 		// no deleteContainer configured. Just mark deletion as finished immediately.
 		backup.DeletePhase = kubermaticv1.BackupStatusPhaseCompleted
-		backup.DeleteFinishedTime = &metav1.Time{Time: r.clock.Now()}
+		backup.DeleteFinishedTime = metav1.NewTime(r.clock.Now())
 	}
 	return nil
 }
@@ -629,7 +634,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 				if cond := getJobConditionIfTrue(job, batchv1.JobComplete); cond != nil {
 					backup.DeletePhase = kubermaticv1.BackupStatusPhaseCompleted
 					backup.DeleteMessage = cond.Message
-					backup.DeleteFinishedTime = &cond.LastTransitionTime
+					backup.DeleteFinishedTime = cond.LastTransitionTime
 					returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: succeededJobRetentionTime})
 				} else if cond := getJobConditionIfTrue(job, batchv1.JobFailed); cond != nil {
 					// job failed. Delete and recreate it. Again, we want to see every delete job complete successfully because
@@ -686,10 +691,10 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 		}
 
 		backupJobDeleted := false
-		if backup.BackupFinishedTime != nil {
+		if !backup.BackupFinishedTime.IsZero() {
 			var retentionTime time.Duration
 			switch {
-			case backupConfig.DeletionTimestamp != nil:
+			case !backupConfig.DeletionTimestamp.IsZero():
 				retentionTime = 0
 			case backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted:
 				retentionTime = succeededJobRetentionTime
@@ -723,9 +728,9 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 		}
 
 		deleteJobDeleted := false
-		if backup.DeleteFinishedTime != nil {
+		if !backup.DeleteFinishedTime.IsZero() {
 			var retentionTime time.Duration
-			if backupConfig.DeletionTimestamp != nil {
+			if !backupConfig.DeletionTimestamp.IsZero() {
 				retentionTime = 0
 			} else {
 				retentionTime = succeededJobRetentionTime

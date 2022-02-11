@@ -262,7 +262,7 @@ func (r *ruleGroupController) reconcile(ctx context.Context, cluster *kubermatic
 	return nil, nil
 }
 
-func (r *ruleGroupController) cleanUp(ctx context.Context) error {
+func (r *ruleGroupController) CleanUp(ctx context.Context) error {
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
 	if err := r.List(ctx, ruleGroupList); err != nil {
 		return err

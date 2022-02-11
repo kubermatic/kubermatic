@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
@@ -204,20 +203,24 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 }
 
 func getFlags(data *resources.TemplateData) ([]string, error) {
+	cluster := data.Cluster()
 	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
+
 	// If CCM migration is enabled and all kubeletes have not been migrated yet
 	// disable the cloud controllers.
-	if metav1.HasAnnotation(data.Cluster().ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) &&
-		!kubermaticv1helper.ClusterConditionHasStatus(data.Cluster(), kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+	hasCSIMigrationCompleted := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue
+
+	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) && !hasCSIMigrationCompleted {
 		controllers = append(controllers, "-cloud-node-lifecycle", "-route", "-service")
 	}
+
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
-		"--cluster-cidr", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		"--cluster-cidr", cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		"--allocate-node-cidrs",
 		"--controllers", strings.Join(controllers, ","),
 		"--use-service-account-credentials",
@@ -228,7 +231,7 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
 
 	// starting with k8s 1.21, this is always true and cannot be toggled anymore
-	if data.Cluster().Spec.Version.Semver().Minor() < 21 {
+	if cluster.Spec.Version.Semver().Minor() < 21 {
 		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
 	}
 
@@ -237,19 +240,19 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	flags = append(flags, "--feature-gates")
 	flags = append(flags, strings.Join(featureGates, ","))
 
-	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(),
-		resources.ExternalCloudProviderEnabled(data.Cluster()))
+	cloudProviderName := resources.GetKubernetesCloudProviderName(cluster,
+		resources.ExternalCloudProviderEnabled(cluster))
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		if cloudProviderName == "azure" && data.Cluster().Spec.Version.Semver().Minor() >= 15 {
+		if cloudProviderName == "azure" && cluster.Spec.Version.Semver().Minor() >= 15 {
 			// Required so multiple clusters using the same resource group can allocate public IPs.
 			// Ref: https://github.com/kubernetes/kubernetes/pull/77630
-			flags = append(flags, "--cluster-name", data.Cluster().Name)
+			flags = append(flags, "--cluster-name", cluster.Name)
 		}
 	}
 
-	if val := CloudRoutesFlagVal(data.Cluster().Spec.Cloud); val != nil {
+	if val := CloudRoutesFlagVal(cluster.Spec.Cloud); val != nil {
 		flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 	}
 
@@ -265,13 +268,13 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	flags = append(flags, "--port", "0")
 
 	// Apply leader election settings
-	if lds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+	if lds := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
 		flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
 	}
-	if rds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {
+	if rds := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {
 		flags = append(flags, "--leader-elect-renew-deadline", fmt.Sprintf("%ds", *rds))
 	}
-	if rps := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RetryPeriodSeconds; rps != nil {
+	if rps := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RetryPeriodSeconds; rps != nil {
 		flags = append(flags, "--leader-elect-retry-period", fmt.Sprintf("%ds", *rps))
 	}
 

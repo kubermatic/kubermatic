@@ -198,7 +198,7 @@ mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"-c",
 						`mc config host add s3 $S3_ENDPOINT $ACCESS_KEY_ID $SECRET_ACCESS_KEY
 mc mb --ignore-existing s3/$S3_BUCKET
-while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET; sleep 300; done`,
+while true; do mc mirror --overwrite /metering-data s3/$S3_BUCKET || exit 1; sleep 300; done`,
 					},
 					Image:           getMinioImage(getRegistry),
 					ImagePullPolicy: corev1.PullIfNotPresent,

@@ -205,11 +205,13 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermati
 		return false, fmt.Errorf("failed to update cluster: %w", err)
 	}
 
-	// Invalidating the health to prevent automatic updates directly on the next processing.
-	cluster.Status.ExtendedHealth.Apiserver = kubermaticv1.HealthStatusDown
-	cluster.Status.ExtendedHealth.Controller = kubermaticv1.HealthStatusDown
-	cluster.Status.ExtendedHealth.Scheduler = kubermaticv1.HealthStatusDown
-	if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		// Invalidating the health to prevent automatic updates directly on the next processing.
+		c.Status.ExtendedHealth.Apiserver = kubermaticv1.HealthStatusDown
+		c.Status.ExtendedHealth.Controller = kubermaticv1.HealthStatusDown
+		c.Status.ExtendedHealth.Scheduler = kubermaticv1.HealthStatusDown
+	})
+	if err != nil {
 		return false, fmt.Errorf("failed to update cluster status: %w", err)
 	}
 

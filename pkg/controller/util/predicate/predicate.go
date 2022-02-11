@@ -44,6 +44,23 @@ func Factory(filter func(o ctrlruntimeclient.Object) bool) predicate.Funcs {
 	}
 }
 
+// MultiFactory returns a predicate func that applies the given filter functions
+// to the respective events for CREATE, UPDATE and DELETE. For UPDATE events, the
+// filter is applied to both the old and new object and OR's the result.
+func MultiFactory(createFilter func(o ctrlruntimeclient.Object) bool, updateFilter func(o ctrlruntimeclient.Object) bool, deleteFilter func(o ctrlruntimeclient.Object) bool) predicate.Funcs {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return createFilter(e.Object)
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return updateFilter(e.ObjectOld) || updateFilter(e.ObjectNew)
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return deleteFilter(e.Object)
+		},
+	}
+}
+
 // ByNamespace returns a predicate func that only includes objects in the given namespace.
 func ByNamespace(namespace string) predicate.Funcs {
 	return Factory(func(o ctrlruntimeclient.Object) bool {
@@ -72,4 +89,9 @@ func ByLabel(key, value string) predicate.Funcs {
 		}
 		return false
 	})
+}
+
+// TrueFilter is a helper filter implementation that always returns true, e.g. for use with MultiFactory.
+func TrueFilter(_ ctrlruntimeclient.Object) bool {
+	return true
 }

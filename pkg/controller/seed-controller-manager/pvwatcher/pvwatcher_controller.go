@@ -26,6 +26,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutils "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -97,7 +98,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
-	clusterName := strings.ReplaceAll(request.Namespace, "cluster-", "")
+	clusterName := kubernetes.ClusterNameFromNamespace(request.Namespace)
 	if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("Skipping because the cluster is already gone")

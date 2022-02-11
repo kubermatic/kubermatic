@@ -154,7 +154,7 @@ func newDashboardGrafanaController(
 	}
 }
 
-func (r *dashboardGrafanaController) cleanUp(ctx context.Context) error {
+func (r *dashboardGrafanaController) CleanUp(ctx context.Context) error {
 	configMapList := &corev1.ConfigMapList{}
 	if err := r.List(ctx, configMapList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return fmt.Errorf("Failed to list configmaps: %w", err)

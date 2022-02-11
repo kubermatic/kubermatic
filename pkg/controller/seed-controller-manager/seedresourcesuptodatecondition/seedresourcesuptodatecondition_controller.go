@@ -19,7 +19,6 @@ package seedresourcesuptodatecondition
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"go.uber.org/zap"
 
@@ -111,7 +110,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil
 	}
 
-	if cluster.Spec.Pause {
+	if cluster.Spec.Pause || cluster.Status.NamespaceName == "" {
 		return nil
 	}
 
@@ -120,31 +119,18 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return err
 	}
 
-	oldCluster := cluster.DeepCopy()
-	if !upToDate {
-		kubermaticv1helper.SetClusterCondition(
-			cluster,
-			r.versions,
-			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			corev1.ConditionFalse,
-			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"Some control plane components did not finish updating",
-		)
-	} else {
-		kubermaticv1helper.SetClusterCondition(
-			cluster,
-			r.versions,
-			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			corev1.ConditionTrue,
-			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"All control plane components are up to date",
-		)
-	}
-	if reflect.DeepEqual(oldCluster, cluster) {
-		return nil
-	}
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r.client, cluster, func(c *kubermaticv1.Cluster) {
+		conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
+		value := corev1.ConditionFalse
+		message := "Some control plane components did not finish updating"
 
-	return r.client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+		if upToDate {
+			value = corev1.ConditionTrue
+			message = "All control plane components are up to date"
+		}
+
+		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, value, kubermaticv1.ReasonClusterUpdateSuccessful, message)
+	})
 }
 
 func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
