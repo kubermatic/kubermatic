@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -197,12 +197,12 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 
 	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1beta1.CRD{
-			Spec: constrainttemplatev1beta1.CRDSpec{
-				Names: constrainttemplatev1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind: allowedregistrycontroller.AllowedRegistryCTName,
 				},
-				Validation: &constrainttemplatev1beta1.Validation{
+				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							allowedregistrycontroller.AllowedRegistryField: {
@@ -218,7 +218,7 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 				},
 			},
 		},
-		Targets: []constrainttemplatev1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego:   "package allowedregistry\n\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.containers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.initContainers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}",
