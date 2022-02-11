@@ -160,14 +160,14 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}, nil
 }
 
-func ValidateCredentials(credentials Credentials) error {
+func ValidateCredentials(ctx context.Context, credentials Credentials) error {
 	var err error
 	groupsClient := subscriptions.NewClient()
 	groupsClient.Authorizer, err = auth.NewClientCredentialsConfig(credentials.ClientID, credentials.ClientSecret, credentials.TenantID).Authorizer()
 	if err != nil {
 		return fmt.Errorf("failed to create authorizer: %w", err)
 	}
-	_, err = groupsClient.ListLocations(context.Background(), credentials.SubscriptionID, nil)
+	_, err = groupsClient.ListLocations(ctx, credentials.SubscriptionID, nil)
 
 	return err
 }

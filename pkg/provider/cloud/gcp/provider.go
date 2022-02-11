@@ -144,8 +144,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 	return deleteFirewallRules(cluster, update, g.log, svc, projectID)
 }
 
-func ValidateCredentials(serviceAccount string) error {
-	ctx := context.Background()
+func ValidateCredentials(ctx context.Context, serviceAccount string) error {
 	svc, project, err := ConnectToComputeService(serviceAccount)
 	if err != nil {
 		return err
