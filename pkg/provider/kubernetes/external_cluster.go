@@ -425,7 +425,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 		cluster.Spec.Cloud.GCP = &kubermaticv1.GCPCloudSpec{
 			ServiceAccount: cloud.GKE.ServiceAccount,
 		}
-		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster, false)
 		if err != nil {
 			return nil, err
 		}
@@ -436,7 +436,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 			AccessKeyID:     cloud.EKS.AccessKeyID,
 			SecretAccessKey: cloud.EKS.SecretAccessKey,
 		}
-		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster, false)
 		if err != nil {
 			return nil, err
 		}
@@ -449,7 +449,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 			ClientID:       cloud.AKS.ClientID,
 			ClientSecret:   cloud.AKS.ClientSecret,
 		}
-		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster, false)
 		if err != nil {
 			return nil, err
 		}
