@@ -81,6 +81,25 @@ func GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, 
 	return vpcOut.Vpcs, nil
 }
 
+// GetSecurityGroups returns the list of AWS Security Group filtered by VPC.
+func GetSecurityGroupsByVPC(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpcID string) ([]*ec2.SecurityGroup, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, "", "", region)
+	if err != nil {
+		return nil, err
+	}
+	sgOut, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{Filters: []*ec2.Filter{ec2VPCFilter(vpcID)}})
+
+	if err != nil {
+		if ok, msg := isAuthFailure(err); ok {
+			return nil, httperror.New(401, fmt.Sprintf("failed to list security groups: %s", msg))
+		}
+
+		return nil, fmt.Errorf("failed to list security groups: %w", err)
+	}
+
+	return sgOut.SecurityGroups, nil
+}
+
 // GetSecurityGroups returns the list of AWS Security Group.
 func GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) ([]*ec2.SecurityGroup, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
