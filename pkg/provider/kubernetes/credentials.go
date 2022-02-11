@@ -183,7 +183,7 @@ func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient
 	}
 
 	if validate {
-		if err := azure.ValidateCredentials(azure.Credentials{
+		if err := azure.ValidateCredentials(ctx, azure.Credentials{
 			TenantID:       spec.TenantID,
 			SubscriptionID: spec.SubscriptionID,
 			ClientID:       spec.ClientID,
@@ -225,7 +225,7 @@ func createOrUpdateDigitaloceanSecret(ctx context.Context, seedClient ctrlruntim
 	}
 
 	if validate {
-		if err := digitalocean.ValidateCredentials(spec.Token); err != nil {
+		if err := digitalocean.ValidateCredentials(ctx, spec.Token); err != nil {
 			return fmt.Errorf("invalid DigitalOcean token: %w", err)
 		}
 	}
@@ -256,7 +256,7 @@ func createOrUpdateGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 	}
 
 	if validate {
-		if err := gcp.ValidateCredentials(spec.ServiceAccount); err != nil {
+		if err := gcp.ValidateCredentials(ctx, spec.ServiceAccount); err != nil {
 			return fmt.Errorf("invalid GCP credentials: %w", err)
 		}
 	}
