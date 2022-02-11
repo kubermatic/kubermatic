@@ -99,23 +99,45 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 	return nil
 }
 
-func checkCreateClusterReqValid(aksCloudSpec *apiv2.AKSCloudSpec) error {
-	agentPoolProfiles := aksCloudSpec.ClusterSpec.MachineDeploymentSpec
-	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
-		return fmt.Errorf("Must define at least one system pool!")
+func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) error {
+	if aksMD == nil {
+		return errors.NewBadRequest("AKS MachineDeploymentSpec cannot be nil")
 	}
-	basicSettings := agentPoolProfiles.BasicSettings
+	basicSettings := aksMD.BasicSettings
+	// check whether required fields for nodepool creation are provided
+	fields := reflect.ValueOf(&basicSettings).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
+		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
+			return errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
+		}
+	}
 	if basicSettings.EnableAutoScaling {
 		maxCount := basicSettings.ScalingConfig.MaxCount
 		minCount := basicSettings.ScalingConfig.MinCount
-		if maxCount == 0 || minCount == 0 {
-			return fmt.Errorf("MaxCount or MinCount config for nodepool autoscaling cannot be nil")
+		if maxCount == 0 {
+			return errors.NewBadRequest("InvalidParameter: value of maxCount for enabled autoscaling is invalid")
+		}
+		if minCount == 0 {
+			return errors.NewBadRequest("InvalidParameter: value of minCount for enabled autoscaling is invalid")
 		}
 	}
 	return nil
 }
 
+func checkCreateClusterReqValidity(aksCloudSpec *apiv2.AKSCloudSpec) error {
+	if len(aksCloudSpec.ClusterSpec.Location) == 0 {
+		return errors.NewBadRequest("required field is missing: Location")
+	}
+	agentPoolProfiles := aksCloudSpec.ClusterSpec.MachineDeploymentSpec
+	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
+		return errors.NewBadRequest("Must define at least one system pool!")
+	}
+	return checkCreatePoolReqValidity(agentPoolProfiles)
+}
+
 func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	// check whether required fields for cluster import are provided
 	fields := reflect.ValueOf(cloud.AKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
 		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
@@ -125,7 +147,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 	}
 
 	if cloud.AKS.ClusterSpec != nil {
-		if err := checkCreateClusterReqValid(cloud.AKS); err != nil {
+		if err := checkCreateClusterReqValidity(cloud.AKS); err != nil {
 			return nil, err
 		}
 		if err := createNewAKSCluster(ctx, cloud.AKS); err != nil {
@@ -480,22 +502,6 @@ func deleteAKSNodeGroup(ctx context.Context, cloud *kubermaticv1.ExternalCluster
 	return nil
 }
 
-func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeployment) error {
-	aksMD := machineDeployment.Cloud.AKS
-	if aksMD == nil {
-		return fmt.Errorf("AKS MachineDeploymentSpec cannot be nil")
-	}
-	basicSettings := aksMD.BasicSettings
-	if basicSettings.EnableAutoScaling {
-		maxCount := basicSettings.ScalingConfig.MaxCount
-		minCount := basicSettings.ScalingConfig.MinCount
-		if maxCount == 0 || minCount == 0 {
-			return fmt.Errorf("MaxCount or MinCount config for nodepool autoscaling cannot be nil")
-		}
-	}
-	return nil
-}
-
 func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
 	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 	if err != nil {
@@ -512,7 +518,7 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 	}
 
 	aksMD := machineDeployment.Cloud.AKS
-	if err := checkCreatePoolReqValid(machineDeployment); err != nil {
+	if err := checkCreatePoolReqValidity(aksMD); err != nil {
 		return nil, err
 	}
 	basicSettings := aksMD.BasicSettings

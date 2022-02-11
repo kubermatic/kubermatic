@@ -18273,6 +18273,7 @@
           "$ref": "#/definitions/AgentPoolConfig"
         },
         "name": {
+          "description": "Name - Node pool name must contain only lowercase letters and numbers. For Linux node pools must be 12 or fewer characters.",
           "type": "string",
           "x-go-name": "Name"
         },

@@ -429,7 +429,7 @@ type GKECloudSpec struct {
 }
 
 type EKSCloudSpec struct {
-	Name            string          `json:"name" required:"true"`
+	Name            string          `json:"name"`
 	AccessKeyID     string          `json:"accessKeyID,omitempty" required:"true"`
 	SecretAccessKey string          `json:"secretAccessKey,omitempty" required:"true"`
 	Region          string          `json:"region" required:"true"`
@@ -463,7 +463,7 @@ type EKSClusterSpec struct {
 }
 
 type AKSCloudSpec struct {
-	Name           string          `json:"name" required:"true"`
+	Name           string          `json:"name"`
 	TenantID       string          `json:"tenantID,omitempty" required:"true"`
 	SubscriptionID string          `json:"subscriptionID,omitempty" required:"true"`
 	ClientID       string          `json:"clientID,omitempty" required:"true"`
@@ -630,7 +630,8 @@ type ExternalClusterMachineDeploymentCloudSpec struct {
 }
 
 type AKSMachineDeploymentCloudSpec struct {
-	Name string `json:"name" required:"true"`
+	// Name - Node pool name must contain only lowercase letters and numbers. For Linux node pools must be 12 or fewer characters.
+	Name string `json:"name"`
 	// BasicSettings - Settings for creating the AKS agentpool
 	BasicSettings AgentPoolBasics `json:"basicSettings"`
 	// OptionalSettings - Optional Settings for creating the AKS agentpool

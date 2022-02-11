@@ -18,7 +18,7 @@ import (
 // swagger:model AKSMachineDeploymentCloudSpec
 type AKSMachineDeploymentCloudSpec struct {
 
-	// name
+	// Name - Node pool name must contain only lowercase letters and numbers. For Linux node pools must be 12 or fewer characters.
 	Name string `json:"name,omitempty"`
 
 	// basic settings
