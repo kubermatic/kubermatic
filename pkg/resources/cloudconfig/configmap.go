@@ -309,7 +309,6 @@ func getVsphereCloudConfig(
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			DefaultDatastore: datastore,
 			WorkingDir:       cluster.Name,
-			ClusterID:        dc.Spec.VSphere.Cluster,
 		},
 		Workspace: vsphere.WorkspaceOpts{
 			// This is redundant with what the Vsphere cloud provider itself does:
