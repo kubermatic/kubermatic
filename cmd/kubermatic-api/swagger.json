@@ -16353,6 +16353,38 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aks"
+        ],
+        "summary": "Gets AKS available VM sizes in an Azure region.",
+        "operationId": "listAKSMDVMSizesNoCredentials",
+        "responses": {
+          "200": {
+            "description": "AKSVMSizeList",
+            "schema": {
+              "$ref": "#/definitions/AKSVMSizeList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes": {
       "get": {
         "produces": [
@@ -16810,13 +16842,13 @@
     },
     "/api/v2/providers/aks/vmsizes": {
       "get": {
-        "description": "List AKS VM Sizes",
         "produces": [
           "application/json"
         ],
         "tags": [
           "aks"
         ],
+        "summary": "List AKS available VM sizes in an Azure region.",
         "operationId": "listAKSVMSizes",
         "parameters": [
           {

@@ -51,7 +51,7 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -100,7 +100,7 @@ func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -157,7 +157,7 @@ func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -192,7 +192,7 @@ func GKEDiskTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfo
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}

@@ -25,6 +25,7 @@ import (
 
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -64,6 +65,39 @@ type AKSVMSizesReq struct {
 	// in: header
 	// name: Location
 	Location string
+}
+
+// aksNoCredentialReq represent a request for AKS resources
+// swagger:parameters listAKSVMSizesNoCredentials
+type aksNoCredentialReq struct {
+	externalcluster.GetClusterReq
+	// Location - Resource location
+	// in: header
+	// name: Location
+	Location string
+}
+
+func DecodeAKSNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req aksNoCredentialReq
+	re, err := externalcluster.DecodeGetReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = re.(externalcluster.GetClusterReq)
+	req.Location = r.Header.Get("Location")
+
+	return req, nil
+}
+
+// Validate validates aksNoCredentialReq request.
+func (req aksNoCredentialReq) Validate() error {
+	if err := req.GetClusterReq.Validate(); err != nil {
+		return err
+	}
+	if len(req.Location) == 0 {
+		return fmt.Errorf("AKS Location cannot be empty")
+	}
+	return nil
 }
 
 // Validate validates aksCommonReq request.
@@ -221,4 +255,14 @@ func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGet
 		ClientID:       clientID,
 		ClientSecret:   clientSecret,
 	}, nil
+}
+
+func AKSSizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(aksNoCredentialReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		return externalcluster.AKSSizesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, settingsProvider, req.ProjectID, req.ClusterID, req.Location)
+	}
 }

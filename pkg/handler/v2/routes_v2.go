@@ -827,7 +827,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/versions").
-		Handler(r.listAKSMDVersionsNoCredentials())
+		Handler(r.listAKSNodeVersionsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes").
+		Handler(r.listAKSVMSizesNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images").
@@ -5303,7 +5307,7 @@ func (r Routing) validateAKSCredentials() http.Handler {
 
 // swagger:route GET /api/v2/providers/aks/vmsizes aks listAKSVMSizes
 //
-// List AKS VM Sizes
+// List AKS available VM sizes in an Azure region.
 //
 //     Produces:
 //     - application/json
@@ -5702,13 +5706,38 @@ func (r Routing) listExternalClusterMachineDeploymentMetrics() http.Handler {
 //       200: []MasterVersion
 //       401: empty
 //       403: empty
-func (r Routing) listAKSMDVersionsNoCredentials() http.Handler {
+func (r Routing) listAKSNodeVersionsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.AKSMDVersionsNoCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		)(externalcluster.AKSNodeVersionsWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes aks listAKSMDVMSizesNoCredentials
+//
+//     Gets AKS available VM sizes in an Azure region.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSVMSizeList
+//       401: empty
+//       403: empty
+func (r Routing) listAKSVMSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AKSSizesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		provider.DecodeAKSNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

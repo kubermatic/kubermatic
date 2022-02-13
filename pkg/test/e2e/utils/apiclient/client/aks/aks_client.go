@@ -30,6 +30,8 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	ListAKSMDAvailableVersions(params *ListAKSMDAvailableVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSMDAvailableVersionsOK, error)
 
+	ListAKSMDVMSizesNoCredentials(params *ListAKSMDVMSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSMDVMSizesNoCredentialsOK, error)
+
 	ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesOK, error)
 
 	ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error)
@@ -76,7 +78,45 @@ func (a *Client) ListAKSMDAvailableVersions(params *ListAKSMDAvailableVersionsPa
 }
 
 /*
-  ListAKSVMSizes List AKS VM Sizes
+  ListAKSMDVMSizesNoCredentials gets a k s available VM sizes in an azure region
+*/
+func (a *Client) ListAKSMDVMSizesNoCredentials(params *ListAKSMDVMSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSMDVMSizesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAKSMDVMSizesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAKSMDVMSizesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAKSMDVMSizesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAKSMDVMSizesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAKSMDVMSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAKSVMSizes lists a k s available VM sizes in an azure region
 */
 func (a *Client) ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesOK, error) {
 	// TODO: Validate the params before sending
