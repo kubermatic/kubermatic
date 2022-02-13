@@ -18,14 +18,38 @@ import (
 // swagger:model AKSClusterSpec
 type AKSClusterSpec struct {
 
+	// DNSPrefix - This cannot be updated once the Managed Cluster has been created.
+	DNSPrefix string `json:"dnsPrefix,omitempty"`
+
+	// EnableRBAC - Whether Kubernetes Role-Based Access Control Enabled.
+	EnableRBAC bool `json:"enableRBAC,omitempty"`
+
+	// Fqdn - READ-ONLY; The FQDN of the master pool.
+	Fqdn string `json:"fqdn,omitempty"`
+
+	// FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.
+	FqdnSubdomain string `json:"fqdnSubdomain,omitempty"`
+
 	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
 	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 
 	// Location - Resource location
 	Location string `json:"location,omitempty"`
 
+	// ManagedAAD - Whether The Azure Active Directory configuration Enabled.
+	ManagedAAD bool `json:"managedAAD,omitempty"`
+
+	// NodeResourceGroup - The name of the resource group containing agent pool nodes.
+	NodeResourceGroup string `json:"nodeResourceGroup,omitempty"`
+
+	// PrivateFQDN - READ-ONLY; The FQDN of private cluster.
+	PrivateFQDN string `json:"privateFQDN,omitempty"`
+
 	// machine deployment spec
 	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
+
+	// network profile
+	NetworkProfile *AKSNetworkProfile `json:"networkProfile,omitempty"`
 }
 
 // Validate validates this a k s cluster spec
@@ -33,6 +57,10 @@ func (m *AKSClusterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateMachineDeploymentSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNetworkProfile(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -59,11 +87,32 @@ func (m *AKSClusterSpec) validateMachineDeploymentSpec(formats strfmt.Registry) 
 	return nil
 }
 
+func (m *AKSClusterSpec) validateNetworkProfile(formats strfmt.Registry) error {
+	if swag.IsZero(m.NetworkProfile) { // not required
+		return nil
+	}
+
+	if m.NetworkProfile != nil {
+		if err := m.NetworkProfile.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("networkProfile")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this a k s cluster spec based on the context it is used
 func (m *AKSClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateMachineDeploymentSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNetworkProfile(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -79,6 +128,20 @@ func (m *AKSClusterSpec) contextValidateMachineDeploymentSpec(ctx context.Contex
 		if err := m.MachineDeploymentSpec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("machineDeploymentSpec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AKSClusterSpec) contextValidateNetworkProfile(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NetworkProfile != nil {
+		if err := m.NetworkProfile.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("networkProfile")
 			}
 			return err
 		}

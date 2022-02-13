@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/distribution/v3/reference"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"

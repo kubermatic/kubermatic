@@ -189,7 +189,7 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 			if err != nil {
 				return fmt.Errorf("failed to get credentials: %w", err)
 			}
-			if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
+			if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster, false); err != nil {
 				return err
 			}
 			kuberneteshelper.AddFinalizer(newCluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)

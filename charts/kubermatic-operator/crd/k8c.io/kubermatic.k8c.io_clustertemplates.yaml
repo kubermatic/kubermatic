@@ -229,12 +229,6 @@ spec:
                         description: The IAM role, the control plane will use. The
                           control plane will perform an assume-role
                         type: string
-                      roleName:
-                        description: DEPRECATED. Don't care for the role name. We
-                          only require the ControlPlaneRoleARN to be set so the control
-                          plane can perform the assume-role. We keep it for backwards
-                          compatibility (We use this name for cleanup purpose).
-                        type: string
                       routeTableID:
                         type: string
                       secretAccessKey:
@@ -1513,9 +1507,6 @@ spec:
                   - gateway
                   type: object
                 type: array
-              masterVersion:
-                description: MasterVersion is Deprecated
-                type: string
               mla:
                 description: MLA contains monitoring, logging and alerting related
                   settings for the user cluster.

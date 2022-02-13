@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -26,13 +27,7 @@ type AgentPoolBasics struct {
 	// EnableAutoScaling - Whether to enable auto-scaler
 	EnableAutoScaling bool `json:"enableAutoScaling,omitempty"`
 
-	// MaxCount - The maximum number of nodes for auto-scaling
-	MaxCount int32 `json:"maxCount,omitempty"`
-
-	// MinCount - The minimum number of nodes for auto-scaling
-	MinCount int32 `json:"minCount,omitempty"`
-
-	// Mode - Possible values include: 'System', 'User'
+	// Mode - Possible values include: 'System', 'User'.
 	Mode string `json:"mode,omitempty"`
 
 	// OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).
@@ -43,15 +38,67 @@ type AgentPoolBasics struct {
 
 	// Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
 	VMSize string `json:"vmSize,omitempty"`
+
+	// scaling config
+	ScalingConfig *AKSNodegroupScalingConfig `json:"scalingConfig,omitempty"`
 }
 
 // Validate validates this agent pool basics
 func (m *AgentPoolBasics) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateScalingConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this agent pool basics based on context it is used
+func (m *AgentPoolBasics) validateScalingConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.ScalingConfig) { // not required
+		return nil
+	}
+
+	if m.ScalingConfig != nil {
+		if err := m.ScalingConfig.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("scalingConfig")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this agent pool basics based on the context it is used
 func (m *AgentPoolBasics) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateScalingConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AgentPoolBasics) contextValidateScalingConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ScalingConfig != nil {
+		if err := m.ScalingConfig.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("scalingConfig")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

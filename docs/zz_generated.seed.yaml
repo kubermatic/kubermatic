@@ -205,12 +205,6 @@ spec:
         vsphere:
           # If set to true, disables the TLS certificate check against the endpoint.
           allowInsecure: false
-          # Optional: The name of the vSphere cluster to use.
-          # Cluster is deprecated and may be removed in future releases as it is
-          # currently ignored.
-          # The cluster hosting the VMs will be the same VM used as a template is
-          # located.
-          cluster: ""
           # The name of the datacenter to use.
           datacenter: ""
           # The default Datastore to be used for provisioning volumes using storage

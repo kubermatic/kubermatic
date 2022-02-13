@@ -264,12 +264,6 @@ spec:
                         description: The IAM role, the control plane will use. The
                           control plane will perform an assume-role
                         type: string
-                      roleName:
-                        description: DEPRECATED. Don't care for the role name. We
-                          only require the ControlPlaneRoleARN to be set so the control
-                          plane can perform the assume-role. We keep it for backwards
-                          compatibility (We use this name for cleanup purpose).
-                        type: string
                       routeTableID:
                         type: string
                       secretAccessKey:
@@ -1548,9 +1542,6 @@ spec:
                   - gateway
                   type: object
                 type: array
-              masterVersion:
-                description: MasterVersion is Deprecated
-                type: string
               mla:
                 description: MLA contains monitoring, logging and alerting related
                   settings for the user cluster.
@@ -1780,32 +1771,6 @@ spec:
           status:
             description: ClusterStatus stores status information about a cluster.
             properties:
-              apiserverCert:
-                description: Deprecated
-                properties:
-                  cert:
-                    format: byte
-                    type: string
-                  key:
-                    format: byte
-                    type: string
-                required:
-                - cert
-                - key
-                type: object
-              apiserverSSHKey:
-                description: Deprecated
-                properties:
-                  privateKey:
-                    format: byte
-                    type: string
-                  publicKey:
-                    format: byte
-                    type: string
-                required:
-                - privateKey
-                - publicKey
-                type: object
               cloudMigrationRevision:
                 description: CloudMigrationRevision describes the latest version of
                   the migration that has been done It is used to avoid redundant and
@@ -1953,23 +1918,6 @@ spec:
                 description: InheritedLabels are labels the cluster inherited from
                   the project. They are read-only for users.
                 type: object
-              kubeletCert:
-                description: Deprecated
-                properties:
-                  cert:
-                    format: byte
-                    type: string
-                  key:
-                    format: byte
-                    type: string
-                required:
-                - cert
-                - key
-                type: object
-              kubermaticVersion:
-                description: KubermaticVersion is the current kubermatic version in
-                  a cluster.
-                type: string
               lastProviderReconciliation:
                 description: LastProviderReconciliation is the time when the cloud
                   provider resources were last fully reconciled (during normal cluster
@@ -1983,23 +1931,6 @@ spec:
               namespaceName:
                 description: NamespaceName defines the namespace the control plane
                   of this cluster is deployed in
-                type: string
-              rootCA:
-                description: Deprecated
-                properties:
-                  cert:
-                    format: byte
-                    type: string
-                  key:
-                    format: byte
-                    type: string
-                required:
-                - cert
-                - key
-                type: object
-              serviceAccountKey:
-                description: Deprecated
-                format: byte
                 type: string
               userEmail:
                 description: UserEmail contains the email of the owner of this cluster

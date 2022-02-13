@@ -144,6 +144,18 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 	return deleteFirewallRules(cluster, update, g.log, svc, projectID)
 }
 
+func ValidateCredentials(ctx context.Context, serviceAccount string) error {
+	svc, project, err := ConnectToComputeService(serviceAccount)
+	if err != nil {
+		return err
+	}
+	req := svc.Regions.List(project)
+	err = req.Pages(ctx, func(list *compute.RegionList) error {
+		return nil
+	})
+	return err
+}
+
 // ConnectToComputeService establishes a service connection to the Compute Engine.
 func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
 	ctx := context.Background()

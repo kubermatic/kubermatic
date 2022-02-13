@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NodegroupScalingConfig nodegroup scaling config
+// EKSNodegroupScalingConfig e k s nodegroup scaling config
 //
-// swagger:model NodegroupScalingConfig
-type NodegroupScalingConfig struct {
+// swagger:model EKSNodegroupScalingConfig
+type EKSNodegroupScalingConfig struct {
 
 	// The current number of nodes that the managed node group should maintain.
 	DesiredSize int64 `json:"desiredSize,omitempty"`
@@ -31,18 +31,18 @@ type NodegroupScalingConfig struct {
 	MinSize int64 `json:"minSize,omitempty"`
 }
 
-// Validate validates this nodegroup scaling config
-func (m *NodegroupScalingConfig) Validate(formats strfmt.Registry) error {
+// Validate validates this e k s nodegroup scaling config
+func (m *EKSNodegroupScalingConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this nodegroup scaling config based on context it is used
-func (m *NodegroupScalingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this e k s nodegroup scaling config based on context it is used
+func (m *EKSNodegroupScalingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *NodegroupScalingConfig) MarshalBinary() ([]byte, error) {
+func (m *EKSNodegroupScalingConfig) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -50,8 +50,8 @@ func (m *NodegroupScalingConfig) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *NodegroupScalingConfig) UnmarshalBinary(b []byte) error {
-	var res NodegroupScalingConfig
+func (m *EKSNodegroupScalingConfig) UnmarshalBinary(b []byte) error {
+	var res EKSNodegroupScalingConfig
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -95,7 +95,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	Version string `json:"version,omitempty"`
 
 	// scaling config
-	ScalingConfig *NodegroupScalingConfig `json:"scalingConfig,omitempty"`
+	ScalingConfig *EKSNodegroupScalingConfig `json:"scalingConfig,omitempty"`
 }
 
 // Validate validates this e k s machine deployment cloud spec

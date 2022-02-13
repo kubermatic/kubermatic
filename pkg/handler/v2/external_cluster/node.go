@@ -747,7 +747,7 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 				return createGKENodePool(ctx, cluster, req.Body, secretKeySelector, cloud.GKE.CredentialsReference)
 			}
 			if cloud.AKS != nil {
-				return createAKSNodePool(ctx, cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
+				return createAKSNodePool(ctx, cloud, req.Body, secretKeySelector, cloud.AKS.CredentialsReference)
 			}
 			if cloud.EKS != nil {
 				return createEKSNodePool(cluster.Spec.CloudSpec, req.Body, secretKeySelector, cloud.EKS.CredentialsReference)

@@ -274,7 +274,7 @@ func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyRepli
 	}
 	md.Spec.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
 	md.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
-	md.Cloud.EKS.ScalingConfig = apiv2.NodegroupScalingConfig{
+	md.Cloud.EKS.ScalingConfig = apiv2.EKSNodegroupScalingConfig{
 		DesiredSize: aws.Int64Value(scalingConfig.DesiredSize),
 		MaxSize:     aws.Int64Value(scalingConfig.MaxSize),
 		MinSize:     aws.Int64Value(scalingConfig.MinSize),
