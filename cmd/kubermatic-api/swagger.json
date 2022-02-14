@@ -16318,6 +16318,38 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/modes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aks"
+        ],
+        "summary": "Gets the AKS node pool modes.",
+        "operationId": "listAKSNodePoolModesNoCredentials",
+        "responses": {
+          "200": {
+            "description": "AKSNodePoolModes",
+            "schema": {
+              "$ref": "#/definitions/AKSNodePoolModes"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/versions": {
       "get": {
         "produces": [
@@ -18615,6 +18647,14 @@
           "type": "string",
           "x-go-name": "ServiceCidr"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AKSNodePoolModes": {
+      "type": "array",
+      "title": "AKSNodePoolModes represents nodepool modes.",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },

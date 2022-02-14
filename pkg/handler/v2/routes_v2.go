@@ -850,6 +850,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAKSVMSizesNoCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/modes").
+		Handler(r.listAKSNodePoolModesNoCredentials())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images").
 		Handler(r.listGKEClusterImages())
 
@@ -5848,6 +5852,31 @@ func (r Routing) listAKSVMSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AKSSizesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		provider.DecodeAKSNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/modes aks listAKSNodePoolModesNoCredentials
+//
+//     Gets the AKS node pool modes.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSNodePoolModes
+//       401: empty
+//       403: empty
+func (r Routing) listAKSNodePoolModesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AKSNodePoolModesWithClusterCredentialsEndpoint()),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

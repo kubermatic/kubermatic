@@ -651,6 +651,10 @@ type AKSVMSizeList []AKSVMSize
 // swagger:model AKSVMSize
 type AKSVMSize string
 
+// AKSNodePoolModes represents nodepool modes.
+// swagger:model AKSNodePoolModes
+type AKSNodePoolModes []string
+
 // FeatureGates represents an object holding feature gate settings
 // swagger:model FeatureGates
 type FeatureGates struct {

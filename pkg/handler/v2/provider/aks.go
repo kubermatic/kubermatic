@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/go-kit/kit/endpoint"
 
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
@@ -264,5 +266,16 @@ func AKSSizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, errors.NewBadRequest(err.Error())
 		}
 		return externalcluster.AKSSizesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, settingsProvider, req.ProjectID, req.ClusterID, req.Location)
+	}
+}
+
+func AKSNodePoolModesWithClusterCredentialsEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var modes apiv2.AKSNodePoolModes
+
+		for _, mode := range containerservice.PossibleAgentPoolModeValues() {
+			modes = append(modes, string(mode))
+		}
+		return modes, nil
 	}
 }

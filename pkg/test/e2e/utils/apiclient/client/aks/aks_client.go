@@ -28,6 +28,8 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListAKSNodePoolModesNoCredentials(params *ListAKSNodePoolModesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesNoCredentialsOK, error)
+
 	ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodeVersionsNoCredentialsOK, error)
 
 	ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesOK, error)
@@ -37,6 +39,44 @@ type ClientService interface {
 	ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListAKSNodePoolModesNoCredentials gets the a k s node pool modes
+*/
+func (a *Client) ListAKSNodePoolModesNoCredentials(params *ListAKSNodePoolModesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAKSNodePoolModesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAKSNodePoolModesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/modes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAKSNodePoolModesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAKSNodePoolModesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAKSNodePoolModesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
