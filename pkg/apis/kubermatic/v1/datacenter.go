@@ -294,7 +294,7 @@ type ImageList map[providerconfig.OperatingSystem]string
 // DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 type DatacenterSpecHetzner struct {
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
-	// at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
+	// at https://docs.hetzner.com/general/others/data-centers-and-connection/
 	Datacenter string `json:"datacenter"`
 	// Network is the pre-existing Hetzner network in which the machines are running.
 	// While machines can be in multiple networks, a single one must be chosen for the

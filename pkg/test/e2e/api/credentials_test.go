@@ -41,6 +41,11 @@ func TestListCredentials(t *testing.T) {
 			expectedList: []string{"e2e-digitalocean"},
 		},
 		{
+			name:         "test, get Hetzner credential names",
+			provider:     "hetzner",
+			expectedList: []string{"e2e-hetzner"},
+		},
+		{
 			name:         "test, get Azure credential names",
 			provider:     "azure",
 			expectedList: []string{"e2e-azure"},

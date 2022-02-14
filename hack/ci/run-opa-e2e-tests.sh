@@ -34,18 +34,18 @@ export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 
-echodate "Creating UI DigitalOcean preset..."
-cat << EOF > preset-digitalocean.yaml
+echodate "Creating Hetzner preset..."
+cat << EOF > preset-hetzner.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
-  name: e2e-digitalocean
+  name: e2e-hetzner
   namespace: kubermatic
 spec:
-  digitalocean:
-    token: ${DO_E2E_TESTS_TOKEN}
+  hetzner:
+    token: ${HZ_E2E_TOKEN}
 EOF
-retry 2 kubectl apply -f preset-digitalocean.yaml
+retry 2 kubectl apply -f preset-hetzner.yaml
 
 echodate "Creating roxy2 user..."
 cat << EOF > user.yaml
