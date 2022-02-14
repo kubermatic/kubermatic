@@ -20578,7 +20578,7 @@
           "x-go-name": "ObservedGeneration"
         }
       },
-      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
     },
     "CNIPluginSettings": {
       "type": "object",
@@ -21431,7 +21431,7 @@
           "x-go-name": "Created"
         }
       },
-      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
     },
     "ControlPlaneMetrics": {
       "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
@@ -21469,7 +21469,7 @@
           "x-go-name": "Message"
         }
       },
-      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
     },
     "CreateClusterSpec": {
       "description": "CreateClusterSpec is the structure that is used to create cluster with its initial node deployment",
