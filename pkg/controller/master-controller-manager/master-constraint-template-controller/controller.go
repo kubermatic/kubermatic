@@ -146,20 +146,11 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return err
 		}
 
-		oldConstraintTemplate := constraintTemplate.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
-			return fmt.Errorf("failed to remove constraint template finalizer %s: %w", constraintTemplate.Name, err)
-		}
-		return nil
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
 	}
 
-	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
-		oldConstraintTemplate := constraintTemplate.DeepCopy()
-		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
-			return fmt.Errorf("failed to set constraint template finalizer %s: %w", constraintTemplate.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	ctCreatorGetters := []reconciling.NamedKubermaticV1ConstraintTemplateCreatorGetter{

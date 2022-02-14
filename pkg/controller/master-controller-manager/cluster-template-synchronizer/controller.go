@@ -114,11 +114,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer) {
-		kuberneteshelper.AddFinalizer(clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, clusterTemplate); err != nil {
-			return fmt.Errorf("failed to add finalizer: %w", err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	clusterTemplateCreatorGetters := []reconciling.NamedKubermaticV1ClusterTemplateCreatorGetter{
@@ -148,8 +145,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}); err != nil {
 			return err
 		}
-		kuberneteshelper.RemoveFinalizer(template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, template); err != nil {
+
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove cluster template finalizer %s: %w", template.Name, err)
 		}
 	}
@@ -167,8 +164,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		kuberneteshelper.RemoveFinalizer(template, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, template); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, kubermaticapiv1.CredentialsSecretsCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove credential secret finalizer %s: %w", template.Name, err)
 		}
 	}

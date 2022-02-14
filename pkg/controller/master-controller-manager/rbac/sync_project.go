@@ -94,11 +94,7 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 }
 
 func (c *projectController) ensureCleanupFinalizerExists(ctx context.Context, project *kubermaticv1.Project) error {
-	if !kuberneteshelper.HasFinalizer(project, CleanupFinalizerName) {
-		kuberneteshelper.AddFinalizer(project, CleanupFinalizerName)
-		return c.client.Update(ctx, project)
-	}
-	return nil
+	return kuberneteshelper.TryAddFinalizer(ctx, c.client, project, CleanupFinalizerName)
 }
 
 func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, project *kubermaticv1.Project) error {
@@ -574,9 +570,7 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 		}
 	}
 
-	oldProject := project.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
-	return c.client.Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, c.client, project, CleanupFinalizerName)
 }
 
 func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {

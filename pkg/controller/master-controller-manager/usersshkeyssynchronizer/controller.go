@@ -189,14 +189,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			return fmt.Errorf("failed reconciling usersshkey: %w", err)
 		}
 
-		if kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
-			oldCluster := cluster.DeepCopy()
-			kubernetes.RemoveFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-			if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-				return fmt.Errorf("failed removing %s finalizer: %w", UserSSHKeysClusterIDsCleanupFinalizer, err)
-			}
-		}
-		return nil
+		return kubernetes.TryRemoveFinalizer(ctx, seedClient, cluster, UserSSHKeysClusterIDsCleanupFinalizer)
 	}
 
 	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
@@ -210,12 +203,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return fmt.Errorf("failed to reconcile ssh key secret: %w", err)
 	}
 
-	oldCluster := cluster.DeepCopy()
-	if !kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
-		kubernetes.AddFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-		if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed adding %s finalizer: %w", UserSSHKeysClusterIDsCleanupFinalizer, err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, seedClient, cluster, UserSSHKeysClusterIDsCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	return nil

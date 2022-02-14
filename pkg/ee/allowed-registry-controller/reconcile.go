@@ -91,13 +91,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv1.AllowedRegistry) error {
+	finalizer := kubermaticapiv1.AllowedRegistryCleanupFinalizer
+
 	regSet, err := r.getRegistrySet()
 	if err != nil {
 		return fmt.Errorf("error getting registry set from AllowedRegistries: %w", err)
 	}
 
 	if allowedRegistry.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(allowedRegistry, kubermaticapiv1.AllowedRegistryCleanupFinalizer) {
+		if !kuberneteshelper.HasFinalizer(allowedRegistry, finalizer) {
 			return nil
 		}
 
@@ -111,20 +113,11 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 			return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 		}
 
-		oldAllowedRegistry := allowedRegistry.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(allowedRegistry, kubermaticapiv1.AllowedRegistryCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, allowedRegistry, ctrlruntimeclient.MergeFrom(oldAllowedRegistry)); err != nil {
-			return fmt.Errorf("failed to remove allowed registry finalizer %s: %w", allowedRegistry.Name, err)
-		}
-		return nil
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, allowedRegistry, finalizer)
 	}
 
-	if !kuberneteshelper.HasFinalizer(allowedRegistry, kubermaticapiv1.AllowedRegistryCleanupFinalizer) {
-		oldAllowedRegistry := allowedRegistry.DeepCopy()
-		kuberneteshelper.AddFinalizer(allowedRegistry, kubermaticapiv1.AllowedRegistryCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, allowedRegistry, ctrlruntimeclient.MergeFrom(oldAllowedRegistry)); err != nil {
-			return fmt.Errorf("failed to set allowed registry finalizer %s: %w", allowedRegistry.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, allowedRegistry, finalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	// Ensure that the Constraint Template for AllowedRegistry exists
