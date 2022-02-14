@@ -19,13 +19,13 @@ package main
 import (
 	"strings"
 
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 
 	"k8c.io/kubermatic/v2/docs"
 )
 
-func PrintCommand() cli.Command {
-	return cli.Command{
+func PrintCommand() *cli.Command {
+	return &cli.Command{
 		Name:        "print",
 		Usage:       "Prints example configuration manifest",
 		UsageText:   "kubermatic-installer print <resource>",

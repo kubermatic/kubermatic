@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
@@ -32,14 +32,14 @@ import (
 )
 
 var (
-	versionShortFlag = cli.BoolFlag{
+	versionShortFlag = &cli.BoolFlag{
 		Name:  "short",
 		Usage: "Omit git and chart information",
 	}
 )
 
-func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
-	return cli.Command{
+func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cli.Command {
+	return &cli.Command{
 		Name:   "version",
 		Usage:  "Prints the installer's version",
 		Action: VersionAction(logger, versions),
@@ -58,7 +58,7 @@ func VersionAction(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			return nil
 		}
 
-		charts, err := loadCharts(ctx.GlobalString(chartsDirectoryFlag.Name))
+		charts, err := loadCharts(ctx.String(chartsDirectoryFlag.Name))
 		if err != nil {
 			return fmt.Errorf("failed to determine installer chart state: %w", err)
 		}

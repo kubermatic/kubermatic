@@ -21,23 +21,23 @@ import (
 	"os"
 	"time"
 
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 var (
-	verboseFlag = cli.BoolFlag{
+	verboseFlag = &cli.BoolFlag{
 		Name:  "verbose, v",
 		Usage: "enable more verbose output",
 	}
 
-	chartsDirectoryFlag = cli.StringFlag{
-		Name:   "charts-directory",
-		Value:  "charts",
-		Usage:  "filesystem path to the Kubermatic Helm charts",
-		EnvVar: "KUBERMATIC_CHARTS_DIRECTORY",
+	chartsDirectoryFlag = &cli.StringFlag{
+		Name:    "charts-directory",
+		Value:   "charts",
+		Usage:   "filesystem path to the Kubermatic Helm charts",
+		EnvVars: []string{"KUBERMATIC_CHARTS_DIRECTORY"},
 	}
 )
 

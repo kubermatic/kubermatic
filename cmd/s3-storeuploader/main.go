@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -38,63 +38,63 @@ func main() {
 	app.Version = "v0.1.6"
 	app.Description = "Helper tool to backup files to S3 and maintain a given number of revisions"
 
-	endpointFlag := cli.StringFlag{
+	endpointFlag := &cli.StringFlag{
 		Name:  "endpoint, e",
 		Value: "",
 		Usage: "S3 endpoint",
 	}
-	accessKeyIDFlag := cli.StringFlag{
-		Name:   "access-key-id",
-		Value:  "",
-		EnvVar: "ACCESS_KEY_ID",
-		Usage:  "S3 AccessKeyID",
+	accessKeyIDFlag := &cli.StringFlag{
+		Name:    "access-key-id",
+		Value:   "",
+		EnvVars: []string{"ACCESS_KEY_ID"},
+		Usage:   "S3 AccessKeyID",
 	}
-	secretAccessKeyFlag := cli.StringFlag{
-		Name:   "secret-access-key",
-		Value:  "",
-		EnvVar: "SECRET_ACCESS_KEY",
-		Usage:  "S3 SecretAccessKey",
+	secretAccessKeyFlag := &cli.StringFlag{
+		Name:    "secret-access-key",
+		Value:   "",
+		EnvVars: []string{"SECRET_ACCESS_KEY"},
+		Usage:   "S3 SecretAccessKey",
 	}
-	bucketFlag := cli.StringFlag{
+	bucketFlag := &cli.StringFlag{
 		Name:  "bucket, b",
 		Value: "kubermatic-backups",
 		Usage: "S3 bucket in which to store the snapshots",
 	}
-	prefixFlag := cli.StringFlag{
+	prefixFlag := &cli.StringFlag{
 		Name:  "prefix, p",
 		Value: "",
 		Usage: "Prefix to use for all objects stored in S3",
 	}
-	fileFlag := cli.StringFlag{
+	fileFlag := &cli.StringFlag{
 		Name:  "file, f",
 		Value: "/backup/snapshot.db",
 		Usage: "Path to the file to store in S3",
 	}
-	secureFlag := cli.BoolFlag{
+	secureFlag := &cli.BoolFlag{
 		Name:  "secure",
 		Usage: "Enable tls validation",
 	}
-	caBundleFlag := cli.StringFlag{
+	caBundleFlag := &cli.StringFlag{
 		Name:  "ca-bundle",
 		Usage: "Filename of the CA bundle to use (if not given, default system certificates are used)",
 	}
-	createBucketFlag := cli.BoolFlag{
+	createBucketFlag := &cli.BoolFlag{
 		Name:  "create-bucket",
 		Usage: "creates the bucket if it does not exist yet",
 	}
-	maxRevisionsFlag := cli.IntFlag{
+	maxRevisionsFlag := &cli.IntFlag{
 		Name:  "max-revisions",
 		Value: 20,
 		Usage: "Maximum number of revisions of the file to keep in S3. Older ones will be deleted",
 	}
 
-	logDebugFlag := cli.BoolFlag{
+	logDebugFlag := &cli.BoolFlag{
 		Name:  "log-debug",
 		Usage: "Enables more verbose logging",
 	}
 
 	defaultLogFormat := log.FormatJSON
-	logFormatFlag := cli.GenericFlag{
+	logFormatFlag := &cli.GenericFlag{
 		Name:  "log-format",
 		Value: &defaultLogFormat,
 		Usage: fmt.Sprintf("Use one of [%v] to change the log output", log.AvailableFormats),
@@ -105,7 +105,7 @@ func main() {
 		logFormatFlag,
 	}
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:   "store",
 			Usage:  "Stores the given file on S3",
@@ -156,8 +156,8 @@ func main() {
 
 	// setup logging
 	app.Before = func(c *cli.Context) error {
-		format := c.GlobalGeneric("log-format").(*log.Format)
-		rawLog := log.New(c.GlobalBool("log-debug"), *format)
+		format := c.Generic("log-format").(*log.Format)
+		rawLog := log.New(c.Bool("log-debug"), *format)
 		logger = rawLog.Sugar()
 
 		return nil

@@ -24,7 +24,7 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -47,7 +47,7 @@ func handleErrors(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
 
 func setupLogger(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
-		if ctx.GlobalBool("verbose") {
+		if ctx.Bool("verbose") {
 			logger.SetLevel(logrus.DebugLevel)
 		}
 

@@ -22,7 +22,7 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
@@ -32,8 +32,8 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.Command {
-	return []cli.Command{
+func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []*cli.Command {
+	return []*cli.Command{
 		VersionCommand(logger, versions),
 		DeployCommand(logger, versions),
 		ConvertKubeconfigCommand(logger),

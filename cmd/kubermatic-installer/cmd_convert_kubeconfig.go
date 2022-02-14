@@ -24,7 +24,7 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -43,19 +43,19 @@ const (
 )
 
 var (
-	inPlaceConversionFlag = cli.BoolFlag{
+	inPlaceConversionFlag = &cli.BoolFlag{
 		Name:  "in-place",
 		Usage: "Update the given kubeconfig file instead of outputting to stdout",
 	}
-	namespaceFlag = cli.StringFlag{
+	namespaceFlag = &cli.StringFlag{
 		Name:  "namespace",
 		Value: metav1.NamespaceSystem,
 		Usage: "Namespace to create ServiceAccount and ClusterRoleBinding in",
 	}
 )
 
-func ConvertKubeconfigCommand(logger *logrus.Logger) cli.Command {
-	return cli.Command{
+func ConvertKubeconfigCommand(logger *logrus.Logger) *cli.Command {
+	return &cli.Command{
 		Name:      "convert-kubeconfig",
 		Usage:     "Takes a kubeconfig and creates a ServiceAccount with cluster-admin permissions in all clusters, then updates the kubeconfig to use the ServiceAccount's token",
 		Action:    ConvertKubeconfigAction(logger),

@@ -26,7 +26,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	cli "github.com/urfave/cli/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -47,73 +47,73 @@ import (
 var (
 	minHelmVersion = semver.MustParse("v3.0.0")
 
-	deployForceFlag = cli.BoolFlag{
+	deployForceFlag = &cli.BoolFlag{
 		Name:  "force",
 		Usage: "Perform Helm upgrades even when the release is up-to-date",
 	}
-	deployConfigFlag = cli.StringFlag{
-		Name:   "config",
-		Usage:  "Full path to the KubermaticConfiguration YAML file",
-		EnvVar: "CONFIG_YAML",
+	deployConfigFlag = &cli.StringFlag{
+		Name:    "config",
+		Usage:   "Full path to the KubermaticConfiguration YAML file",
+		EnvVars: []string{"CONFIG_YAML"},
 	}
-	deployHelmValuesFlag = cli.StringFlag{
-		Name:   "helm-values",
-		Usage:  "Full path to the Helm values.yaml used for customizing all charts",
-		EnvVar: "VALUES_YAML",
+	deployHelmValuesFlag = &cli.StringFlag{
+		Name:    "helm-values",
+		Usage:   "Full path to the Helm values.yaml used for customizing all charts",
+		EnvVars: []string{"VALUES_YAML"},
 	}
-	deployKubeconfigFlag = cli.StringFlag{
-		Name:   "kubeconfig",
-		Usage:  "Full path to where a kubeconfig with cluster-admin permissions for the target cluster",
-		EnvVar: "KUBECONFIG",
+	deployKubeconfigFlag = &cli.StringFlag{
+		Name:    "kubeconfig",
+		Usage:   "Full path to where a kubeconfig with cluster-admin permissions for the target cluster",
+		EnvVars: []string{"KUBECONFIG"},
 	}
-	deployKubeContextFlag = cli.StringFlag{
-		Name:   "kube-context",
-		Usage:  "Context to use from the given kubeconfig",
-		EnvVar: "KUBE_CONTEXT",
+	deployKubeContextFlag = &cli.StringFlag{
+		Name:    "kube-context",
+		Usage:   "Context to use from the given kubeconfig",
+		EnvVars: []string{"KUBE_CONTEXT"},
 	}
-	deployHelmTimeoutFlag = cli.DurationFlag{
+	deployHelmTimeoutFlag = &cli.DurationFlag{
 		Name:  "helm-timeout",
 		Usage: "Time to wait for Helm operations to finish",
 		Value: 5 * time.Minute,
 	}
-	deployHelmBinaryFlag = cli.StringFlag{
-		Name:   "helm-binary",
-		Usage:  "Full path to the Helm 3 binary to use",
-		Value:  "helm",
-		EnvVar: "HELM_BINARY",
+	deployHelmBinaryFlag = &cli.StringFlag{
+		Name:    "helm-binary",
+		Usage:   "Full path to the Helm 3 binary to use",
+		Value:   "helm",
+		EnvVars: []string{"HELM_BINARY"},
 	}
-	deployStorageClassFlag = cli.StringFlag{
+	deployStorageClassFlag = &cli.StringFlag{
 		Name:  "storageclass",
 		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()),
 	}
-	enableCertManagerV2MigrationFlag = cli.BoolFlag{
+	enableCertManagerV2MigrationFlag = &cli.BoolFlag{
 		Name:  "migrate-cert-manager",
 		Usage: "enable the migration for cert-manager CRDs from v1alpha2 to v1",
 	}
-	enableCertManagerUpstreamMigrationFlag = cli.BoolFlag{
+	enableCertManagerUpstreamMigrationFlag = &cli.BoolFlag{
 		Name:  "migrate-upstream-cert-manager",
 		Usage: "enable the migration for cert-manager to chart version 2.1.0+",
 	}
-	enableNginxIngressMigrationFlag = cli.BoolFlag{
+	enableNginxIngressMigrationFlag = &cli.BoolFlag{
 		Name:  "migrate-upstream-nginx-ingress",
 		Usage: "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)",
 	}
-	migrateOpenstackCSIdriversFlag = cli.BoolFlag{
+	migrateOpenstackCSIdriversFlag = &cli.BoolFlag{
 		Name:  "migrate-openstack-csidrivers",
 		Usage: "(kubermatic-seed STACK only) enable the data migration of CSIDriver of openstack user-clusters",
 	}
-	migrateLogrotateFlag = cli.BoolFlag{
+	migrateLogrotateFlag = &cli.BoolFlag{
 		Name:  "migrate-logrotate",
 		Usage: "enable the data migration to delete the logrotate addon",
 	}
-	disableTelemetryFlag = cli.BoolFlag{
+	disableTelemetryFlag = &cli.BoolFlag{
 		Name:  "disable-telemetry",
 		Usage: "disable telemetry agents",
 	}
 )
 
-func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
-	return cli.Command{
+func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cli.Command {
+	return &cli.Command{
 		Name:      "deploy",
 		Usage:     "Installs or upgrades the current installation to the installer's built-in version",
 		Action:    DeployAction(logger, versions),
@@ -143,7 +143,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			"version": versions.Kubermatic,
 			"edition": edition.KubermaticEdition,
 		}
-		if ctx.GlobalBool("verbose") {
+		if ctx.Bool("verbose") {
 			fields["git"] = versions.KubermaticCommit
 		}
 
@@ -170,7 +170,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 				helmBinary,
 				helmVersion,
 				deployHelmBinaryFlag.Name,
-				deployHelmBinaryFlag.EnvVar)
+				deployHelmBinaryFlag.EnvVars[0])
 		}
 
 		var kubermaticStack stack.Stack
@@ -189,7 +189,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		// load config files
 		if len(kubeconfig) == 0 {
-			return fmt.Errorf("no kubeconfig (--%s or $%s) given", deployKubeContextFlag.Name, deployKubeconfigFlag.EnvVar)
+			return fmt.Errorf("no kubeconfig (--%s or $%s) given", deployKubeContextFlag.Name, deployKubeconfigFlag.EnvVars[0])
 		}
 
 		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(ctx.String(deployConfigFlag.Name))
@@ -209,7 +209,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			RawKubermaticConfiguration:         rawKubermaticConfig,
 			StorageClassProvider:               ctx.String(deployStorageClassFlag.Name),
 			ForceHelmReleaseUpgrade:            ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:                    ctx.GlobalString(chartsDirectoryFlag.Name),
+			ChartsDirectory:                    ctx.String(chartsDirectoryFlag.Name),
 			EnableCertManagerV2Migration:       ctx.Bool(enableCertManagerV2MigrationFlag.Name),
 			EnableCertManagerUpstreamMigration: ctx.Bool(enableCertManagerUpstreamMigrationFlag.Name),
 			EnableNginxIngressMigration:        ctx.Bool(enableNginxIngressMigrationFlag.Name),
