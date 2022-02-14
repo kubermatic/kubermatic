@@ -121,20 +121,32 @@ func (c *resourcesController) Reconcile(ctx context.Context, req reconcile.Reque
 		return reconcile.Result{}, err
 	}
 
+	err := c.reconcile(ctx, obj)
+	if err != nil {
+		kind := obj.GetObjectKind().GroupVersionKind().Kind
+		key := ctrlruntimeclient.ObjectKeyFromObject(obj)
+
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile %s %s in %s cluster: %w", kind, key, c.providerName, err)
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (c *resourcesController) reconcile(ctx context.Context, obj ctrlruntimeclient.Object) error {
 	err := c.syncClusterScopedProjectResource(ctx, obj)
 	if err != nil {
-		return reconcile.Result{}, err
+		return fmt.Errorf("failed to reconcile cluster-scoped resources: %w", err)
 	}
 
 	err = c.syncNamespaceScopedProjectResource(ctx, obj)
 	if err != nil {
-		return reconcile.Result{}, err
+		return fmt.Errorf("failed to reconcile namespaced resources: %w", err)
 	}
 
 	err = c.syncClusterResource(ctx, obj)
 	if err != nil {
-		return reconcile.Result{}, err
+		return fmt.Errorf("failed to sync Cluster resource: %w", err)
 	}
 
-	return reconcile.Result{}, nil
+	return nil
 }
