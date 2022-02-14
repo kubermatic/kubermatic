@@ -16350,6 +16350,38 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/capacitytypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Gets the EKS Capacity types for node group.",
+        "operationId": "listEKSCapacityTypesNoCredentials",
+        "responses": {
+          "200": {
+            "description": "EKSCapacityTypes",
+            "schema": {
+              "$ref": "#/definitions/EKSCapacityTypes"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes": {
       "get": {
         "produces": [
@@ -21896,6 +21928,14 @@
     "EKSAMITypes": {
       "type": "array",
       "title": "EKSAMITypes represents a list of EKS AMI Types for node group.",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSCapacityTypes": {
+      "type": "array",
+      "title": "EKSCapacityTypes represents a list of EKS Capacity Types for node group.",
       "items": {
         "type": "string"
       },

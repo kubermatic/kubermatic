@@ -45,6 +45,7 @@ const (
 	EKSNodeGroupNameLabel = "eks.amazonaws.com/nodegroup"
 	EKSAMITypes           = "Amazon Linux 2"
 	EKSCustomAMIType      = "CUSTOM"
+	EKSCapacityTypes      = "SPOT"
 )
 
 func createNewEKSCluster(ctx context.Context, eksCloudSpec *apiv2.EKSCloudSpec) error {
@@ -431,5 +432,17 @@ func EKSAMITypesWithClusterCredentialsEndpoint() endpoint.Endpoint {
 			amiTypes = append(amiTypes, string(amiType))
 		}
 		return amiTypes, nil
+	}
+}
+
+func EKSCapacityTypesWithClusterCredentialsEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var capacityType types.CapacityTypes = EKSCapacityTypes
+		var capacityTypes apiv2.EKSCapacityTypes
+
+		for _, c := range capacityType.Values() {
+			capacityTypes = append(capacityTypes, string(c))
+		}
+		return capacityTypes, nil
 	}
 }

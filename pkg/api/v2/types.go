@@ -608,6 +608,10 @@ type EKSRegions []string
 // swagger:model EKSAMITypes
 type EKSAMITypes []string
 
+// EKSCapacityTypes represents a list of EKS Capacity Types for node group.
+// swagger:model EKSCapacityTypes
+type EKSCapacityTypes []string
+
 // EKSSubnetIDList represents an array of EKS subnetID.
 // swagger:model EKSSubnetIDList
 type EKSSubnetIDList []EKSSubnetID
