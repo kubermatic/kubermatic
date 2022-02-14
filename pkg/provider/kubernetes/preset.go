@@ -452,6 +452,12 @@ func (m *PresetProvider) setNutanixCredentials(userInfo *provider.UserInfo, pres
 	cloud.Nutanix.Username = preset.Spec.Nutanix.Username
 	cloud.Nutanix.Password = preset.Spec.Nutanix.Password
 
+	cloud.Nutanix.PeUsername = preset.Spec.Nutanix.PeUsername
+	cloud.Nutanix.PePassword = preset.Spec.Nutanix.PePassword
+
+	cloud.Nutanix.PeEndpoint = preset.Spec.Nutanix.PeEndpoint
+	cloud.Nutanix.PePort = preset.Spec.Nutanix.PePort
+
 	if proxyURL := preset.Spec.Nutanix.ProxyURL; proxyURL != "" {
 		cloud.Nutanix.ProxyURL = proxyURL
 	}

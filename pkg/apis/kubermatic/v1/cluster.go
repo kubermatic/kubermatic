@@ -840,9 +840,18 @@ type NutanixCloudSpec struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	// Prism Element credentials, required for csi driver
+	// Prism Element Username for csi driver
 	PeUsername string `json:"peUsername,omitempty"`
+
+	// Prism Element Password for csi driver
 	PePassword string `json:"pePassword,omitempty"`
+
+	// PeEndpoint to access Nutanix Prism Element for csi driver
+	PeEndpoint string `json:"peEndpoint"`
+
+	// Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	// +optional
+	PePort *int32 `json:"pePort,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=HealthStatusDown;HealthStatusUp;HealthStatusProvisioning

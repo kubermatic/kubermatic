@@ -598,10 +598,20 @@ spec:
                         type: object
                       password:
                         type: string
-                      pePassword:
+                      peEndpoint:
+                        description: PeEndpoint to access Nutanix Prism Element for
+                          csi driver
                         type: string
+                      pePassword:
+                        description: Prism Element Password for csi driver
+                        type: string
+                      pePort:
+                        description: 'Optional: PePort to use when connecting to the
+                          Nutanix Prism Element endpoint (defaults to 9440)'
+                        format: int32
+                        type: integer
                       peUsername:
-                        description: Prism Element credentials, required for csi driver
+                        description: Prism Element Username for csi driver
                         type: string
                       projectName:
                         description: ProjectName is the project that this cluster
@@ -613,6 +623,7 @@ spec:
                         type: string
                     required:
                     - clusterName
+                    - peEndpoint
                     type: object
                   openstack:
                     description: OpenstackCloudSpec specifies access data to an OpenStack

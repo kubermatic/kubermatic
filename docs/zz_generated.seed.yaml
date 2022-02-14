@@ -146,10 +146,6 @@ spec:
             rhel: ""
             sles: ""
             ubuntu: ""
-          # PeEndpoint to use for accessing Nutanix Prism Element. No protocol or port should be passed,
-          peEndpoint: ""
-          # Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
-          pePort: null
           # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
           port: 9440
         openstack:

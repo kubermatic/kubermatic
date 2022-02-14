@@ -214,10 +214,10 @@ const (
 
 	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
 	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigConfigMapName is the name for the configmap containing the cloud-config used by the csi driver.
-	CSICloudConfigConfigMapName = "cloud-config-csi"
-	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found.
-	CloudConfigConfigMapKey = "config"
+	// CSICloudConfigName is the name for the configmap containing the cloud-config used by the csi driver.
+	CSICloudConfigName = "cloud-config-csi"
+	// CloudConfigKey is the key under which the cloud-config in the cloud-config configmap can be found.
+	CloudConfigKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster.
@@ -593,6 +593,8 @@ const (
 	NutanixPassword   = "password"
 	NutanixPeUsername = "peUsername"
 	NutanixPePassword = "pePassword"
+	NutanixPeEndpoint = "peEndpoint"
+	NutanixPePort     = "pePort"
 	NutanixProxyURL   = "proxyURL"
 
 	UserSSHKeys = "usersshkeys"

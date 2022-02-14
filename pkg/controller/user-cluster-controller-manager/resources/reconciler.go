@@ -89,9 +89,9 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider {
-		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
+		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigName)
 		if err != nil {
-			return fmt.Errorf("failed to get cloudConfig: %w", err)
+			return fmt.Errorf("failed to get csi config: %w", err)
 		}
 	}
 
@@ -752,14 +752,14 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		)
 	}
 
-	if data.csiCloudConfig != nil && r.cloudProvider == kubermaticv1.VSphereCloudProvider {
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
 		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
 		if data.ccmMigration {
 			creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
 		}
 	}
 
-	if data.csiCloudConfig != nil && r.cloudProvider == kubermaticv1.NutanixCloudProvider {
+	if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
 		creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
 			csi.TLSServingCertificateCreator(resources.NutanixCSIWebhookName, data.caCert))
 	}

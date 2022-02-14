@@ -21079,17 +21079,6 @@
         "images": {
           "$ref": "#/definitions/ImageList"
         },
-        "peEndpoint": {
-          "description": "PeEndpoint to use for accessing Nutanix Prism Element. No protocol or port should be passed,",
-          "type": "string",
-          "x-go-name": "PeEndpoint"
-        },
-        "pePort": {
-          "description": "Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "PePort"
-        },
         "port": {
           "description": "Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)",
           "type": "integer",
@@ -24437,12 +24426,24 @@
           "type": "string",
           "x-go-name": "Password"
         },
+        "peEndpoint": {
+          "description": "PeEndpoint to access Nutanix Prism Element for csi driver",
+          "type": "string",
+          "x-go-name": "PeEndpoint"
+        },
         "pePassword": {
+          "description": "Prism Element Password for csi driver",
           "type": "string",
           "x-go-name": "PePassword"
         },
+        "pePort": {
+          "description": "Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "PePort"
+        },
         "peUsername": {
-          "description": "Prism Element credentials, required for csi driver",
+          "description": "Prism Element Username for csi driver",
           "type": "string",
           "x-go-name": "PeUsername"
         },

@@ -264,6 +264,21 @@ spec:
                     description: Password is the password corresponding to the provided
                       user.
                     type: string
+                  peEndpoint:
+                    description: PeEndpoint to access Nutanix Prism Element for csi
+                      driver
+                    type: string
+                  pePassword:
+                    description: Prism Element Password for csi driver
+                    type: string
+                  pePort:
+                    description: 'Optional: PePort to use when connecting to the Nutanix
+                      Prism Element endpoint (defaults to 9440)'
+                    format: int32
+                    type: integer
+                  peUsername:
+                    description: Prism Element Username for csi driver
+                    type: string
                   projectName:
                     description: ProjectName is the optional Nutanix project to use.
                       If none is given, no project will be used.
@@ -279,6 +294,7 @@ spec:
                 required:
                 - clusterName
                 - password
+                - peEndpoint
                 - username
                 type: object
               openstack:

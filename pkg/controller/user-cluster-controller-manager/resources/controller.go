@@ -364,9 +364,9 @@ func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName s
 	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
 		return nil, fmt.Errorf("failed to get cloud-config: %w", err)
 	}
-	value, exists := configmap.Data[resources.CloudConfigConfigMapKey]
+	value, exists := configmap.Data[resources.CloudConfigKey]
 	if !exists {
-		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigConfigMapKey)
+		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigKey)
 	}
 	return []byte(value), nil
 }

@@ -26,10 +26,17 @@ type NutanixCloudSpec struct {
 	// password
 	Password string `json:"password,omitempty"`
 
-	// pe password
+	// PeEndpoint to access Nutanix Prism Element for csi driver
+	PeEndpoint string `json:"peEndpoint,omitempty"`
+
+	// Prism Element Password for csi driver
 	PePassword string `json:"pePassword,omitempty"`
 
-	// Prism Element credentials, required for csi driver
+	// Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	// +optional
+	PePort int32 `json:"pePort,omitempty"`
+
+	// Prism Element Username for csi driver
 	PeUsername string `json:"peUsername,omitempty"`
 
 	// ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.

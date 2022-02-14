@@ -27,12 +27,6 @@ type DatacenterSpecNutanix struct {
 	// for example "nutanix.example.com" or "10.0.0.1"
 	Endpoint string `json:"endpoint,omitempty"`
 
-	// PeEndpoint to use for accessing Nutanix Prism Element. No protocol or port should be passed,
-	PeEndpoint string `json:"peEndpoint,omitempty"`
-
-	// Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
-	PePort int32 `json:"pePort,omitempty"`
-
 	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
 	Port int32 `json:"port,omitempty"`
 
