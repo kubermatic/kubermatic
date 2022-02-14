@@ -94,7 +94,7 @@ func (f FeatureGate) Set(s string) error {
 
 		arr := strings.SplitN(s, "=", 2)
 		if len(arr) != 2 {
-			return fmt.Errorf("missing bool value for feature gate key = %s", s)
+			return fmt.Errorf("missing bool value for feature gate %s", s)
 		}
 
 		k := strings.TrimSpace(arr[0])
@@ -102,7 +102,7 @@ func (f FeatureGate) Set(s string) error {
 
 		boolValue, err := strconv.ParseBool(v)
 		if err != nil {
-			return fmt.Errorf("invalid value %v for feature gate key = %s, use true|false instead", v, k)
+			return fmt.Errorf("invalid value %v for feature gate %s, use true|false instead", v, k)
 		}
 		f[k] = boolValue
 	}

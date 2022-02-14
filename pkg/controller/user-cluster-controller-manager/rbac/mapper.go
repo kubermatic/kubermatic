@@ -58,7 +58,7 @@ func generateVerbsForGroup(groupName string) ([]string, error) {
 	}
 
 	// unknown group passed
-	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
+	return []string{}, fmt.Errorf("unable to generate verbs, unknown group %q name given", groupName)
 }
 
 // GenerateRBACClusterRole creates role for specific group.
