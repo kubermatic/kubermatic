@@ -62,5 +62,5 @@ EOF
 retry 2 kubectl apply -f user.yaml
 
 echodate "Running opa tests..."
-go test -timeout 30m -tags e2e -v ./pkg/test/e2e/opa -kubeconfig "$KUBECONFIG"
+go test -timeout 500m -tags e2e -v ./pkg/test/e2e/opa -kubeconfig "$KUBECONFIG"
 echodate "Tests completed successfully!"
