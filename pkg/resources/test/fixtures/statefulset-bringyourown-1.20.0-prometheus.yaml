@@ -33,7 +33,7 @@ spec:
         - --web.enable-lifecycle
         - --storage.tsdb.no-lockfile
         - --web.route-prefix=/
-        image: quay.io/prometheus/prometheus:v2.29.1
+        image: quay.io/prometheus/prometheus:v2.33.3
         livenessProbe:
           failureThreshold: 10
           httpGet:
@@ -61,10 +61,10 @@ spec:
           timeoutSeconds: 3
         resources:
           limits:
-            cpu: 100m
+            cpu: 500m
             memory: 1Gi
           requests:
-            cpu: 50m
+            cpu: 100m
             memory: 256Mi
         volumeMounts:
         - mountPath: /etc/prometheus/config

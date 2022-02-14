@@ -31,7 +31,7 @@ import (
 
 const (
 	name = "prometheus"
-	tag  = "v2.29.1"
+	tag  = "v2.33.3"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
@@ -42,11 +42,11 @@ var (
 		name: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("1Gi"),
-				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceCPU:    resource.MustParse("500m"),
 			},
 		},
 	}
