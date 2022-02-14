@@ -18,7 +18,7 @@ require (
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
 	github.com/digitalocean/godo v1.65.0
 	github.com/distribution/distribution/v3 v3.0.0-20220208183205-a4d9db5a884b
-	github.com/embik/nutanix-client-go v0.0.0-20220209085320-446760ae94b4
+	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
 	github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021
 	github.com/evanphx/json-patch v4.12.0+incompatible
 	github.com/ghodss/yaml v1.0.0
