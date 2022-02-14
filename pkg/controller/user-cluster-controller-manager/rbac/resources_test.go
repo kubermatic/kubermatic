@@ -22,57 +22,56 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 func TestGeneratedResourcesForGroups(t *testing.T) {
 	tests := []struct {
 		name              string
-		resurceName       string
+		resourceName      string
 		expectError       bool
 		expectedResources []string
 	}{
 		{
 			name:              "scenario 1: check resources for owners",
-			resurceName:       genResourceName(rbac.OwnerGroupNamePrefix),
+			resourceName:      genResourceName(rbac.OwnerGroupNamePrefix),
 			expectedResources: []string{"*"},
 			expectError:       false,
 		},
 		{
 			name:              "scenario 2: check resources for editors",
-			resurceName:       genResourceName(rbac.EditorGroupNamePrefix),
+			resourceName:      genResourceName(rbac.EditorGroupNamePrefix),
 			expectedResources: []string{"*"},
 			expectError:       false,
 		},
 		{
 			name:              "scenario 3: check resources for viewers",
-			resurceName:       genResourceName(rbac.ViewerGroupNamePrefix),
+			resourceName:      genResourceName(rbac.ViewerGroupNamePrefix),
 			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
 			expectError:       false,
 		},
 		{
-			name:        "scenario 4: incorrect resource name",
-			resurceName: rbac.ViewerGroupNamePrefix,
-			expectError: true,
+			name:         "scenario 4: incorrect resource name",
+			resourceName: rbac.ViewerGroupNamePrefix,
+			expectError:  true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			role, err := GenerateRBACClusterRole(test.resurceName)
-
+			cr, err := CreateClusterRole(test.resourceName, &rbacv1.ClusterRole{})
+			if test.expectError && err == nil {
+				t.Fatal("expected error")
+			}
+			if !test.expectError && err != nil {
+				t.Fatalf("expected no error, but got: %v", err)
+			}
 			if test.expectError {
-				if err == nil {
-					t.Fatalf("expected error")
-				}
 				return
 			}
 
-			if err != nil {
-				t.Fatalf("generate RBAC role err: %v", err)
-			}
-
-			actualResources := role.Rules[0].Resources
+			actualResources := cr.Rules[0].Resources
 			if !equality.Semantic.DeepEqual(actualResources, test.expectedResources) {
 				t.Fatalf("incorrect resources were returned, got: %v, want: %v", actualResources, test.expectedResources)
 			}
@@ -83,53 +82,52 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 func TestGenerateVerbsForGroup(t *testing.T) {
 	tests := []struct {
 		name          string
-		resurceName   string
+		resourceName  string
 		expectError   bool
 		expectedVerbs []string
 	}{
 		// test for any named resource
 		{
 			name:          "scenario 1: generate verbs for owners",
-			resurceName:   genResourceName(rbac.OwnerGroupNamePrefix),
+			resourceName:  genResourceName(rbac.OwnerGroupNamePrefix),
 			expectedVerbs: []string{"*"},
 			expectError:   false,
 		},
 		{
 			name:          "scenario 2: generate verbs for editors",
-			resurceName:   genResourceName(rbac.EditorGroupNamePrefix),
+			resourceName:  genResourceName(rbac.EditorGroupNamePrefix),
 			expectedVerbs: []string{"*"},
 			expectError:   false,
 		},
 		{
 			name:          "scenario 3: generate verbs for viewers",
-			resurceName:   genResourceName(rbac.ViewerGroupNamePrefix),
+			resourceName:  genResourceName(rbac.ViewerGroupNamePrefix),
 			expectedVerbs: []string{"list", "get", "watch"},
 			expectError:   false,
 		},
 		{
-			name:        "scenario 4: incorrect resource name",
-			resurceName: rbac.ViewerGroupNamePrefix,
-			expectError: true,
+			name:         "scenario 4: incorrect resource name",
+			resourceName: rbac.ViewerGroupNamePrefix,
+			expectError:  true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			role, err := GenerateRBACClusterRole(test.resurceName)
-
+			cr, err := CreateClusterRole(test.resourceName, &rbacv1.ClusterRole{})
+			if test.expectError && err == nil {
+				t.Fatal("expected error")
+			}
+			if !test.expectError && err != nil {
+				t.Fatalf("expected no error, but got: %v", err)
+			}
 			if test.expectError {
-				if err == nil {
-					t.Fatalf("expected error")
-				}
-			} else {
-				if err != nil {
-					t.Fatalf("generate RBAC role err: %v", err)
-				}
+				return
+			}
 
-				returnedVerbs := role.Rules[0].Verbs
-				if !equality.Semantic.DeepEqual(returnedVerbs, test.expectedVerbs) {
-					t.Fatalf("incorrect verbs were returned, got: %v, want: %v", returnedVerbs, test.expectedVerbs)
-				}
+			returnedVerbs := cr.Rules[0].Verbs
+			if !equality.Semantic.DeepEqual(returnedVerbs, test.expectedVerbs) {
+				t.Fatalf("incorrect verbs were returned, got: %v, want: %v", returnedVerbs, test.expectedVerbs)
 			}
 		})
 	}
@@ -138,38 +136,38 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 func TestGroupName(t *testing.T) {
 	tests := []struct {
 		name              string
-		resurceName       string
+		resourceName      string
 		expectError       bool
 		expectedGroupName string
 	}{
 		{
 			name:              "scenario 1: get group name for owners",
-			resurceName:       genResourceName(rbac.OwnerGroupNamePrefix),
+			resourceName:      genResourceName(rbac.OwnerGroupNamePrefix),
 			expectError:       false,
 			expectedGroupName: rbac.OwnerGroupNamePrefix,
 		},
 		{
 			name:              "scenario 2: get group name for viewers",
-			resurceName:       genResourceName(rbac.ViewerGroupNamePrefix),
+			resourceName:      genResourceName(rbac.ViewerGroupNamePrefix),
 			expectError:       false,
 			expectedGroupName: rbac.ViewerGroupNamePrefix,
 		},
 		{
 			name:              "scenario 3: get group name for editors",
-			resurceName:       genResourceName(rbac.EditorGroupNamePrefix),
+			resourceName:      genResourceName(rbac.EditorGroupNamePrefix),
 			expectError:       false,
 			expectedGroupName: rbac.EditorGroupNamePrefix,
 		},
 		{
-			name:        "scenario 4: incorrect resource name",
-			resurceName: "test:test:test",
-			expectError: true,
+			name:         "scenario 4: incorrect resource name",
+			resourceName: "test:test:test",
+			expectError:  true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			groupName, err := getGroupName(test.resurceName)
+			groupName, err := getGroupName(test.resourceName)
 
 			if test.expectError {
 				if err == nil {
@@ -181,7 +179,7 @@ func TestGroupName(t *testing.T) {
 				}
 
 				if groupName != test.expectedGroupName {
-					t.Fatalf("incorrect group name was returned, got: %v, want: %v", groupName, test.expectedGroupName)
+					t.Fatalf("incorrect group name was returned, got %q, want %q", groupName, test.expectedGroupName)
 				}
 			}
 		})

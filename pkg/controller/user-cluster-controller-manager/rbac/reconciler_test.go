@@ -19,13 +19,17 @@ package rbacusercluster
 import (
 	"context"
 	"sort"
+	"sync"
 	"testing"
 
+	"go.uber.org/zap"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -64,13 +68,20 @@ func TestReconcileCreate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 			fakeClient := fake.NewClientBuilder().Build()
-			r := reconciler{Client: fakeClient}
+			r := reconciler{
+				Client: fakeClient,
+				logger: zap.NewNop().Sugar(),
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
+				rLock: &sync.Mutex{},
+			}
 
 			// create scenario
 			for _, name := range test.resourceNames {
-				err := r.Reconcile(ctx, name)
+				_, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: name}})
 				if err != nil {
-					t.Fatalf("Reconcile method error: %v", err)
+					t.Fatalf("Reconcile error: %v", err)
 				}
 			}
 
@@ -175,14 +186,21 @@ func TestReconcileUpdateRole(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			r := reconciler{Client: fake.NewClientBuilder().Build()}
+			r := reconciler{
+				Client: fake.NewClientBuilder().Build(),
+				logger: zap.NewNop().Sugar(),
+				clusterIsPaused: func(c context.Context) (bool, error) {
+					return false, nil
+				},
+				rLock: &sync.Mutex{},
+			}
 
 			if err := r.Create(ctx, test.updatedRole); err != nil {
 				t.Fatalf("failed to create ClusterRole: %v", err)
 			}
 
 			// check for updates
-			err := r.Reconcile(ctx, test.roleName)
+			_, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.roleName}})
 			if err != nil {
 				t.Fatalf("Reconcile method error: %v", err)
 			}
@@ -205,19 +223,39 @@ func TestReconcileUpdateRole(t *testing.T) {
 }
 
 func genTestClusterRole(t *testing.T, resourceName string) rbacv1.ClusterRole {
-	role, err := GenerateRBACClusterRole(resourceName)
+	creatorGetter, err := newClusterRoleCreator(resourceName)
 	if err != nil {
-		t.Fatalf("can't generate role for %s, error: %v", resourceName, err)
+		t.Fatalf("failed to create ClusterRole getter: %v", err)
 	}
-	role.ResourceVersion = "1"
-	return *role
+
+	_, creator := creatorGetter()
+
+	clusterRole, err := creator(&rbacv1.ClusterRole{})
+	if err != nil {
+		t.Fatalf("failed to run ClusterRole creator: %v", err)
+	}
+
+	clusterRole.Name = resourceName
+	clusterRole.ResourceVersion = "1"
+
+	return *clusterRole
 }
 
 func genTestClusterRoleBinding(t *testing.T, resourceName string) rbacv1.ClusterRoleBinding {
-	roleBinding, err := GenerateRBACClusterRoleBinding(resourceName)
+	creatorGetter, err := newClusterRoleBindingCreator(resourceName)
 	if err != nil {
-		t.Fatalf("can't generate role for %s, error: %v", resourceName, err)
+		t.Fatalf("failed to create ClusterRoleBinding getter: %v", err)
 	}
-	roleBinding.ResourceVersion = "1"
-	return *roleBinding
+
+	_, creator := creatorGetter()
+
+	clusterRoleBinding, err := creator(&rbacv1.ClusterRoleBinding{})
+	if err != nil {
+		t.Fatalf("failed to run ClusterRoleBinding creator: %v", err)
+	}
+
+	clusterRoleBinding.Name = resourceName
+	clusterRoleBinding.ResourceVersion = "1"
+
+	return *clusterRoleBinding
 }

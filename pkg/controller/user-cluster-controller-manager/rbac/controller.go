@@ -17,7 +17,6 @@ limitations under the License.
 package rbacusercluster
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -64,7 +63,7 @@ var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) 
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
 // for groups: `owners`, `editors` and `viewers``.
 func Add(mgr manager.Manager, logger *zap.SugaredLogger, registerReconciledCheck func(name string, check healthz.Checker) error, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
-	reconcile := &reconcileRBAC{
+	reconcile := &reconciler{
 		Client:          mgr.GetClient(),
 		logger:          logger,
 		rLock:           &sync.Mutex{},
@@ -97,49 +96,4 @@ func Add(mgr manager.Manager, logger *zap.SugaredLogger, registerReconciledCheck
 		}
 		return nil
 	})
-}
-
-// reconcileRBAC reconciles Cluster Role and Cluster Role Binding objects.
-type reconcileRBAC struct {
-	ctrlruntimeclient.Client
-
-	logger                     *zap.SugaredLogger
-	rLock                      *sync.Mutex
-	clusterIsPaused            userclustercontrollermanager.IsPausedChecker
-	reconciledSuccessfullyOnce bool
-}
-
-// Reconcile makes changes in response to Cluster Role and Cluster Role Binding related changes.
-func (r *reconcileRBAC) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	err := r.reconcile(ctx, request)
-	if err != nil {
-		r.logger.Errorw("Reconciling failed", zap.Error(err))
-	}
-
-	return reconcile.Result{}, err
-}
-
-func (r *reconcileRBAC) reconcile(ctx context.Context, request reconcile.Request) error {
-	paused, err := r.clusterIsPaused(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to check cluster pause status: %w", err)
-	}
-	if paused {
-		return nil
-	}
-
-	rdr := reconciler{
-		Client: r.Client,
-		logger: r.logger,
-	}
-
-	if err := rdr.Reconcile(ctx, request.Name); err != nil {
-		return fmt.Errorf("RBAC reconciliation failed: %w", err)
-	}
-
-	r.rLock.Lock()
-	defer r.rLock.Unlock()
-	r.reconciledSuccessfullyOnce = true
-
-	return nil
 }
