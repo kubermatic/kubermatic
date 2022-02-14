@@ -62,7 +62,7 @@ func (c *resourcesController) syncClusterScopedProjectResource(ctx context.Conte
 		return err
 	}
 
-	projectName, err := getProjectName(metaObject, rmapping)
+	projectName, err := getProjectName(obj)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Con
 		return err
 	}
 
-	projectName, err := getProjectName(metaObject, rmapping)
+	projectName, err := getProjectName(obj)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlr
 		return err
 	}
 
-	projectName, err := getProjectName(obj, rmapping)
+	projectName, err := getProjectName(obj)
 	if err != nil {
 		return err
 	}
@@ -221,9 +221,9 @@ func userClusterMLAEnabled(cluster *kubermaticv1.Cluster) (bool, error) {
 	return cluster.Spec.MLA != nil && (cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled), nil
 }
 
-func getProjectName(metaObject metav1.Object, rmapping *meta.RESTMapping) (string, error) {
+func getProjectName(obj ctrlruntimeclient.Object) (string, error) {
 	projectName := ""
-	for _, owner := range metaObject.GetOwnerReferences() {
+	for _, owner := range obj.GetOwnerReferences() {
 		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
 			len(owner.Name) > 0 && len(owner.UID) > 0 {
 			projectName = owner.Name
@@ -231,11 +231,11 @@ func getProjectName(metaObject metav1.Object, rmapping *meta.RESTMapping) (strin
 		}
 	}
 	if len(projectName) == 0 {
-		projectName = metaObject.GetLabels()[kubermaticv1.ProjectIDLabelKey]
+		projectName = obj.GetLabels()[kubermaticv1.ProjectIDLabelKey]
 	}
 
 	if len(projectName) == 0 {
-		return "", fmt.Errorf("unable to find owning project for %s %s", formatMapping(rmapping), metaObject.GetName())
+		return "", fmt.Errorf("unable to find owning project for %s %s", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName())
 	}
 	return projectName, nil
 }
