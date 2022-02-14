@@ -162,7 +162,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			},
 			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
 			projectToSync:    "plan9-ID",
-			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = plan9-ID"}}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to project plan9-ID"}}`,
 		},
 	}
 

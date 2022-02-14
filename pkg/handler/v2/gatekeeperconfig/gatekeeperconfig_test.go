@@ -77,7 +77,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not get bobs gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
@@ -172,7 +172,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not delete bobs gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
@@ -269,7 +269,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not create bob cluster gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			ToCreateConfig:   genAPIGatekeeperConfig(),
@@ -372,7 +372,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not patch bobs gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
