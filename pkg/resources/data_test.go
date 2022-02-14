@@ -97,9 +97,8 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
+					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
+						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
 						},
 					},
@@ -127,9 +126,8 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
+					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
+						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
 						},
 					},

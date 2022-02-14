@@ -76,7 +76,6 @@ spec:
           endpoint: "https://vcenter.loodse.io"
           datacenter: "dc-1"
           datastore: "exsi-nas"
-          cluster: "cl-1"
           rootPath: "/dc-1/vm/e2e-tests"
           templates:
             ubuntu: "machine-controller-e2e-ubuntu"

@@ -59,6 +59,13 @@ func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, version
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = UpdaterName
+			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "updater",
@@ -66,7 +73,7 @@ func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, version
 					Command: []string{"/updater"},
 					Args: []string{
 						fmt.Sprintf("--address=:%d", updaterPort),
-						"--evict-after-oom-treshold=30m",
+						"--evict-after-oom-threshold=30m",
 						"--updater-interval=10m",
 						"--logtostderr",
 					},

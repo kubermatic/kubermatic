@@ -368,12 +368,6 @@ type DatacenterSpecVSphere struct {
 	DefaultDatastore string `json:"datastore"`
 	// The name of the datacenter to use.
 	Datacenter string `json:"datacenter"`
-	// Optional: The name of the vSphere cluster to use.
-	// Cluster is deprecated and may be removed in future releases as it is
-	// currently ignored.
-	// The cluster hosting the VMs will be the same VM used as a template is
-	// located.
-	Cluster string `json:"cluster,omitempty"`
 	// The name of the storage policy to use for the storage class created in the user cluster.
 	DefaultStoragePolicy string `json:"storagePolicy,omitempty"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own

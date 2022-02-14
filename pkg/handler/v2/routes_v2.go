@@ -70,6 +70,22 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.validateEKSCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/eks/vpcs").
+		Handler(r.listEKSVPCS())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/subnets").
+		Handler(r.listEKSSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/securitygroups").
+		Handler(r.listEKSSecurityGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/regions").
+		Handler(r.listEKSRegions())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/aks/validatecredentials").
 		Handler(r.validateAKSCredentials())
 
@@ -5349,6 +5365,100 @@ func (r Routing) listEKSClusters() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/providers/eks/vpcs eks listEKSVPCS
+//
+// Lists EKS vpc's
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSVPCList
+func (r Routing) listEKSVPCS() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSVPCEndpoint(r.userInfoGetter, r.presetProvider)),
+		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/subnets eks listEKSSubnets
+//
+// Lists EKS subnet's ID list.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSSubnetIDList
+func (r Routing) listEKSSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSSubnetsEndpoint(r.userInfoGetter, r.presetProvider)),
+		provider.DecodeEKSSubnetIDsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/securitygroups eks listEKSSecurityGroups
+//
+//     List EKS securitygroup's ID list.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSSecurityGroupIDList
+//       401: empty
+//       403: empty
+func (r Routing) listEKSSecurityGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSSecurityGroupsEndpoint(r.userInfoGetter, r.presetProvider)),
+		provider.DecodeEKSSubnetIDsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/eks/regions eks listEKSRegions
+//
+//     List EKS regions.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []EKSRegions
+//       401: empty
+//       403: empty
+func (r Routing) listEKSRegions() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
+		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/providers/aks/clusters project listAKSClusters
 //
 // Lists AKS clusters
@@ -5693,9 +5803,9 @@ func (r Routing) listExternalClusterMachineDeploymentMetrics() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/versions aks listAKSMDAvailableVersions
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/versions aks listAKSNodeVersionsNoCredentials
 //
-//     Gets AKS machine deployments available versions.
+//     Gets AKS nodepool available versions.
 //
 //
 //     Produces:
@@ -5718,7 +5828,7 @@ func (r Routing) listAKSNodeVersionsNoCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes aks listAKSMDVMSizesNoCredentials
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes aks listAKSVMSizesNoCredentials
 //
 //     Gets AKS available VM sizes in an Azure region.
 //

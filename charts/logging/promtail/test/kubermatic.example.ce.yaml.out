@@ -6,10 +6,10 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-3.8.1
+    helm.sh/chart: promtail-3.11.0
     app.kubernetes.io/name: promtail
-    app.kubernetes.io/instance: RELEASE-NAME
-    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "2.4.2"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: promtail/charts/promtail/templates/secret.yaml
@@ -19,10 +19,10 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-3.8.1
+    helm.sh/chart: promtail-3.11.0
     app.kubernetes.io/name: promtail
-    app.kubernetes.io/instance: RELEASE-NAME
-    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "2.4.2"
     app.kubernetes.io/managed-by: Helm
 stringData:
   promtail.yaml: |
@@ -321,10 +321,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: promtail
   labels:
-    helm.sh/chart: promtail-3.8.1
+    helm.sh/chart: promtail-3.11.0
     app.kubernetes.io/name: promtail
-    app.kubernetes.io/instance: RELEASE-NAME
-    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "2.4.2"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -346,10 +346,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: promtail
   labels:
-    helm.sh/chart: promtail-3.8.1
+    helm.sh/chart: promtail-3.11.0
     app.kubernetes.io/name: promtail
-    app.kubernetes.io/instance: RELEASE-NAME
-    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "2.4.2"
     app.kubernetes.io/managed-by: Helm
 subjects:
   - kind: ServiceAccount
@@ -367,25 +367,25 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-3.8.1
+    helm.sh/chart: promtail-3.11.0
     app.kubernetes.io/name: promtail
-    app.kubernetes.io/instance: RELEASE-NAME
-    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "2.4.2"
     app.kubernetes.io/managed-by: Helm
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: promtail
-      app.kubernetes.io/instance: RELEASE-NAME
+      app.kubernetes.io/instance: release-name
   updateStrategy:
     {}
   template:
     metadata:
       labels:
         app.kubernetes.io/name: promtail
-        app.kubernetes.io/instance: RELEASE-NAME
+        app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: 0ba41c4e343869f0f86c21da7d1545167370d3c9e8d46c92e461fa4c9ca223ae
+        checksum/config: 8214fb5e32addb8342b5928a6b8e443237de2116beb204e198193647f9e8ef9c
         prometheus.io/port: "3101"
         prometheus.io/scrape: "true"
     spec:
@@ -405,7 +405,7 @@ spec:
         runAsUser: 0
       containers:
         - name: promtail
-          image: "docker.io/grafana/promtail:2.3.0"
+          image: "docker.io/grafana/promtail:2.4.2"
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/promtail/promtail.yaml"

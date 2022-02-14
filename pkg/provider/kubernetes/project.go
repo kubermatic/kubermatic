@@ -27,6 +27,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -95,12 +96,14 @@ func (p *ProjectProvider) New(users []*kubermaticv1.User, projectName string, la
 		return nil, err
 	}
 
-	oldProject := project.DeepCopy()
-	project.Status = kubermaticv1.ProjectStatus{
-		Phase: kubermaticv1.ProjectInactive,
-	}
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		oldProject := project.DeepCopy()
+		project.Status = kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectInactive,
+		}
 
-	if err := p.clientPrivileged.Status().Patch(context.Background(), project, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+		return p.clientPrivileged.Status().Patch(context.Background(), project, ctrlruntimeclient.MergeFromWithOptions(oldProject, ctrlruntimeclient.MergeFromWithOptimisticLock{}))
+	}); err != nil {
 		return nil, err
 	}
 
@@ -143,7 +146,7 @@ func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalNam
 
 	oldProject := existingProject.DeepCopy()
 	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
-	if err := p.clientPrivileged.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+	if err := p.clientPrivileged.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFromWithOptions(oldProject, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
 		return err
 	}
 
@@ -202,7 +205,7 @@ func (p *PrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) 
 
 	oldProject := existingProject.DeepCopy()
 	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
-	if err := p.clientPrivileged.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+	if err := p.clientPrivileged.Status().Patch(context.Background(), existingProject, ctrlruntimeclient.MergeFromWithOptions(oldProject, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
 		return err
 	}
 

@@ -78,7 +78,7 @@ func TestGetEndpoint(t *testing.T) {
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, false),
 		},
 	}
 
@@ -133,9 +133,9 @@ func TestListEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-2", kubermaticv1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenAPIRuleGroup("test-2", kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 		},
 		{
@@ -164,8 +164,8 @@ func TestListEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics),
-				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics),
+				test.GenAPIRuleGroup("test-1", kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenAPIRuleGroup("test-3", kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 		},
 		{
@@ -183,7 +183,7 @@ func TestListEndpoint(t *testing.T) {
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
-				test.GenAPIRuleGroup("test-4", kubermaticv1.RuleGroupTypeLogs),
+				test.GenAPIRuleGroup("test-4", kubermaticv1.RuleGroupTypeLogs, false),
 			},
 		},
 		{
@@ -269,9 +269,9 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusCreated,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, true),
 		},
 		{
 			Name:     "admin cannot create rule group in the given cluster because it already exists",
@@ -282,7 +282,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminRuleGroup("test-rule-group", "mla", kubermaticv1.RuleGroupTypeMetrics),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusConflict,
 		},
 		{
@@ -293,7 +293,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
 		{
@@ -318,7 +318,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusUnauthorized,
 		},
 	}
@@ -375,9 +375,9 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenAdminRuleGroup("test-rule-group", "mla", "UpdateThisType"),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusOK,
-			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			ExpectedResponse:       test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, true),
 		},
 		{
 			Name:          "admin cannot update rule group because it doesn't exists",
@@ -388,7 +388,7 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusNotFound,
 		},
 		{
@@ -401,7 +401,7 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenAdminRuleGroup("test-rule-group", "mla", "UpdateThisType"),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group-2", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group-2", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
 		{
@@ -430,7 +430,7 @@ func TestUpdateEndpoint(t *testing.T) {
 				test.GenAdminRuleGroup("test-rule-group", "mla", "UpdateThisType"),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics),
+			RuleGroup:              test.GenAPIRuleGroup("test-rule-group", kubermaticv1.RuleGroupTypeMetrics, false),
 			ExpectedHTTPStatusCode: http.StatusUnauthorized,
 		},
 	}

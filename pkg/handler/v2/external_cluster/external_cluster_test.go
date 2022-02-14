@@ -148,7 +148,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 9: create EKS cluster with empty region",
 			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc"}}}`,
-			ExpectedResponse:       `{"error":{"code":400,"message":"the EKS cluster name, region or credentials can not be empty"}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"required field is missing: Region"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
@@ -157,7 +157,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 10: create EKS cluster with empty AccessKeyID or SecretAccessKey",
 			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","region":"abc"}}}`,
-			ExpectedResponse:       `{"error":{"code":400,"message":"the EKS cluster name, region or credentials can not be empty"}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"required field is missing: AccessKeyID"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),

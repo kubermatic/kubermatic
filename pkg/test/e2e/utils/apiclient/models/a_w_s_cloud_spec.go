@@ -36,11 +36,6 @@ type AWSCloudSpec struct {
 	// node ports allowed IP range
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
-	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
-	// can perform the assume-role.
-	// We keep it for backwards compatibility (We use this name for cleanup purpose).
-	RoleName string `json:"roleName,omitempty"`
-
 	// route table ID
 	RouteTableID string `json:"routeTableID,omitempty"`
 

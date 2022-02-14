@@ -413,3 +413,21 @@ heading() {
   repeat ${#title} "="
   echo
 }
+
+# This is used during releases to set the correct version on all Helm charts.
+set_helm_charts_version() {
+  local version="$1"
+  local dockerTag="${2:-$version}"
+
+  echodate "Setting Helm chart version to $version..."
+
+  while IFS= read -r -d '' chartFile; do
+    chart="$(basename $(dirname "$chartFile"))"
+
+    yq write --inplace "$chartFile" version "$version"
+    if [ "$chart" = "kubermatic-operator" ]; then
+      yq write --inplace "$chartFile" appVersion "$version"
+      yq write --inplace "$(dirname "$chartFile")/values.yaml" kubermaticOperator.image.tag "$dockerTag"
+    fi
+  done < <(find charts -name 'Chart.yaml' -print0 | sort --zero-terminated)
+}

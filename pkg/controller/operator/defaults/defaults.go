@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/distribution/v3/reference"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 
@@ -48,9 +48,9 @@ const (
 	DefaultControllerManagerReplicas              = 1
 	DefaultSchedulerReplicas                      = 1
 	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyNodePort
-	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
-	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
-	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
+	DefaultVPARecommenderDockerRepository         = "k8s.gcr.io/autoscaling/vpa-recommender"
+	DefaultVPAUpdaterDockerRepository             = "k8s.gcr.io/autoscaling/vpa-updater"
+	DefaultVPAAdmissionControllerDockerRepository = "k8s.gcr.io/autoscaling/vpa-admission-controller"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
 	DefaultUserClusterScrapeAnnotationPrefix      = "monitoring.kubermatic.io"
 	DefaultMaximumParallelReconciles              = 10

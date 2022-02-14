@@ -206,7 +206,7 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 	return r.Update(ctx, configMap)
 }
 
-func (r *ratelimitCortexController) cleanUp(ctx context.Context) error {
+func (r *ratelimitCortexController) CleanUp(ctx context.Context) error {
 	mlaAdminSettingList := &kubermaticv1.MLAAdminSettingList{}
 	if err := r.List(ctx, mlaAdminSettingList); err != nil {
 		return fmt.Errorf("Failed to list mlaAdminSetting: %w", err)

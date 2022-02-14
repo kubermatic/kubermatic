@@ -143,7 +143,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 				}
 			}
 
-			createdCluster, err := createEKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportEKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -356,7 +356,16 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		if apiCluster.Status.State != apiv2.RUNNING {
 			return apiCluster, nil
 		}
-
+		cloud := cluster.Spec.CloudSpec
+		if cloud != nil {
+			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+			if cloud.AKS != nil {
+				apiCluster, err = getAKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 		// get version for running cluster
 		version, err := clusterProvider.GetVersion(cluster)
 		if err != nil {
@@ -370,8 +379,8 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 	}
 }
 
-// getClusterReq defines HTTP request for getExternalCluster
-// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig listGKEClusterDiskTypes listGKEClusterSizes listGKEClusterZones listGKEClusterImages
+// GetClusterReq defines HTTP request for getExternalCluster
+// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig listGKEClusterDiskTypes listGKEClusterSizes listGKEClusterZones listGKEClusterImages listAKSNodeVersionsNoCredentials
 type GetClusterReq struct {
 	common.ProjectReq
 	// in: path

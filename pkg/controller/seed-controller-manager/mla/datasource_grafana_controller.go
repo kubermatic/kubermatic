@@ -118,6 +118,11 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
+	if cluster.Address.ExternalName == "" {
+		log.Debug("Skipping cluster reconciling because it has no external name yet")
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -350,7 +355,7 @@ func (r *datasourceGrafanaController) ensureServices(ctx context.Context, c *kub
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client)
 }
 
-func (r *datasourceGrafanaController) cleanUp(ctx context.Context) error {
+func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.List(ctx, clusterList); err != nil {
 		return err
@@ -364,21 +369,14 @@ func (r *datasourceGrafanaController) cleanUp(ctx context.Context) error {
 }
 
 func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.Context, cluster *kubermaticv1.Cluster, resourceDeletionErr error) error {
-	oldCluster := cluster.DeepCopy()
-	// Remove the health status in Cluster CR
-	cluster.Status.ExtendedHealth.MLAGateway = nil
-	if resourceDeletionErr != nil && !apiErrors.IsNotFound(resourceDeletionErr) {
-		down := kubermaticv1.HealthStatusDown
-		cluster.Status.ExtendedHealth.MLAGateway = &down
-	}
-
-	// Update the health status in Cluster CR
-	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
-		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("error patching cluster health status: %w", err)
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		// Remove the health status in Cluster CR
+		c.Status.ExtendedHealth.MLAGateway = nil
+		if resourceDeletionErr != nil && !apiErrors.IsNotFound(resourceDeletionErr) {
+			down := kubermaticv1.HealthStatusDown
+			c.Status.ExtendedHealth.MLAGateway = &down
 		}
-	}
-	return nil
+	})
 }
 
 func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafanaClient *grafanasdk.Client, cluster *kubermaticv1.Cluster) error {
@@ -393,7 +391,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafan
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
-	if cluster.DeletionTimestamp.IsZero() {
+	if cluster.DeletionTimestamp.IsZero() && cluster.Status.NamespaceName != "" {
 		for _, resource := range ResourcesOnDeletion(cluster.Status.NamespaceName) {
 			err := r.Client.Delete(ctx, resource)
 			// Update Health status even in case of error
@@ -425,13 +423,13 @@ func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, clus
 	if err != nil {
 		return fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterPrometheusDeploymentName, err)
 	}
-	oldCluster := cluster.DeepCopy()
-	cluster.Status.ExtendedHealth.MLAGateway = &mlaGatewayHealth
 
-	if oldCluster != cluster {
-		if err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("error patching cluster health status: %w", err)
-		}
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth.MLAGateway = &mlaGatewayHealth
+	})
+	if err != nil {
+		return fmt.Errorf("error patching cluster health status: %w", err)
 	}
+
 	return nil
 }

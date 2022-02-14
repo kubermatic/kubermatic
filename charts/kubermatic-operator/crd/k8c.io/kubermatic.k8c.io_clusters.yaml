@@ -264,12 +264,6 @@ spec:
                         description: The IAM role, the control plane will use. The
                           control plane will perform an assume-role
                         type: string
-                      roleName:
-                        description: DEPRECATED. Don't care for the role name. We
-                          only require the ControlPlaneRoleARN to be set so the control
-                          plane can perform the assume-role. We keep it for backwards
-                          compatibility (We use this name for cleanup purpose).
-                        type: string
                       routeTableID:
                         type: string
                       secretAccessKey:
@@ -1548,9 +1542,6 @@ spec:
                   - gateway
                   type: object
                 type: array
-              masterVersion:
-                description: MasterVersion is Deprecated
-                type: string
               mla:
                 description: MLA contains monitoring, logging and alerting related
                   settings for the user cluster.
@@ -1780,42 +1771,13 @@ spec:
           status:
             description: ClusterStatus stores status information about a cluster.
             properties:
-              apiserverCert:
-                description: Deprecated
-                properties:
-                  cert:
-                    format: byte
-                    type: string
-                  key:
-                    format: byte
-                    type: string
-                required:
-                - cert
-                - key
-                type: object
-              apiserverSSHKey:
-                description: Deprecated
-                properties:
-                  privateKey:
-                    format: byte
-                    type: string
-                  publicKey:
-                    format: byte
-                    type: string
-                required:
-                - privateKey
-                - publicKey
-                type: object
               cloudMigrationRevision:
                 description: CloudMigrationRevision describes the latest version of
                   the migration that has been done It is used to avoid redundant and
                   potentially costly migrations
                 type: integer
               conditions:
-                description: Conditions contains conditions the cluster is in, its
-                  primary use case is status signaling between controllers or between
-                  controllers and the API
-                items:
+                additionalProperties:
                   properties:
                     kubermaticVersion:
                       description: KubermaticVersion current kubermatic version.
@@ -1839,34 +1801,15 @@ spec:
                     status:
                       description: Status of the condition, one of True, False, Unknown.
                       type: string
-                    type:
-                      description: Type of cluster condition.
-                      enum:
-                      - ""
-                      - SeedResourcesUpToDate
-                      - ClusterControllerReconciledSuccessfully
-                      - AddonControllerReconciledSuccessfully
-                      - AddonInstallerControllerReconciledSuccessfully
-                      - BackupControllerReconciledSuccessfully
-                      - CloudControllerReconcilledSuccessfully
-                      - UpdateControllerReconciledSuccessfully
-                      - MonitoringControllerReconciledSuccessfully
-                      - MachineDeploymentReconciledSuccessfully
-                      - MLAControllerReconciledSuccessfully
-                      - ClusterInitialized
-                      - EtcdClusterInitialized
-                      - CSIKubeletMigrationCompleted
-                      - ClusterUpdateSuccessful
-                      - ClusterUpdateInProgress
-                      - CSIKubeletMigrationSuccess
-                      - CSIKubeletMigrationInProgress
-                      type: string
                   required:
                   - kubermaticVersion
+                  - lastHeartbeatTime
                   - status
-                  - type
                   type: object
-                type: array
+                description: Conditions contains conditions the cluster is in, its
+                  primary use case is status signaling between controllers or between
+                  controllers and the API
+                type: object
               errorMessage:
                 description: ErrorMessage contains a default error message in case
                   the controller encountered an error. Will be reset if the error
@@ -1968,15 +1911,6 @@ spec:
                     - HealthStatusUp
                     - HealthStatusProvisioning
                     type: string
-                required:
-                - apiserver
-                - cloudProviderInfrastructure
-                - controller
-                - etcd
-                - machineController
-                - openvpn
-                - scheduler
-                - userClusterControllerManager
                 type: object
               inheritedLabels:
                 additionalProperties:
@@ -1984,23 +1918,6 @@ spec:
                 description: InheritedLabels are labels the cluster inherited from
                   the project. They are read-only for users.
                 type: object
-              kubeletCert:
-                description: Deprecated
-                properties:
-                  cert:
-                    format: byte
-                    type: string
-                  key:
-                    format: byte
-                    type: string
-                required:
-                - cert
-                - key
-                type: object
-              kubermaticVersion:
-                description: KubermaticVersion is the current kubermatic version in
-                  a cluster.
-                type: string
               lastProviderReconciliation:
                 description: LastProviderReconciliation is the time when the cloud
                   provider resources were last fully reconciled (during normal cluster
@@ -2015,34 +1932,12 @@ spec:
                 description: NamespaceName defines the namespace the control plane
                   of this cluster is deployed in
                 type: string
-              rootCA:
-                description: Deprecated
-                properties:
-                  cert:
-                    format: byte
-                    type: string
-                  key:
-                    format: byte
-                    type: string
-                required:
-                - cert
-                - key
-                type: object
-              serviceAccountKey:
-                description: Deprecated
-                format: byte
-                type: string
               userEmail:
                 description: UserEmail contains the email of the owner of this cluster
                 type: string
               userName:
                 description: UserName contains the name of the owner of this cluster
                 type: string
-            required:
-            - cloudMigrationRevision
-            - kubermaticVersion
-            - namespaceName
-            - userEmail
             type: object
         type: object
     served: true

@@ -32,6 +32,7 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -221,6 +222,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 	log = log.With("cluster", cluster.Name)
 
+	// ensure new Cluster objects have basic status information set;
+	// this should be done regardless of ClusterAvailableForReconciling()
+	// and hence outside the ClusterReconcileWrapper
+	if err := r.reconcileClusterStatus(ctx, cluster); err != nil {
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+
+		return reconcile.Result{}, err
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -251,6 +262,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	return *result, err
+}
+
+func (r *Reconciler) reconcileClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if c.Status.NamespaceName == "" {
+			c.Status.NamespaceName = kubernetesprovider.NamespaceName(cluster.Name)
+		}
+	})
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
@@ -301,24 +320,8 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return errors.New("updateCluster must not change cluster status")
 	}
 
-	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...)); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (r *Reconciler) updateClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
-	oldCluster := cluster.DeepCopy()
-	modify(cluster)
-	if reflect.DeepEqual(oldCluster, cluster) {
-		return nil
-	}
-
-	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
-		if err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -340,31 +343,22 @@ func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {
-	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason != reason {
-		err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.ErrorMessage = &message
-			c.Status.ErrorReason = &reason
-		})
-		if err != nil {
-			return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %w", reason, message, err)
-		}
+	err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ErrorMessage = &message
+		c.Status.ErrorReason = &reason
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %w", reason, message, err)
 	}
 
 	return nil
 }
 
 func (r *Reconciler) clearClusterError(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if cluster.Status.ErrorReason != nil || cluster.Status.ErrorMessage != nil {
-		err := r.updateClusterStatus(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.ErrorMessage = nil
-			c.Status.ErrorReason = nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ErrorMessage = nil
+		c.Status.ErrorReason = nil
+	})
 }
 
 func (r *Reconciler) getOwnerRefForCluster(cluster *kubermaticv1.Cluster) metav1.OwnerReference {

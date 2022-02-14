@@ -25,7 +25,6 @@ import (
 )
 
 const (
-
 	// ExternalClusterResourceName represents "Resource" defined in Kubernetes.
 	ExternalClusterResourceName = "externalclusters"
 

@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -273,6 +274,9 @@ func genCluster(name string, opaEnabled bool) *kubermaticv1.Cluster {
 				Enabled: opaEnabled,
 			},
 			HumanReadableName: name,
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: kubernetes.NamespaceName(name),
 		},
 	}
 }

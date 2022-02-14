@@ -84,6 +84,13 @@ func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfigurat
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = AdmissionControllerName
+			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "admission-controller",

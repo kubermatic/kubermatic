@@ -32,19 +32,21 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type tlsConfig struct {
+type TLSConfig struct {
 	CAFile   string `yaml:"ca_file"`
 	CertFile string `yaml:"cert_file"`
 	KeyFile  string `yaml:"key_file"`
 }
 
-// customizationData is the data available to custom scraping configs and rules,
-// containing everything required to scrape resources.
-type customizationData struct {
+// CustomizationData is the data available to custom scraping configs and rules,
+// containing everything required to scrape resources. This is a public interface
+// and changes to this struct could break existing custom scrape/rule configs, so
+// care must be taken when changing this.
+type CustomizationData struct {
 	Cluster                  *kubermaticv1.Cluster
 	APIServerHost            string
-	EtcdTLS                  tlsConfig
-	ApiserverTLS             tlsConfig
+	EtcdTLS                  TLSConfig
+	ApiserverTLS             TLSConfig
 	ScrapingAnnotationPrefix string
 }
 
@@ -66,13 +68,13 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			kubermaticConfig := data.KubermaticConfiguration()
 
 			// prepare TLS config
-			etcdTLS := tlsConfig{
+			etcdTLS := TLSConfig{
 				CAFile:   "/etc/etcd/pki/client/ca.crt",
 				CertFile: "/etc/etcd/pki/client/apiserver-etcd-client.crt",
 				KeyFile:  "/etc/etcd/pki/client/apiserver-etcd-client.key",
 			}
 
-			apiserverTLS := tlsConfig{
+			apiserverTLS := TLSConfig{
 				CAFile:   "/etc/kubernetes/ca.crt",
 				CertFile: "/etc/kubernetes/prometheus-client.crt",
 				KeyFile:  "/etc/kubernetes/prometheus-client.key",
@@ -82,7 +84,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			scrapeAnnotationPrefix := strings.NewReplacer(".", "_", "/", "").Replace(kubermaticConfig.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix)
 
 			// get custom scraping configs and rules
-			customData := &customizationData{
+			customData := &CustomizationData{
 				Cluster:                  cluster,
 				APIServerHost:            cluster.Address.InternalName,
 				EtcdTLS:                  etcdTLS,

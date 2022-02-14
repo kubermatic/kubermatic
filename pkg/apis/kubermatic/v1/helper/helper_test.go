@@ -26,74 +26,6 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 )
 
-func TestGetClusterCondition(t *testing.T) {
-	testCases := []struct {
-		name              string
-		cluster           *kubermaticv1.Cluster
-		conditionType     kubermaticv1.ClusterConditionType
-		expectedIndex     int
-		expectedCondition *kubermaticv1.ClusterCondition
-	}{
-		{
-			name:          "No condition",
-			cluster:       &kubermaticv1.Cluster{},
-			conditionType: kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			expectedIndex: -1,
-		},
-		{
-			name: "Condition exists",
-			cluster: &kubermaticv1.Cluster{
-				Status: kubermaticv1.ClusterStatus{
-					Conditions: []kubermaticv1.ClusterCondition{{
-						Type: kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-					}},
-				},
-			},
-			conditionType: kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			expectedIndex: 0,
-			expectedCondition: &kubermaticv1.ClusterCondition{
-				Type: kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			},
-		},
-	}
-
-	for idx := range testCases {
-		tc := testCases[idx]
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			index, condition := GetClusterCondition(tc.cluster, tc.conditionType)
-			if index != tc.expectedIndex {
-				t.Errorf("expected index %d, got index %d", tc.expectedIndex, index)
-			}
-			if !apiequality.Semantic.DeepEqual(condition, tc.expectedCondition) {
-				t.Error("conditions are not equal")
-			}
-		})
-	}
-}
-
-func TestSetClusterCondition_sorts(t *testing.T) {
-	cluster := &kubermaticv1.Cluster{
-		Status: kubermaticv1.ClusterStatus{
-			Conditions: []kubermaticv1.ClusterCondition{
-				{Type: kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess},
-				{Type: kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess},
-			},
-		},
-	}
-	SetClusterCondition(
-		cluster,
-		kubermatic.NewDefaultVersions(),
-		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccess,
-		corev1.ConditionTrue,
-		"",
-		"",
-	)
-	if cluster.Status.Conditions[0].Type != kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess {
-		t.Fatal("ClusterConditions are unsorted")
-	}
-}
-
 func TestSetClusterCondition(t *testing.T) {
 	conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
 	versions := kubermatic.NewFakeVersions()
@@ -108,8 +40,7 @@ func TestSetClusterCondition(t *testing.T) {
 	}{
 		{
 			name: "Condition already exists, nothing to do",
-			cluster: getCluster(&kubermaticv1.ClusterCondition{
-				Type:              conditionType,
+			cluster: getCluster(conditionType, &kubermaticv1.ClusterCondition{
 				Status:            corev1.ConditionTrue,
 				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "my-reason",
@@ -122,7 +53,7 @@ func TestSetClusterCondition(t *testing.T) {
 		},
 		{
 			name:                    "Condition doesn't exist and is created",
-			cluster:                 getCluster(nil),
+			cluster:                 getCluster("", nil),
 			conditionStatus:         corev1.ConditionTrue,
 			conditionReason:         "my-reason",
 			conditionMessage:        "my-message",
@@ -130,8 +61,7 @@ func TestSetClusterCondition(t *testing.T) {
 		},
 		{
 			name: "Update because of Kubermatic version",
-			cluster: getCluster(&kubermaticv1.ClusterCondition{
-				Type:              conditionType,
+			cluster: getCluster(conditionType, &kubermaticv1.ClusterCondition{
 				Status:            corev1.ConditionTrue,
 				KubermaticVersion: "outdated",
 				Reason:            "my-reason",
@@ -144,8 +74,7 @@ func TestSetClusterCondition(t *testing.T) {
 		},
 		{
 			name: "Update because of status",
-			cluster: getCluster(&kubermaticv1.ClusterCondition{
-				Type:              conditionType,
+			cluster: getCluster(conditionType, &kubermaticv1.ClusterCondition{
 				Status:            corev1.ConditionFalse,
 				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "my-reason",
@@ -158,8 +87,7 @@ func TestSetClusterCondition(t *testing.T) {
 		},
 		{
 			name: "Update because of reason",
-			cluster: getCluster(&kubermaticv1.ClusterCondition{
-				Type:              conditionType,
+			cluster: getCluster(conditionType, &kubermaticv1.ClusterCondition{
 				Status:            corev1.ConditionTrue,
 				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "outdated-reason",
@@ -172,8 +100,7 @@ func TestSetClusterCondition(t *testing.T) {
 		},
 		{
 			name: "Update because of message",
-			cluster: getCluster(&kubermaticv1.ClusterCondition{
-				Type:              conditionType,
+			cluster: getCluster(conditionType, &kubermaticv1.ClusterCondition{
 				Status:            corev1.ConditionTrue,
 				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "my-reason",
@@ -200,10 +127,13 @@ func TestSetClusterCondition(t *testing.T) {
 	}
 }
 
-func getCluster(condition *kubermaticv1.ClusterCondition) *kubermaticv1.Cluster {
+func getCluster(conditionType kubermaticv1.ClusterConditionType, condition *kubermaticv1.ClusterCondition) *kubermaticv1.Cluster {
 	c := &kubermaticv1.Cluster{}
 	if condition != nil {
-		c.Status.Conditions = []kubermaticv1.ClusterCondition{*condition}
+		c.Status.Conditions = map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
+			conditionType: *condition,
+		}
 	}
+
 	return c
 }

@@ -1218,7 +1218,7 @@ type BackupCredentialsProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured() (*corev1.Secret, error)
+	GetUnsecured(credentialName string) (*corev1.Secret, error)
 
 	// UpdateUnsecured updates the backup credentials
 	//

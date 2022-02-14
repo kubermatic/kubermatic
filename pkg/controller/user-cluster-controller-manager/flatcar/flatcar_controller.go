@@ -63,10 +63,9 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		return err
 	}
 
-	predicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
-		node := o.(*corev1.Node)
-		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue && !node.Spec.Unschedulable
-	})
+	predicate := predicateutil.MultiFactory(predicateutil.TrueFilter, func(o ctrlruntimeclient.Object) bool {
+		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
+	}, predicateutil.TrueFilter)
 
 	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
 }
@@ -80,11 +79,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %w", err)
+	var nodeList corev1.NodeList
+	if err := r.List(ctx, &nodeList,
+		ctrlruntimeclient.MatchingLabels{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue},
+	); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	// filter out any Flatcar nodes that are already being deleted
+	var nodes []corev1.Node
+	for _, node := range nodeList.Items {
+		if node.ObjectMeta.DeletionTimestamp == nil {
+			nodes = append(nodes, node)
+		}
+	}
+
+	if len(nodes) == 0 {
+		if err := r.cleanupUpdateOperatorResources(ctx); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to clean up UpdateOperator resources: %w", err)
+		}
+	} else {
+		if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %w", err)
+		}
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
+	return resources.EnsureAllDeleted(ctx, r.Client)
 }
 
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
