@@ -413,3 +413,40 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 	}
 	return nil
 }
+
+func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
+	if err != nil {
+		return nil, err
+	}
+	clusterOutput, err := client.EKS.DescribeCluster(&eks.DescribeClusterInput{Name: &cloudSpec.EKS.Name})
+	if err != nil {
+		return nil, err
+	}
+	clusterSpec := apiv2.EKSClusterSpec{}
+	eksCluster := clusterOutput.Cluster
+	if eksCluster == nil {
+		apiCluster.Cloud.EKS.ClusterSpec = &clusterSpec
+		return apiCluster, nil
+	}
+	clusterSpec = apiv2.EKSClusterSpec{
+		RoleArn: aws.StringValue(eksCluster.RoleArn),
+		Version: aws.StringValue(eksCluster.Version),
+	}
+	if eksCluster.ResourcesVpcConfig == nil {
+		apiCluster.Cloud.EKS.ClusterSpec = &clusterSpec
+		return apiCluster, nil
+	}
+	clusterSpec.ResourcesVpcConfig = apiv2.VpcConfigRequest{
+		SecurityGroupIds: eksCluster.ResourcesVpcConfig.SecurityGroupIds,
+		SubnetIds:        eksCluster.ResourcesVpcConfig.SubnetIds,
+	}
+	apiCluster.Cloud.EKS.ClusterSpec = &clusterSpec
+
+	return apiCluster, nil
+}
