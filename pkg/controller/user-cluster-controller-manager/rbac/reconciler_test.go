@@ -64,7 +64,7 @@ func TestReconcileCreate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 			fakeClient := fake.NewClientBuilder().Build()
-			r := reconciler{client: fakeClient}
+			r := reconciler{Client: fakeClient}
 
 			// create scenario
 			for _, name := range test.resourceNames {
@@ -75,7 +75,7 @@ func TestReconcileCreate(t *testing.T) {
 			}
 
 			roles := &rbacv1.ClusterRoleList{}
-			if err := r.client.List(ctx, roles); err != nil {
+			if err := r.List(ctx, roles); err != nil {
 				t.Fatalf("getting cluster roles error: %v", err)
 			}
 
@@ -91,7 +91,7 @@ func TestReconcileCreate(t *testing.T) {
 			}
 
 			rolesBindings := &rbacv1.ClusterRoleBindingList{}
-			if err := r.client.List(ctx, rolesBindings); err != nil {
+			if err := r.List(ctx, rolesBindings); err != nil {
 				t.Fatalf("getting cluster role bindings error: %v", err)
 			}
 
@@ -175,9 +175,9 @@ func TestReconcileUpdateRole(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			r := reconciler{client: fake.NewClientBuilder().Build()}
+			r := reconciler{Client: fake.NewClientBuilder().Build()}
 
-			if err := r.client.Create(ctx, test.updatedRole); err != nil {
+			if err := r.Create(ctx, test.updatedRole); err != nil {
 				t.Fatalf("failed to create ClusterRole: %v", err)
 			}
 
@@ -188,7 +188,7 @@ func TestReconcileUpdateRole(t *testing.T) {
 			}
 
 			role := &rbacv1.ClusterRole{}
-			if err := r.client.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: test.roleName}, role); err != nil {
+			if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: test.roleName}, role); err != nil {
 				t.Fatalf("can't find cluster role %v", err)
 			}
 
