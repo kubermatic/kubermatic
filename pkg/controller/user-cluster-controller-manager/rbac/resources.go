@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
-	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	configv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -140,7 +140,7 @@ func CreateClusterRole(resourceName string, cr *rbacv1.ClusterRole) (*rbacv1.Clu
 			Verbs:     verbs,
 		},
 		{
-			APIGroups: []string{gatekeeperv1beta1.SchemeGroupVersion.Group},
+			APIGroups: []string{constrainttemplatesv1.SchemeGroupVersion.Group},
 			Resources: []string{"constrainttemplates"},
 			Verbs:     verbs,
 		},

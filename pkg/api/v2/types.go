@@ -17,7 +17,7 @@ limitations under the License.
 package v2
 
 import (
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -31,8 +31,8 @@ import (
 type ConstraintTemplate struct {
 	Name string `json:"name"`
 
-	Spec   kubermaticv1.ConstraintTemplateSpec `json:"spec"`
-	Status v1beta1.ConstraintTemplateStatus    `json:"status"`
+	Spec   kubermaticv1.ConstraintTemplateSpec            `json:"spec"`
+	Status constrainttemplatesv1.ConstraintTemplateStatus `json:"status"`
 }
 
 // Constraint represents a gatekeeper Constraint

@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -53,7 +53,7 @@ var (
 func TestOPAIntegration(t *testing.T) {
 	ctx := context.Background()
 
-	if err := constrainttemplatev1beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err := constrainttemplatev1.AddToScheme(scheme.Scheme); err != nil {
 		t.Fatalf("failed to register gatekeeper scheme: %v", err)
 	}
 
@@ -248,7 +248,7 @@ func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclien
 
 func waitForCTSync(ctx context.Context, userClient ctrlruntimeclient.Client, ctName string, deleted bool) error {
 	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
-		gatekeeperCT := &constrainttemplatev1beta1.ConstraintTemplate{}
+		gatekeeperCT := &constrainttemplatev1.ConstraintTemplate{}
 		err := userClient.Get(ctx, types.NamespacedName{Name: ctName}, gatekeeperCT)
 
 		if deleted {
