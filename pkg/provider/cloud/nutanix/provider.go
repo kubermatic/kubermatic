@@ -155,7 +155,7 @@ func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) erro
 
 	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
-		_, err := client.Prism.V3.GetCategoryValue(context.TODO(), ProjectCategoryName, projectID)
+		_, err := client.Prism.V3.GetCategoryValue(ctx, ProjectCategoryName, projectID)
 		if err != nil {
 			nutanixError, parseErr := ParseNutanixError(err)
 
