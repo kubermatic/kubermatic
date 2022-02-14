@@ -28,6 +28,8 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListEKSAMITypesNoCredentials(params *ListEKSAMITypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSAMITypesNoCredentialsOK, error)
+
 	ListEKSRegions(params *ListEKSRegionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSRegionsOK, error)
 
 	ListEKSSecurityGroups(params *ListEKSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSecurityGroupsOK, error)
@@ -39,6 +41,44 @@ type ClientService interface {
 	ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListEKSAMITypesNoCredentials gets the e k s a m i types for node group
+*/
+func (a *Client) ListEKSAMITypesNoCredentials(params *ListEKSAMITypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSAMITypesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSAMITypesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSAMITypesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/amitypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSAMITypesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSAMITypesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSAMITypesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

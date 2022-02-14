@@ -22,8 +22,10 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/go-kit/kit/endpoint"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -41,6 +43,8 @@ import (
 const (
 	EKSNodeGroupStatus    = "ACTIVE"
 	EKSNodeGroupNameLabel = "eks.amazonaws.com/nodegroup"
+	EKSAMITypes           = "Amazon Linux 2"
+	EKSCustomAMIType      = "CUSTOM"
 )
 
 func createNewEKSCluster(ctx context.Context, eksCloudSpec *apiv2.EKSCloudSpec) error {
@@ -412,4 +416,20 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 		return err
 	}
 	return nil
+}
+
+func EKSAMITypesWithClusterCredentialsEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var ami types.AMITypes = EKSAMITypes
+		var amiTypes apiv2.EKSAMITypes
+
+		for _, amiType := range ami.Values() {
+			// AMI type Custom is not valid
+			if amiType == EKSCustomAMIType {
+				continue
+			}
+			amiTypes = append(amiTypes, string(amiType))
+		}
+		return amiTypes, nil
+	}
 }

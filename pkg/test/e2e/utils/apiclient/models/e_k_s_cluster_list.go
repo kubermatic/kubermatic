@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// EKSClusterList EKSClusterList represents an list of EKS clusters.
+// EKSClusterList EKSClusterList represents a list of EKS clusters.
 //
 // swagger:model EKSClusterList
 type EKSClusterList []*EKSCluster

@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// EKSRegions Regions represents an list of EKS regions.
+// EKSRegions Regions represents a list of EKS regions.
 //
 // swagger:model EKSRegions
 type EKSRegions []string

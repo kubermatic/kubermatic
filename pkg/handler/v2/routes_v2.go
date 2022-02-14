@@ -867,6 +867,12 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/cniversions").
 		Handler(r.listCNIPluginVersionsForCluster())
+
+	// Defines a set of HTTP endpoints for various cloud providers
+	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/amitypes").
+		Handler(r.listEKSAMITypesNoCredentials())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -5283,6 +5289,31 @@ func (r Routing) validateEKSCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.EKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
 		provider.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/amitypes eks listEKSAMITypesNoCredentials
+//
+//     Gets the EKS AMI types for node group.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSAMITypes
+//       401: empty
+//       403: empty
+func (r Routing) listEKSAMITypesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSAMITypesWithClusterCredentialsEndpoint()),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

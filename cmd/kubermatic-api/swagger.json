@@ -16318,6 +16318,38 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/amitypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Gets the EKS AMI types for node group.",
+        "operationId": "listEKSAMITypesNoCredentials",
+        "responses": {
+          "200": {
+            "description": "EKSAMITypes",
+            "schema": {
+              "$ref": "#/definitions/EKSAMITypes"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes": {
       "get": {
         "produces": [
@@ -21861,6 +21893,14 @@
       },
       "x-go-package": "kubevirt.io/api/core/v1"
     },
+    "EKSAMITypes": {
+      "type": "array",
+      "title": "EKSAMITypes represents a list of EKS AMI Types for node group.",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "EKSCloudSpec": {
       "type": "object",
       "properties": {
@@ -21907,7 +21947,7 @@
     },
     "EKSClusterList": {
       "type": "array",
-      "title": "EKSClusterList represents an list of EKS clusters.",
+      "title": "EKSClusterList represents a list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
       },
@@ -21934,7 +21974,7 @@
     },
     "EKSRegions": {
       "type": "array",
-      "title": "Regions represents an list of EKS regions.",
+      "title": "Regions represents a list of EKS regions.",
       "items": {
         "type": "string"
       },
