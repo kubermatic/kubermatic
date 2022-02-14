@@ -30,6 +30,7 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -737,7 +738,7 @@ func (r *TestClient) WaitForClusterHealthy(projectID, dc, clusterID string) erro
 }
 
 func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID string) error {
-	timeout := 5 * time.Minute
+	timeout := 30 * time.Minute
 	before := time.Now()
 
 	r.test.Logf("Waiting %v for OPA enabled cluster %s to become healthy...", timeout, clusterID)
