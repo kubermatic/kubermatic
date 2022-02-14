@@ -30,6 +30,7 @@ const (
 	CheckpointActorRoleName     = "system:vpa-checkpoint-actor"
 	EvictionerRoleName          = "system:vpa-evictioner"
 	AdmissionControllerRoleName = "system:vpa-admission-controller"
+	StatusReaderRoleName        = "system:vpa-status-reader"
 )
 
 func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
@@ -44,6 +45,11 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
 
 		clusterRoleCreator(TargetReaderRoleName, []rbacv1.PolicyRule{
 			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*/scale"},
+				Verbs:     []string{"get", "watch"},
+			},
+			{
 				APIGroups: []string{""},
 				Resources: []string{"replicationcontrollers"},
 				Verbs:     []string{"get", "list", "watch"},
@@ -55,7 +61,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
 			},
 			{
 				APIGroups: []string{"batch"},
-				Resources: []string{"jobs"},
+				Resources: []string{"jobs", "cronjobs"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 		}),
@@ -63,7 +69,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
 		clusterRoleCreator(ActorRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
-				Resources: []string{"pods", "nodes"},
+				Resources: []string{"pods", "nodes", "limitranges"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
@@ -108,7 +114,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
 				Verbs:     []string{"create"},
 			},
 			{
-				APIGroups: []string{"extensions"},
+				APIGroups: []string{"apps", "extensions"},
 				Resources: []string{"replicasets"},
 				Verbs:     []string{"get"},
 			},
@@ -117,7 +123,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
 		clusterRoleCreator(AdmissionControllerRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
-				Resources: []string{"pods", "configmaps", "nodes"},
+				Resources: []string{"pods", "configmaps", "nodes", "limitranges"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
@@ -133,6 +139,19 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
 			{
 				APIGroups: []string{"autoscaling.k8s.io"},
 				Resources: []string{"verticalpodautoscalers"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"create", "update", "get", "list", "watch"},
+			},
+		}),
+
+		clusterRoleCreator(StatusReaderRoleName, []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
 		}),
@@ -217,6 +236,14 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingCreatorGe
 			Name:     AdmissionControllerRoleName,
 		}, []rbacv1.Subject{
 			admissionController,
+		}),
+
+		clusterRoleBindingCreator(StatusReaderRoleName, rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     StatusReaderRoleName,
+		}, []rbacv1.Subject{
+			updater,
 		}),
 	}
 }

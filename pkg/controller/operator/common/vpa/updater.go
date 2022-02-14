@@ -59,6 +59,13 @@ func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, version
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = UpdaterName
+			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "updater",
