@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"go.uber.org/zap"
+
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 
 	rbacv1 "k8s.io/api/rbac/v1"
