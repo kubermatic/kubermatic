@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -679,4 +680,8 @@ func generateVerbsForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster
 
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster = %s, group = %s, kind = %s, name = %s", cluster.Name, groupName, kind, name)
+}
+
+func formatMapping(rmapping *meta.RESTMapping) string {
+	return rmapping.GroupVersionKind.Kind
 }
