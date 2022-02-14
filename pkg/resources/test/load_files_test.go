@@ -232,6 +232,7 @@ func TestLoadFiles(t *testing.T) {
 				AllowInsecure:    false,
 				DefaultDatastore: "vs-datastore",
 				Datacenter:       "vs-datacenter",
+				Cluster:          "vs-cluster",
 				RootPath:         "vs-cluster",
 			},
 			AWS: &kubermaticv1.DatacenterSpecAWS{

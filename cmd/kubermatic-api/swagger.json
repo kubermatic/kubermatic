@@ -21440,6 +21440,11 @@
           "type": "boolean",
           "x-go-name": "AllowInsecure"
         },
+        "cluster": {
+          "description": "The name of the vSphere cluster to use. Used for out-of-tree CSI Driver.",
+          "type": "string",
+          "x-go-name": "Cluster"
+        },
         "datacenter": {
           "description": "The name of the datacenter to use.",
           "type": "string",
