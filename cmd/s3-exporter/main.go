@@ -24,7 +24,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/exporters/s3"
@@ -86,13 +87,10 @@ func main() {
 	endpoint := strings.TrimPrefix(*endpointWithProto, "http://")
 	endpoint = strings.TrimPrefix(endpoint, "https://")
 
-	stopChannel := make(chan struct{})
-	minioClient, err := minio.New(endpoint, *accessKeyID, *secretAccessKey, secure)
-	if err != nil {
-		logger.Fatalw("Failed to get S3 client", zap.Error(err))
+	options := &minio.Options{
+		Creds:  credentials.NewStaticV4(*accessKeyID, *secretAccessKey, ""),
+		Secure: secure,
 	}
-
-	minioClient.SetAppInfo("kubermatic-exporter", "v0.1")
 
 	if *caBundleFile != "" {
 		bundle, err := certificates.NewCABundleFromFile(*caBundleFile)
@@ -100,11 +98,19 @@ func main() {
 			logger.Fatalw("Failed to load CA bundle", zap.Error(err))
 		}
 
-		minioClient.SetCustomTransport(&http.Transport{
+		options.Transport = &http.Transport{
 			TLSClientConfig:    &tls.Config{RootCAs: bundle.CertPool()},
 			DisableCompression: true,
-		})
+		}
 	}
+
+	stopChannel := make(chan struct{})
+	minioClient, err := minio.New(endpoint, options)
+	if err != nil {
+		logger.Fatalw("Failed to get S3 client", zap.Error(err))
+	}
+
+	minioClient.SetAppInfo("kubermatic-exporter", "v0.2")
 
 	s3.MustRun(minioClient, client, *bucket, *listenAddress, logger)
 

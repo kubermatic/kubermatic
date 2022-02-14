@@ -30,7 +30,8 @@ import (
 	"net/http"
 	"time"
 
-	minio "github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -1419,16 +1420,17 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		return nil, "", errors.New("CA bundle does not contain any valid certificates")
 	}
 
-	s3Client, err := minio.New(endpoint, accessKeyID, secretAccessKey, true)
-	if err != nil {
-		return nil, "", fmt.Errorf("error creating s3 client: %w", err)
-	}
-	s3Client.SetAppInfo("kubermatic", "v0.1")
-
-	s3Client.SetCustomTransport(&http.Transport{
-		TLSClientConfig:    &tls.Config{RootCAs: pool},
-		DisableCompression: true,
+	s3Client, err := minio.New(endpoint, &minio.Options{
+		Creds: credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Transport: &http.Transport{
+			TLSClientConfig:    &tls.Config{RootCAs: pool},
+			DisableCompression: true,
+		},
 	})
+	if err != nil {
+		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
+	}
+	s3Client.SetAppInfo("kubermatic", "v0.2")
 
 	return s3Client, bucketName, nil
 }
