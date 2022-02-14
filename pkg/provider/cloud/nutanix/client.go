@@ -17,6 +17,7 @@ limitations under the License.
 package nutanix
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -153,7 +154,7 @@ func getClientSet(credentials nutanixclient.Credentials) (*ClientSet, error) {
 
 func GetSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.SubnetIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
-	subnets, err := client.Prism.V3.ListAllSubnet(filter)
+	subnets, err := client.Prism.V3.ListAllSubnet(context.TODO(), filter)
 
 	if err != nil {
 		return nil, err
@@ -190,7 +191,7 @@ func GetSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.Subn
 
 func GetProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error) {
 	filter := fmt.Sprintf("name==%s", name)
-	projects, err := client.Prism.V3.ListAllProject(filter)
+	projects, err := client.Prism.V3.ListAllProject(context.TODO(), filter)
 
 	if err != nil {
 		return nil, err
@@ -219,7 +220,7 @@ func GetProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error
 
 func GetClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
-	clusters, err := client.Prism.V3.ListAllCluster(filter)
+	clusters, err := client.Prism.V3.ListAllCluster(context.TODO(), filter)
 
 	if err != nil {
 		return nil, err

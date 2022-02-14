@@ -17,6 +17,7 @@ limitations under the License.
 package nutanix
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -24,7 +25,7 @@ import (
 )
 
 func GetClusters(client *ClientSet) ([]nutanixv3.ClusterIntentResponse, error) {
-	resp, err := client.Prism.V3.ListAllCluster("")
+	resp, err := client.Prism.V3.ListAllCluster(context.TODO(), "")
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}
@@ -43,7 +44,7 @@ func GetClusters(client *ClientSet) ([]nutanixv3.ClusterIntentResponse, error) {
 }
 
 func GetProjects(client *ClientSet) ([]nutanixv3.Project, error) {
-	resp, err := client.Prism.V3.ListAllProject("")
+	resp, err := client.Prism.V3.ListAllProject(context.TODO(), "")
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}
@@ -62,7 +63,7 @@ func GetProjects(client *ClientSet) ([]nutanixv3.Project, error) {
 }
 
 func GetSubnets(client *ClientSet, clusterName, projectName string) ([]nutanixv3.SubnetIntentResponse, error) {
-	resp, err := client.Prism.V3.ListAllSubnet("")
+	resp, err := client.Prism.V3.ListAllSubnet(context.TODO(), "")
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}
