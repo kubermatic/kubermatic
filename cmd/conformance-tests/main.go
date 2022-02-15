@@ -42,6 +42,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -158,6 +159,8 @@ type secrets struct {
 		Password    string
 		PeUsername  string
 		PePassword  string
+		PeEndpoint  string
+		PePort      int32
 		ProxyURL    string
 		ClusterName string
 		ProjectName string
@@ -258,8 +261,9 @@ func main() {
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
 	flag.StringVar(&opts.secrets.Nutanix.Username, "nutanix-username", "", "Nutanix: Username")
 	flag.StringVar(&opts.secrets.Nutanix.Password, "nutanix-password", "", "Nutanix: Password")
-	flag.StringVar(&opts.secrets.Nutanix.Username, "nutanix-pe-username", "", "Nutanix Prism Element: Username")
-	flag.StringVar(&opts.secrets.Nutanix.Password, "nutanix-pe-password", "", "Nutanix Prism Element: Password")
+	flag.StringVar(&opts.secrets.Nutanix.PeUsername, "nutanix-pe-username", "", "Nutanix Prism Element: Username")
+	flag.StringVar(&opts.secrets.Nutanix.PePassword, "nutanix-pe-password", "", "Nutanix Prism Element: Password")
+	flag.StringVar(&opts.secrets.Nutanix.PeEndpoint, "nutanix-pe-endpoint", "", "Nutanix Prism Element: Endpoint")
 	flag.StringVar(&opts.secrets.Nutanix.ProxyURL, "nutanix-proxy-url", "", "Nutanix: HTTP Proxy URL to access endpoint")
 	flag.StringVar(&opts.secrets.Nutanix.ClusterName, "nutanix-cluster-name", "", "Nutanix: Cluster Name")
 	flag.StringVar(&opts.secrets.Nutanix.ProjectName, "nutanix-project-name", "", "Nutanix: Project Name")

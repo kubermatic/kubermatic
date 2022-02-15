@@ -148,7 +148,6 @@ spec:
       spec:
         nutanix:
           endpoint: "__NUTANIX_ENDPOINT__"
-          peEndpoint: "__NUTANIX_PE_ENDPOINT__"
           allowInsecure: true
           images:
             centos: machine-controller-e2e-centos
