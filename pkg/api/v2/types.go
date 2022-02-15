@@ -18,15 +18,12 @@ package v2
 
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
@@ -1062,55 +1059,13 @@ type GKEUpgradeSettings struct {
 // swagger:model VirtualMachineInstancePresetList
 type VirtualMachineInstancePresetList []VirtualMachineInstancePreset
 
-// Need to copy the following type to avoid a collision on Resources
-// between kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API.
-type DomainSpec struct {
-	// Resources describes the Compute Resources required by this vmi.
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	// CPU allow specified the detailed CPU topology inside the vmi.
-	// +optional
-	CPU *kubevirtv1.CPU `json:"cpu,omitempty"`
-	// Memory allow specifying the VMI memory features.
-	// +optional
-	Memory *kubevirtv1.Memory `json:"memory,omitempty"`
-	// Machine type.
-	// +optional
-	Machine *kubevirtv1.Machine `json:"machine,omitempty"`
-	// Firmware.
-	// +optional
-	Firmware *kubevirtv1.Firmware `json:"firmware,omitempty"`
-	// Clock sets the clock and timers of the vmi.
-	// +optional
-	Clock *kubevirtv1.Clock `json:"clock,omitempty"`
-	// Features like acpi, apic, hyperv, smm.
-	// +optional
-	Features *kubevirtv1.Features `json:"features,omitempty"`
-	// Devices allows adding disks, network interfaces, and others
-	Devices kubevirtv1.Devices `json:"devices"`
-	// Controls whether or not disks will share IOThreads.
-	// Omitting IOThreadsPolicy disables use of IOThreads.
-	// One of: shared, auto
-	// +optional
-	IOThreadsPolicy *kubevirtv1.IOThreadsPolicy `json:"ioThreadsPolicy,omitempty"`
-	// Chassis specifies the chassis info passed to the domain.
-	// +optional
-	Chassis *kubevirtv1.Chassis `json:"chassis,omitempty"`
-}
-
-type VirtualMachineInstancePresetSpec struct {
-	// Selector is a label query over a set of VMIs.
-	// Required.
-	Selector metav1.LabelSelector `json:"selector"`
-	// Domain is the same object type as contained in VirtualMachineInstanceSpec
-	Domain *DomainSpec `json:"domain,omitempty"`
-}
-
 // VirtualMachineInstancePreset represents a KubeVirt Virtual Machine Instance Preset
 // swagger:model VirtualMachineInstancePreset
 type VirtualMachineInstancePreset struct {
-	apiv1.ObjectMeta `json:",inline"`
-	// VirtualMachineInstance Spec contains the VirtualMachineInstance specification.
-	Spec VirtualMachineInstancePresetSpec `json:"spec,omitempty" valid:"required"`
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	// Spec contains the kubevirtv1.VirtualMachineInstancePreset.Spec object marshalled
+	Spec string `json:"spec,omitempty"`
 }
 
 // StorageClassList represents a list of Kubernetes StorageClass.
@@ -1120,43 +1075,7 @@ type StorageClassList []StorageClass
 // StorageClass represents a Kubernetes StorageClass
 // swagger:model StorageClass
 type StorageClass struct {
-	apiv1.ObjectMeta `json:",inline"`
-	// Provisioner indicates the type of the provisioner.
-	Provisioner string `json:"provisioner"`
-
-	// Parameters holds the parameters for the provisioner that should
-	// create volumes of this storage class.
-	// +optional
-	Parameters map[string]string `json:"parameters,omitempty"`
-
-	// Dynamically provisioned PersistentVolumes of this storage class are
-	// created with this reclaimPolicy. Defaults to Delete.
-	// +optional
-	ReclaimPolicy *corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
-
-	// Dynamically provisioned PersistentVolumes of this storage class are
-	// created with these mountOptions, e.g. ["ro", "soft"]. Not validated -
-	// mount of the PVs will simply fail if one is invalid.
-	// +optional
-	MountOptions []string `json:"mountOptions,omitempty"`
-
-	// AllowVolumeExpansion shows whether the storage class allow volume expand
-	// +optional
-	AllowVolumeExpansion *bool `json:"allowVolumeExpansion,omitempty"`
-
-	// VolumeBindingMode indicates how PersistentVolumeClaims should be
-	// provisioned and bound.  When unset, VolumeBindingImmediate is used.
-	// This field is only honored by servers that enable the VolumeScheduling feature.
-	// +optional
-	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
-
-	// Restrict the node topologies where volumes can be dynamically provisioned.
-	// Each volume plugin defines its own supported topology specifications.
-	// An empty TopologySelectorTerm list means there is no topology restriction.
-	// This field is only honored by servers that enable the VolumeScheduling feature.
-	// +optional
-	// +listType=atomic
-	AllowedTopologies []corev1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
+	Name string `json:"name"`
 }
 
 // CNIVersions is a list of versions for a CNI Plugin
