@@ -763,7 +763,6 @@ func cloneClusterResourcesInCluster(ctx context.Context, logger logrus.FieldLogg
 		}
 
 		newObject.Status = newv1.ClusterStatus{
-			KubermaticVersion:      oldObject.Status.KubermaticVersion,
 			NamespaceName:          oldObject.Status.NamespaceName,
 			CloudMigrationRevision: oldObject.Status.CloudMigrationRevision,
 			LastUpdated:            oldObject.Status.LastUpdated,
@@ -835,8 +834,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			DatacenterName: old.Cloud.DatacenterName,
 			ProviderName:   old.Cloud.ProviderName,
 
-			// Azure, VSphere and Openstack need special treatment further down
-			AWS:          (*newv1.AWSCloudSpec)(old.Cloud.AWS),
+			// AWS, Azure, VSphere and Openstack need special treatment further down
 			Alibaba:      (*newv1.AlibabaCloudSpec)(old.Cloud.Alibaba),
 			Anexia:       (*newv1.AnexiaCloudSpec)(old.Cloud.Anexia),
 			BringYourOwn: (*newv1.BringYourOwnCloudSpec)(old.Cloud.BringYourOwn),
@@ -858,7 +856,6 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			KonnectivityEnabled:      old.ClusterNetwork.KonnectivityEnabled,
 		},
 		Version:                              old.Version,
-		MasterVersion:                        old.MasterVersion,
 		HumanReadableName:                    old.HumanReadableName,
 		ExposeStrategy:                       newv1.ExposeStrategy(old.ExposeStrategy),
 		Pause:                                old.Pause,
@@ -903,6 +900,22 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 
 	if result.ExposeStrategy == "" {
 		result.ExposeStrategy = defaults.DefaultExposeStrategy
+	}
+
+	if old := old.Cloud.AWS; old != nil {
+		result.Cloud.AWS = &newv1.AWSCloudSpec{
+			CredentialsReference:    old.CredentialsReference,
+			AccessKeyID:             old.AccessKeyID,
+			SecretAccessKey:         old.SecretAccessKey,
+			AssumeRoleARN:           old.AssumeRoleARN,
+			AssumeRoleExternalID:    old.AssumeRoleExternalID,
+			VPCID:                   old.VPCID,
+			ControlPlaneRoleARN:     old.ControlPlaneRoleARN,
+			RouteTableID:            old.RouteTableID,
+			InstanceProfileName:     old.InstanceProfileName,
+			SecurityGroupID:         old.SecurityGroupID,
+			NodePortsAllowedIPRange: old.NodePortsAllowedIPRange,
+		}
 	}
 
 	if old := old.Cloud.Azure; old != nil {
