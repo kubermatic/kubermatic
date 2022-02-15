@@ -615,6 +615,10 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
+	if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
+		creators = append(creators, csi.ValidatingWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.NutanixCSIValidatingWebhookConfigurationName))
+	}
+
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ValidatingWebhookConfigurations: %w", err)
 	}

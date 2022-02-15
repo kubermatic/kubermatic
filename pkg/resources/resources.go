@@ -665,6 +665,8 @@ const (
 	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration.
 	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
 
+	NutanixCSIValidatingWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
+
 	CSIWebhookSecretName = "csi-webhook-certs"
 	// CSIWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	CSIWebhookServingCertCertKeyName = "cert.pem"
