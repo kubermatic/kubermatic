@@ -111,11 +111,8 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(user, mlaFinalizer) {
-		kubernetes.AddFinalizer(user, mlaFinalizer)
-		if err := r.Update(ctx, user); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, user, mlaFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	if err := r.userGrafanaController.ensureGrafanaUser(ctx, user); err != nil {
@@ -178,14 +175,8 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
-	if kubernetes.HasFinalizer(user, mlaFinalizer) {
-		oldUser := user.DeepCopy()
-		kubernetes.RemoveFinalizer(user, mlaFinalizer)
-		if err := r.Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
-			return fmt.Errorf("failed to update User: %w", err)
-		}
-	}
-	return nil
+
+	return kubernetes.TryRemoveFinalizer(ctx, r, user, mlaFinalizer)
 }
 
 func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User) error {

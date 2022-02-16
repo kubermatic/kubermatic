@@ -47,14 +47,11 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1
 	}
 
 	for _, constraint := range constraintList.Items {
-		oldConstraint := constraint.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(&constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := d.seedClient.Patch(ctx, &constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
+		err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
+		if err != nil {
 			return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
 		}
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
-	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
 }

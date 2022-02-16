@@ -135,36 +135,30 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 }
 
 func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger, oldRole *rbacv1.Role, namespaces []string) error {
+	finalizer := kubermaticapiv1.UserClusterRoleCleanupFinalizer
+
 	if oldRole.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
-			return nil
-		}
-		for _, namespace := range namespaces {
-			if err := r.client.Delete(ctx, &rbacv1.Role{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      oldRole.Name,
-					Namespace: namespace,
-				},
-			}); err != nil {
-				if kerrors.IsNotFound(err) {
-					continue
+		if kuberneteshelper.HasFinalizer(oldRole, finalizer) {
+			for _, namespace := range namespaces {
+				if err := r.client.Delete(ctx, &rbacv1.Role{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      oldRole.Name,
+						Namespace: namespace,
+					},
+				}); err != nil {
+					if kerrors.IsNotFound(err) {
+						continue
+					}
+					return fmt.Errorf("failed to delete role: %w", err)
 				}
-				return fmt.Errorf("failed to delete role: %w", err)
 			}
 		}
 
-		kuberneteshelper.RemoveFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer)
-		if err := r.client.Update(ctx, oldRole); err != nil {
-			return fmt.Errorf("failed to update role: %w", err)
-		}
-		return nil
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.client, oldRole, finalizer)
 	}
 
-	if !kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
-		kuberneteshelper.AddFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer)
-		if err := r.client.Update(ctx, oldRole); err != nil {
-			return fmt.Errorf("failed to update role: %w", err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.client, oldRole, finalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	for _, namespace := range namespaces {

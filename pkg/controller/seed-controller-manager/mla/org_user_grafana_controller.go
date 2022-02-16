@@ -109,11 +109,8 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
-		kubernetes.AddFinalizer(userProjectBinding, mlaFinalizer)
-		if err := r.Update(ctx, userProjectBinding); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, userProjectBinding, mlaFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	project := &kubermaticv1.Project{}
@@ -174,13 +171,5 @@ func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProje
 		}
 	}
 
-	if kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
-		oldBinding := userProjectBinding.DeepCopy()
-		kubernetes.RemoveFinalizer(userProjectBinding, mlaFinalizer)
-		if err := r.Patch(ctx, userProjectBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
-			return fmt.Errorf("failed to update UserProjectBinding: %w", err)
-		}
-	}
-
-	return nil
+	return kubernetes.TryRemoveFinalizer(ctx, r, userProjectBinding, mlaFinalizer)
 }

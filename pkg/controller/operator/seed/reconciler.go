@@ -200,13 +200,6 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up OSP ValidatingWebhookConfiguration: %w", err)
 	}
 
-	oldSeed := seed.DeepCopy()
-	kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
-
-	if err := client.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-		return fmt.Errorf("failed to remove finalizer from Seed: %w", err)
-	}
-
 	// On shared master+seed clusters, the kubermatic-webhook currently has the -seed-name
 	// flag set; now that the seed (maybe the shared seed, maybe another) is gone, we must
 	// trigger a reconciliation once to get rid of the flag. If the deleted Seed is just
@@ -230,14 +223,12 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to reconcile webhook Deployment: %w", err)
 	}
 
-	return nil
+	return kubernetes.TryRemoveFinalizer(ctx, client, seed, common.CleanupFinalizer)
 }
 
 func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	oldSeed := seed.DeepCopy()
-	kubernetes.AddFinalizer(seed, common.CleanupFinalizer)
-	if err := client.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-		return fmt.Errorf("failed to add finalizer to Seed: %w", err)
+	if err := kubernetes.TryAddFinalizer(ctx, client, seed, common.CleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	// apply the default values from the config to the current Seed

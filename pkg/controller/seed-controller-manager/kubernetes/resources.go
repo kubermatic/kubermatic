@@ -331,6 +331,8 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 
 // GetSecretCreators returns all SecretCreators that are currently in use.
 func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
+	namespace := data.Cluster().Status.NamespaceName
+
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
 		certificates.FrontProxyCACreator(),
@@ -344,14 +346,14 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		machinecontroller.TLSServingCertificateCreator(data),
 
 		// Kubeconfigs
-		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.OperatingSystemManagerKubeconfigSecretName, resources.OperatingSystemManagerCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
-		resources.GetInternalKubeconfigCreator(resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data),
-		resources.GetInternalKubeconfigCreator(resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.OperatingSystemManagerKubeconfigSecretName, resources.OperatingSystemManagerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(namespace, resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data),
 		resources.AdminKubeconfigCreator(data),
 		apiserver.TokenViewerCreator(),
 		apiserver.TokenUsersCreator(data),
@@ -369,14 +371,14 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 			openvpn.TLSServingCertificateCreator(data),
 			openvpn.InternalClientCertificateCreator(data),
 			metricsserver.TLSServingCertSecretCreator(data.GetRootCA),
-			resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
-			resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
+			resources.GetInternalKubeconfigCreator(namespace, resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
+			resources.GetInternalKubeconfigCreator(namespace, resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
 		)
 	}
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
 		creators = append(creators, resources.GetInternalKubeconfigCreator(
-			resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data,
+			namespace, resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data,
 		))
 	}
 

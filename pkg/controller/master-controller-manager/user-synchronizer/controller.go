@@ -126,11 +126,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer) {
-		kuberneteshelper.AddFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, user); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to add user finalizer %s: %w", user.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, kubermaticapiv1.SeedUserCleanupFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	userCreatorGetters := []reconciling.NamedKubermaticV1UserCreatorGetter{
@@ -172,13 +169,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	if err != nil {
 		return err
 	}
-	if kuberneteshelper.HasFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer) {
-		kuberneteshelper.RemoveFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, user); err != nil {
-			return fmt.Errorf("failed to remove user finalizer %s: %w", user.Name, err)
-		}
-	}
-	return nil
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, kubermaticapiv1.SeedUserCleanupFinalizer)
 }
 
 func (r *reconciler) syncAllSeeds(

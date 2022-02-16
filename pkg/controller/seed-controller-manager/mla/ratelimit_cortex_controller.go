@@ -124,11 +124,8 @@ func (r *ratelimitCortexReconciler) Reconcile(ctx context.Context, request recon
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(mlaAdminSetting, mlaFinalizer) {
-		kubernetes.AddFinalizer(mlaAdminSetting, mlaFinalizer)
-		if err := r.Update(ctx, mlaAdminSetting); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, mlaAdminSetting, mlaFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	if err := r.ratelimitCortexController.ensureLimits(ctx, mlaAdminSetting); err != nil {
@@ -243,12 +240,6 @@ func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap
 			return fmt.Errorf("unable to update configmap: %w", err)
 		}
 	}
-	if kubernetes.HasFinalizer(mlaAdminSetting, mlaFinalizer) {
-		oldSetting := mlaAdminSetting.DeepCopy()
-		kubernetes.RemoveFinalizer(mlaAdminSetting, mlaFinalizer)
-		if err := r.Patch(ctx, mlaAdminSetting, ctrlruntimeclient.MergeFrom(oldSetting)); err != nil {
-			return fmt.Errorf("failed to update mlaAdminSetting: %w", err)
-		}
-	}
-	return nil
+
+	return kubernetes.TryRemoveFinalizer(ctx, r, mlaAdminSetting, mlaFinalizer)
 }

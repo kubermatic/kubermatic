@@ -91,9 +91,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	// ensure we always have a cleanup finalizer
-	oldConfig := config.DeepCopy()
-	kubernetes.AddFinalizer(config, common.CleanupFinalizer)
-	if err := r.Patch(ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
+	if err := kubernetes.TryAddFinalizer(ctx, r, config, common.CleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -174,14 +172,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
 	}
 
-	oldConfig := config.DeepCopy()
-	kubernetes.RemoveFinalizer(config, common.CleanupFinalizer)
-
-	if err := r.Patch(ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
-		return fmt.Errorf("failed to remove finalizer: %w", err)
-	}
-
-	return nil
+	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
 }
 
 func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {

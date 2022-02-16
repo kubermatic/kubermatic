@@ -22,18 +22,10 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // cleanupClusterRoleBindings is deprecated and should be removed in KKP 2.20+, because
 // nowadays we use owner references for cleanup and this manual step is not needed anymore.
 func (d *Deletion) cleanupClusterRoleBindings(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer) {
-		return nil
-	}
-
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer)
-	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer)
 }

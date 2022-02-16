@@ -198,9 +198,7 @@ func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kuber
 		return err
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
-	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
 }
 
 func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
@@ -208,9 +206,7 @@ func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kube
 		return err
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
-	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error {

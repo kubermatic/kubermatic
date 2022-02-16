@@ -48,7 +48,5 @@ func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kuberm
 		}
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
-	return d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
 }
