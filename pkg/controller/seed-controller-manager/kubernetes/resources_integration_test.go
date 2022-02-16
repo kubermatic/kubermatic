@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -121,6 +122,10 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				DNSDomain:                "cluster.local",
 				ProxyMode:                resources.IPVSProxyMode,
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			CNIPlugin: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 			},
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "my-dc",
