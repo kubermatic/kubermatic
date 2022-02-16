@@ -102,6 +102,8 @@ const (
 	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
 	// NodePortProxyEnvoyDeploymentName is the name of the nodeport-proxy deployment in the user cluster.
 	NodePortProxyEnvoyDeploymentName = "nodeport-proxy-envoy"
+	// NodePortProxyEnvoyContainerName is the name of the envoy container in the nodeport-proxy deployment.
+	NodePortProxyEnvoyContainerName = "envoy"
 
 	// ApiserverServiceName is the name for the apiserver service.
 	ApiserverServiceName = "apiserver-external"
@@ -1278,7 +1280,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.NodePortProxyEnvoy.Resources.Requests != nil ||
 		componentSettings.NodePortProxyEnvoy.Resources.Limits != nil {
-		r[NodePortProxyEnvoyDeploymentName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
+		r[NodePortProxyEnvoyContainerName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
 	}
 
 	return r
