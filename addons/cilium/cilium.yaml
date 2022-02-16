@@ -19,6 +19,7 @@
 #
 # Modifications:
 #   - templated cluster-pool-ipv4-cidr
+#   - templated enable-ipv6 & cluster-pool-ipv6-cidr
 #   - templated kube-proxy-replacement parts
 #   - added seccomp profile to cilium-operator
 #   - templates/hubble, templates/hubble-relay and templates/hubble-ui components moved to a separate addon "hubble"
@@ -82,7 +83,11 @@ data:
 
   # Enable IPv6 addressing. If enabled, all endpoints are allocated an IPv6
   # address.
+{{ if eq (len .Cluster.Network.PodCIDRBlocks) 2 }}
+  enable-ipv6: "true"
+{{ else }}
   enable-ipv6: "false"
+{{ end }}
   # Users who wish to specify their own custom CNI configuration file must set
   # custom-cni-conf to "true", otherwise Cilium may overwrite the configuration.
   custom-cni-conf: "false"
@@ -192,6 +197,10 @@ data:
   ipam: "cluster-pool"
   cluster-pool-ipv4-cidr: "{{ first .Cluster.Network.PodCIDRBlocks }}"
   cluster-pool-ipv4-mask-size: "24"
+{{ if eq (len .Cluster.Network.PodCIDRBlocks) 2 }}
+  cluster-pool-ipv6-cidr: "{{ last .Cluster.Network.PodCIDRBlocks }}"
+  cluster-pool-ipv6-mask-size: "112"
+{{ end }}
   disable-cnp-status-updates: "true"
   cgroup-root: "/run/cilium/cgroupv2"
   enable-k8s-terminating-endpoint: "true"

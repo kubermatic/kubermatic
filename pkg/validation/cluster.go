@@ -214,12 +214,12 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 
 func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	// We only consider first element (not sure why we use lists).
-	if len(n.Pods.CIDRBlocks) > 1 {
-		allErrs = append(allErrs, field.TooMany(fldPath.Child("pods", "cidrBlocks"), len(n.Pods.CIDRBlocks), 1))
+	// Maximum 2 (one IPv4 + one IPv6) CIDR blocks are allowed
+	if len(n.Pods.CIDRBlocks) > 2 {
+		allErrs = append(allErrs, field.TooMany(fldPath.Child("pods", "cidrBlocks"), len(n.Pods.CIDRBlocks), 2))
 	}
-	if len(n.Services.CIDRBlocks) > 1 {
-		allErrs = append(allErrs, field.TooMany(fldPath.Child("services", "cidrBlocks"), len(n.Services.CIDRBlocks), 1))
+	if len(n.Services.CIDRBlocks) > 2 {
+		allErrs = append(allErrs, field.TooMany(fldPath.Child("services", "cidrBlocks"), len(n.Services.CIDRBlocks), 2))
 	}
 	if len(n.Pods.CIDRBlocks) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("pods", "cidrBlocks"), "pod CIDR must be provided"))
@@ -227,18 +227,41 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	if len(n.Services.CIDRBlocks) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("services", "cidrBlocks"), "service CIDR must be provided"))
 	}
-
-	// Verify that provided CIDR are well formed
-	if podsCIDR := n.Pods.CIDRBlocks; len(podsCIDR) == 1 {
-		if _, _, err := net.ParseCIDR(podsCIDR[0]); err != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(0), podsCIDR,
+	// Verify that provided CIDRs are well-formed
+	for i, podsCIDR := range n.Pods.CIDRBlocks {
+		addr, _, err := net.ParseCIDR(podsCIDR)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), podsCIDR,
 				fmt.Sprintf("couldn't parse pod CIDR %q: %v", podsCIDR, err)))
 		}
+		// At this point, KKP only supports IPv4 as the primary CIDR and IPv6 as the secondary CIDR.
+		// The first provided CIDR has to be IPv4
+		if i == 0 && addr.To4() == nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), podsCIDR,
+				fmt.Sprintf("invalid address family for primary pod CIDR %q: has to be IPv4", podsCIDR)))
+		}
+		// The second provided CIDR has to be IPv6
+		if i == 1 && addr.To4() != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), podsCIDR,
+				fmt.Sprintf("invalid address family for secondary pod CIDR %q: has to be IPv6", podsCIDR)))
+		}
 	}
-	if servicesCIDR := n.Services.CIDRBlocks; len(servicesCIDR) == 1 {
-		if _, _, err := net.ParseCIDR(servicesCIDR[0]); err != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(0), servicesCIDR,
+	for i, servicesCIDR := range n.Services.CIDRBlocks {
+		addr, _, err := net.ParseCIDR(servicesCIDR)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(i), servicesCIDR,
 				fmt.Sprintf("couldn't parse service CIDR %q: %v", servicesCIDR, err)))
+		}
+		// At this point, KKP only supports IPv4 as the primary CIDR and IPv6 as the secondary CIDR.
+		// The first provided CIDR has to be IPv4
+		if i == 0 && addr.To4() == nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(i), servicesCIDR,
+				fmt.Sprintf("invalid address family for primary service CIDR %q: has to be IPv4", servicesCIDR)))
+		}
+		// The second provided CIDR has to be IPv6
+		if i == 1 && addr.To4() != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(i), servicesCIDR,
+				fmt.Sprintf("invalid address family for secondary service CIDR %q: has to be IPv6", servicesCIDR)))
 		}
 	}
 	// TODO Remove all hardcodes before allowing arbitrary domain names.
