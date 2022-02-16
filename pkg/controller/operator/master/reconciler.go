@@ -112,6 +112,14 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
+	if err := r.reconcileRoles(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoleBindings(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
 	if err := r.reconcileClusterRoleBindings(ctx, defaulted, logger); err != nil {
 		return err
 	}
@@ -143,6 +151,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	if err := r.reconcileAdmissionWebhooks(ctx, defaulted, logger); err != nil {
 		return err
 	}
+
+	// Since the new standalone webhook, the old service is not required anymore.
+	// Once the webhooks are reconciled above, we can now clean up unneeded services.
+	common.CleanupWebhookServices(ctx, r, logger, defaulted.Namespace)
 
 	return nil
 }
@@ -224,10 +236,39 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermatic.ServiceAccountCreator(config),
+		common.WebhookServiceAccountCreator(config),
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling Roles")
+
+	creators := []reconciling.NamedRoleCreatorGetter{
+		common.WebhookRoleCreator(config),
+	}
+
+	if err := reconciling.ReconcileRoles(ctx, creators, config.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Roles: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling RoleBindings")
+
+	creators := []reconciling.NamedRoleBindingCreatorGetter{
+		common.WebhookRoleBindingCreator(config),
+	}
+
+	if err := reconciling.ReconcileRoleBindings(ctx, creators, config.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile RoleBindings: %w", err)
 	}
 
 	return nil
@@ -254,6 +295,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 		kubermatic.APIDeploymentCreator(config, r.workerName, r.versions),
 		kubermatic.UIDeploymentCreator(config, r.versions),
 		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName, r.versions),
+		common.WebhookDeploymentCreator(config, r.versions, nil, false),
 	}
 
 	modifiers := []reconciling.ObjectModifier{
@@ -295,7 +337,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 	creators := []reconciling.NamedServiceCreatorGetter{
 		kubermatic.APIServiceCreator(config),
 		kubermatic.UIServiceCreator(config),
-		common.SeedAdmissionServiceCreator(config, r.Client),
+		common.WebhookServiceCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
@@ -325,14 +367,14 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 }
 
 func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	logger.Debug("Reconciling AdmissionWebhooks")
+	logger.Debug("Reconciling Validating Webhooks")
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %w", err)
+		return fmt.Errorf("failed to reconcile Validating Webhooks: %w", err)
 	}
 
 	return nil

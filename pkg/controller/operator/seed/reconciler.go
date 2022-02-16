@@ -181,19 +181,23 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
-		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSCAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up OSC ValidatingWebhookConfiguration: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSPAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
+		return fmt.Errorf("failed to clean up OSP ValidatingWebhookConfiguration: %w", err)
 	}
 
 	oldSeed := seed.DeepCopy()
@@ -201,6 +205,29 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 
 	if err := client.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
 		return fmt.Errorf("failed to remove finalizer from Seed: %w", err)
+	}
+
+	// On shared master+seed clusters, the kubermatic-webhook currently has the -seed-name
+	// flag set; now that the seed (maybe the shared seed, maybe another) is gone, we must
+	// trigger a reconciliation once to get rid of the flag. If the deleted Seed is just
+	// a standalone cluster, no problem, the webhook Deployment will simply be deleted when
+	// the kubermatic namespace is deleted. On shared seeds though the master-operator will
+	// continue to reconcile the Deployment, but would itself not remove the -seed-name flag.
+	creators := []reconciling.NamedDeploymentCreatorGetter{
+		common.WebhookDeploymentCreator(cfg, r.versions, nil, true), // true is the important thing here
+	}
+
+	modifiers := []reconciling.ObjectModifier{
+		common.OwnershipModifierFactory(seed, r.scheme),
+		common.VolumeRevisionLabelsModifierFactory(ctx, client),
+	}
+	// add the image pull secret wrapper only when an image pull secret is provided
+	if cfg.Spec.ImagePullSecret != "" {
+		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
+	}
+
+	if err := reconciling.ReconcileDeployments(ctx, creators, r.namespace, client, modifiers...); err != nil {
+		return fmt.Errorf("failed to reconcile webhook Deployment: %w", err)
 	}
 
 	return nil
@@ -272,6 +299,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
+	// Since the new standalone webhook, the old service is not required anymore.
+	// Once the webhooks are reconciled above, we can now clean up unneeded services.
+	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
+
 	if err := metering.ReconcileMeteringResources(ctx, client, cfg, seed); err != nil {
 		return err
 	}
@@ -298,6 +329,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermaticseed.ServiceAccountCreator(cfg, seed),
+		common.WebhookServiceAccountCreator(cfg),
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {
@@ -327,12 +359,12 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Roles")
 
-	if seed.Spec.NodeportProxy.Disable {
-		return nil
+	creators := []reconciling.NamedRoleCreatorGetter{
+		common.WebhookRoleCreator(cfg),
 	}
 
-	creators := []reconciling.NamedRoleCreatorGetter{
-		nodeportproxy.RoleCreator(),
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.RoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -345,12 +377,12 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.Kuber
 func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling RoleBindings")
 
-	if seed.Spec.NodeportProxy.Disable {
-		return nil
+	creators := []reconciling.NamedRoleBindingCreatorGetter{
+		common.WebhookRoleBindingCreator(cfg),
 	}
 
-	creators := []reconciling.NamedRoleBindingCreatorGetter{
-		nodeportproxy.RoleBindingCreator(cfg),
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.RoleBindingCreator(cfg))
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -472,6 +504,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermaticseed.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
+		common.WebhookDeploymentCreator(cfg, r.versions, seed, false),
 	}
 
 	supportsFailureDomainZoneAntiAffinity, err := resources.SupportsFailureDomainZoneAntiAffinity(ctx, client)
@@ -540,8 +573,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 	log.Debug("reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
-		common.SeedAdmissionServiceCreator(cfg, client),
-		kubermaticseed.ClusterAdmissionServiceCreator(cfg, client),
+		common.WebhookServiceCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -576,7 +608,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 }
 
 func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("reconciling AdmissionWebhooks")
+	log.Debug("reconciling Admission Webhooks")
 
 	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(cfg, client),
@@ -584,12 +616,15 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {
-		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client))
-		validatingWebhookCreators = append(validatingWebhookCreators, kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client))
+		validatingWebhookCreators = append(
+			validatingWebhookCreators,
+			kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client),
+			kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client),
+		)
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile validating AdmissionWebhooks: %w", err)
+		return fmt.Errorf("failed to reconcile validating Admission Webhooks: %w", err)
 	}
 
 	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
@@ -597,7 +632,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile mutating AdmissionWebhooks: %w", err)
+		return fmt.Errorf("failed to reconcile mutating Admission Webhooks: %w", err)
 	}
 
 	return nil

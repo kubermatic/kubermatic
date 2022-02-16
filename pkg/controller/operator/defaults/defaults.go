@@ -45,6 +45,7 @@ const (
 	DefaultSeedControllerMgrReplicas              = 1
 	DefaultMasterControllerMgrReplicas            = 1
 	DefaultAPIServerReplicas                      = 2
+	DefaultWebhookReplicas                        = 1
 	DefaultControllerManagerReplicas              = 1
 	DefaultSchedulerReplicas                      = 1
 	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyNodePort
@@ -121,6 +122,17 @@ var (
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
 			corev1.ResourceMemory: resource.MustParse("1Gi"),
+		},
+	}
+
+	DefaultWebhookResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		},
 	}
 
@@ -358,6 +370,16 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)
 	}
 
+	if configCopy.Spec.Webhook.Replicas == nil {
+		configCopy.Spec.Webhook.Replicas = pointer.Int32Ptr(DefaultWebhookReplicas)
+		logger.Debugw("Defaulting field", "field", "webhook.replicas", "value", *configCopy.Spec.Webhook.Replicas)
+	}
+
+	if configCopy.Spec.Webhook.PProfEndpoint == nil {
+		configCopy.Spec.Webhook.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		logger.Debugw("Defaulting field", "field", "webhook.pprofEndpoint", "value", *configCopy.Spec.Webhook.PProfEndpoint)
+	}
+
 	if configCopy.Spec.API.PProfEndpoint == nil {
 		configCopy.Spec.API.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *configCopy.Spec.API.PProfEndpoint)
@@ -480,6 +502,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
+	if err := defaultDockerRepo(&configCopy.Spec.Webhook.DockerRepository, DefaultKubermaticImage, "webhook.dockerRepository", logger); err != nil {
+		return configCopy, err
+	}
+
 	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.KubermaticDockerRepository, DefaultKubermaticImage, "userCluster.kubermaticDockerRepository", logger); err != nil {
 		return configCopy, err
 	}
@@ -521,6 +547,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if err := defaultResources(&configCopy.Spec.MasterController.Resources, DefaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultResources(&configCopy.Spec.Webhook.Resources, DefaultWebhookResources, "webhook.resources", logger); err != nil {
 		return configCopy, err
 	}
 

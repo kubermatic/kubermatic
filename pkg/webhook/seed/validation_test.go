@@ -23,9 +23,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/test"
 
-	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -459,7 +458,11 @@ func TestValidate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var obj []ctrlruntimeclient.Object
+			var (
+				obj []ctrlruntimeclient.Object
+				err error
+			)
+
 			for _, c := range tc.existingClusters {
 				obj = append(obj, c)
 			}
@@ -473,94 +476,23 @@ func TestValidate(t *testing.T) {
 				Build()
 
 			sv := &validator{
-				lock:     &sync.Mutex{},
-				listOpts: &ctrlruntimeclient.ListOptions{},
-				client:   client,
-				features: tc.features,
+				lock:        &sync.Mutex{},
+				features:    tc.features,
+				seedsGetter: test.NewSeedsGetter(tc.existingSeeds...),
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return client, nil
 				},
 			}
 
-			op := admissionv1.Create
 			if tc.isDelete {
-				op = admissionv1.Delete
+				err = sv.ValidateDelete(context.Background(), tc.seedToValidate)
+			} else {
+				err = sv.ValidateCreate(context.Background(), tc.seedToValidate)
 			}
-			err := sv.Validate(context.Background(), tc.seedToValidate, op)
 
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}
 		})
 	}
-}
-
-func TestSingleSeedValidateFunc(t *testing.T) {
-	tests := []struct {
-		name      string
-		namespace string
-		seed      *kubermaticv1.Seed
-		op        admissionv1.Operation
-		wantErr   bool
-	}{
-		{
-			name:      "Matching name and namespace",
-			namespace: "kubermatic",
-			seed: &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      provider.DefaultSeedName,
-					Namespace: "kubermatic",
-				},
-			},
-			op:      admissionv1.Create,
-			wantErr: false,
-		},
-		{
-			name:      "Non Matching namespace",
-			namespace: "kubermatic",
-			seed: &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      provider.DefaultSeedName,
-					Namespace: "kube-system",
-				},
-			},
-			op:      admissionv1.Create,
-			wantErr: true,
-		},
-		{
-			name:      "Non Matching name",
-			namespace: "kubermatic",
-			seed: &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-seed",
-					Namespace: "kubermatic",
-				},
-			},
-			op:      admissionv1.Create,
-			wantErr: true,
-		},
-		{
-			name:      "my-seed",
-			namespace: "kubermatic",
-			seed: &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "custom-seed",
-					Namespace: "kube-system",
-				},
-			},
-			op:      admissionv1.Delete,
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := (ensureSingleSeedValidatorWrapper{validateFunc: validationSuccess, Namespace: tt.namespace, Name: "kubermatic"}).Validate(context.Background(), tt.seed, tt.op); (got == nil) == tt.wantErr {
-				t.Errorf("Expected validation error = %v, but got: %v", tt.wantErr, got)
-			}
-		})
-	}
-}
-
-func validationSuccess(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {
-	return nil
 }

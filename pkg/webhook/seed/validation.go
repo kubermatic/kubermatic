@@ -25,95 +25,95 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
-	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// ValidateFunc validates a Seed resource
-// On DELETE, the only set fields of seed are Name and Namespace as
-// admissionReview.Request.Object is unset.
-type validateFunc func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error
+type validator struct {
+	seedsGetter      provider.SeedsGetter
+	seedClientGetter provider.SeedClientGetter
+	features         features.FeatureGate
+	lock             *sync.Mutex
+}
 
 func newSeedValidator(
-	workerName string,
-	client ctrlruntimeclient.Client,
+	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
 	features features.FeatureGate,
 ) (*validator, error) {
-	labelSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return nil, err
-	}
-	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}
 	return &validator{
-		client:           client,
+		seedsGetter:      seedsGetter,
 		seedClientGetter: seedClientGetter,
-		lock:             &sync.Mutex{},
-		listOpts:         listOpts,
 		features:         features,
+		lock:             &sync.Mutex{},
 	}, nil
 }
 
-// Ensure that Validator.Validate implements ValidateFunc.
-var _ validateFunc = (&validator{}).Validate
+var _ admission.CustomValidator = &validator{}
 
-type validator struct {
-	client           ctrlruntimeclient.Client
-	seedClientGetter provider.SeedClientGetter
-	lock             *sync.Mutex
-	// Can be used to insert a labelSelector
-	listOpts *ctrlruntimeclient.ListOptions
-	features features.FeatureGate
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	return v.validate(ctx, obj, false)
 }
 
-// Validate returns an error if the given seed does not pass all validation steps.
-func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	return v.validate(ctx, newObj, false)
+}
+
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	return v.validate(ctx, obj, true)
+}
+
+func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete bool) error {
+	subject, ok := obj.(*kubermaticv1.Seed)
+	if !ok {
+		return errors.New("given object is not a Seed")
+	}
+
 	// We need locking to make the validation concurrency-safe
 	// TODO: this is acceptable as request rate is low, but is it required?
 	v.lock.Lock()
 	defer v.lock.Unlock()
 
-	seeds := kubermaticv1.SeedList{}
-	err := v.client.List(ctx, &seeds)
+	// fetch all relevant Seeds; in CE this will only be the one supported Seed,
+	// in EE this is a map of all Seed resources; since in CE naming a Seed
+	// anything but "kubermatic" is forbidden, it's okay that we use the default
+	// SeedsGetter, which will also only return this one Seed (i.e. the webhook
+	// in CE never sees any other Seeds)
+	existingSeeds, err := v.seedsGetter()
 	if err != nil {
-		return fmt.Errorf("failed to get seeds: %w", err)
+		return fmt.Errorf("failed to list Seeds: %w", err)
 	}
-	seedsMap := map[string]*kubermaticv1.Seed{}
-	for i, s := range seeds.Items {
-		seedsMap[s.Name] = &seeds.Items[i]
-	}
-	if op == admissionv1.Delete {
-		// when a namespace is deleted, a DELETE call for all seeds in the namespace
+
+	if isDelete {
+		// when a namespace is deleted, a DELETE call for all Seeds in the namespace
 		// is issued; this request has no .Request.Name set, so this check will make
 		// sure that we exit cleanly and allow deleting namespaces without seeds
-		if _, exists := seedsMap[seed.Name]; !exists && op == admissionv1.Delete {
+		if _, exists := existingSeeds[subject.Name]; !exists {
 			return nil
 		}
-		// in case of delete request the seed is empty
-		seed = seedsMap[seed.Name]
+
+		// in case of delete request the seed is empty, so fetch the current one from
+		// the cluster instead
+		subject = existingSeeds[subject.Name]
 	}
 
-	client, err := v.seedClientGetter(seed)
+	// get a client for the Seed cluster; this uses a restmapper and is therefore cached for better performance
+	seedClient, err := v.seedClientGetter(subject)
 	if err != nil {
-		return fmt.Errorf("failed to get client for seed %q: %w", seed.Name, err)
+		return fmt.Errorf("failed to get Seed client: %w", err)
 	}
 
-	return v.validate(ctx, seed, client, seedsMap, op == admissionv1.Delete)
-}
-
-func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
 	// check whether the expose strategy is allowed or not.
 	if subject.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling && !v.features.Enabled(features.TunnelingExposeStrategy) {
-		return errors.New("cannot create seed using Tunneling as a default expose strategy, the TunnelingExposeStrategy feature gate is not enabled")
+		return errors.New("cannot create Seed using Tunneling as a default expose strategy, the TunnelingExposeStrategy feature gate is not enabled")
 	}
 
 	// this can be nil on new seed clusters
 	existingSeed := existingSeeds[subject.Name]
 
-	// remove the seed itself from the list, so uniqueness checks won't fail
+	// remove the seed itself from the map, so uniqueness checks won't fail
 	delete(existingSeeds, subject.Name)
 
 	// collect datacenter names
@@ -127,11 +127,11 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, se
 	}
 
 	// check if the subject introduces a datacenter that already exists
-	for _, existingSeed := range existingSeeds {
-		datacenters := sets.StringKeySet(existingSeed.Spec.Datacenters)
+	for _, existing := range existingSeeds {
+		datacenters := sets.StringKeySet(existing.Spec.Datacenters)
 
 		if duplicates := subjectDatacenters.Intersection(datacenters); duplicates.Len() > 0 {
-			return fmt.Errorf("seed redefines existing datacenters %v from seed %q; datacenter names must be globally unique", duplicates.List(), existingSeed.Name)
+			return fmt.Errorf("Seed redefines existing datacenters %v from Seed %q; datacenter names must be globally unique", duplicates.List(), existing.Name)
 		}
 
 		existingDatacenters = existingDatacenters.Union(datacenters)
@@ -165,7 +165,7 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, se
 
 	// check if there are still clusters using DCs not defined anymore
 	clusters := &kubermaticv1.ClusterList{}
-	if err := seedClient.List(ctx, clusters, v.listOpts); err != nil {
+	if err := seedClient.List(ctx, clusters); err != nil {
 		return fmt.Errorf("failed to list clusters: %w", err)
 	}
 
@@ -186,27 +186,4 @@ func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, se
 	}
 
 	return nil
-}
-
-// ensureSingleSeedValidator ensures that only the seed with the given Name and
-// Namespace can be created.
-type ensureSingleSeedValidatorWrapper struct {
-	validateFunc
-	Name      string
-	Namespace string
-}
-
-// Ensure that SeedValidator.Validate implements ValidateFunc.
-var _ validateFunc = ensureSingleSeedValidatorWrapper{}.Validate
-
-func (e ensureSingleSeedValidatorWrapper) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {
-	switch op {
-	case admissionv1.Create:
-		if seed.Name != e.Name || seed.Namespace != e.Namespace {
-			return fmt.Errorf("cannot create Seed %s/%s. It must be named %s and installed in the %s namespace", seed.Name, seed.Namespace, e.Name, e.Namespace)
-		}
-		return e.validateFunc(ctx, seed, op)
-	default:
-		return nil
-	}
 }

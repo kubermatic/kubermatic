@@ -16,22 +16,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package seed
 
 import (
-	"context"
-	"flag"
-
-	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func addFlags(fs *flag.FlagSet) {
-	// NOP
-}
-
-func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
-	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
+func NewValidator(
+	seedsGetter provider.SeedsGetter,
+	seedClientGetter provider.SeedClientGetter,
+	features features.FeatureGate,
+) (*validator, error) {
+	return newSeedValidator(seedsGetter, seedClientGetter, features)
 }

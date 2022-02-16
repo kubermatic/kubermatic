@@ -26,15 +26,12 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	clusterWebhookServiceName   = "cluster-webhook"
 	ClusterAdmissionWebhookName = "kubermatic-clusters"
 	OSCAdmissionWebhookName     = "kubermatic-operating-system-configs"
 	OSPAdmissionWebhookName     = "kubermatic-operating-system-profiles"
@@ -50,13 +47,13 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticCo
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "clusters.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
@@ -64,9 +61,9 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticCo
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-cluster"),
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-cluster"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
@@ -105,13 +102,13 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.MutatingWebhook{
 				{
 					Name:                    "clusters.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					ReinvocationPolicy:      &reinvocationPolicy,
@@ -120,9 +117,9 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/mutate-kubermatic-k8c-io-cluster"),
+							Path:      pointer.StringPtr("/mutate-kubermatic-k8c-io-v1-cluster"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
@@ -150,30 +147,6 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 	}
 }
 
-// ClusterAdmissionServiceCreator creates the Service for the Cluster Admission webhook.
-// This service is created only on seed clusters.
-func ClusterAdmissionServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
-		return clusterWebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
-			s.Spec.Type = corev1.ServiceTypeClusterIP
-
-			if len(s.Spec.Ports) != 1 {
-				s.Spec.Ports = make([]corev1.ServicePort, 1)
-			}
-
-			s.Spec.Ports[0].Name = "https"
-			s.Spec.Ports[0].Port = 443
-			s.Spec.Ports[0].TargetPort = intstr.FromInt(8100)
-			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
-			s.Spec.Selector = map[string]string{
-				common.NameLabel: common.SeedControllerManagerDeploymentName,
-			}
-
-			return s, nil
-		}
-	}
-}
-
 func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return OSCAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
@@ -184,7 +157,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
@@ -198,7 +171,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
 							Path:      pointer.StringPtr("/validate-operating-system-config"),
 							Port:      pointer.Int32Ptr(443),
@@ -237,7 +210,7 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *kubermatic
 
 			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %w", err)
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
@@ -251,7 +224,7 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *kubermatic
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
+							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
 							Path:      pointer.StringPtr("/validate-operating-system-profile"),
 							Port:      pointer.Int32Ptr(443),
