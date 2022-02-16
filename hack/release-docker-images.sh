@@ -59,7 +59,6 @@ fi
 PRIMARY_TAG="${1}"
 make docker-build TAGS="${PRIMARY_TAG}"
 make -C cmd/nodeport-proxy docker TAG="${PRIMARY_TAG}"
-make -C cmd/kubeletdnat-controller docker TAG="${PRIMARY_TAG}"
 docker build -t "${DOCKER_REPO}/addons:${PRIMARY_TAG}" addons
 docker build -t "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" -f cmd/etcd-launcher/Dockerfile .
 

@@ -46,7 +46,7 @@ trap exit_gracefully EXIT
 source $(dirname $0)/../lib.sh
 
 if [ -z "${GOCACHE_MINIO_ADDRESS:-}" ]; then
-  echodate "env var GOCACHE_MINIO_ADDRESS unset, can not download gocache"
+  echodate "env var GOCACHE_MINIO_ADDRESS unset, cannot download gocache"
   exit 0
 fi
 
