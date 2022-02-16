@@ -15,7 +15,7 @@
 minio:
   image:
     repository: docker.io/minio/minio
-    tag: RELEASE.2021-08-20T18-32-01Z
+    tag: RELEASE.2022-02-16T00-35-27Z
   storeSize: 100Gi
 
   # The is required to enable the BackupRestore controller so it can backup
