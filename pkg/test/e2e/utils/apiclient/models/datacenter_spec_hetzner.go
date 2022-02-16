@@ -18,7 +18,7 @@ import (
 type DatacenterSpecHetzner struct {
 
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
-	// at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
+	// at https://docs.hetzner.com/general/others/data-centers-and-connection/
 	Datacenter string `json:"datacenter,omitempty"`
 
 	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".

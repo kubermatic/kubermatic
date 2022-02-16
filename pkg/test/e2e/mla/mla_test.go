@@ -65,9 +65,9 @@ alertmanager_config: |
 
 var (
 	datacenter = "kubermatic"
-	location   = "do-fra1"
+	location   = "hetzner-hel1"
 	version    = utils.KubernetesVersion()
-	credential = "e2e-digitalocean"
+	credential = "e2e-hetzner"
 )
 
 func TestMLAIntegration(t *testing.T) {
@@ -100,7 +100,7 @@ func TestMLAIntegration(t *testing.T) {
 	defer masterClient.CleanupProject(t, project.ID)
 
 	t.Log("creating cluster...")
-	apiCluster, err := masterClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
+	apiCluster, err := masterClient.CreateHetznerCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
 	if err != nil {
 		t.Fatalf("failed to create cluster: %v", getErrorResponse(err))
 	}

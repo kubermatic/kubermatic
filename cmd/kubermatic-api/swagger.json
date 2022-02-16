@@ -21011,7 +21011,7 @@
       "title": "DatacenterSpecHetzner describes a Hetzner cloud datacenter.",
       "properties": {
         "datacenter": {
-          "description": "Datacenter location, e.g. \"nbg1-dc3\". A list of existing datacenters can be found\nat https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en",
+          "description": "Datacenter location, e.g. \"nbg1-dc3\". A list of existing datacenters can be found\nat https://docs.hetzner.com/general/others/data-centers-and-connection/",
           "type": "string",
           "x-go-name": "Datacenter"
         },

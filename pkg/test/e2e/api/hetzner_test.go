@@ -28,14 +28,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-func TestCreateUpdateDOCluster(t *testing.T) {
+func TestCreateUpdateHetznerCluster(t *testing.T) {
 	tests := []createCluster{
 		{
-			name:       "create cluster on DigitalOcean",
+			name:       "create cluster on Hetzner",
 			dc:         "kubermatic",
-			location:   "do-fra1",
+			location:   "hetzner-hel1",
 			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
+			credential: "e2e-hetzner",
 			replicas:   1,
 			patch: utils.PatchCluster{
 				Name:   "newName",
@@ -83,9 +83,9 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 		{
 			name:       "delete cluster before is up",
 			dc:         "kubermatic",
-			location:   "do-fra1",
+			location:   "hetzner-hel1",
 			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
+			credential: "e2e-hetzner",
 			replicas:   0,
 		},
 	}
@@ -106,7 +106,7 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 			}
 			defer cleanupProject(t, project.ID)
 
-			cluster, err := testClient.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
+			cluster, err := testClient.CreateHetznerCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
 				t.Fatalf("failed to create cluster: %v", err)
 			}
@@ -130,7 +130,7 @@ func createProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, cr
 		t.Fatalf("failed to create project %v", err)
 	}
 
-	cluster, err := testClient.CreateDOCluster(project.ID, dc, rand.String(10), credential, version, location, replicas)
+	cluster, err := testClient.CreateHetznerCluster(project.ID, dc, rand.String(10), credential, version, location, replicas)
 	if err != nil {
 		t.Fatalf("failed to create cluster: %v", err)
 	}
