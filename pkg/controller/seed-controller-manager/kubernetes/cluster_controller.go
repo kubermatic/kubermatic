@@ -269,8 +269,6 @@ func (r *Reconciler) reconcileClusterStatus(ctx context.Context, cluster *kuberm
 		if c.Status.NamespaceName == "" {
 			c.Status.NamespaceName = kubernetesprovider.NamespaceName(cluster.Name)
 		}
-
-		c.Status.KubermaticVersion = r.versions.Kubermatic
 	})
 }
 

@@ -193,7 +193,6 @@ func TestLoadFiles(t *testing.T) {
 				AssumeRoleARN:        "aws-assume-role-arn",
 				AssumeRoleExternalID: "aws-assume-role-external-id",
 				InstanceProfileName:  "aws-instance-profile-name",
-				RoleName:             "aws-role-name",
 				RouteTableID:         "aws-route-table-id",
 				SecurityGroupID:      "aws-security-group",
 				VPCID:                "aws-vpn-id",

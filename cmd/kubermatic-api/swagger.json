@@ -18157,11 +18157,6 @@
           "type": "string",
           "x-go-name": "ControlPlaneRoleARN"
         },
-        "roleName": {
-          "description": "DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane\ncan perform the assume-role.\nWe keep it for backwards compatibility (We use this name for cleanup purpose).",
-          "type": "string",
-          "x-go-name": "RoleName"
-        },
         "routeTableID": {
           "type": "string",
           "x-go-name": "RouteTableID"
@@ -21086,7 +21081,7 @@
           "x-go-name": "AllowInsecure"
         },
         "cluster": {
-          "description": "Optional: The name of the vSphere cluster to use.\nCluster is deprecated and may be removed in future releases as it is\ncurrently ignored.\nThe cluster hosting the VMs will be the same VM used as a template is\nlocated.",
+          "description": "The name of the vSphere cluster to use. Used for out-of-tree CSI Driver.",
           "type": "string",
           "x-go-name": "Cluster"
         },
