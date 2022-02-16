@@ -31,6 +31,8 @@ export TAG_NAME=test
 # prepare gocaches for each arch
 gocaches="$(mktemp -d)"
 for ARCH in ${ARCHITECTURES}; do
+  echodate "Attempting to fetch gocache for $ARCH..."
+
   cacheDir="$gocaches/$ARCH"
   mkdir -p "$cacheDir"
 

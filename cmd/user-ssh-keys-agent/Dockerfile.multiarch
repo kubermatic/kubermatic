@@ -24,6 +24,8 @@ ENV GOPROXY=$GOPROXY
 ENV GOCACHE=$GOCACHE
 ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
 
+RUN echo "proxy is '${GOPROXY}', cache is '${GOCACHE}, edition = '${KUBERMATIC_EDITION}'"
+
 WORKDIR /go/src/k8c.io/kubermatic
 COPY . .
 RUN make -C ./cmd/user-ssh-keys-agent build
