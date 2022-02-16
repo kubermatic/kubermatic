@@ -119,6 +119,9 @@ func main() {
 		}
 	}
 
+	_, err = os.Stat(filepath.Join(e.dataDir, "member"))
+	dataDirectoryIsEmpty := os.IsNotExist(err)
+
 	// setup and start etcd command
 	etcdCmd, err := startEtcdCmd(e, log)
 	if err != nil {
@@ -138,7 +141,7 @@ func main() {
 	if thisMember != nil {
 		log.Infof("%v is a member", thisMember.GetPeerURLs())
 
-		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); os.IsNotExist(err) {
+		if dataDirectoryIsEmpty {
 			client, err := e.getClusterClient()
 			if err != nil {
 				log.Panicw("can't find cluster client: %v", zap.Error(err))
