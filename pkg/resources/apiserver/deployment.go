@@ -289,8 +289,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth",
 		"--service-account-key-file", serviceAccountKeyFile,
-		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
-		"--service-cluster-ip-range", cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0],
+		"--service-cluster-ip-range", strings.Join(cluster.Spec.ClusterNetwork.Services.CIDRBlocks, ","),
 		"--service-node-port-range", overrideFlags.NodePortRange,
 		"--allow-privileged",
 		"--audit-log-maxage", "30",
