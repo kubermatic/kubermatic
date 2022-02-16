@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -202,7 +202,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	}
 
 	objectName := fmt.Sprintf("%s-%s", cluster.GetName(), restore.Spec.BackupName)
-	if _, err := s3Client.StatObject(bucketName, objectName, minio.StatObjectOptions{}); err != nil {
+	if _, err := s3Client.StatObject(ctx, bucketName, objectName, minio.StatObjectOptions{}); err != nil {
 		return nil, fmt.Errorf("could not access backup object %s: %w", objectName, err)
 	}
 

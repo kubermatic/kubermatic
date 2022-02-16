@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
@@ -97,13 +97,13 @@ func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-
 	logger := e.logger.With("bucket", e.bucket)
+	listOpts := minio.ListObjectsOptions{
+		Recursive: true,
+	}
 
 	var objects []minio.ObjectInfo
-	for listerObject := range e.minioClient.ListObjects(e.bucket, "", true, doneCh) {
+	for listerObject := range e.minioClient.ListObjects(context.Background(), e.bucket, listOpts) {
 		if listerObject.Err != nil {
 			logger.Errorw("Error on object", "object", listerObject.Key, zap.Error(listerObject.Err))
 			ch <- prometheus.MustNewConstMetric(
