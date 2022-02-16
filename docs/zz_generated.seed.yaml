@@ -279,7 +279,7 @@ spec:
       tolerations: null
     nodePortProxyEnvoy:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: ""
+      docker_repository: ""
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
