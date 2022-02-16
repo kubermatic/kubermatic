@@ -47,7 +47,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
@@ -259,7 +258,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
-		if sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
+		if kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
 			if !r.disabled {
 				if err := r.Create(ctx, r.cleanupJob(cluster)); err != nil {
 					// Otherwise we end up in a loop when we are able to create the job but not
@@ -282,8 +281,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	// Always add the finalizer first
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, cleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to add finalizer: %w", err)
+	if !r.disabled {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, cleanupFinalizer); err != nil {
+			return fmt.Errorf("failed to add finalizer: %w", err)
+		}
 	}
 
 	if err := r.ensureCronJobSecrets(ctx, cluster); err != nil {
@@ -297,6 +298,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if r.disabled {
 		return r.deleteCronJob(ctx, cluster)
 	}
+
 	return reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{r.cronjob(cluster)}, metav1.NamespaceSystem, r.Client)
 }
 
