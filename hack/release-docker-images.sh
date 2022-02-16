@@ -62,23 +62,37 @@ make -C cmd/nodeport-proxy docker TAG="${PRIMARY_TAG}"
 docker build -t "${DOCKER_REPO}/addons:${PRIMARY_TAG}" addons
 docker build -t "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" -f cmd/etcd-launcher/Dockerfile .
 
+# prepare gocaches for each arch
+gocaches="$(mktemp -d)"
+for ARCH in ${ARCHITECTURES}; do
+  cacheDir="$gocaches/$ARCH"
+  mkdir -p "$cacheDir"
+
+  # amd64 has been downloaded into $GOCACHE already, do not download it again
+  if [ "$ARCH" == "amd64" ]; then
+    cp -ar "$(go env GOCACHE)/*" "$cacheDir"
+    continue
+  fi
+
+  # try to get a gocache for this arch; this can "fail" but still exit with 0
+  TARGET_DIRECTORY="$cacheDir" GOARCH="$ARCH" ./hack/ci/download-gocache.sh
+done
+
 # build multi-arch images
 buildah manifest create "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}"
 for ARCH in ${ARCHITECTURES}; do
   echodate "Building user-ssh-keys-agent image for $ARCH..."
 
-  # Building via buildah does not use the gocache, but that's okay, because we
-  # wouldn't want to cache arm64 stuff anyway, as it would just blow up the
-  # cache size and force every e2e test to download gigabytes worth of unneeded
-  # arm64 stuff. We might need to change this once we run e2e tests on arm64.
   buildah bud \
     --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
     --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
+    --build-arg "GOCACHE=/gocache" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
     --format=docker \
     --file cmd/user-ssh-keys-agent/Dockerfile.multiarch \
+    --volume "$gocaches/$ARCH:/gocache" \
     .
   buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}"
 done
@@ -87,21 +101,21 @@ buildah manifest create "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}"
 for ARCH in ${ARCHITECTURES}; do
   echodate "Building kubeletdnat-controller image for $ARCH..."
 
-  # Building via buildah does not use the gocache, but that's okay, because we
-  # wouldn't want to cache arm64 stuff anyway, as it would just blow up the
-  # cache size and force every e2e test to download gigabytes worth of unneeded
-  # arm64 stuff. We might need to change this once we run e2e tests on arm64.
   buildah bud \
     --tag "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
     --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
+    --build-arg "GOCACHE=/gocache" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
     --format=docker \
     --file cmd/kubeletdnat-controller/Dockerfile.multiarch \
+    --volume "$gocaches/$ARCH:/gocache" \
     .
   buildah manifest add "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}"
 done
+
+rm -rf -- "$gocaches"
 
 # for each given tag, tag and push the image
 for TAG in "$@"; do
