@@ -1300,6 +1300,7 @@ func (in *ComponentSettings) DeepCopyInto(out *ComponentSettings) {
 	in.Scheduler.DeepCopyInto(&out.Scheduler)
 	in.Etcd.DeepCopyInto(&out.Etcd)
 	in.Prometheus.DeepCopyInto(&out.Prometheus)
+	in.NodePortProxyEnvoy.DeepCopyInto(&out.NodePortProxyEnvoy)
 	return
 }
 
