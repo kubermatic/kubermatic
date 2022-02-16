@@ -1421,7 +1421,8 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 	}
 
 	s3Client, err := minio.New(endpoint, &minio.Options{
-		Creds: credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure: true,
 		Transport: &http.Transport{
 			TLSClientConfig:    &tls.Config{RootCAs: pool},
 			DisableCompression: true,
