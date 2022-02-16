@@ -86,16 +86,18 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		return fmt.Errorf("failed to list Seeds: %w", err)
 	}
 
-	// if isDelete {
-	// 	// when a namespace is deleted, a DELETE call for all Seeds in the namespace
-	// 	// is issued; this request has no .Request.Name set, so this check will make
-	// 	// sure that we exit cleanly and allow deleting namespaces without seeds
-	// 	if _, exists := seedsMap[seed.Name]; !exists {
-	// 		return nil
-	// 	}
-	// 	// in case of delete request the seed is empty
-	// 	seed = seedsMap[seed.Name]
-	// }
+	if isDelete {
+		// when a namespace is deleted, a DELETE call for all Seeds in the namespace
+		// is issued; this request has no .Request.Name set, so this check will make
+		// sure that we exit cleanly and allow deleting namespaces without seeds
+		if _, exists := existingSeeds[subject.Name]; !exists {
+			return nil
+		}
+
+		// in case of delete request the seed is empty, so fetch the current one from
+		// the cluster instead
+		subject = existingSeeds[subject.Name]
+	}
 
 	// get a client for the Seed cluster; this uses a restmapper and is therefore cached for better performance
 	seedClient, err := v.seedClientGetter(subject)

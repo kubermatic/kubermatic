@@ -624,7 +624,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookCreators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile validating Validating Webhooks: %w", err)
+		return fmt.Errorf("failed to reconcile validating Admission Webhooks: %w", err)
 	}
 
 	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
@@ -632,7 +632,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile mutating Mutating Webhooks: %w", err)
+		return fmt.Errorf("failed to reconcile mutating Admission Webhooks: %w", err)
 	}
 
 	return nil
