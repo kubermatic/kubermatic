@@ -456,11 +456,12 @@ type MLASettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         APIServerSettings       `json:"apiserver"`
-	ControllerManager ControllerSettings      `json:"controllerManager"`
-	Scheduler         ControllerSettings      `json:"scheduler"`
-	Etcd              EtcdStatefulSetSettings `json:"etcd"`
-	Prometheus        StatefulSetSettings     `json:"prometheus"`
+	Apiserver          APIServerSettings       `json:"apiserver"`
+	ControllerManager  ControllerSettings      `json:"controllerManager"`
+	Scheduler          ControllerSettings      `json:"scheduler"`
+	Etcd               EtcdStatefulSetSettings `json:"etcd"`
+	Prometheus         StatefulSetSettings     `json:"prometheus"`
+	NodePortProxyEnvoy NodeportProxyComponent  `json:"nodePortProxyEnvoy"`
 }
 
 type APIServerSettings struct {

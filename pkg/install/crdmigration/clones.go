@@ -1397,6 +1397,10 @@ func convertComponentSettings(oldSettings kubermaticv1.ComponentSettings) newv1.
 		Prometheus: newv1.StatefulSetSettings{
 			Resources: oldSettings.Prometheus.Resources.DeepCopy(),
 		},
+		NodePortProxyEnvoy: newv1.NodeportProxyComponent{
+			DockerRepository: oldSettings.NodePortProxyEnvoy.DockerRepository,
+			Resources:        oldSettings.NodePortProxyEnvoy.Resources,
+		},
 	}
 
 	return newSettings
