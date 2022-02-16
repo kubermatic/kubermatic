@@ -19749,18 +19749,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "BIOS": {
-      "type": "object",
-      "title": "If set (default), BIOS will be used.",
-      "properties": {
-        "useSerial": {
-          "description": "If set, the BIOS output will be transmitted over serial\n+optional",
-          "type": "boolean",
-          "x-go-name": "UseSerial"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "BackupCredentials": {
       "description": "BackupCredentials contains credentials for etcd backups",
       "type": "object",
@@ -19855,34 +19843,6 @@
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
-    "BlockSize": {
-      "description": "Only one of its members may be specified.",
-      "type": "object",
-      "title": "BlockSize provides the option to change the block size presented to the VM for a disk.",
-      "properties": {
-        "custom": {
-          "$ref": "#/definitions/CustomBlockSize"
-        },
-        "matchVolume": {
-          "$ref": "#/definitions/FeatureState"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Bootloader": {
-      "description": "Used for setting the QEMU BIOS file path for the libvirt domain.",
-      "type": "object",
-      "title": "Represents the firmware blob used to assist in the domain creation process.",
-      "properties": {
-        "bios": {
-          "$ref": "#/definitions/BIOS"
-        },
-        "efi": {
-          "$ref": "#/definitions/EFI"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "BringYourOwnCloudSpec": {
       "type": "object",
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
@@ -19911,25 +19871,6 @@
         }
       },
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-    },
-    "CDRomTarget": {
-      "type": "object",
-      "properties": {
-        "bus": {
-          "description": "Bus indicates the type of disk device to emulate.\nsupported values: virtio, sata, scsi.",
-          "type": "string",
-          "x-go-name": "Bus"
-        },
-        "readonly": {
-          "description": "ReadOnly.\nDefaults to true.",
-          "type": "boolean",
-          "x-go-name": "ReadOnly"
-        },
-        "tray": {
-          "$ref": "#/definitions/TrayState"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "CNIPluginSettings": {
       "type": "object",
@@ -19970,77 +19911,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "CPU": {
-      "type": "object",
-      "title": "CPU allows specifying the CPU topology.",
-      "properties": {
-        "cores": {
-          "description": "Cores specifies the number of cores inside the vmi.\nMust be a value greater or equal 1.",
-          "type": "integer",
-          "format": "uint32",
-          "x-go-name": "Cores"
-        },
-        "dedicatedCpuPlacement": {
-          "description": "DedicatedCPUPlacement requests the scheduler to place the VirtualMachineInstance on a node\nwith enough dedicated pCPUs and pin the vCPUs to it.\n+optional",
-          "type": "boolean",
-          "x-go-name": "DedicatedCPUPlacement"
-        },
-        "features": {
-          "description": "Features specifies the CPU features list inside the VMI.\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CPUFeature"
-          },
-          "x-go-name": "Features"
-        },
-        "isolateEmulatorThread": {
-          "description": "IsolateEmulatorThread requests one more dedicated pCPU to be allocated for the VMI to place\nthe emulator thread on it.\n+optional",
-          "type": "boolean",
-          "x-go-name": "IsolateEmulatorThread"
-        },
-        "model": {
-          "description": "Model specifies the CPU model inside the VMI.\nList of available models https://github.com/libvirt/libvirt/tree/master/src/cpu_map.\nIt is possible to specify special cases like \"host-passthrough\" to get the same CPU as the node\nand \"host-model\" to get CPU closest to the node one.\nDefaults to host-model.\n+optional",
-          "type": "string",
-          "x-go-name": "Model"
-        },
-        "numa": {
-          "$ref": "#/definitions/NUMA"
-        },
-        "realtime": {
-          "$ref": "#/definitions/Realtime"
-        },
-        "sockets": {
-          "description": "Sockets specifies the number of sockets inside the vmi.\nMust be a value greater or equal 1.",
-          "type": "integer",
-          "format": "uint32",
-          "x-go-name": "Sockets"
-        },
-        "threads": {
-          "description": "Threads specifies the number of threads inside the vmi.\nMust be a value greater or equal 1.",
-          "type": "integer",
-          "format": "uint32",
-          "x-go-name": "Threads"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "CPUFeature": {
-      "type": "object",
-      "title": "CPUFeature allows specifying a CPU feature.",
-      "properties": {
-        "name": {
-          "description": "Name of the CPU feature",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "policy": {
-          "description": "Policy is the CPU feature attribute which can have the following attributes:\nforce    - The virtual CPU will claim the feature is supported regardless of it being supported by host CPU.\nrequire  - Guest creation will fail unless the feature is supported by the host CPU or the hypervisor is able to emulate it.\noptional - The feature will be supported by virtual CPU if and only if it is supported by host CPU.\ndisable  - The feature will not be supported by virtual CPU.\nforbid   - Guest creation will fail if the feature is supported by host CPU.\nDefaults to require\n+optional",
-          "type": "string",
-          "x-go-name": "Policy"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "CRD": {
       "type": "object",
       "properties": {
@@ -20074,33 +19944,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "Chassis": {
-      "type": "object",
-      "title": "Chassis specifies the chassis info passed to the domain.",
-      "properties": {
-        "asset": {
-          "type": "string",
-          "x-go-name": "Asset"
-        },
-        "manufacturer": {
-          "type": "string",
-          "x-go-name": "Manufacturer"
-        },
-        "serial": {
-          "type": "string",
-          "x-go-name": "Serial"
-        },
-        "sku": {
-          "type": "string",
-          "x-go-name": "Sku"
-        },
-        "version": {
-          "type": "string",
-          "x-go-name": "Version"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "CleanupOptions": {
       "type": "object",
       "properties": {
@@ -20114,61 +19957,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
-    "ClientPassthroughDevices": {
-      "description": "The struct is currently empty as there is no imediate request for\nuser-facing APIs. This structure simply turns on USB redirection of\nUsbClientPassthroughMaxNumberOf devices.",
-      "type": "object",
-      "title": "Represent a subset of client devices that can be accessed by VMI. At the\nmoment only, USB devices using Usbredir's library and tooling. Another fit\nwould be a smartcard with libcacard.",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Clock": {
-      "description": "+kubebuilder:pruning:PreserveUnknownFields",
-      "type": "object",
-      "title": "Represents the clock and timers of a vmi.",
-      "properties": {
-        "timer": {
-          "$ref": "#/definitions/Timer"
-        },
-        "timezone": {
-          "$ref": "#/definitions/ClockOffsetTimezone"
-        },
-        "utc": {
-          "$ref": "#/definitions/ClockOffsetUTC"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "ClockOffset": {
-      "type": "object",
-      "title": "Exactly one of its members must be set.",
-      "properties": {
-        "timezone": {
-          "$ref": "#/definitions/ClockOffsetTimezone"
-        },
-        "utc": {
-          "$ref": "#/definitions/ClockOffsetUTC"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "ClockOffsetTimezone": {
-      "description": "Zone name follows the TZ environment variable format (e.g. 'America/New_York').",
-      "type": "string",
-      "title": "ClockOffsetTimezone sets the guest clock to the specified timezone.",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "ClockOffsetUTC": {
-      "type": "object",
-      "title": "UTC sets the guest clock to UTC on each boot.",
-      "properties": {
-        "offsetSeconds": {
-          "description": "OffsetSeconds specifies an offset in seconds, relative to UTC. If set,\nguest changes to the clock will be kept during reboots and not reset.",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "OffsetSeconds"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "CloudSpec": {
       "type": "object",
@@ -20964,23 +20752,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "CustomBlockSize": {
-      "type": "object",
-      "title": "CustomBlockSize represents the desired logical and physical block size for a VM disk.",
-      "properties": {
-        "logical": {
-          "type": "integer",
-          "format": "uint64",
-          "x-go-name": "Logical"
-        },
-        "physical": {
-          "type": "integer",
-          "format": "uint64",
-          "x-go-name": "Physical"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "CustomLink": {
       "type": "object",
       "properties": {
@@ -21009,57 +20780,6 @@
         "$ref": "#/definitions/CustomLink"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
-    "DHCPOptions": {
-      "type": "object",
-      "title": "Extra DHCP options to use in the interface.",
-      "properties": {
-        "bootFileName": {
-          "description": "If specified will pass option 67 to interface's DHCP server\n+optional",
-          "type": "string",
-          "x-go-name": "BootFileName"
-        },
-        "ntpServers": {
-          "description": "If specified will pass the configured NTP server to the VM via DHCP option 042.\n+optional",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "NTPServers"
-        },
-        "privateOptions": {
-          "description": "If specified will pass extra DHCP options for private use, range: 224-254\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/DHCPPrivateOptions"
-          },
-          "x-go-name": "PrivateOptions"
-        },
-        "tftpServerName": {
-          "description": "If specified will pass option 66 to interface's DHCP server\n+optional",
-          "type": "string",
-          "x-go-name": "TFTPServerName"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "DHCPPrivateOptions": {
-      "type": "object",
-      "title": "DHCPExtraOptions defines Extra DHCP options for a VM.",
-      "properties": {
-        "option": {
-          "description": "Option is an Integer value from 224-254\nRequired.",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Option"
-        },
-        "value": {
-          "description": "Value is a String value for the Option provided\nRequired.",
-          "type": "string",
-          "x-go-name": "Value"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "Datacenter": {
       "type": "object",
@@ -21479,112 +21199,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
-    "Devices": {
-      "type": "object",
-      "properties": {
-        "autoattachGraphicsDevice": {
-          "description": "Whether to attach the default graphics device or not.\nVNC will not be available if set to false. Defaults to true.",
-          "type": "boolean",
-          "x-go-name": "AutoattachGraphicsDevice"
-        },
-        "autoattachMemBalloon": {
-          "description": "Whether to attach the Memory balloon device with default period.\nPeriod can be adjusted in virt-config.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "AutoattachMemBalloon"
-        },
-        "autoattachPodInterface": {
-          "description": "Whether to attach a pod network interface. Defaults to true.",
-          "type": "boolean",
-          "x-go-name": "AutoattachPodInterface"
-        },
-        "autoattachSerialConsole": {
-          "description": "Whether to attach the default serial console or not.\nSerial console access will not be available if set to false. Defaults to true.",
-          "type": "boolean",
-          "x-go-name": "AutoattachSerialConsole"
-        },
-        "blockMultiQueue": {
-          "description": "Whether or not to enable virtio multi-queue for block devices.\nDefaults to false.\n+optional",
-          "type": "boolean",
-          "x-go-name": "BlockMultiQueue"
-        },
-        "clientPassthrough": {
-          "$ref": "#/definitions/ClientPassthroughDevices"
-        },
-        "disableHotplug": {
-          "description": "DisableHotplug disabled the ability to hotplug disks.",
-          "type": "boolean",
-          "x-go-name": "DisableHotplug"
-        },
-        "disks": {
-          "description": "Disks describes disks, cdroms, floppy and luns which are connected to the vmi.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Disk"
-          },
-          "x-go-name": "Disks"
-        },
-        "filesystems": {
-          "description": "Filesystems describes filesystem which is connected to the vmi.\n+optional\n+listType=atomic",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Filesystem"
-          },
-          "x-go-name": "Filesystems"
-        },
-        "gpus": {
-          "description": "Whether to attach a GPU device to the vmi.\n+optional\n+listType=atomic",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/GPU"
-          },
-          "x-go-name": "GPUs"
-        },
-        "hostDevices": {
-          "description": "Whether to attach a host device to the vmi.\n+optional\n+listType=atomic",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/HostDevice"
-          },
-          "x-go-name": "HostDevices"
-        },
-        "inputs": {
-          "description": "Inputs describe input devices",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Input"
-          },
-          "x-go-name": "Inputs"
-        },
-        "interfaces": {
-          "description": "Interfaces describe network interfaces which are added to the vmi.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Interface"
-          },
-          "x-go-name": "Interfaces"
-        },
-        "networkInterfaceMultiqueue": {
-          "description": "If specified, virtual network interfaces configured with a virtio bus will also enable the vhost multiqueue feature for network devices. The number of queues created depends on additional factors of the VirtualMachineInstance, like the number of guest CPUs.\n+optional",
-          "type": "boolean",
-          "x-go-name": "NetworkInterfaceMultiQueue"
-        },
-        "rng": {
-          "$ref": "#/definitions/Rng"
-        },
-        "sound": {
-          "$ref": "#/definitions/SoundDevice"
-        },
-        "useVirtioTransitional": {
-          "description": "Fall back to legacy virtio 0.9 support if virtio bus is selected on devices.\nThis is helpful for old machines like CentOS6 or RHEL6 which\ndo not understand virtio_non_transitional (virtio 1.0).",
-          "type": "boolean",
-          "x-go-name": "UseVirtioTransitional"
-        },
-        "watchdog": {
-          "$ref": "#/definitions/Watchdog"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "DigitaloceanCloudSpec": {
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
@@ -21709,157 +21323,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "Disk": {
-      "type": "object",
-      "properties": {
-        "blockSize": {
-          "$ref": "#/definitions/BlockSize"
-        },
-        "bootOrder": {
-          "description": "BootOrder is an integer value \u003e 0, used to determine ordering of boot devices.\nLower values take precedence.\nEach disk or interface that has a boot order must have a unique value.\nDisks without a boot order are not tried if a disk with a boot order exists.\n+optional",
-          "type": "integer",
-          "format": "uint64",
-          "x-go-name": "BootOrder"
-        },
-        "cache": {
-          "$ref": "#/definitions/DriverCache"
-        },
-        "cdrom": {
-          "$ref": "#/definitions/CDRomTarget"
-        },
-        "dedicatedIOThread": {
-          "description": "dedicatedIOThread indicates this disk should have an exclusive IO Thread.\nEnabling this implies useIOThreads = true.\nDefaults to false.\n+optional",
-          "type": "boolean",
-          "x-go-name": "DedicatedIOThread"
-        },
-        "disk": {
-          "$ref": "#/definitions/DiskTarget"
-        },
-        "floppy": {
-          "$ref": "#/definitions/FloppyTarget"
-        },
-        "io": {
-          "$ref": "#/definitions/DriverIO"
-        },
-        "lun": {
-          "$ref": "#/definitions/LunTarget"
-        },
-        "name": {
-          "description": "Name is the device name",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "serial": {
-          "description": "Serial provides the ability to specify a serial number for the disk device.\n+optional",
-          "type": "string",
-          "x-go-name": "Serial"
-        },
-        "tag": {
-          "description": "If specified, disk address and its tag will be provided to the guest via config drive metadata\n+optional",
-          "type": "string",
-          "x-go-name": "Tag"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "DiskDevice": {
-      "description": "Only one of its members may be specified.",
-      "type": "object",
-      "title": "Represents the target of a volume to mount.",
-      "properties": {
-        "cdrom": {
-          "$ref": "#/definitions/CDRomTarget"
-        },
-        "disk": {
-          "$ref": "#/definitions/DiskTarget"
-        },
-        "floppy": {
-          "$ref": "#/definitions/FloppyTarget"
-        },
-        "lun": {
-          "$ref": "#/definitions/LunTarget"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "DiskTarget": {
-      "type": "object",
-      "properties": {
-        "bus": {
-          "description": "Bus indicates the type of disk device to emulate.\nsupported values: virtio, sata, scsi.",
-          "type": "string",
-          "x-go-name": "Bus"
-        },
-        "pciAddress": {
-          "type": "string",
-          "x-go-name": "PciAddress",
-          "example": "0000:81:01.10"
-        },
-        "readonly": {
-          "description": "ReadOnly.\nDefaults to false.",
-          "type": "boolean",
-          "x-go-name": "ReadOnly"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "DomainSpec": {
-      "description": "Need to copy the following type to avoid a collision on Resources\nbetween kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API.",
-      "type": "object",
-      "properties": {
-        "chassis": {
-          "$ref": "#/definitions/Chassis"
-        },
-        "clock": {
-          "$ref": "#/definitions/Clock"
-        },
-        "cpu": {
-          "$ref": "#/definitions/CPU"
-        },
-        "devices": {
-          "$ref": "#/definitions/Devices"
-        },
-        "features": {
-          "$ref": "#/definitions/Features"
-        },
-        "firmware": {
-          "$ref": "#/definitions/Firmware"
-        },
-        "ioThreadsPolicy": {
-          "$ref": "#/definitions/IOThreadsPolicy"
-        },
-        "machine": {
-          "$ref": "#/definitions/Machine"
-        },
-        "memory": {
-          "$ref": "#/definitions/Memory"
-        },
-        "resources": {
-          "$ref": "#/definitions/ResourceRequirements"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "DriverCache": {
-      "type": "string",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "DriverIO": {
-      "type": "string",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "EFI": {
-      "type": "object",
-      "title": "If set, EFI will be used instead of BIOS.",
-      "properties": {
-        "secureBoot": {
-          "description": "If set, SecureBoot will be enabled and the OVMF roms will be swapped for\nSecureBoot-enabled ones.\nRequires SMM to be enabled.\nDefaults to true\n+optional",
-          "type": "boolean",
-          "x-go-name": "SecureBoot"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "EKSCloudSpec": {
       "type": "object",
@@ -22592,22 +22055,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
-    "FeatureAPIC": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "description": "Enabled determines if the feature should be enabled or disabled on the guest.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        },
-        "endOfInterrupt": {
-          "description": "EndOfInterrupt enables the end of interrupt notification in the guest.\nDefaults to false.\n+optional",
-          "type": "boolean",
-          "x-go-name": "EndOfInterrupt"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "FeatureGates": {
       "description": "FeatureGates represents an object holding feature gate settings",
       "type": "object",
@@ -22618,173 +22065,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "FeatureHyperv": {
-      "type": "object",
-      "title": "Hyperv specific features.",
-      "properties": {
-        "evmcs": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "frequencies": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "ipi": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "reenlightenment": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "relaxed": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "reset": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "runtime": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "spinlocks": {
-          "$ref": "#/definitions/FeatureSpinlocks"
-        },
-        "synic": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "synictimer": {
-          "$ref": "#/definitions/SyNICTimer"
-        },
-        "tlbflush": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "vapic": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "vendorid": {
-          "$ref": "#/definitions/FeatureVendorID"
-        },
-        "vpindex": {
-          "$ref": "#/definitions/FeatureState"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "FeatureKVM": {
-      "type": "object",
-      "properties": {
-        "hidden": {
-          "description": "Hide the KVM hypervisor from standard MSR based discovery.\nDefaults to false",
-          "type": "boolean",
-          "x-go-name": "Hidden"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "FeatureSpinlocks": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "description": "Enabled determines if the feature should be enabled or disabled on the guest.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        },
-        "spinlocks": {
-          "description": "Retries indicates the number of retries.\nMust be a value greater or equal 4096.\nDefaults to 4096.\n+optional",
-          "type": "integer",
-          "format": "uint32",
-          "x-go-name": "Retries"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "FeatureState": {
-      "type": "object",
-      "title": "Represents if a feature is enabled or disabled.",
-      "properties": {
-        "enabled": {
-          "description": "Enabled determines if the feature should be enabled or disabled on the guest.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "FeatureVendorID": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "description": "Enabled determines if the feature should be enabled or disabled on the guest.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        },
-        "vendorid": {
-          "description": "VendorID sets the hypervisor vendor id, visible to the vmi.\nString up to twelve characters.",
-          "type": "string",
-          "x-go-name": "VendorID"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Features": {
-      "type": "object",
-      "properties": {
-        "acpi": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "apic": {
-          "$ref": "#/definitions/FeatureAPIC"
-        },
-        "hyperv": {
-          "$ref": "#/definitions/FeatureHyperv"
-        },
-        "kvm": {
-          "$ref": "#/definitions/FeatureKVM"
-        },
-        "pvspinlock": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "smm": {
-          "$ref": "#/definitions/FeatureState"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Filesystem": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "description": "Name is the device name",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "virtiofs": {
-          "$ref": "#/definitions/FilesystemVirtiofs"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "FilesystemVirtiofs": {
-      "type": "object",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Firmware": {
-      "type": "object",
-      "properties": {
-        "bootloader": {
-          "$ref": "#/definitions/Bootloader"
-        },
-        "kernelBoot": {
-          "$ref": "#/definitions/KernelBoot"
-        },
-        "serial": {
-          "description": "The system-serial-number in SMBIOS",
-          "type": "string",
-          "x-go-name": "Serial"
-        },
-        "uuid": {
-          "$ref": "#/definitions/UID"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "FlatcarSpec": {
       "description": "FlatcarSpec contains Flatcar Linux specific settings",
@@ -22797,20 +22077,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "FloppyTarget": {
-      "type": "object",
-      "properties": {
-        "readonly": {
-          "description": "ReadOnly.\nDefaults to false.",
-          "type": "boolean",
-          "x-go-name": "ReadOnly"
-        },
-        "tray": {
-          "$ref": "#/definitions/TrayState"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "GCPCloudSpec": {
       "type": "object",
@@ -23488,24 +22754,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "GPU": {
-      "type": "object",
-      "properties": {
-        "deviceName": {
-          "type": "string",
-          "x-go-name": "DeviceName"
-        },
-        "name": {
-          "description": "Name of the GPU device as exposed by a device plugin",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "virtualGPUOptions": {
-          "$ref": "#/definitions/VGPUOptions"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "GVK": {
       "type": "object",
       "title": "GVK group version kind of a resource.",
@@ -23617,25 +22865,6 @@
       "description": "GlobalSettings defines global settings",
       "$ref": "#/definitions/SettingSpec"
     },
-    "HPETTickPolicy": {
-      "type": "string",
-      "title": "HPETTickPolicy determines what happens when QEMU misses a deadline for injecting a tick to the guest.",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "HPETTimer": {
-      "type": "object",
-      "properties": {
-        "present": {
-          "description": "Enabled set to false makes sure that the machine type or a preset can't add the timer.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        },
-        "tickPolicy": {
-          "$ref": "#/definitions/HPETTickPolicy"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "HealthStatus": {
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -23736,58 +22965,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "HostDevice": {
-      "type": "object",
-      "properties": {
-        "deviceName": {
-          "description": "DeviceName is the resource name of the host device exposed by a device plugin",
-          "type": "string",
-          "x-go-name": "DeviceName"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Hugepages": {
-      "type": "object",
-      "title": "Hugepages allow to use hugepages for the VirtualMachineInstance instead of regular memory.",
-      "properties": {
-        "pageSize": {
-          "description": "PageSize specifies the hugepage size, for x86_64 architecture valid values are 1Gi and 2Mi.",
-          "type": "string",
-          "x-go-name": "PageSize"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "HypervTimer": {
-      "type": "object",
-      "properties": {
-        "present": {
-          "description": "Enabled set to false makes sure that the machine type or a preset can't add the timer.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "I6300ESBWatchdog": {
-      "type": "object",
-      "title": "i6300esb watchdog device.",
-      "properties": {
-        "action": {
-          "$ref": "#/definitions/WatchdogAction"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "IOThreadsPolicy": {
-      "type": "string",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "IPVSConfiguration": {
       "type": "object",
       "title": "IPVSConfiguration contains ipvs-related configuration details for kube-proxy.",
@@ -23807,133 +22984,6 @@
         "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
-    "Input": {
-      "type": "object",
-      "properties": {
-        "bus": {
-          "description": "Bus indicates the bus of input device to emulate.\nSupported values: virtio, usb.",
-          "type": "string",
-          "x-go-name": "Bus"
-        },
-        "name": {
-          "description": "Name is the device name",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "type": {
-          "description": "Type indicated the type of input device.\nSupported values: tablet.",
-          "type": "string",
-          "x-go-name": "Type"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "Interface": {
-      "type": "object",
-      "properties": {
-        "bootOrder": {
-          "description": "BootOrder is an integer value \u003e 0, used to determine ordering of boot devices.\nLower values take precedence.\nEach interface or disk that has a boot order must have a unique value.\nInterfaces without a boot order are not tried.\n+optional",
-          "type": "integer",
-          "format": "uint64",
-          "x-go-name": "BootOrder"
-        },
-        "bridge": {
-          "$ref": "#/definitions/InterfaceBridge"
-        },
-        "dhcpOptions": {
-          "$ref": "#/definitions/DHCPOptions"
-        },
-        "macAddress": {
-          "type": "string",
-          "x-go-name": "MacAddress",
-          "example": "de:ad:00:00:be:af or DE-AD-00-00-BE-AF."
-        },
-        "macvtap": {
-          "$ref": "#/definitions/InterfaceMacvtap"
-        },
-        "masquerade": {
-          "$ref": "#/definitions/InterfaceMasquerade"
-        },
-        "model": {
-          "description": "Interface model.\nOne of: e1000, e1000e, ne2k_pci, pcnet, rtl8139, virtio.\nDefaults to virtio.\nTODO:(ihar) switch to enums once opengen-api supports them. See: https://github.com/kubernetes/kube-openapi/issues/51",
-          "type": "string",
-          "x-go-name": "Model"
-        },
-        "name": {
-          "description": "Logical name of the interface as well as a reference to the associated networks.\nMust match the Name of a Network.",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "pciAddress": {
-          "type": "string",
-          "x-go-name": "PciAddress",
-          "example": "0000:81:01.10"
-        },
-        "ports": {
-          "description": "List of ports to be forwarded to the virtual machine.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Port"
-          },
-          "x-go-name": "Ports"
-        },
-        "slirp": {
-          "$ref": "#/definitions/InterfaceSlirp"
-        },
-        "sriov": {
-          "$ref": "#/definitions/InterfaceSRIOV"
-        },
-        "tag": {
-          "description": "If specified, the virtual network interface address and its tag will be provided to the guest via config drive\n+optional",
-          "type": "string",
-          "x-go-name": "Tag"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "InterfaceBindingMethod": {
-      "description": "Only one of its members may be specified.",
-      "type": "object",
-      "title": "Represents the method which will be used to connect the interface to the guest.",
-      "properties": {
-        "bridge": {
-          "$ref": "#/definitions/InterfaceBridge"
-        },
-        "macvtap": {
-          "$ref": "#/definitions/InterfaceMacvtap"
-        },
-        "masquerade": {
-          "$ref": "#/definitions/InterfaceMasquerade"
-        },
-        "slirp": {
-          "$ref": "#/definitions/InterfaceSlirp"
-        },
-        "sriov": {
-          "$ref": "#/definitions/InterfaceSRIOV"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "InterfaceBridge": {
-      "type": "object",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "InterfaceMacvtap": {
-      "type": "object",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "InterfaceMasquerade": {
-      "type": "object",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "InterfaceSRIOV": {
-      "type": "object",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "InterfaceSlirp": {
-      "type": "object",
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "JSON": {
       "description": "These types are supported: bool, int64, float64, string, []interface{}, map[string]interface{} and nil.",
@@ -24229,63 +23279,6 @@
       "title": "JSONSchemaURL represents a schema url.",
       "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
-    "KVMTimer": {
-      "type": "object",
-      "properties": {
-        "present": {
-          "description": "Enabled set to false makes sure that the machine type or a preset can't add the timer.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "KernelBoot": {
-      "description": "Used for setting the kernel, initrd and command line arguments",
-      "type": "object",
-      "title": "Represents the firmware blob used to assist in the kernel boot process.",
-      "properties": {
-        "container": {
-          "$ref": "#/definitions/KernelBootContainer"
-        },
-        "kernelArgs": {
-          "description": "Arguments to be passed to the kernel at boot time",
-          "type": "string",
-          "x-go-name": "KernelArgs"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "KernelBootContainer": {
-      "type": "object",
-      "title": "If set, the VM will be booted from the defined kernel / initrd.",
-      "properties": {
-        "image": {
-          "description": "Image that contains initrd / kernel files.",
-          "type": "string",
-          "x-go-name": "Image"
-        },
-        "imagePullPolicy": {
-          "$ref": "#/definitions/PullPolicy"
-        },
-        "imagePullSecret": {
-          "description": "ImagePullSecret is the name of the Docker registry secret required to pull the image. The secret must already exist.\n+optional",
-          "type": "string",
-          "x-go-name": "ImagePullSecret"
-        },
-        "initrdPath": {
-          "description": "the fully-qualified path to the ramdisk image in the host OS\n+optional",
-          "type": "string",
-          "x-go-name": "InitrdPath"
-        },
-        "kernelPath": {
-          "description": "The fully-qualified path to the kernel image in the host OS\n+optional",
-          "type": "string",
-          "x-go-name": "KernelPath"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "Kind": {
       "type": "object",
       "title": "Kind specifies the resource Kind and APIGroup.",
@@ -24474,22 +23467,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
-    "LunTarget": {
-      "type": "object",
-      "properties": {
-        "bus": {
-          "description": "Bus indicates the type of disk device to emulate.\nsupported values: virtio, sata, scsi.",
-          "type": "string",
-          "x-go-name": "Bus"
-        },
-        "readonly": {
-          "description": "ReadOnly.\nDefaults to false.",
-          "type": "boolean",
-          "x-go-name": "ReadOnly"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "MLA": {
       "type": "object",
       "properties": {
@@ -24541,17 +23518,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
-    "Machine": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "description": "QEMU machine type is the actual chipset of the VirtualMachineInstance.\n+optional",
-          "type": "string",
-          "x-go-name": "Type"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "MachineDeploymentStatus": {
       "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",
@@ -24735,19 +23701,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "Memory": {
-      "type": "object",
-      "title": "Memory allows specifying the VirtualMachineInstance memory features.",
-      "properties": {
-        "guest": {
-          "$ref": "#/definitions/Quantity"
-        },
-        "hugepages": {
-          "$ref": "#/definitions/Hugepages"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "MeteringConfiguration": {
       "type": "object",
       "title": "MeteringConfiguration contains all the configuration for the metering tool.",
@@ -24872,21 +23825,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
-    "NUMA": {
-      "type": "object",
-      "properties": {
-        "guestMappingPassthrough": {
-          "$ref": "#/definitions/NUMAGuestMappingPassthrough"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "NUMAGuestMappingPassthrough": {
-      "description": "This will result in a subset of the node numa topology being passed through, ensuring that virtual numa nodes and their memory\nnever cross boundaries coming from the node numa mapping.",
-      "type": "object",
-      "title": "NUMAGuestMappingPassthrough instructs kubevirt to model numa topology which is compatible with the CPU pinning on the guest.",
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "Names": {
       "type": "object",
@@ -26031,25 +24969,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "PITTickPolicy": {
-      "type": "string",
-      "title": "PITTickPolicy determines what happens when QEMU misses a deadline for injecting a tick to the guest.",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "PITTimer": {
-      "type": "object",
-      "properties": {
-        "present": {
-          "description": "Enabled set to false makes sure that the machine type or a preset can't add the timer.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        },
-        "tickPolicy": {
-          "$ref": "#/definitions/PITTickPolicy"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "PacketCPU": {
       "type": "object",
       "title": "PacketCPU represents an array of Packet CPUs. It is a part of PacketSize.",
@@ -26175,12 +25094,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
-    "PersistentVolumeReclaimPolicy": {
-      "description": "+enum",
-      "type": "string",
-      "title": "PersistentVolumeReclaimPolicy describes a policy for end-of-life maintenance of persistent volumes.",
-      "x-go-package": "k8s.io/api/core/v1"
-    },
     "PodDNSConfig": {
       "description": "PodDNSConfig defines the DNS parameters of a pod in addition to\nthose generated from DNSPolicy.",
       "type": "object",
@@ -26275,30 +25188,6 @@
         }
       },
       "x-go-package": "k8s.io/api/rbac/v1"
-    },
-    "Port": {
-      "description": "Default protocol TCP.\nThe port field is mandatory",
-      "type": "object",
-      "title": "Port repesents a port to expose from the virtual machine.",
-      "properties": {
-        "name": {
-          "description": "If specified, this must be an IANA_SVC_NAME and unique within the pod. Each\nnamed port in a pod must have a unique name. Name for the port that can be\nreferred to by services.\n+optional",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "port": {
-          "description": "Number of port to expose for the virtual machine.\nThis must be a valid port number, 0 \u003c x \u003c 65536.",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Port"
-        },
-        "protocol": {
-          "description": "Protocol for port. Must be UDP or TCP.\nDefaults to \"TCP\".\n+optional",
-          "type": "string",
-          "x-go-name": "Protocol"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "Preset": {
       "description": "Preset represents a preset",
@@ -26653,11 +25542,6 @@
       "title": "PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "PullPolicy": {
-      "description": "PullPolicy describes a policy for if/when to pull a container image\n+enum",
-      "type": "string",
-      "x-go-package": "k8s.io/api/core/v1"
-    },
     "Quantity": {
       "description": "The serialization format is:\n\n\u003cquantity\u003e        ::= \u003csignedNumber\u003e\u003csuffix\u003e\n(Note that \u003csuffix\u003e may be empty, from the \"\" case in \u003cdecimalSI\u003e.)\n\u003cdigit\u003e           ::= 0 | 1 | ... | 9\n\u003cdigits\u003e          ::= \u003cdigit\u003e | \u003cdigit\u003e\u003cdigits\u003e\n\u003cnumber\u003e          ::= \u003cdigits\u003e | \u003cdigits\u003e.\u003cdigits\u003e | \u003cdigits\u003e. | .\u003cdigits\u003e\n\u003csign\u003e            ::= \"+\" | \"-\"\n\u003csignedNumber\u003e    ::= \u003cnumber\u003e | \u003csign\u003e\u003cnumber\u003e\n\u003csuffix\u003e          ::= \u003cbinarySI\u003e | \u003cdecimalExponent\u003e | \u003cdecimalSI\u003e\n\u003cbinarySI\u003e        ::= Ki | Mi | Gi | Ti | Pi | Ei\n(International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)\n\u003cdecimalSI\u003e       ::= m | \"\" | k | M | G | T | P | E\n(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)\n\u003cdecimalExponent\u003e ::= \"e\" \u003csignedNumber\u003e | \"E\" \u003csignedNumber\u003e\n\nNo matter which of the three exponent forms is used, no quantity may represent\na number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal\nplaces. Numbers larger or more precise will be capped or rounded up.\n(E.g.: 0.1m will rounded up to 1m.)\nThis may be extended in the future if we require larger or smaller quantities.\n\nWhen a Quantity is parsed from a string, it will remember the type of suffix\nit had, and will use the same type again when it is serialized.\n\nBefore serializing, Quantity will be put in \"canonical form\".\nThis means that Exponent/suffix will be adjusted up or down (with a\ncorresponding increase or decrease in Mantissa) such that:\na. No precision is lost\nb. No fractional digits will be emitted\nc. The exponent (or suffix) is as large as possible.\nThe sign will be omitted unless the number is negative.\n\nExamples:\n1.5 will be serialized as \"1500m\"\n1.5Gi will be serialized as \"1536Mi\"\n\nNote that the quantity will NEVER be internally represented by a\nfloating point number. That is the whole point of this exercise.\n\nNon-canonical values will still parse as long as they are well formed,\nbut will be re-emitted in their canonical form. (So always use canonical\nform, or don't diff.)\n\nThis format is intended to make it difficult to use these numbers without\nwriting some sort of special handling code in the hopes that that will\ncause implementors to also use a fixed point implementation.\n\n+protobuf=true\n+protobuf.embed=string\n+protobuf.options.marshal=false\n+protobuf.options.(gogoproto.goproto_stringer)=false\n+k8s:deepcopy-gen=true\n+k8s:openapi-gen=true",
       "type": "object",
@@ -26688,33 +25572,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "RTCTickPolicy": {
-      "type": "string",
-      "title": "RTCTickPolicy determines what happens when QEMU misses a deadline for injecting a tick to the guest.",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "RTCTimer": {
-      "type": "object",
-      "properties": {
-        "present": {
-          "description": "Enabled set to false makes sure that the machine type or a preset can't add the timer.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        },
-        "tickPolicy": {
-          "$ref": "#/definitions/RTCTickPolicy"
-        },
-        "track": {
-          "$ref": "#/definitions/RTCTimerTrack"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "RTCTimerTrack": {
-      "type": "string",
-      "title": "RTCTimerTrack specifies from which source to track the time.",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "ReadinessSpec": {
       "type": "object",
       "properties": {
@@ -26725,19 +25582,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "Realtime": {
-      "type": "object",
-      "title": "Realtime holds the tuning knobs specific for realtime workloads.",
-      "properties": {
-        "mask": {
-          "description": "Mask defines the vcpu mask expression that defines which vcpus are used for realtime. Format matches libvirt's expressions.",
-          "type": "string",
-          "x-go-name": "Mask",
-          "example": "\"0-3,^1\",\"0,2,3\",\"2-3\""
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "ResourceLabelMap": {
       "type": "object",
@@ -26771,11 +25615,6 @@
     "ResourceType": {
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "Rng": {
-      "description": "Rng represents the random device passed from host",
-      "type": "object",
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "Role": {
       "description": "Role defines RBAC role for the user cluster",
@@ -27363,96 +26202,13 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
-    "SoundDevice": {
-      "type": "object",
-      "title": "Represents the user's configuration to emulate sound cards in the VMI.",
-      "properties": {
-        "model": {
-          "description": "We only support ich9 or ac97.\nIf SoundDevice is not set: No sound card is emulated.\nIf SoundDevice is set but Model is not: ich9\n+optional",
-          "type": "string",
-          "x-go-name": "Model"
-        },
-        "name": {
-          "description": "User's defined name for this sound device",
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
     "StorageClass": {
       "description": "StorageClass represents a Kubernetes StorageClass",
       "type": "object",
       "properties": {
-        "allowVolumeExpansion": {
-          "description": "AllowVolumeExpansion shows whether the storage class allow volume expand\n+optional",
-          "type": "boolean",
-          "x-go-name": "AllowVolumeExpansion"
-        },
-        "allowedTopologies": {
-          "description": "Restrict the node topologies where volumes can be dynamically provisioned.\nEach volume plugin defines its own supported topology specifications.\nAn empty TopologySelectorTerm list means there is no topology restriction.\nThis field is only honored by servers that enable the VolumeScheduling feature.\n+optional\n+listType=atomic",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TopologySelectorTerm"
-          },
-          "x-go-name": "AllowedTopologies"
-        },
-        "annotations": {
-          "description": "Annotations that can be added to the resource",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Annotations"
-        },
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CreationTimestamp"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "DeletionTimestamp"
-        },
-        "id": {
-          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
-          "type": "string",
-          "x-go-name": "ID"
-        },
-        "mountOptions": {
-          "description": "Dynamically provisioned PersistentVolumes of this storage class are\ncreated with these mountOptions, e.g. [\"ro\", \"soft\"]. Not validated -\nmount of the PVs will simply fail if one is invalid.\n+optional",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "MountOptions"
-        },
         "name": {
-          "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
-        },
-        "parameters": {
-          "description": "Parameters holds the parameters for the provisioner that should\ncreate volumes of this storage class.\n+optional",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Parameters"
-        },
-        "provisioner": {
-          "description": "Provisioner indicates the type of the provisioner.",
-          "type": "string",
-          "x-go-name": "Provisioner"
-        },
-        "reclaimPolicy": {
-          "$ref": "#/definitions/PersistentVolumeReclaimPolicy"
-        },
-        "volumeBindingMode": {
-          "$ref": "#/definitions/VolumeBindingMode"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -27492,19 +26248,6 @@
         }
       },
       "x-go-package": "k8s.io/api/rbac/v1"
-    },
-    "SyNICTimer": {
-      "type": "object",
-      "properties": {
-        "direct": {
-          "$ref": "#/definitions/FeatureState"
-        },
-        "enabled": {
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "Sync": {
       "type": "object",
@@ -27567,65 +26310,6 @@
       "title": "A Time represents an instant in time with nanosecond precision.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "Timer": {
-      "type": "object",
-      "title": "Represents all available timers in a vmi.",
-      "properties": {
-        "hpet": {
-          "$ref": "#/definitions/HPETTimer"
-        },
-        "hyperv": {
-          "$ref": "#/definitions/HypervTimer"
-        },
-        "kvm": {
-          "$ref": "#/definitions/KVMTimer"
-        },
-        "pit": {
-          "$ref": "#/definitions/PITTimer"
-        },
-        "rtc": {
-          "$ref": "#/definitions/RTCTimer"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "TopologySelectorLabelRequirement": {
-      "description": "This is an alpha feature and may change in the future.",
-      "type": "object",
-      "title": "A topology selector requirement is a selector that matches given label.",
-      "properties": {
-        "key": {
-          "description": "The label key that the selector applies to.",
-          "type": "string",
-          "x-go-name": "Key"
-        },
-        "values": {
-          "description": "An array of string values. One value must match the label to be selected.\nEach entry in Values is ORed.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Values"
-        }
-      },
-      "x-go-package": "k8s.io/api/core/v1"
-    },
-    "TopologySelectorTerm": {
-      "description": "A null or empty topology selector term matches no objects.\nThe requirements of them are ANDed.\nIt provides a subset of functionality as NodeSelectorTerm.\nThis is an alpha feature and may change in the future.\n+structType=atomic",
-      "type": "object",
-      "title": "A topology selector term represents the result of label queries.",
-      "properties": {
-        "matchLabelExpressions": {
-          "description": "A list of topology selector requirements by labels.\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TopologySelectorLabelRequirement"
-          },
-          "x-go-name": "MatchLabelExpressions"
-        }
-      },
-      "x-go-package": "k8s.io/api/core/v1"
-    },
     "Trace": {
       "type": "object",
       "properties": {
@@ -27644,11 +26328,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "TrayState": {
-      "type": "string",
-      "title": "TrayState indicates if a tray of a cdrom or floppy is open or closed.",
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "UID": {
       "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
@@ -27777,29 +26456,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
-    "VGPUDisplayOptions": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "description": "Enabled determines if a display addapter backed by a vGPU should be enabled or disabled on the guest.\nDefaults to true.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Enabled"
-        },
-        "ramFB": {
-          "$ref": "#/definitions/FeatureState"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "VGPUOptions": {
-      "type": "object",
-      "properties": {
-        "display": {
-          "$ref": "#/definitions/VGPUDisplayOptions"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "VSphereCloudSpec": {
       "type": "object",
@@ -28031,38 +26687,18 @@
       "description": "VirtualMachineInstancePreset represents a KubeVirt Virtual Machine Instance Preset",
       "type": "object",
       "properties": {
-        "annotations": {
-          "description": "Annotations that can be added to the resource",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Annotations"
-        },
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CreationTimestamp"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "DeletionTimestamp"
-        },
-        "id": {
-          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
-          "type": "string",
-          "x-go-name": "ID"
-        },
         "name": {
-          "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
         },
+        "namespace": {
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
         "spec": {
-          "$ref": "#/definitions/VirtualMachineInstancePresetSpec"
+          "description": "Spec contains the kubevirtv1.VirtualMachineInstancePreset.Spec object marshalled",
+          "type": "string",
+          "x-go-name": "Spec"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -28074,24 +26710,6 @@
         "$ref": "#/definitions/VirtualMachineInstancePreset"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "VirtualMachineInstancePresetSpec": {
-      "type": "object",
-      "properties": {
-        "domain": {
-          "$ref": "#/definitions/DomainSpec"
-        },
-        "selector": {
-          "$ref": "#/definitions/LabelSelector"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "VolumeBindingMode": {
-      "description": "+enum",
-      "type": "string",
-      "title": "VolumeBindingMode indicates how PersistentVolumeClaims should be bound.",
-      "x-go-package": "k8s.io/api/storage/v1"
     },
     "VpcConfigRequest": {
       "type": "object",
@@ -28114,37 +26732,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "Watchdog": {
-      "type": "object",
-      "title": "Named watchdog device.",
-      "properties": {
-        "i6300esb": {
-          "$ref": "#/definitions/I6300ESBWatchdog"
-        },
-        "name": {
-          "description": "Name of the watchdog.",
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "WatchdogAction": {
-      "type": "string",
-      "title": "WatchdogAction defines the watchdog action, if a watchdog gets triggered.",
-      "x-go-package": "kubevirt.io/api/core/v1"
-    },
-    "WatchdogDevice": {
-      "description": "Exactly one of its members must be set.",
-      "type": "object",
-      "title": "Hardware watchdog device.",
-      "properties": {
-        "i6300esb": {
-          "$ref": "#/definitions/I6300ESBWatchdog"
-        }
-      },
-      "x-go-package": "kubevirt.io/api/core/v1"
     },
     "bcBody": {
       "type": "object",

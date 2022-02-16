@@ -153,7 +153,7 @@ func GenKubeVirtKubermaticPreset() *kubermaticv1.Preset {
 }
 
 var (
-	presetListResponse = `[{"name":"preset-default-small-1","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"selector":{},"domain":{"resources":{"limits":{"cpu":"456","memory":"345"},"requests":{"cpu":"234","memory":"123"}},"cpu":{"cores":2},"devices":{"disks":[{"name":"datavolumedisk","disk":{"bus":"virtio"}},{"name":"cloudinitdisk","disk":{"bus":"virtio"}}]}}}},{"name":"preset-default-small-2","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"selector":{},"domain":{"resources":{"limits":{"cpu":"456","memory":"345"},"requests":{"cpu":"234","memory":"123"}},"cpu":{"cores":2},"devices":{"disks":[{"name":"datavolumedisk","disk":{"bus":"virtio"}},{"name":"cloudinitdisk","disk":{"bus":"virtio"}}]}}}}]`
+	presetListResponse = `[{"name":"preset-default-small-1","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},{"name":"preset-default-small-2","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"}]`
 )
 
 func TestListPresetEndpoint(t *testing.T) {
@@ -340,7 +340,7 @@ var (
 		},
 	}
 
-	storageClassListResponse = ` [{"name":"storageclass-1","creationTimestamp":"0001-01-01T00:00:00Z","provisioner":"","reclaimPolicy":"Delete"},{"name":"storageclass-2","creationTimestamp":"0001-01-01T00:00:00Z","provisioner":""}]`
+	storageClassListResponse = `[{"name":"storageclass-1"},{"name":"storageclass-2"}]`
 )
 
 func TestListStorageClassEndpoint(t *testing.T) {
