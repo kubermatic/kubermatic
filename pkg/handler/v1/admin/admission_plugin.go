@@ -144,7 +144,7 @@ type updateAdmissionPluginReq struct {
 // Validate validates UpdateAdmissionPluginEndpoint request.
 func (r updateAdmissionPluginReq) Validate() error {
 	if r.Name != r.Body.Name {
-		return fmt.Errorf("admission plugin name mismatch, you requested to update AdmissionPlugin = %s but body contains AdmissionPlugin = %s", r.Name, r.Body.Name)
+		return fmt.Errorf("admission plugin name mismatch, you requested to update AdmissionPlugin %q but body contains AdmissionPlugin %q", r.Name, r.Body.Name)
 	}
 	return nil
 }

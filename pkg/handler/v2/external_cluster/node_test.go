@@ -77,7 +77,7 @@ func TestListNodesEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: the user John can not get Bob's cluster nodes",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -159,7 +159,7 @@ func TestGetNodeEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: the user John can not get Bob's cluster nodes",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -271,7 +271,7 @@ func TestGetClusterNodesMetrics(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: the user John can not get Bob's cluster nodes metrics",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ClusterToGet:     "clusterAbcID",
 			HTTPStatus:       http.StatusForbidden,
 			ExistingNodes: []*corev1.Node{

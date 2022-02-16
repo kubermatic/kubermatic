@@ -179,7 +179,7 @@ func TestUpdateSeedEndpoint(t *testing.T) {
 			name:                   "scenario 3: seed name mismatch",
 			body:                   `{"name":"central1","spec":{"country":"US","location":"us-central","kubeconfig":{},"datacenters":{"audited-dc":{"country":"Germany","location":"Finanzamt Castle","node":{},"spec":{"fake":{},"enforceAuditLogging":true}},"fake-dc":{"country":"Germany","location":"Henrik's basement","node":{},"spec":{"fake":{},"enforceAuditLogging":false}},"private-do1":{"country":"NL","location":"US ","node":{},"spec":{"digitalocean":{"region":"ams2"},"enforceAuditLogging":false}},"regular-do1":{"country":"NL","location":"Amsterdam","node":{},"spec":{"digitalocean":{"region":"ams2"},"enforceAuditLogging":false}},"restricted-fake-dc":{"country":"NL","location":"Amsterdam","node":{},"spec":{"fake":{},"requiredEmails":["example.com"],"enforceAuditLogging":false}},"restricted-fake-dc2":{"country":"NL","location":"Amsterdam","node":{},"spec":{"fake":{},"requiredEmails":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false}}}}}`,
 			seedName:               "us-central1",
-			expectedResponse:       `{"error":{"code":400,"message":"seed name mismatch, you requested to update Seed = us-central1 but body contains Seed = central1"}}`,
+			expectedResponse:       `{"error":{"code":400,"message":"seed name mismatch, you requested to update Seed \"us-central1\" but body contains Seed \"central1\""}}`,
 			httpStatus:             http.StatusBadRequest,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true), test.GenTestSeed()},
 			existingAPIUser:        test.GenDefaultAPIUser(),

@@ -441,7 +441,7 @@ func (r updateTokenReq) Validate() error {
 		return fmt.Errorf("new name can not be empty")
 	}
 	if r.TokenID != r.Body.ID {
-		return fmt.Errorf("token ID mismatch, you requested to update token = %s but body contains token = %s", r.TokenID, r.Body.ID)
+		return fmt.Errorf("token ID mismatch, you requested to update token %q but body contains token %q", r.TokenID, r.Body.ID)
 	}
 
 	return nil

@@ -45,7 +45,7 @@ func TestFeatureGates(t *testing.T) {
 			for feature, shouldBeEnabled := range tc.output {
 				isEnabled := target.Enabled(feature)
 				if isEnabled != shouldBeEnabled {
-					t.Fatalf("expected feature = %s to be set to %v but was set to %v", feature, shouldBeEnabled, isEnabled)
+					t.Fatalf("expected feature %s to be set to %v but was set to %v", feature, shouldBeEnabled, isEnabled)
 				}
 			}
 		})

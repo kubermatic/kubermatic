@@ -260,7 +260,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	// PHASE initial handles request from the end-user that wants to authenticate
 	// and kicksoff the process of kubeconfig generation
 	if req.phase != initialPhase {
-		return nil, kcerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase = %d, expected phase = %d, did you forget to set the phase while decoding the request ?", req.phase, initialPhase))
+		return nil, kcerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase %d, expected phase %d, did you forget to set the phase while decoding the request?", req.phase, initialPhase))
 	}
 
 	rsp := createOIDCKubeconfigRsp{}
@@ -366,7 +366,7 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		errType := r.URL.Query().Get("error")
 		errMessage := r.URL.Query().Get("error_description")
 		if len(errMessage) != 0 {
-			return nil, fmt.Errorf("OIDC provider error type = %s, description = %s", errType, errMessage)
+			return nil, fmt.Errorf("OIDC provider error %s: %s", errType, errMessage)
 		}
 	}
 
