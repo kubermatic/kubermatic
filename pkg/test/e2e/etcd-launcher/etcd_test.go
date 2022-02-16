@@ -362,7 +362,7 @@ func breakAndRecover(ctx context.Context, t *testing.T, client ctrlruntimeclient
 
 	// wait for a bit before checking health as the PV recovery process
 	// is a controller-manager loop that doesn't necessarily kick in immediately
-	time.Sleep(30 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	// auto recovery should kick in. We need to wait for it
 	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
