@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+KUBERMATIC_EDITION ?= ce
 DOCKER_REPO ?= "quay.io/kubermatic"
-GOOS ?= $(shell go env GOOS)
+LDFLAGS ?= -w -extldflags '-static'
+GOTOOLFLAGS ?= -ldflags '$(LDFLAGS)' -v
+
+export CGO_ENABLED=0
 
 .PHONY: build
 build:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -v -o ./_build/user-ssh-keys-agent
+	go env
+	go build $(GOTOOLFLAGS) -tags "$(KUBERMATIC_EDITION)" -o ./_build/user-ssh-keys-agent
 
 .PHONY: docker
 docker: build
