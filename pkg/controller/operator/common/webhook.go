@@ -58,6 +58,52 @@ func WebhookServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration) rec
 	}
 }
 
+func WebhookClusterRoleName(cfg *kubermaticv1.KubermaticConfiguration) string {
+	return fmt.Sprintf("%s:kubermatic-webhook", cfg.Namespace)
+}
+
+func WebhookClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
+	return fmt.Sprintf("%s:kubermatic-webhook", cfg.Namespace)
+}
+
+func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleCreatorGetter {
+	return func() (string, reconciling.ClusterRoleCreator) {
+		return WebhookClusterRoleName(cfg), func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"clustertemplates"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+			}
+
+			return r, nil
+		}
+	}
+}
+
+func WebhookClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
+		return WebhookClusterRoleBindingName(cfg), func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+			rb.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "ClusterRole",
+				Name:     WebhookClusterRoleName(cfg),
+			}
+
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      WebhookServiceAccountName,
+					Namespace: cfg.Namespace,
+				},
+			}
+
+			return rb, nil
+		}
+	}
+}
+
 func WebhookRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return WebhookRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {

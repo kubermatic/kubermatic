@@ -118,6 +118,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
+	if err := r.reconcileClusterRoles(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
 	if err := r.reconcileClusterRoleBindings(ctx, defaulted, logger); err != nil {
 		return err
 	}
@@ -265,11 +269,26 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermat
 	return nil
 }
 
+func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling ClusterRoles")
+
+	creators := []reconciling.NamedClusterRoleCreatorGetter{
+		common.WebhookClusterRoleCreator(config),
+	}
+
+	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ClusterRoleBindings")
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(config),
+		common.WebhookClusterRoleBindingCreator(config),
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
