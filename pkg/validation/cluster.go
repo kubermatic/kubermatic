@@ -227,6 +227,16 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	if len(n.Services.CIDRBlocks) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("services", "cidrBlocks"), "service CIDR must be provided"))
 	}
+	if len(n.Pods.CIDRBlocks) < len(n.Services.CIDRBlocks) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks"), n.Pods.CIDRBlocks,
+			fmt.Sprintf("%d pod CIDRs must be provided", len(n.Services.CIDRBlocks))),
+		)
+	}
+	if len(n.Services.CIDRBlocks) < len(n.Pods.CIDRBlocks) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks"), n.Services.CIDRBlocks,
+			fmt.Sprintf("%d services CIDRs must be provided", len(n.Pods.CIDRBlocks))),
+		)
+	}
 	// Verify that provided CIDRs are well-formed
 	for i, podsCIDR := range n.Pods.CIDRBlocks {
 		addr, _, err := net.ParseCIDR(podsCIDR)

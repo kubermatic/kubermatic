@@ -323,6 +323,39 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "valid dual-stack network config",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd00::/104"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid dual-stack network config (IPv6 as primary address)",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"fd00::/104", "10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"fd00::/104", "10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid dual-stack network config (missing IPv6 services CIDR)",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: true,
+		},
+		{
 			name: "missing DNS domain",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -357,7 +390,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid service cidr",
+			name: "invalid DNS domain",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				DNSDomain: "cluster.bla",
 			},
