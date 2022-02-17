@@ -428,25 +428,23 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	clusterSpec := apiv2.EKSClusterSpec{}
 	eksCluster := clusterOutput.Cluster
 	if eksCluster == nil {
-		apiCluster.Cloud.EKS.ClusterSpec = &clusterSpec
 		return apiCluster, nil
 	}
-	clusterSpec = apiv2.EKSClusterSpec{
+
+	clusterSpec := &apiv2.EKSClusterSpec{
 		RoleArn: aws.StringValue(eksCluster.RoleArn),
 		Version: aws.StringValue(eksCluster.Version),
 	}
-	if eksCluster.ResourcesVpcConfig == nil {
-		apiCluster.Cloud.EKS.ClusterSpec = &clusterSpec
-		return apiCluster, nil
-	}
-	clusterSpec.ResourcesVpcConfig = apiv2.VpcConfigRequest{
-		SecurityGroupIds: eksCluster.ResourcesVpcConfig.SecurityGroupIds,
-		SubnetIds:        eksCluster.ResourcesVpcConfig.SubnetIds,
-	}
-	apiCluster.Cloud.EKS.ClusterSpec = &clusterSpec
 
+	if eksCluster.ResourcesVpcConfig != nil {
+		clusterSpec.ResourcesVpcConfig = apiv2.VpcConfigRequest{
+			SecurityGroupIds: eksCluster.ResourcesVpcConfig.SecurityGroupIds,
+			SubnetIds:        eksCluster.ResourcesVpcConfig.SubnetIds,
+		}
+	}
+
+	apiCluster.Cloud.EKS.ClusterSpec = clusterSpec
 	return apiCluster, nil
 }
