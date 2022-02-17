@@ -150,6 +150,8 @@ func testUserCluster(t *testing.T, userconfig string) {
 		t.Fatalf("failed to create client: %s", err)
 	}
 
+	var nodeIP string
+
 	t.Logf("waiting for nodes to come up")
 	{
 		expectedNodes := 2
@@ -164,14 +166,28 @@ func testUserCluster(t *testing.T, userconfig string) {
 				return false, nil
 			}
 
-			for _, c := range nodes.Items[0].Status.Conditions {
-				if c.Type == corev1.NodeReady {
-					t.Logf("node is ready")
-					return true, nil
+			readyNodeCount := 0
+
+			for _, node := range nodes.Items {
+				for _, c := range node.Status.Conditions {
+					if c.Type == corev1.NodeReady {
+						readyNodeCount++
+					}
 				}
 			}
-			t.Logf("no nodes are ready")
-			return false, nil
+
+			if readyNodeCount != expectedNodes {
+				t.Logf("%d out of %d nodes are ready", readyNodeCount, expectedNodes)
+				return false, nil
+			}
+
+			for _, addr := range nodes.Items[0].Status.Addresses {
+				if addr.Type == corev1.NodeExternalIP {
+					nodeIP = addr.Address
+					break
+				}
+			}
+			return true, nil
 		})
 		if err != nil {
 			t.Fatalf("nodes never became ready: %v", err)
@@ -244,7 +260,7 @@ func testUserCluster(t *testing.T, userconfig string) {
 
 		s := makeScheme()
 
-		objs, err := resourcesFromYaml(s)
+		objs, err := resourcesFromYaml("./testdata/connectivity-check.yaml", s)
 		if err != nil {
 			t.Fatalf("failed to read objects from yaml: %v", err)
 		}
@@ -290,6 +306,31 @@ func testUserCluster(t *testing.T, userconfig string) {
 			default:
 				t.Fatalf("unknown resource type: %v", obj.GetObjectKind())
 			}
+		}
+	}
+
+	t.Logf("deploy hubble-relay-nodeport and hubble-ui-nodeport services")
+	{
+		s := makeScheme()
+
+		objs1, err := resourcesFromYaml("./testdata/hubble-relay-svc.yaml", s)
+		if err != nil {
+			t.Fatalf("failed to read objects from yaml: %v", err)
+		}
+
+		objs2, err := resourcesFromYaml("./testdata/hubble-ui-svc.yaml", s)
+		if err != nil {
+			t.Fatalf("failed to read objects from yaml: %v", err)
+		}
+
+		for _, o := range append(objs1, objs2...) {
+			x := o.(*corev1.Service)
+			_, err := userClient.CoreV1().Services("kube-system").Create(context.Background(), x,
+				metav1.CreateOptions{})
+			if err != nil {
+				t.Fatalf("failed to apply resource: %v", err)
+			}
+			t.Logf("created %v", x.Name)
 		}
 	}
 
@@ -437,40 +478,44 @@ func testUserCluster(t *testing.T, userconfig string) {
 		}
 	}
 
-	time.Sleep(time.Minute * 10)
-
 	t.Logf("test hubble relay observe")
 	{
-		pods, err := userClient.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			t.Fatalf("failed to get pod list: %s", err)
-		}
+		//pods, err := userClient.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{})
+		//if err != nil {
+		//	t.Fatalf("failed to get pod list: %s", err)
+		//}
+		//
+		//pods.Items = filterByLabel(pods.Items, "k8s-app", "hubble-relay")
+		//if len(pods.Items) == 0 {
+		//	t.Fatalf("no hubble-relay pods found")
+		//}
+		//podName := pods.Items[0].Name
+		//
+		//var port uint16
+		//var stopChan chan struct{}
+		//nRetry := 3
+		//for i := 0; i < nRetry; i++ {
+		//	port, stopChan, err = portForward(config, podName, <-localPort, 4245)
+		//	if err != nil {
+		//		t.Logf("failed to portforward: %v", err)
+		//		t.Logf("retrying portforward...")
+		//		time.Sleep(time.Second * 30)
+		//		continue
+		//	}
+		//	break
+		//}
+		//if err != nil {
+		//	t.Fatalf("failed to portforward after multiple attempts: %v", err)
+		//}
+		//defer close(stopChan)
 
-		pods.Items = filterByLabel(pods.Items, "k8s-app", "hubble-relay")
-		if len(pods.Items) == 0 {
-			t.Fatalf("no hubble-relay pods found")
-		}
-		podName := pods.Items[0].Name
+		//creds, err := credentials.NewClientTLSFromFile("/home/pratik/kubermatic/src/kubermatic/pkg/test/e2e/cilium/tls.crt", "")
+		//
+		//if err != nil {
+		//	t.Fatalf("failed to read cert from file: %v", err)
+		//}
 
-		var port uint16
-		var stopChan chan struct{}
-		nRetry := 3
-		for i := 0; i < nRetry; i++ {
-			port, stopChan, err = portForward(config, podName, <-localPort, 4245)
-			if err != nil {
-				t.Logf("failed to portforward: %v", err)
-				t.Logf("retrying portforward...")
-				time.Sleep(time.Second * 30)
-				continue
-			}
-			break
-		}
-		if err != nil {
-			t.Fatalf("failed to portforward after multiple attempts: %v", err)
-		}
-		defer close(stopChan)
-
-		conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), grpc.WithInsecure())
+		conn, err := grpc.Dial(fmt.Sprintf("%s:%d", nodeIP, 30077), grpc.WithInsecure())
 		if err != nil {
 			t.Fatalf("failed to dial to hubble relay: %v", err)
 		}
@@ -484,46 +529,47 @@ func testUserCluster(t *testing.T, userconfig string) {
 		}
 
 		for c := 0; c < nFlows; c++ {
-			_, err := flowsClient.Recv()
+			flow, err := flowsClient.Recv()
 			if err != nil {
 				t.Fatalf("failed to get flow:%v", err)
 			}
+			fmt.Println(flow)
 		}
 	}
 
 	t.Logf("test hubble ui observe")
 	{
-		pods, err := userClient.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			t.Fatalf("failed to get pod list: %s", err)
-		}
-
-		pods.Items = filterByLabel(pods.Items, "k8s-app", "hubble-ui")
-		if len(pods.Items) == 0 {
-			t.Fatalf("no hubble-ui pods found")
-		}
-		podName := pods.Items[0].Name
-
-		var port uint16
-		var stopChan chan struct{}
-		nRetry := 3
-		for i := 0; i < nRetry; i++ {
-			port, stopChan, err = portForward(config, podName, <-localPort, 8081)
-			if err != nil {
-				t.Logf("failed to portforward: %v", err)
-				t.Logf("retrying portforward...")
-				time.Sleep(time.Second * 30)
-				continue
-			}
-			break
-		}
-		if err != nil {
-			t.Fatalf("failed to portforward after multiple attempts: %v", err)
-		}
-		defer close(stopChan)
+		//pods, err := userClient.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{})
+		//if err != nil {
+		//	t.Fatalf("failed to get pod list: %s", err)
+		//}
+		//
+		//pods.Items = filterByLabel(pods.Items, "k8s-app", "hubble-ui")
+		//if len(pods.Items) == 0 {
+		//	t.Fatalf("no hubble-ui pods found")
+		//}
+		//podName := pods.Items[0].Name
+		//
+		//var port uint16
+		//var stopChan chan struct{}
+		//nRetry := 3
+		//for i := 0; i < nRetry; i++ {
+		//	port, stopChan, err = portForward(config, podName, <-localPort, 8081)
+		//	if err != nil {
+		//		t.Logf("failed to portforward: %v", err)
+		//		t.Logf("retrying portforward...")
+		//		time.Sleep(time.Second * 30)
+		//		continue
+		//	}
+		//	break
+		//}
+		//if err != nil {
+		//	t.Fatalf("failed to portforward after multiple attempts: %v", err)
+		//}
+		//defer close(stopChan)
 
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet,
-			fmt.Sprintf("http://localhost:%d", port), nil)
+			fmt.Sprintf("http://%s:%d", nodeIP, 30007), nil)
 		if err != nil {
 			t.Fatalf("failed to construct request to hubble ui: %v", err)
 		}
@@ -621,8 +667,8 @@ func makeScheme() *runtime.Scheme {
 	return s
 }
 
-func resourcesFromYaml(s *runtime.Scheme) ([]runtime.Object, error) {
-	data, err := ioutil.ReadFile("./testdata/connectivity-check.yaml")
+func resourcesFromYaml(filename string, s *runtime.Scheme) ([]runtime.Object, error) {
+	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
