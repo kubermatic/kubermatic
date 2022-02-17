@@ -42,7 +42,7 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 	// check if usercluster-controller was deployed on seed cluster
 	deployment := &appsv1.Deployment{}
 	if err := seedClusterClient.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: resources.UserClusterControllerDeploymentName}, deployment); err != nil {
-		return fmt.Errorf("failed to get Deployment: %s, error: %w", resources.UserClusterControllerDeploymentName, err)
+		return fmt.Errorf("failed to get Deployment %s: %w", resources.UserClusterControllerDeploymentName, err)
 	}
 
 	if deployment.Status.AvailableReplicas == 0 {
@@ -51,37 +51,37 @@ func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap
 
 	// check user cluster resources: ClusterRoles and ClusterRoleBindings
 	for _, resourceName := range rbacResourceNames() {
-		log.Info("Getting a Cluster Role: ", resourceName)
+		log.Infof("Getting ClusterRole: %s", resourceName)
 		clusterRole := &rbacv1.ClusterRole{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Name: resourceName}, clusterRole); err != nil {
-			return fmt.Errorf("failed to get Cluster Role: %s, error: %w", clusterRole, err)
+			return fmt.Errorf("failed to get ClusterRole %s: %w", clusterRole, err)
 		}
 
-		defaultClusterRole, err := rbacusercluster.GenerateRBACClusterRole(resourceName)
+		defaultClusterRole, err := rbacusercluster.CreateClusterRole(resourceName, &rbacv1.ClusterRole{})
 		if err != nil {
-			return fmt.Errorf("failed to generate default Cluster Role: %s, error: %w", resourceName, err)
+			return fmt.Errorf("failed to generate default ClusterRole %s: %w", resourceName, err)
 		}
 
 		if !equality.Semantic.DeepEqual(clusterRole.Rules, defaultClusterRole.Rules) {
-			return fmt.Errorf("incorrect Cluster Role Rules were returned, got: %v, want: %v", clusterRole.Rules, defaultClusterRole.Rules)
+			return fmt.Errorf("incorrect ClusterRole Rules were returned, got %v, want %v", clusterRole.Rules, defaultClusterRole.Rules)
 		}
 
-		log.Info("Getting a Cluster Role Binding: ", resourceName)
+		log.Infof("Getting ClusterRoleBinding %s", resourceName)
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Name: resourceName}, clusterRoleBinding); err != nil {
-			return fmt.Errorf("failed to get Cluster Role Binding: %s, error: %w", resourceName, err)
+			return fmt.Errorf("failed to get ClusterRoleBinding %s: %w", resourceName, err)
 		}
 
-		defaultClusterRoleBinding, err := rbacusercluster.GenerateRBACClusterRoleBinding(resourceName)
+		defaultClusterRoleBinding, err := rbacusercluster.CreateClusterRoleBinding(resourceName, &rbacv1.ClusterRoleBinding{})
 		if err != nil {
-			return fmt.Errorf("failed to generate default Cluster Role Binding: %s, error: %w", resourceName, err)
+			return fmt.Errorf("failed to generate default ClusterRoleBinding %s: %w", resourceName, err)
 		}
 
 		if !equality.Semantic.DeepEqual(clusterRoleBinding.RoleRef, defaultClusterRoleBinding.RoleRef) {
-			return fmt.Errorf("incorrect Cluster Role Binding RoleRef were returned, got: %v, want: %v", clusterRoleBinding.RoleRef, defaultClusterRoleBinding.RoleRef)
+			return fmt.Errorf("incorrect ClusterRoleBinding RoleRef were returned, got %v, want %v", clusterRoleBinding.RoleRef, defaultClusterRoleBinding.RoleRef)
 		}
 		if !equality.Semantic.DeepEqual(clusterRoleBinding.Subjects, defaultClusterRoleBinding.Subjects) {
-			return fmt.Errorf("incorrect Cluster Role Binding Subjects were returned, got: %v, want: %v", clusterRoleBinding.Subjects, defaultClusterRoleBinding.Subjects)
+			return fmt.Errorf("incorrect ClusterRoleBinding Subjects were returned, got %v, want %v", clusterRoleBinding.Subjects, defaultClusterRoleBinding.Subjects)
 		}
 	}
 
