@@ -38,6 +38,8 @@ type ClientService interface {
 
 	ListEKSSubnets(params *ListEKSSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsOK, error)
 
+	ListEKSSubnetsNoCredentials(params *ListEKSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsNoCredentialsOK, error)
+
 	ListEKSVPCS(params *ListEKSVPCSParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSVPCSOK, error)
 
 	ValidateEKSCredentials(params *ValidateEKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateEKSCredentialsOK, error)
@@ -232,6 +234,44 @@ func (a *Client) ListEKSSubnets(params *ListEKSSubnetsParams, authInfo runtime.C
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEKSSubnetsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListEKSSubnetsNoCredentials gets the e k s subnets for node group
+*/
+func (a *Client) ListEKSSubnetsNoCredentials(params *ListEKSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSSubnetsNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListEKSSubnetsNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listEKSSubnetsNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListEKSSubnetsNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListEKSSubnetsNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListEKSSubnetsNoCredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

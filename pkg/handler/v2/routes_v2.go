@@ -877,6 +877,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/capacitytypes").
 		Handler(r.listEKSCapacityTypesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets").
+		Handler(r.listEKSSubnetsNoCredentials())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -5291,8 +5295,8 @@ func (r Routing) validateEKSCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.EKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeEKSTypesReq,
+		)(externalcluster.EKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5348,6 +5352,31 @@ func (r Routing) listEKSCapacityTypesNoCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets eks listEKSSubnetsNoCredentials
+//
+//     Gets the EKS Subnets for node group.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSSubnetIDList
+//       401: empty
+//       403: empty
+func (r Routing) listEKSSubnetsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSSubnetsWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeEKSNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/aks/validatecredentials aks validateAKSCredentials
 //
 // Validates AKS credentials
@@ -5363,8 +5392,8 @@ func (r Routing) validateAKSCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeAKSTypesReq,
+		)(externalcluster.AKSValidateCredentialsEndpoint(r.presetProvider, r.userInfoGetter)),
+		externalcluster.DecodeAKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5385,8 +5414,8 @@ func (r Routing) listEKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
-		provider.DecodeEKSClusterListReq,
+		)(externalcluster.ListEKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		externalcluster.DecodeEKSClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5407,8 +5436,8 @@ func (r Routing) listEKSVPCS() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSVPCEndpoint(r.userInfoGetter, r.presetProvider)),
-		provider.DecodeEKSTypesReq,
+		)(externalcluster.ListEKSVPCEndpoint(r.userInfoGetter, r.presetProvider)),
+		externalcluster.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5429,8 +5458,8 @@ func (r Routing) listEKSSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSSubnetsEndpoint(r.userInfoGetter, r.presetProvider)),
-		provider.DecodeEKSSubnetIDsReq,
+		)(externalcluster.ListEKSSubnetsEndpoint(r.userInfoGetter, r.presetProvider)),
+		externalcluster.DecodeEKSReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5454,8 +5483,8 @@ func (r Routing) listEKSSecurityGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSSecurityGroupsEndpoint(r.userInfoGetter, r.presetProvider)),
-		provider.DecodeEKSSubnetIDsReq,
+		)(externalcluster.ListEKSSecurityGroupsEndpoint(r.userInfoGetter, r.presetProvider)),
+		externalcluster.DecodeEKSReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5479,8 +5508,8 @@ func (r Routing) listEKSRegions() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
-		provider.DecodeEKSTypesReq,
+		)(externalcluster.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
+		externalcluster.DecodeEKSTypesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -5501,8 +5530,8 @@ func (r Routing) listAKSClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.ListAKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
-		provider.DecodeAKSClusterListReq,
+		)(externalcluster.ListAKSClustersEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.presetProvider)),
+		externalcluster.DecodeAKSClusterListReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
