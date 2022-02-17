@@ -441,12 +441,9 @@ func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeplo
 	if eksMD == nil {
 		return fmt.Errorf("EKS MachineDeployment Spec cannot be nil")
 	}
-	fields := reflect.ValueOf(eksMD).Elem()
-	for i := 0; i < fields.NumField(); i++ {
-		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
-		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
-			return errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
-		}
+
+	if len(eksMD.Subnets) == 0 || len(eksMD.NodeRole) == 0 {
+		return errors.NewBadRequest("required field is missing: Subnets or NodeRole cannot be empty")
 	}
 	return nil
 }
