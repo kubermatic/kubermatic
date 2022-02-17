@@ -100,6 +100,10 @@ const (
 	EtcdDefaultBackupConfigName = "default-backups"
 	// EtcdTLSEnabledAnnotation is the annotation assigned to etcd Pods that run with a TLS peer endpoint.
 	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
+	// NodePortProxyEnvoyDeploymentName is the name of the nodeport-proxy deployment in the user cluster.
+	NodePortProxyEnvoyDeploymentName = "nodeport-proxy-envoy"
+	// NodePortProxyEnvoyContainerName is the name of the envoy container in the nodeport-proxy deployment.
+	NodePortProxyEnvoyContainerName = "envoy"
 
 	// ApiserverServiceName is the name for the apiserver service.
 	ApiserverServiceName = "apiserver-external"
@@ -1238,6 +1242,13 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 		}
 	}
 	for k, v := range overrides {
+		if v.Requests == nil {
+			v.Requests = defaultRequirements[k].Requests
+		}
+		if v.Limits == nil {
+			v.Limits = defaultRequirements[k].Limits
+		}
+
 		requirements[k] = v.DeepCopy()
 	}
 
@@ -1266,6 +1277,10 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.Prometheus.Resources != nil {
 		r[PrometheusStatefulSetName] = componentSettings.Prometheus.Resources.DeepCopy()
+	}
+	if componentSettings.NodePortProxyEnvoy.Resources.Requests != nil ||
+		componentSettings.NodePortProxyEnvoy.Resources.Limits != nil {
+		r[NodePortProxyEnvoyContainerName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
 	}
 
 	return r

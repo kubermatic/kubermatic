@@ -38,7 +38,7 @@ import (
 const (
 	name               = "nodeport-proxy"
 	imageName          = "kubermatic/nodeport-proxy"
-	envoyAppLabelValue = name + "-envoy"
+	envoyAppLabelValue = resources.NodePortProxyEnvoyDeploymentName
 
 	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
@@ -123,7 +123,7 @@ var (
 				corev1.ResourceMemory: resource.MustParse("48Mi"),
 			},
 		},
-		"envoy": {
+		resources.NodePortProxyEnvoyContainerName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("50m"),
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
@@ -244,9 +244,8 @@ func roleBinding(ns string) reconciling.NamedRoleBindingCreatorGetter {
 
 func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
 	volumeMountNameEnvoyConfig := "envoy-config"
-	name := envoyAppLabelValue
 	return func() (string, reconciling.DeploymentCreator) {
-		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Labels = resources.BaseAppLabels(name, nil)
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -297,7 +296,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					},
 				},
 			}, {
-				Name:  "envoy",
+				Name:  resources.NodePortProxyEnvoyContainerName,
 				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.16.0",
 				Command: []string{
 					"/usr/local/bin/envoy",
@@ -345,7 +344,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					MountPath: "/etc/envoy",
 				}},
 			}}
-			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
+			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), d.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
