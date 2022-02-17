@@ -29,6 +29,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -117,14 +118,27 @@ func TestCiliumClusters(t *testing.T) {
 		},
 	}
 
+	var mu sync.Mutex
+
 	for _, test := range tests {
 		proxyMode := test.proxyMode
 		t.Run(test.name, func(t *testing.T) {
+
+			t.Parallel()
+			mu.Lock()
 			uc, _, cleanup, err := createUsercluster(t, proxyMode)
+			mu.Unlock()
+
 			if err != nil {
 				t.Fatalf("failed to create user cluster: %v", err)
 			}
-			defer cleanup()
+
+			defer func() {
+				mu.Lock()
+				cleanup()
+				mu.Unlock()
+			}()
+
 			testUserCluster(t, uc)
 		})
 	}
