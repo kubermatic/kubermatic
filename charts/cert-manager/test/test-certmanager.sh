@@ -33,7 +33,7 @@ helm upgrade \
   --atomic \
   cert-manager charts/cert-manager/
 
-if ! which cmctl; then 
+if ! which cmctl; then
   echodate "Downloading cmctl..."
   OS=$(go env GOOS); ARCH=$(go env GOARCH); curl -sLo cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/latest/download/cmctl-$OS-$ARCH.tar.gz
   tar xzf cmctl.tar.gz
@@ -41,9 +41,8 @@ if ! which cmctl; then
   function cmctl_cleanup {
     echodate "Cleaning up..."
     rm cmctl cmctl.tar.gz
-    exit $exitcode
   }
-  trap cmctl_cleanup EXIT
+  appendTrap cmctl_cleanup EXIT
 fi
 echodate "Testing cert-manager..."
 ./cmctl check api --wait=2m

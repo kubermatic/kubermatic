@@ -116,11 +116,8 @@ func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconci
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(ruleGroup, ruleGroupFinalizer) {
-		kubernetes.AddFinalizer(ruleGroup, ruleGroupFinalizer)
-		if err := r.Update(ctx, ruleGroup); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers for ruleGroup object: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, ruleGroup, ruleGroupFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	if err := r.ruleGroupSyncController.syncClusterNS(ctx, log, ruleGroup, func(seedClient ctrlruntimeclient.Client, ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) error {
@@ -182,14 +179,7 @@ func (r *ruleGroupSyncController) handleDeletion(ctx context.Context, log *zap.S
 		return err
 	}
 
-	if kubernetes.HasFinalizer(ruleGroup, ruleGroupFinalizer) {
-		oldGroup := ruleGroup.DeepCopy()
-		kubernetes.RemoveFinalizer(ruleGroup, ruleGroupFinalizer)
-		if err := r.Patch(ctx, ruleGroup, ctrlruntimeclient.MergeFrom(oldGroup)); err != nil {
-			return fmt.Errorf("failed to remove ruleGroup finalizer: %w", err)
-		}
-	}
-	return nil
+	return kubernetes.TryRemoveFinalizer(ctx, r, ruleGroup, ruleGroupFinalizer)
 }
 
 func (r *ruleGroupSyncController) syncClusterNS(

@@ -572,8 +572,8 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 	return convertCluster(clusterResponse.Payload)
 }
 
-// CreateDOCluster creates cluster for DigitalOcean provider.
-func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
+// CreateHetznerCluster creates cluster for Hetzner provider.
+func (r *TestClient) CreateHetznerCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 	_, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
@@ -587,25 +587,22 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 		Spec: &models.ClusterSpec{
 			Cloud: &models.CloudSpec{
 				DatacenterName: location,
-				Digitalocean:   &models.DigitaloceanCloudSpec{},
+				Hetzner:        &models.HetznerCloudSpec{},
 			},
 			Version: models.Semver(version),
 		},
 	}
 
 	if replicas > 0 {
-		instanceSize := "s-2vcpu-2gb"
+		instanceSize := "cx21"
 
 		clusterSpec.NodeDeployment = &models.NodeDeployment{
 			Spec: &models.NodeDeploymentSpec{
 				Replicas: &replicas,
 				Template: &models.NodeSpec{
 					Cloud: &models.NodeCloudSpec{
-						Digitalocean: &models.DigitaloceanNodeSpec{
-							Size:       &instanceSize,
-							Backups:    false,
-							IPV6:       false,
-							Monitoring: false,
+						Hetzner: &models.HetznerNodeSpec{
+							Type: &instanceSize,
 						},
 					},
 					OperatingSystem: &models.OperatingSystemSpec{
@@ -621,7 +618,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	r.test.Logf("Creating DigitalOcean cluster %q (%s, %d nodes)...", name, version, replicas)
+	r.test.Logf("Creating Hetzner cluster %q (%s, %d nodes)...", name, version, replicas)
 
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
@@ -1751,7 +1748,7 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 				Spec: &models.ClusterSpec{
 					Cloud: &models.CloudSpec{
 						DatacenterName: location,
-						Digitalocean:   &models.DigitaloceanCloudSpec{},
+						Hetzner:        &models.HetznerCloudSpec{},
 					},
 					Version: models.Semver(version),
 				},

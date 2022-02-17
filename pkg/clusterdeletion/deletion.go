@@ -151,7 +151,5 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		return nil
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer, kubermaticapiv1.InClusterPVCleanupFinalizer)
-	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.InClusterLBCleanupFinalizer, kubermaticapiv1.InClusterPVCleanupFinalizer)
 }

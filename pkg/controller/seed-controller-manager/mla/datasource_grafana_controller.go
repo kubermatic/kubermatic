@@ -219,11 +219,8 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		return nil, nil
 	}
 
-	if !kubernetes.HasFinalizer(cluster, mlaFinalizer) {
-		kubernetes.AddFinalizer(cluster, mlaFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
-			return nil, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, cluster, mlaFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	data := resources.NewTemplateDataBuilder().
@@ -407,15 +404,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafan
 		}
 	}
 
-	if kubernetes.HasFinalizer(cluster, mlaFinalizer) {
-		oldCluster := cluster.DeepCopy()
-		kubernetes.RemoveFinalizer(cluster, mlaFinalizer)
-		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to update Cluster: %w", err)
-		}
-	}
-
-	return nil
+	return kubernetes.TryRemoveFinalizer(ctx, r, cluster, mlaFinalizer)
 }
 
 func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, cluster *kubermaticv1.Cluster) error {

@@ -540,3 +540,28 @@ spec:
         requests:
           cpu: 50m
           memory: 32Mi
+  # Webhook configures the webhook.
+  webhook:
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic webhook image.
+    dockerRepository: quay.io/kubermatic/kubermatic
+    # PProfEndpoint controls the port the webhook should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+    # Replicas sets the number of pod replicas for the webhook.
+    replicas: 1
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      limits:
+        cpu: 250m
+        memory: 256Mi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      requests:
+        cpu: 50m
+        memory: 64Mi

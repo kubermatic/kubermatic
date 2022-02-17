@@ -147,12 +147,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer) {
-		oldconstraint := constraint.DeepCopy()
-		kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
-			return fmt.Errorf("failed to set constraint finalizer %s: %w", constraint.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
@@ -184,10 +180,5 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return err
 	}
 
-	oldconstraint := constraint.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
-	if err := r.masterClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
-		return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
-	}
-	return nil
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
 }

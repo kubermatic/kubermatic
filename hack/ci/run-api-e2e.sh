@@ -35,7 +35,7 @@ export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 
-echodate "Creating UI Azure preset..."
+echodate "Creating Azure preset..."
 cat << EOF > preset-azure.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: Preset
@@ -52,7 +52,20 @@ spec:
 EOF
 retry 2 kubectl apply -f preset-azure.yaml
 
-echodate "Creating UI DigitalOcean preset..."
+echodate "Creating Hetzner preset..."
+cat << EOF > preset-hetzner.yaml
+apiVersion: kubermatic.k8c.io/v1
+kind: Preset
+metadata:
+  name: e2e-hetzner
+  namespace: kubermatic
+spec:
+  hetzner:
+    token: ${HZ_E2E_TOKEN}
+EOF
+retry 2 kubectl apply -f preset-hetzner.yaml
+
+echodate "Creating DigitalOcean preset..."
 cat << EOF > preset-digitalocean.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: Preset
@@ -65,7 +78,7 @@ spec:
 EOF
 retry 2 kubectl apply -f preset-digitalocean.yaml
 
-echodate "Creating UI GCP preset..."
+echodate "Creating GCP preset..."
 cat << EOF > preset-gcp.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: Preset
@@ -90,7 +103,7 @@ EOF
 retry 2 kubectl apply -f preset-gcp.yaml
 retry 2 kubectl apply -f preset-gcp-datacenter.yaml
 
-echodate "Creating UI OpenStack preset..."
+echodate "Creating OpenStack preset..."
 cat << EOF > preset-openstack.yaml
 apiVersion: kubermatic.k8c.io/v1
 kind: Preset

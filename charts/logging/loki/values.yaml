@@ -13,7 +13,8 @@
 # limitations under the License.
 
 loki:
-
+  image:
+    repository: docker.io/grafana/loki
   fullnameOverride: loki
 
   affinity: {}

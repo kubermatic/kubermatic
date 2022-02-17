@@ -86,6 +86,12 @@ if [ -n "${DOCKER_REGISTRY_MIRROR_ADDR:-}" ]; then
   mkdir -p /mirror
   socat UNIX-LISTEN:/mirror/mirror.sock,fork,reuseaddr,unlink-early,mode=777 TCP4:$mirrorHost &
 
+  function end_socat_process {
+    echodate "Killing socat docker registry mirror processes..."
+    pkill -e socat
+  }
+  appendTrap end_socat_process EXIT
+
   cat << EOF > kind-config.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -108,7 +114,7 @@ EOF
 
   # unwrap the socket inside the kind cluster and make it available on a TCP port,
   # because containerd/Docker doesn't support sockets for mirrors.
-  docker exec kubermatic-control-plane bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
+  docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
 else
   kind create cluster --name "$KIND_CLUSTER_NAME"
 fi

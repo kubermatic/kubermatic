@@ -24,7 +24,6 @@ import (
 
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -35,13 +34,4 @@ func addFlags(fs *flag.FlagSet) {
 
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
-}
-
-func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedwebhook.AdmissionHandler, error) {
-	return (&seedwebhook.ValidationHandlerBuilder{}).
-		Client(client).
-		SeedName(options.seedName).
-		WorkerName(options.workerName).
-		FeatureGates(options.featureGates).
-		Build(ctx)
 }

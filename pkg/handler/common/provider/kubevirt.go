@@ -19,11 +19,11 @@ package provider
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -33,7 +33,6 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
-	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -100,7 +99,11 @@ func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetLi
 	}
 	res := apiv2.VirtualMachineInstancePresetList{}
 	for _, vmiPreset := range vmiPresets.Items {
-		res = append(res, *newAPIVirtualMachineInstancePreset(&vmiPreset))
+		preset, err := newAPIVirtualMachineInstancePreset(&vmiPreset)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *preset)
 	}
 
 	return res, nil
@@ -116,52 +119,22 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 	return KubeVirtVMIPresets(kvKubeconfig)
 }
 
-func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) *apiv2.VirtualMachineInstancePreset {
-	return &apiv2.VirtualMachineInstancePreset{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                string(vmiPreset.ObjectMeta.UID),
-			Name:              vmiPreset.ObjectMeta.Name,
-			Annotations:       vmiPreset.Annotations,
-			CreationTimestamp: apiv1.Time(vmiPreset.CreationTimestamp),
-			DeletionTimestamp: (*apiv1.Time)(vmiPreset.DeletionTimestamp),
-		},
-		Spec: apiv2.VirtualMachineInstancePresetSpec{
-			Selector: vmiPreset.Spec.Selector,
-			Domain: &apiv2.DomainSpec{
-				Resources: corev1.ResourceRequirements{
-					Limits:   vmiPreset.Spec.Domain.Resources.Limits,
-					Requests: vmiPreset.Spec.Domain.Resources.Requests,
-				},
-				CPU:             vmiPreset.Spec.Domain.CPU,
-				Memory:          vmiPreset.Spec.Domain.Memory,
-				Machine:         vmiPreset.Spec.Domain.Machine,
-				Firmware:        vmiPreset.Spec.Domain.Firmware,
-				Clock:           vmiPreset.Spec.Domain.Clock,
-				Features:        vmiPreset.Spec.Domain.Features,
-				Devices:         vmiPreset.Spec.Domain.Devices,
-				IOThreadsPolicy: vmiPreset.Spec.Domain.IOThreadsPolicy,
-				Chassis:         vmiPreset.Spec.Domain.Chassis,
-			},
-		},
+func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) (*apiv2.VirtualMachineInstancePreset, error) {
+	spec, err := json.Marshal(vmiPreset.Spec)
+	if err != nil {
+		return nil, err
 	}
+
+	return &apiv2.VirtualMachineInstancePreset{
+		Name:      vmiPreset.ObjectMeta.Name,
+		Namespace: vmiPreset.ObjectMeta.Namespace,
+		Spec:      string(spec),
+	}, nil
 }
 
 func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
 	return &apiv2.StorageClass{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                string(sc.ObjectMeta.UID),
-			Name:              sc.ObjectMeta.Name,
-			Annotations:       sc.Annotations,
-			CreationTimestamp: apiv1.Time(sc.CreationTimestamp),
-			DeletionTimestamp: (*apiv1.Time)(sc.DeletionTimestamp),
-		},
-		Provisioner:          sc.Provisioner,
-		Parameters:           sc.Parameters,
-		ReclaimPolicy:        sc.ReclaimPolicy,
-		MountOptions:         sc.MountOptions,
-		AllowVolumeExpansion: sc.AllowVolumeExpansion,
-		VolumeBindingMode:    sc.VolumeBindingMode,
-		AllowedTopologies:    sc.AllowedTopologies,
+		Name: sc.ObjectMeta.Name,
 	}
 }
 

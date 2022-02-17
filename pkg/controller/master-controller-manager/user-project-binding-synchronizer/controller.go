@@ -114,11 +114,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer) {
-		kuberneteshelper.AddFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, userProjectBinding); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to add userProjectBinding finalizer %s: %w", userProjectBinding.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	userProjectBindingCreatorGetters := []reconciling.NamedKubermaticV1UserProjectBindingCreatorGetter{
@@ -146,16 +143,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	if err != nil {
 		return err
 	}
-	if kuberneteshelper.HasFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer) {
-		oldBinding := userProjectBinding.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer)
-		patch := ctrlruntimeclient.MergeFrom(oldBinding)
-		// ignore NotFound because on shared master/seed systems, the code above will already have deleted the binding
-		if err := r.masterClient.Patch(ctx, userProjectBinding, patch); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-			return fmt.Errorf("failed to remove userprojectbinding finalizer %s: %w", userProjectBinding.Name, err)
-		}
-	}
-	return nil
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, userProjectBinding, kubermaticapiv1.SeedUserProjectBindingCleanupFinalizer)
 }
 
 func (r *reconciler) syncAllSeeds(

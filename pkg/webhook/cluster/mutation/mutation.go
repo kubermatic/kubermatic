@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -56,7 +57,7 @@ type AdmissionHandler struct {
 	disableProviderMutation bool
 }
 
-// NewAdmissionHandler returns a new cluster mutation AdmissionHandler.
+// NewAdmissionHandler returns a new cluster AdmissionHandler.
 func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *AdmissionHandler {
 	return &AdmissionHandler{
 		client:       client,
@@ -67,7 +68,7 @@ func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-cluster", &webhook.Admission{Handler: h})
+	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-cluster", &webhook.Admission{Handler: h})
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
@@ -220,6 +221,9 @@ func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *k
 	seed, err := h.seedGetter()
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)
+	}
+	if seed == nil {
+		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
 	}
 
 	if h.disableProviderMutation {

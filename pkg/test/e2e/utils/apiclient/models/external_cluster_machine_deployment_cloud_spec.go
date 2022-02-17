@@ -21,6 +21,9 @@ type ExternalClusterMachineDeploymentCloudSpec struct {
 	// aks
 	Aks *AKSMachineDeploymentCloudSpec `json:"aks,omitempty"`
 
+	// eks
+	Eks *EKSMachineDeploymentCloudSpec `json:"eks,omitempty"`
+
 	// gke
 	Gke *GKEMachineDeploymentCloudSpec `json:"gke,omitempty"`
 }
@@ -30,6 +33,10 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) Validate(formats strfmt.Regi
 	var res []error
 
 	if err := m.validateAks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -52,6 +59,23 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) validateAks(formats strfmt.R
 		if err := m.Aks.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterMachineDeploymentCloudSpec) validateEks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Eks) { // not required
+		return nil
+	}
+
+	if m.Eks != nil {
+		if err := m.Eks.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eks")
 			}
 			return err
 		}
@@ -85,6 +109,10 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) ContextValidate(ctx context.
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateEks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateGke(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -101,6 +129,20 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) contextValidateAks(ctx conte
 		if err := m.Aks.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterMachineDeploymentCloudSpec) contextValidateEks(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Eks != nil {
+		if err := m.Eks.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eks")
 			}
 			return err
 		}

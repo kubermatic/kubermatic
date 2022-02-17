@@ -40,10 +40,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
-	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
-	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
-	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -198,40 +194,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,
 		versions:             versions,
-	}
-
-	if options.admissionWebhook.Configured() {
-		if err := options.admissionWebhook.Configure(mgr.GetWebhookServer()); err != nil {
-			log.Fatalw("Failed to configure admission webhook server", zap.Error(err))
-		}
-
-		// Register Seed validation admission webhook
-		h, err := seedValidationHandler(rootCtx, mgr.GetClient(), options)
-		if err != nil {
-			log.Fatalw("Failed to build Seed validation handler", zap.Error(err))
-		}
-
-		// Setup the admission handler for kubermatic Seed CRDs
-		h.SetupWebhookWithManager(mgr)
-
-		seedGetter, err := seedGetterFactory(rootCtx, mgr.GetAPIReader(), options)
-		if err != nil {
-			log.Fatalf("make seed getter with api reader: %v", err)
-		}
-
-		caPool := options.caBundle.CertPool()
-
-		// Setup the validation admission handler for kubermatic Cluster CRDs
-		clustervalidation.NewAdmissionHandler(mgr.GetClient(), seedGetter, options.featureGates, caPool).SetupWebhookWithManager(mgr)
-
-		// Setup the mutation admission handler for kubermatic Cluster CRDs
-		clustermutation.NewAdmissionHandler(mgr.GetClient(), ctrlCtx.configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
-
-		// Setup the validation admission handler for OperatingSystemConfig CRDs
-		oscvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
-
-		// Setup the validation admission handler for OperatingSystemProfile CRDs
-		ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

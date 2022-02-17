@@ -328,18 +328,7 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finalizers ...string) (*reconcile.Result, error) {
-	if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(c, finalizers...)
-	}, ctrlruntimeclient.MergeFromWithOptimisticLock{}); err != nil {
-		if !kerrors.IsConflict(err) {
-			return nil, fmt.Errorf("failed to add finalizers %v: %w", finalizers, err)
-		}
-		// In case of conflict we just re-enqueue the item for later
-		// processing without returning an error.
-		r.log.Infow("failed to add finalizers", "error", err, "finalizers", finalizers)
-		return &reconcile.Result{Requeue: true}, nil
-	}
-	return &reconcile.Result{}, nil
+	return &reconcile.Result{}, kuberneteshelper.TryAddFinalizer(ctx, r, cluster, finalizers...)
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {

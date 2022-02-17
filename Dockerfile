@@ -33,6 +33,7 @@ COPY ./_build/image-loader \
      ./_build/kubermatic-api \
      ./_build/kubermatic-operator \
      ./_build/kubermatic-installer \
+     ./_build/kubermatic-webhook \
      ./_build/master-controller-manager \
      ./_build/owner-remover \
      ./_build/seed-controller-manager \

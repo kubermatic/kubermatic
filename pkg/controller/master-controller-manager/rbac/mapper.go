@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -546,7 +547,7 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	}
 
 	// unknown group passed
-	return nil, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
+	return nil, fmt.Errorf("unable to generate verbs, unknown group name %q passed in", groupName)
 }
 
 // generateVerbsForResource generates verbs for a resource for example "cluster"
@@ -596,7 +597,7 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 	}
 
 	// unknown group passed
-	return nil, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
+	return nil, fmt.Errorf("unable to generate verbs, unknown group name %q given", groupName)
 }
 
 func generateVerbsForNamespacedResource(groupName, resourceKind, namespace string) ([]string, error) {
@@ -614,7 +615,7 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 	}
 
 	// unknown group passed
-	return nil, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s, namespace = %s", groupName, namespace)
+	return nil, fmt.Errorf("unable to generate verbs, unknown group name %q, namespace %q given", groupName, namespace)
 }
 
 // generateVerbsForNamedResourceInNamespace generates a set of verbs for a named resource in a given namespace
@@ -634,7 +635,7 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 	}
 
 	// unknown group passed
-	return nil, fmt.Errorf("unable to generate verbs for group = %s, kind = %s, namespace = %s", groupName, resourceKind, namespace)
+	return nil, fmt.Errorf("unable to generate verbs for group %q, kind %q and namespace %q", groupName, resourceKind, namespace)
 }
 
 func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) ([]string, error) {
@@ -653,7 +654,7 @@ func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, gro
 	}
 
 	// unknown group passed
-	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster = %s, group = %s, kind = %s", cluster.Name, groupName, kind)
+	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster %q, group %q and kind %q", cluster.Name, groupName, kind)
 }
 
 func generateVerbsForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster, groupName, kind, name string) ([]string, error) {
@@ -678,5 +679,9 @@ func generateVerbsForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster
 	}
 
 	// unknown group passed
-	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster = %s, group = %s, kind = %s, name = %s", cluster.Name, groupName, kind, name)
+	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster %q, group %q, kind %q and name %q", cluster.Name, groupName, kind, name)
+}
+
+func formatMapping(rmapping *meta.RESTMapping) string {
+	return rmapping.GroupVersionKind.Kind
 }

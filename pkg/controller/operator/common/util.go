@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
@@ -247,4 +249,35 @@ func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.En
 	})
 
 	return result
+}
+
+func DeleteObject(ctx context.Context, client ctrlruntimeclient.Client, name, namespace string, obj ctrlruntimeclient.Object) error {
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	if err := client.Get(ctx, key, obj); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get object %v: %w", key, err)
+	}
+
+	return client.Delete(ctx, obj)
+}
+
+func DeleteService(ctx context.Context, client ctrlruntimeclient.Client, name, namespace string) error {
+	return DeleteObject(ctx, client, name, namespace, &corev1.Service{})
+}
+
+// CleanupWebhookServices removes the unused webhook services. It's here because
+// we need to exact same logic on master and seed clusters.
+func CleanupWebhookServices(ctx context.Context, client ctrlruntimeclient.Client, logger *zap.SugaredLogger, namespace string) {
+	for _, name := range []string{SeedWebhookServiceName, ClusterWebhookServiceName} {
+		if err := DeleteService(ctx, client, name, namespace); err != nil {
+			logger.Warnw("Failed to delete unused Service", zap.Error(err))
+		}
+	}
 }

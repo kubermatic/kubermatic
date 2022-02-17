@@ -24,7 +24,6 @@ import (
 
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,12 +38,4 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt controllerRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return eemasterctrlmgr.SeedKubeconfigGetterFactory(ctx, client)
-}
-
-func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedwebhook.AdmissionHandler, error) {
-	return (&seedwebhook.ValidationHandlerBuilder{}).
-		Client(client).
-		WorkerName(options.workerName).
-		FeatureGates(options.featureGates).
-		Build(ctx)
 }

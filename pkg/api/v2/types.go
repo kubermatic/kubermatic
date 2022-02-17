@@ -18,15 +18,12 @@ package v2
 
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	storagev1 "k8s.io/api/storage/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
@@ -654,6 +651,104 @@ type FeatureGates struct {
 type ExternalClusterMachineDeploymentCloudSpec struct {
 	GKE *GKEMachineDeploymentCloudSpec `json:"gke,omitempty"`
 	AKS *AKSMachineDeploymentCloudSpec `json:"aks,omitempty"`
+	EKS *EKSMachineDeploymentCloudSpec `json:"eks,omitempty"`
+}
+
+type EKSMachineDeploymentCloudSpec struct {
+	// The subnets to use for the Auto Scaling group that is created for your node
+	// group. These subnets must have the tag key kubernetes.io/cluster/CLUSTER_NAME
+	// with a value of shared, where CLUSTER_NAME is replaced with the name of your
+	// cluster. If you specify launchTemplate, then don't specify SubnetId (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkInterface.html)
+	// in your launch template, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	//
+	// Subnets is a required field
+	Subnets []*string `json:"subnets" required:"true"`
+
+	// The Amazon Resource Name (ARN) of the IAM role to associate with your node
+	// group. The Amazon EKS worker node kubelet daemon makes calls to AWS APIs
+	// on your behalf. Nodes receive permissions for these API calls through an
+	// IAM instance profile and associated policies. Before you can launch nodes
+	// and register them into a cluster, you must create an IAM role for those nodes
+	// to use when they are launched. For more information, see Amazon EKS node
+	// IAM role (https://docs.aws.amazon.com/eks/latest/userguide/worker_node_IAM_role.html)
+	// in the Amazon EKS User Guide . If you specify launchTemplate, then don't
+	// specify IamInstanceProfile (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_IamInstanceProfile.html)
+	// in your launch template, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	//
+	// NodeRole is a required field
+	NodeRole string `json:"nodeRole" required:"true"`
+
+	// The AMI type for your node group. GPU instance types should use the AL2_x86_64_GPU
+	// AMI type. Non-GPU instances should use the AL2_x86_64 AMI type. Arm instances
+	// should use the AL2_ARM_64 AMI type. All types use the Amazon EKS optimized
+	// Amazon Linux 2 AMI. If you specify launchTemplate, and your launch template
+	// uses a custom AMI, then don't specify amiType, or the node group deployment
+	// will fail. For more information about using launch templates with Amazon
+	// EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	AmiType string `json:"amiType,omitempty"`
+
+	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
+	CapacityType string `json:"capacityType,omitempty"`
+
+	// The root device disk size (in GiB) for your node group instances. The default
+	// disk size is 20 GiB. If you specify launchTemplate, then don't specify diskSize,
+	// or the node group deployment will fail. For more information about using
+	// launch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	DiskSize int64 `json:"diskSize,omitempty"`
+
+	// Specify the instance types for a node group. If you specify a GPU instance
+	// type, be sure to specify AL2_x86_64_GPU with the amiType parameter. If you
+	// specify launchTemplate, then you can specify zero or one instance type in
+	// your launch template or you can specify 0-20 instance types for instanceTypes.
+	// If however, you specify an instance type in your launch template and specify
+	// any instanceTypes, the node group deployment will fail. If you don't specify
+	// an instance type in a launch template or for instanceTypes, then t3.medium
+	// is used, by default. If you specify Spot for capacityType, then we recommend
+	// specifying multiple values for instanceTypes. For more information, see Managed
+	// node group capacity types (https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types)
+	// and Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	InstanceTypes []*string `json:"instanceTypes,omitempty"`
+
+	// The Kubernetes labels to be applied to the nodes in the node group when they
+	// are created.
+	Labels map[string]*string `json:"labels,omitempty"`
+
+	// The scaling configuration details for the Auto Scaling group that is created
+	// for your node group.
+	ScalingConfig EKSNodegroupScalingConfig `json:"scalingConfig,omitempty"`
+
+	// The Kubernetes version to use for your managed nodes. By default, the Kubernetes
+	// version of the cluster is used, and this is the only accepted specified value.
+	// If you specify launchTemplate, and your launch template uses a custom AMI,
+	// then don't specify version, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	Version string `json:"version,omitempty"`
+}
+
+type EKSNodegroupScalingConfig struct {
+	// The current number of nodes that the managed node group should maintain.
+	DesiredSize int64 `json:"desiredSize,omitempty"`
+
+	// The maximum number of nodes that the managed node group can scale out to.
+	// For information about the maximum number that you can specify, see Amazon
+	// EKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)
+	// in the Amazon EKS User Guide.
+	MaxSize int64 `json:"maxSize,omitempty"`
+
+	// The minimum number of nodes that the managed node group can scale in to.
+	// This number must be greater than zero.
+	MinSize int64 `json:"minSize,omitempty"`
 }
 
 type AKSMachineDeploymentCloudSpec struct {
@@ -682,12 +777,12 @@ type AgentPoolBasics struct {
 	EnableAutoScaling bool `json:"enableAutoScaling,omitempty"`
 	// The scaling configuration details for the Auto Scaling group that is created
 	// for your node group.
-	ScalingConfig NodegroupScalingConfig `json:"scalingConfig,omitempty"`
+	ScalingConfig AKSNodegroupScalingConfig `json:"scalingConfig,omitempty"`
 	// The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.
 	OsDiskSizeGB int32 `json:"osDiskSizeGB,omitempty"`
 }
 
-type NodegroupScalingConfig struct {
+type AKSNodegroupScalingConfig struct {
 	// MaxCount - The maximum number of nodes for auto-scaling
 	MaxCount int32 `json:"maxCount,omitempty"`
 	// MinCount - The minimum number of nodes for auto-scaling
@@ -1062,55 +1157,13 @@ type GKEUpgradeSettings struct {
 // swagger:model VirtualMachineInstancePresetList
 type VirtualMachineInstancePresetList []VirtualMachineInstancePreset
 
-// Need to copy the following type to avoid a collision on Resources
-// between kubevirtv1.ResourceRequirements and corev1.ResourceRequirements used in different part of the API.
-type DomainSpec struct {
-	// Resources describes the Compute Resources required by this vmi.
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	// CPU allow specified the detailed CPU topology inside the vmi.
-	// +optional
-	CPU *kubevirtv1.CPU `json:"cpu,omitempty"`
-	// Memory allow specifying the VMI memory features.
-	// +optional
-	Memory *kubevirtv1.Memory `json:"memory,omitempty"`
-	// Machine type.
-	// +optional
-	Machine *kubevirtv1.Machine `json:"machine,omitempty"`
-	// Firmware.
-	// +optional
-	Firmware *kubevirtv1.Firmware `json:"firmware,omitempty"`
-	// Clock sets the clock and timers of the vmi.
-	// +optional
-	Clock *kubevirtv1.Clock `json:"clock,omitempty"`
-	// Features like acpi, apic, hyperv, smm.
-	// +optional
-	Features *kubevirtv1.Features `json:"features,omitempty"`
-	// Devices allows adding disks, network interfaces, and others
-	Devices kubevirtv1.Devices `json:"devices"`
-	// Controls whether or not disks will share IOThreads.
-	// Omitting IOThreadsPolicy disables use of IOThreads.
-	// One of: shared, auto
-	// +optional
-	IOThreadsPolicy *kubevirtv1.IOThreadsPolicy `json:"ioThreadsPolicy,omitempty"`
-	// Chassis specifies the chassis info passed to the domain.
-	// +optional
-	Chassis *kubevirtv1.Chassis `json:"chassis,omitempty"`
-}
-
-type VirtualMachineInstancePresetSpec struct {
-	// Selector is a label query over a set of VMIs.
-	// Required.
-	Selector metav1.LabelSelector `json:"selector"`
-	// Domain is the same object type as contained in VirtualMachineInstanceSpec
-	Domain *DomainSpec `json:"domain,omitempty"`
-}
-
 // VirtualMachineInstancePreset represents a KubeVirt Virtual Machine Instance Preset
 // swagger:model VirtualMachineInstancePreset
 type VirtualMachineInstancePreset struct {
-	apiv1.ObjectMeta `json:",inline"`
-	// VirtualMachineInstance Spec contains the VirtualMachineInstance specification.
-	Spec VirtualMachineInstancePresetSpec `json:"spec,omitempty" valid:"required"`
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	// Spec contains the kubevirtv1.VirtualMachineInstancePreset.Spec object marshalled
+	Spec string `json:"spec,omitempty"`
 }
 
 // StorageClassList represents a list of Kubernetes StorageClass.
@@ -1120,43 +1173,7 @@ type StorageClassList []StorageClass
 // StorageClass represents a Kubernetes StorageClass
 // swagger:model StorageClass
 type StorageClass struct {
-	apiv1.ObjectMeta `json:",inline"`
-	// Provisioner indicates the type of the provisioner.
-	Provisioner string `json:"provisioner"`
-
-	// Parameters holds the parameters for the provisioner that should
-	// create volumes of this storage class.
-	// +optional
-	Parameters map[string]string `json:"parameters,omitempty"`
-
-	// Dynamically provisioned PersistentVolumes of this storage class are
-	// created with this reclaimPolicy. Defaults to Delete.
-	// +optional
-	ReclaimPolicy *corev1.PersistentVolumeReclaimPolicy `json:"reclaimPolicy,omitempty"`
-
-	// Dynamically provisioned PersistentVolumes of this storage class are
-	// created with these mountOptions, e.g. ["ro", "soft"]. Not validated -
-	// mount of the PVs will simply fail if one is invalid.
-	// +optional
-	MountOptions []string `json:"mountOptions,omitempty"`
-
-	// AllowVolumeExpansion shows whether the storage class allow volume expand
-	// +optional
-	AllowVolumeExpansion *bool `json:"allowVolumeExpansion,omitempty"`
-
-	// VolumeBindingMode indicates how PersistentVolumeClaims should be
-	// provisioned and bound.  When unset, VolumeBindingImmediate is used.
-	// This field is only honored by servers that enable the VolumeScheduling feature.
-	// +optional
-	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
-
-	// Restrict the node topologies where volumes can be dynamically provisioned.
-	// Each volume plugin defines its own supported topology specifications.
-	// An empty TopologySelectorTerm list means there is no topology restriction.
-	// This field is only honored by servers that enable the VolumeScheduling feature.
-	// +optional
-	// +listType=atomic
-	AllowedTopologies []corev1.TopologySelectorTerm `json:"allowedTopologies,omitempty"`
+	Name string `json:"name"`
 }
 
 // CNIVersions is a list of versions for a CNI Plugin

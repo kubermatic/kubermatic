@@ -276,15 +276,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 }
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
-	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
-		oldAddon := addon.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(addon, cleanupFinalizerName)
-		if err := r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon)); err != nil {
-			return err
-		}
-		log.Debugw("Removed the cleanup finalizer", "finalizer", cleanupFinalizerName)
-	}
-	return nil
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, addon, cleanupFinalizerName)
 }
 
 func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
@@ -522,13 +514,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 }
 
 func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
-	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
-		return nil
-	}
-
-	oldAddon := addon.DeepCopy()
-	kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
-	return r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
+	return kuberneteshelper.TryAddFinalizer(ctx, r, addon, cleanupFinalizerName)
 }
 
 func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {

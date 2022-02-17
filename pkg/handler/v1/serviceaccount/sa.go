@@ -347,7 +347,7 @@ func (r updateReq) Validate() error {
 		return err
 	}
 	if r.ServiceAccountID != r.Body.ID {
-		return fmt.Errorf("service account ID mismatch, you requested to update ServiceAccount = %s but body contains ServiceAccount = %s", r.ServiceAccountID, r.Body.ID)
+		return fmt.Errorf("service account ID mismatch, you requested to update ServiceAccount %q but body contains ServiceAccount %q", r.ServiceAccountID, r.Body.ID)
 	}
 	return nil
 }
