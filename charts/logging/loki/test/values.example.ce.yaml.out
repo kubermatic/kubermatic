@@ -5,7 +5,7 @@ kind: ServiceAccount
 metadata:
   labels:
     app: loki
-    chart: loki-2.8.1
+    chart: loki-2.9.1
     heritage: Helm
     release: release-name
   annotations:
@@ -22,7 +22,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.8.1
+    chart: loki-2.9.1
     release: release-name
     heritage: Helm
 data:
@@ -36,7 +36,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.8.1
+    chart: loki-2.9.1
     heritage: Helm
     release: release-name
 ---
@@ -48,7 +48,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.8.1
+    chart: loki-2.9.1
     heritage: Helm
     release: release-name
 roleRef:
@@ -67,7 +67,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.8.1
+    chart: loki-2.9.1
     release: release-name
     heritage: Helm
     variant: headless
@@ -90,7 +90,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.8.1
+    chart: loki-2.9.1
     release: release-name
     heritage: Helm
   annotations:
@@ -114,7 +114,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.8.1
+    chart: loki-2.9.1
     release: release-name
     heritage: Helm
   annotations:
@@ -136,7 +136,7 @@ spec:
         name: loki
         release: release-name
       annotations:
-        checksum/config: a3ca5baf8225ea358579c6e59ee46507278844bfb458fd306233eae3c4443b8e
+        checksum/config: 25618b2f882eec3a9146b352792bb7f6bca8dcefa1d167b7d40b40b184b75abd
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
     spec:
@@ -150,7 +150,7 @@ spec:
         []
       containers:
         - name: loki
-          image: "grafana/loki:2.4.1"
+          image: "docker.io/grafana/loki:2.4.2"
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/loki/loki.yaml"
