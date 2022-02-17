@@ -145,6 +145,8 @@ func TestKonnectivity(t *testing.T) {
 		}
 	}
 
+	time.Sleep(time.Hour)
+
 	t.Logf("checking if apiserver has konnectivity-proxy in sidecar")
 	{
 		config, err := clientcmd.BuildConfigFromFlags("", seedconfig)
