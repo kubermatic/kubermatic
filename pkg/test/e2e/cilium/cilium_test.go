@@ -24,9 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -38,7 +36,6 @@ import (
 	ciliumclientset "github.com/cilium/cilium/pkg/k8s/client/clientset/versioned"
 	"google.golang.org/grpc"
 
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
@@ -51,15 +48,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	kjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/transport/spdy"
 )
 
 var (
@@ -123,7 +117,6 @@ func TestCiliumClusters(t *testing.T) {
 	for _, test := range tests {
 		proxyMode := test.proxyMode
 		t.Run(test.name, func(t *testing.T) {
-
 			t.Parallel()
 			mu.Lock()
 			uc, _, cleanup, err := createUsercluster(t, proxyMode)
@@ -534,55 +527,6 @@ func testUserCluster(t *testing.T, userconfig string) {
 			t.Fatalf("failed to find Hubble in the body")
 		}
 	}
-}
-
-func portForward(config *rest.Config, podName string, localPort, remotePort uint16) (uint16, chan struct{}, error) {
-	dialer, stopChan, err := getDialer(config, podName)
-	if err != nil {
-		return 0, nil, fmt.Errorf("failed to get dialer: %w", err)
-	}
-
-	forwarder, err := portforward.New(dialer, []string{fmt.Sprintf("%d:%d", localPort, remotePort)}, stopChan,
-		make(chan struct{}, 1), os.Stdout, os.Stderr)
-	if err != nil {
-		return 0, nil, fmt.Errorf("failed to port forward to %s pod: %w", podName, err)
-	}
-
-	errorChan := make(chan error)
-	go func() {
-		if err := forwarder.ForwardPorts(); err != nil {
-			errorChan <- err
-		}
-	}()
-
-	err = common.WaitForPortForwarder(60*time.Second, forwarder, errorChan)
-	if err != nil {
-		return 0, nil, fmt.Errorf("waiting for portforward failed: %w", err)
-	}
-
-	ports, err := forwarder.GetPorts()
-	if err != nil {
-		return 0, nil, fmt.Errorf("failed to get forwarded port: %w", err)
-	}
-
-	return ports[0].Local, stopChan, nil
-}
-
-func getDialer(config *rest.Config, podName string) (httpstream.Dialer, chan struct{}, error) {
-	roundTripper, upgrader, err := spdy.RoundTripperFor(config)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create roundtripper: %w", err)
-	}
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", "kube-system", podName)
-	u, err := url.Parse(config.Host)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed parse config.Host: %w", err)
-	}
-	serverURL := url.URL{Scheme: "https", Path: path, Host: u.Host}
-	log.Println("server url: ", serverURL.String())
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
-	stopChan := make(chan struct{}, 1)
-	return dialer, stopChan, nil
 }
 
 func filterByLabel(pods []corev1.Pod, key string, values ...string) []corev1.Pod {
