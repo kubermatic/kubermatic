@@ -317,7 +317,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 ### Misc
 
-- Support custom pod resources for NodePort-Proxy pod for the user cluster ([#9018](https://github.com/kubermatic/kubermatic/issues/9018))
+- Support custom pod resources for NodePort-Proxy pod for the user cluster ([#9028](https://github.com/kubermatic/kubermatic/issues/9028))
 
 ## [v2.18.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.5)
 
