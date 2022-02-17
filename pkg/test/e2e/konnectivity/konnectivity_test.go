@@ -308,7 +308,6 @@ func TestKonnectivity(t *testing.T) {
 		if err != nil {
 			t.Fatalf("konnectivity agents never became healthy: %v", err)
 		}
-
 	}
 
 	t.Log("check if we can get logs from pods")
