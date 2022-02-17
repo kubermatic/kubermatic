@@ -256,6 +256,9 @@ spec:
             - --csi-address=/csi/csi.sock
             - --http-endpoint=:9808
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
         - operator: "Exists"
       volumes:
@@ -420,6 +423,9 @@ spec:
             - --csi-address=/csi/csi.sock
             - --http-endpoint=:9807
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
         - key: "node-role.kubernetes.io/master"
           operator: "Exists"

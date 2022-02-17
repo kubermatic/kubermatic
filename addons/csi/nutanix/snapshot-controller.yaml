@@ -658,9 +658,10 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
         - key: "node-role.kubernetes.io/master"
           operator: "Exists"
@@ -704,8 +705,6 @@ spec:
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
         volumeMounts:
           - name: snapshot-validation-webhook-certs
             mountPath: /etc/snapshot-validation-webhook/certs
@@ -715,6 +714,9 @@ spec:
           secret:
             secretName: csi-webhook-certs
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
         - key: "node-role.kubernetes.io/master"
           operator: "Exists"
