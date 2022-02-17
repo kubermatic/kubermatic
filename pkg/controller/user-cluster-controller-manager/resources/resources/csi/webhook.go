@@ -28,7 +28,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the machine controller.
+// ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI.
 func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
