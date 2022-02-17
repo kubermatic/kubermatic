@@ -670,16 +670,6 @@ func validateNutanixCloudSpec(spec *kubermaticv1.NutanixCloudSpec) error {
 		}
 	}
 
-	if spec.PePort == nil {
-		if spec.CredentialsReference == nil {
-			return errors.New("no prism element port or reference specified")
-		}
-
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.NutanixPePort); err != nil {
-			return err
-		}
-	}
-
 	if spec.ClusterName == "" {
 		return errors.New("no cluster name specified")
 	}
