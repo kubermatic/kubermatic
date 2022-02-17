@@ -180,7 +180,5 @@ type NutanixCredentials struct {
 	Password   string
 	PeUsername string
 	PePassword string
-	PeEndpoint string
-	PePort     *int32
 	ProxyURL   string
 }

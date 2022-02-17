@@ -18,7 +18,6 @@ package resources
 
 import (
 	"context"
-	"strconv"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -127,8 +126,6 @@ type NutanixCredentials struct {
 	Password   string
 	PeUsername string
 	PePassword string
-	PeEndpoint string
-	PePort     *int32
 	ProxyURL   string
 }
 
@@ -689,36 +686,6 @@ func GetNutanixCredentials(data CredentialsData) (NutanixCredentials, error) {
 		credentials.PePassword = spec.PePassword
 	} else if credentials.PePassword, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixPePassword); err != nil {
 		return NutanixCredentials{}, err
-	}
-
-	if spec.PeEndpoint != "" {
-		credentials.PeEndpoint = spec.PeEndpoint
-	} else if credentials.PeEndpoint, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixPeEndpoint); err != nil {
-		return NutanixCredentials{}, err
-	}
-
-	if spec.PePort != nil {
-		credentials.PePort = spec.PePort
-	} else {
-		var portString string
-		portString, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixPePort)
-		if err != nil {
-			return NutanixCredentials{}, err
-		}
-
-		if portString != "" {
-			var p int
-			p, err = strconv.Atoi(portString)
-
-			if err != nil {
-				return NutanixCredentials{}, err
-			}
-
-			port := int32(p)
-			credentials.PePort = &port
-		} else {
-			credentials.PePort = nil
-		}
 	}
 
 	if spec.ProxyURL != "" {

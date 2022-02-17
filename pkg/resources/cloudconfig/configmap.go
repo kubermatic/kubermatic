@@ -114,15 +114,7 @@ func NutanixCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConf
 				return nil, err
 			}
 
-			var pePort int32
-			if credentials.Nutanix.PePort != nil {
-				pePort = *credentials.Nutanix.PePort
-			} else {
-				// default nutanix prism element port
-				pePort = 9440
-			}
-
-			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", credentials.Nutanix.PeEndpoint, pePort, credentials.Nutanix.PeUsername, credentials.Nutanix.PePassword)
+			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", data.Cluster().Spec.Cloud.Nutanix.PeEndpoint, data.Cluster().Spec.Cloud.Nutanix.PePort, credentials.Nutanix.PeUsername, credentials.Nutanix.PePassword)
 
 			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
 			cm.Data[resources.CloudConfigKey] = nutanixCsiConf
