@@ -611,60 +611,6 @@ func TestHandle(t *testing.T) {
 			wantAllowed: false,
 		},
 		{
-			name: "Accept dual-stack pod & services CIDRs (IPv6 as secondary address)",
-			op:   admissionv1.Create,
-			cluster: rawClusterGen{
-				Name:                  "foo",
-				Namespace:             "kubermatic",
-				ExposeStrategy:        "NodePort",
-				ExternalCloudProvider: true,
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods: kubermaticv1.NetworkRanges{
-						CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"},
-					},
-					Services: kubermaticv1.NetworkRanges{
-						CIDRBlocks: []string{"10.240.32.0/20", "fd03::/112"},
-					},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32768",
-					},
-				},
-			}.Build(),
-			wantAllowed: true,
-		},
-		{
-			name: "Reject dual-stack pod & services CIDRs with IPv6 as primary address",
-			op:   admissionv1.Create,
-			cluster: rawClusterGen{
-				Name:                  "foo",
-				Namespace:             "kubermatic",
-				ExposeStrategy:        "NodePort",
-				ExternalCloudProvider: true,
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods: kubermaticv1.NetworkRanges{
-						CIDRBlocks: []string{"fd00::/104", "10.241.0.0/16"},
-					},
-					Services: kubermaticv1.NetworkRanges{
-						CIDRBlocks: []string{"fd03::/112", "10.240.32.0/20"},
-					},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32768",
-					},
-				},
-			}.Build(),
-			wantAllowed: false,
-		},
-		{
 			name: "Reject updating the nodeport range",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
