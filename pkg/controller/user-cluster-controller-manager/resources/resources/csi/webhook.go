@@ -33,6 +33,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace, 
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			sideEffect := admissionregistrationv1.SideEffectClassNone
+			matchPolicy := admissionregistrationv1.Equivalent
 			failurePolicy := admissionregistrationv1.Fail
 			scope := admissionregistrationv1.AllScopes
 
@@ -40,6 +41,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace, 
 				{
 					Name:                    name,
 					AdmissionReviewVersions: []string{"v1", "v1beta1"},
+					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffect,
 					TimeoutSeconds:          pointer.Int32Ptr(2),
