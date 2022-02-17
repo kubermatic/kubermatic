@@ -40,7 +40,7 @@ type AgentPoolBasics struct {
 	VMSize string `json:"vmSize,omitempty"`
 
 	// scaling config
-	ScalingConfig *NodegroupScalingConfig `json:"scalingConfig,omitempty"`
+	ScalingConfig *AKSNodegroupScalingConfig `json:"scalingConfig,omitempty"`
 }
 
 // Validate validates this agent pool basics

@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NodegroupScalingConfig nodegroup scaling config
+// AKSNodegroupScalingConfig a k s nodegroup scaling config
 //
-// swagger:model NodegroupScalingConfig
-type NodegroupScalingConfig struct {
+// swagger:model AKSNodegroupScalingConfig
+type AKSNodegroupScalingConfig struct {
 
 	// MaxCount - The maximum number of nodes for auto-scaling
 	MaxCount int32 `json:"maxCount,omitempty"`
@@ -24,18 +24,18 @@ type NodegroupScalingConfig struct {
 	MinCount int32 `json:"minCount,omitempty"`
 }
 
-// Validate validates this nodegroup scaling config
-func (m *NodegroupScalingConfig) Validate(formats strfmt.Registry) error {
+// Validate validates this a k s nodegroup scaling config
+func (m *AKSNodegroupScalingConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this nodegroup scaling config based on context it is used
-func (m *NodegroupScalingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this a k s nodegroup scaling config based on context it is used
+func (m *AKSNodegroupScalingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *NodegroupScalingConfig) MarshalBinary() ([]byte, error) {
+func (m *AKSNodegroupScalingConfig) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -43,8 +43,8 @@ func (m *NodegroupScalingConfig) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *NodegroupScalingConfig) UnmarshalBinary(b []byte) error {
-	var res NodegroupScalingConfig
+func (m *AKSNodegroupScalingConfig) UnmarshalBinary(b []byte) error {
+	var res AKSNodegroupScalingConfig
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

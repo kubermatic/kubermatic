@@ -239,26 +239,48 @@ func getEKSMachineDeployment(client *awsprovider.ClientSet, cluster *kubermaticv
 }
 
 func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyReplicas int32) apiv2.ExternalClusterMachineDeployment {
-	return apiv2.ExternalClusterMachineDeployment{
+	md := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
-				ID:   *nodeGroup.NodegroupName,
-				Name: *nodeGroup.NodegroupName,
+				ID:   aws.StringValue(nodeGroup.NodegroupName),
+				Name: aws.StringValue(nodeGroup.NodegroupName),
 			},
 			Spec: apiv1.NodeDeploymentSpec{
-				Replicas: int32(*nodeGroup.ScalingConfig.DesiredSize),
 				Template: apiv1.NodeSpec{
 					Versions: apiv1.NodeVersionInfo{
-						Kubelet: *nodeGroup.Version,
+						Kubelet: aws.StringValue(nodeGroup.Version),
 					},
 				},
 			},
 			Status: clusterv1alpha1.MachineDeploymentStatus{
-				Replicas:      int32(*nodeGroup.ScalingConfig.DesiredSize),
 				ReadyReplicas: readyReplicas,
 			},
 		},
+		Cloud: &apiv2.ExternalClusterMachineDeploymentCloudSpec{},
 	}
+	md.Cloud.EKS = &apiv2.EKSMachineDeploymentCloudSpec{
+		Subnets:       nodeGroup.Subnets,
+		NodeRole:      aws.StringValue(nodeGroup.NodeRole),
+		AmiType:       aws.StringValue(nodeGroup.AmiType),
+		CapacityType:  aws.StringValue(nodeGroup.CapacityType),
+		DiskSize:      aws.Int64Value(nodeGroup.DiskSize),
+		InstanceTypes: nodeGroup.InstanceTypes,
+		Labels:        nodeGroup.Labels,
+		Version:       aws.StringValue(nodeGroup.Version),
+	}
+	scalingConfig := nodeGroup.ScalingConfig
+	if nodeGroup.ScalingConfig == nil {
+		return md
+	}
+	md.Spec.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
+	md.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
+	md.Cloud.EKS.ScalingConfig = apiv2.EKSNodegroupScalingConfig{
+		DesiredSize: aws.Int64Value(scalingConfig.DesiredSize),
+		MaxSize:     aws.Int64Value(scalingConfig.MaxSize),
+		MinSize:     aws.Int64Value(scalingConfig.MinSize),
+	}
+
+	return md
 }
 
 func patchEKSMachineDeployment(oldMD, newMD *apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, cluster *kubermaticv1.ExternalCluster) (*apiv2.ExternalClusterMachineDeployment, error) {
@@ -412,4 +434,55 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 		return err
 	}
 	return nil
+}
+
+func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeployment) error {
+	eksMD := machineDeployment.Cloud.EKS
+	if eksMD == nil {
+		return fmt.Errorf("EKS MachineDeployment Spec cannot be nil")
+	}
+
+	if len(eksMD.Subnets) == 0 || len(eksMD.NodeRole) == 0 {
+		return errors.NewBadRequest("required field is missing: Subnets or NodeRole cannot be empty")
+	}
+	return nil
+}
+
+func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {
+	if err := checkCreatePoolReqValid(machineDeployment); err != nil {
+		return nil, err
+	}
+	eksMD := machineDeployment.Cloud.EKS
+
+	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+	client, err := awsprovider.GetClientSet(accessKeyID, secretAccessKey, "", "", cloudSpec.EKS.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	createInput := &eks.CreateNodegroupInput{
+		ClusterName:   aws.String(cloudSpec.EKS.Name),
+		NodegroupName: aws.String(machineDeployment.Name),
+		Subnets:       eksMD.Subnets,
+		NodeRole:      aws.String(eksMD.NodeRole),
+		AmiType:       aws.String(eksMD.AmiType),
+		CapacityType:  aws.String(eksMD.CapacityType),
+		DiskSize:      aws.Int64(eksMD.DiskSize),
+		InstanceTypes: eksMD.InstanceTypes,
+		Labels:        eksMD.Labels,
+		ScalingConfig: &eks.NodegroupScalingConfig{
+			DesiredSize: aws.Int64(eksMD.ScalingConfig.DesiredSize),
+			MaxSize:     aws.Int64(eksMD.ScalingConfig.MaxSize),
+			MinSize:     aws.Int64(eksMD.ScalingConfig.MinSize),
+		},
+	}
+	_, err = client.EKS.CreateNodegroup(createInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return &machineDeployment, nil
 }

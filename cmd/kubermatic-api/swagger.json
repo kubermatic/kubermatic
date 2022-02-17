@@ -13095,6 +13095,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13106,13 +13113,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -18454,6 +18454,24 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "AKSNodegroupScalingConfig": {
+      "type": "object",
+      "properties": {
+        "maxCount": {
+          "description": "MaxCount - The maximum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxCount"
+        },
+        "minCount": {
+          "description": "MinCount - The minimum number of nodes for auto-scaling",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MinCount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "AWSCloudSpec": {
       "type": "object",
       "title": "AWSCloudSpec specifies access data to Amazon Web Services.",
@@ -19129,7 +19147,7 @@
           "x-go-name": "OsDiskSizeGB"
         },
         "scalingConfig": {
-          "$ref": "#/definitions/NodegroupScalingConfig"
+          "$ref": "#/definitions/AKSNodegroupScalingConfig"
         },
         "vmSize": {
           "description": "Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions",
@@ -21395,6 +21413,89 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "EKSMachineDeploymentCloudSpec": {
+      "type": "object",
+      "properties": {
+        "amiType": {
+          "description": "The AMI type for your node group. GPU instance types should use the AL2_x86_64_GPU\nAMI type. Non-GPU instances should use the AL2_x86_64 AMI type. Arm instances\nshould use the AL2_ARM_64 AMI type. All types use the Amazon EKS optimized\nAmazon Linux 2 AMI. If you specify launchTemplate, and your launch template\nuses a custom AMI, then don't specify amiType, or the node group deployment\nwill fail. For more information about using launch templates with Amazon\nEKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
+          "type": "string",
+          "x-go-name": "AmiType"
+        },
+        "capacityType": {
+          "description": "The capacity type for your node group. Possible values ON_DEMAND | SPOT",
+          "type": "string",
+          "x-go-name": "CapacityType"
+        },
+        "diskSize": {
+          "description": "The root device disk size (in GiB) for your node group instances. The default\ndisk size is 20 GiB. If you specify launchTemplate, then don't specify diskSize,\nor the node group deployment will fail. For more information about using\nlaunch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskSize"
+        },
+        "instanceTypes": {
+          "description": "Specify the instance types for a node group. If you specify a GPU instance\ntype, be sure to specify AL2_x86_64_GPU with the amiType parameter. If you\nspecify launchTemplate, then you can specify zero or one instance type in\nyour launch template or you can specify 0-20 instance types for instanceTypes.\nIf however, you specify an instance type in your launch template and specify\nany instanceTypes, the node group deployment will fail. If you don't specify\nan instance type in a launch template or for instanceTypes, then t3.medium\nis used, by default. If you specify Spot for capacityType, then we recommend\nspecifying multiple values for instanceTypes. For more information, see Managed\nnode group capacity types (https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types)\nand Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "InstanceTypes"
+        },
+        "labels": {
+          "description": "The Kubernetes labels to be applied to the nodes in the node group when they\nare created.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "nodeRole": {
+          "description": "The Amazon Resource Name (ARN) of the IAM role to associate with your node\ngroup. The Amazon EKS worker node kubelet daemon makes calls to AWS APIs\non your behalf. Nodes receive permissions for these API calls through an\nIAM instance profile and associated policies. Before you can launch nodes\nand register them into a cluster, you must create an IAM role for those nodes\nto use when they are launched. For more information, see Amazon EKS node\nIAM role (https://docs.aws.amazon.com/eks/latest/userguide/worker_node_IAM_role.html)\nin the Amazon EKS User Guide . If you specify launchTemplate, then don't\nspecify IamInstanceProfile (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_IamInstanceProfile.html)\nin your launch template, or the node group deployment will fail. For more\ninformation about using launch templates with Amazon EKS, see Launch template\nsupport (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.\n\nNodeRole is a required field",
+          "type": "string",
+          "x-go-name": "NodeRole"
+        },
+        "scalingConfig": {
+          "$ref": "#/definitions/EKSNodegroupScalingConfig"
+        },
+        "subnets": {
+          "description": "The subnets to use for the Auto Scaling group that is created for your node\ngroup. These subnets must have the tag key kubernetes.io/cluster/CLUSTER_NAME\nwith a value of shared, where CLUSTER_NAME is replaced with the name of your\ncluster. If you specify launchTemplate, then don't specify SubnetId (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkInterface.html)\nin your launch template, or the node group deployment will fail. For more\ninformation about using launch templates with Amazon EKS, see Launch template\nsupport (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.\n\nSubnets is a required field",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Subnets"
+        },
+        "version": {
+          "description": "The Kubernetes version to use for your managed nodes. By default, the Kubernetes\nversion of the cluster is used, and this is the only accepted specified value.\nIf you specify launchTemplate, and your launch template uses a custom AMI,\nthen don't specify version, or the node group deployment will fail. For more\ninformation about using launch templates with Amazon EKS, see Launch template\nsupport (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)\nin the Amazon EKS User Guide.",
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSNodegroupScalingConfig": {
+      "type": "object",
+      "properties": {
+        "desiredSize": {
+          "description": "The current number of nodes that the managed node group should maintain.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DesiredSize"
+        },
+        "maxSize": {
+          "description": "The maximum number of nodes that the managed node group can scale out to.\nFor information about the maximum number that you can specify, see Amazon\nEKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)\nin the Amazon EKS User Guide.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxSize"
+        },
+        "minSize": {
+          "description": "The minimum number of nodes that the managed node group can scale in to.\nThis number must be greater than zero.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinSize"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "EKSRegions": {
       "type": "array",
       "title": "Regions represents an list of EKS regions.",
@@ -21951,6 +22052,9 @@
       "properties": {
         "aks": {
           "$ref": "#/definitions/AKSMachineDeploymentCloudSpec"
+        },
+        "eks": {
+          "$ref": "#/definitions/EKSMachineDeploymentCloudSpec"
         },
         "gke": {
           "$ref": "#/definitions/GKEMachineDeploymentCloudSpec"
@@ -24262,24 +24366,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "NodegroupScalingConfig": {
-      "type": "object",
-      "properties": {
-        "maxCount": {
-          "description": "MaxCount - The maximum number of nodes for auto-scaling",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MaxCount"
-        },
-        "minCount": {
-          "description": "MinCount - The minimum number of nodes for auto-scaling",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MinCount"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "NodesMetric": {
       "description": "NodesMetric defines a metric for a group of nodes",
