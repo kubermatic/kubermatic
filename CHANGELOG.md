@@ -12,6 +12,7 @@
 - Fix bad owner references for ClusterRoleBindings ([#8858](https://github.com/kubermatic/kubermatic/issues/8858))
 - If a network is set in the Hetzner cluster spec, it is now correctly applied to generated machines ([#8872](https://github.com/kubermatic/kubermatic/issues/8872))
 - fix AWS cloud provider cleanup sometimes getting stuck when cleaning up tags ([#8879](https://github.com/kubermatic/kubermatic/issues/8879))
+- Helm charts using dependencies (loki, promtail, nginx, cert-manager) now have specified apiVersion v2 ([#9038](https://github.com/kubermatic/kubermatic/issues/9038))
 
 ### Misc
 
