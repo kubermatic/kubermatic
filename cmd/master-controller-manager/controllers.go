@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/allowed-registry-controller"
+	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
@@ -63,6 +64,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	clusterTemplateSynchronizerFactory := clusterTemplateSynchronizerFactoryCreator(ctrlCtx)
 	userProjectBindingSynchronizerFactory := userProjectBindingSynchronizerFactoryCreator(ctrlCtx)
 	projectSynchronizerFactory := projectSynchronizerFactoryCreator(ctrlCtx)
+	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -78,6 +80,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		clusterTemplateSynchronizerFactory,
 		userProjectBindingSynchronizerFactory,
 		projectSynchronizerFactory,
+		applicationdefinitionsynchronizerFactory,
 	); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)
@@ -200,6 +203,17 @@ func userProjectBindingSynchronizerFactoryCreator(ctrlCtx *controllerContext) se
 func projectSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return projectsynchronizer.ControllerName, projectsynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func applicationDefinitionSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return applicationdefinitionsynchronizer.ControllerName, applicationdefinitionsynchronizer.Add(
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
