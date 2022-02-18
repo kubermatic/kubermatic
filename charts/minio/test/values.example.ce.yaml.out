@@ -147,17 +147,17 @@ spec:
     spec:
       containers:
       - name: minio
-        image: 'docker.io/minio/minio:RELEASE.2021-08-20T18-32-01Z'
+        image: 'docker.io/minio/minio:RELEASE.2022-02-16T00-35-27Z'
         args:
         - server
         - /storage
         env:
-        - name: MINIO_ACCESS_KEY
+        - name: MINIO_ROOT_USER
           valueFrom:
             secretKeyRef:
               name: minio
               key: accessKey
-        - name: MINIO_SECRET_KEY
+        - name: MINIO_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
               name: minio
