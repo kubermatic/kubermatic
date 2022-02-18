@@ -30,6 +30,7 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -1653,6 +1654,7 @@ func (r *TestClient) CreateCT(name, ctKind string) (*kubermaticv1.ConstraintTemp
 				},
 				Validation: &models.Validation{
 					OpenAPIV3Schema: &models.JSONSchemaProps{
+						Type: "object",
 						Properties: map[string]models.JSONSchemaProps{
 							"labels": {
 								Type: "array",
