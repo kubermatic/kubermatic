@@ -110,7 +110,7 @@ type updateAlertmanagerReq struct {
 
 func (req *updateAlertmanagerReq) validateUpdateAlertmanagerReq() error {
 	bodyMap := map[string]interface{}{}
-	if err := yaml.Unmarshal(req.Body.Spec.Config, &bodyMap); err != nil {
+	if err := yaml.UnmarshalStrict(req.Body.Spec.Config, &bodyMap); err != nil {
 		return fmt.Errorf("can not unmarshal yaml configuration: %w", err)
 	}
 	return nil

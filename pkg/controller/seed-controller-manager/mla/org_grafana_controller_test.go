@@ -393,10 +393,10 @@ func jsonEqual(expectedBody, body []byte) bool {
 func yamlEqual(expectedBody, body []byte) bool {
 	expectedBodyMap := map[string]interface{}{}
 	bodyMap := map[string]interface{}{}
-	if err := yaml.Unmarshal(expectedBody, &expectedBodyMap); err != nil {
+	if err := yaml.UnmarshalStrict(expectedBody, &expectedBodyMap); err != nil {
 		return false
 	}
-	if err := yaml.Unmarshal(body, &bodyMap); err != nil {
+	if err := yaml.UnmarshalStrict(body, &bodyMap); err != nil {
 		return false
 	}
 	return reflect.DeepEqual(expectedBodyMap, bodyMap)

@@ -54,7 +54,7 @@ func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConfigCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.Unmarshal([]byte(configYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(configYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}
@@ -76,7 +76,7 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplateCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.Unmarshal([]byte(constraintTemplateYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(constraintTemplateYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}
@@ -98,7 +98,7 @@ func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCr
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.Unmarshal([]byte(constraintPodStatusYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(constraintPodStatusYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}
@@ -120,7 +120,7 @@ func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefi
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplatePodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.Unmarshal([]byte(constraintTemplatePodStatusYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(constraintTemplatePodStatusYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}
@@ -141,7 +141,7 @@ func MutatorPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreat
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperMutatorPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.Unmarshal([]byte(mutatorPodStatusYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(mutatorPodStatusYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}
@@ -162,7 +162,7 @@ func AssignCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperAssignCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.Unmarshal([]byte(assignYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(assignYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}
@@ -183,7 +183,7 @@ func AssignMetadataCRDCreator() reconciling.NamedCustomResourceDefinitionCreator
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperAssignMetadataCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			err := yaml.Unmarshal([]byte(assignMetadataYAML), &fileCRD)
+			err := yaml.UnmarshalStrict([]byte(assignMetadataYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}

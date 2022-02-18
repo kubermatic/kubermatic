@@ -347,7 +347,7 @@ func (d *Document) normalize() interface{} {
 	encoded, _ := yaml.Marshal(d.root)
 
 	var normal interface{}
-	_ = yaml.Unmarshal(encoded, &normal)
+	_ = yaml.UnmarshalStrict(encoded, &normal)
 
 	return normal
 }

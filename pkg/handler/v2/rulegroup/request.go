@@ -193,7 +193,7 @@ func DecodeRuleGroupID(r *http.Request) (string, error) {
 
 func GetRuleGroupNameInData(data []byte) (string, error) {
 	bodyMap := map[string]interface{}{}
-	if err := yaml.Unmarshal(data, &bodyMap); err != nil {
+	if err := yaml.UnmarshalStrict(data, &bodyMap); err != nil {
 		return "", fmt.Errorf("cannot unmarshal rule group data in yaml: %w", err)
 	}
 	ruleGroupName, ok := bodyMap["name"].(string)

@@ -52,7 +52,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 		}
 
 		cluster := kubermaticv1.Cluster{}
-		err = yaml.Unmarshal(content, &cluster)
+		err = yaml.UnmarshalStrict(content, &cluster)
 		if err != nil {
 			t.Fatal(err)
 		}

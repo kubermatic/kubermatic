@@ -59,25 +59,25 @@ func (d *documenter) scanAll() error {
 
 func (d *documenter) scanManifest(manifest []byte) error {
 	var u unstructured.Unstructured
-	if err := yaml.Unmarshal(manifest, &u); err != nil {
+	if err := yaml.UnmarshalStrict(manifest, &u); err != nil {
 		return err
 	}
 	switch u.GetKind() {
 	case "Deployment":
 		var ad appsv1.Deployment
-		if err := yaml.Unmarshal(manifest, &ad); err != nil {
+		if err := yaml.UnmarshalStrict(manifest, &ad); err != nil {
 			return err
 		}
 		d.addSpec(ad.Spec.Template.Spec)
 	case "DaemonSet":
 		var ad appsv1.DaemonSet
-		if err := yaml.Unmarshal(manifest, &ad); err != nil {
+		if err := yaml.UnmarshalStrict(manifest, &ad); err != nil {
 			return err
 		}
 		d.addSpec(ad.Spec.Template.Spec)
 	case "StatefulSet":
 		var as appsv1.StatefulSet
-		if err := yaml.Unmarshal(manifest, &as); err != nil {
+		if err := yaml.UnmarshalStrict(manifest, &as); err != nil {
 			return err
 		}
 		d.addSpec(as.Spec.Template.Spec)

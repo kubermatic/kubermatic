@@ -219,7 +219,7 @@ func (r *Reconciler) getAddons(ctx context.Context) (*kubermaticv1.AddonList, er
 	}
 
 	if c.DefaultManifests != "" {
-		if err := yaml.Unmarshal([]byte(c.DefaultManifests), result); err != nil {
+		if err := yaml.UnmarshalStrict([]byte(c.DefaultManifests), result); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal default addon list: %w", err)
 		}
 	}
@@ -240,7 +240,7 @@ func (r *Reconciler) getAddons(ctx context.Context) (*kubermaticv1.AddonList, er
 // mechanism where instead of an AddonList, only a []string is given.
 func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 	defaultAddonList := kubermaticv1.AddonList{}
-	if err := yaml.Unmarshal([]byte(defaults.DefaultKubernetesAddons), &defaultAddonList); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(defaults.DefaultKubernetesAddons), &defaultAddonList); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal default addon list: %w", err)
 	}
 

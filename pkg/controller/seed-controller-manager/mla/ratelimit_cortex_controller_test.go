@@ -291,7 +291,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 				t.Fatalf("unable to get configMap: %v", err)
 			}
 			actualOverrides := &Overrides{}
-			err = yaml.Unmarshal([]byte(configMap.Data[RuntimeConfigFileName]), actualOverrides)
+			err = yaml.UnmarshalStrict([]byte(configMap.Data[RuntimeConfigFileName]), actualOverrides)
 			assert.Nil(t, err)
 			assert.Equal(t, tc.expectedOverrides, *actualOverrides)
 			mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}

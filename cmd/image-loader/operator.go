@@ -38,7 +38,7 @@ func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*kube
 	}
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := yaml.Unmarshal(content, &config); err != nil {
+	if err := yaml.UnmarshalStrict(content, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
