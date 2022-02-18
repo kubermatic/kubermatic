@@ -365,6 +365,12 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 					return nil, err
 				}
 			}
+			if cloud.EKS != nil {
+				apiCluster, err = getEKSClusterDetails(ctx, apiCluster, secretKeySelector, cloud)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 		// get version for running cluster
 		version, err := clusterProvider.GetVersion(cluster)
