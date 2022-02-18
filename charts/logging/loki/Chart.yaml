@@ -14,7 +14,7 @@
 
 apiVersion: v2
 name: loki
-version: 0.2.2
+version: 0.2.3
 appVersion: v2.8.1
 description: "Loki: like Prometheus, but for logs."
 keywords:
