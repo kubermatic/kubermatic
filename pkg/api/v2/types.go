@@ -644,6 +644,7 @@ type AKSClusterList []AKSCluster
 // swagger:model FeatureGates
 type FeatureGates struct {
 	KonnectivityService *bool `json:"konnectivityService,omitempty"`
+	OIDCKubeCfgEndpoint *bool `json:"OIDCKubeCfgEndpoint,omitempty"`
 }
 
 // ExternalClusterMachineDeploymentCloudSpec represents an object holding machine deployment cloud details.
