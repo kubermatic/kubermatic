@@ -206,6 +206,10 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --endpoint-reconciler-type
+        - master-count
+        - --apiserver-count
+        - "1"
         - --profiling=false
         - --service-account-issuer
         - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000

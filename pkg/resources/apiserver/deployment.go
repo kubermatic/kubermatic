@@ -311,10 +311,11 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
-		// use the master-count endpoint-reconciler, as the lease reconciler does not work well with single advertise-address
+		// use the master-count endpoint-reconciler, as the lease reconciler does not work well
+		// with single advertise-address on multiple apiserver instances
 		"--endpoint-reconciler-type", "master-count",
-		// apiserver-count affects only the master-count endpoint-reconciler, it should equal the number of
-		// different apiserver addresses, which in case of KKP is always 1
+		// apiserver-count affects only the master-count endpoint-reconciler, it should be equal to
+		// the number of different apiserver advertise-address's, which in case of KKP is always 1
 		"--apiserver-count", "1",
 		// this can't be passed as two strings as the other parameters
 		"--profiling=false",
