@@ -146,10 +146,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 }
 
 func createEtcdBackupController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
-		return nil
-	}
-
 	return etcdbackupcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -178,14 +174,12 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 		ctrlCtx.runOptions.caBundle,
+		ctrlCtx.seedGetter,
 		ctrlCtx.configGetter,
 	)
 }
 
 func createEtcdRestoreController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
-		return nil
-	}
 	return etcdrestorecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -193,6 +187,7 @@ func createEtcdRestoreController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
 		ctrlCtx.seedGetter,
+		ctrlCtx.configGetter,
 	)
 }
 

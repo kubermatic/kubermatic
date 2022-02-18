@@ -97,6 +97,7 @@ type Reconciler struct {
 	disabled bool
 
 	caBundle     resources.CABundle
+	seedGetter   provider.SeedGetter
 	configGetter provider.KubermaticConfigurationGetter
 
 	recorder record.EventRecorder
@@ -115,6 +116,7 @@ func Add(
 	versions kubermatic.Versions,
 	disabled bool,
 	caBundle resources.CABundle,
+	seedGetter provider.SeedGetter,
 	configGetter provider.KubermaticConfigurationGetter,
 ) error {
 	log = log.Named(ControllerName)
@@ -137,6 +139,7 @@ func Add(
 		versions:             versions,
 		caBundle:             caBundle,
 		scheme:               mgr.GetScheme(),
+		seedGetter:           seedGetter,
 		configGetter:         configGetter,
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -183,6 +186,21 @@ func (w *runnableWrapper) Start(ctx context.Context) error {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// the etcdbackup/etcdrestore controllers are enabled (at least for this seed), do nothing
+	if kubermaticv1helper.AutomaticBackupEnabled(config, seed) {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -195,7 +213,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	_, err := kubermaticv1helper.ClusterReconcileWrapper(
+	_, err = kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -203,7 +221,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return nil, r.reconcile(ctx, log, cluster)
+			return nil, r.reconcile(ctx, log, config, seed, cluster)
 		},
 	)
 	if err != nil {
@@ -213,13 +231,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	config, err := r.configGetter(ctx)
-	if err != nil {
-		return err
-	}
-
-	backupStoreContainer, err := kuberneteshelper.ContainerFromString(config.Spec.SeedController.BackupStoreContainer)
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, cluster *kubermaticv1.Cluster) error {
+	backupStoreContainer, err := kubermaticv1helper.EffectiveBackupStoreContainer(config, seed)
 	if err != nil {
 		return fmt.Errorf("failed to create backup store container: %w", err)
 	}
@@ -228,7 +241,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return err
 	}
 
-	backupCleanupContainer, err := kuberneteshelper.ContainerFromString(config.Spec.SeedController.BackupCleanupContainer)
+	backupCleanupContainer, err := kubermaticv1helper.EffectiveBackupCleanupContainer(config, seed)
 	if err != nil {
 		return fmt.Errorf("failed to create backup cleanup container: %w", err)
 	}

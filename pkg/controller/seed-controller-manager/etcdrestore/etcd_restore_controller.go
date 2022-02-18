@@ -67,9 +67,10 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 	workerName string
 	ctrlruntimeclient.Client
-	recorder   record.EventRecorder
-	versions   kubermatic.Versions
-	seedGetter provider.SeedGetter
+	recorder     record.EventRecorder
+	versions     kubermatic.Versions
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
 }
 
 // Add creates a new etcd restore controller that is responsible for
@@ -81,17 +82,19 @@ func Add(
 	workerName string,
 	versions kubermatic.Versions,
 	seedGetter provider.SeedGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
-		log:        log,
-		Client:     client,
-		workerName: workerName,
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
-		versions:   versions,
-		seedGetter: seedGetter,
+		log:          log,
+		Client:       client,
+		workerName:   workerName,
+		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		versions:     versions,
+		seedGetter:   seedGetter,
+		configGetter: configGetter,
 	}
 
 	ctrlOptions := controller.Options{
@@ -118,6 +121,21 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// this feature is not enabled for this seed, do nothing
+	if !kubermaticv1helper.AutomaticBackupEnabled(config, seed) {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -143,11 +161,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		return reconcile.Result{}, nil
-	}
-
-	seed, err := r.seedGetter()
-	if err != nil {
-		return reconcile.Result{}, err
 	}
 
 	result, err := r.reconcile(ctx, log, restore, cluster, seed)

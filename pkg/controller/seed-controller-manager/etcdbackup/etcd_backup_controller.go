@@ -179,6 +179,21 @@ func Add(
 
 // Reconcile handle etcd backups reconciliation.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// this feature is not enabled for this seed, do nothing
+	if !kubermaticv1helper.AutomaticBackupEnabled(config, seed) {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -200,16 +215,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	seed, err := r.seedGetter()
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	config, err := r.configGetter(ctx)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	log = r.log.With("cluster", cluster.Name, "backupConfig", backupConfig.Name)
 
 	var suppressedError error
@@ -223,7 +228,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionNone,
 		func() (*reconcile.Result, error) {
-			result, err := r.reconcile(ctx, log, backupConfig, cluster, seed, &config.Spec.SeedController)
+			result, err := r.reconcile(ctx, log, backupConfig, cluster, seed, config)
 			if kerrors.IsConflict(err) {
 				// benign update conflict -- remember this so we can
 				// suppress log.Error and event generation below
@@ -259,7 +264,7 @@ func (r *Reconciler) reconcile(
 	backupConfig *kubermaticv1.EtcdBackupConfig,
 	cluster *kubermaticv1.Cluster,
 	seed *kubermaticv1.Seed,
-	ctrlCfg *kubermaticv1.KubermaticSeedControllerConfiguration,
+	config *kubermaticv1.KubermaticConfiguration,
 ) (*reconcile.Result, error) {
 	var destination *kubermaticv1.BackupDestination
 	if backupConfig.Spec.Destination != "" {
@@ -284,17 +289,17 @@ func (r *Reconciler) reconcile(
 		return nil, errors.Wrap(err, "failed to create backup configmaps")
 	}
 
-	backupStoreContainer, err := kuberneteshelper.ContainerFromString(ctrlCfg.BackupStoreContainer)
+	backupStoreContainer, err := kubermaticv1helper.EffectiveBackupStoreContainer(config, seed)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create backup store container")
 	}
 
-	backupDeleteContainer, err := kuberneteshelper.ContainerFromString(ctrlCfg.BackupDeleteContainer)
+	backupDeleteContainer, err := kubermaticv1helper.EffectiveBackupDeleteContainer(config, seed)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create backup delete container")
 	}
 
-	backupCleanupContainer, err := kuberneteshelper.ContainerFromString(ctrlCfg.BackupCleanupContainer)
+	backupCleanupContainer, err := kubermaticv1helper.EffectiveBackupCleanupContainer(config, seed)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create backup cleanup container")
 	}

@@ -21,19 +21,16 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -228,28 +225,4 @@ func GetDeploymentCondition(status appsv1.DeploymentStatus, condType appsv1.Depl
 		}
 	}
 	return nil
-}
-
-func ContainerFromString(containerSpec string) (*corev1.Container, error) {
-	if len(strings.TrimSpace(containerSpec)) == 0 {
-		return nil, nil
-	}
-
-	container := &corev1.Container{}
-	manifestDecoder := yaml.NewYAMLToJSONDecoder(strings.NewReader(containerSpec))
-	if err := manifestDecoder.Decode(container); err != nil {
-		return nil, err
-	}
-
-	// Just because it's a valid corev1.Container does not mean
-	// the APIServer will accept it, thus we do some additional
-	// checks
-	if container.Name == "" {
-		return nil, fmt.Errorf("container must have a name")
-	}
-	if container.Image == "" {
-		return nil, fmt.Errorf("container must have an image")
-	}
-
-	return container, nil
 }

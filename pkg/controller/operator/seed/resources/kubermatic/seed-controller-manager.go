@@ -75,10 +75,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
 			}
 
-			if cfg.Spec.SeedController.BackupRestore.Enabled || seed.Spec.BackupRestore != nil || seed.Spec.EtcdBackupRestore != nil {
-				args = append(args, "-enable-etcd-backups-restores")
-			}
-
 			if cfg.Spec.ImagePullSecret != "" {
 				args = append(args, fmt.Sprintf("-docker-pull-config-json-file=/opt/docker/%s", corev1.DockerConfigJsonKey))
 			}
