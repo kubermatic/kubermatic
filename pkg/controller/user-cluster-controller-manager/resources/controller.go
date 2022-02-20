@@ -96,6 +96,7 @@ func Add(
 	caBundle resources.CABundle,
 	userClusterMLA UserClusterMLA,
 	clusterName string,
+	nutanixCSIEnabled bool,
 	konnectivity bool,
 	konnectivityServerHost string,
 	konnectivityServerPort int,
@@ -126,6 +127,7 @@ func Add(
 		userClusterMLA:               userClusterMLA,
 		cloudProvider:                kubermaticv1.ProviderType(cloudProviderName),
 		clusterName:                  clusterName,
+		nutanixCSIEnabled:            nutanixCSIEnabled,
 		isKonnectivityEnabled:        konnectivity,
 		konnectivityServerHost:       konnectivityServerHost,
 		konnectivityServerPort:       konnectivityServerPort,
@@ -296,6 +298,7 @@ type reconciler struct {
 	userClusterMLA               UserClusterMLA
 	cloudProvider                kubermaticv1.ProviderType
 	clusterName                  string
+	nutanixCSIEnabled            bool
 	isKonnectivityEnabled        bool
 	konnectivityServerHost       string
 	konnectivityServerPort       int

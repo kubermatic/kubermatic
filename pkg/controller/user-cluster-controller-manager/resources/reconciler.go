@@ -88,8 +88,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
-	// Todo: only load data if Nutanix has CSI conf set
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider {
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
 		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigName)
 		if err != nil {
 			return fmt.Errorf("failed to get csi config: %w", err)
