@@ -24413,23 +24413,23 @@
       "type": "object",
       "title": "NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.",
       "properties": {
-        "peEndpoint": {
+        "endpoint": {
           "description": "Prism Element Endpoint to access Nutanix Prism Element for csi driver",
           "type": "string",
           "x-go-name": "Endpoint"
         },
-        "pePassword": {
+        "password": {
           "description": "Prism Element Password for csi driver",
           "type": "string",
           "x-go-name": "Password"
         },
-        "pePort": {
+        "port": {
           "description": "Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)\n+optional",
           "type": "integer",
           "format": "int32",
           "x-go-name": "Port"
         },
-        "peUsername": {
+        "username": {
           "description": "Prism Element Username for csi driver",
           "type": "string",
           "x-go-name": "Username"

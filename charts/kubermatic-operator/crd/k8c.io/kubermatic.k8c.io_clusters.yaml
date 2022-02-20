@@ -635,23 +635,23 @@ spec:
                         description: NutanixCSIConfig for csi driver that connects
                           to a prism element
                         properties:
-                          peEndpoint:
+                          endpoint:
                             description: Prism Element Endpoint to access Nutanix
                               Prism Element for csi driver
                             type: string
-                          pePassword:
+                          password:
                             description: Prism Element Password for csi driver
                             type: string
-                          pePort:
+                          port:
                             description: 'Optional: Port to use when connecting to
                               the Nutanix Prism Element endpoint (defaults to 9440)'
                             format: int32
                             type: integer
-                          peUsername:
+                          username:
                             description: Prism Element Username for csi driver
                             type: string
                         required:
-                        - peEndpoint
+                        - endpoint
                         type: object
                       password:
                         type: string
