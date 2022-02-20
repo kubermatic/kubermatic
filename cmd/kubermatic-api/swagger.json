@@ -22163,12 +22163,13 @@
       "description": "FeatureGates represents an object holding feature gate settings",
       "type": "object",
       "properties": {
-        "OIDCKubeCfgEndpoint": {
-          "type": "boolean"
-        },
         "konnectivityService": {
           "type": "boolean",
           "x-go-name": "KonnectivityService"
+        },
+        "oidcKubeCfgEndpoint": {
+          "type": "boolean",
+          "x-go-name": "OIDCKubeCfgEndpoint"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
