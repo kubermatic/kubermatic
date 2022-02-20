@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -824,6 +825,23 @@ type AnexiaCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
+// NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
+type NutanixCSIConfig struct {
+
+	// Prism Element Username for csi driver
+	Username string `json:"username,omitempty"`
+
+	// Prism Element Password for csi driver
+	Password string `json:"password,omitempty"`
+
+	// Prism Element Endpoint to access Nutanix Prism Element for csi driver
+	Endpoint string `json:"endpoint"`
+
+	// Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	// +optional
+	Port *int32 `json:"port,omitempty"`
+}
+
 // NutanixCloudSpec specifies the access data to Nutanix.
 // NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
 type NutanixCloudSpec struct {
@@ -840,18 +858,9 @@ type NutanixCloudSpec struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	// Prism Element Username for csi driver
-	PeUsername string `json:"peUsername,omitempty"`
-
-	// Prism Element Password for csi driver
-	PePassword string `json:"pePassword,omitempty"`
-
-	// PeEndpoint to access Nutanix Prism Element for csi driver
-	PeEndpoint string `json:"peEndpoint"`
-
-	// Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	// NutanixCSIConfig for csi driver that connects to a prism element
 	// +optional
-	PePort *int32 `json:"pePort,omitempty"`
+	CSI *NutanixCSIConfig `json:"csi,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=HealthStatusDown;HealthStatusUp;HealthStatusProvisioning

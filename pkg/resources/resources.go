@@ -589,13 +589,11 @@ const (
 
 	AnexiaToken = "token"
 
-	NutanixUsername   = "username"
-	NutanixPassword   = "password"
-	NutanixPeUsername = "peUsername"
-	NutanixPePassword = "pePassword"
-	NutanixPeEndpoint = "peEndpoint"
-	NutanixPePort     = "pePort"
-	NutanixProxyURL   = "proxyURL"
+	NutanixUsername    = "username"
+	NutanixPassword    = "password"
+	NutanixCSIUsername = "csiUsername"
+	NutanixCSIPassword = "csiPassword"
+	NutanixProxyURL    = "proxyURL"
 
 	UserSSHKeys = "usersshkeys"
 )

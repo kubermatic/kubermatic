@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -515,19 +516,30 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	spec := cluster.Spec.Cloud.Nutanix
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" && spec.PeUsername == "" && spec.PePassword == "" && spec.ProxyURL == "" {
+	if spec.Username == "" && spec.Password == "" && spec.ProxyURL == "" && (spec.CSI == nil || (spec.CSI.Username == "" && spec.CSI.Password == "")) {
 		return nil
 	}
 
 	secretData := map[string][]byte{
-		resources.NutanixUsername:   []byte(spec.Username),
-		resources.NutanixPassword:   []byte(spec.Password),
-		resources.NutanixPeUsername: []byte(spec.PeUsername),
-		resources.NutanixPePassword: []byte(spec.PePassword),
+		resources.NutanixUsername: []byte(spec.Username),
+		resources.NutanixPassword: []byte(spec.Password),
 	}
 
 	if spec.ProxyURL != "" {
 		secretData[resources.NutanixProxyURL] = []byte(spec.ProxyURL)
+	}
+
+	// clean old inline credentials
+	cluster.Spec.Cloud.Nutanix.Username = ""
+	cluster.Spec.Cloud.Nutanix.Password = ""
+	cluster.Spec.Cloud.Nutanix.ProxyURL = ""
+
+	if spec.CSI != nil {
+		secretData[resources.NutanixCSIUsername] = []byte(spec.CSI.Username)
+		secretData[resources.NutanixCSIPassword] = []byte(spec.CSI.Password)
+
+		cluster.Spec.Cloud.Nutanix.CSI.Username = ""
+		cluster.Spec.Cloud.Nutanix.CSI.Password = ""
 	}
 
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, secretData)
@@ -537,13 +549,6 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 
 	// add secret key reference to cluster object
 	cluster.Spec.Cloud.Nutanix.CredentialsReference = credentialRef
-
-	// clean old inline credentials
-	cluster.Spec.Cloud.Nutanix.Username = ""
-	cluster.Spec.Cloud.Nutanix.Password = ""
-	cluster.Spec.Cloud.Nutanix.PeUsername = ""
-	cluster.Spec.Cloud.Nutanix.PePassword = ""
-	cluster.Spec.Cloud.Nutanix.ProxyURL = ""
 
 	return nil
 }

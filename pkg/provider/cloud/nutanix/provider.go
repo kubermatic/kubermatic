@@ -98,8 +98,11 @@ func (n *Nutanix) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 }
 
 func (n *Nutanix) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
-	if spec.Nutanix.PePort == nil {
-		spec.Nutanix.PePort = pointer.Int32Ptr(9440)
+	// default csi
+	if spec.Nutanix.CSI != nil {
+		if spec.Nutanix.CSI.Port == nil {
+			spec.Nutanix.CSI.Port = pointer.Int32Ptr(9440)
+		}
 	}
 
 	return nil

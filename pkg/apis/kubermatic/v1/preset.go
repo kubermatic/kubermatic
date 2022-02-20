@@ -304,17 +304,16 @@ type Nutanix struct {
 	ProjectName string `json:"projectName,omitempty"`
 
 	// Prism Element Username for csi driver
-	PeUsername string `json:"peUsername,omitempty"`
+	CSIUsername string `json:"csiUsername,omitempty"`
 
 	// Prism Element Password for csi driver
-	PePassword string `json:"pePassword,omitempty"`
+	CSIPassword string `json:"csiPassword,omitempty"`
 
-	// PeEndpoint to access Nutanix Prism Element for csi driver
-	PeEndpoint string `json:"peEndpoint"`
+	// CSIEndpoint to access Nutanix Prism Element for csi driver
+	CSIEndpoint string `json:"csiEndpoint,omitempty"`
 
-	// Optional: PePort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
-	// +optional
-	PePort *int32 `json:"pePort,omitempty"`
+	// CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	CSIPort *int32 `json:"csiPort,omitempty"`
 }
 
 func (s Nutanix) IsValid() bool {

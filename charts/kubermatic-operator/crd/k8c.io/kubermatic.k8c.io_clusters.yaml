@@ -631,22 +631,29 @@ spec:
                             description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                             type: string
                         type: object
+                      csi:
+                        description: NutanixCSIConfig for csi driver that connects
+                          to a prism element
+                        properties:
+                          peEndpoint:
+                            description: Prism Element Endpoint to access Nutanix
+                              Prism Element for csi driver
+                            type: string
+                          pePassword:
+                            description: Prism Element Password for csi driver
+                            type: string
+                          pePort:
+                            description: 'Optional: Port to use when connecting to
+                              the Nutanix Prism Element endpoint (defaults to 9440)'
+                            format: int32
+                            type: integer
+                          peUsername:
+                            description: Prism Element Username for csi driver
+                            type: string
+                        required:
+                        - peEndpoint
+                        type: object
                       password:
-                        type: string
-                      peEndpoint:
-                        description: PeEndpoint to access Nutanix Prism Element for
-                          csi driver
-                        type: string
-                      pePassword:
-                        description: Prism Element Password for csi driver
-                        type: string
-                      pePort:
-                        description: 'Optional: PePort to use when connecting to the
-                          Nutanix Prism Element endpoint (defaults to 9440)'
-                        format: int32
-                        type: integer
-                      peUsername:
-                        description: Prism Element Username for csi driver
                         type: string
                       projectName:
                         description: ProjectName is the project that this cluster
@@ -658,7 +665,6 @@ spec:
                         type: string
                     required:
                     - clusterName
-                    - peEndpoint
                     type: object
                   openstack:
                     description: OpenstackCloudSpec specifies access data to an OpenStack

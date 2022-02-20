@@ -452,12 +452,6 @@ func (m *PresetProvider) setNutanixCredentials(userInfo *provider.UserInfo, pres
 	cloud.Nutanix.Username = preset.Spec.Nutanix.Username
 	cloud.Nutanix.Password = preset.Spec.Nutanix.Password
 
-	cloud.Nutanix.PeUsername = preset.Spec.Nutanix.PeUsername
-	cloud.Nutanix.PePassword = preset.Spec.Nutanix.PePassword
-
-	cloud.Nutanix.PeEndpoint = preset.Spec.Nutanix.PeEndpoint
-	cloud.Nutanix.PePort = preset.Spec.Nutanix.PePort
-
 	if proxyURL := preset.Spec.Nutanix.ProxyURL; proxyURL != "" {
 		cloud.Nutanix.ProxyURL = proxyURL
 	}
@@ -468,6 +462,15 @@ func (m *PresetProvider) setNutanixCredentials(userInfo *provider.UserInfo, pres
 
 	if projectName := preset.Spec.Nutanix.ProjectName; projectName != "" {
 		cloud.Nutanix.ProjectName = projectName
+	}
+
+	if preset.Spec.Nutanix.CSIUsername != "" && preset.Spec.Nutanix.CSIPassword != "" && preset.Spec.Nutanix.CSIEndpoint != "" {
+		cloud.Nutanix.CSI = &kubermaticv1.NutanixCSIConfig{
+			Username: preset.Spec.Nutanix.CSIUsername,
+			Password: preset.Spec.Nutanix.CSIPassword,
+			Endpoint: preset.Spec.Nutanix.CSIEndpoint,
+			Port:     preset.Spec.Nutanix.CSIPort,
+		}
 	}
 
 	return &cloud, nil
