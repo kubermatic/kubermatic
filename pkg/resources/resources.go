@@ -1242,11 +1242,11 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 		}
 	}
 	for k, v := range overrides {
-		defaultRequirement, ok := defaultRequirements[k]
-		if v.Requests == nil && ok {
+		defaultRequirement := defaultRequirements[k]
+		if v.Requests == nil && defaultRequirement != nil {
 			v.Requests = defaultRequirement.Requests
 		}
-		if v.Limits == nil && ok {
+		if v.Limits == nil && defaultRequirement != nil {
 			v.Limits = defaultRequirement.Limits
 		}
 
