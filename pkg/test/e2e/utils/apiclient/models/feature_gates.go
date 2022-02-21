@@ -21,7 +21,7 @@ type FeatureGates struct {
 	KonnectivityService bool `json:"konnectivityService,omitempty"`
 
 	// o ID c kube cfg endpoint
-	OIDCKubeCfgEndpoint bool `json:"OIDCKubeCfgEndpoint,omitempty"`
+	OIDCKubeCfgEndpoint bool `json:"oidcKubeCfgEndpoint,omitempty"`
 }
 
 // Validate validates this feature gates
