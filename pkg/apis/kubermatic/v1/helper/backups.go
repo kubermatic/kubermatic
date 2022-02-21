@@ -28,7 +28,7 @@ import (
 )
 
 func AutomaticBackupEnabled(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) bool {
-	return cfg.Spec.SeedController.BackupRestore.Enabled || seed.IsDefaultEtcdAutomaticBackupEnabled()
+	return cfg.Spec.SeedController.BackupRestore.S3BucketName != "" || seed.IsDefaultEtcdAutomaticBackupEnabled()
 }
 
 func EffectiveBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
@@ -37,7 +37,7 @@ func EffectiveBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, se
 		return ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
 	}
 
-	if cfg.Spec.SeedController.BackupRestore.Enabled || seed.IsDefaultEtcdAutomaticBackupEnabled() {
+	if AutomaticBackupEnabled(cfg, seed) {
 		return ContainerFromString(defaults.DefaultNewBackupStoreContainer)
 	}
 

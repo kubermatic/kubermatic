@@ -70,19 +70,15 @@ func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *
 	}
 }
 
-func RestoreS3SettingsConfigMapCreator(backupRestore *kubermaticv1.SeedBackupRestoreConfiguration) reconciling.NamedConfigMapCreatorGetter {
-	if backupRestore == nil {
-		return nil
-	}
-
+func RestoreS3SettingsConfigMapCreator(destination *kubermaticv1.BackupDestination) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return restoreS3SettingsConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if c.Data == nil {
 				c.Data = make(map[string]string)
 			}
 
-			c.Data[s3EndpointKey] = backupRestore.S3Endpoint
-			c.Data[s3BucketNameKey] = backupRestore.S3BucketName
+			c.Data[s3EndpointKey] = destination.Endpoint
+			c.Data[s3BucketNameKey] = destination.BucketName
 
 			return c, nil
 		}

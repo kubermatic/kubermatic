@@ -436,23 +436,24 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
-	var kubeSystemCreators []reconciling.NamedConfigMapCreatorGetter
-
-	// For backward compatibility check both sources for backup and restore configuration.
-	backupRestore := &kubermaticv1.SeedBackupRestoreConfiguration{}
-	if cfg.Spec.SeedController.BackupRestore.Enabled {
-		backupRestore.S3Endpoint = cfg.Spec.SeedController.BackupRestore.S3Endpoint
-		backupRestore.S3BucketName = cfg.Spec.SeedController.BackupRestore.S3BucketName
-	}
-	// Seed backup and restore configuration takes precedence.
-	if seed.Spec.BackupRestore != nil {
-		backupRestore = seed.Spec.BackupRestore
-	}
-	if creator := kubermaticseed.RestoreS3SettingsConfigMapCreator(backupRestore); creator != nil {
-		kubeSystemCreators = append(kubeSystemCreators, creator)
+	destination := &kubermaticv1.BackupDestination{
+		Endpoint:   cfg.Spec.SeedController.BackupRestore.S3Endpoint,
+		BucketName: cfg.Spec.SeedController.BackupRestore.S3BucketName,
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, kubeSystemCreators, metav1.NamespaceSystem, client); err != nil {
+	if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.DefaultDestination != nil {
+		for k := range seed.Spec.EtcdBackupRestore.Destinations {
+			if k == *seed.Spec.EtcdBackupRestore.DefaultDestination {
+				destination = seed.Spec.EtcdBackupRestore.Destinations[k]
+			}
+		}
+	}
+
+	creators = []reconciling.NamedConfigMapCreatorGetter{
+		kubermaticseed.RestoreS3SettingsConfigMapCreator(destination),
+	}
+
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, client); err != nil {
 		return fmt.Errorf("failed to reconcile kube-system ConfigMaps: %w", err)
 	}
 

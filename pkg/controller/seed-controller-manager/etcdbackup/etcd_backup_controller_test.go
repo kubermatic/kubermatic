@@ -115,7 +115,6 @@ func genDeleteContainer() *corev1.Container {
 
 func getConfigGetter(t *testing.T, storeContainer, deleteContainer *corev1.Container) provider.KubermaticConfigurationGetter {
 	config := &kubermaticv1.KubermaticConfiguration{}
-	config.Spec.SeedController.BackupRestore.Enabled = true
 	config.Spec.SeedController.BackupRestore.S3BucketName = "test"
 
 	if storeContainer != nil {

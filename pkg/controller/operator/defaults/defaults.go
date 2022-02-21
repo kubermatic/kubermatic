@@ -338,13 +338,8 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", configCopy.Spec.SeedController.MaximumParallelReconciles)
 	}
 
-	if configCopy.Spec.SeedController.BackupRestore.Enabled {
-		if configCopy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
-			configCopy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
-		}
-		if configCopy.Spec.SeedController.BackupRestore.S3BucketName == "" {
-			return nil, fmt.Errorf("backupRestore.enabled is set, but s3BucketName is unset")
-		}
+	if configCopy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
+		configCopy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
 	}
 
 	if configCopy.Spec.SeedController.Replicas == nil {

@@ -289,21 +289,19 @@ spec:
                 properties:
                   backupCleanupContainer:
                     description: BackupCleanupContainer is the container used for
-                      removing expired backups from the storage location.
+                      removing expired backups from the storage location. This container
+                      is only relevant when the old, deprecated backup controllers
+                      are enabled.
                     type: string
                   backupDeleteContainer:
                     description: BackupDeleteContainer is the container used for deleting
-                      etcd snapshots from a backup location.
+                      etcd snapshots from a backup location. This container is only
+                      relevant when the new backup/restore controllers are enabled.
                     type: string
                   backupRestore:
-                    description: 'BackupRestore contains the setup of the new backup
-                      and restore controllers. Deprecated: Use Seed.Spec.EtcdBackupRestore.
-                      This is legacy field to support old configurations.'
+                    description: BackupRestore contains the setup of the new backup
+                      and restore controllers.
                     properties:
-                      enabled:
-                        description: Enabled enables the new etcd backup and restore
-                          controllers.
-                        type: boolean
                       s3BucketName:
                         description: S3BucketName is the S3 bucket name to use for
                           backup and restore.

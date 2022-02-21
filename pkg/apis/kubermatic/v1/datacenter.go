@@ -162,30 +162,18 @@ type SeedSpec struct {
 	DefaultClusterTemplate string `json:"defaultClusterTemplate,omitempty"`
 	// Metering configures the metering tool on user clusters across the seed.
 	Metering *MeteringConfiguration `json:"metering,omitempty"`
-	// BackupRestore when set, enables backup and restore controllers with given configuration.
-	// Deprecated: use EtcdBackupRestore instead which allows for multiple destinations. For now, it's still supported and
-	// will work if set.
-	BackupRestore *SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
-	// EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed
+	// EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
+	// if this is set, the new backup/restore controllers are enabled for this Seed.
 	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
 }
 
-// SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.
-// Deprecated: use EtcdBackupRestore.
-type SeedBackupRestoreConfiguration struct {
-	// S3Endpoint is the S3 API endpoint to use for backup and restore.
-	S3Endpoint string `json:"s3Endpoint,omitempty"`
-	// S3BucketName is the S3 bucket name to use for backup and restore.
-	S3BucketName string `json:"s3BucketName,omitempty"`
-}
-
-// EtcdBackupRestore holds the configuration of the automatic backup restores.
+// EtcdBackupRestore holds the configuration of the automatic backup and restores.
 type EtcdBackupRestore struct {
 	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
 	// it enables automatic backup and restore for the seed.
 	Destinations map[string]*BackupDestination `json:"destinations,omitempty"`
 	// DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is
-	// created for every user cluster. If not set, the default etcd backup config won't be created (unless the legacy Seed.Spec.BackupRestore is used).
+	// created for every user cluster. If not set, the default etcd backup config won't be created.
 	// Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.
 	DefaultDestination *string `json:"defaultDestination,omitempty"`
@@ -559,7 +547,9 @@ type MeteringConfiguration struct {
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
 func (s *Seed) IsDefaultEtcdAutomaticBackupEnabled() bool {
-	return s.Spec.BackupRestore != nil ||
-		(s.Spec.EtcdBackupRestore != nil && len(s.Spec.EtcdBackupRestore.Destinations) > 0 &&
-			s.Spec.EtcdBackupRestore.DefaultDestination != nil && *s.Spec.EtcdBackupRestore.DefaultDestination != "")
+	if cfg := s.Spec.EtcdBackupRestore; cfg != nil {
+		return len(cfg.Destinations) > 0 && cfg.DefaultDestination != nil && *cfg.DefaultDestination != ""
+	}
+
+	return false
 }

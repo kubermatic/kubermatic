@@ -14,13 +14,13 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// EtcdBackupRestore EtcdBackupRestore holds the configuration of the automatic backup restores.
+// EtcdBackupRestore EtcdBackupRestore holds the configuration of the automatic backup and restores.
 //
 // swagger:model EtcdBackupRestore
 type EtcdBackupRestore struct {
 
 	// DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is
-	// created for every user cluster. If not set, the default etcd backup config won't be created (unless the legacy Seed.Spec.BackupRestore is used).
+	// created for every user cluster. If not set, the default etcd backup config won't be created.
 	// Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.
 	DefaultDestination string `json:"defaultDestination,omitempty"`
