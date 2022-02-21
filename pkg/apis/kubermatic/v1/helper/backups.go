@@ -27,13 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-// containerIsSet makes the code more readable and takes the
-// implicit defaulting that happens to KubermaticConfigurations
-// into account, by considering value==default to *not* be set
-func containerIsSet(field string, defaultValue string) bool {
-	return field == "" || field == defaultValue
-}
-
 func AutomaticBackupEnabled(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) bool {
 	return cfg.Spec.SeedController.BackupRestore.Enabled || seed.IsDefaultEtcdAutomaticBackupEnabled()
 }
