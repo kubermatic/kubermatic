@@ -20,6 +20,7 @@ package opa
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -35,19 +36,22 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	datacenter             = "kubermatic"
-	location               = "hetzner-hel1"
-	version                = utils.KubernetesVersion()
-	credential             = "e2e-hetzner"
-	ctKind                 = "RequiredLabels"
-	masterNamespace        = "kubermatic"
-	defaultConstraintName  = "testconstraint"
-	constraintTemplateName = "requiredlabels"
+	datacenter            = "kubermatic"
+	location              = "hetzner-hel1"
+	version               = utils.KubernetesVersion()
+	credential            = "e2e-hetzner"
+	ctKind                = "RequiredLabels"
+	masterNamespace       = "kubermatic"
+	defaultConstraintName = "testconstraint"
+
+	//go:embed constraint_template.yaml
+	testCT string
 )
 
 func TestOPAIntegration(t *testing.T) {
@@ -117,10 +121,11 @@ func TestOPAIntegration(t *testing.T) {
 
 	// Create CT
 	t.Log("creating Constraint Template...")
-	ct, err := masterAdminClient.CreateCT(constraintTemplateName, ctKind)
+	ct, err := createTestConstraintTemplate(ctx, seedClient)
 	if err != nil {
 		t.Fatalf("error creating Constraint Template: %v", getErrorResponse(err))
 	}
+	t.Logf("created Constraint Template %v", *ct)
 
 	t.Log("creating client for user cluster...")
 	userClient, err := masterClient.GetUserClusterClient(datacenter, project.ID, apiCluster.ID)
@@ -293,4 +298,14 @@ func cleanupProject(t *testing.T, id string) {
 	}
 
 	utils.NewTestClient(token, t).CleanupProject(t, id)
+}
+
+func createTestConstraintTemplate(ctx context.Context, client ctrlruntimeclient.Client) (*kubermaticv1.ConstraintTemplate, error) {
+	var ct *kubermaticv1.ConstraintTemplate
+	err := yaml.Unmarshal([]byte(testCT), &ct)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling Constraint Template: %v", err)
+	}
+
+	return ct, client.Create(ctx, ct)
 }
