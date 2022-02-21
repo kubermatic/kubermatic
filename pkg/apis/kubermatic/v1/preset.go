@@ -190,10 +190,10 @@ type Openstack struct {
 	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
 	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
 
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	Project   string `json:"project"`
-	ProjectID string `json:"projectID"`
+	Username  string `json:"username,omitempty"`
+	Password  string `json:"password,omitempty"`
+	Project   string `json:"project,omitempty"`
+	ProjectID string `json:"projectID,omitempty"`
 	Domain    string `json:"domain"`
 
 	Network        string `json:"network,omitempty"`
