@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	. "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 )
@@ -33,11 +33,11 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name    string
-		cluster ClusterSpec
+		cluster apiv1.ClusterSpec
 	}{
 		{
 			"case 1: filter username and password from OpenStack",
-			ClusterSpec{
+			apiv1.ClusterSpec{
 				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					DatacenterName: "OpenstackDatacenter",
@@ -57,7 +57,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 2: client ID and client secret from Azure",
-			ClusterSpec{
+			apiv1.ClusterSpec{
 				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Azure: &kubermaticv1.AzureCloudSpec{
@@ -77,7 +77,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 3: filter token from Hetzner",
-			ClusterSpec{
+			apiv1.ClusterSpec{
 				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Hetzner: &kubermaticv1.HetznerCloudSpec{
@@ -88,7 +88,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 4: filter token from DigitalOcean",
-			ClusterSpec{
+			apiv1.ClusterSpec{
 				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
@@ -99,7 +99,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 5: filter usernames and passwords from VSphere",
-			ClusterSpec{
+			apiv1.ClusterSpec{
 				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					VSphere: &kubermaticv1.VSphereCloudSpec{
@@ -117,7 +117,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 6: filter access key ID and secret access key from AWS",
-			ClusterSpec{
+			apiv1.ClusterSpec{
 				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					AWS: &kubermaticv1.AWSCloudSpec{
@@ -144,7 +144,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 				t.Errorf("output JSON: %s should not contain: %s", jsonString, valueToBeFiltered)
 			}
 
-			var jsonObject ClusterSpec
+			var jsonObject apiv1.ClusterSpec
 			if err := json.Unmarshal(jsonByteArray, &jsonObject); err != nil {
 				t.Errorf("failed to unmarshal: %v", err)
 			}
@@ -157,17 +157,17 @@ func TestDigitalOceanNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *DigitaloceanNodeSpec
+		spec     *apiv1.DigitaloceanNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when size is not provided",
-			&DigitaloceanNodeSpec{},
+			&apiv1.DigitaloceanNodeSpec{},
 			"missing or invalid required parameter(s): size",
 		},
 		{
 			"case 2: should marshal when size is provided",
-			&DigitaloceanNodeSpec{
+			&apiv1.DigitaloceanNodeSpec{
 				Size: "test-size",
 			},
 			"{\"size\":\"test-size\",\"backups\":false,\"ipv6\":false,\"monitoring\":false,\"tags\":null}",
@@ -193,17 +193,17 @@ func TestHetznerNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *HetznerNodeSpec
+		spec     *apiv1.HetznerNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when type is not provided",
-			&HetznerNodeSpec{},
+			&apiv1.HetznerNodeSpec{},
 			"missing or invalid required parameter(s): type",
 		},
 		{
 			"case 2: should marshal when type is provided",
-			&HetznerNodeSpec{
+			&apiv1.HetznerNodeSpec{
 				Type:    "test-type",
 				Network: "test",
 			},
@@ -230,17 +230,17 @@ func TestAzureNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *AzureNodeSpec
+		spec     *apiv1.AzureNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when size is not provided",
-			&AzureNodeSpec{},
+			&apiv1.AzureNodeSpec{},
 			"missing or invalid required parameter(s): size",
 		},
 		{
 			"case 2: should marshal when size is provided",
-			&AzureNodeSpec{
+			&apiv1.AzureNodeSpec{
 				Size: "test-size",
 			},
 			"{\"size\":\"test-size\",\"assignPublicIP\":false,\"osDiskSize\":0,\"dataDiskSize\":0,\"zones\":null,\"imageID\":\"\",\"assignAvailabilitySet\":false}",
@@ -266,24 +266,24 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *VSphereNodeSpec
+		spec     *apiv1.VSphereNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when required parameters are not provided",
-			&VSphereNodeSpec{},
+			&apiv1.VSphereNodeSpec{},
 			"missing or invalid required parameter(s): cpus, memory, diskSizeGB, template",
 		},
 		{
 			"case 2: should fail when only cpus are provided",
-			&VSphereNodeSpec{
+			&apiv1.VSphereNodeSpec{
 				CPUs: 1,
 			},
 			"missing or invalid required parameter(s): memory, diskSizeGB, template",
 		},
 		{
 			"case 3: should fail when cpus and memory are provided",
-			&VSphereNodeSpec{
+			&apiv1.VSphereNodeSpec{
 				CPUs:   1,
 				Memory: 1,
 			},
@@ -291,7 +291,7 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 4: should fail when cpus, memory and disk size are provided",
-			&VSphereNodeSpec{
+			&apiv1.VSphereNodeSpec{
 				CPUs:       1,
 				Memory:     1,
 				DiskSizeGB: &[]int64{1}[0],
@@ -300,7 +300,7 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 5: should fail when cpus count is wrong",
-			&VSphereNodeSpec{
+			&apiv1.VSphereNodeSpec{
 				CPUs:       0,
 				Memory:     1,
 				DiskSizeGB: &[]int64{1}[0],
@@ -310,7 +310,7 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 6: should fail when memory count is wrong",
-			&VSphereNodeSpec{
+			&apiv1.VSphereNodeSpec{
 				CPUs:       1,
 				Memory:     0,
 				DiskSizeGB: &[]int64{1}[0],
@@ -320,7 +320,7 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 7: should fail when disk size is wrong",
-			&VSphereNodeSpec{
+			&apiv1.VSphereNodeSpec{
 				CPUs:       1,
 				Memory:     1,
 				DiskSizeGB: &[]int64{0}[0],
@@ -330,7 +330,7 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 8: should marshal when all required parameters are provided",
-			&VSphereNodeSpec{
+			&apiv1.VSphereNodeSpec{
 				CPUs:       1,
 				Memory:     1,
 				DiskSizeGB: &[]int64{1}[0],
@@ -359,31 +359,31 @@ func TestOpenstackNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *OpenstackNodeSpec
+		spec     *apiv1.OpenstackNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when required parameters are not provided",
-			&OpenstackNodeSpec{},
+			&apiv1.OpenstackNodeSpec{},
 			"missing or invalid required parameter(s): flavor, image",
 		},
 		{
 			"case 2: should fail when only flavor is provided",
-			&OpenstackNodeSpec{
+			&apiv1.OpenstackNodeSpec{
 				Flavor: "test-flavor",
 			},
 			"missing or invalid required parameter(s): image",
 		},
 		{
 			"case 3: should fail when only image is provided",
-			&OpenstackNodeSpec{
+			&apiv1.OpenstackNodeSpec{
 				Image: "test-image",
 			},
 			"missing or invalid required parameter(s): flavor",
 		},
 		{
 			"case 4: should marshal when all required parameters are provided",
-			&OpenstackNodeSpec{
+			&apiv1.OpenstackNodeSpec{
 				Flavor: "test-flavor",
 				Image:  "test-image",
 			},
@@ -410,38 +410,38 @@ func TestAWSNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *AWSNodeSpec
+		spec     *apiv1.AWSNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when required parameters are not provided",
-			&AWSNodeSpec{},
+			&apiv1.AWSNodeSpec{},
 			"missing or invalid required parameter(s): instanceType, diskSize, volumeType",
 		},
 		{
 			"case 2: should fail when only instance type is provided",
-			&AWSNodeSpec{
+			&apiv1.AWSNodeSpec{
 				InstanceType: "test-instance",
 			},
 			"missing or invalid required parameter(s): diskSize, volumeType",
 		},
 		{
 			"case 3: should fail when only volume type is provided",
-			&AWSNodeSpec{
+			&apiv1.AWSNodeSpec{
 				VolumeType: "test-volume",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize",
 		},
 		{
 			"case 4: should fail when only volume size is provided",
-			&AWSNodeSpec{
+			&apiv1.AWSNodeSpec{
 				VolumeSize: 1,
 			},
 			"missing or invalid required parameter(s): instanceType, volumeType",
 		},
 		{
 			"case 3: should fail when volume size is wrong",
-			&AWSNodeSpec{
+			&apiv1.AWSNodeSpec{
 				VolumeSize:   0,
 				InstanceType: "test-instance",
 				VolumeType:   "test-volume",
@@ -450,7 +450,7 @@ func TestAWSNodeSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 4: should marshal when all required parameters are provided",
-			&AWSNodeSpec{
+			&apiv1.AWSNodeSpec{
 				InstanceType: "test-instance",
 				VolumeSize:   1,
 				VolumeType:   "test-volume",
@@ -478,17 +478,17 @@ func TestPacketNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *PacketNodeSpec
+		spec     *apiv1.PacketNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when instance type is not provided",
-			&PacketNodeSpec{},
+			&apiv1.PacketNodeSpec{},
 			"missing or invalid required parameter(s): instanceType",
 		},
 		{
 			"case 2: should marshal when instance type is provided",
-			&PacketNodeSpec{
+			&apiv1.PacketNodeSpec{
 				InstanceType: "test-instance",
 			},
 			"{\"instanceType\":\"test-instance\",\"tags\":null}",
@@ -514,52 +514,52 @@ func TestGCPNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *GCPNodeSpec
+		spec     *apiv1.GCPNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when required parameters are not provided",
-			&GCPNodeSpec{},
+			&apiv1.GCPNodeSpec{},
 			"missing or invalid required parameter(s): zone, diskSize, machineType, diskType",
 		},
 		{
 			"case 2: should fail when only zone is provided",
-			&GCPNodeSpec{
+			&apiv1.GCPNodeSpec{
 				Zone: "test-zone",
 			},
 			"missing or invalid required parameter(s): diskSize, machineType, diskType",
 		},
 		{
 			"case 3: should fail when only diskSize is provided",
-			&GCPNodeSpec{
+			&apiv1.GCPNodeSpec{
 				DiskSize: 1,
 			},
 			"missing or invalid required parameter(s): zone, machineType, diskType",
 		},
 		{
 			"case 4: should fail when only machineType is provided",
-			&GCPNodeSpec{
+			&apiv1.GCPNodeSpec{
 				MachineType: "test-machine",
 			},
 			"missing or invalid required parameter(s): zone, diskSize, diskType",
 		},
 		{
 			"case 5: should fail when only diskType is provided",
-			&GCPNodeSpec{
+			&apiv1.GCPNodeSpec{
 				DiskType: "test-disk",
 			},
 			"missing or invalid required parameter(s): zone, diskSize, machineType",
 		},
 		{
 			"case 6: should fail when diskSize is invalid",
-			&GCPNodeSpec{
+			&apiv1.GCPNodeSpec{
 				DiskSize: 0,
 			},
 			"missing or invalid required parameter(s): zone, diskSize, machineType, diskType",
 		},
 		{
 			"case 7: should marshal when instance type is provided",
-			&GCPNodeSpec{
+			&apiv1.GCPNodeSpec{
 				Zone:        "test-zone",
 				MachineType: "test-machine",
 				DiskSize:    1,
@@ -588,59 +588,59 @@ func TestKubevirtNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *KubevirtNodeSpec
+		spec     *apiv1.KubevirtNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when required parameters are not provided",
-			&KubevirtNodeSpec{},
+			&apiv1.KubevirtNodeSpec{},
 			"missing or invalid required parameter(s): cpus, memory, namespace, sourceURL, storageClassName, pvcSize",
 		},
 		{
 			"case 2: should fail when only cpus is provided",
-			&KubevirtNodeSpec{
+			&apiv1.KubevirtNodeSpec{
 				CPUs: "1",
 			},
 			"missing or invalid required parameter(s): memory, namespace, sourceURL, storageClassName, pvcSize",
 		},
 		{
 			"case 3: should fail when only memory is provided",
-			&KubevirtNodeSpec{
+			&apiv1.KubevirtNodeSpec{
 				Memory: "1",
 			},
 			"missing or invalid required parameter(s): cpus, namespace, sourceURL, storageClassName, pvcSize",
 		},
 		{
 			"case 4: should fail when only namespace is provided",
-			&KubevirtNodeSpec{
+			&apiv1.KubevirtNodeSpec{
 				Namespace: "test-ns",
 			},
 			"missing or invalid required parameter(s): cpus, memory, sourceURL, storageClassName, pvcSize",
 		},
 		{
 			"case 5: should fail when only sourceURL is provided",
-			&KubevirtNodeSpec{
+			&apiv1.KubevirtNodeSpec{
 				SourceURL: "test-url",
 			},
 			"missing or invalid required parameter(s): cpus, memory, namespace, storageClassName, pvcSize",
 		},
 		{
 			"case 6: should fail when only storageClassName is provided",
-			&KubevirtNodeSpec{
+			&apiv1.KubevirtNodeSpec{
 				StorageClassName: "test-sc",
 			},
 			"missing or invalid required parameter(s): cpus, memory, namespace, sourceURL, pvcSize",
 		},
 		{
 			"case 7: should fail when only pvcSize is provided",
-			&KubevirtNodeSpec{
+			&apiv1.KubevirtNodeSpec{
 				PVCSize: "1",
 			},
 			"missing or invalid required parameter(s): cpus, memory, namespace, sourceURL, storageClassName",
 		},
 		{
 			"case 8: should marshal when instance type is provided",
-			&KubevirtNodeSpec{
+			&apiv1.KubevirtNodeSpec{
 				CPUs:             "1",
 				Memory:           "1",
 				Namespace:        "test-ns",
@@ -671,59 +671,59 @@ func TestAlibabaNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *AlibabaNodeSpec
+		spec     *apiv1.AlibabaNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when required parameters are not provided",
-			&AlibabaNodeSpec{},
+			&apiv1.AlibabaNodeSpec{},
 			"missing or invalid required parameter(s): instanceType, diskSize, diskType, vSwitchID, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 2: should fail when only instanceType is provided",
-			&AlibabaNodeSpec{
+			&apiv1.AlibabaNodeSpec{
 				InstanceType: "test-instance",
 			},
 			"missing or invalid required parameter(s): diskSize, diskType, vSwitchID, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 3: should fail when only diskSize is provided",
-			&AlibabaNodeSpec{
+			&apiv1.AlibabaNodeSpec{
 				DiskSize: "1",
 			},
 			"missing or invalid required parameter(s): instanceType, diskType, vSwitchID, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 4: should fail when only diskType is provided",
-			&AlibabaNodeSpec{
+			&apiv1.AlibabaNodeSpec{
 				DiskType: "test-disk",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize, vSwitchID, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 5: should fail when only vSwitchID is provided",
-			&AlibabaNodeSpec{
+			&apiv1.AlibabaNodeSpec{
 				VSwitchID: "test-vswitch",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize, diskType, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 6: should fail when only internetMaxBandwidthOut is provided",
-			&AlibabaNodeSpec{
+			&apiv1.AlibabaNodeSpec{
 				InternetMaxBandwidthOut: "1",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize, diskType, vSwitchID, zoneID",
 		},
 		{
 			"case 7: should fail when only zoneID is provided",
-			&AlibabaNodeSpec{
+			&apiv1.AlibabaNodeSpec{
 				ZoneID: "test-zone",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize, diskType, vSwitchID, internetMaxBandwidthOut",
 		},
 		{
 			"case 8: should marshal when instance type is provided",
-			&AlibabaNodeSpec{
+			&apiv1.AlibabaNodeSpec{
 				InstanceType:            "test-instance",
 				DiskSize:                "1",
 				DiskType:                "test-disk",
@@ -754,52 +754,52 @@ func TestAnexiaNodeSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		spec     *AnexiaNodeSpec
+		spec     *apiv1.AnexiaNodeSpec
 		expected string
 	}{
 		{
 			"case 1: should fail when required parameters are not provided",
-			&AnexiaNodeSpec{},
+			&apiv1.AnexiaNodeSpec{},
 			"missing or invalid required parameter(s): vlanID, cpus, memory, diskSize, templateID",
 		},
 		{
 			"case 2: should fail when only vlanID is provided",
-			&AnexiaNodeSpec{
+			&apiv1.AnexiaNodeSpec{
 				VlanID: "test-vlan",
 			},
 			"missing or invalid required parameter(s): cpus, memory, diskSize, templateID",
 		},
 		{
 			"case 3: should fail when only templateID is provided",
-			&AnexiaNodeSpec{
+			&apiv1.AnexiaNodeSpec{
 				TemplateID: "test-template",
 			},
 			"missing or invalid required parameter(s): vlanID, cpus, memory, diskSize",
 		},
 		{
 			"case 4: should fail when only cpus is provided",
-			&AnexiaNodeSpec{
+			&apiv1.AnexiaNodeSpec{
 				CPUs: 1,
 			},
 			"missing or invalid required parameter(s): vlanID, memory, diskSize, templateID",
 		},
 		{
 			"case 5: should fail when only memory is provided",
-			&AnexiaNodeSpec{
+			&apiv1.AnexiaNodeSpec{
 				Memory: 1,
 			},
 			"missing or invalid required parameter(s): vlanID, cpus, diskSize, templateID",
 		},
 		{
 			"case 6: should fail when only diskSize is provided",
-			&AnexiaNodeSpec{
+			&apiv1.AnexiaNodeSpec{
 				DiskSize: 1,
 			},
 			"missing or invalid required parameter(s): vlanID, cpus, memory, templateID",
 		},
 		{
 			"case 8: should marshal when instance type is provided",
-			&AnexiaNodeSpec{
+			&apiv1.AnexiaNodeSpec{
 				VlanID:     "test-vlan",
 				TemplateID: "test-template",
 				CPUs:       1,

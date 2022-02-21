@@ -21,21 +21,21 @@ import (
 	"testing"
 	"time"
 
-	. "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 )
 
 type TimeHolder struct {
-	T Time `json:"t"`
+	T apiv1.Time `json:"t"`
 }
 
 func TestTimeMarshalJSON(t *testing.T) {
 	cases := []struct {
-		input  Time
+		input  apiv1.Time
 		result string
 	}{
-		{Time{}, "{\"t\":\"0001-01-01T00:00:00Z\"}"},
-		{Date(1998, time.May, 5, 5, 5, 5, 50, time.UTC), "{\"t\":\"1998-05-05T05:05:05Z\"}"},
-		{Date(1998, time.May, 5, 5, 5, 5, 0, time.UTC), "{\"t\":\"1998-05-05T05:05:05Z\"}"},
+		{apiv1.Time{}, "{\"t\":\"0001-01-01T00:00:00Z\"}"},
+		{apiv1.Date(1998, time.May, 5, 5, 5, 5, 50, time.UTC), "{\"t\":\"1998-05-05T05:05:05Z\"}"},
+		{apiv1.Date(1998, time.May, 5, 5, 5, 5, 0, time.UTC), "{\"t\":\"1998-05-05T05:05:05Z\"}"},
 	}
 
 	for _, c := range cases {
@@ -53,10 +53,10 @@ func TestTimeMarshalJSON(t *testing.T) {
 func TestTimeUnmarshalJSON(t *testing.T) {
 	cases := []struct {
 		input  string
-		result Time
+		result apiv1.Time
 	}{
-		{"{\"t\":\"0001-01-01T00:00:00Z\"}", Time{}},
-		{"{\"t\":\"1998-05-05T05:05:05Z\"}", NewTime(Date(1998, time.May, 5, 5, 5, 5, 0, time.UTC).Local())},
+		{"{\"t\":\"0001-01-01T00:00:00Z\"}", apiv1.Time{}},
+		{"{\"t\":\"1998-05-05T05:05:05Z\"}", apiv1.NewTime(apiv1.Date(1998, time.May, 5, 5, 5, 5, 0, time.UTC).Local())},
 	}
 
 	for _, c := range cases {
