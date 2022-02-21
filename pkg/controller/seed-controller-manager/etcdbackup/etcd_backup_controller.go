@@ -299,11 +299,6 @@ func (r *Reconciler) reconcile(
 		return nil, errors.Wrap(err, "failed to create backup delete container")
 	}
 
-	backupCleanupContainer, err := kubermaticv1helper.EffectiveBackupCleanupContainer(config, seed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create backup cleanup container")
-	}
-
 	var nextReconcile, totalReconcile *reconcile.Result
 	errorReconcile := &reconcile.Result{RequeueAfter: 1 * time.Minute}
 
@@ -337,8 +332,8 @@ func (r *Reconciler) reconcile(
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	if nextReconcile, err = r.handleFinalization(ctx, log, backupConfig, cluster, destination, backupCleanupContainer, backupDeleteContainer); err != nil {
-		return errorReconcile, errors.Wrap(err, "failed to delete finished backup jobs")
+	if nextReconcile, err = r.handleFinalization(ctx, backupConfig); err != nil {
+		return errorReconcile, errors.Wrap(err, "failed to clean up EtcdBackupConfig")
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
@@ -805,79 +800,22 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 	return returnReconcile, nil
 }
 
-func (r *Reconciler) handleFinalization(ctx context.Context, log *zap.SugaredLogger, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster,
-	destination *kubermaticv1.BackupDestination, cleanupContainer *corev1.Container, deleteContainer *corev1.Container) (*reconcile.Result, error) {
+func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig) (*reconcile.Result, error) {
 	if backupConfig.DeletionTimestamp == nil || len(backupConfig.Status.CurrentBackups) > 0 {
 		return nil, nil
 	}
 
-	canRemoveFinalizer := true
+	// in older releases, this code executed the legacy cleanup jobs, which were
+	// part of the legacy backup controller; this new controller was meant to be
+	// a drop-in replacement and so was able to also handle the cleanup stuff.
+	// As it turned out, the delete container was never possible to be empty, so
+	// the "compat mode" where we used the cleanup containers never happened;
+	// That is why this function now only removes the finalizer if all backups
+	// are gone.
 
-	if cleanupContainer != nil && deleteContainer == nil {
-		// Need to run, track and delete a cleanup job
-		cleanupJobName := fmt.Sprintf("%s-backup-%s-cleanup", cluster.Name, backupConfig.Name)
+	err := kuberneteshelper.TryRemoveFinalizer(ctx, r, backupConfig, DeleteAllBackupsFinalizer)
 
-		if !backupConfig.Status.CleanupRunning {
-			// job not started before. start it
-			cleanupJob := r.cleanupJob(backupConfig, cluster, cleanupJobName, destination, cleanupContainer)
-			if err := r.Create(ctx, cleanupJob); err != nil && !kerrors.IsAlreadyExists(err) {
-				return nil, errors.Wrapf(err, "error creating cleanup job (%v)", cleanupJobName)
-			}
-			backupConfig.Status.CleanupRunning = true
-			canRemoveFinalizer = false
-		} else {
-			// job was started before. Re-acquire it and check completion status
-			cleanupJob := &batchv1.Job{}
-			err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: cleanupJobName}, cleanupJob)
-			if err == nil {
-				jobSucceeded := getJobConditionIfTrue(cleanupJob, batchv1.JobComplete) != nil
-				jobFailed := getJobConditionIfTrue(cleanupJob, batchv1.JobFailed) != nil
-				if jobSucceeded || jobFailed {
-					// job completed either way. delete it.
-					if err := r.Delete(ctx, cleanupJob, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
-						return nil, errors.Wrapf(err, "failed to delete finished cleanup job %s", cleanupJobName)
-					}
-					if jobFailed {
-						// job failed, restart it.
-						canRemoveFinalizer = false
-						cleanupJob := r.cleanupJob(backupConfig, cluster, cleanupJobName, destination, cleanupContainer)
-						if err := r.Create(ctx, cleanupJob); err != nil && !kerrors.IsAlreadyExists(err) {
-							return nil, errors.Wrapf(err, "error recreating cleanup job (%v)", cleanupJobName)
-						}
-					}
-				} else {
-					// job still running
-					canRemoveFinalizer = false
-				}
-			} else if !kerrors.IsNotFound(err) {
-				return nil, errors.Wrapf(err, "error getting cleanup job previously started (%v)", cleanupJobName)
-			}
-			// err IsNotFound or job deleted successfully => fall through
-		}
-	}
-
-	returnReconcile := &reconcile.Result{RequeueAfter: 30 * time.Second}
-
-	if canRemoveFinalizer {
-		kuberneteshelper.RemoveFinalizer(backupConfig, DeleteAllBackupsFinalizer)
-		returnReconcile = nil
-	}
-
-	status := backupConfig.Status.DeepCopy()
-
-	if err := r.Update(ctx, backupConfig); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup config")
-	}
-
-	// the update above can lead to the EtcdBackupConfig disappearing, so the
-	// following is allowed to end in a NotFoundErr
-	oldBackupConfig := backupConfig.DeepCopy()
-	backupConfig.Status = *status
-	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-		return nil, errors.Wrap(err, "failed to update backup status")
-	}
-
-	return returnReconcile, nil
+	return nil, err
 }
 
 func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus,
@@ -1084,56 +1022,6 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 	job := r.jobBase(backupConfig, cluster, backupStatus.DeleteJobName)
 	job.Spec.Template.Spec.Containers = []corev1.Container{*deleteContainer}
 	job.Spec.ActiveDeadlineSeconds = resources.Int64(4 * 60)
-	job.Spec.Template.Spec.Volumes = []corev1.Volume{
-		{
-			Name: "ca-bundle",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: caBundleConfigMapName(cluster),
-					},
-				},
-			},
-		},
-	}
-	return job
-}
-
-func (r *Reconciler) cleanupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, jobName string,
-	destination *kubermaticv1.BackupDestination, cleanupContainer *corev1.Container) *batchv1.Job {
-	cleanupContainer = cleanupContainer.DeepCopy()
-
-	// If destination is set, we need to set the credentials and backup bucket details to match the destination
-	if destination != nil {
-		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
-		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
-		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, corev1.EnvVar{
-			Name:  bucketNameEnvVarKey,
-			Value: destination.BucketName,
-		})
-		cleanupContainer.Env = setEnvVar(cleanupContainer.Env, corev1.EnvVar{
-			Name:  backupEndpointEnvVarKey,
-			Value: destination.Endpoint,
-		})
-	}
-
-	cleanupContainer.Env = append(
-		cleanupContainer.Env,
-		corev1.EnvVar{
-			Name:  clusterEnvVarKey,
-			Value: cluster.Name,
-		},
-		corev1.EnvVar{
-			Name:  backupConfigEnvVarKey,
-			Value: backupConfig.Name,
-		})
-	cleanupContainer.VolumeMounts = append(cleanupContainer.VolumeMounts, corev1.VolumeMount{
-		Name:      "ca-bundle",
-		MountPath: "/etc/ca-bundle/",
-		ReadOnly:  true,
-	})
-	job := r.jobBase(backupConfig, cluster, jobName)
-	job.Spec.Template.Spec.Containers = []corev1.Container{*cleanupContainer}
 	job.Spec.Template.Spec.Volumes = []corev1.Volume{
 		{
 			Name: "ca-bundle",
