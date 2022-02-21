@@ -31,7 +31,6 @@ spec:
     debugLog: true
   api:
     replicas: 1
-    debugLog: true
   ui:
     replicas: 0
   # Dex integration

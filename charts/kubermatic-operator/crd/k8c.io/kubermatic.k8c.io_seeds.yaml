@@ -930,8 +930,7 @@ spec:
                   defaultDestination:
                     description: DefaultDestination Optional setting which marks the
                       default destination that will be used for the default etcd backup
-                      config which is created for every user cluster. If not set,
-                      the default etcd backup config won't be created. Has to correspond
+                      config which is created for every user cluster. Has to correspond
                       to a destination in Destinations. If removed, it removes the
                       related default etcd backup configs.
                     type: string
@@ -970,6 +969,8 @@ spec:
                       where the backups for the Seed can be stored. If not empty,
                       it enables automatic backup and restore for the seed.
                     type: object
+                required:
+                - defaultDestination
                 type: object
               exposeStrategy:
                 description: 'Optional: ExposeStrategy explicitly sets the expose

@@ -60,9 +60,8 @@ func BackupConfigCreator(data etcdBackupConfigCreatorData, seed *kubermaticv1.Se
 				APIVersion: "kubermatic.k8c.io/v1",
 			}
 
-			if seed.Spec.EtcdBackupRestore != nil && len(seed.Spec.EtcdBackupRestore.Destinations) > 0 &&
-				seed.Spec.EtcdBackupRestore.DefaultDestination != nil && *seed.Spec.EtcdBackupRestore.DefaultDestination != "" {
-				config.Spec.Destination = *seed.Spec.EtcdBackupRestore.DefaultDestination
+			if seed.IsDefaultEtcdAutomaticBackupEnabled() {
+				config.Spec.Destination = seed.Spec.EtcdBackupRestore.DefaultDestination
 			}
 
 			return config, nil

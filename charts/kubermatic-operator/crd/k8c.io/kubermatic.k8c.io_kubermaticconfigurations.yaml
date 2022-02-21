@@ -298,20 +298,6 @@ spec:
                       etcd snapshots from a backup location. This container is only
                       relevant when the new backup/restore controllers are enabled.
                     type: string
-                  backupRestore:
-                    description: BackupRestore contains the setup of the new backup
-                      and restore controllers.
-                    properties:
-                      s3BucketName:
-                        description: S3BucketName is the S3 bucket name to use for
-                          backup and restore.
-                        type: string
-                      s3Endpoint:
-                        default: s3.amazonaws.com
-                        description: S3Endpoint is the S3 API endpoint to use for
-                          backup and restore. Defaults to s3.amazonaws.com.
-                        type: string
-                    type: object
                   backupStoreContainer:
                     description: BackupStoreContainer is the container used for shipping
                       etcd snapshots to a backup location.

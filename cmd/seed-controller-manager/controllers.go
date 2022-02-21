@@ -185,7 +185,6 @@ func createEtcdRestoreController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
 		ctrlCtx.seedGetter,
-		ctrlCtx.configGetter,
 	)
 }
 

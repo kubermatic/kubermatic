@@ -21719,7 +21719,7 @@
       "title": "EtcdBackupRestore holds the configuration of the automatic backup and restores.",
       "properties": {
         "defaultDestination": {
-          "description": "DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is\ncreated for every user cluster. If not set, the default etcd backup config won't be created.\nHas to correspond to a destination in Destinations.\nIf removed, it removes the related default etcd backup configs.",
+          "description": "DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is\ncreated for every user cluster. Has to correspond to a destination in Destinations.\nIf removed, it removes the related default etcd backup configs.",
           "type": "string",
           "x-go-name": "DefaultDestination"
         },

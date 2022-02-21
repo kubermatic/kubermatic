@@ -115,7 +115,6 @@ func genDeleteContainer() *corev1.Container {
 
 func getConfigGetter(t *testing.T, storeContainer, deleteContainer *corev1.Container) provider.KubermaticConfigurationGetter {
 	config := &kubermaticv1.KubermaticConfiguration{}
-	config.Spec.SeedController.BackupRestore.S3BucketName = "test"
 
 	if storeContainer != nil {
 		config.Spec.SeedController.BackupStoreContainer = encodeContainerAsYAML(t, storeContainer)
@@ -1609,7 +1608,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{},
-			expectedErr:        fmt.Sprintf("credentials not set for backup destination %q in Seed %q", "no-credentials", test.GenTestSeed().Name),
+			expectedErr:        fmt.Sprintf("credentials not set for backup destination %q", "no-credentials"),
 		},
 		{
 			name: "backup should fail destination is missing",
@@ -1619,7 +1618,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{},
-			expectedErr:        fmt.Sprintf("can't find backup destination %q in Seed %q", "missing", test.GenTestSeed().Name),
+			expectedErr:        fmt.Sprintf("cannot find backup destination %q", "missing"),
 		},
 	}
 
@@ -1682,6 +1681,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 
 func addSeedDestinations(seed *kubermaticv1.Seed) {
 	seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
+		DefaultDestination: "s3",
 		Destinations: map[string]*kubermaticv1.BackupDestination{
 			"s3": genDefaultBackupDestination(),
 			"no-credentials": {

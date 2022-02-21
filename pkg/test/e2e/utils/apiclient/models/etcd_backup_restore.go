@@ -20,8 +20,7 @@ import (
 type EtcdBackupRestore struct {
 
 	// DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is
-	// created for every user cluster. If not set, the default etcd backup config won't be created.
-	// Has to correspond to a destination in Destinations.
+	// created for every user cluster. Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.
 	DefaultDestination string `json:"defaultDestination,omitempty"`
 

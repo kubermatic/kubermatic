@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -220,7 +221,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, cluster *kubermaticv1.Cluster) error {
-	backupStoreContainer, err := kubermaticv1helper.EffectiveBackupStoreContainer(config, seed)
+	backupStoreContainer, err := getBackupStoreContainer(config, seed)
 	if err != nil {
 		return fmt.Errorf("failed to create backup store container: %w", err)
 	}
@@ -229,14 +230,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		return err
 	}
 
-	backupCleanupContainer, err := kubermaticv1helper.EffectiveBackupCleanupContainer(config, seed)
+	backupCleanupContainer, err := getBackupCleanupContainer(config, seed)
 	if err != nil {
 		return fmt.Errorf("failed to create backup cleanup container: %w", err)
 	}
 
 	// the etcdbackup/etcdrestore controllers are enabled (at least for this seed), so we
 	// only perform cleanup for older clusters when needed
-	controllerEnabled := !kubermaticv1helper.AutomaticBackupEnabled(config, seed)
+	controllerEnabled := !seed.IsDefaultEtcdAutomaticBackupEnabled()
 
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
@@ -283,6 +284,24 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 	}
 
 	return reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{r.cronjob(cluster, backupStoreContainer)}, metav1.NamespaceSystem, r.Client)
+}
+
+func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupStoreContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaults.DefaultBackupStoreContainer)
+}
+
+func getBackupCleanupContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupCleanupContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupCleanupContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaults.DefaultBackupCleanupContainer)
 }
 
 func (r *Reconciler) cleanupJobs(ctx context.Context) {

@@ -338,10 +338,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", configCopy.Spec.SeedController.MaximumParallelReconciles)
 	}
 
-	if configCopy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
-		configCopy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
-	}
-
 	if configCopy.Spec.SeedController.Replicas == nil {
 		configCopy.Spec.SeedController.Replicas = pointer.Int32Ptr(DefaultSeedControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)

@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -190,7 +191,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// this feature is not enabled for this seed, do nothing
-	if !kubermaticv1helper.AutomaticBackupEnabled(config, seed) {
+	if !seed.IsDefaultEtcdAutomaticBackupEnabled() {
 		return reconcile.Result{}, nil
 	}
 
@@ -266,19 +267,12 @@ func (r *Reconciler) reconcile(
 	seed *kubermaticv1.Seed,
 	config *kubermaticv1.KubermaticConfiguration,
 ) (*reconcile.Result, error) {
-	var destination *kubermaticv1.BackupDestination
-	if backupConfig.Spec.Destination != "" {
-		if seed.Spec.EtcdBackupRestore == nil {
-			return nil, errors.Errorf("can't find backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
-		}
-		var ok bool
-		destination, ok = seed.Spec.EtcdBackupRestore.Destinations[backupConfig.Spec.Destination]
-		if !ok {
-			return nil, errors.Errorf("can't find backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
-		}
-		if destination.Credentials == nil {
-			return nil, errors.Errorf("credentials not set for backup destination %q in Seed %q", backupConfig.Spec.Destination, seed.Name)
-		}
+	destination := seed.GetEtcdBackupDestination(backupConfig.Spec.Destination)
+	if destination == nil {
+		return nil, errors.Errorf("cannot find backup destination %q", backupConfig.Spec.Destination)
+	}
+	if destination.Credentials == nil {
+		return nil, errors.Errorf("credentials not set for backup destination %q", backupConfig.Spec.Destination)
 	}
 
 	if err := r.ensureSecrets(ctx, cluster); err != nil {
@@ -289,12 +283,12 @@ func (r *Reconciler) reconcile(
 		return nil, errors.Wrap(err, "failed to create backup configmaps")
 	}
 
-	backupStoreContainer, err := kubermaticv1helper.EffectiveBackupStoreContainer(config, seed)
+	backupStoreContainer, err := getBackupStoreContainer(config, seed)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create backup store container")
 	}
 
-	backupDeleteContainer, err := kubermaticv1helper.EffectiveBackupDeleteContainer(config, seed)
+	backupDeleteContainer, err := getBackupDeleteContainer(config, seed)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create backup delete container")
 	}
@@ -339,6 +333,24 @@ func (r *Reconciler) reconcile(
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	return totalReconcile, nil
+}
+
+func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupStoreContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaults.DefaultNewBackupStoreContainer)
+}
+
+func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupDeleteContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaults.DefaultNewBackupDeleteContainer)
 }
 
 func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {

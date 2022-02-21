@@ -436,25 +436,16 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
-	destination := &kubermaticv1.BackupDestination{
-		Endpoint:   cfg.Spec.SeedController.BackupRestore.S3Endpoint,
-		BucketName: cfg.Spec.SeedController.BackupRestore.S3BucketName,
-	}
+	if seed.IsDefaultEtcdAutomaticBackupEnabled() {
+		destination := seed.GetEtcdBackupDestination(seed.Spec.EtcdBackupRestore.DefaultDestination)
 
-	if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.DefaultDestination != nil {
-		for k := range seed.Spec.EtcdBackupRestore.Destinations {
-			if k == *seed.Spec.EtcdBackupRestore.DefaultDestination {
-				destination = seed.Spec.EtcdBackupRestore.Destinations[k]
-			}
+		creators = []reconciling.NamedConfigMapCreatorGetter{
+			kubermaticseed.RestoreS3SettingsConfigMapCreator(destination),
 		}
-	}
 
-	creators = []reconciling.NamedConfigMapCreatorGetter{
-		kubermaticseed.RestoreS3SettingsConfigMapCreator(destination),
-	}
-
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, client); err != nil {
-		return fmt.Errorf("failed to reconcile kube-system ConfigMaps: %w", err)
+		if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, client); err != nil {
+			return fmt.Errorf("failed to reconcile kube-system ConfigMaps: %w", err)
+		}
 	}
 
 	return nil
