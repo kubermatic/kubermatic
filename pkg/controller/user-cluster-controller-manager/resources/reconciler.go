@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
+	kubernetesresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
@@ -95,11 +96,9 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if r.networkPolices {
-		data.clusterAddress, data.k8sServiceApiIP, err = r.networkingData(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get cluster address: %w", err)
-		}
+	data.clusterAddress, data.k8sServiceApiIP, data.reconcileK8sSvcEndpoints, err = r.networkingData(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cluster address: %w", err)
 	}
 
 	if !r.isKonnectivityEnabled {
@@ -151,6 +150,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileServices(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileEndpoints(ctx, data); err != nil {
 		return err
 	}
 
@@ -662,6 +665,24 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 	return nil
 }
 
+func (r *reconciler) reconcileEndpoints(ctx context.Context, data reconcileData) error {
+	if data.reconcileK8sSvcEndpoints {
+		epCreators := []reconciling.NamedEndpointsCreatorGetter{
+			kubernetesresources.EndpointsCreator(data.clusterAddress),
+		}
+		if err := reconciling.ReconcileEndpoints(ctx, epCreators, metav1.NamespaceDefault, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Endpoints: %w", err)
+		}
+		epSliceCreators := []reconciling.NamedEndpointSliceCreatorGetter{
+			kubernetesresources.EndpointSliceCreator(data.clusterAddress),
+		}
+		if err := reconciling.ReconcileEndpointSlices(ctx, epSliceCreators, metav1.NamespaceDefault, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile EndpointSlices: %w", err)
+		}
+	}
+	return nil
+}
+
 func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), data.caCert.Cert),
@@ -1008,6 +1029,7 @@ type reconcileData struct {
 	monitoringReplicas          *int32
 	clusterAddress              *kubermaticv1.ClusterAddress
 	k8sServiceApiIP             *net.IP
+	reconcileK8sSvcEndpoints    bool
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
