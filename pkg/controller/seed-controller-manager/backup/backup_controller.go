@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 
@@ -91,10 +90,6 @@ type Reconciler struct {
 	// backupContainerImage holds the image used for creating the etcd backup
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
-	// disabled means delete any existing back cronjob, rather than
-	// ensuring they're installed. This is used to permanently delete the backup cronjobs
-	// and disable the controller, usually in favor of the new one (../etcdbackup)
-	disabled bool
 
 	caBundle     resources.CABundle
 	seedGetter   provider.SeedGetter
@@ -114,7 +109,6 @@ func Add(
 	backupSchedule time.Duration,
 	backupContainerImage string,
 	versions kubermatic.Versions,
-	disabled bool,
 	caBundle resources.CABundle,
 	seedGetter provider.SeedGetter,
 	configGetter provider.KubermaticConfigurationGetter,
@@ -134,7 +128,6 @@ func Add(
 		workerName:           workerName,
 		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
-		disabled:             disabled,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,
 		caBundle:             caBundle,
@@ -196,11 +189,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	// the etcdbackup/etcdrestore controllers are enabled (at least for this seed), do nothing
-	if kubermaticv1helper.AutomaticBackupEnabled(config, seed) {
-		return reconcile.Result{}, nil
-	}
-
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -246,11 +234,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		return fmt.Errorf("failed to create backup cleanup container: %w", err)
 	}
 
+	// the etcdbackup/etcdrestore controllers are enabled (at least for this seed), so we
+	// only perform cleanup for older clusters when needed
+	controllerEnabled := !kubermaticv1helper.AutomaticBackupEnabled(config, seed)
+
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
 		if kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
-			if !r.disabled {
+			if controllerEnabled {
 				if err := r.Create(ctx, r.cleanupJob(cluster, backupCleanupContainer)); err != nil {
 					// Otherwise we end up in a loop when we are able to create the job but not
 					// remove the finalizer.
@@ -272,7 +264,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 	}
 
 	// Always add the finalizer first
-	if !r.disabled {
+	if controllerEnabled {
 		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, cleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to add finalizer: %w", err)
 		}
@@ -286,7 +278,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		return fmt.Errorf("failed to reconcile configmaps: %w", err)
 	}
 
-	if r.disabled {
+	if !controllerEnabled {
 		return r.deleteCronJob(ctx, cluster)
 	}
 
@@ -542,7 +534,7 @@ func (r *Reconciler) deleteCronJob(ctx context.Context, cluster *kubermaticv1.Cl
 		return err
 	}
 	if err := r.Delete(ctx, cj, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
-		return errors.Wrapf(err, "failed to delete cronjob %s", name)
+		return fmt.Errorf("failed to delete cronjob %s: %w", name, err)
 	}
 	return nil
 }

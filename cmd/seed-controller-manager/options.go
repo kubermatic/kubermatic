@@ -48,25 +48,24 @@ type controllerRunOptions struct {
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 
-	externalURL                       string
-	seedName                          string
-	workerName                        string
-	workerCount                       int
-	overwriteRegistry                 string
-	nodeAccessNetwork                 string
-	addonsPath                        string
-	backupContainerImage              string
-	backupInterval                    string
-	etcdDiskSize                      resource.Quantity
-	dockerPullConfigJSONFile          string
-	kubermaticImage                   string
-	etcdLauncherImage                 string
-	enableEtcdBackupRestoreController bool
-	dnatControllerImage               string
-	namespace                         string
-	concurrentClusterUpdate           int
-	addonEnforceInterval              int
-	caBundle                          *certificates.CABundle
+	externalURL              string
+	seedName                 string
+	workerName               string
+	workerCount              int
+	overwriteRegistry        string
+	nodeAccessNetwork        string
+	addonsPath               string
+	backupContainerImage     string
+	backupInterval           string
+	etcdDiskSize             resource.Quantity
+	dockerPullConfigJSONFile string
+	kubermaticImage          string
+	etcdLauncherImage        string
+	dnatControllerImage      string
+	namespace                string
+	concurrentClusterUpdate  int
+	addonEnforceInterval     int
+	caBundle                 *certificates.CABundle
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
@@ -130,7 +129,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", defaults.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", defaults.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
-	flag.BoolVar(&c.enableEtcdBackupRestoreController, "enable-etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaults.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for Seed resources")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")

@@ -138,6 +138,8 @@ func genCleanupContainer() *corev1.Container {
 
 func getConfigGetter(t *testing.T, storeContainer, cleanupContainer, deleteContainer *corev1.Container) provider.KubermaticConfigurationGetter {
 	config := &kubermaticv1.KubermaticConfiguration{}
+	config.Spec.SeedController.BackupRestore.Enabled = true
+	config.Spec.SeedController.BackupRestore.S3BucketName = "test"
 
 	if storeContainer != nil {
 		config.Spec.SeedController.BackupStoreContainer = encodeContainerAsYAML(t, storeContainer)

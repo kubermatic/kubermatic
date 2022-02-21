@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -122,6 +123,9 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		scheme:               scheme.Scheme,
 		caBundle:             certificates.NewFakeCABundle(),
 		configGetter:         configGetter,
+		seedGetter: func() (*kubermaticv1.Seed, error) {
+			return test.GenTestSeed(), nil
+		},
 	}
 
 	if _, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}}); err != nil {
