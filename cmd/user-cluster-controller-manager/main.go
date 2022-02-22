@@ -320,7 +320,7 @@ func main() {
 		log.Infof("Added IPAM controller to mgr")
 	}
 
-	if err := rbacusercluster.Add(mgr, mgr.AddReadyzCheck, isPausedChecker); err != nil {
+	if err := rbacusercluster.Add(mgr, log, mgr.AddReadyzCheck, isPausedChecker); err != nil {
 		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered user RBAC controller")

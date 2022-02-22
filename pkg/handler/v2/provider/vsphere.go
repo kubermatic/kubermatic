@@ -57,7 +57,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(vSphereDatastoresReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got %T", request)
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {

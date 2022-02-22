@@ -392,7 +392,7 @@ spec:
       serviceAccountName: promtail
       initContainers:
         - name: init
-          image: "docker.io/busybox:1.33"
+          image: "docker.io/library/busybox:1.33"
           imagePullPolicy: IfNotPresent
           command:
             - sh

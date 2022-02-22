@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	"os"
@@ -214,6 +215,7 @@ func store(c *cli.Context) error {
 	}
 
 	return uploader.Store(
+		context.Background(),
 		c.String("file"),
 		c.String("bucket"),
 		c.String("prefix"),
@@ -228,6 +230,7 @@ func deleteOldRevisions(c *cli.Context) error {
 	}
 
 	return uploader.DeleteOldBackups(
+		context.Background(),
 		c.String("bucket"),
 		c.String("prefix"),
 		c.Int("max-revisions"),
@@ -241,6 +244,7 @@ func deleteAll(c *cli.Context) error {
 	}
 
 	return uploader.DeleteAll(
+		context.Background(),
 		c.String("bucket"),
 		c.String("prefix"),
 	)

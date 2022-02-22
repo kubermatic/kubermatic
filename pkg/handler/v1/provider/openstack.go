@@ -76,7 +76,7 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetProvider prov
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
 		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
@@ -110,7 +110,7 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetProvider pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		reqTenant, ok := request.(OpenstackTenantReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got %T", request)
 		}
 		req := OpenstackReq{
 			Username:                    reqTenant.Username,
@@ -149,7 +149,7 @@ func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
 		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
@@ -174,7 +174,7 @@ func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, presetProv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
 		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
@@ -199,7 +199,7 @@ func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got %T", request)
 		}
 		userInfo, cred, err := getAuthInfo(ctx, req.OpenstackReq, userInfoGetter, presetProvider)
 		if err != nil {
@@ -224,7 +224,7 @@ func OpenstackAvailabilityZoneEndpoint(seedsGetter provider.SeedsGetter, presetP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
 		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {

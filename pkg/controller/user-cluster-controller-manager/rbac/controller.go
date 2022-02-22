@@ -17,17 +17,17 @@ limitations under the License.
 package rbacusercluster
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"sync"
 
+	"go.uber.org/zap"
+
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -63,8 +63,13 @@ var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) 
 
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
 // for groups: `owners`, `editors` and `viewers``.
-func Add(mgr manager.Manager, registerReconciledCheck func(name string, check healthz.Checker) error, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
-	reconcile := &reconcileRBAC{Client: mgr.GetClient(), rLock: &sync.Mutex{}, clusterIsPaused: clusterIsPaused}
+func Add(mgr manager.Manager, logger *zap.SugaredLogger, registerReconciledCheck func(name string, check healthz.Checker) error, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
+	reconcile := &reconciler{
+		Client:          mgr.GetClient(),
+		logger:          logger,
+		rLock:           &sync.Mutex{},
+		clusterIsPaused: clusterIsPaused,
+	}
 
 	// Create a new controller
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
@@ -81,7 +86,8 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 		return err
 	}
 
-	// A very simple but limited way to express the first successful reconciling to the seed cluster
+	// A very simple but limited way to express the first successful reconciling to the seed cluster;
+	// this is registered as a readyz check on the manager.
 	return registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func(_ *http.Request) error {
 		reconcile.rLock.Lock()
 		defer reconcile.rLock.Unlock()
@@ -91,36 +97,4 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 		}
 		return nil
 	})
-}
-
-// reconcileRBAC reconciles Cluster Role and Cluster Role Binding objects.
-type reconcileRBAC struct {
-	ctrlruntimeclient.Client
-
-	rLock                      *sync.Mutex
-	clusterIsPaused            userclustercontrollermanager.IsPausedChecker
-	reconciledSuccessfullyOnce bool
-}
-
-// Reconcile makes changes in response to Cluster Role and Cluster Role Binding related changes.
-func (r *reconcileRBAC) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	paused, err := r.clusterIsPaused(ctx)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
-	}
-	if paused {
-		return reconcile.Result{}, nil
-	}
-
-	rdr := reconciler{client: r.Client}
-
-	if err := rdr.Reconcile(ctx, request.Name); err != nil {
-		klog.Errorf("RBAC reconciliation failed: %v", err)
-		return reconcile.Result{}, err
-	}
-
-	r.rLock.Lock()
-	defer r.rLock.Unlock()
-	r.reconciledSuccessfullyOnce = true
-	return reconcile.Result{}, nil
 }

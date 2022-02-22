@@ -203,7 +203,7 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	req.Key = apiv1.SSHKey{}
 	if err := json.NewDecoder(r.Body).Decode(&req.Key); err != nil {
-		return nil, errors.NewBadRequest("unable to parse the input, err = %v", err.Error())
+		return nil, errors.NewBadRequest("unable to parse the input: %v", err)
 	}
 
 	if len(req.Key.Name) == 0 {

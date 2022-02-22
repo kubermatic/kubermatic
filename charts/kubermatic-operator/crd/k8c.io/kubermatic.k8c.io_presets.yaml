@@ -315,10 +315,6 @@ spec:
                     type: string
                 required:
                 - domain
-                - password
-                - project
-                - projectID
-                - username
                 type: object
               packet:
                 properties:

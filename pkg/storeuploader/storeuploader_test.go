@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 )
 
 func TestGetObjectsToDelete(t *testing.T) {

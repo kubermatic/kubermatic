@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -173,9 +173,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	log.Infof("performing etcd restore from backup %v", restore.Spec.BackupName)
 
 	if restore.DeletionTimestamp == nil {
-		if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
-			kuberneteshelper.AddFinalizer(restore, FinishRestoreFinalizer)
-		}); err != nil {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, restore, FinishRestoreFinalizer); err != nil {
 			return nil, fmt.Errorf("failed to add finalizer: %w", err)
 		}
 	}
@@ -202,7 +200,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	}
 
 	objectName := fmt.Sprintf("%s-%s", cluster.GetName(), restore.Spec.BackupName)
-	if _, err := s3Client.StatObject(bucketName, objectName, minio.StatObjectOptions{}); err != nil {
+	if _, err := s3Client.StatObject(ctx, bucketName, objectName, minio.StatObjectOptions{}); err != nil {
 		return nil, fmt.Errorf("could not access backup object %s: %w", objectName, err)
 	}
 

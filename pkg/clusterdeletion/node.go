@@ -109,7 +109,5 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		return nil
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer)
-	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.NodeDeletionFinalizer)
 }

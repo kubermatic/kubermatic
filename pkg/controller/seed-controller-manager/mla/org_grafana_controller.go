@@ -109,11 +109,8 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(project, mlaFinalizer) {
-		kubernetes.AddFinalizer(project, mlaFinalizer)
-		if err := r.Update(ctx, project); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, project, mlaFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	org := grafanasdk.Org{

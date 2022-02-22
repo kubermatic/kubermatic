@@ -189,7 +189,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		// load config files
 		if len(kubeconfig) == 0 {
-			return fmt.Errorf("no kubeconfig (--%s or $%s) given", deployKubeContextFlag.Name, deployKubeconfigFlag.EnvVar)
+			return fmt.Errorf("no kubeconfig (--%s or $%s) given", deployKubeconfigFlag.Name, deployKubeconfigFlag.EnvVar)
 		}
 
 		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(ctx.String(deployConfigFlag.Name))

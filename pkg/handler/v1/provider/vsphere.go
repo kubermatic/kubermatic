@@ -35,7 +35,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetProvider pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got %T", request)
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -74,7 +74,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetProvider pro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereFoldersReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got %T", request)
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
