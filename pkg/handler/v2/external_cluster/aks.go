@@ -359,10 +359,9 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 		NodeLabels: nodePool.NodeLabels,
 		NodeTaints: to.StringSlice(nodePool.NodeTaints),
 	}
-	if nodePool.UpgradeSettings == nil {
-		return md
+	if nodePool.UpgradeSettings != nil {
+		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
-	md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	return md
 }
 
@@ -653,13 +652,11 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	clusterSpec := apiv2.AKSClusterSpec{}
 	aksClusterProperties := aksCluster.ManagedClusterProperties
 	if aksClusterProperties == nil {
-		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
 		return apiCluster, nil
 	}
-	clusterSpec = apiv2.AKSClusterSpec{
+	clusterSpec := &apiv2.AKSClusterSpec{
 		Location:          to.String(aksCluster.Location),
 		DNSPrefix:         to.String(aksCluster.DNSPrefix),
 		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),
@@ -670,25 +667,22 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		PrivateFQDN:       to.String(aksClusterProperties.PrivateFQDN),
 	}
 	networkProfile := aksClusterProperties.NetworkProfile
-	if networkProfile == nil {
-		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
-		return apiCluster, nil
+	if networkProfile != nil {
+		clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
+			NetworkPlugin:    string(networkProfile.NetworkPlugin),
+			NetworkPolicy:    string(networkProfile.NetworkPolicy),
+			NetworkMode:      string(networkProfile.NetworkMode),
+			PodCidr:          to.String(networkProfile.PodCidr),
+			ServiceCidr:      to.String(networkProfile.ServiceCidr),
+			DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
+			DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
+		}
 	}
-	clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
-		NetworkPlugin:    string(networkProfile.NetworkPlugin),
-		NetworkPolicy:    string(networkProfile.NetworkPolicy),
-		NetworkMode:      string(networkProfile.NetworkMode),
-		PodCidr:          to.String(networkProfile.PodCidr),
-		ServiceCidr:      to.String(networkProfile.ServiceCidr),
-		DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
-		DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
+	if aksCluster.AadProfile != nil {
+		clusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
 	}
-	if aksCluster.AadProfile == nil {
-		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
-		return apiCluster, nil
-	}
-	clusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
-	apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
+
+	apiCluster.Cloud.AKS.ClusterSpec = clusterSpec
 
 	return apiCluster, nil
 }
