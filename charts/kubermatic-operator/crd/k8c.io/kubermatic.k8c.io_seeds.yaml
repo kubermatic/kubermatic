@@ -226,7 +226,7 @@ spec:
                           properties:
                             datacenter:
                               description: Datacenter location, e.g. "nbg1-dc3". A
-                                list of existing datacenters can be found at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
+                                list of existing datacenters can be found at https://docs.hetzner.com/general/others/data-centers-and-connection/
                               type: string
                             location:
                               description: 'Optional: Detailed location of the datacenter,
@@ -439,6 +439,10 @@ spec:
                               description: If set to true, disables the TLS certificate
                                 check against the endpoint.
                               type: boolean
+                            cluster:
+                              description: The name of the vSphere cluster to use.
+                                Used for out-of-tree CSI Driver.
+                              type: string
                             datacenter:
                               description: The name of the datacenter to use.
                               type: string
@@ -481,6 +485,7 @@ spec:
                                 See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation'
                               type: object
                           required:
+                          - cluster
                           - datacenter
                           - datastore
                           - endpoint

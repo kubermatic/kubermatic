@@ -183,6 +183,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 			args = append(args, "-cloud-provider-name", providerName)
 
+			if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
+				args = append(args, "-nutanix-csi-enabled=true")
+			}
+
 			if data.Cluster().Spec.UpdateWindow != nil && data.Cluster().Spec.UpdateWindow.Length != "" && data.Cluster().Spec.UpdateWindow.Start != "" {
 				args = append(args, "-update-window-start", data.Cluster().Spec.UpdateWindow.Start, "-update-window-length", data.Cluster().Spec.UpdateWindow.Length)
 			}

@@ -200,6 +200,7 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		Datacenter:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
 		Datastore:        providerconfig.ConfigVarString{Value: datastore},
 		DatastoreCluster: providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.DatastoreCluster},
+		Cluster:          providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
 		Folder:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
 		AllowInsecure:    providerconfig.ConfigVarBool{Value: pointer.Bool(dc.Spec.VSphere.AllowInsecure)},
 		ResourcePool:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.ResourcePool},

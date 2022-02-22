@@ -946,7 +946,7 @@ presubmits:
   - name: pre-kubermatic-e2e-nutanix-ubuntu-1.22
     decorate: true
     optional: true
-    run_if_changed: "pkg/provider/cloud/nutanix"
+    run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-nutanix: "true"
@@ -991,7 +991,7 @@ presubmits:
   - name: pre-kubermatic-e2e-nutanix-centos-1.22
     decorate: true
     optional: true
-    run_if_changed: "pkg/provider/cloud/nutanix"
+    run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-nutanix: "true"
@@ -1043,6 +1043,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"
+      preset-hetzner: "true"
       preset-openstack: "true"
       preset-azure: "true"
       preset-kubeconfig-ci: "true"
@@ -1076,49 +1077,49 @@ presubmits:
             cpu: 2
           limits:
             memory: 6Gi
-            
+
   #########################################################
   # Konnectivity e2e tests
   #########################################################
 
-  - name: pre-kubermatic-konnectivity-e2e
-    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow.yaml)"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws: "true"
-      preset-kubeconfig-ci: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-kind-volume-mounts: "true"
-      preset-vault: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-5
-          imagePullPolicy: Always
-          command:
-            - "./hack/ci/run-konnectivity-e2e-test.sh"
-          env:
-            - name: VERSION_TO_TEST
-              value: v1.22.5
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 2
-            limits:
-              memory: 6Gi
-  
-  
+#  - name: pre-kubermatic-konnectivity-e2e
+#    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow.yaml)"
+#    decorate: true
+#    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+#    labels:
+#      preset-aws: "true"
+#      preset-kubeconfig-ci: "true"
+#      preset-docker-pull: "true"
+#      preset-docker-push: "true"
+#      preset-kind-volume-mounts: "true"
+#      preset-vault: "true"
+#      preset-goproxy: "true"
+#    spec:
+#      containers:
+#        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-5
+#          imagePullPolicy: Always
+#          command:
+#            - "./hack/ci/run-konnectivity-e2e-test.sh"
+#          env:
+#            - name: VERSION_TO_TEST
+#              value: v1.22.5
+#            - name: KUBERMATIC_EDITION
+#              value: ee
+#            - name: SERVICE_ACCOUNT_KEY
+#              valueFrom:
+#                secretKeyRef:
+#                  name: e2e-ci
+#                  key: serviceAccountSigningKey
+#          securityContext:
+#            privileged: true
+#          resources:
+#            requests:
+#              memory: 4Gi
+#              cpu: 2
+#            limits:
+#              memory: 6Gi
+
+
   #########################################################
   # etcd-launcher e2e tests
   #########################################################
@@ -1129,6 +1130,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"
+      preset-hetzner: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
@@ -1198,6 +1200,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"
+      preset-hetzner: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
@@ -1330,6 +1333,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"
+      preset-hetzner: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"

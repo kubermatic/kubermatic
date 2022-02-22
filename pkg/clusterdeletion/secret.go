@@ -28,7 +28,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -36,9 +35,7 @@ func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kuber
 		return err
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
-	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
 }
 
 func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -50,7 +47,7 @@ func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Clust
 	secret := &corev1.Secret{}
 	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
 	err := d.seedClient.Get(ctx, name, secret)
-	// Its already gone
+	// It's already gone
 	if kerrors.IsNotFound(err) {
 		return nil
 	}

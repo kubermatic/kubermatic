@@ -430,7 +430,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 				},
 			},
 			ExistingAPIUser:        *test.GenAPIUser("bob", "bob@acme.com"),
-			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = foo-ID"}}`,
+			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to project foo-ID"}}`,
 		},
 	}
 

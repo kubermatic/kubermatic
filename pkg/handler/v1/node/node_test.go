@@ -138,7 +138,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedHTTPStatusOnGet: http.StatusForbidden,
-			ExpectedResponseOnGet:   `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponseOnGet:   `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ExpectedNodeCount:       2,
 		},
 	}
@@ -1096,7 +1096,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				test.GenTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Machine", "venus-1-machine"),
 				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Machine", "venus-1-machine"),
 			},
-			ExpectedResult: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResult: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 		},
 	}
 
@@ -1257,7 +1257,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 		{
 			Name:                       "Scenario 7: The user John can not update Bob's node deployment",
 			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
-			ExpectedResponse:           `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse:           `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusForbidden,
 			project:                    test.GenDefaultProject().Name,
@@ -1554,7 +1554,7 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 		},
 	}
 

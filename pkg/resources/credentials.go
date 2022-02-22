@@ -122,9 +122,11 @@ type AnexiaCredentials struct {
 }
 
 type NutanixCredentials struct {
-	Username string
-	Password string
-	ProxyURL string
+	Username    string
+	Password    string
+	CSIUsername string
+	CSIPassword string
+	ProxyURL    string
 }
 
 type CredentialsData interface {
@@ -679,6 +681,22 @@ func GetNutanixCredentials(data CredentialsData) (NutanixCredentials, error) {
 		credentials.ProxyURL = spec.ProxyURL
 	} else {
 		credentials.ProxyURL, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixProxyURL)
+	}
+
+	if spec.CSI == nil {
+		return credentials, nil
+	}
+
+	if spec.CSI.Username != "" {
+		credentials.CSIUsername = spec.CSI.Username
+	} else if credentials.CSIUsername, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixCSIUsername); err != nil {
+		return NutanixCredentials{}, err
+	}
+
+	if spec.CSI.Password != "" {
+		credentials.CSIPassword = spec.CSI.Password
+	} else if credentials.CSIPassword, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixCSIPassword); err != nil {
+		return NutanixCredentials{}, err
 	}
 
 	return credentials, nil

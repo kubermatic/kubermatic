@@ -640,7 +640,7 @@ func TestUpdateToken(t *testing.T) {
 			projectToSync:    "plan9-ID",
 			saToSync:         "1",
 			tokenToSync:      "1",
-			expectedErrorMsg: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = plan9-ID"}}`,
+			expectedErrorMsg: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to project plan9-ID"}}`,
 		},
 	}
 

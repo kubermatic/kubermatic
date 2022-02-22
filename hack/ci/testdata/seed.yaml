@@ -53,6 +53,13 @@ spec:
       spec:
         aws:
           region: eu-central-1
+    hetzner-hel1:
+      location: Helsinki 1 DC 6
+      country: DE
+      spec:
+        hetzner:
+          datacenter: hel1-dc2
+          network: kubermatic-e2e
     hetzner-nbg1:
       location: Nuremberg 1 DC 3
       country: DE
@@ -68,6 +75,7 @@ spec:
           endpoint: "https://vcenter.loodse.io"
           datacenter: "dc-1"
           datastore: "exsi-nas"
+          cluster: "cl-1"
           rootPath: "/dc-1/vm/e2e-tests"
           templates:
             ubuntu: "machine-controller-e2e-ubuntu"

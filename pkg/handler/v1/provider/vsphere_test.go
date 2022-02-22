@@ -128,6 +128,7 @@ func (v *vSphereMock) buildVSphereDatacenter() provider.SeedsGetter {
 									AllowInsecure:    true,
 									DefaultDatastore: "LocalDS_0",
 									Datacenter:       "ha-datacenter",
+									Cluster:          "localhost.localdomain",
 									RootPath:         "/ha-datacenter/vm/",
 								},
 							},

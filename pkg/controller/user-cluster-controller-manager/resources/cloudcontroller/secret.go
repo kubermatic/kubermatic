@@ -36,3 +36,16 @@ func CloudConfig(cloudConfig []byte, secretName string) reconciling.NamedSecretC
 		}
 	}
 }
+
+// NutanixCSIConfig stores the nutanix csi configuration.
+func NutanixCSIConfig(cloudConfig []byte) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.NutanixCSIConfigSecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
+			if existing.Data == nil {
+				existing.Data = map[string][]byte{}
+			}
+			existing.Data[resources.NutanixCSIConfigSecretKey] = cloudConfig
+			return existing, nil
+		}
+	}
+}

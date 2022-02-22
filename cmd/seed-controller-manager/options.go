@@ -37,7 +37,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -68,7 +67,6 @@ type controllerRunOptions struct {
 	enableEtcdBackupRestoreController bool
 	dnatControllerImage               string
 	namespace                         string
-	admissionWebhook                  webhook.Options
 	concurrentClusterUpdate           int
 	addonEnforceInterval              int
 	caBundle                          *certificates.CABundle
@@ -156,13 +154,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.machineControllerImageTag, "machine-controller-image-tag", "", "The Machine Controller image tag.")
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
-	c.admissionWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
 	flag.Parse()
-
-	if err := c.admissionWebhook.Validate(); err != nil {
-		return c, fmt.Errorf("invalid admission webhook configuration: %w", err)
-	}
 
 	etcdDiskSize, err := resource.ParseQuantity(rawEtcdDiskSize)
 	if err != nil {

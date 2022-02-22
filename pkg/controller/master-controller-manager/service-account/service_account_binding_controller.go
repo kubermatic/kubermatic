@@ -100,7 +100,7 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 	}
 
 	if len(projectName) == 0 {
-		return fmt.Errorf("unable to find owing project for the service account = %s", sa.Name)
+		return fmt.Errorf("unable to find owing project for the service account %q", sa.Name)
 	}
 
 	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, projectName))

@@ -179,7 +179,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			Name:             "scenario 7: the user John can't update Bob's project",
 			Body:             `{"Name": "Super-Project"}`,
 			ProjectToRename:  "my-third-project-ID",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-third-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-third-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				// add some projects
@@ -612,7 +612,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			Name:             "scenario 3: the user John can't get Bob's project",
 			Body:             ``,
 			ProjectToSync:    "my-third-project-ID",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-third-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-third-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				// add some projects

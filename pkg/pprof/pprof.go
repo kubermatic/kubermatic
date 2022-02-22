@@ -33,7 +33,7 @@ type Opts struct {
 }
 
 func (opts *Opts) AddFlags(fs *flag.FlagSet) {
-	fs.StringVar(&opts.ListenAddress, "pprof-listen-address", ":6600", "The listen address for pprof. Set to `0` to disable it.")
+	fs.StringVar(&opts.ListenAddress, "pprof-listen-address", "", "The listen address for pprof. Set to `` or `0` to disable it.")
 }
 
 func (opts *Opts) Start(ctx context.Context) error {

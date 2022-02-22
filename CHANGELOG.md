@@ -1,4 +1,25 @@
 # Kubermatic 2.19
+
+## [v2.19.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.1)
+
+### Bugfixes
+
+- ICMP rules migration only runs on Azure NSGs created by KKP ([#8843](https://github.com/kubermatic/kubermatic/issues/8843))
+- Fix apiserver network policy: allow all egress DNS traffic from the apiserver ([#8788](https://github.com/kubermatic/kubermatic/issues/8788))
+- Automatic upgrades from 1.19.\* to 1.20.13 work as intended now ([#8821](https://github.com/kubermatic/kubermatic/issues/8821))
+- Fixes installation issue with charts/logging/loki (error evaluating symlink) ([#8823](https://github.com/kubermatic/kubermatic/issues/8823))
+- Update example values and KubermaticConfiguration to respect OIDC settings ([#8851](https://github.com/kubermatic/kubermatic/issues/8851))
+- Fix bad owner references for ClusterRoleBindings ([#8858](https://github.com/kubermatic/kubermatic/issues/8858))
+- If a network is set in the Hetzner cluster spec, it is now correctly applied to generated machines ([#8872](https://github.com/kubermatic/kubermatic/issues/8872))
+- fix AWS cloud provider cleanup sometimes getting stuck when cleaning up tags ([#8879](https://github.com/kubermatic/kubermatic/issues/8879))
+- Helm charts using dependencies (loki, promtail, nginx, cert-manager) now have specified apiVersion v2 ([#9038](https://github.com/kubermatic/kubermatic/issues/9038))
+
+### Misc
+
+- Add endpoints to v2 KKP API to query Nutanix clusters, projects and subnets ([#8736](https://github.com/kubermatic/kubermatic/issues/8736))
+- Do not reference Nutanix cluster in KKP API endpoint path for subnets ([#8906](https://github.com/kubermatic/kubermatic/issues/8906))
+- Support custom pod resources for NodePort-Proxy pod for the user cluster ([#9018](https://github.com/kubermatic/kubermatic/issues/9018))
+
 ## [v2.19.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.0)
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.19/upgrading/guidelines/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
@@ -285,6 +306,19 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Incompatibilty between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
 
 # Kubermatic 2.18
+
+## [v2.18.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.6)
+
+### Bugfixes
+
+- ICMP rules migration only runs on Azure NSGs created by KKP ([#8843](https://github.com/kubermatic/kubermatic/issues/8843))
+- Add Prometheus scraping if minio is running with TLS ([#8467](https://github.com/kubermatic/kubermatic/issues/8467))
+- Fix Grafana dashboards using legacy kube-state-metrics metrics for CPU/memory limits and requests ([#8749](https://github.com/kubermatic/kubermatic/issues/8749))
+- Fix apiserver network policy: allow all egress DNS traffic from the apiserver ([#8852](https://github.com/kubermatic/kubermatic/issues/8852))
+
+### Misc
+
+- Support custom pod resources for NodePort-Proxy pod for the user cluster ([#9028](https://github.com/kubermatic/kubermatic/issues/9028))
 
 ## [v2.18.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.5)
 

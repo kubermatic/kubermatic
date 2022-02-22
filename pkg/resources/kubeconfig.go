@@ -111,7 +111,7 @@ type internalKubeconfigCreatorData interface {
 }
 
 // GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigCreator(name, commonName string, organizations []string, data internalKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
+func GetInternalKubeconfigCreator(namespace, name, commonName string, organizations []string, data internalKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -128,9 +128,9 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 			valid, err := IsValidKubeconfig(b, ca.Cert, apiserverURL, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
-					klog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
+					klog.V(2).Infof("failed to validate existing kubeconfig from %s/%s, regenerating it: %v", namespace, name, err)
 				} else {
-					klog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
+					klog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", namespace, name)
 				}
 
 				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, apiserverURL, commonName, organizations, data.Cluster().Name)

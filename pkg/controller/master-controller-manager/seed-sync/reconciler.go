@@ -122,10 +122,8 @@ func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace s
 func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
 	// ensure we always have a cleanup finalizer on the original
 	// Seed CR inside the master cluster
-	oldSeed := seed.DeepCopy()
-	kubernetes.AddFinalizer(seed, CleanupFinalizer)
-	if err := r.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-		return fmt.Errorf("failed to add finalizer to Seed: %w", err)
+	if err := kubernetes.TryAddFinalizer(ctx, r, seed, CleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	if seed.Spec.ExposeStrategy != "" {
@@ -206,10 +204,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *kub
 	}
 
 	// at this point either the Seed CR copy is gone or it has only our own finalizer left
-	oldSeed := seedInMaster.DeepCopy()
-	kubernetes.RemoveFinalizer(seedInMaster, CleanupFinalizer)
-
-	if err := r.Patch(ctx, seedInMaster, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+	if err := kubernetes.TryRemoveFinalizer(ctx, r, seedInMaster, CleanupFinalizer); err != nil {
 		return nil, fmt.Errorf("failed to remove finalizer from Seed in master cluster: %w", err)
 	}
 

@@ -156,7 +156,7 @@ func TestGetUsersForProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:        *genAPIUser("alice2", "alice2@acme.com"),
-			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"alice2@acme.com\" doesn't belong to the given project = foo2-ID"}}`,
+			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"alice2@acme.com\" doesn't belong to project foo2-ID"}}`,
 		},
 		{
 			Name:         "scenario 3: the admin can get a list of user for any project",
@@ -335,7 +335,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 			},
 			UserIDToDelete:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot delete the user = bob@acme.com from the project plan9-ID because the user is not a member of the project"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot delete the user bob@acme.com from the project plan9-ID because the user is not a member of the project"}}`,
 		},
 
 		// scenario 3
@@ -485,7 +485,7 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot change the membership of the user = bob@acme.com for the project plan9-ID because the user is not a member of the project"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot change the membership of the user bob@acme.com for the project plan9-ID because the user is not a member of the project"}}`,
 		},
 
 		// scenario 3

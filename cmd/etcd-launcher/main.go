@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"github.com/pkg/errors"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
@@ -680,7 +680,7 @@ func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cC
 	objectName := fmt.Sprintf("%s-%s", k8cCluster.GetName(), activeRestore.Spec.BackupName)
 	downloadedSnapshotFile := fmt.Sprintf("/tmp/%s", objectName)
 
-	if err := s3Client.FGetObject(bucketName, objectName, downloadedSnapshotFile, minio.GetObjectOptions{}); err != nil {
+	if err := s3Client.FGetObject(ctx, bucketName, objectName, downloadedSnapshotFile, minio.GetObjectOptions{}); err != nil {
 		return fmt.Errorf("failed to download backup (%s/%s): %w", bucketName, objectName, err)
 	}
 

@@ -117,11 +117,8 @@ func (r *dashboardGrafanaReconciler) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(configMap, mlaFinalizer) {
-		kubernetes.AddFinalizer(configMap, mlaFinalizer)
-		if err := r.Update(ctx, configMap); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, configMap, mlaFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	if err := r.dashboardGrafanaController.ensureDashboards(ctx, log, configMap); err != nil {
@@ -190,14 +187,8 @@ func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *za
 			return err
 		}
 	}
-	if kubernetes.HasFinalizer(configMap, mlaFinalizer) {
-		oldConfigMap := configMap.DeepCopy()
-		kubernetes.RemoveFinalizer(configMap, mlaFinalizer)
-		if err := r.Patch(ctx, configMap, ctrlruntimeclient.MergeFrom(oldConfigMap)); err != nil {
-			return fmt.Errorf("failed to update ConfigMap: %w", err)
-		}
-	}
-	return nil
+
+	return kubernetes.TryRemoveFinalizer(ctx, r, configMap, mlaFinalizer)
 }
 
 func (r *dashboardGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap) error {

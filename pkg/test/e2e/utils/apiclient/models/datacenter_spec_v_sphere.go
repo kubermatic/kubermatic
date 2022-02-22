@@ -21,6 +21,9 @@ type DatacenterSpecVSphere struct {
 	// If set to true, disables the TLS certificate check against the endpoint.
 	AllowInsecure bool `json:"allowInsecure,omitempty"`
 
+	// The name of the vSphere cluster to use. Used for out-of-tree CSI Driver.
+	Cluster string `json:"cluster,omitempty"`
+
 	// The name of the datacenter to use.
 	Datacenter string `json:"datacenter,omitempty"`
 

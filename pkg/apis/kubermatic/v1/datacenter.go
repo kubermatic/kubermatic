@@ -294,7 +294,7 @@ type ImageList map[providerconfig.OperatingSystem]string
 // DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 type DatacenterSpecHetzner struct {
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
-	// at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
+	// at https://docs.hetzner.com/general/others/data-centers-and-connection/
 	Datacenter string `json:"datacenter"`
 	// Network is the pre-existing Hetzner network in which the machines are running.
 	// While machines can be in multiple networks, a single one must be chosen for the
@@ -368,6 +368,8 @@ type DatacenterSpecVSphere struct {
 	DefaultDatastore string `json:"datastore"`
 	// The name of the datacenter to use.
 	Datacenter string `json:"datacenter"`
+	// The name of the vSphere cluster to use. Used for out-of-tree CSI Driver.
+	Cluster string `json:"cluster"`
 	// The name of the storage policy to use for the storage class created in the user cluster.
 	DefaultStoragePolicy string `json:"storagePolicy,omitempty"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
@@ -452,6 +454,7 @@ type DatacenterSpecNutanix struct {
 	Endpoint string `json:"endpoint"`
 	// Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
 	Port *int32 `json:"port,omitempty"`
+
 	// Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
 	AllowInsecure bool `json:"allowInsecure,omitempty"`
 	// Images to use for each supported operating system

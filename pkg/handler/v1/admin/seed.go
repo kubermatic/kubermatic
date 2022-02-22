@@ -220,7 +220,7 @@ func DecodeSeedReq(c context.Context, r *http.Request) (interface{}, error) {
 // Validate validates UpdateAdmissionPluginEndpoint request.
 func (r updateSeedReq) Validate() error {
 	if r.Name != r.Body.Name {
-		return fmt.Errorf("seed name mismatch, you requested to update Seed = %s but body contains Seed = %s", r.Name, r.Body.Name)
+		return fmt.Errorf("seed name mismatch, you requested to update Seed %q but body contains Seed %q", r.Name, r.Body.Name)
 	}
 	return nil
 }

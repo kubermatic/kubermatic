@@ -66,7 +66,7 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(memberList) == 0 {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot delete the user = %s from the project %s because the user is not a member of the project", user.Spec.Email, req.ProjectID))
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot delete the user %s from the project %s because the user is not a member of the project", user.Spec.Email, req.ProjectID))
 		}
 		if len(memberList) != 1 {
 			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot delete the user user %s from the project, inconsistent state in database", user.Spec.Email))
@@ -163,7 +163,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(memberList) == 0 {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot change the membership of the user = %s for the project %s because the user is not a member of the project", currentMemberFromRequest.Email, req.ProjectID))
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot change the membership of the user %s for the project %s because the user is not a member of the project", currentMemberFromRequest.Email, req.ProjectID))
 		}
 		if len(memberList) != 1 {
 			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot change the membershp of the user %s, inconsistent state in database", currentMemberFromRequest.Email))
@@ -482,7 +482,7 @@ func (r EditReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 		return err
 	}
 	if r.UserID != r.Body.ID {
-		return k8cerrors.NewBadRequest(fmt.Sprintf("userID mismatch, you requested to update user = %s but body contains user = %s", r.UserID, r.Body.ID))
+		return k8cerrors.NewBadRequest(fmt.Sprintf("userID mismatch, you requested to update user %q but body contains user %q", r.UserID, r.Body.ID))
 	}
 	return nil
 }

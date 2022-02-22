@@ -30,7 +30,8 @@ import (
 	"net/http"
 	"time"
 
-	minio "github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -102,6 +103,8 @@ const (
 	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
 	// NodePortProxyEnvoyDeploymentName is the name of the nodeport-proxy deployment in the user cluster.
 	NodePortProxyEnvoyDeploymentName = "nodeport-proxy-envoy"
+	// NodePortProxyEnvoyContainerName is the name of the envoy container in the nodeport-proxy deployment.
+	NodePortProxyEnvoyContainerName = "envoy"
 
 	// ApiserverServiceName is the name for the apiserver service.
 	ApiserverServiceName = "apiserver-external"
@@ -211,10 +214,10 @@ const (
 
 	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
 	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigConfigMapName is the name for the configmap containing the cloud-config used by the csi driver.
-	CSICloudConfigConfigMapName = "cloud-config-csi"
-	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found.
-	CloudConfigConfigMapKey = "config"
+	// CSICloudConfigName is the name for the configmap containing the cloud-config used by the csi driver.
+	CSICloudConfigName = "cloud-config-csi"
+	// CloudConfigKey is the key under which the cloud-config in the cloud-config configmap can be found.
+	CloudConfigKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster.
@@ -534,6 +537,10 @@ const (
 
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"
+	// NutanixCSIConfigSecretKey is the secret key for nutanix csi secret.
+	NutanixCSIConfigSecretKey = "key"
+	// NutanixCSIConfigSecretName is the secret key for nutanix csi secret.
+	NutanixCSIConfigSecretName = "ntnx-secret"
 )
 
 const (
@@ -582,9 +589,11 @@ const (
 
 	AnexiaToken = "token"
 
-	NutanixUsername = "username"
-	NutanixPassword = "password"
-	NutanixProxyURL = "proxyURL"
+	NutanixUsername    = "username"
+	NutanixPassword    = "password"
+	NutanixCSIUsername = "csiUsername"
+	NutanixCSIPassword = "csiPassword"
+	NutanixProxyURL    = "proxyURL"
 
 	UserSSHKeys = "usersshkeys"
 )
@@ -646,16 +655,23 @@ const (
 	CSIMigrationWebhookName = "csi-migration-webhook"
 	// CSIMigrationWebhookSecretName defines the name of the secret containing the certificates for the csi-migration admission webhook.
 	CSIMigrationWebhookSecretName = "csi-migration-webhook-certs"
-	// CSIMigrationWebhookServingCertCertKeyName is the name for the key that contains the cert.
-	CSIMigrationWebhookServingCertCertKeyName = "cert.pem"
-	// CSIMigrationWebhookServingCertKeyKeyName is the name for the key that contains the key.
-	CSIMigrationWebhookServingCertKeyKeyName = "key.pem"
+
 	// CSIMigrationWebhookConfig is the name for the key that contains the webhook config.
 	CSIMigrationWebhookConfig = "webhook.config"
 	// CSIMigrationWebhookPort is the port used by the CSI-migration webhook.
 	CSIMigrationWebhookPort = 8443
 	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration.
 	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
+
+	NutanixCSIValidatingWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
+
+	CSIWebhookSecretName = "csi-webhook-certs"
+	// CSIWebhookServingCertCertKeyName is the name for the key that contains the cert.
+	CSIWebhookServingCertCertKeyName = "cert.pem"
+	// CSIWebhookServingCertKeyKeyName is the name for the key that contains the key.
+	CSIWebhookServingCertKeyKeyName = "key.pem"
+
+	NutanixCSIWebhookName = "snapshot-validation-service"
 )
 
 const (
@@ -1240,11 +1256,12 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 		}
 	}
 	for k, v := range overrides {
-		if v.Requests == nil {
-			v.Requests = defaultRequirements[k].Requests
+		defaultRequirement := defaultRequirements[k]
+		if v.Requests == nil && defaultRequirement != nil {
+			v.Requests = defaultRequirement.Requests
 		}
-		if v.Limits == nil {
-			v.Limits = defaultRequirements[k].Limits
+		if v.Limits == nil && defaultRequirement != nil {
+			v.Limits = defaultRequirement.Limits
 		}
 
 		requirements[k] = v.DeepCopy()
@@ -1278,7 +1295,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.NodePortProxyEnvoy.Resources.Requests != nil ||
 		componentSettings.NodePortProxyEnvoy.Resources.Limits != nil {
-		r[NodePortProxyEnvoyDeploymentName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
+		r[NodePortProxyEnvoyContainerName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
 	}
 
 	return r
@@ -1419,16 +1436,18 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		return nil, "", errors.New("CA bundle does not contain any valid certificates")
 	}
 
-	s3Client, err := minio.New(endpoint, accessKeyID, secretAccessKey, true)
-	if err != nil {
-		return nil, "", fmt.Errorf("error creating s3 client: %w", err)
-	}
-	s3Client.SetAppInfo("kubermatic", "v0.1")
-
-	s3Client.SetCustomTransport(&http.Transport{
-		TLSClientConfig:    &tls.Config{RootCAs: pool},
-		DisableCompression: true,
+	s3Client, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure: true,
+		Transport: &http.Transport{
+			TLSClientConfig:    &tls.Config{RootCAs: pool},
+			DisableCompression: true,
+		},
 	})
+	if err != nil {
+		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
+	}
+	s3Client.SetAppInfo("kubermatic", "v0.2")
 
 	return s3Client, bucketName, nil
 }

@@ -93,6 +93,7 @@ type controllerRunOptions struct {
 	prometheusScrapeConfigPrefix string
 	ccmMigration                 bool
 	ccmMigrationCompleted        bool
+	nutanixCSIEnabled            bool
 	isKonnectivityEnabled        bool
 	konnectivityServerHost       string
 	konnectivityServerPort       int
@@ -138,6 +139,7 @@ func main() {
 	flag.StringVar(&runOp.prometheusScrapeConfigPrefix, "prometheus-scrape-config-prefix", "prometheus-scraping", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster Prometheus.", resources.UserClusterMLANamespace))
 	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
 	flag.BoolVar(&runOp.ccmMigrationCompleted, "ccm-migration-completed", false, "cluster has been successfully migrated.")
+	flag.BoolVar(&runOp.nutanixCSIEnabled, "nutanix-csi-enabled", false, "enable Nutanix CSI")
 	flag.BoolVar(&runOp.isKonnectivityEnabled, "konnectivity-enabled", false, "Enable Konnectivity.")
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
@@ -287,6 +289,7 @@ func main() {
 			PrometheusScrapeConfigPrefix: runOp.prometheusScrapeConfigPrefix,
 		},
 		runOp.clusterName,
+		runOp.nutanixCSIEnabled,
 		runOp.isKonnectivityEnabled,
 		runOp.konnectivityServerHost,
 		runOp.konnectivityServerPort,
@@ -320,7 +323,7 @@ func main() {
 		log.Infof("Added IPAM controller to mgr")
 	}
 
-	if err := rbacusercluster.Add(mgr, mgr.AddReadyzCheck, isPausedChecker); err != nil {
+	if err := rbacusercluster.Add(mgr, log, mgr.AddReadyzCheck, isPausedChecker); err != nil {
 		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered user RBAC controller")
