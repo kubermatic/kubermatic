@@ -17306,6 +17306,28 @@
         ],
         "summary": "List EKS regions.",
         "operationId": "listEKSRegions",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSRegions",
@@ -17341,6 +17363,33 @@
         ],
         "summary": "List EKS securitygroup's ID list.",
         "operationId": "listEKSSecurityGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSSecurityGroupIDList",
@@ -17373,6 +17422,33 @@
         ],
         "summary": "Lists EKS subnet's ID list.",
         "operationId": "listEKSSubnets",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSSubnetIDList",
@@ -17444,6 +17520,28 @@
           "eks"
         ],
         "operationId": "listEKSVPCS",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSVPCList",
@@ -24650,6 +24748,34 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "NutanixCSIConfig": {
+      "type": "object",
+      "title": "NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.",
+      "properties": {
+        "endpoint": {
+          "description": "Prism Element Endpoint to access Nutanix Prism Element for csi driver",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
+        "password": {
+          "description": "Prism Element Password for csi driver",
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "port": {
+          "description": "Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Port"
+        },
+        "username": {
+          "description": "Prism Element Username for csi driver",
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "NutanixCloudSpec": {
       "description": "NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.",
       "type": "object",
@@ -24662,6 +24788,9 @@
         },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
+        "csi": {
+          "$ref": "#/definitions/NutanixCSIConfig"
         },
         "password": {
           "type": "string",
@@ -26923,6 +27052,14 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "Memory"
+        },
+        "tags": {
+          "description": "additional instance tags",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
         },
         "template": {
           "type": "string",

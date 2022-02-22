@@ -29,8 +29,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -55,13 +57,13 @@ func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 		return createOrUpdateGCPSecret(ctx, seedClient, cluster, validate)
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
-		return createOrUpdateHetznerSecret(ctx, seedClient, cluster)
+		return createOrUpdateHetznerSecret(ctx, seedClient, cluster, validate)
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
 		return createOrUpdateOpenstackSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
-		return createOrUpdatePacketSecret(ctx, seedClient, cluster)
+		return createOrUpdatePacketSecret(ctx, seedClient, cluster, validate)
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return createOrUpdateKubevirtSecret(ctx, seedClient, cluster)
@@ -278,12 +280,18 @@ func createOrUpdateGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 	return nil
 }
 
-func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate bool) error {
 	spec := cluster.Spec.Cloud.Hetzner
 
 	// already migrated
 	if spec.Token == "" {
 		return nil
+	}
+
+	if validate {
+		if err := hetzner.ValidateCredentials(ctx, spec.Token); err != nil {
+			return fmt.Errorf("invalid Hetzner credentials: %w", err)
+		}
 	}
 
 	// move credentials into dedicated Secret
@@ -366,12 +374,18 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	return nil
 }
 
-func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate bool) error {
 	spec := cluster.Spec.Cloud.Packet
 
 	// already migrated
 	if spec.APIKey == "" && spec.ProjectID == "" {
 		return nil
+	}
+
+	if validate {
+		if err := packet.ValidateCredentials(spec.APIKey, spec.ProjectID); err != nil {
+			return fmt.Errorf("invalid Equinixmetal credentials: %w", err)
+		}
 	}
 
 	// move credentials into dedicated Secret
@@ -515,7 +529,7 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	spec := cluster.Spec.Cloud.Nutanix
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" && spec.ProxyURL == "" {
+	if spec.Username == "" && spec.Password == "" && spec.ProxyURL == "" && (spec.CSI == nil || (spec.CSI.Username == "" && spec.CSI.Password == "")) {
 		return nil
 	}
 
@@ -528,6 +542,19 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 		secretData[resources.NutanixProxyURL] = []byte(spec.ProxyURL)
 	}
 
+	// clean old inline credentials
+	cluster.Spec.Cloud.Nutanix.Username = ""
+	cluster.Spec.Cloud.Nutanix.Password = ""
+	cluster.Spec.Cloud.Nutanix.ProxyURL = ""
+
+	if spec.CSI != nil {
+		secretData[resources.NutanixCSIUsername] = []byte(spec.CSI.Username)
+		secretData[resources.NutanixCSIPassword] = []byte(spec.CSI.Password)
+
+		cluster.Spec.Cloud.Nutanix.CSI.Username = ""
+		cluster.Spec.Cloud.Nutanix.CSI.Password = ""
+	}
+
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, secretData)
 	if err != nil {
 		return err
@@ -535,11 +562,6 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 
 	// add secret key reference to cluster object
 	cluster.Spec.Cloud.Nutanix.CredentialsReference = credentialRef
-
-	// clean old inline credentials
-	cluster.Spec.Cloud.Nutanix.Username = ""
-	cluster.Spec.Cloud.Nutanix.Password = ""
-	cluster.Spec.Cloud.Nutanix.ProxyURL = ""
 
 	return nil
 }

@@ -39,10 +39,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	name = "cloud-config"
-)
-
 type configMapCreatorData interface {
 	DC() *kubermaticv1.Datacenter
 	Cluster() *kubermaticv1.Cluster
@@ -67,8 +63,8 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 				return nil, fmt.Errorf("failed to create cloud-config: %w", err)
 			}
 
-			cm.Labels = resources.BaseAppLabels(name, nil)
-			cm.Data[resources.CloudConfigConfigMapKey] = cloudConfig
+			cm.Labels = resources.BaseAppLabels(resources.CloudConfigConfigMapName, nil)
+			cm.Data[resources.CloudConfigKey] = cloudConfig
 			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
 
 			return cm, nil
@@ -76,9 +72,9 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 	}
 }
 
-func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+func VsphereCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.CSICloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return resources.CSICloudConfigName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
@@ -97,9 +93,31 @@ func ConfigmapVsphereCSICreator(data configMapCreatorData) reconciling.NamedConf
 				return nil, err
 			}
 
-			cm.Labels = resources.BaseAppLabels(name, nil)
-			cm.Data[resources.CloudConfigConfigMapKey] = cloudConfig
+			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
+			cm.Data[resources.CloudConfigKey] = cloudConfig
 			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
+
+			return cm, nil
+		}
+	}
+}
+
+func NutanixCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.CSICloudConfigName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", data.Cluster().Spec.Cloud.Nutanix.CSI.Endpoint, data.Cluster().Spec.Cloud.Nutanix.CSI.Port, credentials.Nutanix.CSIUsername, credentials.Nutanix.CSIPassword)
+
+			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
+			cm.Data[resources.CloudConfigKey] = nutanixCsiConf
 
 			return cm, nil
 		}

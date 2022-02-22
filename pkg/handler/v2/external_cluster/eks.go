@@ -51,15 +51,6 @@ const (
 	EKSCapacityTypes      = "SPOT"
 )
 
-// EKSTypesReq represent a request for EKS types.
-// swagger:parameters validateEKSCredentials
-type EKSTypesReq struct {
-	EKSCommonReq
-	// in: header
-	// name: Region
-	Region string
-}
-
 // EKSCommonReq represent a request with common parameters for EKS.
 type EKSCommonReq struct {
 	// in: header
@@ -81,6 +72,15 @@ func DecodeEKSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	req.Credential = r.Header.Get("Credential")
 
 	return req, nil
+}
+
+// EKSTypesReq represent a request for EKS types.
+// swagger:parameters validateEKSCredentials listEKSRegions listEKSVPCS
+type EKSTypesReq struct {
+	EKSCommonReq
+	// in: header
+	// name: Region
+	Region string
 }
 
 func DecodeEKSTypesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -146,19 +146,10 @@ func DecodeEKSClusterListReq(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-// eksSubnetsNoCredentialReq represent a request for EKS resources
-// swagger:parameters listEKSSubnetsNoCredentials
-type eksSubnetsNoCredentialReq struct {
-	eksNoCredentialReq
-	// in: header
-	// name: VpcId
-	VpcId string
-}
-
 // eksNoCredentialReq represent a request for EKS resources
 // swagger:parameters listEKSVPCsNoCredentials listEKSInstanceTypesNoCredentials
 type eksNoCredentialReq struct {
-	getClusterReq
+	GetClusterReq
 }
 
 func DecodeEKSNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -167,9 +158,18 @@ func DecodeEKSNoCredentialReq(c context.Context, r *http.Request) (interface{}, 
 	if err != nil {
 		return nil, err
 	}
-	req.getClusterReq = re.(getClusterReq)
+	req.GetClusterReq = re.(GetClusterReq)
 
 	return req, nil
+}
+
+// eksSubnetsNoCredentialReq represent a request for EKS resources
+// swagger:parameters listEKSSubnetsNoCredentials
+type eksSubnetsNoCredentialReq struct {
+	eksNoCredentialReq
+	// in: header
+	// name: VpcId
+	VpcId string
 }
 
 func DecodeEKSSubnetsNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -186,7 +186,7 @@ func DecodeEKSSubnetsNoCredentialReq(c context.Context, r *http.Request) (interf
 
 // Validate validates eksSubnetsNoCredentialReq request.
 func (req eksSubnetsNoCredentialReq) Validate() error {
-	if err := req.getClusterReq.Validate(); err != nil {
+	if err := req.GetClusterReq.Validate(); err != nil {
 		return err
 	}
 	if len(req.VpcId) == 0 {
@@ -318,7 +318,7 @@ func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGett
 }
 
 // EKSSubnetsReq represent a request for EKS subnets.
-// swagger:parameters listEKSSubnetIDs
+// swagger:parameters listEKSSubnets listEKSSecurityGroups
 type EKSReq struct {
 	EKSTypesReq
 	// in: header

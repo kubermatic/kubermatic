@@ -38,6 +38,9 @@ type NutanixCloudSpec struct {
 
 	// credentials reference
 	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// csi
+	Csi *NutanixCSIConfig `json:"csi,omitempty"`
 }
 
 // Validate validates this nutanix cloud spec
@@ -45,6 +48,10 @@ func (m *NutanixCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCredentialsReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCsi(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -71,11 +78,32 @@ func (m *NutanixCloudSpec) validateCredentialsReference(formats strfmt.Registry)
 	return nil
 }
 
+func (m *NutanixCloudSpec) validateCsi(formats strfmt.Registry) error {
+	if swag.IsZero(m.Csi) { // not required
+		return nil
+	}
+
+	if m.Csi != nil {
+		if err := m.Csi.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("csi")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this nutanix cloud spec based on the context it is used
 func (m *NutanixCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCredentialsReference(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCsi(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -91,6 +119,20 @@ func (m *NutanixCloudSpec) contextValidateCredentialsReference(ctx context.Conte
 		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *NutanixCloudSpec) contextValidateCsi(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Csi != nil {
+		if err := m.Csi.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("csi")
 			}
 			return err
 		}

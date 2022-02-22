@@ -98,6 +98,13 @@ func (n *Nutanix) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 }
 
 func (n *Nutanix) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+	// default csi
+	if spec.Nutanix.CSI != nil {
+		if spec.Nutanix.CSI.Port == nil {
+			spec.Nutanix.CSI.Port = pointer.Int32Ptr(9440)
+		}
+	}
+
 	return nil
 }
 
@@ -117,6 +124,11 @@ func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// validate csi is set - required for new clusters
+	if spec.Nutanix.CSI == nil {
+		return errors.New("CSI not configured")
 	}
 
 	return nil

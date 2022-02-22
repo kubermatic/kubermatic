@@ -58,6 +58,22 @@ func NewListEKSSecurityGroupsParamsWithHTTPClient(client *http.Client) *ListEKSS
    Typically these are written to a http.Request.
 */
 type ListEKSSecurityGroupsParams struct {
+
+	// AccessKeyID.
+	AccessKeyID *string
+
+	// Credential.
+	Credential *string
+
+	// Region.
+	Region *string
+
+	// SecretAccessKey.
+	SecretAccessKey *string
+
+	// VpcID.
+	VpcID *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +127,61 @@ func (o *ListEKSSecurityGroupsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithAccessKeyID adds the accessKeyID to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) WithAccessKeyID(accessKeyID *string) *ListEKSSecurityGroupsParams {
+	o.SetAccessKeyID(accessKeyID)
+	return o
+}
+
+// SetAccessKeyID adds the accessKeyId to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) SetAccessKeyID(accessKeyID *string) {
+	o.AccessKeyID = accessKeyID
+}
+
+// WithCredential adds the credential to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) WithCredential(credential *string) *ListEKSSecurityGroupsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithRegion adds the region to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) WithRegion(region *string) *ListEKSSecurityGroupsParams {
+	o.SetRegion(region)
+	return o
+}
+
+// SetRegion adds the region to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) SetRegion(region *string) {
+	o.Region = region
+}
+
+// WithSecretAccessKey adds the secretAccessKey to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) WithSecretAccessKey(secretAccessKey *string) *ListEKSSecurityGroupsParams {
+	o.SetSecretAccessKey(secretAccessKey)
+	return o
+}
+
+// SetSecretAccessKey adds the secretAccessKey to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) SetSecretAccessKey(secretAccessKey *string) {
+	o.SecretAccessKey = secretAccessKey
+}
+
+// WithVpcID adds the vpcID to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) WithVpcID(vpcID *string) *ListEKSSecurityGroupsParams {
+	o.SetVpcID(vpcID)
+	return o
+}
+
+// SetVpcID adds the vpcId to the list e k s security groups params
+func (o *ListEKSSecurityGroupsParams) SetVpcID(vpcID *string) {
+	o.VpcID = vpcID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListEKSSecurityGroupsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +189,46 @@ func (o *ListEKSSecurityGroupsParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
+
+	if o.AccessKeyID != nil {
+
+		// header param AccessKeyID
+		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
+			return err
+		}
+	}
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.Region != nil {
+
+		// header param Region
+		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
+			return err
+		}
+	}
+
+	if o.SecretAccessKey != nil {
+
+		// header param SecretAccessKey
+		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
+
+	if o.VpcID != nil {
+
+		// header param VpcId
+		if err := r.SetHeaderParam("VpcId", *o.VpcID); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

@@ -1465,6 +1465,8 @@ type VSphereNodeSpec struct {
 	Memory     int    `json:"memory"`
 	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
 	Template   string `json:"template"`
+	// additional instance tags
+	Tags map[string]string `json:"tags"`
 }
 
 func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {

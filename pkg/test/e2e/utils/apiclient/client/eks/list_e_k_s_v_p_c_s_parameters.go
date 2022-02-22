@@ -58,6 +58,19 @@ func NewListEKSVPCSParamsWithHTTPClient(client *http.Client) *ListEKSVPCSParams 
    Typically these are written to a http.Request.
 */
 type ListEKSVPCSParams struct {
+
+	// AccessKeyID.
+	AccessKeyID *string
+
+	// Credential.
+	Credential *string
+
+	// Region.
+	Region *string
+
+	// SecretAccessKey.
+	SecretAccessKey *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,6 +124,50 @@ func (o *ListEKSVPCSParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithAccessKeyID adds the accessKeyID to the list e k s v p c s params
+func (o *ListEKSVPCSParams) WithAccessKeyID(accessKeyID *string) *ListEKSVPCSParams {
+	o.SetAccessKeyID(accessKeyID)
+	return o
+}
+
+// SetAccessKeyID adds the accessKeyId to the list e k s v p c s params
+func (o *ListEKSVPCSParams) SetAccessKeyID(accessKeyID *string) {
+	o.AccessKeyID = accessKeyID
+}
+
+// WithCredential adds the credential to the list e k s v p c s params
+func (o *ListEKSVPCSParams) WithCredential(credential *string) *ListEKSVPCSParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list e k s v p c s params
+func (o *ListEKSVPCSParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithRegion adds the region to the list e k s v p c s params
+func (o *ListEKSVPCSParams) WithRegion(region *string) *ListEKSVPCSParams {
+	o.SetRegion(region)
+	return o
+}
+
+// SetRegion adds the region to the list e k s v p c s params
+func (o *ListEKSVPCSParams) SetRegion(region *string) {
+	o.Region = region
+}
+
+// WithSecretAccessKey adds the secretAccessKey to the list e k s v p c s params
+func (o *ListEKSVPCSParams) WithSecretAccessKey(secretAccessKey *string) *ListEKSVPCSParams {
+	o.SetSecretAccessKey(secretAccessKey)
+	return o
+}
+
+// SetSecretAccessKey adds the secretAccessKey to the list e k s v p c s params
+func (o *ListEKSVPCSParams) SetSecretAccessKey(secretAccessKey *string) {
+	o.SecretAccessKey = secretAccessKey
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListEKSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -118,6 +175,38 @@ func (o *ListEKSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		return err
 	}
 	var res []error
+
+	if o.AccessKeyID != nil {
+
+		// header param AccessKeyID
+		if err := r.SetHeaderParam("AccessKeyID", *o.AccessKeyID); err != nil {
+			return err
+		}
+	}
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.Region != nil {
+
+		// header param Region
+		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
+			return err
+		}
+	}
+
+	if o.SecretAccessKey != nil {
+
+		// header param SecretAccessKey
+		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

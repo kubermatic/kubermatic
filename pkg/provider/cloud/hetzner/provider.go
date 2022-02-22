@@ -100,3 +100,14 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 	return hetznerToken, nil
 }
+
+func ValidateCredentials(ctx context.Context, token string) error {
+	client := hcloud.NewClient(hcloud.WithToken(token))
+
+	timeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	opts := hcloud.LocationListOpts{}
+	opts.PerPage = 1
+	_, _, err := client.Location.List(timeout, opts)
+	return err
+}
