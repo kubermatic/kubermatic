@@ -146,13 +146,19 @@ func DecodeEKSClusterListReq(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-// eksNoCredentialReq represent a request for EKS resources
+// eksSubnetsNoCredentialReq represent a request for EKS resources
 // swagger:parameters listEKSSubnetsNoCredentials
-type eksNoCredentialReq struct {
-	getClusterReq
+type eksSubnetsNoCredentialReq struct {
+	eksNoCredentialReq
 	// in: header
 	// name: VpcId
 	VpcId string
+}
+
+// eksNoCredentialReq represent a request for EKS resources
+// swagger:parameters listEKSVPCsNoCredentials
+type eksNoCredentialReq struct {
+	getClusterReq
 }
 
 func DecodeEKSNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -162,13 +168,24 @@ func DecodeEKSNoCredentialReq(c context.Context, r *http.Request) (interface{}, 
 		return nil, err
 	}
 	req.getClusterReq = re.(getClusterReq)
+
+	return req, nil
+}
+
+func DecodeEKSSubnetsNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req eksSubnetsNoCredentialReq
+	re, err := DecodeEKSNoCredentialReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.eksNoCredentialReq = re.(eksNoCredentialReq)
 	req.VpcId = r.Header.Get("VpcId")
 
 	return req, nil
 }
 
-// Validate validates eksNoCredentialReq request.
-func (req eksNoCredentialReq) Validate() error {
+// Validate validates eksSubnetsNoCredentialReq request.
+func (req eksSubnetsNoCredentialReq) Validate() error {
 	if err := req.getClusterReq.Validate(); err != nil {
 		return err
 	}
@@ -548,15 +565,14 @@ func createMachineDeploymentFromEKSNodePoll(nodeGroup *eks.Nodegroup, readyRepli
 		Version:       aws.StringValue(nodeGroup.Version),
 	}
 	scalingConfig := nodeGroup.ScalingConfig
-	if nodeGroup.ScalingConfig == nil {
-		return md
-	}
-	md.Spec.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
-	md.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
-	md.Cloud.EKS.ScalingConfig = apiv2.EKSNodegroupScalingConfig{
-		DesiredSize: aws.Int64Value(scalingConfig.DesiredSize),
-		MaxSize:     aws.Int64Value(scalingConfig.MaxSize),
-		MinSize:     aws.Int64Value(scalingConfig.MinSize),
+	if scalingConfig != nil {
+		md.Spec.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
+		md.Status.Replicas = int32(aws.Int64Value(scalingConfig.DesiredSize))
+		md.Cloud.EKS.ScalingConfig = apiv2.EKSNodegroupScalingConfig{
+			DesiredSize: aws.Int64Value(scalingConfig.DesiredSize),
+			MaxSize:     aws.Int64Value(scalingConfig.MaxSize),
+			MinSize:     aws.Int64Value(scalingConfig.MinSize),
+		}
 	}
 
 	return md
@@ -743,10 +759,47 @@ func EKSCapacityTypesWithClusterCredentialsEndpoint() endpoint.Endpoint {
 	}
 }
 
-func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func EKSVPCsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		req := request.(eksNoCredentialReq)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+		cloudSpec := cluster.Spec.CloudSpec
+		if cloudSpec.EKS == nil {
+			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
+		}
+
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		if cloudSpec.EKS.Region == "" {
+			return nil, errors.New("no region provided in externalcluter spec")
+		}
+		credential := providercommon.EKSCredential{
+			AccessKeyID:     accessKeyID,
+			SecretAccessKey: secretAccessKey,
+			Region:          cloudSpec.EKS.Region,
+		}
+		return providercommon.ListEKSVPC(ctx, credential)
+	}
+}
+
+func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		req := request.(eksSubnetsNoCredentialReq)
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -781,6 +834,7 @@ func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGe
 		}
 		return providercommon.ListEKSSubnetIDs(ctx, cred, req.VpcId)
 	}
+}
 
 func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
 	accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
@@ -824,7 +878,7 @@ func checkCreatePoolReqValid(machineDeployment apiv2.ExternalClusterMachineDeplo
 	}
 
 	if len(eksMD.Subnets) == 0 || len(eksMD.NodeRole) == 0 {
-		return errors.NewBadRequest("required field is missing: Subnets or NodeRole cannot be empty")
+		return utilerrors.NewBadRequest("required field is missing: Subnets or NodeRole cannot be empty")
 	}
 	return nil
 }
