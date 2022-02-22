@@ -401,11 +401,25 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 	}
 
 	// ensure that CSI driver on user cluster will have an access to KubeVirt cluster
+	// 1- Service Account
 	r, err := kubevirt.NewReconciler(spec.Kubeconfig, cluster.Name)
 	if err != nil {
 		return err
 	}
-	csiKubeconfig, err := r.ReconcileCSIAccess(ctx)
+	csiKubeconfig, err := r.ReconcileCSIServiceAccount(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 2- Role and RoleBinding,
+	// separated from the ReconcileCSIServiceAccount as Role and Rolebinding reconciliation
+	// is also called in `ReconcileCluster`, whereas the SA is only created here and not reconciled after.
+	client, restConfig, err := kubevirt.NewClientWithRestConfig(spec.Kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	err = kubevirt.ReconcileCSIRoleRoleBinding(client, restConfig)
 	if err != nil {
 		return err
 	}
