@@ -302,6 +302,18 @@ type Nutanix struct {
 	// ProjectName is the optional Nutanix project to use. If none is given,
 	// no project will be used.
 	ProjectName string `json:"projectName,omitempty"`
+
+	// Prism Element Username for csi driver
+	CSIUsername string `json:"csiUsername,omitempty"`
+
+	// Prism Element Password for csi driver
+	CSIPassword string `json:"csiPassword,omitempty"`
+
+	// CSIEndpoint to access Nutanix Prism Element for csi driver
+	CSIEndpoint string `json:"csiEndpoint,omitempty"`
+
+	// CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	CSIPort *int32 `json:"csiPort,omitempty"`
 }
 
 func (s Nutanix) IsValid() bool {

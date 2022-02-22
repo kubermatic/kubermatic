@@ -96,6 +96,7 @@ func Add(
 	caBundle resources.CABundle,
 	userClusterMLA UserClusterMLA,
 	clusterName string,
+	nutanixCSIEnabled bool,
 	konnectivity bool,
 	konnectivityServerHost string,
 	konnectivityServerPort int,
@@ -126,6 +127,7 @@ func Add(
 		userClusterMLA:               userClusterMLA,
 		cloudProvider:                kubermaticv1.ProviderType(cloudProviderName),
 		clusterName:                  clusterName,
+		nutanixCSIEnabled:            nutanixCSIEnabled,
 		isKonnectivityEnabled:        konnectivity,
 		konnectivityServerHost:       konnectivityServerHost,
 		konnectivityServerPort:       konnectivityServerPort,
@@ -296,6 +298,7 @@ type reconciler struct {
 	userClusterMLA               UserClusterMLA
 	cloudProvider                kubermaticv1.ProviderType
 	clusterName                  string
+	nutanixCSIEnabled            bool
 	isKonnectivityEnabled        bool
 	konnectivityServerHost       string
 	konnectivityServerPort       int
@@ -364,9 +367,9 @@ func (r *reconciler) cloudConfig(ctx context.Context, cloudConfigConfigmapName s
 	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
 		return nil, fmt.Errorf("failed to get cloud-config: %w", err)
 	}
-	value, exists := configmap.Data[resources.CloudConfigConfigMapKey]
+	value, exists := configmap.Data[resources.CloudConfigKey]
 	if !exists {
-		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigConfigMapKey)
+		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigKey)
 	}
 	return []byte(value), nil
 }

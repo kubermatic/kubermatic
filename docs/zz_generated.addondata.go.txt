@@ -176,7 +176,9 @@ type AnexiaCredentials struct {
 }
 
 type NutanixCredentials struct {
-	Username string
-	Password string
-	ProxyURL string
+	Username    string
+	Password    string
+	CSIUsername string
+	CSIPassword string
+	ProxyURL    string
 }

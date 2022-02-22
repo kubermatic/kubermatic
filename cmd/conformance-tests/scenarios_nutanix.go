@@ -65,8 +65,13 @@ func (s *nutanixScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: "nutanix-ger",
 					Nutanix: &apimodels.NutanixCloudSpec{
-						Username:    secrets.Nutanix.Username,
-						Password:    secrets.Nutanix.Password,
+						Username: secrets.Nutanix.Username,
+						Password: secrets.Nutanix.Password,
+						Csi: &apimodels.NutanixCSIConfig{
+							Endpoint: secrets.Nutanix.CSIEndpoint,
+							Password: secrets.Nutanix.CSIPassword,
+							Username: secrets.Nutanix.CSIUsername,
+						},
 						ProxyURL:    secrets.Nutanix.ProxyURL,
 						ClusterName: secrets.Nutanix.ClusterName,
 						ProjectName: secrets.Nutanix.ProjectName,

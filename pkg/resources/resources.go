@@ -213,10 +213,10 @@ const (
 
 	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
 	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigConfigMapName is the name for the configmap containing the cloud-config used by the csi driver.
-	CSICloudConfigConfigMapName = "cloud-config-csi"
-	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found.
-	CloudConfigConfigMapKey = "config"
+	// CSICloudConfigName is the name for the configmap containing the cloud-config used by the csi driver.
+	CSICloudConfigName = "cloud-config-csi"
+	// CloudConfigKey is the key under which the cloud-config in the cloud-config configmap can be found.
+	CloudConfigKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster.
@@ -536,6 +536,10 @@ const (
 
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"
+	// NutanixCSIConfigSecretKey is the secret key for nutanix csi secret.
+	NutanixCSIConfigSecretKey = "key"
+	// NutanixCSIConfigSecretName is the secret key for nutanix csi secret.
+	NutanixCSIConfigSecretName = "ntnx-secret"
 )
 
 const (
@@ -584,9 +588,11 @@ const (
 
 	AnexiaToken = "token"
 
-	NutanixUsername = "username"
-	NutanixPassword = "password"
-	NutanixProxyURL = "proxyURL"
+	NutanixUsername    = "username"
+	NutanixPassword    = "password"
+	NutanixCSIUsername = "csiUsername"
+	NutanixCSIPassword = "csiPassword"
+	NutanixProxyURL    = "proxyURL"
 
 	UserSSHKeys = "usersshkeys"
 )
@@ -648,16 +654,23 @@ const (
 	CSIMigrationWebhookName = "csi-migration-webhook"
 	// CSIMigrationWebhookSecretName defines the name of the secret containing the certificates for the csi-migration admission webhook.
 	CSIMigrationWebhookSecretName = "csi-migration-webhook-certs"
-	// CSIMigrationWebhookServingCertCertKeyName is the name for the key that contains the cert.
-	CSIMigrationWebhookServingCertCertKeyName = "cert.pem"
-	// CSIMigrationWebhookServingCertKeyKeyName is the name for the key that contains the key.
-	CSIMigrationWebhookServingCertKeyKeyName = "key.pem"
+
 	// CSIMigrationWebhookConfig is the name for the key that contains the webhook config.
 	CSIMigrationWebhookConfig = "webhook.config"
 	// CSIMigrationWebhookPort is the port used by the CSI-migration webhook.
 	CSIMigrationWebhookPort = 8443
 	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration.
 	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
+
+	NutanixCSIValidatingWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
+
+	CSIWebhookSecretName = "csi-webhook-certs"
+	// CSIWebhookServingCertCertKeyName is the name for the key that contains the cert.
+	CSIWebhookServingCertCertKeyName = "cert.pem"
+	// CSIWebhookServingCertKeyKeyName is the name for the key that contains the key.
+	CSIWebhookServingCertKeyKeyName = "key.pem"
+
+	NutanixCSIWebhookName = "snapshot-validation-service"
 )
 
 const (
