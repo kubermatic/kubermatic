@@ -644,6 +644,40 @@ func validateNutanixCloudSpec(spec *kubermaticv1.NutanixCloudSpec) error {
 		return errors.New("no cluster name specified")
 	}
 
+	if spec.CSI == nil {
+		return nil
+	}
+
+	// validate csi
+	if spec.CSI.Username == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no CSI username or credentials reference specified")
+		}
+
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.NutanixCSIUsername); err != nil {
+			return err
+		}
+	}
+
+	if spec.CSI.Password == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no CSI password or credentials reference specified")
+		}
+
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.NutanixCSIPassword); err != nil {
+			return err
+		}
+	}
+
+	if spec.CSI.Endpoint == "" {
+		return errors.New("CSI Endpoint mut not be empty")
+	}
+
+	// should never happen due to defaulting
+	if spec.CSI.Port == nil {
+		return errors.New("CSI Port mut not be empty")
+	}
+
 	return nil
 }
 

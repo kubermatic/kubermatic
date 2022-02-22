@@ -24413,6 +24413,34 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "NutanixCSIConfig": {
+      "type": "object",
+      "title": "NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.",
+      "properties": {
+        "endpoint": {
+          "description": "Prism Element Endpoint to access Nutanix Prism Element for csi driver",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
+        "password": {
+          "description": "Prism Element Password for csi driver",
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "port": {
+          "description": "Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Port"
+        },
+        "username": {
+          "description": "Prism Element Username for csi driver",
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "NutanixCloudSpec": {
       "description": "NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.",
       "type": "object",
@@ -24425,6 +24453,9 @@
         },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
+        "csi": {
+          "$ref": "#/definitions/NutanixCSIConfig"
         },
         "password": {
           "type": "string",

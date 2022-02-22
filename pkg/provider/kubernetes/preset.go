@@ -464,5 +464,14 @@ func (m *PresetProvider) setNutanixCredentials(userInfo *provider.UserInfo, pres
 		cloud.Nutanix.ProjectName = projectName
 	}
 
+	if preset.Spec.Nutanix.CSIUsername != "" && preset.Spec.Nutanix.CSIPassword != "" && preset.Spec.Nutanix.CSIEndpoint != "" {
+		cloud.Nutanix.CSI = &kubermaticv1.NutanixCSIConfig{
+			Username: preset.Spec.Nutanix.CSIUsername,
+			Password: preset.Spec.Nutanix.CSIPassword,
+			Endpoint: preset.Spec.Nutanix.CSIEndpoint,
+			Port:     preset.Spec.Nutanix.CSIPort,
+		}
+	}
+
 	return &cloud, nil
 }

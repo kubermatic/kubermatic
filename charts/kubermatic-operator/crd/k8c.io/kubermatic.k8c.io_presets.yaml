@@ -256,6 +256,21 @@ spec:
                     description: ClusterName is the Nutanix cluster to deploy resources
                       and nodes to.
                     type: string
+                  csiEndpoint:
+                    description: CSIEndpoint to access Nutanix Prism Element for csi
+                      driver
+                    type: string
+                  csiPassword:
+                    description: Prism Element Password for csi driver
+                    type: string
+                  csiPort:
+                    description: CSIPort to use when connecting to the Nutanix Prism
+                      Element endpoint (defaults to 9440)
+                    format: int32
+                    type: integer
+                  csiUsername:
+                    description: Prism Element Username for csi driver
+                    type: string
                   datacenter:
                     type: string
                   enabled:

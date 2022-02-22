@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi"
 	csimigration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
@@ -87,10 +88,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
-		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigConfigMapName)
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
+		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigName)
 		if err != nil {
-			return fmt.Errorf("failed to get cloudConfig: %w", err)
+			return fmt.Errorf("failed to get csi config: %w", err)
 		}
 	}
 
@@ -614,6 +615,10 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
+	if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
+		creators = append(creators, csi.ValidatingWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.NutanixCSIValidatingWebhookConfigurationName))
+	}
+
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ValidatingWebhookConfigurations: %w", err)
 	}
@@ -752,9 +757,16 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 
 	if data.csiCloudConfig != nil {
-		creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
-		if data.ccmMigration {
-			creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
+		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
+			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
+			if data.ccmMigration {
+				creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
+			}
+		}
+
+		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
+			creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
+				csi.TLSServingCertificateCreator(resources.NutanixCSIWebhookName, data.caCert))
 		}
 	}
 
@@ -986,7 +998,7 @@ type reconcileData struct {
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
-	// csiCloudConfig is currently used only by vSphere, whose needs it to properly configure the external CSI driver
+	// csiCloudConfig is currently used only by vSphere and Nutanix, whose needs it to properly configure the external CSI driver
 	csiCloudConfig              []byte
 	ccmMigration                bool
 	monitoringRequirements      *corev1.ResourceRequirements
