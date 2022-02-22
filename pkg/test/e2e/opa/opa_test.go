@@ -304,7 +304,7 @@ func createTestConstraintTemplate(ctx context.Context, client ctrlruntimeclient.
 	var ct *kubermaticv1.ConstraintTemplate
 	err := yaml.Unmarshal([]byte(testCT), &ct)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling Constraint Template: %v", err)
+		return nil, fmt.Errorf("error unmarshalling Constraint Template: %w", err)
 	}
 
 	return ct, client.Create(ctx, ct)
