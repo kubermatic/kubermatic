@@ -649,7 +649,6 @@ func validateNutanixCloudSpec(spec *kubermaticv1.NutanixCloudSpec) error {
 	}
 
 	// validate csi
-
 	if spec.CSI.Username == "" {
 		if spec.CredentialsReference == nil {
 			return errors.New("no CSI username or credentials reference specified")
