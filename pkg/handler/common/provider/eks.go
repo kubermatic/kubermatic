@@ -120,7 +120,7 @@ func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (ap
 
 	subnetResults, err := awsprovider.GetSubnets(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get subnets: %w", err)
+		return nil, err
 	}
 
 	for _, subnet := range subnetResults {
@@ -134,7 +134,7 @@ func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, erro
 
 	vpcResults, err := awsprovider.GetVPCS(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get vpcs: %w", err)
+		return nil, err
 	}
 
 	for _, v := range vpcResults {
@@ -145,6 +145,20 @@ func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, erro
 		vpcs = append(vpcs, vpc)
 	}
 	return vpcs, nil
+}
+
+func ListInstanceTypes(ctx context.Context, cred EKSCredential) (apiv2.EKSInstanceTypes, error) {
+	instanceTypes := apiv2.EKSInstanceTypes{}
+
+	instanceTypesResults, err := awsprovider.GetInstanceTypes(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, instanceTypeResult := range instanceTypesResults {
+		instanceTypes = append(instanceTypes, *instanceTypeResult.InstanceType)
+	}
+	return instanceTypes, nil
 }
 
 func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, error) {

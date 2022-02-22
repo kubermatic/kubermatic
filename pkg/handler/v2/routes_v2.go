@@ -879,6 +879,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listEKSCapacityTypesNoCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes").
+		Handler(r.listEKSInstanceTypesNoCredentials())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets").
 		Handler(r.listEKSSubnetsNoCredentials())
 
@@ -5351,6 +5355,31 @@ func (r Routing) listEKSCapacityTypesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.EKSCapacityTypesWithClusterCredentialsEndpoint()),
 		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes eks listEKSInstanceTypesNoCredentials
+//
+//     Gets the EKS Instance types for node group.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSInstanceTypes
+//       401: empty
+//       403: empty
+func (r Routing) listEKSInstanceTypesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSInstanceTypesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeEKSNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

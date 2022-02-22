@@ -609,6 +609,10 @@ type EKSAMITypes []string
 // swagger:model EKSCapacityTypes
 type EKSCapacityTypes []string
 
+// EKSInstanceTypes represents a list of EKS Instance Types for node group.
+// swagger:model EKSInstanceTypes
+type EKSInstanceTypes []string
+
 // EKSSubnetIDList represents an array of EKS subnetID.
 // swagger:model EKSSubnetIDList
 type EKSSubnetIDList []EKSSubnetID

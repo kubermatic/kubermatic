@@ -156,7 +156,7 @@ type eksSubnetsNoCredentialReq struct {
 }
 
 // eksNoCredentialReq represent a request for EKS resources
-// swagger:parameters listEKSVPCsNoCredentials
+// swagger:parameters listEKSVPCsNoCredentials listEKSInstanceTypesNoCredentials
 type eksNoCredentialReq struct {
 	getClusterReq
 }
@@ -759,9 +759,44 @@ func EKSCapacityTypesWithClusterCredentialsEndpoint() endpoint.Endpoint {
 	}
 }
 
+func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(eksNoCredentialReq)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+		cloudSpec := cluster.Spec.CloudSpec
+		if cloudSpec.EKS == nil {
+			return nil, utilerrors.NewNotFound("cloud spec for %s", cluster.Name)
+		}
+
+		accessKeyID, secretAccessKey, err := eksprovider.GetCredentialsForCluster(*cloudSpec, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		if cloudSpec.EKS.Region == "" {
+			return nil, errors.New("no region provided in externalcluter spec")
+		}
+		credential := providercommon.EKSCredential{
+			AccessKeyID:     accessKeyID,
+			SecretAccessKey: secretAccessKey,
+			Region:          cloudSpec.EKS.Region,
+		}
+		return providercommon.ListInstanceTypes(ctx, credential)
+	}
+}
+
 func EKSVPCsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req := request.(eksNoCredentialReq)
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
@@ -798,7 +833,6 @@ func EKSVPCsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGette
 
 func EKSSubnetsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req := request.(eksSubnetsNoCredentialReq)
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
