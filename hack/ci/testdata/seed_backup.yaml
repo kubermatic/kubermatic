@@ -73,9 +73,9 @@ spec:
       country: DE
       spec:
         vsphere:
-          endpoint: "https://vcenter.loodse.io"
+          endpoint: "https://vcenter.qa.lab.kubermatic.io"
           datacenter: "dc-1"
-          datastore: "exsi-nas"
+          datastore: "HS-FreeNAS"
           cluster: "cl-1"
           rootPath: "/dc-1/vm/e2e-tests"
           templates:

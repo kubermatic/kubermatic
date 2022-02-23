@@ -61,7 +61,8 @@ elif [[ $provider == "openstack" ]]; then
     -openstack-password=${OS_PASSWORD}"
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
-    -vsphere-password=${VSPHERE_E2E_PASSWORD}"
+    -vsphere-password=${VSPHERE_E2E_PASSWORD}
+    -vsphere-datastore=HS-FreeNAS"
 elif [[ $provider == "kubevirt" ]]; then
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"
