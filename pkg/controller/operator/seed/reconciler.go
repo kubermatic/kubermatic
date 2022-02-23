@@ -436,18 +436,6 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
-	if seed.IsDefaultEtcdAutomaticBackupEnabled() {
-		destination := seed.GetEtcdBackupDestination(seed.Spec.EtcdBackupRestore.DefaultDestination)
-
-		creators = []reconciling.NamedConfigMapCreatorGetter{
-			kubermaticseed.RestoreS3SettingsConfigMapCreator(destination),
-		}
-
-		if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, client); err != nil {
-			return fmt.Errorf("failed to reconcile kube-system ConfigMaps: %w", err)
-		}
-	}
-
 	return nil
 }
 

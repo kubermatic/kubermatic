@@ -27,11 +27,8 @@ import (
 )
 
 const (
-	serviceAccountName             = "kubermatic-seed"
-	restoreS3SettingsConfigMapName = "s3-settings"
-	s3EndpointKey                  = "ENDPOINT"
-	s3BucketNameKey                = "BUCKET_NAME"
-	caBundleConfigMapName          = "ca-bundle"
+	serviceAccountName    = "kubermatic-seed"
+	caBundleConfigMapName = "ca-bundle"
 )
 
 func ClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
@@ -66,21 +63,6 @@ func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *
 			}
 
 			return crb, nil
-		}
-	}
-}
-
-func RestoreS3SettingsConfigMapCreator(destination *kubermaticv1.BackupDestination) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return restoreS3SettingsConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if c.Data == nil {
-				c.Data = make(map[string]string)
-			}
-
-			c.Data[s3EndpointKey] = destination.Endpoint
-			c.Data[s3BucketNameKey] = destination.BucketName
-
-			return c, nil
 		}
 	}
 }
