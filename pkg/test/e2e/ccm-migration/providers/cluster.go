@@ -24,10 +24,11 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -142,10 +143,7 @@ func (ccj *CommonClusterJig) waitForClusterControlPlaneReady() error {
 		if err := ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name}, cluster); err != nil {
 			return false, errors.Wrap(err, "failed to get user cluster")
 		}
-		_, cond := kubermaticv1helper.GetClusterCondition(cluster, kubermaticv1.ClusterConditionSeedResourcesUpToDate)
-		if cond != nil && cond.Status == corev1.ConditionTrue {
-			return true, nil
-		}
-		return false, nil
+		_, reconciledSuccessfully := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, kubermatic.Versions{}, true)
+		return reconciledSuccessfully, nil
 	})
 }

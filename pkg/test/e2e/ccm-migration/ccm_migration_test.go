@@ -26,6 +26,8 @@ import (
 	"github.com/onsi/gomega"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
@@ -39,8 +41,6 @@ import (
 )
 
 var _ = ginkgo.Describe("CCM migration", func() {
-	ctx := context.Background()
-
 	var (
 		seedClient            ctrlruntimeclient.Client
 		userClient            ctrlruntimeclient.Client
@@ -185,10 +185,7 @@ func testBody(clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cl
 		if err := clusterJig.Seed().Get(context.TODO(), types.NamespacedName{Name: clusterJig.Name()}, migratingCluster); err != nil {
 			return false, err
 		}
-		if helper.ClusterConditionHasStatus(migratingCluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-			return true, nil
-		}
-		return false, nil
+		return kubermaticv1helper.CCMMigrationCompleted(migratingCluster), nil
 	})).NotTo(gomega.HaveOccurred())
 
 	ginkgo.By("checking that all the needed components are up and running")

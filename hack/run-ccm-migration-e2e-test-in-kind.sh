@@ -44,7 +44,7 @@ source hack/ci/setup-kubermatic-in-kind.sh
 pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-project=${OS_TENANT_NAME}
+    -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
     -openstack-auth-url=${OS_AUTH_URL}
