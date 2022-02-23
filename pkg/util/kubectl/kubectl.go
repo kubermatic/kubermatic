@@ -35,7 +35,7 @@ func BinaryForClusterVersion(version *semver.Version) (string, error) {
 	case 20:
 		binary = "kubectl-1.20"
 	case 21:
-		binary = "kubectl-1.22"
+		binary = "kubectl-1.21"
 	case 22:
 		binary = "kubectl-1.22"
 	default:
