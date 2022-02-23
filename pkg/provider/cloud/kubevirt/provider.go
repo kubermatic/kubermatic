@@ -27,7 +27,9 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type kubevirt struct {
@@ -72,8 +74,26 @@ func (k *kubevirt) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (k *kubevirt) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return k.reconcileCluster(cluster, update)
+}
+
+func (k *kubevirt) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return k.reconcileCluster(cluster, update)
+}
+
+func (k *kubevirt) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	// Reconcile CSI access: Role and Rolebinding
+	client, restConfig, err := k.GetClientWithRestConfigForCluster(cluster)
+	if err != nil {
+		return cluster, err
+	}
+	err = ReconcileCSIRoleRoleBinding(client, restConfig)
+	if err != nil {
+		return cluster, err
+	}
+
+	return cluster, nil
 }
 
 func (k *kubevirt) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -82,6 +102,24 @@ func (k *kubevirt) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.Clus
 
 func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
+}
+
+// GetClientWithRestConfigForCluster returns the kubernetes client and the rest config for the KubeVirt underlying cluster.
+func (k *kubevirt) GetClientWithRestConfigForCluster(cluster *kubermaticv1.Cluster) (ctrlruntimeclient.Client, *restclient.Config, error) {
+	if cluster.Spec.Cloud.Kubevirt == nil {
+		return nil, nil, errors.New("No KubeVirt provider spec")
+	}
+	kubeconfig, err := GetCredentialsForCluster(cluster.Spec.Cloud, k.secretKeySelector)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, restConfig, err := NewClientWithRestConfig(kubeconfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return client, restConfig, nil
 }
 
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.

@@ -47,33 +47,15 @@ func NewReconciler(kubeconfig string, clusterName string) (*reconciler, error) {
 	return &reconciler{Client: client, RestConfig: restConfig, ClusterName: clusterName}, nil
 }
 
-func (r *reconciler) ReconcileCSIAccess(ctx context.Context) ([]byte, error) {
-	// soon we are going to change the default namespace to cluster namespace
-	namespace := "default"
-	csiResourceName := "kubevirt-csi"
-
+func (r *reconciler) ReconcileCSIServiceAccount(ctx context.Context) ([]byte, error) {
 	saCreators := []reconciling.NamedServiceAccountCreatorGetter{
 		csiServiceAccountCreator(csiResourceName),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, csiResourceNamespace, r.Client); err != nil {
 		return nil, err
 	}
 
-	roleCreators := []reconciling.NamedRoleCreatorGetter{
-		csiRoleCreator(csiResourceName),
-	}
-	if err := reconciling.ReconcileRoles(ctx, roleCreators, namespace, r.Client); err != nil {
-		return nil, err
-	}
-
-	roleBindingCreators := []reconciling.NamedRoleBindingCreatorGetter{
-		csiRoleBindingCreator(csiResourceName, namespace),
-	}
-	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, namespace, r.Client); err != nil {
-		return nil, err
-	}
-
-	return r.GenerateKubeConfigForSA(ctx, csiResourceName, namespace)
+	return r.GenerateKubeConfigForSA(ctx, csiResourceName, csiResourceNamespace)
 }
 
 func (r *reconciler) GenerateKubeConfigForSA(ctx context.Context, name string, namespace string) ([]byte, error) {
