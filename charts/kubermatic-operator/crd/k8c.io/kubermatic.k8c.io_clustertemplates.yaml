@@ -604,6 +604,9 @@ spec:
                             description: Prism Element Endpoint to access Nutanix
                               Prism Element for csi driver
                             type: string
+                          fstype:
+                            description: 'Optional: defaults to "xfs"'
+                            type: string
                           password:
                             description: Prism Element Password for csi driver
                             type: string
@@ -612,6 +615,12 @@ spec:
                               the Nutanix Prism Element endpoint (defaults to 9440)'
                             format: int32
                             type: integer
+                          ssSegmentedIscsiNetwork:
+                            description: 'Optional: defaults to "false"'
+                            type: boolean
+                          storageContainer:
+                            description: 'Optional: defaults to "Default"'
+                            type: string
                           username:
                             description: Prism Element Username for csi driver
                             type: string

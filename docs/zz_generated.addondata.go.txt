@@ -51,10 +51,10 @@ type ClusterData struct {
 	Features sets.String
 	// CNIPlugin contains the CNIPlugin settings
 	CNIPlugin CNIPlugin
+	// CSI specific options, dependent on provider
+	CSI CSIOptions
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA MLASettings
-	// StoragePolicy is the storage policy to use for vsphere csi addon
-	StoragePolicy string
 	// CSIMigration indicates if the cluster needed the CSIMigration
 	CSIMigration bool
 }
@@ -88,6 +88,18 @@ type ClusterNetwork struct {
 type CNIPlugin struct {
 	Type    string
 	Version string
+}
+
+type CSIOptions struct {
+
+	// vsphere
+	// StoragePolicy is the storage policy to use for vsphere csi addon
+	StoragePolicy string
+
+	// nutanix
+	StorageContainer        string
+	Fstype                  string
+	SsSegmentedIscsiNetwork *bool
 }
 
 type MLASettings struct {

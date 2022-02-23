@@ -91,14 +91,16 @@ func NewTemplateData(
 		return nil, fmt.Errorf("cniPlugin must not be nil")
 	}
 
-	cniPlugin := CNIPlugin{
-		Type:    cluster.Spec.CNIPlugin.Type.String(),
-		Version: cluster.Spec.CNIPlugin.Version,
+	var csiOptions CSIOptions
+
+	if cluster.Spec.Cloud.VSphere != nil {
+		csiOptions.StoragePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
 	}
 
-	var storagePolicy string
-	if cluster.Spec.Cloud.VSphere != nil {
-		storagePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
+	if cluster.Spec.Cloud.Nutanix != nil && cluster.Spec.Cloud.Nutanix.CSI != nil {
+		csiOptions.StorageContainer = cluster.Spec.Cloud.Nutanix.CSI.StorageContainer
+		csiOptions.Fstype = cluster.Spec.Cloud.Nutanix.CSI.Fstype
+		csiOptions.SsSegmentedIscsiNetwork = cluster.Spec.Cloud.Nutanix.CSI.SsSegmentedIscsiNetwork
 	}
 
 	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
@@ -131,13 +133,16 @@ func NewTemplateData(
 				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
 				StrictArp:         *cluster.Spec.ClusterNetwork.IPVS.StrictArp,
 			},
-			CNIPlugin: cniPlugin,
+			CNIPlugin: CNIPlugin{
+				Type:    cluster.Spec.CNIPlugin.Type.String(),
+				Version: cluster.Spec.CNIPlugin.Version,
+			},
+			CSI: csiOptions,
 			MLA: MLASettings{
 				MonitoringEnabled: cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled,
 				LoggingEnabled:    cluster.Spec.MLA != nil && cluster.Spec.MLA.LoggingEnabled,
 			},
-			StoragePolicy: storagePolicy,
-			CSIMigration:  csiMigration,
+			CSIMigration: csiMigration,
 		},
 	}, nil
 }
@@ -186,10 +191,10 @@ type ClusterData struct {
 	Features sets.String
 	// CNIPlugin contains the CNIPlugin settings
 	CNIPlugin CNIPlugin
+	// CSI specific options, dependent on provider
+	CSI CSIOptions
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA MLASettings
-	// StoragePolicy is the storage policy to use for vsphere csi addon
-	StoragePolicy string
 	// CSIMigration indicates if the cluster needed the CSIMigration
 	CSIMigration bool
 }
@@ -214,6 +219,18 @@ type MLASettings struct {
 	MonitoringEnabled bool
 	// LoggingEnabled is the flag for enabling logging in user cluster.
 	LoggingEnabled bool
+}
+
+type CSIOptions struct {
+
+	// vsphere
+	// StoragePolicy is the storage policy to use for vsphere csi addon
+	StoragePolicy string
+
+	// nutanix
+	StorageContainer        string
+	Fstype                  string
+	SsSegmentedIscsiNetwork *bool
 }
 
 func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {

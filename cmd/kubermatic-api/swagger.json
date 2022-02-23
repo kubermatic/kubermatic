@@ -3633,6 +3633,11 @@
         "parameters": [
           {
             "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -3651,11 +3656,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "header"
           }
         ],
         "responses": {
@@ -24422,6 +24422,11 @@
           "type": "string",
           "x-go-name": "Endpoint"
         },
+        "fstype": {
+          "description": "Optional: defaults to \"xfs\"\n+optional",
+          "type": "string",
+          "x-go-name": "Fstype"
+        },
         "password": {
           "description": "Prism Element Password for csi driver",
           "type": "string",
@@ -24432,6 +24437,16 @@
           "type": "integer",
           "format": "int32",
           "x-go-name": "Port"
+        },
+        "ssSegmentedIscsiNetwork": {
+          "description": "Optional: defaults to \"false\"\n+optional",
+          "type": "boolean",
+          "x-go-name": "SsSegmentedIscsiNetwork"
+        },
+        "storageContainer": {
+          "description": "Optional: defaults to \"Default\"\n+optional",
+          "type": "string",
+          "x-go-name": "StorageContainer"
         },
         "username": {
           "description": "Prism Element Username for csi driver",
