@@ -11,7 +11,7 @@ data:
     datacenter        = "vs-datacenter"
     datastore         = "vs-datastore"
     server            = "vs-endpoint.io"
-    cluster-id        = "vs-cluster"
+    cluster-id        = "de-test-01"
 
     [Disk]
     scsicontrollertype = "pvscsi"
