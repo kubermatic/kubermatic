@@ -246,11 +246,11 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 	volumeMountNameEnvoyConfig := "envoy-config"
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Labels = resources.BaseAppLabels(name, nil)
+			d.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabels(name, nil)
+				MatchLabels: resources.BaseAppLabels(envoyAppLabelValue, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
