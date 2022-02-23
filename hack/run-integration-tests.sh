@@ -78,5 +78,4 @@ echodate "Running integration tests..."
 grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ |
   xargs dirname |
   sort -u |
-  grep -v vsphere |
   xargs -I ^ go test -tags "integration ${KUBERMATIC_EDITION:-ce}" -race ./^
