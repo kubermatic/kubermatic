@@ -118,9 +118,6 @@ func (k *kubevirt) GetClientWithRestConfigForCluster(cluster *kubermaticv1.Clust
 	if err != nil {
 		return nil, nil, err
 	}
-	if err != nil {
-		return nil, nil, err
-	}
 
 	return client, restConfig, nil
 }
