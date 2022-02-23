@@ -64,18 +64,14 @@ func TestProvider_GetVMFolders(t *testing.T) {
 		name            string
 		dc              *kubermaticv1.DatacenterSpecVSphere
 		expectedFolders sets.String
-		// If we check for folders on the root we might have other tests creating folders, so we have to skip that check
-		skipAdditionalFoldersCheck bool
 	}{
 		{
-			name:                       "successfully-list-default-folders",
-			skipAdditionalFoldersCheck: true,
-			dc:                         getTestDC(),
+			name: "successfully-list-default-folders",
+			dc:   getTestDC(),
 			expectedFolders: sets.NewString(
 				path.Join("/", vSphereDatacenter, "vm"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic-e2e-tests"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic-e2e-tests", "test-1"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic-e2e-tests-2"),
+				path.Join("/", vSphereDatacenter, "vm", "e2e-tests"),
+				path.Join("/", vSphereDatacenter, "vm", "kubermatic"),
 			),
 		},
 		{
@@ -83,11 +79,11 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			dc: &kubermaticv1.DatacenterSpecVSphere{
 				Datacenter: vSphereDatacenter,
 				Endpoint:   vSphereEndpoint,
-				RootPath:   path.Join("/", vSphereDatacenter, "vm", "kubermatic-e2e-tests"),
+				RootPath:   path.Join("/", vSphereDatacenter, "vm"),
 			},
 			expectedFolders: sets.NewString(
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic-e2e-tests"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic-e2e-tests", "test-1"),
+				path.Join("/", vSphereDatacenter, "vm", "e2e-tests"),
+				path.Join("/", vSphereDatacenter, "vm", "kubermatic"),
 			),
 		},
 	}
@@ -107,11 +103,6 @@ func TestProvider_GetVMFolders(t *testing.T) {
 
 			if diff := test.expectedFolders.Difference(gotFolders); diff.Len() > 0 {
 				t.Errorf("Response is missing expected folders: %v", diff.List())
-			}
-			if !test.skipAdditionalFoldersCheck {
-				if diff := gotFolders.Difference(test.expectedFolders); diff.Len() > 0 {
-					t.Errorf("Response contains unexpected folders: %v", diff.List())
-				}
 			}
 		})
 	}
