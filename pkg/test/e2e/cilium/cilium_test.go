@@ -570,7 +570,7 @@ func createUsercluster(t *testing.T, proxyMode string) (*rest.Config, string, fu
 		return nil, "", nil, err
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(userconfig))
 	if err != nil {
 		t.Fatalf("failed to build config: %s", err)
 	}
