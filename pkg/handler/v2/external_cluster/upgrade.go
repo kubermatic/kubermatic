@@ -40,7 +40,7 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}

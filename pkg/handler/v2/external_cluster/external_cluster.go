@@ -337,7 +337,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -385,9 +385,9 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 	}
 }
 
-// getClusterReq defines HTTP request for getExternalCluster
-// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig listGKEClusterDiskTypes listGKEClusterSizes listGKEClusterZones listGKEClusterImages
-type getClusterReq struct {
+// GetClusterReq defines HTTP request for getExternalCluster
+// swagger:parameters getExternalCluster getExternalClusterMetrics getExternalClusterUpgrades getExternalClusterKubeconfig listGKEClusterDiskTypes listGKEClusterSizes listGKEClusterZones listGKEClusterImages listAKSNodeVersionsNoCredentials
+type GetClusterReq struct {
 	common.ProjectReq
 	// in: path
 	// required: true
@@ -395,7 +395,7 @@ type getClusterReq struct {
 }
 
 func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req getClusterReq
+	var req GetClusterReq
 
 	pr, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
@@ -413,7 +413,7 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // Validate validates DeleteEndpoint request.
-func (req getClusterReq) Validate() error {
+func (req GetClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
 	}
@@ -633,7 +633,7 @@ func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -1012,7 +1012,7 @@ func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvid
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
-		req := request.(getClusterReq)
+		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
