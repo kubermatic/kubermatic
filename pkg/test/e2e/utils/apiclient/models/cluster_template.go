@@ -50,10 +50,10 @@ type ClusterTemplate struct {
 	UserSSHKeys []*ClusterTemplateSSHKey `json:"userSshKeys"`
 
 	// cluster
-	Cluster *Cluster `json:"cluster,omitempty"`
+	Cluster *ClusterTemplateInfo `json:"cluster,omitempty"`
 
 	// node deployment
-	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
+	NodeDeployment *ClusterTemplateNodeDeployment `json:"nodeDeployment,omitempty"`
 }
 
 // Validate validates this cluster template

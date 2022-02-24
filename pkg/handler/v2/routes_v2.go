@@ -694,12 +694,18 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clustertemplates").
 		Handler(r.createClusterTemplate())
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clustertemplates/import").
+		Handler(r.importClusterTemplate())
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clustertemplates").
 		Handler(r.listClusterTemplates())
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clustertemplates/{template_id}").
 		Handler(r.getClusterTemplate())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clustertemplates/{template_id}/export").
+		Handler(r.exportClusterTemplate())
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clustertemplates/{template_id}").
 		Handler(r.deleteClusterTemplate())
@@ -4302,8 +4308,36 @@ func (r Routing) createClusterTemplate() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter, r.features)),
+		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter, r.features)),
 		clustertemplate.DecodeCreateReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clustertemplates/import project importClusterTemplate
+//
+//     Import a cluster templates for the given project.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterTemplate
+//       401: empty
+//       403: empty
+func (r Routing) importClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(clustertemplate.ImportEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter, r.features)),
+		clustertemplate.DecodeImportReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -4359,6 +4393,31 @@ func (r Routing) getClusterTemplate() http.Handler {
 		)(clustertemplate.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
 		clustertemplate.DecodeGetReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export project exportClusterTemplate
+//
+//     Export cluster template to file.
+//
+//
+//     Produces:
+//     - application/octet-stream
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterTemplate
+//       401: empty
+//       403: empty
+func (r Routing) exportClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.ExportEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
+		clustertemplate.DecodeExportReq,
+		clustertemplate.EncodeClusterTemplate,
 		r.defaultServerOptions()...,
 	)
 }
