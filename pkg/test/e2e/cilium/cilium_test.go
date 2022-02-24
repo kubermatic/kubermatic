@@ -555,7 +555,7 @@ func createUsercluster(t *testing.T, proxyMode string) (*rest.Config, string, fu
 
 	// try to get kubeconfig
 	var userconfig string
-	err = wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+	err = wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
 		t.Logf("trying to get kubeconfig...")
 		// construct clients
 		userconfig, err = apicli.GetKubeconfig(seed, project.ID, cluster.ID)
