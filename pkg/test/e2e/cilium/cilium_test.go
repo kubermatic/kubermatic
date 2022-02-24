@@ -154,7 +154,7 @@ func testUserCluster(t *testing.T, userconfig string) {
 	t.Logf("waiting for nodes to come up")
 	{
 		expectedNodes := 2
-		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
 			nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				t.Logf("failed to get nodes list: %s", err)
@@ -195,7 +195,7 @@ func testUserCluster(t *testing.T, userconfig string) {
 
 	t.Logf("waiting for pods to get ready")
 	{
-		err := wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
+		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
 			t.Logf("checking pod readiness...")
 
 			pods, err := userClient.CoreV1().Pods("kube-system").List(
@@ -335,7 +335,7 @@ func testUserCluster(t *testing.T, userconfig string) {
 
 	t.Logf("waiting for Cilium connectivity pods to get ready")
 	{
-		err := wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
+		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
 			t.Logf("checking pod readiness...")
 
 			names := []string{
@@ -414,7 +414,7 @@ func testUserCluster(t *testing.T, userconfig string) {
 
 	t.Logf("checking for Hubble pods")
 	{
-		err := wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
+		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
 			t.Logf("checking pod readiness...")
 
 			names := []string{
@@ -626,7 +626,7 @@ func createUsercluster(t *testing.T, proxyMode string) (string, string, func(), 
 
 	// try to get kubeconfig
 	var data string
-	err = wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+	err = wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
 		t.Logf("trying to get kubeconfig...")
 		// construct clients
 		data, err = apicli.GetKubeconfig(seed, project.ID, cluster.ID)
