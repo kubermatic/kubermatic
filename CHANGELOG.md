@@ -4,7 +4,7 @@
 
 ### Breaking Changes
 
-- ACTION REQUIRED: Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected versions (v2.19.1 or v2.18.6) is necessary. This will briefly disconnect the user cluster's Kubernetes API until the Deployment is recreated ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
+- ACTION REQUIRED: Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected versions (v2.19.1 or v2.18.6) is necessary ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
 
 ### Bugfixes 
 
@@ -326,7 +326,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 ### Breaking Changes
 
-- ACTION REQUIRED: Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected version (v2.18.6) is necessary. This will briefly disconnect the user cluster's Kubernetes API until the Deployment is recreated ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
+- ACTION REQUIRED: Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected version (v2.18.6) is necessary ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
 
 ### Misc
 
