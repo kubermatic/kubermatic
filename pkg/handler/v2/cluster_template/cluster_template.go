@@ -43,6 +43,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // scopeList holds a list of user cluster template access levels.
@@ -52,7 +53,11 @@ var scopeList = []string{
 	kubermaticv1.GlobalClusterTemplateScope,
 }
 
-const yamlFormat = "yaml"
+const (
+	yamlFormat = "yaml"
+	jsonFormat = "json"
+)
+
 
 func CreateEndpoint(
 	projectProvider provider.ProjectProvider,
@@ -603,7 +608,9 @@ func DecodeExportReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	queryParam := r.URL.Query().Get("format")
 
-	if len(queryParam) > 0 && queryParam != yamlFormat {
+	supportedFormats := sets.NewString(yamlFormat, jsonFormat)
+
+	if len(queryParam) > 0 && !supportedFormats.Has(queryParam) {
 		return nil, fmt.Errorf("not supported file format: %s", queryParam)
 	}
 	req.Format = queryParam
