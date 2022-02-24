@@ -312,17 +312,17 @@ func testUserCluster(t *testing.T, userconfig string) {
 	{
 		s := makeScheme()
 
-		objs1, err := resourcesFromYaml("./testdata/hubble-relay-svc.yaml", s)
+		hubbleRelaySvc, err := resourcesFromYaml("./testdata/hubble-relay-svc.yaml", s)
 		if err != nil {
 			t.Fatalf("failed to read objects from yaml: %v", err)
 		}
 
-		objs2, err := resourcesFromYaml("./testdata/hubble-ui-svc.yaml", s)
+		hubbleUISvc, err := resourcesFromYaml("./testdata/hubble-ui-svc.yaml", s)
 		if err != nil {
 			t.Fatalf("failed to read objects from yaml: %v", err)
 		}
 
-		for _, o := range append(objs1, objs2...) {
+		for _, o := range append(hubbleRelaySvc, hubbleUISvc...) {
 			x := o.(*corev1.Service)
 			_, err := userClient.CoreV1().Services("kube-system").Create(context.Background(), x,
 				metav1.CreateOptions{})
