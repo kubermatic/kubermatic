@@ -28,9 +28,9 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListEKSAMITypesNoCredentials(params *ListEKSAMITypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSAMITypesNoCredentialsOK, error)
+	ListEKSAMITypes(params *ListEKSAMITypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSAMITypesOK, error)
 
-	ListEKSCapacityTypesNoCredentials(params *ListEKSCapacityTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSCapacityTypesNoCredentialsOK, error)
+	ListEKSCapacityTypes(params *ListEKSCapacityTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSCapacityTypesOK, error)
 
 	ListEKSInstanceTypesNoCredentials(params *ListEKSInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSInstanceTypesNoCredentialsOK, error)
 
@@ -52,22 +52,22 @@ type ClientService interface {
 }
 
 /*
-  ListEKSAMITypesNoCredentials gets the e k s a m i types for node group
+  ListEKSAMITypes gets the e k s a m i types for node group
 */
-func (a *Client) ListEKSAMITypesNoCredentials(params *ListEKSAMITypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSAMITypesNoCredentialsOK, error) {
+func (a *Client) ListEKSAMITypes(params *ListEKSAMITypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSAMITypesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListEKSAMITypesNoCredentialsParams()
+		params = NewListEKSAMITypesParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listEKSAMITypesNoCredentials",
+		ID:                 "listEKSAMITypes",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/amitypes",
+		PathPattern:        "/api/v2/eks/amitypes",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListEKSAMITypesNoCredentialsReader{formats: a.formats},
+		Reader:             &ListEKSAMITypesReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -80,32 +80,32 @@ func (a *Client) ListEKSAMITypesNoCredentials(params *ListEKSAMITypesNoCredentia
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListEKSAMITypesNoCredentialsOK)
+	success, ok := result.(*ListEKSAMITypesOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListEKSAMITypesNoCredentialsDefault)
+	unexpectedSuccess := result.(*ListEKSAMITypesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-  ListEKSCapacityTypesNoCredentials gets the e k s capacity types for node group
+  ListEKSCapacityTypes gets the e k s capacity types for node group
 */
-func (a *Client) ListEKSCapacityTypesNoCredentials(params *ListEKSCapacityTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSCapacityTypesNoCredentialsOK, error) {
+func (a *Client) ListEKSCapacityTypes(params *ListEKSCapacityTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSCapacityTypesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListEKSCapacityTypesNoCredentialsParams()
+		params = NewListEKSCapacityTypesParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listEKSCapacityTypesNoCredentials",
+		ID:                 "listEKSCapacityTypes",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/capacitytypes",
+		PathPattern:        "/api/v2/eks/capacitytypes",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListEKSCapacityTypesNoCredentialsReader{formats: a.formats},
+		Reader:             &ListEKSCapacityTypesReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -118,12 +118,12 @@ func (a *Client) ListEKSCapacityTypesNoCredentials(params *ListEKSCapacityTypesN
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListEKSCapacityTypesNoCredentialsOK)
+	success, ok := result.(*ListEKSCapacityTypesOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListEKSCapacityTypesNoCredentialsDefault)
+	unexpectedSuccess := result.(*ListEKSCapacityTypesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

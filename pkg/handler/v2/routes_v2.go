@@ -86,6 +86,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listEKSRegions())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/eks/amitypes").
+		Handler(r.listEKSAMITypes())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/eks/capacitytypes").
+		Handler(r.listEKSCapacityTypes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/aks/validatecredentials").
 		Handler(r.validateAKSCredentials())
 
@@ -870,14 +878,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/amitypes").
-		Handler(r.listEKSAMITypesNoCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/capacitytypes").
-		Handler(r.listEKSCapacityTypesNoCredentials())
-
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes").
 		Handler(r.listEKSInstanceTypesNoCredentials())
@@ -5310,56 +5310,6 @@ func (r Routing) validateEKSCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/amitypes eks listEKSAMITypesNoCredentials
-//
-//     Gets the EKS AMI types for node group.
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: EKSAMITypes
-//       401: empty
-//       403: empty
-func (r Routing) listEKSAMITypesNoCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(externalcluster.EKSAMITypesWithClusterCredentialsEndpoint()),
-		common.DecodeEmptyReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/capacitytypes eks listEKSCapacityTypesNoCredentials
-//
-//     Gets the EKS Capacity types for node group.
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: EKSCapacityTypes
-//       401: empty
-//       403: empty
-func (r Routing) listEKSCapacityTypesNoCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(externalcluster.EKSCapacityTypesWithClusterCredentialsEndpoint()),
-		common.DecodeEmptyReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
 // swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes eks listEKSInstanceTypesNoCredentials
 //
 //     Gets the EKS Instance types for node group.
@@ -5568,6 +5518,56 @@ func (r Routing) listEKSRegions() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEKSRegionsEndpoint(r.userInfoGetter, r.presetProvider)),
 		externalcluster.DecodeEKSTypesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/eks/amitypes eks listEKSAMITypes
+//
+//     Gets the EKS AMI types for node group.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSAMITypes
+//       401: empty
+//       403: empty
+func (r Routing) listEKSAMITypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSAMITypesEndpoint()),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/eks/capacitytypes eks listEKSCapacityTypes
+//
+//     Gets the EKS Capacity types for node group.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EKSCapacityTypes
+//       401: empty
+//       403: empty
+func (r Routing) listEKSCapacityTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.EKSCapacityTypesEndpoint()),
+		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

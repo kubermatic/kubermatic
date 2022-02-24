@@ -731,34 +731,6 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 	return nil
 }
 
-func EKSAMITypesWithClusterCredentialsEndpoint() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var ami types.AMITypes = EKSAMITypes
-		var amiTypes apiv2.EKSAMITypes
-
-		for _, amiType := range ami.Values() {
-			// AMI type Custom is not valid
-			if amiType == EKSCustomAMIType {
-				continue
-			}
-			amiTypes = append(amiTypes, string(amiType))
-		}
-		return amiTypes, nil
-	}
-}
-
-func EKSCapacityTypesWithClusterCredentialsEndpoint() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var capacityType types.CapacityTypes = EKSCapacityTypes
-		var capacityTypes apiv2.EKSCapacityTypes
-
-		for _, c := range capacityType.Values() {
-			capacityTypes = append(capacityTypes, string(c))
-		}
-		return capacityTypes, nil
-	}
-}
-
 func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(eksNoCredentialReq)
@@ -954,4 +926,32 @@ func createEKSNodePool(cloudSpec *kubermaticv1.ExternalClusterCloudSpec, machine
 	}
 
 	return &machineDeployment, nil
+}
+
+func EKSAMITypesEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var ami types.AMITypes = EKSAMITypes
+		var amiTypes apiv2.EKSAMITypes
+
+		for _, amiType := range ami.Values() {
+			// AMI type Custom is not valid
+			if amiType == EKSCustomAMIType {
+				continue
+			}
+			amiTypes = append(amiTypes, string(amiType))
+		}
+		return amiTypes, nil
+	}
+}
+
+func EKSCapacityTypesEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var capacityType types.CapacityTypes = EKSCapacityTypes
+		var capacityTypes apiv2.EKSCapacityTypes
+
+		for _, c := range capacityType.Values() {
+			capacityTypes = append(capacityTypes, string(c))
+		}
+		return capacityTypes, nil
+	}
 }
