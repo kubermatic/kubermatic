@@ -126,11 +126,6 @@ func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		}
 	}
 
-	// validate csi is set - required for new clusters
-	if spec.Nutanix.CSI == nil {
-		return errors.New("CSI not configured")
-	}
-
 	return nil
 }
 
