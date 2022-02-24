@@ -58,7 +58,6 @@ const (
 	jsonFormat = "json"
 )
 
-
 func CreateEndpoint(
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
