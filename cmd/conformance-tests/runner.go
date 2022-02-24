@@ -1347,7 +1347,8 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 		cluster.Spec.Cloud.AWS != nil ||
 		cluster.Spec.Cloud.VSphere != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
-		cluster.Spec.Cloud.Hetzner != nil
+		cluster.Spec.Cloud.Hetzner != nil ||
+		cluster.Spec.Cloud.Nutanix != nil
 }
 
 func supportsLBs(cluster *kubermaticv1.Cluster) bool {

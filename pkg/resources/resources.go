@@ -664,7 +664,7 @@ const (
 
 	NutanixCSIValidatingWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
 
-	CSIWebhookSecretName = "csi-webhook-certs"
+	CSISnapshotWebhookSecretName = "csi-snapshot-webhook-certs"
 	// CSIWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	CSIWebhookServingCertCertKeyName = "cert.pem"
 	// CSIWebhookServingCertKeyKeyName is the name for the key that contains the key.

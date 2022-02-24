@@ -839,6 +839,20 @@ type NutanixCSIConfig struct {
 	// Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
 	// +optional
 	Port *int32 `json:"port,omitempty"`
+
+	// Storage Class options
+
+	// Optional: defaults to "Default"
+	// +optional
+	StorageContainer string `json:"storageContainer,omitempty"`
+
+	// Optional: defaults to "xfs"
+	// +optional
+	Fstype string `json:"fstype,omitempty"`
+
+	// Optional: defaults to "false"
+	// +optional
+	SsSegmentedIscsiNetwork *bool `json:"ssSegmentedIscsiNetwork,omitempty"`
 }
 
 // NutanixCloudSpec specifies the access data to Nutanix.

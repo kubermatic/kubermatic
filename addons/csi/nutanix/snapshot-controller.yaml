@@ -712,7 +712,7 @@ spec:
       volumes:
         - name: snapshot-validation-webhook-certs
           secret:
-            secretName: csi-webhook-certs
+            secretName: csi-snapshot-webhook-certs
       priorityClassName: system-cluster-critical
       securityContext:
         seccompProfile:
