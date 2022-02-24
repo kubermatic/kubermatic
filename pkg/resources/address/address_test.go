@@ -38,6 +38,7 @@ const (
 	fakeExternalURL          = "dev.kubermatic.io"
 	fakeClusterNamespaceName = "cluster-ns"
 	externalIP               = "34.89.181.151"
+	loadbBalancerHostName    = "xyz.eu-central-1.cloudprovider.test"
 	testDomain               = "dns-test.kubermatic.io"
 )
 
@@ -48,6 +49,8 @@ func testLookupFunction(host string) ([]net.IP, error) {
 	case "fake-cluster.europe-west3-c.dev.kubermatic.io":
 		fallthrough
 	case "fake-cluster.alias-europe-west3-c.dev.kubermatic.io":
+		return []net.IP{net.IPv4(34, 89, 181, 151)}, nil
+	case loadbBalancerHostName:
 		return []net.IP{net.IPv4(34, 89, 181, 151)}, nil
 	default:
 		return []net.IP{}, nil
@@ -121,6 +124,27 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedIP:           "1.2.3.4",
 			expectedPort:         int32(443),
 			expectedURL:          "https://1.2.3.4:443",
+		},
+		{
+			name: "Verify properties for service type LoadBalancer with LB hostname instead of IP",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{NodePort: int32(443)},
+					},
+				}},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{Hostname: loadbBalancerHostName}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: loadbBalancerHostName,
+			expectedIP:           externalIP,
+			expectedPort:         int32(443),
+			expectedURL:          fmt.Sprintf("https://%s:443", loadbBalancerHostName),
 		},
 		{
 			name: "Verify properties for service type NodePort",
