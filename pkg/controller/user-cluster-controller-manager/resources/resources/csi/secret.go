@@ -30,7 +30,7 @@ import (
 
 func TLSServingCertificateCreator(webhookName string, ca *triple.KeyPair) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.CSIWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+		return resources.CSISnapshotWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}
@@ -48,7 +48,7 @@ func TLSServingCertificateCreator(webhookName string, ca *triple.KeyPair) reconc
 			if b, exists := se.Data[resources.CSIWebhookServingCertCertKeyName]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.CSIWebhookSecretName, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.CSISnapshotWebhookSecretName, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil

@@ -114,7 +114,11 @@ func NutanixCSIConfigMapCreator(data configMapCreatorData) reconciling.NamedConf
 				return nil, err
 			}
 
-			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", data.Cluster().Spec.Cloud.Nutanix.CSI.Endpoint, data.Cluster().Spec.Cloud.Nutanix.CSI.Port, credentials.Nutanix.CSIUsername, credentials.Nutanix.CSIPassword)
+			if data.Cluster().Spec.Cloud.Nutanix.CSI.Port == nil {
+				return nil, errors.New("CSI Port must not be nil")
+			}
+
+			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", data.Cluster().Spec.Cloud.Nutanix.CSI.Endpoint, *data.Cluster().Spec.Cloud.Nutanix.CSI.Port, credentials.Nutanix.CSIUsername, credentials.Nutanix.CSIPassword)
 
 			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigName, nil)
 			cm.Data[resources.CloudConfigKey] = nutanixCsiConf
