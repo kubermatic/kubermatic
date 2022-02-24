@@ -24,6 +24,8 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"net/http"
 	"os"
 	"strings"
@@ -152,329 +154,69 @@ func testUserCluster(t *testing.T, userconfig string) {
 	var nodeIP string
 
 	t.Logf("waiting for nodes to come up")
-	{
-		expectedNodes := 2
-		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
-			nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-			if err != nil {
-				t.Logf("failed to get nodes list: %s", err)
-				return false, nil
-			}
-			if len(nodes.Items) != expectedNodes {
-				t.Logf("node count: %d, expected: %d", len(nodes.Items), expectedNodes)
-				return false, nil
-			}
-
-			readyNodeCount := 0
-
-			for _, node := range nodes.Items {
-				for _, c := range node.Status.Conditions {
-					if c.Type == corev1.NodeReady {
-						readyNodeCount++
-					}
-				}
-			}
-
-			if readyNodeCount != expectedNodes {
-				t.Logf("%d out of %d nodes are ready", readyNodeCount, expectedNodes)
-				return false, nil
-			}
-
-			for _, addr := range nodes.Items[0].Status.Addresses {
-				if addr.Type == corev1.NodeExternalIP {
-					nodeIP = addr.Address
-					break
-				}
-			}
-			return true, nil
-		})
-		if err != nil {
-			t.Fatalf("nodes never became ready: %v", err)
-		}
-	}
+	nodeIP = checkNodeReadiness(t, userClient, nodeIP)
 
 	t.Logf("waiting for pods to get ready")
-	{
-		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
-			t.Logf("checking pod readiness...")
-
-			pods, err := userClient.CoreV1().Pods("kube-system").List(
-				context.Background(), metav1.ListOptions{})
-			if err != nil {
-				t.Logf("failed to get pod list: %s", err)
-				return false, nil
-			}
-
-			names := []string{
-				"cilium-operator",
-				"cilium",
-			}
-
-			pods.Items = filterByLabel(pods.Items, "k8s-app", names...)
-
-			if len(pods.Items) == 0 {
-				t.Logf("no cilium pods found")
-				return false, nil
-			}
-
-			allRunning := true
-			for _, pod := range pods.Items {
-				if pod.Status.Phase != corev1.PodRunning {
-					allRunning = false
-				}
-				t.Log(pod.Name, pod.Status.Phase)
-			}
-
-			if !allRunning {
-				t.Logf("not all pods running yet...")
-				return false, nil
-			}
-
-			return true, nil
-		})
-		if err != nil {
-			t.Fatalf("pods never became ready: %v", err)
-		}
+	err = waitForPods(t, userClient, "kube-system", "k8s-app", []string{
+		"cilium-operator",
+		"cilium",
+	})
+	if err != nil {
+		t.Fatalf("pods never became ready: %v", err)
 	}
 
 	t.Logf("run Cilium connectivity tests")
-	{
-		_, err := userClient.CoreV1().Namespaces().Create(context.Background(), &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ciliumTestNs,
-			},
-		}, metav1.CreateOptions{})
-		defer func() {
-			err := userClient.CoreV1().Namespaces().Delete(context.Background(), ciliumTestNs,
-				metav1.DeleteOptions{})
-			if err != nil {
-				t.Fatalf("failed to create %q namespace: %v", ciliumTestNs, err)
-			}
-		}()
+
+	_, err = userClient.CoreV1().Namespaces().Create(context.Background(), &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: ciliumTestNs}}, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatalf("failed to create %q namespace: %v", ciliumTestNs, err)
+	}
+	defer func() {
+		err := userClient.CoreV1().Namespaces().Delete(context.Background(), ciliumTestNs, metav1.DeleteOptions{})
 		if err != nil {
 			t.Fatalf("failed to create %q namespace: %v", ciliumTestNs, err)
 		}
+	}()
 
-		t.Logf("namespace %q created", ciliumTestNs)
+	t.Logf("namespace %q created", ciliumTestNs)
 
-		s := makeScheme()
-
-		objs, err := resourcesFromYaml("./testdata/connectivity-check.yaml", s)
-		if err != nil {
-			t.Fatalf("failed to read objects from yaml: %v", err)
-		}
-
-		for _, obj := range objs {
-			switch x := obj.(type) {
-			case *appsv1.Deployment:
-				_, err := userClient.AppsV1().Deployments(ciliumTestNs).Create(context.Background(), x,
-					metav1.CreateOptions{})
-				if err != nil {
-					t.Fatalf("failed to apply resource: %v", err)
-				}
-				t.Logf("created %v", x.Name)
-
-			case *corev1.Service:
-				_, err := userClient.CoreV1().Services(ciliumTestNs).Create(context.Background(), x,
-					metav1.CreateOptions{})
-				if err != nil {
-					t.Fatalf("failed to apply resource: %v", err)
-				}
-				t.Logf("created %v", x.Name)
-
-			case *ciliumv2.CiliumNetworkPolicy:
-				crdConfig := *config
-				crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{
-					Group:   ciliumv2.CustomResourceDefinitionGroup,
-					Version: ciliumv2.CustomResourceDefinitionVersion,
-				}
-				crdConfig.APIPath = "/apis"
-				crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(s)
-				crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-				cs, err := ciliumclientset.NewForConfig(&crdConfig)
-				if err != nil {
-					t.Fatalf("failed to get clientset for config: %v", err)
-				}
-				_, err = cs.CiliumV2().CiliumNetworkPolicies(ciliumTestNs).Create(
-					context.Background(), x, metav1.CreateOptions{})
-				if err != nil {
-					t.Fatalf("failed to create cilium network policy: %v", err)
-				}
-				t.Logf("created %v", x.Name)
-
-			default:
-				t.Fatalf("unknown resource type: %v", obj.GetObjectKind())
-			}
-		}
-	}
+	runCiliumConnectivityTests(t, userClient, config)
 
 	t.Logf("deploy hubble-relay-nodeport and hubble-ui-nodeport services")
-	{
-		s := makeScheme()
-
-		hubbleRelaySvc, err := resourcesFromYaml("./testdata/hubble-relay-svc.yaml", s)
-		if err != nil {
-			t.Fatalf("failed to read objects from yaml: %v", err)
-		}
-
-		hubbleUISvc, err := resourcesFromYaml("./testdata/hubble-ui-svc.yaml", s)
-		if err != nil {
-			t.Fatalf("failed to read objects from yaml: %v", err)
-		}
-
-		for _, o := range append(hubbleRelaySvc, hubbleUISvc...) {
-			x := o.(*corev1.Service)
-			_, err := userClient.CoreV1().Services("kube-system").Create(context.Background(), x,
-				metav1.CreateOptions{})
-			if err != nil {
-				t.Fatalf("failed to apply resource: %v", err)
-			}
-			t.Logf("created %v", x.Name)
-		}
-	}
+	cleanup := deployHubbleServices(t, userClient)
+	defer cleanup()
 
 	t.Logf("waiting for Cilium connectivity pods to get ready")
-	{
-		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
-			t.Logf("checking pod readiness...")
-
-			names := []string{
-				"echo-a",
-				"echo-b",
-				"echo-b-headless",
-				"echo-b-host",
-				"echo-b-host-headless",
-				"host-to-b-multi-node-clusterip",
-				"host-to-b-multi-node-headless",
-				"pod-to-a",
-				"pod-to-a-allowed-cnp",
-				"pod-to-a-denied-cnp",
-				"pod-to-b-intra-node-nodeport",
-				"pod-to-b-multi-node-clusterip",
-				"pod-to-b-multi-node-headless",
-				"pod-to-b-multi-node-nodeport",
-				"pod-to-external-1111",
-				"pod-to-external-fqdn-allow-google-cnp",
-			}
-
-			pods, err := userClient.CoreV1().Pods(ciliumTestNs).List(context.Background(), metav1.ListOptions{})
-			if err != nil {
-				t.Logf("failed to get pod list: %s", err)
-				return false, nil
-			}
-
-			pods.Items = filterByLabel(pods.Items, "name", names...)
-
-			if len(pods.Items) == 0 {
-				t.Logf("no connectivity test pods found")
-				return false, nil
-			}
-
-			allHealthy := true
-			for _, pod := range pods.Items {
-				podHealthy := true
-				if pod.Status.Phase != corev1.PodRunning {
-					podHealthy = false
-					t.Log("not running", pod.Name, pod.Status.Phase)
-				}
-				for _, c := range pod.Status.Conditions {
-					if c.Type == corev1.PodReady {
-						if c.Status != corev1.ConditionTrue {
-							podHealthy = false
-							t.Log("not ready", pod.Name, c.Type, c.Status)
-						}
-					} else if c.Type == corev1.ContainersReady {
-						if c.Status != corev1.ConditionTrue {
-							podHealthy = false
-							t.Log("not container ready", pod.Name, c.Type, c.Status)
-						}
-					}
-				}
-
-				if !podHealthy {
-					t.Logf("%q not healthy", pod.Name)
-				}
-
-				allHealthy = allHealthy && podHealthy
-			}
-
-			if !allHealthy {
-				t.Logf("not all pods healthy yet...")
-				return false, nil
-			}
-
-			t.Logf("all pods healthy")
-
-			return true, nil
-		})
-		if err != nil {
-			t.Fatalf("pods never became ready: %v", err)
-		}
+	err = waitForPods(t, userClient, ciliumTestNs, "name", []string{
+		"echo-a",
+		"echo-b",
+		"echo-b-headless",
+		"echo-b-host",
+		"echo-b-host-headless",
+		"host-to-b-multi-node-clusterip",
+		"host-to-b-multi-node-headless",
+		"pod-to-a",
+		"pod-to-a-allowed-cnp",
+		"pod-to-a-denied-cnp",
+		"pod-to-b-intra-node-nodeport",
+		"pod-to-b-multi-node-clusterip",
+		"pod-to-b-multi-node-headless",
+		"pod-to-b-multi-node-nodeport",
+		"pod-to-external-1111",
+		"pod-to-external-fqdn-allow-google-cnp",
+	})
+	if err != nil {
+		t.Fatalf("pods never became ready: %v", err)
 	}
 
 	t.Logf("checking for Hubble pods")
-	{
-		err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
-			t.Logf("checking pod readiness...")
-
-			names := []string{
-				"hubble-relay",
-				"hubble-ui",
-			}
-
-			pods, err := userClient.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{})
-			if err != nil {
-				t.Logf("failed to get pod list: %s", err)
-				return false, nil
-			}
-
-			pods.Items = filterByLabel(pods.Items, "k8s-app", names...)
-
-			if len(pods.Items) == 0 {
-				t.Logf("no hubble pods found")
-				return false, nil
-			}
-
-			allHealthy := true
-			for _, pod := range pods.Items {
-				podHealthy := true
-				if pod.Status.Phase != corev1.PodRunning {
-					podHealthy = false
-					t.Log("not running", pod.Name, pod.Status.Phase)
-				}
-				for _, c := range pod.Status.Conditions {
-					if c.Type == corev1.PodReady {
-						if c.Status != corev1.ConditionTrue {
-							podHealthy = false
-							t.Log("not ready", pod.Name, c.Type, c.Status)
-						}
-					} else if c.Type == corev1.ContainersReady {
-						if c.Status != corev1.ConditionTrue {
-							podHealthy = false
-							t.Log("not container ready", pod.Name, c.Type, c.Status)
-						}
-					}
-				}
-
-				if !podHealthy {
-					t.Logf("%q not healthy", pod.Name)
-				}
-
-				allHealthy = allHealthy && podHealthy
-			}
-
-			if !allHealthy {
-				t.Logf("not all pods healthy yet...")
-				return false, nil
-			}
-
-			t.Logf("all hubble pods healthy")
-
-			return true, nil
-		})
-		if err != nil {
-			t.Fatalf("pods never became ready: %v", err)
-		}
+	err = waitForPods(t, userClient, "kube-system", "k8s-app", []string{
+		"hubble-relay",
+		"hubble-ui",
+	})
+	if err != nil {
+		t.Fatalf("pods never became ready: %v", err)
 	}
 
 	t.Logf("test hubble relay observe")
@@ -529,18 +271,204 @@ func testUserCluster(t *testing.T, userconfig string) {
 	}
 }
 
-func filterByLabel(pods []corev1.Pod, key string, values ...string) []corev1.Pod {
-	c := 0
-	for _, p := range pods {
-		for _, v := range values {
-			vv, ok := p.Labels[key]
-			if ok && vv == v {
-				c++
-				pods = append(pods, p)
+func waitForPods(t *testing.T, userClient *kubernetes.Clientset, namespace string, key string, names []string) error {
+	t.Log("checking pod readiness...", namespace, key, names)
+
+	return wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
+		r, err := labels.NewRequirement(key, selection.In, names)
+		if err != nil {
+			t.Logf("failed to build requirement: %v", err)
+			return false, nil
+		}
+		l := labels.NewSelector().Add(*r)
+		pods, err := userClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
+			LabelSelector: l.String(),
+		})
+		if err != nil {
+			t.Logf("failed to get pod list: %s", err)
+			return false, nil
+		}
+
+		if len(pods.Items) == 0 {
+			t.Logf("no pods found")
+			return false, nil
+		}
+
+		allHealthy := allPodsHealthy(pods, t)
+		if !allHealthy {
+			t.Logf("not all pods healthy yet...")
+			return false, nil
+		}
+
+		t.Logf("all pods healthy")
+
+		return true, nil
+	})
+}
+
+func allPodsHealthy(pods *corev1.PodList, t *testing.T) bool {
+	allHealthy := true
+	for _, pod := range pods.Items {
+		podHealthy := true
+		if pod.Status.Phase != corev1.PodRunning {
+			podHealthy = false
+			t.Log("not running", pod.Name, pod.Status.Phase)
+		}
+		for _, c := range pod.Status.Conditions {
+			if c.Type == corev1.PodReady {
+				if c.Status != corev1.ConditionTrue {
+					podHealthy = false
+					t.Log("not ready", pod.Name, c.Type, c.Status)
+				}
+			} else if c.Type == corev1.ContainersReady {
+				if c.Status != corev1.ConditionTrue {
+					podHealthy = false
+					t.Log("not container ready", pod.Name, c.Type, c.Status)
+				}
 			}
 		}
+
+		if !podHealthy {
+			t.Logf("%q not healthy", pod.Name)
+		}
+
+		allHealthy = allHealthy && podHealthy
 	}
-	return pods[len(pods)-c:]
+
+	return allHealthy
+}
+
+func deployHubbleServices(t *testing.T, userClient *kubernetes.Clientset) func() {
+	s := makeScheme()
+
+	hubbleRelaySvc, err := resourcesFromYaml("./testdata/hubble-relay-svc.yaml", s)
+	if err != nil {
+		t.Fatalf("failed to read objects from yaml: %v", err)
+	}
+
+	hubbleUISvc, err := resourcesFromYaml("./testdata/hubble-ui-svc.yaml", s)
+	if err != nil {
+		t.Fatalf("failed to read objects from yaml: %v", err)
+	}
+
+	var cleanups []func()
+	for _, o := range append(hubbleRelaySvc, hubbleUISvc...) {
+		x := o.(*corev1.Service)
+		_, err := userClient.CoreV1().Services("kube-system").Create(context.Background(), x, metav1.CreateOptions{})
+		if err != nil {
+			t.Fatalf("failed to apply resource: %v", err)
+		}
+
+		cleanups = append(cleanups, func() {
+			err := userClient.CoreV1().Services("kube-system").Delete(context.Background(), x.Name, metav1.DeleteOptions{})
+			if err != nil {
+				t.Logf("failed to apply resource: %v", err)
+			}
+		})
+
+		t.Logf("created %v", x.Name)
+	}
+
+	return func() {
+		for _, cleanup := range cleanups {
+			cleanup()
+		}
+	}
+}
+
+func runCiliumConnectivityTests(t *testing.T, userClient *kubernetes.Clientset, config *rest.Config) {
+
+	s := makeScheme()
+
+	objs, err := resourcesFromYaml("./testdata/connectivity-check.yaml", s)
+	if err != nil {
+		t.Fatalf("failed to read objects from yaml: %v", err)
+	}
+
+	for _, obj := range objs {
+		switch x := obj.(type) {
+		case *appsv1.Deployment:
+			_, err := userClient.AppsV1().Deployments(ciliumTestNs).Create(context.Background(), x,
+				metav1.CreateOptions{})
+			if err != nil {
+				t.Fatalf("failed to apply resource: %v", err)
+			}
+			t.Logf("created %v", x.Name)
+
+		case *corev1.Service:
+			_, err := userClient.CoreV1().Services(ciliumTestNs).Create(context.Background(), x,
+				metav1.CreateOptions{})
+			if err != nil {
+				t.Fatalf("failed to apply resource: %v", err)
+			}
+			t.Logf("created %v", x.Name)
+
+		case *ciliumv2.CiliumNetworkPolicy:
+			crdConfig := *config
+			crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{
+				Group:   ciliumv2.CustomResourceDefinitionGroup,
+				Version: ciliumv2.CustomResourceDefinitionVersion,
+			}
+			crdConfig.APIPath = "/apis"
+			crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(s)
+			crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
+			cs, err := ciliumclientset.NewForConfig(&crdConfig)
+			if err != nil {
+				t.Fatalf("failed to get clientset for config: %v", err)
+			}
+			_, err = cs.CiliumV2().CiliumNetworkPolicies(ciliumTestNs).Create(
+				context.Background(), x, metav1.CreateOptions{})
+			if err != nil {
+				t.Fatalf("failed to create cilium network policy: %v", err)
+			}
+			t.Logf("created %v", x.Name)
+
+		default:
+			t.Fatalf("unknown resource type: %v", obj.GetObjectKind())
+		}
+	}
+}
+
+func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, nodeIP string) string {
+	expectedNodes := 2
+	err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
+		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			t.Logf("failed to get nodes list: %s", err)
+			return false, nil
+		}
+		if len(nodes.Items) != expectedNodes {
+			t.Logf("node count: %d, expected: %d", len(nodes.Items), expectedNodes)
+			return false, nil
+		}
+
+		readyNodeCount := 0
+
+		for _, node := range nodes.Items {
+			for _, c := range node.Status.Conditions {
+				if c.Type == corev1.NodeReady {
+					readyNodeCount++
+				}
+			}
+		}
+
+		if readyNodeCount != expectedNodes {
+			t.Logf("%d out of %d nodes are ready", readyNodeCount, expectedNodes)
+			return false, nil
+		}
+
+		for _, addr := range nodes.Items[0].Status.Addresses {
+			if addr.Type == corev1.NodeExternalIP {
+				nodeIP = addr.Address
+				break
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		t.Fatalf("nodes never became ready: %v", err)
+	}
+	return nodeIP
 }
 
 func makeScheme() *runtime.Scheme {
