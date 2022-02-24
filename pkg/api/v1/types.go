@@ -2382,8 +2382,6 @@ const (
 	ClusterTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template"
 	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
 	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
-	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup.
-	SeedClusterTemplateInstanceFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template-instance"
 )
 
 const (
