@@ -48,8 +48,6 @@ import (
 
 const (
 	ControllerName = "cluster_template_controller"
-
-	finalizer = kubermaticapiv1.SeedClusterTemplateInstanceFinalizer
 )
 
 type reconciler struct {
@@ -120,21 +118,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, log *zap.SugaredLogger) error {
 	// handle deletion
 	if !instance.DeletionTimestamp.IsZero() {
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, instance, finalizer)
+		return nil
 	}
 
+	// create all [remaining] clusters
 	if err := r.createClusters(ctx, instance, log); err != nil {
 		return err
 	}
 
-	// set finalizer when all instances are created
-	if err := r.patchInstance(ctx, instance, func(i *kubermaticv1.ClusterTemplateInstance) {
-		i.Spec.Replicas = 0
-		kuberneteshelper.AddFinalizer(i, finalizer)
-	}); err != nil {
-		return err
-	}
-
+	// now that all clusters are created, delete this temporary object
 	return r.seedClient.Delete(ctx, instance)
 }
 
@@ -170,7 +162,6 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 		}
 		partialCluster.Spec = template.Spec
 
-		oldInstance := instance.DeepCopy()
 		for i := 0; i < int(instance.Spec.Replicas); i++ {
 			newCluster := genNewCluster(template, instance, r.workerName)
 			newStatus := newCluster.Status.DeepCopy()
@@ -186,14 +177,16 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 			kuberneteshelper.AddFinalizer(newCluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
 
 			if err := r.seedClient.Create(ctx, newCluster); err != nil {
-				// if error then change number of replicas
 				created := int64(i + 1)
 				totalReplicas := instance.Spec.Replicas
-				instance.Spec.Replicas = totalReplicas - created
-				if err := r.seedClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+
+				if err := r.patchInstance(ctx, instance, func(i *kubermaticv1.ClusterTemplateInstance) {
+					i.Spec.Replicas = totalReplicas - created
+				}); err != nil {
 					return err
 				}
-				return fmt.Errorf("failed to create desired number of clusters. Created %d from %d", created, totalReplicas)
+
+				return fmt.Errorf("failed to create desired number of clusters. Created %d of %d", created, totalReplicas)
 			}
 
 			if err := helper.UpdateClusterStatus(ctx, r.seedClient, newCluster, func(c *kubermaticv1.Cluster) {
