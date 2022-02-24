@@ -82,7 +82,13 @@ func TestReadyCluster(t *testing.T) {
 		t.Logf("go test ./pkg/test/e2e/cilium -v -race -tags e2e -timeout 30m -run TestReadyCluster -args --userconfig <USERCLUSTER KUBECONFIG>")
 		return
 	}
-	testUserCluster(t, userconfig)
+
+	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
+	if err != nil {
+		t.Fatalf("failed to build config: %s", err)
+	}
+
+	testUserCluster(t, config)
 }
 
 func TestCiliumClusters(t *testing.T) {
@@ -121,7 +127,7 @@ func TestCiliumClusters(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			mu.Lock()
-			uc, _, cleanup, err := createUsercluster(t, proxyMode)
+			config, _, cleanup, err := createUsercluster(t, proxyMode)
 			mu.Unlock()
 
 			if err != nil {
@@ -134,18 +140,13 @@ func TestCiliumClusters(t *testing.T) {
 				mu.Unlock()
 			}()
 
-			testUserCluster(t, uc)
+			testUserCluster(t, config)
 		})
 	}
 }
 
 //gocyclo:ignore
-func testUserCluster(t *testing.T, userconfig string) {
-	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
-	if err != nil {
-		t.Fatalf("failed to build config: %s", err)
-	}
-
+func testUserCluster(t *testing.T, config *rest.Config) {
 	userClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		t.Fatalf("failed to create client: %s", err)
@@ -271,7 +272,7 @@ func testUserCluster(t *testing.T, userconfig string) {
 	}
 }
 
-func waitForPods(t *testing.T, userClient *kubernetes.Clientset, namespace string, key string, names []string) error {
+func waitForPods(t *testing.T, client *kubernetes.Clientset, namespace string, key string, names []string) error {
 	t.Log("checking pod readiness...", namespace, key, names)
 
 	return wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
@@ -281,7 +282,7 @@ func waitForPods(t *testing.T, userClient *kubernetes.Clientset, namespace strin
 			return false, nil
 		}
 		l := labels.NewSelector().Add(*r)
-		pods, err := userClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
+		pods, err := client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
 			LabelSelector: l.String(),
 		})
 		if err != nil {
@@ -294,8 +295,7 @@ func waitForPods(t *testing.T, userClient *kubernetes.Clientset, namespace strin
 			return false, nil
 		}
 
-		allHealthy := allPodsHealthy(pods, t)
-		if !allHealthy {
+		if !allPodsHealthy(t, pods) {
 			t.Logf("not all pods healthy yet...")
 			return false, nil
 		}
@@ -306,7 +306,7 @@ func waitForPods(t *testing.T, userClient *kubernetes.Clientset, namespace strin
 	})
 }
 
-func allPodsHealthy(pods *corev1.PodList, t *testing.T) bool {
+func allPodsHealthy(t *testing.T, pods *corev1.PodList) bool {
 	allHealthy := true
 	for _, pod := range pods.Items {
 		podHealthy := true
@@ -362,7 +362,7 @@ func deployHubbleServices(t *testing.T, userClient *kubernetes.Clientset) func()
 		cleanups = append(cleanups, func() {
 			err := userClient.CoreV1().Services("kube-system").Delete(context.Background(), x.Name, metav1.DeleteOptions{})
 			if err != nil {
-				t.Logf("failed to apply resource: %v", err)
+				t.Logf("failed to delete resource: %v", err)
 			}
 		})
 
@@ -377,7 +377,6 @@ func deployHubbleServices(t *testing.T, userClient *kubernetes.Clientset) func()
 }
 
 func runCiliumConnectivityTests(t *testing.T, userClient *kubernetes.Clientset, config *rest.Config) {
-
 	s := makeScheme()
 
 	objs, err := resourcesFromYaml("./testdata/connectivity-check.yaml", s)
@@ -507,17 +506,19 @@ func resourcesFromYaml(filename string, s *runtime.Scheme) ([]runtime.Object, er
 }
 
 // creates a usercluster on aws.
-func createUsercluster(t *testing.T, proxyMode string) (string, string, func(), error) {
+func createUsercluster(t *testing.T, proxyMode string) (*rest.Config, string, func(), error) {
 	var teardowns []func()
 	cleanup := func() {
 		n := len(teardowns)
 		for i := range teardowns {
 			teardowns[n-1-i]()
 		}
-	} // get kubermatic-api client
+	}
+
+	// get kubermatic-api client
 	token, err := utils.RetrieveMasterToken(context.Background())
 	if err != nil {
-		return "", "", nil, err
+		return nil, "", nil, err
 	}
 
 	apicli := utils.NewTestClient(token, t)
@@ -525,7 +526,7 @@ func createUsercluster(t *testing.T, proxyMode string) (string, string, func(), 
 	// create a project
 	project, err := apicli.CreateProject(projectName + "-" + proxyMode + "-" + rand.String(10))
 	if err != nil {
-		return "", "", nil, err
+		return nil, "", nil, err
 	}
 	teardowns = append(teardowns, func() {
 		err := apicli.DeleteProject(project.ID)
@@ -543,7 +544,7 @@ func createUsercluster(t *testing.T, proxyMode string) (string, string, func(), 
 			Type:    "cilium",
 		})
 	if err != nil {
-		return "", "", nil, err
+		return nil, "", nil, err
 	}
 	teardowns = append(teardowns, func() {
 		err := apicli.DeleteCluster(project.ID, seed, cluster.ID) // TODO: this succeeds but cluster is not actually gone why?
@@ -553,36 +554,26 @@ func createUsercluster(t *testing.T, proxyMode string) (string, string, func(), 
 	})
 
 	// try to get kubeconfig
-	var data string
+	var userconfig string
 	err = wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
 		t.Logf("trying to get kubeconfig...")
 		// construct clients
-		data, err = apicli.GetKubeconfig(seed, project.ID, cluster.ID)
+		userconfig, err = apicli.GetKubeconfig(seed, project.ID, cluster.ID)
 		if err != nil {
 			t.Logf("error trying to get kubeconfig: %s", err)
 			return false, nil
 		}
+
 		return true, nil
 	})
 	if err != nil {
-		return "", "", nil, err
+		return nil, "", nil, err
 	}
 
-	file, err := ioutil.TempFile("/tmp", "kubeconfig-")
+	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
 	if err != nil {
-		return "", "", nil, err
+		t.Fatalf("failed to build config: %s", err)
 	}
 
-	err = os.WriteFile(file.Name(), []byte(data), 0664)
-	if err != nil {
-		return "", "", nil, err
-	}
-	teardowns = append(teardowns, func() {
-		err = os.Remove(file.Name())
-		if err != nil {
-			t.Errorf("failed to delete kubeconfig %s: %s", file.Name(), err)
-		}
-	})
-
-	return file.Name(), cluster.ID, cleanup, nil
+	return config, cluster.ID, cleanup, nil
 }
