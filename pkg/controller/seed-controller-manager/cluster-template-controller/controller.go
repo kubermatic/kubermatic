@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -100,7 +101,11 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	instance := &kubermaticv1.ClusterTemplateInstance{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, instance); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster template instance %s: %w", instance.Name, ctrlruntimeclient.IgnoreNotFound(err))
+		if kerrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster template instance %s: %w", request.NamespacedName, err)
 	}
 
 	err := r.reconcile(ctx, instance, log)
@@ -113,20 +118,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, log *zap.SugaredLogger) error {
-	var remove = true
-	var add = false
-
-	// deletion
+	// handle deletion
 	if !instance.DeletionTimestamp.IsZero() {
-		if !kuberneteshelper.HasFinalizer(instance, finalizer) {
-			return nil
-		}
-
-		if err := r.patchFinalizer(ctx, instance, remove); err != nil {
-			return err
-		}
-
-		return nil
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, instance, finalizer)
 	}
 
 	if err := r.createClusters(ctx, instance, log); err != nil {
@@ -134,27 +128,24 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 	}
 
 	// set finalizer when all instances are created
-	if !kuberneteshelper.HasFinalizer(instance, finalizer) {
-		instance.Spec.Replicas = 0
-		if err := r.patchFinalizer(ctx, instance, add); err != nil {
-			return err
-		}
+	if err := r.patchInstance(ctx, instance, func(i *kubermaticv1.ClusterTemplateInstance) {
+		i.Spec.Replicas = 0
+		kuberneteshelper.AddFinalizer(i, finalizer)
+	}); err != nil {
+		return err
 	}
 
 	return r.seedClient.Delete(ctx, instance)
 }
 
-func (r *reconciler) patchFinalizer(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, remove bool) error {
+func (r *reconciler) patchInstance(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, patch func(instance *kubermaticv1.ClusterTemplateInstance)) error {
 	oldInstance := instance.DeepCopy()
 
-	kuberneteshelper.AddFinalizer(instance, finalizer)
-	if remove {
-		kuberneteshelper.RemoveFinalizer(instance, finalizer)
-	}
+	patch(instance)
 
 	if !reflect.DeepEqual(oldInstance, instance) {
 		if err := r.seedClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
-			return fmt.Errorf("failed to update cluster template instance %s finalizer: %w", instance.Name, err)
+			return fmt.Errorf("failed to update cluster template instance %s: %w", instance.Name, err)
 		}
 	}
 
