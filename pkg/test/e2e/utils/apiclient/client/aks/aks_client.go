@@ -28,7 +28,7 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	ListAKSNodePoolModesNoCredentials(params *ListAKSNodePoolModesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesNoCredentialsOK, error)
+	ListAKSNodePoolModes(params *ListAKSNodePoolModesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesOK, error)
 
 	ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodeVersionsNoCredentialsOK, error)
 
@@ -42,22 +42,22 @@ type ClientService interface {
 }
 
 /*
-  ListAKSNodePoolModesNoCredentials gets the a k s node pool modes
+  ListAKSNodePoolModes gets the a k s node pool modes
 */
-func (a *Client) ListAKSNodePoolModesNoCredentials(params *ListAKSNodePoolModesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesNoCredentialsOK, error) {
+func (a *Client) ListAKSNodePoolModes(params *ListAKSNodePoolModesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListAKSNodePoolModesNoCredentialsParams()
+		params = NewListAKSNodePoolModesParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "listAKSNodePoolModesNoCredentials",
+		ID:                 "listAKSNodePoolModes",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/modes",
+		PathPattern:        "/api/v2/providers/aks/modes",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListAKSNodePoolModesNoCredentialsReader{formats: a.formats},
+		Reader:             &ListAKSNodePoolModesReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -70,12 +70,12 @@ func (a *Client) ListAKSNodePoolModesNoCredentials(params *ListAKSNodePoolModesN
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*ListAKSNodePoolModesNoCredentialsOK)
+	success, ok := result.(*ListAKSNodePoolModesOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*ListAKSNodePoolModesNoCredentialsDefault)
+	unexpectedSuccess := result.(*ListAKSNodePoolModesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

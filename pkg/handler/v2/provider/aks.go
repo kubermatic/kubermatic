@@ -104,11 +104,14 @@ func (req aksNoCredentialReq) Validate() error {
 
 // Validate validates aksCommonReq request.
 func (req AKSVMSizesReq) Validate() error {
-	if len(req.Credential) == 0 && len(req.TenantID) == 0 && len(req.SubscriptionID) == 0 && len(req.ClientID) == 0 && len(req.ClientSecret) == 0 {
-		return fmt.Errorf("AKS credentials cannot be empty")
-	}
 	if len(req.Location) == 0 {
 		return fmt.Errorf("AKS Location cannot be empty")
+	}
+	if len(req.Credential) != 0 {
+		return nil
+	}
+	if len(req.TenantID) == 0 || len(req.SubscriptionID) == 0 || len(req.ClientID) == 0 || len(req.ClientSecret) == 0 {
+		return fmt.Errorf("AKS credentials cannot be empty")
 	}
 	return nil
 }
@@ -269,7 +272,7 @@ func AKSSizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 	}
 }
 
-func AKSNodePoolModesWithClusterCredentialsEndpoint() endpoint.Endpoint {
+func AKSNodePoolModesEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var modes apiv2.AKSNodePoolModes
 
