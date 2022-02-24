@@ -70,8 +70,6 @@ set -x
   -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
   -worker-name="$(worker_name)" \
   -external-url=dev.kubermatic.io \
-  -backup-container=charts/kubermatic/static/store-container.yaml \
-  -cleanup-container=charts/kubermatic/static/cleanup-container.yaml \
   -docker-pull-config-json-file=$DOCKERCONFIGJSON \
   -oidc-issuer-url=$OIDC_ISSUER_URL \
   -oidc-issuer-client-id=$OIDC_ISSUER_CLIENT_ID \

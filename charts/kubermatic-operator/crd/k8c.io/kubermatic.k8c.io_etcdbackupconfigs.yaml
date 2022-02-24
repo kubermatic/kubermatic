@@ -79,9 +79,8 @@ spec:
                 type: object
               destination:
                 description: Destination indicates where the backup will be stored.
-                  The destination name should correspond to a destination in the cluster's
-                  Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination
-                  in Seed.Spec.BackupRestore
+                  The destination name must correspond to a destination in the cluster's
+                  Seed.Spec.EtcdBackupRestore.
                 type: string
               keep:
                 description: Keep is the number of backups to keep around before deleting
@@ -99,6 +98,7 @@ spec:
                 type: string
             required:
             - cluster
+            - destination
             - name
             type: object
           status:

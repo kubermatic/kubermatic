@@ -48,28 +48,24 @@ type controllerRunOptions struct {
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 
-	externalURL                       string
-	seedName                          string
-	workerName                        string
-	workerCount                       int
-	overwriteRegistry                 string
-	nodeAccessNetwork                 string
-	addonsPath                        string
-	backupContainerFile               string
-	backupDeleteContainerFile         string
-	cleanupContainerFile              string
-	backupContainerImage              string
-	backupInterval                    string
-	etcdDiskSize                      resource.Quantity
-	dockerPullConfigJSONFile          string
-	kubermaticImage                   string
-	etcdLauncherImage                 string
-	enableEtcdBackupRestoreController bool
-	dnatControllerImage               string
-	namespace                         string
-	concurrentClusterUpdate           int
-	addonEnforceInterval              int
-	caBundle                          *certificates.CABundle
+	externalURL              string
+	seedName                 string
+	workerName               string
+	workerCount              int
+	overwriteRegistry        string
+	nodeAccessNetwork        string
+	addonsPath               string
+	backupContainerImage     string
+	backupInterval           string
+	etcdDiskSize             resource.Quantity
+	dockerPullConfigJSONFile string
+	kubermaticImage          string
+	etcdLauncherImage        string
+	dnatControllerImage      string
+	namespace                string
+	concurrentClusterUpdate  int
+	addonEnforceInterval     int
+	caBundle                 *certificates.CABundle
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration
@@ -123,9 +119,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
-	flag.StringVar(&c.backupDeleteContainerFile, "backup-delete-container", "", "Filepath of a backup deletion container yaml. It receives the name of the backup to delete in an env variable ($BACKUP_TO_DELETE). If not specified, the backup container must handle deletion.")
-	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "(Only required for the old backup controller) Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
 	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&c.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
@@ -136,7 +129,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", defaults.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", defaults.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
-	flag.BoolVar(&c.enableEtcdBackupRestoreController, "enable-etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaults.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for Seed resources")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
@@ -207,10 +199,6 @@ func (o controllerRunOptions) validate() error {
 
 	if o.seedName == "" {
 		return fmt.Errorf("seed-name is undefined")
-	}
-
-	if o.backupContainerFile == "" {
-		return fmt.Errorf("backup-container is undefined")
 	}
 
 	return nil

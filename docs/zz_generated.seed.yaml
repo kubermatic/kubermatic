@@ -4,10 +4,6 @@ metadata:
   name: <<exampleseed>>
   namespace: kubermatic
 spec:
-  # BackupRestore when set, enables backup and restore controllers with given configuration.
-  # Deprecated: use EtcdBackupRestore instead which allows for multiple destinations. For now, it's still supported and
-  # will work if set.
-  backupRestore: null
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
   country: ""
@@ -301,7 +297,8 @@ spec:
       replicas: 1
       resources: null
       tolerations: null
-  # EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed
+  # EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
+  # if this is set, the new backup/restore controllers are enabled for this Seed.
   etcdBackupRestore: null
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
   exposeStrategy: NodePort

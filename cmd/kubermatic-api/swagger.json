@@ -22133,10 +22133,10 @@
     },
     "EtcdBackupRestore": {
       "type": "object",
-      "title": "EtcdBackupRestore holds the configuration of the automatic backup restores.",
+      "title": "EtcdBackupRestore holds the configuration of the automatic backup and restores.",
       "properties": {
         "defaultDestination": {
-          "description": "DefaultDestination Optional setting which marks the default destination that will be used for the default etcd backup config which is\ncreated for every user cluster. If not set, the default etcd backup config won't be created (unless the legacy Seed.Spec.BackupRestore is used).\nHas to correspond to a destination in Destinations.\nIf removed, it removes the related default etcd backup configs.",
+          "description": "DefaultDestination marks the default destination that will be used for the default etcd backup config which is\ncreated for every user cluster. Has to correspond to a destination in Destinations.\nIf removed, it removes the related default etcd backup configs.",
           "type": "string",
           "x-go-name": "DefaultDestination"
         },
@@ -26413,9 +26413,6 @@
       "description": "Seed represents a seed object",
       "type": "object",
       "properties": {
-        "backupRestore": {
-          "$ref": "#/definitions/SeedBackupRestoreConfiguration"
-        },
         "country": {
           "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
           "type": "string",
@@ -26462,24 +26459,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "SeedBackupRestoreConfiguration": {
-      "description": "Deprecated: use EtcdBackupRestore.",
-      "type": "object",
-      "title": "SeedBackupRestoreConfiguration defines the bucket name and endpoint as a backup destination.",
-      "properties": {
-        "s3BucketName": {
-          "description": "S3BucketName is the S3 bucket name to use for backup and restore.",
-          "type": "string",
-          "x-go-name": "S3BucketName"
-        },
-        "s3Endpoint": {
-          "description": "S3Endpoint is the S3 API endpoint to use for backup and restore.",
-          "type": "string",
-          "x-go-name": "S3Endpoint"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-    },
     "SeedMLASettings": {
       "type": "object",
       "title": "SeedMLASettings allow configuring seed level MLA (Monitoring, Logging \u0026 Alerting) stack settings.",
@@ -26521,9 +26500,6 @@
       "type": "object",
       "title": "The spec for a seed data.",
       "properties": {
-        "backupRestore": {
-          "$ref": "#/definitions/SeedBackupRestoreConfiguration"
-        },
         "country": {
           "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
           "type": "string",
