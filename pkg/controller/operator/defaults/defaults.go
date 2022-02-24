@@ -764,27 +764,6 @@ command:
     --host=$ENDPOINT \
     --host-bucket='%(bucket).'$ENDPOINT \
     put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
-env:
-- name: ACCESS_KEY_ID
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: ACCESS_KEY_ID
-- name: SECRET_ACCESS_KEY
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: SECRET_ACCESS_KEY
-- name: BUCKET_NAME
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: BUCKET_NAME
-- name: ENDPOINT
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: ENDPOINT
 volumeMounts:
 - name: etcd-backup
   mountPath: /backup
@@ -817,27 +796,6 @@ command:
     exit $?
     ;;
   esac
-env:
-- name: ACCESS_KEY_ID
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: ACCESS_KEY_ID
-- name: SECRET_ACCESS_KEY
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: SECRET_ACCESS_KEY
-- name: BUCKET_NAME
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: BUCKET_NAME
-- name: ENDPOINT
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: ENDPOINT
 `
 
 const DefaultBackupCleanupContainer = `

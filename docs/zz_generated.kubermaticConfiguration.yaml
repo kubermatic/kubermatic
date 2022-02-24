@@ -210,27 +210,6 @@ spec:
           exit $?
           ;;
         esac
-      env:
-      - name: ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: backup-s3
-            key: ACCESS_KEY_ID
-      - name: SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: backup-s3
-            key: SECRET_ACCESS_KEY
-      - name: BUCKET_NAME
-        valueFrom:
-          configMapKeyRef:
-            name: s3-settings
-            key: BUCKET_NAME
-      - name: ENDPOINT
-        valueFrom:
-          configMapKeyRef:
-            name: s3-settings
-            key: ENDPOINT
     # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
     backupStoreContainer: |
       name: store-container
