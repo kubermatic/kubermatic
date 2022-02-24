@@ -272,7 +272,7 @@ func ExportEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 
 		return &encodeClusterTemplateResponse{
 			clusterTemplate: clusterTemplate,
-			filePrefix:      req.ClusterTemplateID,
+			fileSuffix:      req.ClusterTemplateID,
 			format:          req.Format,
 		}, nil
 	}
@@ -493,7 +493,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 
 type encodeClusterTemplateResponse struct {
 	clusterTemplate *apiv2.ClusterTemplate
-	filePrefix      string
+	fileSuffix      string
 	format          string
 }
 
@@ -502,8 +502,8 @@ func EncodeClusterTemplate(_ context.Context, w http.ResponseWriter, response in
 	clusterTemplate := rsp.clusterTemplate
 	filename := "clusterTemplate"
 
-	if len(rsp.filePrefix) > 0 {
-		filename = fmt.Sprintf("%s-%s", filename, rsp.filePrefix)
+	if len(rsp.fileSuffix) > 0 {
+		filename = fmt.Sprintf("%s-%s", filename, rsp.fileSuffix)
 	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
