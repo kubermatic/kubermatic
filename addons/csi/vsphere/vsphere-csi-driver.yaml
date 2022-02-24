@@ -21,6 +21,9 @@
 #   - template function to replace base registry
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
+#   - set "block-volume-snapshot": "true"
+#   - add csi-snapshotter container
+
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -180,7 +183,7 @@ data:
   "async-query-volume": "true"
   "improved-csi-idempotency": "true"
   "improved-volume-topology": "false"
-  "block-volume-snapshot": "false"
+  "block-volume-snapshot": "true"
   "csi-windows-support": "false"
 kind: ConfigMap
 metadata:
@@ -399,6 +402,19 @@ spec:
             # needed only for topology aware setup
             #- "--feature-gates=Topology=true"
             #- "--strict-topology"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - name: csi-snapshotter
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v4.1.1
+          args:
+            - "--v=4"
+            - "--timeout=300s"
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
