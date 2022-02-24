@@ -270,7 +270,10 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 
-	return resources.SanitizeEnvVars(vars), nil
+	vars = resources.SanitizeEnvVars(vars)
+	vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})
+
+	return vars, nil
 }
 
 func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, enableOperatingSystemManager bool) []string {
