@@ -326,33 +326,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", configCopy.Spec.SeedController.MaximumParallelReconciles)
 	}
 
-	if configCopy.Spec.SeedController.BackupStoreContainer == "" {
-		if configCopy.Spec.SeedController.BackupRestore.Enabled {
-			configCopy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultNewBackupStoreContainer)
-		} else {
-			configCopy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
-		}
-		logger.Debugw("Defaulting field", "field", "seedController.backupStoreContainer")
-	}
-
-	if configCopy.Spec.SeedController.BackupCleanupContainer == "" && !configCopy.Spec.SeedController.BackupRestore.Enabled {
-		configCopy.Spec.SeedController.BackupCleanupContainer = strings.TrimSpace(DefaultBackupCleanupContainer)
-		logger.Debugw("Defaulting field", "field", "seedController.backupCleanupContainer")
-	}
-
-	if configCopy.Spec.SeedController.BackupRestore.Enabled {
-		if configCopy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
-			configCopy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
-		}
-		if configCopy.Spec.SeedController.BackupRestore.S3BucketName == "" {
-			return nil, fmt.Errorf("backupRestore.enabled is set, but s3BucketName is unset")
-		}
-		if configCopy.Spec.SeedController.BackupDeleteContainer == "" {
-			configCopy.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(DefaultNewBackupDeleteContainer)
-			logger.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
-		}
-	}
-
 	if configCopy.Spec.SeedController.Replicas == nil {
 		configCopy.Spec.SeedController.Replicas = pointer.Int32Ptr(DefaultSeedControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)
@@ -761,27 +734,6 @@ command:
     --host=$ENDPOINT \
     --host-bucket='%(bucket).'$ENDPOINT \
     put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
-env:
-- name: ACCESS_KEY_ID
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: ACCESS_KEY_ID
-- name: SECRET_ACCESS_KEY
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: SECRET_ACCESS_KEY
-- name: BUCKET_NAME
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: BUCKET_NAME
-- name: ENDPOINT
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: ENDPOINT
 volumeMounts:
 - name: etcd-backup
   mountPath: /backup
@@ -814,27 +766,6 @@ command:
     exit $?
     ;;
   esac
-env:
-- name: ACCESS_KEY_ID
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: ACCESS_KEY_ID
-- name: SECRET_ACCESS_KEY
-  valueFrom:
-    secretKeyRef:
-      name: backup-s3
-      key: SECRET_ACCESS_KEY
-- name: BUCKET_NAME
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: BUCKET_NAME
-- name: ENDPOINT
-  valueFrom:
-    configMapKeyRef:
-      name: s3-settings
-      key: ENDPOINT
 `
 
 const DefaultBackupCleanupContainer = `

@@ -30,6 +30,7 @@ metadata:
     worker-name: "__BUILD_ID__"
 spec:
   etcdBackupRestore:
+    defaultDestination: minio
     destinations:
       minio:
         bucketName: kkpbackupe2e

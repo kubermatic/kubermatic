@@ -242,7 +242,6 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.Seed
 		ProxySettings:     seedSpec.ProxySettings,
 		ExposeStrategy:    seedSpec.ExposeStrategy,
 		MLA:               seedSpec.MLA,
-		BackupRestore:     seedSpec.BackupRestore,
 		EtcdBackupRestore: seedSpec.EtcdBackupRestore,
 	}
 	if seedSpec.Datacenters != nil {
