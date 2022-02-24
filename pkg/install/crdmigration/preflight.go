@@ -71,6 +71,11 @@ func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt 
 		success = false
 	}
 
+	if err := validateEtcdBackupConfiguration(ctx, logger, opt); err != nil {
+		logger.Errorf("etcd backup configuration check failed: %v", err)
+		success = false
+	}
+
 	if err := validateCRDsExist(ctx, logger, opt); err != nil {
 		logger.Errorf("CustomResourceDefinition check failed: %v", err)
 		success = false
@@ -378,6 +383,22 @@ func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Opti
 
 	if checklist.Len() > 0 {
 		return fmt.Errorf("could not find files containing the CRDs for %v", checklist.List())
+	}
+
+	return nil
+}
+
+func validateEtcdBackupConfiguration(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
+	logger.Info("Validating etcd backup configuration…")
+
+	for name, seed := range opt.Seeds {
+		if seed.Spec.BackupRestore != nil {
+			return fmt.Errorf("Seed %s uses the deprecated `backupRestore` configuration; please migrate to the `etcdBackupRestore` configuration before proceeding, as the deprecated options have been removed in KKP 2.20", name)
+		}
+
+		if seed.Spec.EtcdBackupRestore.DefaultDestination == nil {
+			return fmt.Errorf("Seed %s does not set a default backup destination in `etcdBackupRestore`; please configure a default destination", name)
+		}
 	}
 
 	return nil
