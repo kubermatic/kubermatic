@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
+	oldv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 
@@ -398,6 +399,25 @@ func validateEtcdBackupConfiguration(ctx context.Context, logger logrus.FieldLog
 
 		if seed.Spec.EtcdBackupRestore.DefaultDestination == nil {
 			return fmt.Errorf("Seed %s does not set a default backup destination in `etcdBackupRestore`; please configure a default destination", name)
+		}
+	}
+
+	for name, client := range opt.SeedClients {
+		etcdBackupList := &oldv1.EtcdBackupConfigList{}
+		if err := client.List(ctx, etcdBackupList); err != nil {
+			return fmt.Errorf("failed to list EtcdBackupConfig objects in Seed %s: %w", name, err)
+		}
+
+		invalidObjects := []string{}
+
+		for _, item := range etcdBackupList.Items {
+			if item.Spec.Destination == "" {
+				invalidObjects = append(invalidObjects, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
+			}
+		}
+
+		if len(invalidObjects) > 0 {
+			return fmt.Errorf("Seed %s has EtcdBackupConfig objects (%s) that do not specify a destination; please ensure each object has a destination pointing to the etcdBackupRestore configuration in the Seed", name, invalidObjects)
 		}
 	}
 
