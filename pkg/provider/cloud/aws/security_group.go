@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -120,16 +121,27 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 		groupID = *out.GroupId
 	}
 
+	ipv4Permissions := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv6Permissions := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+
+	permissions := getCommonSecurityGroupPermissions(groupID, ipv4Permissions, ipv6Permissions)
+
+	lowPort, highPort := getNodePortRange(cluster)
 	nodePortsAllowedIPRange := cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange
-	if nodePortsAllowedIPRange == "" {
-		nodePortsAllowedIPRange = "0.0.0.0/0"
+
+	if nodePortsAllowedIPRange != "" {
+		permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, nodePortsAllowedIPRange)...)
+	} else {
+		if ipv4Permissions {
+			permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, "0.0.0.0/0")...)
+		}
+		if ipv6Permissions {
+			permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, "::/0")...)
+		}
 	}
 
 	// Iterate over the permissions and add them one by one, because if an error occurs
 	// (e.g., one permission already exists) none of them would be created
-	lowPort, highPort := getNodePortRange(cluster)
-	permissions := getSecurityGroupPermissions(groupID, lowPort, highPort, nodePortsAllowedIPRange)
-
 	for _, perm := range permissions {
 		// try to add permission
 		_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
@@ -159,8 +171,8 @@ func getNodePortRange(cluster *kubermaticv1.Cluster) (int, int) {
 		NodePorts()
 }
 
-func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int, nodePortsAllowedIPRange string) []*ec2.IpPermission {
-	return []*ec2.IpPermission{
+func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, ipv6Permissions bool) []*ec2.IpPermission {
+	permissions := []*ec2.IpPermission{
 		// all protocols from within the sg
 		{
 			IpProtocol: aws.String("-1"),
@@ -168,37 +180,56 @@ func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int, 
 				GroupId: aws.String(securityGroupID),
 			}},
 		},
+	}
+	if ipv4Permissions {
+		permissions = append(permissions, []*ec2.IpPermission{
+			// tcp:22 from everywhere
+			{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(provider.DefaultSSHPort),
+				ToPort:     aws.Int64(provider.DefaultSSHPort),
+				IpRanges: []*ec2.IpRange{{
+					CidrIp: aws.String("0.0.0.0/0"),
+				}},
+			},
+			// ICMP from/to everywhere
+			{
+				IpProtocol: aws.String("icmp"),
+				FromPort:   aws.Int64(-1), // any port
+				ToPort:     aws.Int64(-1), // any port
+				IpRanges: []*ec2.IpRange{{
+					CidrIp: aws.String("0.0.0.0/0"),
+				}},
+			},
+		}...)
+	}
+	if ipv6Permissions {
+		permissions = append(permissions, []*ec2.IpPermission{
+			// tcp:22 from everywhere
+			{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(provider.DefaultSSHPort),
+				ToPort:     aws.Int64(provider.DefaultSSHPort),
+				IpRanges: []*ec2.IpRange{{
+					CidrIp: aws.String("::/0"),
+				}},
+			},
+			// ICMPv6 from/to everywhere
+			{
+				IpProtocol: aws.String("icmpv6"),
+				FromPort:   aws.Int64(-1), // any port
+				ToPort:     aws.Int64(-1), // any port
+				Ipv6Ranges: []*ec2.Ipv6Range{{
+					CidrIpv6: aws.String("::/0"),
+				}},
+			},
+		}...)
+	}
+	return permissions
+}
 
-		// tcp:22 from everywhere
-		{
-			IpProtocol: aws.String("tcp"),
-			FromPort:   aws.Int64(provider.DefaultSSHPort),
-			ToPort:     aws.Int64(provider.DefaultSSHPort),
-			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("0.0.0.0/0"),
-			}},
-		},
-
-		// ICMP from/to everywhere
-		{
-			IpProtocol: aws.String("icmp"),
-			FromPort:   aws.Int64(-1), // any port
-			ToPort:     aws.Int64(-1), // any port
-			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("0.0.0.0/0"),
-			}},
-		},
-
-		// ICMPv6 from/to everywhere
-		{
-			IpProtocol: aws.String("icmpv6"),
-			FromPort:   aws.Int64(-1), // any port
-			ToPort:     aws.Int64(-1), // any port
-			Ipv6Ranges: []*ec2.Ipv6Range{{
-				CidrIpv6: aws.String("::/0"),
-			}},
-		},
-
+func getNodePortSecurityGroupPermissions(lowPort, highPort int, nodePortsAllowedIPRange string) []*ec2.IpPermission {
+	return []*ec2.IpPermission{
 		// tcp:nodeports in given range
 		{
 			IpProtocol: aws.String("tcp"),
