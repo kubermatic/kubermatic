@@ -2120,6 +2120,10 @@ func convertDatacenter(oldDC kubermaticv1.Datacenter) newv1.Datacenter {
 		}
 	}
 
+	if oldSpec.BringYourOwn != nil {
+		newDC.Spec.BringYourOwn = &newv1.DatacenterSpecBringYourOwn{}
+	}
+
 	if oldSpec.Fake != nil {
 		newDC.Spec.Fake = &newv1.DatacenterSpecFake{
 			FakeProperty: oldSpec.Fake.FakeProperty,
