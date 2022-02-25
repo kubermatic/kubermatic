@@ -58,7 +58,6 @@ try() {
 try "Verify code generation" make verify
 try "Spellcheck" make spellcheck
 try "Verify go.mod" make check-dependencies
-try "Verify legacy kubermatic chart" ./hack/verify-kubermatic-chart.sh
 try "Verify generated documentation" ./hack/verify-docs.sh
 try "Verify license compatibility" ./hack/verify-licenses.sh
 try "Verify Grafana dashboards" ./hack/verify-grafana-dashboards.sh

@@ -118,6 +118,16 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// this feature is not enabled for this seed, do nothing
+	if !seed.IsDefaultEtcdAutomaticBackupEnabled() {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -143,11 +153,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		return reconcile.Result{}, nil
-	}
-
-	seed, err := r.seedGetter()
-	if err != nil {
-		return reconcile.Result{}, err
 	}
 
 	result, err := r.reconcile(ctx, log, restore, cluster, seed)

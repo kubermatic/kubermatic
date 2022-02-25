@@ -220,12 +220,20 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
-		"--cluster-cidr", cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-		"--allocate-node-cidrs",
 		"--controllers", strings.Join(controllers, ","),
 		"--use-service-account-credentials",
 		// this can't be passed as two strings as the other parameters
 		"--profiling=false",
+	}
+
+	// Cilium uses its own node IPAM, use --allocate-node-cidrs and related flags only for other CNIs
+	if cluster.Spec.CNIPlugin.Type != kubermaticv1.CNIPluginTypeCilium {
+		flags = append(flags, "--allocate-node-cidrs")
+		flags = append(flags, "--cluster-cidr", strings.Join(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks, ","))
+		flags = append(flags, "--service-cluster-ip-range", strings.Join(cluster.Spec.ClusterNetwork.Services.CIDRBlocks, ","))
+		if val := CloudRoutesFlagVal(cluster.Spec.Cloud); val != nil {
+			flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
+		}
 	}
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
@@ -250,10 +258,6 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 			// Ref: https://github.com/kubernetes/kubernetes/pull/77630
 			flags = append(flags, "--cluster-name", cluster.Name)
 		}
-	}
-
-	if val := CloudRoutesFlagVal(cluster.Spec.Cloud); val != nil {
-		flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 	}
 
 	// New flag in v1.12 which gets used to perform permission checks for tokens

@@ -209,6 +209,11 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 			API: kubermaticv1.KubermaticAPIConfiguration{
 				AccessibleAddons: []string{},
 			},
+			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
+				BackupStoreContainer:   defaults.DefaultBackupStoreContainer,
+				BackupCleanupContainer: defaults.DefaultBackupCleanupContainer,
+				BackupDeleteContainer:  defaults.DefaultNewBackupDeleteContainer,
+			},
 		},
 	}
 

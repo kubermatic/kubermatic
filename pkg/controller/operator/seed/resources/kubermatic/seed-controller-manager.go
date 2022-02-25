@@ -73,18 +73,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
 				fmt.Sprintf("-max-parallel-reconcile=%d", cfg.Spec.SeedController.MaximumParallelReconciles),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
-				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
-			}
-
-			if seed.Spec.BackupRestore == nil && seed.Spec.EtcdBackupRestore == nil {
-				args = append(args, fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey))
-			} else if !cfg.Spec.SeedController.BackupRestore.Enabled || cfg.Spec.SeedController.BackupCleanupContainer != "" {
-				args = append(args, fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey))
-			}
-
-			if cfg.Spec.SeedController.BackupRestore.Enabled || seed.Spec.BackupRestore != nil || seed.Spec.EtcdBackupRestore != nil {
-				args = append(args, "-enable-etcd-backups-restores")
-				args = append(args, fmt.Sprintf("-backup-delete-container=/opt/backup/%s", deleteContainerKey))
 			}
 
 			if cfg.Spec.ImagePullSecret != "" {
@@ -127,16 +115,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 						},
 					},
 				},
-				{
-					Name: "backup-container",
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: backupContainersConfigMapName,
-							},
-						},
-					},
-				},
 			}
 
 			volumeMounts := []corev1.VolumeMount{
@@ -148,11 +126,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				{
 					Name:      "ca-bundle",
 					MountPath: "/opt/ca-bundle/",
-					ReadOnly:  true,
-				},
-				{
-					Name:      "backup-container",
-					MountPath: "/opt/backup/",
 					ReadOnly:  true,
 				},
 			}

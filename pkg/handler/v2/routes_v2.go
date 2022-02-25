@@ -98,6 +98,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.validateAKSCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/aks/vmsizes").
+		Handler(r.listAKSVMSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/aks/modes").
+		Handler(r.listAKSNodePoolModes())
+
+	mux.Methods(http.MethodGet).
 		Path("/featuregates").
 		Handler(r.getFeatureGates())
 
@@ -119,7 +127,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/providers/eks/clusters").
 		Handler(r.listEKSClusters())
 
-	// Defines a set of HTTP endpoints for cluster that belong to a project.
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/providers/aks/clusters").
 		Handler(r.listAKSClusters())
@@ -695,12 +702,18 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clustertemplates").
 		Handler(r.createClusterTemplate())
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clustertemplates/import").
+		Handler(r.importClusterTemplate())
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clustertemplates").
 		Handler(r.listClusterTemplates())
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clustertemplates/{template_id}").
 		Handler(r.getClusterTemplate())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clustertemplates/{template_id}/export").
+		Handler(r.exportClusterTemplate())
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clustertemplates/{template_id}").
 		Handler(r.deleteClusterTemplate())
@@ -846,6 +859,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/versions").
+		Handler(r.listAKSNodeVersionsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes").
+		Handler(r.listAKSVMSizesNoCredentials())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images").
 		Handler(r.listGKEClusterImages())
@@ -4309,8 +4330,36 @@ func (r Routing) createClusterTemplate() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter, r.features)),
+		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter, r.features)),
 		clustertemplate.DecodeCreateReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clustertemplates/import project importClusterTemplate
+//
+//     Import a cluster templates for the given project.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterTemplate
+//       401: empty
+//       403: empty
+func (r Routing) importClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(clustertemplate.ImportEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.presetProvider, r.caBundle, r.exposeStrategy, r.sshKeyProvider, r.kubermaticConfigGetter, r.features)),
+		clustertemplate.DecodeImportReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -4366,6 +4415,31 @@ func (r Routing) getClusterTemplate() http.Handler {
 		)(clustertemplate.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
 		clustertemplate.DecodeGetReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export project exportClusterTemplate
+//
+//     Export cluster template to file.
+//
+//
+//     Produces:
+//     - application/octet-stream
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterTemplate
+//       401: empty
+//       403: empty
+func (r Routing) exportClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.ExportEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
+		clustertemplate.DecodeExportReq,
+		clustertemplate.EncodeClusterTemplate,
 		r.defaultServerOptions()...,
 	)
 }
@@ -5407,6 +5481,53 @@ func (r Routing) validateAKSCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/providers/aks/vmsizes aks listAKSVMSizes
+//
+// List AKS available VM sizes in an Azure region.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSVMSizeList
+func (r Routing) listAKSVMSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.ListAKSVMSizesEndpoint(r.presetProvider, r.userInfoGetter)),
+		provider.DecodeAKSVMSizesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/aks/modes aks listAKSNodePoolModes
+//
+//     Gets the AKS node pool modes.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSNodePoolModes
+//       401: empty
+//       403: empty
+func (r Routing) listAKSNodePoolModes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AKSNodePoolModesEndpoint()),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/providers/eks/clusters project listEKSClusters
 //
 // Lists EKS clusters
@@ -5912,6 +6033,56 @@ func (r Routing) listExternalClusterMachineDeploymentMetrics() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListMachineDeploymentMetricsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeGetMachineDeploymentReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/versions aks listAKSNodeVersionsNoCredentials
+//
+//     Gets AKS nodepool available versions.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+//       401: empty
+//       403: empty
+func (r Routing) listAKSNodeVersionsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.AKSNodeVersionsWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/aks/vmsizes aks listAKSVMSizesNoCredentials
+//
+//     Gets AKS available VM sizes in an Azure region.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AKSVMSizeList
+//       401: empty
+//       403: empty
+func (r Routing) listAKSVMSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AKSSizesWithClusterCredentialsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		provider.DecodeAKSNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

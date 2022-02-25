@@ -51,7 +51,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: create cluster template in user scope",
 			Body:             `{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -64,7 +64,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 2: create cluster template in project scope",
 			Body:             `{"name":"test","scope":"project","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -77,7 +77,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 3: create cluster template in global scope by admin",
 			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"john@acme.com","scope":"global","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -103,7 +103,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 5: create cluster template in project scope with SSH key",
 			Body:             `{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"}],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":[{"name":"test","id":"key-c08aa5c7abf34504f18552846485267d-yafn"}],"cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":[{"name":"test","id":"key-c08aa5c7abf34504f18552846485267d-yafn"}],"cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -222,7 +222,7 @@ func TestListClusterTemplates(t *testing.T) {
 					ProjectID: test.GenDefaultProject().Name,
 					User:      test.GenDefaultAPIUser().Email,
 					Scope:     kubermaticv1.UserClusterTemplateScope,
-					Cluster: &apiv1.Cluster{
+					Cluster: &apiv2.ClusterTemplateInfo{
 						Spec: apiv1.ClusterSpec{
 							Cloud: kubermaticv1.CloudSpec{
 								DatacenterName: "fake-dc",
@@ -230,7 +230,7 @@ func TestListClusterTemplates(t *testing.T) {
 							},
 						},
 					},
-					NodeDeployment: &apiv1.NodeDeployment{},
+					NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{},
 				},
 				{
 					Name:      "ct2",
@@ -238,7 +238,7 @@ func TestListClusterTemplates(t *testing.T) {
 					ProjectID: "",
 					User:      "john@acme.com",
 					Scope:     kubermaticv1.GlobalClusterTemplateScope,
-					Cluster: &apiv1.Cluster{
+					Cluster: &apiv2.ClusterTemplateInfo{
 						Spec: apiv1.ClusterSpec{
 							Cloud: kubermaticv1.CloudSpec{
 								DatacenterName: "fake-dc",
@@ -246,7 +246,7 @@ func TestListClusterTemplates(t *testing.T) {
 							},
 						},
 					},
-					NodeDeployment: &apiv1.NodeDeployment{},
+					NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{},
 				},
 				{
 					Name:      "ct4",
@@ -254,7 +254,7 @@ func TestListClusterTemplates(t *testing.T) {
 					ProjectID: test.GenDefaultProject().Name,
 					User:      "john@acme.com",
 					Scope:     kubermaticv1.ProjectClusterTemplateScope,
-					Cluster: &apiv1.Cluster{
+					Cluster: &apiv2.ClusterTemplateInfo{
 						Spec: apiv1.ClusterSpec{
 							Cloud: kubermaticv1.CloudSpec{
 								DatacenterName: "fake-dc",
@@ -262,7 +262,7 @@ func TestListClusterTemplates(t *testing.T) {
 							},
 						},
 					},
-					NodeDeployment: &apiv1.NodeDeployment{},
+					NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{},
 				},
 			},
 			HTTPStatus: http.StatusOK,
@@ -320,7 +320,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 1: get global template",
 			TemplateID:       "ctID2",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct2","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct2","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -352,7 +352,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: get user scope template",
 			TemplateID:       "ctID1",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct1","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct1","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -368,7 +368,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 4: get project scope template",
 			TemplateID:       "ctID4",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct4","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}},"status":{"version":"","url":"","externalCCMMigration":""}},"nodeDeployment":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}},"status":{}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct4","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -589,6 +589,263 @@ func TestCreateClusterTemplateInstance(t *testing.T) {
 				t.Fatal(err)
 			}
 			expectedResponse := fmt.Sprintf(tc.ExpectedResponse, actualClusterTemplateInstance.Name)
+
+			test.CompareWithResult(t, res, expectedResponse)
+		})
+	}
+}
+
+func TestExportlusterTemplates(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExpectedResponse       string
+		TemplateID             string
+		HTTPStatus             int
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: export global template",
+			TemplateID:       "ctID2",
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct2","user":"john@acme.com","scope":"global","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:             "scenario 2: export forbidden user template",
+			TemplateID:       "ctID3",
+			ExpectedResponse: `{"error":{"code":403,"message":"user bob@acme.com can't access template ctID3"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 3
+		{
+			Name:             "scenario 3: export user scope template",
+			TemplateID:       "ctID1",
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct1","user":"bob@acme.com","scope":"user","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 4
+		{
+			Name:             "scenario 4: exportproject scope template",
+			TemplateID:       "ctID4",
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct4","user":"john@acme.com","scope":"project","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 5
+		{
+			Name:             "scenario 5: get template for different project",
+			TemplateID:       "ctID5",
+			ExpectedResponse: `{"error":{"code":403,"message":"cluster template doesn't belong to the project my-first-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct5", "ctID5", "someProjectID", kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clustertemplates/%s/export", test.ProjectName, tc.TemplateID), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			var kubermaticObj []ctrlruntimeclient.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
+func TestImportClusterTemplateEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ProjectToSync          string
+		ExistingProject        *kubermaticv1.Project
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		RewriteClusterID       bool
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: import cluster template in user scope",
+			Body:             `{"name":"test","scope":"user","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			RewriteClusterID: true,
+			HTTPStatus:       http.StatusCreated,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:             "scenario 2: regular user can't import global cluster template",
+			Body:             `{"name":"test","scope":"global","cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"error":{"code":500,"message":"the global scope is reserved only for admins"}}`,
+			HTTPStatus:       http.StatusInternalServerError,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 3
+		{
+			Name:             "scenario 3: import cluster template in project scope with SSH key",
+			Body:             `{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"}],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"test","id":"%s","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"project","userSshKeys":[{"name":"test","id":"key-c08aa5c7abf34504f18552846485267d-yafn"}],"cluster":{"labels":{"project-id":"my-first-project-ID"},"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd"}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			RewriteClusterID: true,
+			HTTPStatus:       http.StatusCreated,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				// add an ssh key
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8c.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+				},
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 4
+		{
+			Name:             "scenario 4: import cluster template in project scope with wrong SSH key",
+			Body:             `{"name":"test","scope":"project","userSshKeys":[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"test"},{"id":"wrong-key","name":"wrong-key"}],"cluster":{"name":"keen-snyder","spec":{"version":"1.22.5","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key wrong-key does not belong to the given project my-first-project (my-first-project-ID)"}}`,
+			HTTPStatus:       http.StatusInternalServerError,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				// add an ssh key
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8c.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+				},
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	dummyKubermaticConfiguration := kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: test.KubermaticNamespace,
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Versions: kubermaticv1.KubermaticVersioningConfiguration{
+				Versions: test.GenDefaultVersions(),
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clustertemplates/import", tc.ProjectToSync), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			var kubermaticObj []ctrlruntimeclient.Object
+			if tc.ExistingProject != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingProject)
+			}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, &dummyKubermaticConfiguration, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			expectedResponse := tc.ExpectedResponse
+			// since Cluster.Name is automatically generated by the system just rewrite it.
+			if tc.RewriteClusterID {
+				actualClusterTemplate := &apiv2.ClusterTemplate{}
+				err = json.Unmarshal(res.Body.Bytes(), actualClusterTemplate)
+				if err != nil {
+					t.Fatal(err)
+				}
+				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualClusterTemplate.ID)
+			}
 
 			test.CompareWithResult(t, res, expectedResponse)
 		})

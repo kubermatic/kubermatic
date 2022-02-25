@@ -1465,8 +1465,6 @@ type VSphereNodeSpec struct {
 	Memory     int    `json:"memory"`
 	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
 	Template   string `json:"template"`
-	// additional instance tags
-	Tags map[string]string `json:"tags"`
 }
 
 func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
@@ -2315,9 +2313,6 @@ type SeedSpec struct {
 	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *kubermaticv1.SeedMLASettings `json:"mla,omitempty"`
-	// Optional: BackupRestore when set, enables backup and restore controllers with given configuration.
-	// Deprecated: use EtcdBackupRestore for multiple backup destination support
-	BackupRestore *kubermaticv1.SeedBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 	// Optional: EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed.
 	// When set, enables automatic etcd backup and restore controllers with given configuration.
 	EtcdBackupRestore *kubermaticv1.EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
@@ -2384,8 +2379,6 @@ const (
 	ClusterTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template"
 	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
 	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
-	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup.
-	SeedClusterTemplateInstanceFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template-instance"
 )
 
 const (

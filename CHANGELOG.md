@@ -1,5 +1,15 @@
 # Kubermatic 2.19
 
+## [v2.19.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.2)
+
+### Breaking Changes
+
+- ACTION REQUIRED: Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected versions (v2.19.1 or v2.18.6) is necessary ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
+
+### Bugfixes 
+
+- Fix applying resource requirements when using incomplete overrides (e.g. specifying only limits, but no request for a container) ([#9045](https://github.com/kubermatic/kubermatic/issues/9045))
+
 ## [v2.19.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.1)
 
 ### Bugfixes
@@ -19,6 +29,11 @@
 - Add endpoints to v2 KKP API to query Nutanix clusters, projects and subnets ([#8736](https://github.com/kubermatic/kubermatic/issues/8736))
 - Do not reference Nutanix cluster in KKP API endpoint path for subnets ([#8906](https://github.com/kubermatic/kubermatic/issues/8906))
 - Support custom pod resources for NodePort-Proxy pod for the user cluster ([#9018](https://github.com/kubermatic/kubermatic/issues/9018))
+
+### Known Issues
+
+- Upgrading to this version is not recommended if the [`LoadBalancer` expose strategy](https://docs.kubermatic.com/kubermatic/v2.19/tutorials_howtos/networking/expose_strategies/) is used due to a bug in the `nodeport-proxy-envoy` Deployment template (#9059).
+- Defining a component override that only gives partial resource configuration (only limits or requests) triggers an exception in the `seed-controller-manager`. If resources are defined in a component override, always define a full set of resource limits and requests to prevent this.
 
 ## [v2.19.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.0)
 
@@ -307,6 +322,16 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 # Kubermatic 2.18
 
+## [v2.18.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.7)
+
+### Breaking Changes
+
+- ACTION REQUIRED: Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected version (v2.18.6) is necessary ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
+
+### Misc
+
+- Fix applying resource requirements when using incomplete overrides (e.g. specifying only limits, but no request for a container) ([#9045](https://github.com/kubermatic/kubermatic/issues/9045))
+
 ## [v2.18.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.6)
 
 ### Bugfixes
@@ -319,6 +344,11 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 ### Misc
 
 - Support custom pod resources for NodePort-Proxy pod for the user cluster ([#9028](https://github.com/kubermatic/kubermatic/issues/9028))
+
+### Known Issues
+
+- Upgrading to this version is not recommended if the [`LoadBalancer` expose strategy](https://docs.kubermatic.com/kubermatic/v2.18/guides/kkp_networking/expose_strategies/) is used due to a bug in the `nodeport-proxy-envoy` Deployment template (#9059).
+- Defining a component override that only gives partial resource configuration (only limits or requests) triggers an exception in the `seed-controller-manager`. If resources are defined in a component override, always define a full set of resource limits and requests to prevent this.
 
 ## [v2.18.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.5)
 

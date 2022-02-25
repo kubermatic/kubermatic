@@ -14,11 +14,8 @@ Update the `defaults.go` variable `DefaultKubernetesVersioning` accordingly.
 Next, re-generate the Helm chart and documentation:
 
 ```bash
-./hack/update-kubermatic-chart.sh
 ./hack/update-docs.sh
 ```
-
-Bump the `kubermatic` chart version in `charts/kubermatic/Chart.yaml`.
 
 As a last step, update the `.prow.yaml` and change the e2e jobs to use the most recent
 patch versions for all support minor versions.
@@ -57,9 +54,6 @@ Once new Docker images are ready, KKP can be updated as well.
 Lastly, re-generate the Helm chart and documentation:
 
 ```bash
-./hack/update-kubermatic-chart.sh
 ./hack/update-docs.sh
 ./hack/update-fixtures.sh
 ```
-
-Bump the `kubermatic` chart version in `charts/kubermatic/Chart.yaml`.

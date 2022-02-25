@@ -26,9 +26,6 @@ type VSphereNodeSpec struct {
 	// memory
 	Memory int64 `json:"memory,omitempty"`
 
-	// additional instance tags
-	Tags map[string]string `json:"tags,omitempty"`
-
 	// template
 	Template string `json:"template,omitempty"`
 }

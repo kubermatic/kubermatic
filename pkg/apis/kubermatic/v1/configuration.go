@@ -155,12 +155,11 @@ type KubermaticSeedControllerConfiguration struct {
 	// BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
 	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
 	// BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
+	// This container is only relevant when the new backup/restore controllers are enabled.
 	BackupDeleteContainer string `json:"backupDeleteContainer,omitempty"`
 	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
+	// This container is only relevant when the old, deprecated backup controllers are enabled.
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
-	// BackupRestore contains the setup of the new backup and restore controllers.
-	// Deprecated: Use Seed.Spec.EtcdBackupRestore. This is legacy field to support old configurations.
-	BackupRestore LegacyKubermaticBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 	// MaximumParallelReconciles limits the number of cluster reconciliations
 	// that are active at any given time.
 	MaximumParallelReconciles int `json:"maximumParallelReconciles,omitempty"`
@@ -173,20 +172,6 @@ type KubermaticSeedControllerConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the seed-controller-manager.
 	Replicas *int32 `json:"replicas,omitempty"`
-}
-
-// Deprecated: Use Seed.Spec.EtcdBackupRestore.
-// LegacyKubermaticBackupRestoreConfiguration are s3 settings used for backups and restores of user cluster etcds.
-type LegacyKubermaticBackupRestoreConfiguration struct {
-	// Enabled enables the new etcd backup and restore controllers.
-	Enabled bool `json:"enabled,omitempty"`
-
-	// +kubebuilder:default=s3.amazonaws.com
-
-	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
-	S3Endpoint string `json:"s3Endpoint,omitempty"`
-	// S3BucketName is the S3 bucket name to use for backup and restore.
-	S3BucketName string `json:"s3BucketName,omitempty"`
 }
 
 // KubermaticWebhookConfiguration configures the Kubermatic webhook.

@@ -26,6 +26,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-kit/kit/endpoint"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -501,10 +502,9 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 		NodeLabels: nodePool.NodeLabels,
 		NodeTaints: to.StringSlice(nodePool.NodeTaints),
 	}
-	if nodePool.UpgradeSettings == nil {
-		return md
+	if nodePool.UpgradeSettings != nil {
+		md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	}
-	md.Cloud.AKS.Configuration.MaxSurgeUpgradeSetting = to.String(nodePool.UpgradeSettings.MaxSurge)
 	return md
 }
 
@@ -694,6 +694,94 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 	return &machineDeployment, nil
 }
 
+func AKSNodeVersionsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if !AreExternalClustersEnabled(settingsProvider) {
+			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+		}
+
+		req := request.(GetClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cloud := cluster.Spec.CloudSpec
+		if cloud.AKS == nil {
+			return nil, errors.NewNotFound("cloud spec for %s", req.ClusterID)
+		}
+
+		resourceGroup := cloud.AKS.ResourceGroup
+		resourceName := cloud.AKS.Name
+		availableVersions := make([]*apiv1.MasterVersion, 0)
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+		cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		agentPoolClient, err := getAKSNodePoolClient(cred)
+		if err != nil {
+			return nil, err
+		}
+
+		agentPoolAvailableVersions, err := agentPoolClient.GetAvailableAgentPoolVersions(ctx, resourceGroup, resourceName)
+		if err != nil {
+			return nil, err
+		}
+
+		agentPoolAvailableVersionsProperties := agentPoolAvailableVersions.AgentPoolAvailableVersionsProperties
+		if agentPoolAvailableVersionsProperties == nil || agentPoolAvailableVersionsProperties.AgentPoolVersions == nil {
+			return availableVersions, nil
+		}
+
+		for _, version := range *agentPoolAvailableVersionsProperties.AgentPoolVersions {
+			if version.KubernetesVersion != nil {
+				kubernetesVersion, err := semverlib.NewVersion(to.String(version.KubernetesVersion))
+				if err != nil {
+					return nil, err
+				}
+				availableVersions = append(availableVersions, &apiv1.MasterVersion{Version: kubernetesVersion, Default: to.Bool(version.Default)})
+			}
+		}
+
+		return availableVersions, nil
+	}
+}
+
+func AKSSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider, projectID, clusterID, location string) (interface{}, error) {
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, clusterID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	cloud := cluster.Spec.CloudSpec
+	if cloud.AKS == nil {
+		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+	}
+
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
+
+	return providercommon.ListAKSVMSizes(ctx, cred, location)
+}
+
 func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
 	cred, err := aks.GetCredentialsForCluster(*cloud, secretKeySelector)
 	if err != nil {
@@ -707,13 +795,11 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	clusterSpec := apiv2.AKSClusterSpec{}
 	aksClusterProperties := aksCluster.ManagedClusterProperties
 	if aksClusterProperties == nil {
-		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
 		return apiCluster, nil
 	}
-	clusterSpec = apiv2.AKSClusterSpec{
+	clusterSpec := &apiv2.AKSClusterSpec{
 		Location:          to.String(aksCluster.Location),
 		DNSPrefix:         to.String(aksCluster.DNSPrefix),
 		KubernetesVersion: to.String(aksClusterProperties.KubernetesVersion),
@@ -724,25 +810,22 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		PrivateFQDN:       to.String(aksClusterProperties.PrivateFQDN),
 	}
 	networkProfile := aksClusterProperties.NetworkProfile
-	if networkProfile == nil {
-		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
-		return apiCluster, nil
+	if networkProfile != nil {
+		clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
+			NetworkPlugin:    string(networkProfile.NetworkPlugin),
+			NetworkPolicy:    string(networkProfile.NetworkPolicy),
+			NetworkMode:      string(networkProfile.NetworkMode),
+			PodCidr:          to.String(networkProfile.PodCidr),
+			ServiceCidr:      to.String(networkProfile.ServiceCidr),
+			DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
+			DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
+		}
 	}
-	clusterSpec.NetworkProfile = apiv2.AKSNetworkProfile{
-		NetworkPlugin:    string(networkProfile.NetworkPlugin),
-		NetworkPolicy:    string(networkProfile.NetworkPolicy),
-		NetworkMode:      string(networkProfile.NetworkMode),
-		PodCidr:          to.String(networkProfile.PodCidr),
-		ServiceCidr:      to.String(networkProfile.ServiceCidr),
-		DNSServiceIP:     to.String(networkProfile.DNSServiceIP),
-		DockerBridgeCidr: to.String(networkProfile.DockerBridgeCidr),
+	if aksCluster.AadProfile != nil {
+		clusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
 	}
-	if aksCluster.AadProfile == nil {
-		apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
-		return apiCluster, nil
-	}
-	clusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
-	apiCluster.Cloud.AKS.ClusterSpec = &clusterSpec
+
+	apiCluster.Cloud.AKS.ClusterSpec = clusterSpec
 
 	return apiCluster, nil
 }

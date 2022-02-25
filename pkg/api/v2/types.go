@@ -174,14 +174,27 @@ type ClusterTemplate struct {
 	apiv1.ObjectMeta
 
 	Name string `json:"name"`
-	ID   string `json:"id"`
+	ID   string `json:"id,omitempty"`
 
-	ProjectID      string                  `json:"projectID,omitempty"`
-	User           string                  `json:"user,omitempty"`
-	Scope          string                  `json:"scope"`
-	UserSSHKeys    []ClusterTemplateSSHKey `json:"userSshKeys,omitempty"`
-	Cluster        *apiv1.Cluster          `json:"cluster,omitempty"`
-	NodeDeployment *apiv1.NodeDeployment   `json:"nodeDeployment,omitempty"`
+	ProjectID      string                         `json:"projectID,omitempty"`
+	User           string                         `json:"user,omitempty"`
+	Scope          string                         `json:"scope"`
+	UserSSHKeys    []ClusterTemplateSSHKey        `json:"userSshKeys,omitempty"`
+	Cluster        *ClusterTemplateInfo           `json:"cluster,omitempty"`
+	NodeDeployment *ClusterTemplateNodeDeployment `json:"nodeDeployment,omitempty"`
+}
+
+// ClusterTemplateInfo represents a ClusterTemplateInfo object.
+type ClusterTemplateInfo struct {
+	Labels          map[string]string `json:"labels,omitempty"`
+	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+	// indicates the preset name
+	Credential string            `json:"credential,omitempty"`
+	Spec       apiv1.ClusterSpec `json:"spec"`
+}
+
+type ClusterTemplateNodeDeployment struct {
+	Spec apiv1.NodeDeploymentSpec `json:"spec"`
 }
 
 // ClusterTemplateSSHKey represents SSH Key object for Cluster Template
@@ -651,6 +664,18 @@ type AKSCluster struct {
 // AKSClusterList represents an list of AKS clusters.
 // swagger:model AKSClusterList
 type AKSClusterList []AKSCluster
+
+// AKSVMSizeList represents an array of AKS VM sizes.
+// swagger:model AKSVMSizeList
+type AKSVMSizeList []AKSVMSize
+
+// AKSVMSize is the object representing Azure VM sizes.
+// swagger:model AKSVMSize
+type AKSVMSize string
+
+// AKSNodePoolModes represents nodepool modes.
+// swagger:model AKSNodePoolModes
+type AKSNodePoolModes []string
 
 // FeatureGates represents an object holding feature gate settings
 // swagger:model FeatureGates
