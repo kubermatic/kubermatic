@@ -38,11 +38,15 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	testDestination = "s3"
+)
+
 func TestCreateOrUpdateEndpoint(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		Name                      string
-		SeedName                  string
+		Seed                      *kubermaticv1.Seed
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingKubeObjects       []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
@@ -50,22 +54,18 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 		ExpectedHTTPStatusCode    int
 	}{
 		{
-			Name:     "create backup credentials for given seed",
-			SeedName: test.GenTestSeed().Name,
+			Name: "non-admin user cannot create backup credentials",
+			Seed: test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+				seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
+					Destinations: map[string]*kubermaticv1.BackupDestination{
+						testDestination: {
+							Endpoint:   "aws.s3.com",
+							BucketName: "testbucket",
+						},
+					},
+				}
+			}),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultCluster(),
-				test.GenAdminUser("John", "john@acme.com", true),
-			),
-			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
-			BackupCredentials:      test.GenDefaultAPIBackupCredentials(),
-			ExpectedHTTPStatusCode: http.StatusOK,
-		},
-		{
-			Name:     "non-admin user cannot create backup credentials",
-			SeedName: test.GenTestSeed().Name,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
@@ -74,98 +74,69 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
-			Name:     "can't manage backup credentials for non-existing seed",
-			SeedName: "nothere",
+			Name: "create backup credentials for given seed with destination",
+			Seed: test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+				seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
+					Destinations: map[string]*kubermaticv1.BackupDestination{
+						testDestination: {
+							Endpoint:   "aws.s3.com",
+							BucketName: "testbucket",
+						},
+					},
+				}
+			}),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			BackupCredentials:      test.GenDefaultAPIBackupCredentials(),
-			ExpectedHTTPStatusCode: http.StatusBadRequest,
+			ExpectedHTTPStatusCode: http.StatusOK,
 		},
 		{
-			Name:     "Update backup credentials for given seed",
-			SeedName: test.GenTestSeed().Name,
+			Name: "update backup credentials for given seed with destination",
+			Seed: test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+				seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
+					Destinations: map[string]*kubermaticv1.BackupDestination{
+						testDestination: {
+							Endpoint:   "aws.s3.com",
+							BucketName: "testbucket",
+							Credentials: &corev1.SecretReference{
+								Name:      "secret",
+								Namespace: "kubermatic",
+							},
+						},
+					},
+				}
+			}),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
-			ExistingKubeObjects: []ctrlruntimeclient.Object{
-				test.GenDefaultBackupCredentials(),
-			},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			BackupCredentials:      test.GenDefaultAPIBackupCredentials(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 		},
 		{
-			Name:     "create backup credentials for given seed with destination",
-			SeedName: test.GenTestSeed().Name,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
-					seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
-						Destinations: map[string]*kubermaticv1.BackupDestination{
-							"s3": {
-								Endpoint:   "aws.s3.com",
-								BucketName: "testbucket",
-							},
+			Name: "can't manage backup credentials for non-existing seed destination",
+			Seed: test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+				seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
+					Destinations: map[string]*kubermaticv1.BackupDestination{
+						testDestination: {
+							Endpoint:   "aws.s3.com",
+							BucketName: "testbucket",
 						},
-					}
-				}),
-				test.GenDefaultCluster(),
-				test.GenAdminUser("John", "john@acme.com", true),
-			),
-			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
-			BackupCredentials: func() *apiv2.BackupCredentials {
-				cred := test.GenDefaultAPIBackupCredentials()
-				cred.Destination = "s3"
-				return cred
-			}(),
-			ExpectedHTTPStatusCode: http.StatusOK,
-		},
-		{
-			Name:     "update backup credentials for given seed with destination",
-			SeedName: test.GenTestSeed().Name,
+					},
+				}
+			}),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
-					seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
-						Destinations: map[string]*kubermaticv1.BackupDestination{
-							"s3": {
-								Endpoint:   "aws.s3.com",
-								BucketName: "testbucket",
-								Credentials: &corev1.SecretReference{
-									Name:      "secret",
-									Namespace: "kubermatic",
-								},
-							},
-						},
-					}
-				}),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			BackupCredentials: func() *apiv2.BackupCredentials {
 				cred := test.GenDefaultAPIBackupCredentials()
-				cred.Destination = "s3"
-				return cred
-			}(),
-			ExpectedHTTPStatusCode: http.StatusOK,
-		},
-		{
-			Name:     "can't manage backup credentials for non-existing seed destination",
-			SeedName: "nothere",
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultCluster(),
-				test.GenAdminUser("John", "john@acme.com", true),
-			),
-			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
-			BackupCredentials: func() *apiv2.BackupCredentials {
-				cred := test.GenDefaultAPIBackupCredentials()
-				cred.Destination = "s3"
+				cred.Destination = "not-here"
 				return cred
 			}(),
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
@@ -179,7 +150,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 			}{
 				BackupCredentials: tc.BackupCredentials,
 			}
-			requestURL := fmt.Sprintf("/api/v2/seeds/%s/backupcredentials", tc.SeedName)
+			requestURL := fmt.Sprintf("/api/v2/seeds/%s/backupcredentials", tc.Seed.Name)
 			body, err := json.Marshal(creds)
 			if err != nil {
 				t.Fatalf("failed marshalling backupcredentials: %v", err)
@@ -187,7 +158,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPut, requestURL, bytes.NewBuffer(body))
 			resp := httptest.NewRecorder()
 
-			ep, clients, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, tc.ExistingKubeObjects, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
+			ep, clients, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, tc.ExistingKubeObjects, nil, append(tc.ExistingKubermaticObjects, tc.Seed), nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint: %v", err)
 			}
@@ -204,7 +175,7 @@ func TestCreateOrUpdateEndpoint(t *testing.T) {
 			secret := &corev1.Secret{}
 			err = clients.FakeClient.Get(context.Background(), types.NamespacedName{
 				Namespace: metav1.NamespaceSystem,
-				Name:      backupcredentials.GenBackupCredentialsSecretName(tc.BackupCredentials.Destination),
+				Name:      backupcredentials.GenBackupCredentialsSecretName(tc.BackupCredentials.Destination, tc.Seed.GetEtcdBackupDestination(testDestination)),
 			}, secret)
 			if err != nil {
 				t.Fatalf("Error getting backup credentials secret: %v", err)
