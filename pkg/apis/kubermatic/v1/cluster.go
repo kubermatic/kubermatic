@@ -824,6 +824,37 @@ type AnexiaCloudSpec struct {
 	Token string `json:"token,omitempty"`
 }
 
+// NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
+type NutanixCSIConfig struct {
+
+	// Prism Element Username for csi driver
+	Username string `json:"username,omitempty"`
+
+	// Prism Element Password for csi driver
+	Password string `json:"password,omitempty"`
+
+	// Prism Element Endpoint to access Nutanix Prism Element for csi driver
+	Endpoint string `json:"endpoint"`
+
+	// Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	// +optional
+	Port *int32 `json:"port,omitempty"`
+
+	// Storage Class options
+
+	// Optional: defaults to "Default"
+	// +optional
+	StorageContainer string `json:"storageContainer,omitempty"`
+
+	// Optional: defaults to "xfs"
+	// +optional
+	Fstype string `json:"fstype,omitempty"`
+
+	// Optional: defaults to "false"
+	// +optional
+	SsSegmentedIscsiNetwork *bool `json:"ssSegmentedIscsiNetwork,omitempty"`
+}
+
 // NutanixCloudSpec specifies the access data to Nutanix.
 // NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
 type NutanixCloudSpec struct {
@@ -839,6 +870,10 @@ type NutanixCloudSpec struct {
 	ProxyURL string `json:"proxyURL,omitempty"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
+
+	// NutanixCSIConfig for csi driver that connects to a prism element
+	// +optional
+	CSI *NutanixCSIConfig `json:"csi,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=HealthStatusDown;HealthStatusUp;HealthStatusProvisioning

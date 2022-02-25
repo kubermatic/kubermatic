@@ -844,7 +844,7 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 			Hetzner:      (*newv1.HetznerCloudSpec)(old.Cloud.Hetzner),
 			Kubevirt:     (*newv1.KubevirtCloudSpec)(old.Cloud.Kubevirt),
 			Packet:       (*newv1.PacketCloudSpec)(old.Cloud.Packet),
-			Nutanix:      (*newv1.NutanixCloudSpec)(old.Cloud.Nutanix),
+			Nutanix:      convertNutanixCloudSpec(old.Cloud.Nutanix),
 		},
 		ClusterNetwork: newv1.ClusterNetworkingConfig{
 			Pods:                     newv1.NetworkRanges(old.ClusterNetwork.Pods),
@@ -1034,6 +1034,21 @@ func convertClusterSpec(old kubermaticv1.ClusterSpec) newv1.ClusterSpec {
 	}
 
 	return result
+}
+
+func convertNutanixCloudSpec(old *kubermaticv1.NutanixCloudSpec) *newv1.NutanixCloudSpec {
+	if old == nil {
+		return nil
+	}
+	return &newv1.NutanixCloudSpec{
+		CredentialsReference: old.CredentialsReference,
+		ClusterName:          old.ClusterName,
+		ProjectName:          old.ProjectName,
+		ProxyURL:             old.ProxyURL,
+		Username:             old.Username,
+		Password:             old.Password,
+		CSI:                  nil,
+	}
 }
 
 func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client) (int, error) {

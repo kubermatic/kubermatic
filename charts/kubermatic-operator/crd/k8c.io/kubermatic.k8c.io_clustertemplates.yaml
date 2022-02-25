@@ -596,6 +596,37 @@ spec:
                             description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                             type: string
                         type: object
+                      csi:
+                        description: NutanixCSIConfig for csi driver that connects
+                          to a prism element
+                        properties:
+                          endpoint:
+                            description: Prism Element Endpoint to access Nutanix
+                              Prism Element for csi driver
+                            type: string
+                          fstype:
+                            description: 'Optional: defaults to "xfs"'
+                            type: string
+                          password:
+                            description: Prism Element Password for csi driver
+                            type: string
+                          port:
+                            description: 'Optional: Port to use when connecting to
+                              the Nutanix Prism Element endpoint (defaults to 9440)'
+                            format: int32
+                            type: integer
+                          ssSegmentedIscsiNetwork:
+                            description: 'Optional: defaults to "false"'
+                            type: boolean
+                          storageContainer:
+                            description: 'Optional: defaults to "Default"'
+                            type: string
+                          username:
+                            description: Prism Element Username for csi driver
+                            type: string
+                        required:
+                        - endpoint
+                        type: object
                       password:
                         type: string
                       projectName:

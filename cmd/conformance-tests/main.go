@@ -157,6 +157,10 @@ type secrets struct {
 	Nutanix struct {
 		Username    string
 		Password    string
+		CSIUsername string
+		CSIPassword string
+		CSIEndpoint string
+		CSIPort     int32
 		ProxyURL    string
 		ClusterName string
 		ProjectName string
@@ -258,6 +262,9 @@ func main() {
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
 	flag.StringVar(&opts.secrets.Nutanix.Username, "nutanix-username", "", "Nutanix: Username")
 	flag.StringVar(&opts.secrets.Nutanix.Password, "nutanix-password", "", "Nutanix: Password")
+	flag.StringVar(&opts.secrets.Nutanix.CSIUsername, "nutanix-csi-username", "", "Nutanix CSI Prism Element: Username")
+	flag.StringVar(&opts.secrets.Nutanix.CSIPassword, "nutanix-csi-password", "", "Nutanix CSI Prism Element: Password")
+	flag.StringVar(&opts.secrets.Nutanix.CSIEndpoint, "nutanix-csi-endpoint", "", "Nutanix CSI Prism Element: Endpoint")
 	flag.StringVar(&opts.secrets.Nutanix.ProxyURL, "nutanix-proxy-url", "", "Nutanix: HTTP Proxy URL to access endpoint")
 	flag.StringVar(&opts.secrets.Nutanix.ClusterName, "nutanix-cluster-name", "", "Nutanix: Cluster Name")
 	flag.StringVar(&opts.secrets.Nutanix.ProjectName, "nutanix-project-name", "", "Nutanix: Project Name")

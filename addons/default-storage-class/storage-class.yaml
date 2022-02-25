@@ -54,9 +54,9 @@ metadata:
     kubernetes.io/cluster-service: "true"
   name: vsphere-csi
 provisioner: csi.vsphere.vmware.com
-{{ if .Cluster.StoragePolicy }}
+{{ if .Cluster.CSI.StoragePolicy }}
 parameters:
-  storagepolicyname: {{ .Cluster.StoragePolicy }}
+  storagepolicyname: {{ .Cluster.CSI.StoragePolicy }}
 {{ end }}
 {{ else }}
 apiVersion: storage.k8s.io/v1
@@ -123,4 +123,27 @@ metadata:
 provisioner: csi.hetzner.cloud
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
+{{ end }}
+
+{{ if eq .Cluster.CloudProviderName "nutanix" }}
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: ntnx-csi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: csi.nutanix.com
+parameters:
+  storageType: NutanixVolumes
+  csi.storage.k8s.io/provisioner-secret-name: ntnx-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: kube-system
+  csi.storage.k8s.io/node-publish-secret-name: ntnx-secret
+  csi.storage.k8s.io/node-publish-secret-namespace: kube-system
+  csi.storage.k8s.io/controller-expand-secret-name: ntnx-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
+  storageContainer: {{ default "Default" .Cluster.CSI.StorageContainer | quote }}
+  csi.storage.k8s.io/fstype: {{ default "xfs" .Cluster.CSI.Fstype | quote }}
+  isSegmentedIscsiNetwork: {{ default "false" .Cluster.CSI.SsSegmentedIscsiNetwork | quote }}
+allowVolumeExpansion: true
+reclaimPolicy: Delete
 {{ end }}
