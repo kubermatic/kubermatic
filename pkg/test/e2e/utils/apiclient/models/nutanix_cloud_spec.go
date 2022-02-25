@@ -15,8 +15,6 @@ import (
 
 // NutanixCloudSpec NutanixCloudSpec specifies the access data to Nutanix.
 //
-// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
-//
 // swagger:model NutanixCloudSpec
 type NutanixCloudSpec struct {
 

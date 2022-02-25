@@ -447,7 +447,6 @@ type DatacenterSpecKubevirt struct {
 }
 
 // DatacenterSpecNutanix describes a Nutanix datacenter.
-// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
 type DatacenterSpecNutanix struct {
 	// Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
 	// for example "nutanix.example.com" or "10.0.0.1"

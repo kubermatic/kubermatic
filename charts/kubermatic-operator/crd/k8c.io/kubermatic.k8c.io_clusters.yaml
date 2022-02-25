@@ -585,7 +585,6 @@ spec:
                     type: object
                   nutanix:
                     description: NutanixCloudSpec specifies the access data to Nutanix.
-                      NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
                     properties:
                       clusterName:
                         description: ClusterName is the Nutanix cluster that this

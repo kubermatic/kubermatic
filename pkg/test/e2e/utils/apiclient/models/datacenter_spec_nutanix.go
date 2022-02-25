@@ -15,8 +15,6 @@ import (
 
 // DatacenterSpecNutanix DatacenterSpecNutanix describes a Nutanix datacenter.
 //
-// NUTANIX IMPLEMENTATION IS EXPERIMENTAL AND UNSUPPORTED.
-//
 // swagger:model DatacenterSpecNutanix
 type DatacenterSpecNutanix struct {
 
