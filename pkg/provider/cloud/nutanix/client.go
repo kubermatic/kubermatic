@@ -177,11 +177,7 @@ func GetSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.Subn
 			return nil, errors.New("subnet name is nil")
 		}
 
-		if subnet.Status.ClusterReference == nil || subnet.Status.ClusterReference.UUID == nil {
-			return nil, errors.New("subnet status does not contain valid cluster reference")
-		}
-
-		if *subnet.Status.Name == name && *subnet.Status.ClusterReference.UUID == clusterID {
+		if *subnet.Status.Name == name && (subnet.Status.ClusterReference == nil || (subnet.Status.ClusterReference.UUID != nil && *subnet.Status.ClusterReference.UUID == clusterID)) {
 			return subnet, nil
 		}
 	}
