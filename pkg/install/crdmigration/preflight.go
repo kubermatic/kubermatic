@@ -317,7 +317,12 @@ func validateNoStuckResourcesInCluster(ctx context.Context, logger logrus.FieldL
 		}
 
 		for _, object := range objectList.Items {
-			objectLogger := logger.WithField(strings.ToLower(object.GetKind()), object.GetName())
+			key := object.GetName()
+			if ns := object.GetNamespace(); ns != "" {
+				key = fmt.Sprintf("%s/%s", ns, key)
+			}
+
+			objectLogger := logger.WithField(strings.ToLower(object.GetKind()), key)
 			objectLogger.Debug("Validating…")
 
 			if object.GetDeletionTimestamp() != nil {

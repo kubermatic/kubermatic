@@ -153,9 +153,49 @@ func cloneResourcesInCluster(ctx context.Context, logger logrus.FieldLogger, cli
 		oldAPIVersion: "v1",
 		newAPIVersion: "v1",
 	}, ownerRefTask{
+		kind:          "Service",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
 		kind:          "Secret",
 		oldAPIVersion: "v1",
 		newAPIVersion: "v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "ConfigMap",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "Deployment",
+		oldAPIVersion: "apps/v1",
+		newAPIVersion: "apps/v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "ServiceAccount",
+		oldAPIVersion: "v1",
+		newAPIVersion: "v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "Role",
+		oldAPIVersion: "rbac.authorization.k8s.io/v1",
+		newAPIVersion: "rbac.authorization.k8s.io/v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "RoleBinding",
+		oldAPIVersion: "rbac.authorization.k8s.io/v1",
+		newAPIVersion: "rbac.authorization.k8s.io/v1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "PodDisruptionBudget",
+		oldAPIVersion: "policy/v1beta1",
+		newAPIVersion: "policy/v1beta1",
+		namespaces:    []string{kubermaticNamespace},
+	}, ownerRefTask{
+		kind:          "Ingress",
+		oldAPIVersion: "networking.k8s.io/v1",
+		newAPIVersion: "networking.k8s.io/v1",
 		namespaces:    []string{kubermaticNamespace},
 	}, ownerRefTask{
 		kind:          "CronJob",
@@ -679,7 +719,7 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 
 		logger.WithField("resource", ctrlruntimeclient.ObjectKeyFromObject(&oldObject)).Debug("Duplicating KubermaticConfiguration…")
 
-		if err := ensureObject(ctx, client, &newObject, false); err != nil {
+		if err := ensureObject(ctx, client, &newObject, true); err != nil {
 			return 0, fmt.Errorf("failed to clone %s: %w", oldObject.Name, err)
 		}
 	}
@@ -2118,6 +2158,10 @@ func convertDatacenter(oldDC kubermaticv1.Datacenter) newv1.Datacenter {
 		newDC.Spec.Digitalocean = &newv1.DatacenterSpecDigitalocean{
 			Region: oldSpec.Digitalocean.Region,
 		}
+	}
+
+	if oldSpec.BringYourOwn != nil {
+		newDC.Spec.BringYourOwn = &newv1.DatacenterSpecBringYourOwn{}
 	}
 
 	if oldSpec.Fake != nil {

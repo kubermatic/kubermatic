@@ -118,8 +118,8 @@ func ShutdownAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("operation failed: %w", err)
 		}
 
-		logger.Info("All controllers have been scaled down to 0 replicas now. It can take up to 3 minutes for all pods to be terminated.")
-		logger.Info("Please run the `migrate-crds` command now to migrate your resources. The migration will first ensure that all controller pods have been removed.")
+		logger.Info("All controllers have been scaled down to 0 replicas and webhooks have been removed now.")
+		logger.Info("Please run the `migrate-crds` command now to migrate your resources.")
 
 		return nil
 	}))

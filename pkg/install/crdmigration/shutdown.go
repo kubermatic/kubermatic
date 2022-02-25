@@ -201,6 +201,18 @@ func waitForAllPodsToBeGone(ctx context.Context, logger logrus.FieldLogger, clie
 }
 
 func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) error {
+	if err := shutdownValidatingWebhooksInCluster(ctx, logger, client, config); err != nil {
+		return err
+	}
+
+	if err := shutdownMutatingWebhooksInCluster(ctx, logger, client, config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func shutdownValidatingWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) error {
 	webhooks := []string{
 		kubermaticseed.ClusterAdmissionWebhookName,
 		// this cheats a bit and assumes that the function only needs the object meta
@@ -221,6 +233,38 @@ func shutdownWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, c
 		hookLogger := logger.WithField("webhook", webhookName)
 
 		webhook := admissionregistrationv1.ValidatingWebhookConfiguration{}
+		key := types.NamespacedName{Name: webhookName}
+
+		if err := client.Get(ctx, key, &webhook); err != nil {
+			// not all webhooks need to exist in all clusters / maybe we already cleaned up
+			// because the user ran the "shutdown" command twice
+			if apierrors.IsNotFound(err) {
+				hookLogger.Debug("Webhook not found.")
+				continue
+			}
+
+			return fmt.Errorf("failed to get Webhook %s: %w", webhookName, err)
+		}
+
+		hookLogger.Debug("Removing…")
+
+		if err := client.Delete(ctx, &webhook); err != nil {
+			return fmt.Errorf("failed to remove Webhook %s: %w", webhookName, err)
+		}
+	}
+
+	return nil
+}
+
+func shutdownMutatingWebhooksInCluster(ctx context.Context, logger logrus.FieldLogger, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) error {
+	webhooks := []string{
+		kubermaticseed.ClusterAdmissionWebhookName,
+	}
+
+	for _, webhookName := range webhooks {
+		hookLogger := logger.WithField("webhook", webhookName)
+
+		webhook := admissionregistrationv1.MutatingWebhookConfiguration{}
 		key := types.NamespacedName{Name: webhookName}
 
 		if err := client.Get(ctx, key, &webhook); err != nil {
