@@ -184,10 +184,6 @@ TBD
 
 TBD
 
-## update-kubermatic-chart.sh
-
-TBD
-
 ## update-prometheus-rules.sh
 
 TBD
@@ -221,10 +217,6 @@ TBD
 TBD
 
 ## verify-grafana-dashboards.sh
-
-TBD
-
-## verify-kubermatic-chart.sh
 
 TBD
 
