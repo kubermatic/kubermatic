@@ -406,32 +406,11 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 	log.Debug("reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		kubermaticseed.BackupContainersConfigMapCreator(cfg, seed, log),
 		kubermaticseed.CABundleConfigMapCreator(caBundle),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
-	}
-
-	var kubeSystemCreators []reconciling.NamedConfigMapCreatorGetter
-
-	// For backward compatibility check both sources for backup and restore configuration.
-	backupRestore := &kubermaticv1.SeedBackupRestoreConfiguration{}
-	if cfg.Spec.SeedController.BackupRestore.Enabled {
-		backupRestore.S3Endpoint = cfg.Spec.SeedController.BackupRestore.S3Endpoint
-		backupRestore.S3BucketName = cfg.Spec.SeedController.BackupRestore.S3BucketName
-	}
-	// Seed backup and restore configuration takes precedence.
-	if seed.Spec.BackupRestore != nil {
-		backupRestore = seed.Spec.BackupRestore
-	}
-	if creator := kubermaticseed.RestoreS3SettingsConfigMapCreator(backupRestore); creator != nil {
-		kubeSystemCreators = append(kubeSystemCreators, creator)
-	}
-
-	if err := reconciling.ReconcileConfigMaps(ctx, kubeSystemCreators, metav1.NamespaceSystem, client); err != nil {
-		return fmt.Errorf("failed to reconcile kube-system ConfigMaps: %w", err)
 	}
 
 	return nil

@@ -17,6 +17,8 @@ limitations under the License.
 package test
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -25,6 +27,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"sigs.k8s.io/yaml"
 )
 
 func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {
@@ -79,4 +83,37 @@ func NewSeedsGetter(seeds ...*kubermaticv1.Seed) provider.SeedsGetter {
 	return func() (map[string]*kubermaticv1.Seed, error) {
 		return result, nil
 	}
+}
+
+func ObjectYAMLDiff(t *testing.T, expectedObj, actualObj interface{}) error {
+	t.Helper()
+
+	expectedEncoded, err := yaml.Marshal(expectedObj)
+	if err != nil {
+		return fmt.Errorf("failed to encode old object as YAML: %w", err)
+	}
+
+	actualEncoded, err := yaml.Marshal(actualObj)
+	if err != nil {
+		return fmt.Errorf("failed to encode new object as YAML: %w", err)
+	}
+
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(string(expectedEncoded)),
+		B:        difflib.SplitLines(string(actualEncoded)),
+		FromFile: "Expected",
+		ToFile:   "Actual",
+		Context:  3,
+	}
+
+	diffStr, err := difflib.GetUnifiedDiffString(diff)
+	if err != nil {
+		return fmt.Errorf("failed to create diff: %w", err)
+	}
+
+	if diffStr != "" {
+		return errors.New(diffStr)
+	}
+
+	return nil
 }

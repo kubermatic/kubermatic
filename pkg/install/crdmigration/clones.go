@@ -673,7 +673,6 @@ func cloneKubermaticConfigurationResourcesInCluster(ctx context.Context, logger 
 					BackupStoreContainer:      oldObject.Spec.SeedController.BackupStoreContainer,
 					BackupDeleteContainer:     oldObject.Spec.SeedController.BackupDeleteContainer,
 					BackupCleanupContainer:    oldObject.Spec.SeedController.BackupCleanupContainer,
-					BackupRestore:             newv1.LegacyKubermaticBackupRestoreConfiguration(oldObject.Spec.SeedController.BackupRestore), //nolint:staticcheck
 					MaximumParallelReconciles: oldObject.Spec.SeedController.MaximumParallelReconciles,
 					PProfEndpoint:             oldObject.Spec.SeedController.PProfEndpoint,
 					Resources:                 oldObject.Spec.SeedController.Resources,
@@ -2007,14 +2006,13 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			}
 		}
 
-		if oldObject.Spec.BackupRestore != nil {
-			newObject.Spec.BackupRestore = &newv1.SeedBackupRestoreConfiguration{
-				S3Endpoint:   oldObject.Spec.BackupRestore.S3Endpoint,
-				S3BucketName: oldObject.Spec.BackupRestore.S3BucketName,
-			}
-		}
-
 		if oldObject.Spec.EtcdBackupRestore != nil {
+			// due to the preflight checks, this can only happen if someone edits
+			// the Seed right after the preflight checks and before the cloning phase
+			if oldObject.Spec.EtcdBackupRestore.DefaultDestination == nil {
+				return 0, fmt.Errorf("a default destination must be set for the EtcdBackupRestore configuration in Seed %s", oldObject.Name)
+			}
+
 			destinations := make(map[string]*newv1.BackupDestination)
 			for name, destination := range oldObject.Spec.EtcdBackupRestore.Destinations {
 				destinations[name] = &newv1.BackupDestination{
@@ -2025,7 +2023,7 @@ func cloneSeedResourcesInCluster(ctx context.Context, logger logrus.FieldLogger,
 			}
 			newObject.Spec.EtcdBackupRestore = &newv1.EtcdBackupRestore{
 				Destinations:       destinations,
-				DefaultDestination: oldObject.Spec.EtcdBackupRestore.DefaultDestination,
+				DefaultDestination: *oldObject.Spec.EtcdBackupRestore.DefaultDestination,
 			}
 		}
 

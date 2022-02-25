@@ -27,25 +27,25 @@ import (
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kubermaticv1.Cluster, etcdBackupRestoreController bool) error {
+func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer) {
 		return nil
 	}
 
-	if etcdBackupRestoreController {
-		backupConfigs := &kubermaticv1.EtcdBackupConfigList{}
-		if err := d.seedClient.List(ctx, backupConfigs, controllerruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to get EtcdBackupConfigs: %w", err)
+	// always attempt to cleanup, even if the controllers might be disabled now
+	backupConfigs := &kubermaticv1.EtcdBackupConfigList{}
+	if err := d.seedClient.List(ctx, backupConfigs, controllerruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+		return fmt.Errorf("failed to get EtcdBackupConfigs: %w", err)
+	}
+
+	if len(backupConfigs.Items) > 0 {
+		for _, backupConfig := range backupConfigs.Items {
+			if err := d.seedClient.Delete(ctx, &backupConfig); err != nil {
+				return fmt.Errorf("failed to delete EtcdBackupConfig %q: %w", backupConfig.Name, err)
+			}
 		}
 
-		if len(backupConfigs.Items) > 0 {
-			for _, backupConfig := range backupConfigs.Items {
-				if err := d.seedClient.Delete(ctx, &backupConfig); err != nil {
-					return fmt.Errorf("failed to delete EtcdBackupConfig %q: %w", backupConfig.Name, err)
-				}
-			}
-			return nil
-		}
+		return nil
 	}
 
 	oldCluster := cluster.DeepCopy()

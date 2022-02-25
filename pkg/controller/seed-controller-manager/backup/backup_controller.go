@@ -22,15 +22,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -47,7 +48,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
@@ -82,22 +82,19 @@ const (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	log              *zap.SugaredLogger
-	scheme           *runtime.Scheme
-	workerName       string
-	storeContainer   corev1.Container
-	cleanupContainer corev1.Container
+	log        *zap.SugaredLogger
+	scheme     *runtime.Scheme
+	workerName string
 	// backupScheduleString is the cron string representing
 	// the backupSchedule
 	backupScheduleString string
 	// backupContainerImage holds the image used for creating the etcd backup
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
-	// disabled means delete any existing back cronjob, rather than
-	// ensuring they're installed. This is used to permanently delete the backup cronjobs
-	// and disable the controller, usually in favor of the new one (../etcdbackup)
-	disabled bool
-	caBundle resources.CABundle
+
+	caBundle     resources.CABundle
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
 
 	recorder record.EventRecorder
 	versions kubermatic.Versions
@@ -110,18 +107,14 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	storeContainer corev1.Container,
-	cleanupContainer corev1.Container,
 	backupSchedule time.Duration,
 	backupContainerImage string,
 	versions kubermatic.Versions,
-	disabled bool,
 	caBundle resources.CABundle,
+	seedGetter provider.SeedGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 ) error {
 	log = log.Named(ControllerName)
-	if err := validateStoreContainer(storeContainer); err != nil {
-		return err
-	}
 	backupScheduleString, err := parseDuration(backupSchedule)
 	if err != nil {
 		return fmt.Errorf("failed to parse backup duration: %w", err)
@@ -134,15 +127,14 @@ func Add(
 		Client:               mgr.GetClient(),
 		log:                  log,
 		workerName:           workerName,
-		storeContainer:       storeContainer,
-		cleanupContainer:     cleanupContainer,
 		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
-		disabled:             disabled,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,
 		caBundle:             caBundle,
 		scheme:               mgr.GetScheme(),
+		seedGetter:           seedGetter,
+		configGetter:         configGetter,
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{
 		Reconciler:              reconciler,
@@ -187,6 +179,137 @@ func (w *runnableWrapper) Start(ctx context.Context) error {
 	return nil
 }
 
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	log := r.log.With("request", request)
+	log.Debug("Processing")
+
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
+		if kerrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	// Add a wrapping here so we can emit an event on error
+	_, err = kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		r.versions,
+		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return nil, r.reconcile(ctx, log, config, seed, cluster)
+		},
+	)
+	if err != nil {
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+	}
+	return reconcile.Result{}, err
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, cluster *kubermaticv1.Cluster) error {
+	backupStoreContainer, err := getBackupStoreContainer(config, seed)
+	if err != nil {
+		return fmt.Errorf("failed to create backup store container: %w", err)
+	}
+
+	if err := validateStoreContainer(backupStoreContainer); err != nil {
+		return err
+	}
+
+	backupCleanupContainer, err := getBackupCleanupContainer(config, seed)
+	if err != nil {
+		return fmt.Errorf("failed to create backup cleanup container: %w", err)
+	}
+
+	// the etcdbackup/etcdrestore controllers are enabled (at least for this seed), so we
+	// only perform cleanup for older clusters when needed
+	controllerEnabled := !seed.IsDefaultEtcdAutomaticBackupEnabled()
+
+	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
+	if cluster.DeletionTimestamp != nil {
+		// Need to cleanup
+		if kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+			if controllerEnabled {
+				if err := r.Create(ctx, r.cleanupJob(cluster, backupCleanupContainer)); err != nil {
+					// Otherwise we end up in a loop when we are able to create the job but not
+					// remove the finalizer.
+					if !kerrors.IsAlreadyExists(err) {
+						return err
+					}
+				}
+			}
+
+			oldCluster := cluster.DeepCopy()
+			kuberneteshelper.RemoveFinalizer(cluster, cleanupFinalizer)
+			if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %w", err)
+			}
+		}
+
+		return nil
+	}
+
+	if cluster.Status.ExtendedHealth.Etcd != kubermaticv1.HealthStatusUp {
+		log.Debug("Skipping because the cluster has no running etcd yet")
+		return nil
+	}
+
+	// Always add the finalizer first
+	if controllerEnabled && !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		oldCluster := cluster.DeepCopy()
+		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
+		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %w", err)
+		}
+	}
+
+	if err := r.ensureCronJobSecrets(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to reconcile secrets: %w", err)
+	}
+
+	if err := r.ensureCronJobConfigMaps(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to reconcile configmaps: %w", err)
+	}
+
+	if !controllerEnabled {
+		return r.deleteCronJob(ctx, cluster)
+	}
+
+	return reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{r.cronjob(cluster, backupStoreContainer)}, metav1.NamespaceSystem, r.Client)
+}
+
+func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupStoreContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaults.DefaultBackupStoreContainer)
+}
+
+func getBackupCleanupContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupCleanupContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupCleanupContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaults.DefaultBackupCleanupContainer)
+}
+
 func (r *Reconciler) cleanupJobs(ctx context.Context) {
 	log := r.log.Named("job_cleanup")
 
@@ -224,89 +347,6 @@ func (r *Reconciler) cleanupJobs(ctx context.Context) {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
-
-	cluster := &kubermaticv1.Cluster{}
-	if err := r.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
-	}
-
-	// Add a wrapping here so we can emit an event on error
-	_, err := kubermaticv1helper.ClusterReconcileWrapper(
-		ctx,
-		r.Client,
-		r.workerName,
-		cluster,
-		r.versions,
-		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			return nil, r.reconcile(ctx, log, cluster)
-		},
-	)
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
-	}
-	return reconcile.Result{}, err
-}
-
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
-	if cluster.DeletionTimestamp != nil {
-		// Need to cleanup
-		if sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
-			if !r.disabled {
-				if err := r.Create(ctx, r.cleanupJob(cluster)); err != nil {
-					// Otherwise we end up in a loop when we are able to create the job but not
-					// remove the finalizer.
-					if !kerrors.IsAlreadyExists(err) {
-						return err
-					}
-				}
-			}
-
-			oldCluster := cluster.DeepCopy()
-			kuberneteshelper.RemoveFinalizer(cluster, cleanupFinalizer)
-			if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %w", err)
-			}
-		}
-		return nil
-	}
-
-	if cluster.Status.ExtendedHealth.Etcd != kubermaticv1.HealthStatusUp {
-		log.Debug("Skipping because the cluster has no running etcd yet")
-		return nil
-	}
-
-	// Always add the finalizer first
-	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) && !r.disabled {
-		oldCluster := cluster.DeepCopy()
-		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
-		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %w", err)
-		}
-	}
-
-	if err := r.ensureCronJobSecrets(ctx, cluster); err != nil {
-		return fmt.Errorf("failed to reconcile secrets: %w", err)
-	}
-
-	if err := r.ensureCronJobConfigMaps(ctx, cluster); err != nil {
-		return fmt.Errorf("failed to reconcile configmaps: %w", err)
-	}
-
-	if r.disabled {
-		return r.deleteCronJob(ctx, cluster)
-	}
-	return reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{r.cronjob(cluster)}, metav1.NamespaceSystem, r.Client)
-}
-
 func (r *Reconciler) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
 }
@@ -342,8 +382,8 @@ func (r *Reconciler) ensureCronJobConfigMaps(ctx context.Context, cluster *kuber
 	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
 }
 
-func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
-	cleanupContainer := r.cleanupContainer.DeepCopy()
+func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster, cleanupContainer *corev1.Container) *batchv1.Job {
+	cleanupContainer = cleanupContainer.DeepCopy()
 	cleanupContainer.Env = append(cleanupContainer.Env, corev1.EnvVar{
 		Name:  clusterEnvVarKey,
 		Value: cluster.Name,
@@ -398,7 +438,7 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
 	}
 }
 
-func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCronJobCreatorGetter {
+func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster, storeContainer *corev1.Container) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name), func(cronJob *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 			gv := kubermaticv1.SchemeGroupVersion
@@ -462,7 +502,7 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 				},
 			}
 
-			storeContainer := r.storeContainer.DeepCopy()
+			storeContainer = storeContainer.DeepCopy()
 			storeContainer.Env = append(storeContainer.Env, corev1.EnvVar{
 				Name:  clusterEnvVarKey,
 				Value: cluster.Name,
@@ -519,7 +559,7 @@ func (r *Reconciler) deleteCronJob(ctx context.Context, cluster *kubermaticv1.Cl
 		return err
 	}
 	if err := r.Delete(ctx, cj, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
-		return errors.Wrapf(err, "failed to delete cronjob %s", name)
+		return fmt.Errorf("failed to delete cronjob %s: %w", name, err)
 	}
 	return nil
 }
@@ -539,12 +579,13 @@ func parseDuration(interval time.Duration) (string, error) {
 	return scheduleString, nil
 }
 
-func validateStoreContainer(storeContainer corev1.Container) error {
+func validateStoreContainer(storeContainer *corev1.Container) error {
 	for _, volumeMount := range storeContainer.VolumeMounts {
 		if volumeMount.Name == SharedVolumeName {
 			return nil
 		}
 	}
+
 	return fmt.Errorf("storeContainer does not have a mount for the shared volume %s", SharedVolumeName)
 }
 

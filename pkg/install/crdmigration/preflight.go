@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
+	oldv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 
@@ -68,6 +69,11 @@ func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt 
 
 	if err := validateNoStuckResources(ctx, logger, opt); err != nil {
 		logger.Errorf("Resource health check failed: %v", err)
+		success = false
+	}
+
+	if err := validateEtcdBackupConfiguration(ctx, logger, opt); err != nil {
+		logger.Errorf("etcd backup configuration check failed: %v", err)
 		success = false
 	}
 
@@ -383,6 +389,41 @@ func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Opti
 
 	if checklist.Len() > 0 {
 		return fmt.Errorf("could not find files containing the CRDs for %v", checklist.List())
+	}
+
+	return nil
+}
+
+func validateEtcdBackupConfiguration(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
+	logger.Info("Validating etcd backup configuration…")
+
+	for name, seed := range opt.Seeds {
+		if seed.Spec.BackupRestore != nil {
+			return fmt.Errorf("Seed %s uses the deprecated `backupRestore` configuration; please migrate to the `etcdBackupRestore` configuration before proceeding, as the deprecated options have been removed in KKP 2.20", name)
+		}
+
+		if seed.Spec.EtcdBackupRestore.DefaultDestination == nil {
+			return fmt.Errorf("Seed %s does not set a default backup destination in `etcdBackupRestore`; please configure a default destination", name)
+		}
+	}
+
+	for name, client := range opt.SeedClients {
+		etcdBackupList := &oldv1.EtcdBackupConfigList{}
+		if err := client.List(ctx, etcdBackupList); err != nil {
+			return fmt.Errorf("failed to list EtcdBackupConfig objects in Seed %s: %w", name, err)
+		}
+
+		invalidObjects := []string{}
+
+		for _, item := range etcdBackupList.Items {
+			if item.Spec.Destination == "" {
+				invalidObjects = append(invalidObjects, fmt.Sprintf("%s/%s", item.Namespace, item.Name))
+			}
+		}
+
+		if len(invalidObjects) > 0 {
+			return fmt.Errorf("Seed %s has EtcdBackupConfig objects (%s) that do not specify a destination; please ensure each object has a destination pointing to the etcdBackupRestore configuration in the Seed", name, invalidObjects)
+		}
 	}
 
 	return nil
