@@ -89,10 +89,20 @@ func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName
 		}
 	}
 
+	cluster, err := GetClusterByName(client, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	if cluster.Metadata == nil || cluster.Metadata.UUID == nil {
+		return nil, fmt.Errorf("Cluster '%s' has no valid metadata", clusterName)
+	}
+
 	if resp != nil {
 		for _, entity := range resp.Entities {
 			if entity != nil {
-				if entity.Status != nil && entity.Status.ClusterReference != nil && *entity.Status.ClusterReference.Name == clusterName &&
+				if entity.Status != nil &&
+					(entity.Status.ClusterReference == nil || (entity.Status.ClusterReference.UUID != nil && *entity.Status.ClusterReference.UUID == *cluster.Metadata.UUID)) &&
 					(projectName == "" || contains(projectAllowedUUIDs, *entity.Metadata.UUID)) {
 					subnets = append(subnets, *entity)
 				}
