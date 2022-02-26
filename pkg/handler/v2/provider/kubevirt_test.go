@@ -32,18 +32,20 @@ import (
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
-	kubevirtv1 "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned"
-	kubevirtclifake "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	kubernetesclientset "k8s.io/client-go/kubernetes"
-	fakerestclient "k8s.io/client-go/kubernetes/fake"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+func init() {
+	utilruntime.Must(kvapiv1.AddToScheme(scheme.Scheme))
+}
 
 var (
 	presetDefaultSmall1 = kvapiv1.VirtualMachineInstancePreset{
@@ -79,15 +81,6 @@ var (
 	credentialref = "credentialref"
 	credentialns  = "ns"
 )
-
-func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
-	runtimeObjects := []runtime.Object{}
-	for _, obj := range objs {
-		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
-	}
-
-	return runtimeObjects
-}
 
 type KeyValue struct {
 	Key   string
@@ -156,6 +149,12 @@ var (
 	presetListResponse = `[{"name":"preset-default-small-1","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},{"name":"preset-default-small-2","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"}]`
 )
 
+func setFakeNewKubeVirtClient(objects []ctrlruntimeclient.Object) {
+	providercommon.NewKubeVirtClient = func(kubeconfig string) (ctrlruntimeclient.Client, error) {
+		return fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objects...).Build(), nil
+	}
+}
+
 func TestListPresetEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                       string
@@ -205,9 +204,7 @@ func TestListPresetEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
+			setFakeNewKubeVirtClient(append(tc.ExistingKubevirtObjects, tc.ExistingKubevirtK8sObjects...))
 
 			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
 			for _, h := range tc.HTTPRequestHeaders {
@@ -300,9 +297,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
+			setFakeNewKubeVirtClient(append(tc.ExistingKubevirtObjects, tc.ExistingKubevirtK8sObjects...))
 
 			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
 			for _, h := range tc.HTTPRequestHeaders {
@@ -392,9 +387,7 @@ func TestListStorageClassEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
+			setFakeNewKubeVirtClient(append(tc.ExistingKubevirtObjects, tc.ExistingKubevirtK8sObjects...))
 
 			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
 			for _, h := range tc.HTTPRequestHeaders {
@@ -489,9 +482,7 @@ func TestListStorageClassNoCredentialsEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			providercommon.NewKubeVirtClientSet = func(kubeconfig string) (kubevirtv1.Interface, kubernetesclientset.Interface, error) {
-				return kubevirtclifake.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtObjects...)...), fakerestclient.NewSimpleClientset(getRuntimeObjects(tc.ExistingKubevirtK8sObjects...)...), nil
-			}
+			setFakeNewKubeVirtClient(append(tc.ExistingKubevirtObjects, tc.ExistingKubevirtK8sObjects...))
 
 			req := httptest.NewRequest(tc.HTTPRequestMethod, tc.HTTPRequestURL, strings.NewReader(tc.Body))
 			for _, h := range tc.HTTPRequestHeaders {
