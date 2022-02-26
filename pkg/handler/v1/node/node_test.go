@@ -169,7 +169,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			}
 
 			machines := &clusterv1alpha1.MachineList{}
-			if err := clientsSets.FakeClient.List(context.TODO(), machines); err != nil {
+			if err := clientsSets.FakeClient.List(context.Background(), machines); err != nil {
 				t.Fatalf("failed to list machines from fake client: %v", err)
 			}
 
@@ -1421,7 +1421,7 @@ func TestDeleteNodeDeployment(t *testing.T) {
 			}
 
 			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-			if err := clientsSets.FakeClient.List(context.TODO(), machineDeployments); err != nil {
+			if err := clientsSets.FakeClient.List(context.Background(), machineDeployments); err != nil {
 				t.Fatalf("failed to list MachineDeployments: %v", err)
 			}
 

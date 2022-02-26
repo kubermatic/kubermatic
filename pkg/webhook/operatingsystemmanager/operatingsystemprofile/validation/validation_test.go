@@ -137,7 +137,7 @@ func TestHandle(t *testing.T) {
 				decoder: d,
 			}
 
-			if res := handler.Handle(context.TODO(), tt.req); res.Allowed != tt.wantAllowed {
+			if res := handler.Handle(context.Background(), tt.req); res.Allowed != tt.wantAllowed {
 				t.Errorf("Allowed %t, but wanted %t", res.Allowed, tt.wantAllowed)
 				t.Logf("Response: %v", res)
 			}

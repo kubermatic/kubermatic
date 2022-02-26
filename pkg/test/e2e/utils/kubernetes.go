@@ -65,9 +65,9 @@ type TestPodConfig struct {
 }
 
 // DeployTestPod deploys the pod to be used to run the test command.
-func (t *TestPodConfig) DeployTestPod() error {
+func (t *TestPodConfig) DeployTestPod(ctx context.Context) error {
 	testPod := t.CreatePodFunc(t.Namespace)
-	if err := t.Client.Create(context.TODO(), testPod); err != nil {
+	if err := t.Client.Create(ctx, testPod); err != nil {
 		return errors.Wrap(err, "failed to create host test pod")
 	}
 
@@ -75,11 +75,11 @@ func (t *TestPodConfig) DeployTestPod() error {
 	if t.PodReadinessTimeout == 0 {
 		t.PodReadinessTimeout = 5 * time.Minute
 	}
-	if !CheckPodsRunningReady(t.Client, t.Namespace, []string{testPod.Name}, t.PodReadinessTimeout) {
+	if !CheckPodsRunningReady(ctx, t.Client, t.Namespace, []string{testPod.Name}, t.PodReadinessTimeout) {
 		return errors.New("timeout occurred while waiting for host test pod readiness")
 	}
 
-	if err := t.Client.Get(context.TODO(), ctrlruntimeclient.ObjectKey{
+	if err := t.Client.Get(ctx, ctrlruntimeclient.ObjectKey{
 		Namespace: testPod.Namespace,
 		Name:      testPod.Name,
 	}, testPod); err != nil {
@@ -90,9 +90,9 @@ func (t *TestPodConfig) DeployTestPod() error {
 }
 
 // CleanUp deletes the resources.
-func (t *TestPodConfig) CleanUp() error {
+func (t *TestPodConfig) CleanUp(ctx context.Context) error {
 	if t.testPod != nil {
-		return t.Client.Delete(context.TODO(), t.testPod)
+		return t.Client.Delete(ctx, t.testPod)
 	}
 	return nil
 }
@@ -188,13 +188,13 @@ func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error
 // WaitForPodsCreated waits for the given replicas number of pods matching the
 // given set of labels to be created, and returns the names of the matched
 // pods.
-func WaitForPodsCreated(c ctrlruntimeclient.Client, replicas int, namespace string, matchLabels map[string]string) ([]string, error) {
+func WaitForPodsCreated(ctx context.Context, c ctrlruntimeclient.Client, replicas int, namespace string, matchLabels map[string]string) ([]string, error) {
 	timeout := 2 * time.Minute
 	// List the pods, making sure we observe all the replicas.
 	DefaultLogger.Debugf("Waiting up to %v for %d pods to be created", timeout, replicas)
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(2 * time.Second) {
 		pods := corev1.PodList{}
-		if err := c.List(context.TODO(), &pods,
+		if err := c.List(ctx, &pods,
 			ctrlruntimeclient.InNamespace(namespace),
 			ctrlruntimeclient.MatchingLabels(matchLabels)); err != nil {
 			return nil, err
@@ -219,16 +219,16 @@ func WaitForPodsCreated(c ctrlruntimeclient.Client, replicas int, namespace stri
 // CheckPodsRunningReady returns whether all pods whose names are listed in
 // podNames in namespace ns are running and ready, using c and waiting at most
 // timeout.
-func CheckPodsRunningReady(c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration) bool {
-	return checkPodsCondition(c, ns, podNames, timeout, PodRunningReady, "running and ready")
+func CheckPodsRunningReady(ctx context.Context, c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration) bool {
+	return checkPodsCondition(ctx, c, ns, podNames, timeout, PodRunningReady, "running and ready")
 }
 
 // WaitForPodCondition waits a pods to be matched to the given condition.
-func WaitForPodCondition(c ctrlruntimeclient.Client, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
+func WaitForPodCondition(ctx context.Context, c ctrlruntimeclient.Client, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
 	DefaultLogger.Infof("Waiting up to %v for pod %q in namespace %q to be %q", timeout, podName, ns, desc)
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(pollPeriod) {
 		pod := corev1.Pod{}
-		if err := c.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Name: podName, Namespace: ns}, &pod); err != nil {
+		if err := c.Get(ctx, ctrlruntimeclient.ObjectKey{Name: podName, Namespace: ns}, &pod); err != nil {
 			if apierrors.IsNotFound(err) {
 				DefaultLogger.Debugf("Pod %q in namespace %q not found. Error: %v", podName, ns, err)
 				return err
@@ -253,7 +253,7 @@ type podCondition func(pod *corev1.Pod) (bool, error)
 
 // checkPodsCondition returns whether all pods whose names are listed in podNames
 // in namespace ns are in the condition, using c and waiting at most timeout.
-func checkPodsCondition(c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration, condition podCondition, desc string) bool {
+func checkPodsCondition(ctx context.Context, c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration, condition podCondition, desc string) bool {
 	np := len(podNames)
 	DefaultLogger.Infof("Waiting up to %v for %d pods to be %s: %s", timeout, np, desc, podNames)
 	type waitPodResult struct {
@@ -264,7 +264,7 @@ func checkPodsCondition(c ctrlruntimeclient.Client, ns string, podNames []string
 	for _, podName := range podNames {
 		// Launch off pod readiness checkers.
 		go func(name string) {
-			err := WaitForPodCondition(c, ns, name, desc, timeout, condition)
+			err := WaitForPodCondition(ctx, c, ns, name, desc, timeout, condition)
 			result <- waitPodResult{err == nil, name}
 		}(podName)
 	}

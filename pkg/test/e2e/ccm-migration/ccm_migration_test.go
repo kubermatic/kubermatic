@@ -46,6 +46,8 @@ const (
 )
 
 var _ = ginkgo.Describe("CCM migration", func() {
+	ctx := context.Background()
+
 	var (
 		userClient ctrlruntimeclient.Client
 		clusterJig *ClusterJig
@@ -65,7 +67,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				Version:        options.kubernetesVersion,
 			}
 
-			gomega.Expect(clusterJig.SetUp(kubermaticv1.CloudSpec{
+			gomega.Expect(clusterJig.SetUp(ctx, kubermaticv1.CloudSpec{
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					FloatingIPPool: options.osCredentials.floatingIPPool,
 					CredentialsReference: &machinecontrollertypes.GlobalSecretKeySelector{
@@ -80,7 +82,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			clusterJig.Log.Debugw("Cluster set up", "name", clusterJig.Cluster.Name)
 
 			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
-				userClient, err = clusterClientProvider.GetClient(context.TODO(), clusterJig.Cluster)
+				userClient, err = clusterClientProvider.GetClient(context.Background(), clusterJig.Cluster)
 				if err != nil {
 					clusterJig.Log.Debug("user cluster client get failed, retrying...")
 					return false, nil
@@ -89,12 +91,12 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			})).NotTo(gomega.HaveOccurred())
 			gomega.Expect(clusterv1alpha1.AddToScheme(userClient.Scheme())).NotTo(gomega.HaveOccurred())
 
-			gomega.Expect(clusterJig.CreateMachineDeployment(userClient, options.osCredentials))
+			gomega.Expect(clusterJig.CreateMachineDeployment(ctx, userClient, options.osCredentials))
 			clusterJig.Log.Debug("MachineDeployment created")
 		})
 
 		ginkgo.AfterEach(func() {
-			gomega.Expect(clusterJig.CleanUp()).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {
@@ -103,11 +105,11 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			newCluster.Spec.Features = map[string]bool{
 				kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 			}
-			gomega.Expect(clusterJig.SeedClient.Patch(context.TODO(), newCluster, ctrlruntimeclient.MergeFrom(clusterJig.Cluster))).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.SeedClient.Patch(context.Background(), newCluster, ctrlruntimeclient.MergeFrom(clusterJig.Cluster))).NotTo(gomega.HaveOccurred())
 
 			ginkgo.By("getting the patched cluster")
 			annotatedCluster := &kubermaticv1.Cluster{}
-			gomega.Expect(clusterJig.SeedClient.Get(context.TODO(), types.NamespacedName{Name: clusterJig.Cluster.Name}, annotatedCluster)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.SeedClient.Get(context.Background(), types.NamespacedName{Name: clusterJig.Cluster.Name}, annotatedCluster)).NotTo(gomega.HaveOccurred())
 
 			ginkgo.By("asserting the annotations existence in the cluster")
 			_, ccmOk := annotatedCluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
@@ -117,7 +119,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			ginkgo.By("checking the -node-external-cloud-provider flag in the machineController webhook pod")
 			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
 				machineControllerWebhookPods := &corev1.PodList{}
-				if err := clusterJig.SeedClient.List(context.TODO(), machineControllerWebhookPods, ctrlruntimeclient.InNamespace(clusterJig.Cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
+				if err := clusterJig.SeedClient.List(context.Background(), machineControllerWebhookPods, ctrlruntimeclient.InNamespace(clusterJig.Cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
 					resources.AppLabelKey: resources.MachineControllerWebhookDeploymentName,
 				}); err != nil {
 					return false, err
@@ -135,15 +137,15 @@ var _ = ginkgo.Describe("CCM migration", func() {
 
 			machines := &clusterv1alpha1.MachineList{}
 			ginkgo.By("rolling out all the machines")
-			gomega.Expect(userClient.List(context.TODO(), machines)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(userClient.List(context.Background(), machines)).NotTo(gomega.HaveOccurred())
 			for _, m := range machines.Items {
-				gomega.Expect(userClient.Delete(context.TODO(), &m)).NotTo(gomega.HaveOccurred())
+				gomega.Expect(userClient.Delete(context.Background(), &m)).NotTo(gomega.HaveOccurred())
 			}
 
 			ginkgo.By("waiting for the complete cluster migration")
 			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
 				migratingCluster := &kubermaticv1.Cluster{}
-				if err := clusterJig.SeedClient.Get(context.TODO(), types.NamespacedName{Name: clusterJig.Cluster.Name}, migratingCluster); err != nil {
+				if err := clusterJig.SeedClient.Get(context.Background(), types.NamespacedName{Name: clusterJig.Cluster.Name}, migratingCluster); err != nil {
 					return false, err
 				}
 

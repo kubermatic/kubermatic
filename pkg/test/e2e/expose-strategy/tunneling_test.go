@@ -19,6 +19,8 @@ limitations under the License.
 package exposestrategy
 
 import (
+	"context"
+
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
@@ -29,6 +31,8 @@ import (
 )
 
 var _ = ginkgo.Describe("The Tunneling strategy", func() {
+	ctx := context.Background()
+
 	var (
 		clusterJig  *ClusterJig
 		agentConfig *AgentConfig
@@ -43,7 +47,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			DatacenterName: options.datacenter,
 			Version:        options.kubernetesVersion,
 		}
-		gomega.Expect(clusterJig.SetUp()).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
+		gomega.Expect(clusterJig.SetUp(ctx)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
 		agentConfig = &AgentConfig{
 			Log:       e2eutils.DefaultLogger,
 			Client:    k8scli,
@@ -58,17 +62,17 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			Config:        restConf,
 			CreatePodFunc: newClientPod,
 		}}
-		gomega.Expect(agentConfig.DeployAgentPod()).NotTo(gomega.HaveOccurred(), "agent should deploy successfully")
-		gomega.Expect(client.DeployTestPod()).NotTo(gomega.HaveOccurred(), "client pod should deploy successfully")
+		gomega.Expect(agentConfig.DeployAgentPod(ctx)).NotTo(gomega.HaveOccurred(), "agent should deploy successfully")
+		gomega.Expect(client.DeployTestPod(ctx)).NotTo(gomega.HaveOccurred(), "client pod should deploy successfully")
 	})
 	ginkgo.AfterEach(func() {
 		if !options.skipCleanup {
-			gomega.Expect(clusterJig.CleanUp()).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
 			if agentConfig != nil {
-				gomega.Expect(agentConfig.CleanUp()).NotTo(gomega.HaveOccurred())
+				gomega.Expect(agentConfig.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
 			}
 			if client != nil {
-				gomega.Expect(client.CleanUp()).NotTo(gomega.HaveOccurred())
+				gomega.Expect(client.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
 			}
 		}
 	})

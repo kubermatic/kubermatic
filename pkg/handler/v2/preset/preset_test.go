@@ -573,7 +573,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
@@ -817,7 +817,7 @@ func TestCreatePreset(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
@@ -1176,7 +1176,7 @@ func TestUpdatePreset(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
@@ -1276,7 +1276,7 @@ func TestDeleteProviderPreset(t *testing.T) {
 			assert.Equal(t, tc.HTTPStatus, res.Code)
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				if !tc.IsDeleted {
 					t.Fatalf("failed to get preset: %+v", err)
 				} else {
@@ -1383,7 +1383,7 @@ func TestDeletePresetProvider(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
@@ -1457,7 +1457,7 @@ func TestDeletePreset(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				if !tc.IsDeleted {
 					t.Fatalf("failed to get preset: %+v", err)
 				} else {

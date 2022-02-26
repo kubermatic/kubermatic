@@ -17,7 +17,6 @@ limitations under the License.
 package handler
 
 import (
-	"context"
 	"net"
 	"net/http"
 	"net/url"
@@ -129,7 +128,7 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 		return nil, err
 	}
 
-	claims, err := tokenVerifier.Verify(context.TODO(), token)
+	claims, err := tokenVerifier.Verify(req.Context(), token)
 	if err != nil {
 		return nil, err
 	}

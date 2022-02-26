@@ -347,7 +347,7 @@ func TestInitializeCloudProvider(t *testing.T) {
 					return sc, nil
 				},
 			}
-			c, err := os.InitializeCloudProvider(context.TODO(), tt.cluster, (&fakeClusterUpdater{c: tt.cluster}).update)
+			c, err := os.InitializeCloudProvider(context.Background(), tt.cluster, (&fakeClusterUpdater{c: tt.cluster}).update)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Provider.InitializeCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
 				return
