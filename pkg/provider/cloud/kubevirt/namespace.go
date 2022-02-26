@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -58,12 +57,7 @@ func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.
 func deleteNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
 	ns := &corev1.Namespace{}
 	if err := client.Get(ctx, types.NamespacedName{Name: name}, ns); err != nil {
-		// namespace is already gone
-		if kerrors.IsNotFound(err) {
-			return nil
-		}
-
-		return fmt.Errorf("failed to reconcile Namespace: %w", err)
+		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	return client.Delete(ctx, ns)
