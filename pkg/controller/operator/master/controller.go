@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -72,6 +73,7 @@ func Add(
 	}
 
 	namespacePredicate := predicateutil.ByNamespace(namespace)
+	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	// put the config's identifier on the queue
 	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
@@ -86,7 +88,7 @@ func Add(
 	})
 
 	cfg := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", cfg, err)
 	}
 
@@ -111,10 +113,16 @@ func Add(
 			return nil
 		}
 
+		config := configs.Items[0]
+		if config.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
+			log.Debugf("KubermaticConfiguration does not have matching %s label", kubermaticv1.WorkerNameLabelKey)
+			return nil
+		}
+
 		return []reconcile.Request{{
 			NamespacedName: types.NamespacedName{
-				Namespace: configs.Items[0].Namespace,
-				Name:      configs.Items[0].Name,
+				Namespace: config.Namespace,
+				Name:      config.Name,
 			},
 		}}
 	})
