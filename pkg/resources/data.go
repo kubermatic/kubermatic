@@ -27,12 +27,14 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/distribution/distribution/v3/reference"
+	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -44,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -357,7 +358,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 func (d *TemplateData) ProviderName() string {
 	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
-		klog.Errorf("could not identify cloud provider: %v", err)
+		kubermaticlog.Logger.Errorw("could not identify cloud provider", zap.Error(err))
 	}
 	return p
 }
@@ -504,27 +505,31 @@ func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 // This is used to avoid deploying the CCM before the in-tree cloud controllers
 // have been deactivated.
 func (d *TemplateData) KCMCloudControllersDeactivated() bool {
+	logger := kubermaticlog.Logger
+
 	kcm := appsv1.Deployment{}
 	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ControllerManagerDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kcm); err != nil {
-		klog.Errorf("could not get kcm deployment: %v", err)
+		logger.Errorw("could not get kcm deployment", zap.Error(err))
 		return false
 	}
+
 	ready, _ := kubernetes.IsDeploymentRolloutComplete(&kcm, 0)
-	klog.V(4).Infof("controller-manager deployment rollout complete: %t", ready)
+	logger.Debugw("controller-manager deployment rollout status", "ready", ready)
+
 	if c := getContainer(&kcm, ControllerManagerDeploymentName); c != nil {
 		if ok, cmd := UnwrapCommand(*c); ok {
-			klog.V(4).Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
-			// If no --cloud-provider flag is provided in-tree cloud provider
-			// is disabled.
+			logger.Debugw("controller-manager command", "args", cmd.Args)
+
+			// If no --cloud-provider flag is provided in-tree cloud provider is disabled.
 			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternalFlag {
-				klog.V(4).Info("in-tree cloud provider disabled in controller-manager deployment")
+				logger.Debug("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
 
 			// Otherwise cloud countrollers could have been explicitly disabled
 			if ok, val := getArgValue(cmd.Args, "--controllers"); ok {
 				controllers := strings.Split(val, ",")
-				klog.V(4).Infof("cloud controllers disabled in controller-manager deployment %s", controllers)
+				logger.Debugw("cloud controllers disabled in controller-manager deployment", "controllers", controllers)
 				return ready && sets.NewString(controllers...).HasAll("-cloud-node-lifecycle", "-route", "-service")
 			}
 		}
@@ -535,7 +540,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 
 func UnwrapCommand(container corev1.Container) (found bool, command httpproberapi.Command) {
 	for i, arg := range container.Args {
-		klog.V(4).Infof("unwrap command processing arg: %s", arg)
+		kubermaticlog.Logger.Debugw("unwrap command processing argument", "arg", arg)
 		if arg == "-command" && i < len(container.Args)-1 {
 			if err := json.Unmarshal([]byte(container.Args[i+1]), &command); err != nil {
 				return
@@ -548,9 +553,9 @@ func UnwrapCommand(container corev1.Container) (found bool, command httpproberap
 
 func getArgValue(args []string, argName string) (bool, string) {
 	for i, arg := range args {
-		klog.V(4).Infof("processing arg %s", arg)
+		kubermaticlog.Logger.Debugw("processing argument", "arg", arg)
 		if arg == argName {
-			klog.V(4).Infof("found argument %s", argName)
+			kubermaticlog.Logger.Debugw("found argument", "name", argName)
 			if i >= len(args)-1 {
 				return false, ""
 			}

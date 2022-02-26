@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -118,7 +119,7 @@ func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	data := &fakeDataProvider{caPair: ca}
 	assert.NotNil(t, data)
 
-	_, create := GetInternalKubeconfigCreator("some-namespace", "some-name", "test-creator-cn", orgs, data)()
+	_, create := GetInternalKubeconfigCreator("some-namespace", "some-name", "test-creator-cn", orgs, data, zap.NewNop().Sugar())()
 	secret, err := create(&corev1.Secret{})
 	if err != nil {
 		t.Fatal(err)

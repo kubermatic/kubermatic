@@ -39,10 +39,9 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-
-	"k8s.io/klog"
 )
 
 const (
@@ -631,7 +630,7 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 			SecGroupID: secGroup.ID,
 			Protocol:   osecuritygrouprules.ProtocolICMP,
 		})
-		klog.Infof("Adding ICMP allow rule to cluster %q", cluster.Name)
+		kubermaticlog.Logger.Infow("Adding Openstack ICMP allow rule to cluster", "cluster", cluster.Name)
 	}
 	if !hasIPV6Rule {
 		rulesToCreate = append(rulesToCreate, osecuritygrouprules.CreateOpts{
@@ -640,7 +639,7 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 			SecGroupID: secGroup.ID,
 			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
 		})
-		klog.Infof("Adding ICMP6 allow rule to cluster %q", cluster.Name)
+		kubermaticlog.Logger.Infow("Adding Openstack ICMP6 allow rule to cluster", "cluster", cluster.Name)
 	}
 
 	for _, rule := range rulesToCreate {
