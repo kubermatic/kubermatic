@@ -77,7 +77,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 			}
 		}
 
-		return providercommon.GetVsphereDatastoreList(userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
+		return providercommon.GetVsphereDatastoreList(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 

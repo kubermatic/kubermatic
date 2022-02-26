@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,8 +32,9 @@ import (
 
 func TestEnsureInstanceProfile(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
@@ -44,7 +46,7 @@ func TestEnsureInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		profile, err := ensureInstanceProfile(cs.IAM, cluster, profileName)
+		profile, err := ensureInstanceProfile(ctx, cs.IAM, cluster, profileName)
 		if err != nil {
 			t.Fatalf("ensureInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -58,7 +60,7 @@ func TestEnsureInstanceProfile(t *testing.T) {
 		}
 
 		// doing it again should not cause any harm
-		profile, err = ensureInstanceProfile(cs.IAM, cluster, profileName)
+		profile, err = ensureInstanceProfile(ctx, cs.IAM, cluster, profileName)
 		if err != nil {
 			t.Fatalf("ensureInstanceProfile (2) should not have errored, but returned %v", err)
 		}
@@ -88,7 +90,7 @@ func TestEnsureInstanceProfile(t *testing.T) {
 			InstanceProfileName: profileName,
 		})
 
-		profile, err := ensureInstanceProfile(cs.IAM, cluster, profileName)
+		profile, err := ensureInstanceProfile(ctx, cs.IAM, cluster, profileName)
 		if err != nil {
 			t.Fatalf("ensureInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -112,8 +114,9 @@ func profileHasRole(profile *iam.InstanceProfile, roleName string) bool {
 
 func TestReconcileWorkerInstanceProfile(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
@@ -124,7 +127,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileWorkerInstanceProfile(cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -133,7 +136,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 			t.Error("Cluster spec should have an instance profile name set, but it's empty")
 		}
 
-		profile, err := getInstanceProfile(cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
+		profile, err := getInstanceProfile(ctx, cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
 		if err != nil {
 			t.Fatalf("getInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -155,7 +158,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 		})
 
 		// this will create a new profile that is owned by us
-		cluster, err = reconcileWorkerInstanceProfile(cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -164,7 +167,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 			t.Errorf("Cluster spec should have retained profile name %q, but now is %q", profileName, cluster.Spec.Cloud.AWS.InstanceProfileName)
 		}
 
-		profile, err := getInstanceProfile(cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
+		profile, err := getInstanceProfile(ctx, cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
 		if err != nil {
 			t.Fatalf("getInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -200,7 +203,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 		// this should create neither a profile nor a role, we rely entirely on the pre-existing stuff,
 		// no matter how broken it might be (it's the user's responsibility if they make us use their
 		// profile)
-		cluster, err = reconcileWorkerInstanceProfile(cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -210,7 +213,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 			t.Errorf("Cluster spec should have retained profile name %q, but now is %q", profileName, cluster.Spec.Cloud.AWS.InstanceProfileName)
 		}
 
-		profile, err := getInstanceProfile(cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
+		profile, err := getInstanceProfile(ctx, cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
 		if err != nil {
 			t.Fatalf("getInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -227,8 +230,9 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 
 func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
@@ -239,24 +243,24 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileWorkerInstanceProfile(cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
 
 		profileName := cluster.Spec.Cloud.AWS.InstanceProfileName
 
-		if err = cleanUpWorkerInstanceProfile(cs.IAM, cluster); err != nil {
+		if err = cleanUpWorkerInstanceProfile(ctx, cs.IAM, cluster); err != nil {
 			t.Fatalf("cleanUpWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
 
 		// make sure the profile is gone
-		if _, err := getInstanceProfile(cs.IAM, profileName); err == nil {
+		if _, err := getInstanceProfile(ctx, cs.IAM, profileName); err == nil {
 			t.Fatal("getInstanceProfile should not have been able to find the profile, but it did")
 		}
 
 		// make sure the role is also gone
-		if _, err := getRole(cs.IAM, workerRoleName(cluster.Name)); err == nil {
+		if _, err := getRole(ctx, cs.IAM, workerRoleName(cluster.Name)); err == nil {
 			t.Fatal("getRole should not have been able to find the worker role, but it did")
 		}
 	})
@@ -266,7 +270,7 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileWorkerInstanceProfile(cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -276,17 +280,17 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 		// the big difference to the vanilla-case testcase: we forget the profile name
 		cluster.Spec.Cloud.AWS.InstanceProfileName = ""
 
-		if err = cleanUpWorkerInstanceProfile(cs.IAM, cluster); err != nil {
+		if err = cleanUpWorkerInstanceProfile(ctx, cs.IAM, cluster); err != nil {
 			t.Fatalf("cleanUpWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
 
 		// make sure the profile is gone
-		if _, err := getInstanceProfile(cs.IAM, profileName); err == nil {
+		if _, err := getInstanceProfile(ctx, cs.IAM, profileName); err == nil {
 			t.Fatal("getInstanceProfile should not have been able to find the profile, but it did")
 		}
 
 		// make sure the role is also gone
-		if _, err := getRole(cs.IAM, workerRoleName(cluster.Name)); err == nil {
+		if _, err := getRole(ctx, cs.IAM, workerRoleName(cluster.Name)); err == nil {
 			t.Fatal("getRole should not have been able to find the worker role, but it did")
 		}
 	})
@@ -296,7 +300,7 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		if err = cleanUpWorkerInstanceProfile(cs.IAM, cluster); err != nil {
+		if err = cleanUpWorkerInstanceProfile(ctx, cs.IAM, cluster); err != nil {
 			t.Fatalf("cleanUpWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
 	})
@@ -321,12 +325,12 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 		})
 
 		// clean it up, this should do nothing
-		if err = cleanUpWorkerInstanceProfile(cs.IAM, cluster); err != nil {
+		if err = cleanUpWorkerInstanceProfile(ctx, cs.IAM, cluster); err != nil {
 			t.Fatalf("cleanUpWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
 
 		// make sure the profile still exists
-		if _, err := getInstanceProfile(cs.IAM, profileName); err != nil {
+		if _, err := getInstanceProfile(ctx, cs.IAM, profileName); err != nil {
 			t.Fatal("getInstanceProfile should have been able to find the foreign profile, but it is gone")
 		}
 	})

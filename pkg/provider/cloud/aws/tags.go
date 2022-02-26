@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -49,14 +50,14 @@ func iamOwnershipTag(clusterName string) *iam.Tag {
 	}
 }
 
-func reconcileClusterTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileClusterTags(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// tagging happens after a successful reconciliation, so we can rely on these fields not being empty
 	resourceIDs := []*string{
 		&cluster.Spec.Cloud.AWS.SecurityGroupID,
 		&cluster.Spec.Cloud.AWS.RouteTableID,
 	}
 
-	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+	sOut, err := client.DescribeSubnetsWithContext(ctx, &ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID)},
 	})
 	if err != nil {
@@ -69,7 +70,7 @@ func reconcileClusterTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster,
 		subnetIDs = append(subnetIDs, *subnet.SubnetId)
 	}
 
-	_, err = client.CreateTags(&ec2.CreateTagsInput{
+	_, err = client.CreateTagsWithContext(ctx, &ec2.CreateTagsInput{
 		Resources: resourceIDs,
 		Tags:      []*ec2.Tag{ec2ClusterTag(cluster.Name)},
 	})
@@ -81,7 +82,7 @@ func reconcileClusterTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster,
 	return cluster, nil
 }
 
-func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
+func cleanUpTags(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 	// Instead of trying to keep track of all the things we might have
 	// tagged, we instead simply list all tagged resources. It's a few
 	// more API calls, but saves us a lot of trouble in the code w.r.t.
@@ -106,7 +107,7 @@ func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 
 	// list subnets (we do not create subnets, but we tagged all of them
 	// to make the AWS CCM LoadBalancer integration work)
-	subnets, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{Filters: filters})
+	subnets, err := client.DescribeSubnetsWithContext(ctx, &ec2.DescribeSubnetsInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list subnets: %w", err)
 	}
@@ -116,7 +117,7 @@ func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 	}
 
 	// list security groups
-	securityGroups, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{Filters: filters})
+	securityGroups, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list security groups: %w", err)
 	}
@@ -126,7 +127,7 @@ func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 	}
 
 	// list route tables
-	routeTables, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{Filters: filters})
+	routeTables, err := client.DescribeRouteTablesWithContext(ctx, &ec2.DescribeRouteTablesInput{Filters: filters})
 	if err != nil {
 		return fmt.Errorf("failed to list route tables: %w", err)
 	}
@@ -137,7 +138,7 @@ func cleanUpTags(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 
 	// remove tag
 	if len(resourceIDs) > 0 {
-		_, err = client.DeleteTags(&ec2.DeleteTagsInput{
+		_, err = client.DeleteTagsWithContext(ctx, &ec2.DeleteTagsInput{
 			Resources: resourceIDs,
 			Tags:      []*ec2.Tag{tag},
 		})

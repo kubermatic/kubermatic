@@ -17,6 +17,7 @@ limitations under the License.
 package vsphere
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -293,7 +294,7 @@ func TestProviderValidateCloudSpec(t *testing.T) {
 			v := &Provider{
 				dc: tt.dc,
 			}
-			if err := v.ValidateCloudSpec(tt.spec); (err != nil) != tt.wantErr {
+			if err := v.ValidateCloudSpec(context.TODO(), tt.spec); (err != nil) != tt.wantErr {
 				t.Errorf("Provider.ValidateCloudSpec() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

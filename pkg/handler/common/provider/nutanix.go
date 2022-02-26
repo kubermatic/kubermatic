@@ -39,9 +39,9 @@ type NutanixCredentials struct {
 }
 
 type NutanixClientSet interface {
-	ListNutanixClusters() (apiv1.NutanixClusterList, error)
-	ListNutanixProjects() (apiv1.NutanixProjectList, error)
-	ListNutanixSubnets(clusterName, projectName string) (apiv1.NutanixSubnetList, error)
+	ListNutanixClusters(ctx context.Context) (apiv1.NutanixClusterList, error)
+	ListNutanixProjects(ctx context.Context) (apiv1.NutanixProjectList, error)
+	ListNutanixSubnets(ctx context.Context, clusterName, projectName string) (apiv1.NutanixSubnetList, error)
 }
 
 type nutanixClientImpl struct {
@@ -56,13 +56,13 @@ var NewNutanixClient = func(dc *kubermaticv1.DatacenterSpecNutanix, creds *Nutan
 	}
 }
 
-func (n *nutanixClientImpl) ListNutanixClusters() (apiv1.NutanixClusterList, error) {
+func (n *nutanixClientImpl) ListNutanixClusters(ctx context.Context) (apiv1.NutanixClusterList, error) {
 	clientSet, err := nutanixprovider.GetClientSetWithCreds(n.dc.Endpoint, n.dc.Port, &n.dc.AllowInsecure, n.creds.ProxyURL, n.creds.Username, n.creds.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	clusterResp, err := nutanixprovider.GetClusters(clientSet)
+	clusterResp, err := nutanixprovider.GetClusters(ctx, clientSet)
 	if err != nil {
 		return nil, err
 	}
@@ -79,13 +79,13 @@ func (n *nutanixClientImpl) ListNutanixClusters() (apiv1.NutanixClusterList, err
 	return clusters, nil
 }
 
-func (n *nutanixClientImpl) ListNutanixProjects() (apiv1.NutanixProjectList, error) {
+func (n *nutanixClientImpl) ListNutanixProjects(ctx context.Context) (apiv1.NutanixProjectList, error) {
 	clientSet, err := nutanixprovider.GetClientSetWithCreds(n.dc.Endpoint, n.dc.Port, &n.dc.AllowInsecure, n.creds.ProxyURL, n.creds.Username, n.creds.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	projectsResp, err := nutanixprovider.GetProjects(clientSet)
+	projectsResp, err := nutanixprovider.GetProjects(ctx, clientSet)
 	if err != nil {
 		return nil, err
 	}
@@ -100,17 +100,17 @@ func (n *nutanixClientImpl) ListNutanixProjects() (apiv1.NutanixProjectList, err
 	return projects, nil
 }
 
-func (n *nutanixClientImpl) ListNutanixSubnets(clusterName, projectName string) (apiv1.NutanixSubnetList, error) {
+func (n *nutanixClientImpl) ListNutanixSubnets(ctx context.Context, clusterName, projectName string) (apiv1.NutanixSubnetList, error) {
 	clientSet, err := nutanixprovider.GetClientSetWithCreds(n.dc.Endpoint, n.dc.Port, &n.dc.AllowInsecure, n.creds.ProxyURL, n.creds.Username, n.creds.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	return listNutanixSubnets(clientSet, clusterName, projectName)
+	return listNutanixSubnets(ctx, clientSet, clusterName, projectName)
 }
 
-func listNutanixSubnets(client *nutanixprovider.ClientSet, clusterName, projectName string) (apiv1.NutanixSubnetList, error) {
-	subnetResp, err := nutanixprovider.GetSubnets(client, clusterName, projectName)
+func listNutanixSubnets(ctx context.Context, client *nutanixprovider.ClientSet, clusterName, projectName string) (apiv1.NutanixSubnetList, error) {
+	subnetResp, err := nutanixprovider.GetSubnets(ctx, client, clusterName, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -163,5 +163,5 @@ func NutanixSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoG
 		return nil, fmt.Errorf("failed to get client set: %w", err)
 	}
 
-	return listNutanixSubnets(client, clusterName, projectName)
+	return listNutanixSubnets(ctx, client, clusterName, projectName)
 }

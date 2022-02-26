@@ -119,7 +119,7 @@ func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 		if err != nil {
 			return nil, err
 		}
-		computeService, gcpProject, err := gcp.ConnectToComputeService(sa)
+		computeService, gcpProject, err := gcp.ConnectToComputeService(ctx, sa)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +220,7 @@ func listGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	diskTypes := apiv1.GCPDiskTypeList{}
 	// TODO: There are some issues at the moment with local-ssd and pd-extreme, that's why it is disabled at the moment.
 	excludedDiskTypes := sets.NewString("local-ssd", "pd-extreme")
-	computeService, project, err := gcp.ConnectToComputeService(sa)
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return diskTypes, err
 	}

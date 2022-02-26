@@ -17,6 +17,7 @@ limitations under the License.
 package cluster
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -34,7 +35,7 @@ import (
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster.
 // The ClusterTemplate can be nil.
-func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter, config *kubermaticv1.KubermaticConfiguration, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool, features features.FeatureGate) (*kubermaticv1.ClusterSpec, error) {
+func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter, config *kubermaticv1.KubermaticConfiguration, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool, features features.FeatureGate) (*kubermaticv1.ClusterSpec, error) {
 	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
 
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
@@ -73,11 +74,11 @@ func Spec(apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed
 		return nil, err
 	}
 
-	if err := defaulting.DefaultClusterSpec(spec, template, seed, config, cloudProvider); err != nil {
+	if err := defaulting.DefaultClusterSpec(ctx, spec, template, seed, config, cloudProvider); err != nil {
 		return nil, err
 	}
 
-	if errs := validation.ValidateNewClusterSpec(spec, dc, cloudProvider, features, nil).ToAggregate(); errs != nil {
+	if errs := validation.ValidateNewClusterSpec(ctx, spec, dc, cloudProvider, features, nil).ToAggregate(); errs != nil {
 		return spec, errs
 	}
 

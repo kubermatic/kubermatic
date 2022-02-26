@@ -53,11 +53,11 @@ const (
 
 // CloudProvider declares a set of methods for interacting with a cloud provider.
 type CloudProvider interface {
-	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
-	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
-	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
-	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
-	ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error
+	InitializeCloudProvider(context.Context, *kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	CleanUpCloudProvider(context.Context, *kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	DefaultCloudSpec(context.Context, *kubermaticv1.CloudSpec) error
+	ValidateCloudSpec(context.Context, kubermaticv1.CloudSpec) error
+	ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error
 }
 
 // ReconcilingCloudProvider is a cloud provider that can not just created resources
@@ -65,7 +65,7 @@ type CloudProvider interface {
 type ReconcilingCloudProvider interface {
 	CloudProvider
 
-	ReconcileCluster(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	ReconcileCluster(context.Context, *kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 }
 
 // UpdaterOption represent an option for the updater function.

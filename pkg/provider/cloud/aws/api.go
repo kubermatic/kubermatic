@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -33,7 +34,7 @@ import (
 // The functions in this file are used throughout KKP, mostly in our REST API.
 
 // GetSubnets returns the list of subnets for a selected AWS VPC.
-func GetSubnets(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpcID string) ([]*ec2.Subnet, error) {
+func GetSubnets(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpcID string) ([]*ec2.Subnet, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
 	if err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func GetSubnets(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalI
 		Filters: []*ec2.Filter{ec2VPCFilter(vpcID)},
 	}
 
-	out, err := client.EC2.DescribeSubnets(subnetsInput)
+	out, err := client.EC2.DescribeSubnetsWithContext(ctx, subnetsInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list subnets: %w", err)
 	}
@@ -62,13 +63,13 @@ func isAuthFailure(err error) (bool, string) {
 }
 
 // GetVPCS returns the list of AWS VPCs.
-func GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) ([]*ec2.Vpc, error) {
+func GetVPCS(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) ([]*ec2.Vpc, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
 	if err != nil {
 		return nil, err
 	}
 
-	vpcOut, err := client.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{})
+	vpcOut, err := client.EC2.DescribeVpcsWithContext(ctx, &ec2.DescribeVpcsInput{})
 
 	if err != nil {
 		if ok, msg := isAuthFailure(err); ok {
@@ -82,12 +83,12 @@ func GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, 
 }
 
 // GetSecurityGroups returns the list of AWS Security Group filtered by VPC.
-func GetSecurityGroupsByVPC(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpcID string) ([]*ec2.SecurityGroup, error) {
+func GetSecurityGroupsByVPC(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpcID string) ([]*ec2.SecurityGroup, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, "", "", region)
 	if err != nil {
 		return nil, err
 	}
-	sgOut, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{Filters: []*ec2.Filter{ec2VPCFilter(vpcID)}})
+	sgOut, err := client.EC2.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{Filters: []*ec2.Filter{ec2VPCFilter(vpcID)}})
 
 	if err != nil {
 		if ok, msg := isAuthFailure(err); ok {
@@ -101,13 +102,13 @@ func GetSecurityGroupsByVPC(accessKeyID, secretAccessKey, assumeRoleARN, assumeR
 }
 
 // GetSecurityGroups returns the list of AWS Security Group.
-func GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) ([]*ec2.SecurityGroup, error) {
+func GetSecurityGroups(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) ([]*ec2.SecurityGroup, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region)
 	if err != nil {
 		return nil, err
 	}
 
-	securityGroups, err := getSecurityGroupsWithClient(client.EC2)
+	securityGroups, err := getSecurityGroupsWithClient(ctx, client.EC2)
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +126,8 @@ func GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleEx
 	return securityGroups, nil
 }
 
-func getSecurityGroupsWithClient(client ec2iface.EC2API) ([]*ec2.SecurityGroup, error) {
-	sgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{})
+func getSecurityGroupsWithClient(ctx context.Context, client ec2iface.EC2API) ([]*ec2.SecurityGroup, error) {
+	sgOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{})
 
 	if err != nil {
 		if ok, msg := isAuthFailure(err); ok {

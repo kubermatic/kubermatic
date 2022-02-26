@@ -103,11 +103,11 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	return allErrs
 }
 
-func ValidateNewClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
+func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := ValidateClusterSpec(spec, dc, enabledFeatures, parentFieldPath)
 
 	if cloudProvider != nil {
-		if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
+		if err := cloudProvider.ValidateCloudSpec(ctx, spec.Cloud); err != nil {
 			// Just using spec.Cloud for the error leads to a Go-representation of the struct being printed in
 			// the error message, which looks awful an is not helpful. However any other encoding (e.g. JSON)
 			// could lead to us leaking credentials that were given in the CloudSpec, so to be safe, we never
@@ -130,7 +130,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	if cloudProvider != nil {
-		if err := cloudProvider.ValidateCloudSpecUpdate(oldCluster.Spec.Cloud, newCluster.Spec.Cloud); err != nil {
+		if err := cloudProvider.ValidateCloudSpecUpdate(ctx, oldCluster.Spec.Cloud, newCluster.Spec.Cloud); err != nil {
 			allErrs = append(allErrs, field.Forbidden(specPath.Child("cloud"), err.Error()))
 		}
 	}

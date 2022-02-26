@@ -55,7 +55,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetProvider pr
 			}
 		}
 
-		return providercommon.GetVsphereNetworks(userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
+		return providercommon.GetVsphereNetworks(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 
@@ -94,7 +94,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetProvider pro
 			}
 		}
 
-		return providercommon.GetVsphereFolders(userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
+		return providercommon.GetVsphereFolders(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 

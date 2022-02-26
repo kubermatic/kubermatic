@@ -19,6 +19,7 @@ limitations under the License.
 package vsphere
 
 import (
+	"context"
 	"crypto/x509"
 	"strings"
 	"testing"
@@ -48,7 +49,7 @@ func TestVSphereCA(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword, test.caBundle)
+			_, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, test.caBundle)
 			if test.expectedError {
 				if err == nil {
 					t.Fatal("expected err, got nil")

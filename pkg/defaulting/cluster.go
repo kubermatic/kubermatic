@@ -44,7 +44,7 @@ import (
 // This function assumes that the KubermaticConfiguration has already been defaulted
 // (as the KubermaticConfigurationGetter does that automatically), but the Seed
 // does not yet need to be defaulted (to the values of the KubermaticConfiguration).
-func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration, cloudProvider provider.CloudProvider) error {
+func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration, cloudProvider provider.CloudProvider) error {
 	var err error
 
 	// Apply default values to the Seed, just in case.
@@ -74,7 +74,7 @@ func DefaultClusterSpec(spec *kubermaticv1.ClusterSpec, template *kubermaticv1.C
 
 	// Give cloud providers a chance to default their spec.
 	if cloudProvider != nil {
-		if err := cloudProvider.DefaultCloudSpec(&spec.Cloud); err != nil {
+		if err := cloudProvider.DefaultCloudSpec(ctx, &spec.Cloud); err != nil {
 			return fmt.Errorf("failed to default cloud spec: %w", err)
 		}
 	}

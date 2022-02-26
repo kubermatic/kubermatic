@@ -177,7 +177,7 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 		}
 
-		clusters, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixClusters()
+		clusters, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixClusters(ctx)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list clusters: %s", err.Error()))
 		}
@@ -226,7 +226,7 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 		}
 
-		projects, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixProjects()
+		projects, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixProjects(ctx)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list projects: %s", err.Error()))
 		}
@@ -280,7 +280,7 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 		}
 
-		subnets, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixSubnets(cluster, project)
+		subnets, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixSubnets(ctx, cluster, project)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list subnets: %s", err.Error()))
 		}

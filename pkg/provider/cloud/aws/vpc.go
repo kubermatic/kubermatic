@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -35,12 +36,12 @@ func ec2VPCFilter(vpcID string) *ec2.Filter {
 	}
 }
 
-func reconcileVPC(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileVPC(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 
 	// check if the VPC exists, if we have an ID cached
 	if vpcID != "" {
-		out, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
+		out, err := client.DescribeVpcsWithContext(ctx, &ec2.DescribeVpcsInput{
 			VpcIds: aws.StringSlice([]string{vpcID}),
 		})
 		if err != nil && !isNotFound(err) {
@@ -59,7 +60,7 @@ func reconcileVPC(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update 
 	}
 
 	// re-find the default VPC
-	defaultVPC, err := getDefaultVPC(client)
+	defaultVPC, err := getDefaultVPC(ctx, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default VPC: %w", err)
 	}
@@ -69,8 +70,8 @@ func reconcileVPC(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update 
 	})
 }
 
-func getDefaultVPC(client ec2iface.EC2API) (*ec2.Vpc, error) {
-	vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
+func getDefaultVPC(ctx context.Context, client ec2iface.EC2API) (*ec2.Vpc, error) {
+	vpcOut, err := client.DescribeVpcsWithContext(ctx, &ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{{
 			Name:   aws.String("isDefault"),
 			Values: aws.StringSlice([]string{"true"}),
@@ -88,8 +89,8 @@ func getDefaultVPC(client ec2iface.EC2API) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
-func getVPCByID(client ec2iface.EC2API, vpcID string) (*ec2.Vpc, error) {
-	vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
+func getVPCByID(ctx context.Context, client ec2iface.EC2API, vpcID string) (*ec2.Vpc, error) {
+	vpcOut, err := client.DescribeVpcsWithContext(ctx, &ec2.DescribeVpcsInput{
 		VpcIds: aws.StringSlice([]string{vpcID}),
 	})
 

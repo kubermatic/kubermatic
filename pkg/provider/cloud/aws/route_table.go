@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -27,13 +28,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func reconcileRouteTable(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileRouteTable(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	tableID := cluster.Spec.Cloud.AWS.RouteTableID
 
 	// check if the RT exists, if we have an ID cached
 	if tableID != "" {
-		out, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+		out, err := client.DescribeRouteTablesWithContext(ctx, &ec2.DescribeRouteTablesInput{
 			RouteTableIds: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.RouteTableID}),
 			Filters:       []*ec2.Filter{ec2VPCFilter(vpcID)},
 		})
@@ -53,7 +54,7 @@ func reconcileRouteTable(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, 
 	}
 
 	// re-find the default route table
-	table, err := getDefaultRouteTable(client, vpcID)
+	table, err := getDefaultRouteTable(ctx, client, vpcID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default route table: %w", err)
 	}
@@ -63,8 +64,8 @@ func reconcileRouteTable(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, 
 	})
 }
 
-func getDefaultRouteTable(client ec2iface.EC2API, vpcID string) (*ec2.RouteTable, error) {
-	out, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+func getDefaultRouteTable(ctx context.Context, client ec2iface.EC2API, vpcID string) (*ec2.RouteTable, error) {
+	out, err := client.DescribeRouteTablesWithContext(ctx, &ec2.DescribeRouteTablesInput{
 		Filters: []*ec2.Filter{
 			ec2VPCFilter(vpcID),
 			{

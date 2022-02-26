@@ -17,6 +17,7 @@ limitations under the License.
 package packet
 
 import (
+	"context"
 	"errors"
 
 	"github.com/packethost/packngo"
@@ -44,19 +45,19 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 var _ provider.CloudProvider = &packet{}
 
 // DefaultCloudSpec adds defaults to the CloudSpec.
-func (p *packet) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (p *packet) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec validates the given CloudSpec.
-func (p *packet) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (p *packet) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	_, _, err := GetCredentialsForCluster(spec, p.secretKeySelector)
 	return err
 }
 
 // InitializeCloudProvider initializes a cluster, in particular
 // updates BillingCycle to the defaultBillingCycle, if it is not set.
-func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *packet) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.Packet.BillingCycle == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -76,12 +77,12 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 // }
 
 // CleanUpCloudProvider.
-func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *packet) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (p *packet) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (p *packet) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 

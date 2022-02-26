@@ -108,7 +108,7 @@ func OpenstackNetworkWithClusterCredentialsEndpoint(ctx context.Context, userInf
 	if err != nil {
 		return nil, err
 	}
-	return GetOpenstackNetworks(userInfo, seedsGetter, creds, datacenterName, caBundle)
+	return GetOpenstackNetworks(ctx, userInfo, seedsGetter, creds, datacenterName, caBundle)
 }
 
 func OpenstackSecurityGroupWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
@@ -131,7 +131,7 @@ func OpenstackSecurityGroupWithClusterCredentialsEndpoint(ctx context.Context, u
 		return nil, err
 	}
 
-	return GetOpenstackSecurityGroups(userInfo, seedsGetter, creds, datacenterName, caBundle)
+	return GetOpenstackSecurityGroups(ctx, userInfo, seedsGetter, creds, datacenterName, caBundle)
 }
 
 func OpenstackSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
@@ -154,7 +154,7 @@ func OpenstackSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInf
 		return nil, err
 	}
 
-	return GetOpenstackSubnets(userInfo, seedsGetter, creds, networkID, datacenterName, caBundle)
+	return GetOpenstackSubnets(ctx, userInfo, seedsGetter, creds, networkID, datacenterName, caBundle)
 }
 
 func OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
@@ -201,13 +201,13 @@ func GetOpenstackAvailabilityZones(datacenter *kubermaticv1.Datacenter, credenti
 	return apiAvailabilityZones, nil
 }
 
-func GetOpenstackSubnets(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, networkID, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackSubnet, error) {
+func GetOpenstackSubnets(ctx context.Context, userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, networkID, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackSubnet, error) {
 	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	subnets, err := openstack.GetSubnets(authURL, region, networkID, credentials, caBundle)
+	subnets, err := openstack.GetSubnets(ctx, authURL, region, networkID, credentials, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -223,13 +223,13 @@ func GetOpenstackSubnets(userInfo *provider.UserInfo, seedsGetter provider.Seeds
 	return apiSubnetIDs, nil
 }
 
-func GetOpenstackNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackNetwork, error) {
+func GetOpenstackNetworks(ctx context.Context, userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackNetwork, error) {
 	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	networks, err := openstack.GetNetworks(authURL, region, credentials, caBundle)
+	networks, err := openstack.GetNetworks(ctx, authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -346,13 +346,13 @@ func IsFlavorEnabled(apiSize apiv1.OpenstackSize, enabledFlavors []string) bool 
 	return false
 }
 
-func GetOpenstackSecurityGroups(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackSecurityGroup, error) {
+func GetOpenstackSecurityGroups(ctx context.Context, userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackSecurityGroup, error) {
 	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	securityGroups, err := openstack.GetSecurityGroups(authURL, region, credentials, caBundle)
+	securityGroups, err := openstack.GetSecurityGroups(ctx, authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, err
 	}

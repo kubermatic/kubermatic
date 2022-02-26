@@ -17,6 +17,7 @@ limitations under the License.
 package gcp
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -31,7 +32,7 @@ import (
 )
 
 // cleanUnusedRoutes finds and remove unused gcp routes.
-func cleanUnusedRoutes(cluster *kubermaticv1.Cluster, log *zap.SugaredLogger, svc *compute.Service, projectID string) error {
+func cleanUnusedRoutes(ctx context.Context, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger, svc *compute.Service, projectID string) error {
 	// filter routes on:
 	// - name prefix for routes created by gcp cloud provider
 	// - default tag for routes created by gcp cloud provider
@@ -41,7 +42,7 @@ func cleanUnusedRoutes(cluster *kubermaticv1.Cluster, log *zap.SugaredLogger, sv
 		k8sNodeRouteTag,
 		networkURL(projectID, cluster.Spec.Cloud.GCP.Network))
 
-	routesList, err := svc.Routes.List(projectID).Filter(filterStr).Do()
+	routesList, err := svc.Routes.List(projectID).Filter(filterStr).Context(ctx).Do()
 	if err != nil {
 		return fmt.Errorf("failed to list GCP routes: %w", err)
 	}
@@ -55,7 +56,7 @@ func cleanUnusedRoutes(cluster *kubermaticv1.Cluster, log *zap.SugaredLogger, sv
 		}
 		if isNextHopNotFound(route) {
 			logger.Infof("deleting unused GCP route [%s]", route.Name)
-			if _, err := svc.Routes.Delete(projectID, route.Name).Do(); err != nil && !isHTTPError(err, http.StatusNotFound) {
+			if _, err := svc.Routes.Delete(projectID, route.Name).Context(ctx).Do(); err != nil && !isHTTPError(err, http.StatusNotFound) {
 				return fmt.Errorf("failed to delete GCP route %s: %w", route.Name, err)
 			}
 		}

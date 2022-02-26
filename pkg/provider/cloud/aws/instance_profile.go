@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,12 +32,12 @@ func workerInstanceProfileName(clusterName string) string {
 	return resourceNamePrefix + clusterName
 }
 
-func getInstanceProfile(client iamiface.IAMAPI, name string) (*iam.InstanceProfile, error) {
+func getInstanceProfile(ctx context.Context, client iamiface.IAMAPI, name string) (*iam.InstanceProfile, error) {
 	getProfileInput := &iam.GetInstanceProfileInput{
 		InstanceProfileName: aws.String(name),
 	}
 
-	profileOut, err := client.GetInstanceProfile(getProfileInput)
+	profileOut, err := client.GetInstanceProfileWithContext(ctx, getProfileInput)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func getInstanceProfile(client iamiface.IAMAPI, name string) (*iam.InstanceProfi
 	return profileOut.InstanceProfile, nil
 }
 
-func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileWorkerInstanceProfile(ctx context.Context, client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// Even though the profile depends upon the role (the role is assigned to it),
 	// the decision whether or not to reconcile any role depends on whether KKP
 	// owns the profile. If a user-supplied profile is used, then no role will
@@ -55,7 +56,7 @@ func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv
 		profileName = workerInstanceProfileName(cluster.Name)
 	}
 
-	profile, err := ensureInstanceProfile(client, cluster, profileName)
+	profile, err := ensureInstanceProfile(ctx, client, cluster, profileName)
 	if err != nil {
 		return cluster, fmt.Errorf("failed to ensure instance profile %q: %w", profileName, err)
 	}
@@ -63,7 +64,7 @@ func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv
 	// if we own the profile, we must also take care of the worker role
 	if hasIAMTag(iamOwnershipTag(cluster.Name), profile.Tags) {
 		// ensure the role exists
-		if err := reconcileWorkerRole(client, cluster); err != nil {
+		if err := reconcileWorkerRole(ctx, client, cluster); err != nil {
 			return nil, fmt.Errorf("failed to reconcile worker role: %w", err)
 		}
 
@@ -84,7 +85,7 @@ func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv
 				RoleName:            aws.String(roleName),
 			}
 
-			if _, err = client.AddRoleToInstanceProfile(addRoleInput); err != nil {
+			if _, err = client.AddRoleToInstanceProfileWithContext(ctx, addRoleInput); err != nil {
 				return cluster, fmt.Errorf("failed to add role to the instance profile: %w", err)
 			}
 		}
@@ -95,9 +96,9 @@ func reconcileWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv
 	})
 }
 
-func ensureInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, profileName string) (*iam.InstanceProfile, error) {
+func ensureInstanceProfile(ctx context.Context, client iamiface.IAMAPI, cluster *kubermaticv1.Cluster, profileName string) (*iam.InstanceProfile, error) {
 	// check if it exists
-	profile, err := getInstanceProfile(client, profileName)
+	profile, err := getInstanceProfile(ctx, client, profileName)
 	if err != nil && !isNotFound(err) {
 		return nil, fmt.Errorf("failed to get instance profile %q: %w", profileName, err)
 	}
@@ -113,7 +114,7 @@ func ensureInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster
 		Tags:                []*iam.Tag{iamOwnershipTag(cluster.Name)},
 	}
 
-	output, err := client.CreateInstanceProfile(createProfileInput)
+	output, err := client.CreateInstanceProfileWithContext(ctx, createProfileInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create instance profile: %w", err)
 	}
@@ -121,14 +122,14 @@ func ensureInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster
 	return output.InstanceProfile, nil
 }
 
-func cleanUpWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.Cluster) error {
+func cleanUpWorkerInstanceProfile(ctx context.Context, client iamiface.IAMAPI, cluster *kubermaticv1.Cluster) error {
 	profileName := cluster.Spec.Cloud.AWS.InstanceProfileName
 	if profileName == "" {
 		profileName = workerInstanceProfileName(cluster.Name)
 	}
 
 	// check if the profile still exists
-	profile, err := getInstanceProfile(client, profileName)
+	profile, err := getInstanceProfile(ctx, client, profileName)
 	if err != nil {
 		// the profile is already gone
 		if isNotFound(err) {
@@ -149,18 +150,18 @@ func cleanUpWorkerInstanceProfile(client iamiface.IAMAPI, cluster *kubermaticv1.
 			RoleName:            role.RoleName,
 			InstanceProfileName: aws.String(profileName),
 		}
-		if _, err = client.RemoveRoleFromInstanceProfile(removeRoleInput); err != nil {
+		if _, err = client.RemoveRoleFromInstanceProfileWithContext(ctx, removeRoleInput); err != nil {
 			return fmt.Errorf("failed to remove role %q from instance profile %q: %w", *role.RoleName, profileName, err)
 		}
 	}
 
 	// delete the worker-role we created
-	if err := deleteRole(client, cluster, workerRoleName(cluster.Name), nil); err != nil {
+	if err := deleteRole(ctx, client, cluster, workerRoleName(cluster.Name), nil); err != nil {
 		return fmt.Errorf("failed to delete worker role: %w", err)
 	}
 
 	// delete the profile itself
-	_, err = client.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{InstanceProfileName: aws.String(profileName)})
+	_, err = client.DeleteInstanceProfileWithContext(ctx, &iam.DeleteInstanceProfileInput{InstanceProfileName: aws.String(profileName)})
 
 	return err
 }

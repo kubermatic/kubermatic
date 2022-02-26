@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -36,12 +37,12 @@ func securityGroupName(cluster *kubermaticv1.Cluster) string {
 
 // Get security group by aws generated id string (sg-xxxxx).
 // Error is returned in case no such group exists.
-func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
+func getSecurityGroupByID(ctx context.Context, client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
 	if vpc == nil {
 		return nil, errors.New("no VPC given")
 	}
 
-	dsgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+	dsgOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
 		GroupIds: aws.StringSlice([]string{id}),
 		Filters:  []*ec2.Filter{ec2VPCFilter(*vpc.VpcId)},
 	})
@@ -55,13 +56,13 @@ func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2
 	return dsgOut.SecurityGroups[0], nil
 }
 
-func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	groupID := cluster.Spec.Cloud.AWS.SecurityGroupID
 
 	// if we already have an ID on the cluster, check if that group still exists
 	if groupID != "" {
-		describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
 			GroupIds: aws.StringSlice([]string{groupID}),
 			Filters:  []*ec2.Filter{ec2VPCFilter(vpcID)},
 		})
@@ -81,7 +82,7 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 	groupName := securityGroupName(cluster)
 
 	if groupID == "" {
-		describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
 			Filters: []*ec2.Filter{
 				ec2VPCFilter(vpcID),
 				{
@@ -102,7 +103,7 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 
 	// if we still have no ID, we must create a new group
 	if groupID == "" {
-		out, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
+		out, err := client.CreateSecurityGroupWithContext(ctx, &ec2.CreateSecurityGroupInput{
 			VpcId:       &vpcID,
 			GroupName:   aws.String(groupName),
 			Description: aws.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", cluster.Name)),
@@ -132,7 +133,7 @@ func reconcileSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluste
 
 	for _, perm := range permissions {
 		// try to add permission
-		_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		_, err := client.AuthorizeSecurityGroupIngressWithContext(ctx, &ec2.AuthorizeSecurityGroupIngressInput{
 			GroupId: aws.String(groupID),
 			IpPermissions: []*ec2.IpPermission{
 				perm,
@@ -221,7 +222,7 @@ func getSecurityGroupPermissions(securityGroupID string, lowPort, highPort int, 
 	}
 }
 
-func cleanUpSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
+func cleanUpSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	groupID := cluster.Spec.Cloud.AWS.SecurityGroupID
 
@@ -230,7 +231,7 @@ func cleanUpSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster)
 	if groupID == "" {
 		groupName := securityGroupName(cluster)
 
-		describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
 			Filters: []*ec2.Filter{
 				ec2VPCFilter(vpcID),
 				{
@@ -255,7 +256,7 @@ func cleanUpSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster)
 	}
 
 	// check if we own the security group
-	describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+	describeOut, err := client.DescribeSecurityGroupsWithContext(ctx, &ec2.DescribeSecurityGroupsInput{
 		GroupIds: aws.StringSlice([]string{groupID}),
 		Filters:  []*ec2.Filter{ec2VPCFilter(vpcID)},
 	})
@@ -274,7 +275,7 @@ func cleanUpSecurityGroup(client ec2iface.EC2API, cluster *kubermaticv1.Cluster)
 	}
 
 	// time to delete the group
-	_, err = client.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{GroupId: &groupID})
+	_, err = client.DeleteSecurityGroupWithContext(ctx, &ec2.DeleteSecurityGroupInput{GroupId: &groupID})
 
 	return err
 }

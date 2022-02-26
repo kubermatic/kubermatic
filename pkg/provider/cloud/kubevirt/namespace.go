@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,9 +40,7 @@ func NamespaceCreator(name string) reconciling.NamedNamespaceCreatorGetter {
 }
 
 // reconcileNamespace reconciles a dedicated namespace in the underlying KubeVirt cluster.
-func reconcileNamespace(name string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, client ctrlruntimeclient.Client) (*kubermaticv1.Cluster, error) {
-	ctx := context.Background()
-
+func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, client ctrlruntimeclient.Client) (*kubermaticv1.Cluster, error) {
 	creators := []reconciling.NamedNamespaceCreatorGetter{
 		NamespaceCreator(name),
 	}
@@ -56,11 +55,14 @@ func reconcileNamespace(name string, cluster *kubermaticv1.Cluster, update provi
 }
 
 // deleteNamespace deletes the dedicated namespace.
-func deleteNamespace(name string, client ctrlruntimeclient.Client) error {
-	ctx := context.Background()
-
+func deleteNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
 	ns := &corev1.Namespace{}
 	if err := client.Get(ctx, types.NamespacedName{Name: name}, ns); err != nil {
+		// namespace is already gone
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+
 		return fmt.Errorf("failed to reconcile Namespace: %w", err)
 	}
 

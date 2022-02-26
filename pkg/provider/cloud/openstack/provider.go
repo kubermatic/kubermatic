@@ -17,6 +17,7 @@ limitations under the License.
 package openstack
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -61,7 +62,7 @@ const (
 	RouterSubnetLinkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-subnet-link-v2"
 )
 
-type getClientFunc func(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)
+type getClientFunc func(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)
 
 // Provider is a struct that implements CloudProvider interface.
 type Provider struct {
@@ -91,13 +92,13 @@ func NewCloudProvider(
 var _ provider.CloudProvider = &Provider{}
 
 // DefaultCloudSpec adds defaults to the cloud spec.
-func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (os *Provider) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec validates the given CloudSpec.
-func (os *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	netClient, err := os.getClientFunc(spec, os.dc, os.secretKeySelector, os.caBundle)
+func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
+	netClient, err := os.getClientFunc(ctx, spec, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
 		return err
 	}
@@ -187,8 +188,8 @@ func ensureFinalizers(cluster *kubermaticv1.Cluster, finalizers []string, update
 
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration.
-func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
+func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	netClient, err := os.getClientFunc(ctx, cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -347,8 +348,8 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 // CleanUpCloudProvider does the clean-up in particular:
 // removes security group and network configuration.
-func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
+func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	netClient, err := os.getClientFunc(ctx, cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -445,8 +446,8 @@ func GetTenants(authURL, region string, credentials *resources.OpenstackCredenti
 }
 
 // GetNetworks lists all available networks for the given CloudSpec.DatacenterName.
-func GetNetworks(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]NetworkWithExternalExt, error) {
-	authClient, err := getNetClient(authURL, region, credentials, caBundle)
+func GetNetworks(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]NetworkWithExternalExt, error) {
+	authClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %w", err)
 	}
@@ -460,8 +461,8 @@ func GetNetworks(authURL, region string, credentials *resources.OpenstackCredent
 }
 
 // GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName.
-func GetSecurityGroups(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossecuritygroups.SecGroup, error) {
-	netClient, err := getNetClient(authURL, region, credentials, caBundle)
+func GetSecurityGroups(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossecuritygroups.SecGroup, error) {
+	netClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %w", err)
 	}
@@ -522,7 +523,7 @@ func getAuthClient(authURL string, credentials *resources.OpenstackCredentials, 
 	return client, nil
 }
 
-func getNetClient(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+func getNetClient(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
 	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
 		return nil, err
@@ -540,6 +541,9 @@ func getNetClient(authURL, region string, credentials *resources.OpenstackCreden
 			return nil, err
 		}
 	}
+
+	serviceClient.Context = ctx
+
 	return serviceClient, err
 }
 
@@ -565,8 +569,8 @@ func getComputeClient(authURL, region string, credentials *resources.OpenstackCr
 }
 
 // GetSubnets list all available subnet ids for a given CloudSpec.
-func GetSubnets(authURL, region, networkID string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossubnets.Subnet, error) {
-	serviceClient, err := getNetClient(authURL, region, credentials, caBundle)
+func GetSubnets(ctx context.Context, authURL, region, networkID string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossubnets.Subnet, error) {
+	serviceClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %w", err)
 	}
@@ -579,7 +583,7 @@ func GetSubnets(authURL, region, networkID string, credentials *resources.Openst
 	return subnets, nil
 }
 
-func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
+func (os *Provider) AddICMPRulesIfRequired(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		return nil
 	}
@@ -590,7 +594,7 @@ func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 		return err
 	}
 
-	netClient, err := getNetClient(os.dc.AuthURL, os.dc.Region, creds, os.caBundle)
+	netClient, err := getNetClient(ctx, os.dc.AuthURL, os.dc.Region, creds, os.caBundle)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %w", err)
 	}
@@ -656,17 +660,17 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (os *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (os *Provider) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func getNetClientForCluster(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+func getNetClientForCluster(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
 	creds, err := GetCredentialsForCluster(cluster, secretKeySelector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
 
-	netClient, err := getNetClient(dc.AuthURL, dc.Region, creds, caBundle)
+	netClient, err := getNetClient(ctx, dc.AuthURL, dc.Region, creds, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %w", err)
 	}

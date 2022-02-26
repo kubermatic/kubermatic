@@ -17,6 +17,7 @@ limitations under the License.
 package provider_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -275,15 +276,15 @@ func mockNutanixClient(dc *kubermaticv1.DatacenterSpecNutanix, creds *providerco
 	}
 }
 
-func (m *mockClientImpl) ListNutanixClusters() (apiv1.NutanixClusterList, error) {
+func (m *mockClientImpl) ListNutanixClusters(ctx context.Context) (apiv1.NutanixClusterList, error) {
 	return m.clusterList, nil
 }
 
-func (m *mockClientImpl) ListNutanixProjects() (apiv1.NutanixProjectList, error) {
+func (m *mockClientImpl) ListNutanixProjects(ctx context.Context) (apiv1.NutanixProjectList, error) {
 	return m.projectList, nil
 }
 
-func (m *mockClientImpl) ListNutanixSubnets(clusterName, projectName string) (apiv1.NutanixSubnetList, error) {
+func (m *mockClientImpl) ListNutanixSubnets(ctx context.Context, clusterName, projectName string) (apiv1.NutanixSubnetList, error) {
 	return nil, nil
 }
 

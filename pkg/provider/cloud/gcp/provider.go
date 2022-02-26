@@ -62,20 +62,20 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
-var _ provider.CloudProvider = &gcp{}
+var _ provider.ReconcilingCloudProvider = &gcp{}
 
 // TODO: update behaviour of all these methods
 // InitializeCloudProvider initializes a cluster.
-func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return g.reconcileCluster(cluster, update, false, true)
+func (g *gcp) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return g.reconcileCluster(ctx, cluster, update, false, true)
 }
 
 // ReconcileCluster enforces the existence of the needed resources in the cloud provider.
-func (g *gcp) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return g.reconcileCluster(cluster, update, true, true)
+func (g *gcp) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return g.reconcileCluster(ctx, cluster, update, true, true)
 }
 
-func (g *gcp) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force, setTags bool) (*kubermaticv1.Cluster, error) {
+func (g *gcp) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force, setTags bool) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -91,12 +91,12 @@ func (g *gcp) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.Cl
 		return nil, err
 	}
 
-	svc, projectID, err := ConnectToComputeService(serviceAccount)
+	svc, projectID, err := ConnectToComputeService(ctx, serviceAccount)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := reconcileFirewallRules(cluster, update, svc, projectID); err != nil {
+	if err := reconcileFirewallRules(ctx, cluster, update, svc, projectID); err != nil {
 		return nil, err
 	}
 
@@ -113,12 +113,12 @@ func (g *gcp) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.Cl
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
-func (g *gcp) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (g *gcp) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec validates the given CloudSpec.
-func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (g *gcp) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
 	sa, err := GetCredentialsForCluster(spec, g.secretKeySelector)
 	if err != nil {
 		return err
@@ -130,22 +130,22 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
-func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (g *gcp) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	svc, projectID, err := ConnectToComputeService(serviceAccount)
+	svc, projectID, err := ConnectToComputeService(ctx, serviceAccount)
 	if err != nil {
 		return nil, err
 	}
 
-	return deleteFirewallRules(cluster, update, g.log, svc, projectID)
+	return deleteFirewallRules(ctx, cluster, update, g.log, svc, projectID)
 }
 
 func ValidateCredentials(ctx context.Context, serviceAccount string) error {
-	svc, project, err := ConnectToComputeService(serviceAccount)
+	svc, project, err := ConnectToComputeService(ctx, serviceAccount)
 	if err != nil {
 		return err
 	}
@@ -157,8 +157,7 @@ func ValidateCredentials(ctx context.Context, serviceAccount string) error {
 }
 
 // ConnectToComputeService establishes a service connection to the Compute Engine.
-func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
-	ctx := context.Background()
+func ConnectToComputeService(ctx context.Context, serviceAccount string) (*compute.Service, string, error) {
 	client, projectID, err := createClient(ctx, serviceAccount, compute.ComputeScope)
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot create Google Cloud client: %w", err)
@@ -196,7 +195,7 @@ func createClient(ctx context.Context, serviceAccount string, scope string) (*ht
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (g *gcp) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (g *gcp) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 

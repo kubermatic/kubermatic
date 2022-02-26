@@ -80,7 +80,7 @@ func Add(
 		return fmt.Errorf("failed to create watcher for secrets: %w", err)
 	}
 
-	if err := reconciler.watchAuthorizedKeys(context.TODO(), authorizedKeysPaths); err != nil {
+	if err := reconciler.watchAuthorizedKeys(authorizedKeysPaths); err != nil {
 		return fmt.Errorf("failed to watch authorized_keys files: %w", err)
 	}
 
@@ -118,7 +118,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) error {
+func (r *Reconciler) watchAuthorizedKeys(paths []string) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("failed creating a new file watcher: %w", err)

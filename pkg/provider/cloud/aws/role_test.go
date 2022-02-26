@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -68,7 +69,7 @@ func assertOwnership(t *testing.T, client iamiface.IAMAPI, cluster *kubermaticv1
 }
 
 func assertRoleIsGone(t *testing.T, client iamiface.IAMAPI, roleName string) {
-	if _, err := getRole(client, roleName); err == nil {
+	if _, err := getRole(context.Background(), client, roleName); err == nil {
 		t.Fatal("GetRole did not return an error, indicating that the role still exists.")
 	}
 }
@@ -101,7 +102,7 @@ func TestEnsureRole(t *testing.T) {
 		roleName := controlPlaneRoleName(cluster.Name)
 		policies := map[string]string{workerPolicyName: workerRolePolicy}
 
-		if err := ensureRole(cs.IAM, cluster, roleName, policies); err != nil {
+		if err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies); err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
 		}
 
@@ -126,7 +127,7 @@ func TestEnsureRole(t *testing.T) {
 
 		// reconcile role and check if the code successfully attaches the policy
 		// to an existing role
-		if err := ensureRole(cs.IAM, cluster, roleName, policies); err != nil {
+		if err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies); err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
 		}
 
@@ -141,7 +142,7 @@ func TestReconcileWorkerRole(t *testing.T) {
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 	roleName := workerRoleName(cluster.Name)
 
-	if err := reconcileWorkerRole(cs.IAM, cluster); err != nil {
+	if err := reconcileWorkerRole(context.Background(), cs.IAM, cluster); err != nil {
 		t.Fatalf("reconcileWorkerRole should have not errored, but returned %v", err)
 	}
 
@@ -161,7 +162,7 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 			t.Fatalf("failed to build the control plane policy: %v", err)
 		}
 
-		cluster, err = reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err = reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -182,7 +183,7 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 		})
 		updater := testClusterUpdater(cluster)
 
-		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -204,7 +205,7 @@ func TestDeleteRole(t *testing.T) {
 		updater := testClusterUpdater(cluster)
 
 		// reconcile to create the control plane role
-		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -219,7 +220,7 @@ func TestDeleteRole(t *testing.T) {
 
 		// and let's nuke it (we do not specify a list of policies, so the code should
 		// be smart enough to figure out that it needs to remove all policies)
-		if err := deleteRole(cs.IAM, cluster, expectedRole, nil); err != nil {
+		if err := deleteRole(context.Background(), cs.IAM, cluster, expectedRole, nil); err != nil {
 			t.Fatalf("deleteRole should not have errored, but returned %v", err)
 		}
 
@@ -242,7 +243,7 @@ func TestDeleteRole(t *testing.T) {
 		}
 
 		// reconcile the role to assign policies to it, but not the owner tag
-		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -253,7 +254,7 @@ func TestDeleteRole(t *testing.T) {
 		// and let's "nuke" it; normally we would always specify a list of policies here,
 		// but for this test case we just try to see what the code does it no list was given;
 		// it should remove all policies from the role.
-		if err := deleteRole(cs.IAM, cluster, roleName, nil); err != nil {
+		if err := deleteRole(context.Background(), cs.IAM, cluster, roleName, nil); err != nil {
 			t.Fatalf("deleteRole should not have errored, but returned %v", err)
 		}
 
@@ -280,7 +281,7 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 		updater := testClusterUpdater(cluster)
 
 		// reconcile to create the control plane role
-		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -289,7 +290,7 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 		assertOwnership(t, cs.IAM, cluster, roleName, true)
 
 		// and let's nuke it
-		if err := cleanUpControlPlaneRole(cs.IAM, cluster); err != nil {
+		if err := cleanUpControlPlaneRole(context.Background(), cs.IAM, cluster); err != nil {
 			t.Fatalf("deleteRole should not have errored, but returned %v", err)
 		}
 
@@ -312,7 +313,7 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 		}
 
 		// reconcile the role to assign policies to it, but not the owner tag
-		cluster, err := reconcileControlPlaneRole(cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -321,7 +322,7 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 		assertOwnership(t, cs.IAM, cluster, roleName, false)
 
 		// and let's "nuke" it
-		if err := cleanUpControlPlaneRole(cs.IAM, cluster); err != nil {
+		if err := cleanUpControlPlaneRole(context.Background(), cs.IAM, cluster); err != nil {
 			t.Fatalf("deleteRole should not have errored, but returned %v", err)
 		}
 

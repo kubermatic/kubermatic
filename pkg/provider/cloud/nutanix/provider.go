@@ -48,7 +48,7 @@ type Nutanix struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
-var _ provider.CloudProvider = &Nutanix{}
+var _ provider.ReconcilingCloudProvider = &Nutanix{}
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Nutanix, error) {
 	if dc.Spec.Nutanix == nil {
@@ -62,15 +62,15 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
-func (n *Nutanix) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return n.reconcileCluster(cluster, update, false)
+func (n *Nutanix) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return n.reconcileCluster(ctx, cluster, update, false)
 }
 
-func (n *Nutanix) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return n.reconcileCluster(cluster, update, true)
+func (n *Nutanix) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return n.reconcileCluster(ctx, cluster, update, true)
 }
 
-func (n *Nutanix) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (n *Nutanix) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	logger := n.log.With("cluster", cluster.Name)
 
 	client, err := GetClientSet(n.dc, cluster.Spec.Cloud.Nutanix, n.secretKeySelector)
@@ -81,7 +81,7 @@ func (n *Nutanix) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 	logger.Info("removing category values")
 
 	if kuberneteshelper.HasFinalizer(cluster, categoryCleanupFinalizer) {
-		if err = deleteCategoryValues(client, cluster); err != nil {
+		if err = deleteCategoryValues(ctx, client, cluster); err != nil {
 			return nil, err
 		}
 
@@ -97,7 +97,7 @@ func (n *Nutanix) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pro
 	return cluster, nil
 }
 
-func (n *Nutanix) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (n *Nutanix) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSpec) error {
 	// default csi
 	if spec.Nutanix.CSI != nil {
 		if spec.Nutanix.CSI.Port == nil {
@@ -108,7 +108,7 @@ func (n *Nutanix) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (n *Nutanix) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
 	if spec.Nutanix == nil {
 		return errors.New("not a Nutanix spec")
 	}
@@ -120,7 +120,7 @@ func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	if spec.Nutanix.ProjectName != "" {
 		// check for project existence
-		_, err = GetProjectByName(client, spec.Nutanix.ProjectName)
+		_, err = GetProjectByName(ctx, client, spec.Nutanix.ProjectName)
 		if err != nil {
 			return err
 		}
@@ -134,11 +134,11 @@ func (n *Nutanix) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (n *Nutanix) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (n *Nutanix) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool) (*kubermaticv1.Cluster, error) {
+func (n *Nutanix) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool) (*kubermaticv1.Cluster, error) {
 	logger := n.log.With("cluster", cluster.Name)
 
 	client, err := GetClientSet(n.dc, cluster.Spec.Cloud.Nutanix, n.secretKeySelector)
@@ -147,7 +147,7 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 	}
 
 	logger.Info("reconciling category and value")
-	if err := reconcileCategoryAndValue(client, cluster); err != nil {
+	if err := reconcileCategoryAndValue(ctx, client, cluster); err != nil {
 		return nil, fmt.Errorf("failed to reconcile category and cluster value: %w", err)
 	}
 
@@ -162,9 +162,7 @@ func (n *Nutanix) reconcileCluster(cluster *kubermaticv1.Cluster, update provide
 	return cluster, nil
 }
 
-func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) error {
-	ctx := context.TODO()
-
+func deleteCategoryValues(ctx context.Context, client *ClientSet, cluster *kubermaticv1.Cluster) error {
 	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
 		_, err := client.Prism.V3.GetCategoryValue(ctx, ProjectCategoryName, projectID)
@@ -241,9 +239,7 @@ func deleteCategoryValues(client *ClientSet, cluster *kubermaticv1.Cluster) erro
 	return nil
 }
 
-func reconcileCategoryAndValue(client *ClientSet, cluster *kubermaticv1.Cluster) error {
-	ctx := context.TODO()
-
+func reconcileCategoryAndValue(ctx context.Context, client *ClientSet, cluster *kubermaticv1.Cluster) error {
 	// check if category (key) is present, create it if not
 	_, err := client.Prism.V3.GetCategoryKey(ctx, ClusterCategoryName)
 	if err != nil {

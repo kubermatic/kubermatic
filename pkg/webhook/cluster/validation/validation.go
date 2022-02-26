@@ -69,7 +69,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return err
 	}
 
-	return validation.ValidateNewClusterSpec(&cluster.Spec, datacenter, cloudProvider, v.features, nil).ToAggregate()
+	return validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, v.features, nil).ToAggregate()
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {

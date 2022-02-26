@@ -17,6 +17,7 @@ limitations under the License.
 package openstack
 
 import (
+	"context"
 	"crypto/x509"
 	"net/http"
 	"reflect"
@@ -341,12 +342,12 @@ func TestInitializeCloudProvider(t *testing.T) {
 
 			os := &Provider{
 				dc: tt.dc,
-				getClientFunc: func(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+				getClientFunc: func(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
 					sc := s.GetClient()
 					return sc, nil
 				},
 			}
-			c, err := os.InitializeCloudProvider(tt.cluster, (&fakeClusterUpdater{c: tt.cluster}).update)
+			c, err := os.InitializeCloudProvider(context.TODO(), tt.cluster, (&fakeClusterUpdater{c: tt.cluster}).update)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Provider.InitializeCloudProvider() error = %v, wantErr %v", err, tt.wantErr)
 				return

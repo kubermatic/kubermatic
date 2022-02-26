@@ -173,7 +173,7 @@ func ListGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	diskTypes := apiv1.GCPDiskTypeList{}
 	// TODO: There are some issues at the moment with local-ssd and pd-balanced, that's why it is disabled at the moment.
 	excludedDiskTypes := sets.NewString("local-ssd", "pd-balanced")
-	computeService, project, err := gcp.ConnectToComputeService(sa)
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return diskTypes, err
 	}
@@ -207,7 +207,7 @@ func ListGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datace
 
 	subnetworks := apiv1.GCPSubnetworkList{}
 
-	computeService, project, err := gcp.ConnectToComputeService(sa)
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return subnetworks, err
 	}
@@ -246,7 +246,7 @@ func ListGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datace
 func ListGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, error) {
 	networks := apiv1.GCPNetworkList{}
 
-	computeService, project, err := gcp.ConnectToComputeService(sa)
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return networks, err
 	}
@@ -284,7 +284,7 @@ func ListGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacent
 		return nil, errors.NewBadRequest("the %s is not GCP datacenter", datacenterName)
 	}
 
-	computeService, project, err := gcp.ConnectToComputeService(sa)
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +307,7 @@ func ListGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacent
 func ListGCPSizes(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, sa, zone string) (apiv1.GCPMachineSizeList, error) {
 	sizes := apiv1.GCPMachineSizeList{}
 
-	computeService, project, err := gcp.ConnectToComputeService(sa)
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return sizes, err
 	}

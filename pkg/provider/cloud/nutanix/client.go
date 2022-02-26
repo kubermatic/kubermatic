@@ -152,9 +152,9 @@ func getClientSet(credentials nutanixclient.Credentials) (*ClientSet, error) {
 	}, nil
 }
 
-func GetSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.SubnetIntentResponse, error) {
+func GetSubnetByName(ctx context.Context, client *ClientSet, name, clusterID string) (*nutanixv3.SubnetIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
-	subnets, err := client.Prism.V3.ListAllSubnet(context.TODO(), filter)
+	subnets, err := client.Prism.V3.ListAllSubnet(ctx, filter)
 
 	if err != nil {
 		return nil, err
@@ -189,9 +189,9 @@ func GetSubnetByName(client *ClientSet, name, clusterID string) (*nutanixv3.Subn
 	return nil, fmt.Errorf("no subnet found for '%s' on cluster '%s'", filter, clusterID)
 }
 
-func GetProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error) {
+func GetProjectByName(ctx context.Context, client *ClientSet, name string) (*nutanixv3.Project, error) {
 	filter := fmt.Sprintf("name==%s", name)
-	projects, err := client.Prism.V3.ListAllProject(context.TODO(), filter)
+	projects, err := client.Prism.V3.ListAllProject(ctx, filter)
 
 	if err != nil {
 		return nil, err
@@ -218,9 +218,9 @@ func GetProjectByName(client *ClientSet, name string) (*nutanixv3.Project, error
 	return nil, fmt.Errorf("no project found for '%s'", filter)
 }
 
-func GetClusterByName(client *ClientSet, name string) (*nutanixv3.ClusterIntentResponse, error) {
+func GetClusterByName(ctx context.Context, client *ClientSet, name string) (*nutanixv3.ClusterIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
-	clusters, err := client.Prism.V3.ListAllCluster(context.TODO(), filter)
+	clusters, err := client.Prism.V3.ListAllCluster(ctx, filter)
 
 	if err != nil {
 		return nil, err

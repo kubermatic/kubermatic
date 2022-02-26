@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -65,7 +66,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
-var _ provider.CloudProvider = &AmazonEC2{}
+var _ provider.ReconcilingCloudProvider = &AmazonEC2{}
 
 func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
 	if a.clientSet != nil {
@@ -80,7 +81,7 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 	return GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, a.dc.Region)
 }
 
-func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
@@ -90,7 +91,7 @@ func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 // will be created if they do not yet exist / are not explicitly specified.
 // TL;DR: This validation does not need to be extended to cover more than
 // VPC and SG.
-func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (a *AmazonEC2) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
 	client, err := a.getClientSet(spec)
 	if err != nil {
 		return fmt.Errorf("failed to get API client: %w", err)
@@ -104,13 +105,13 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	}
 
 	if spec.AWS.VPCID != "" {
-		vpc, err := getVPCByID(client.EC2, spec.AWS.VPCID)
+		vpc, err := getVPCByID(ctx, client.EC2, spec.AWS.VPCID)
 		if err != nil {
 			return err
 		}
 
 		if spec.AWS.SecurityGroupID != "" {
-			if _, err = getSecurityGroupByID(client.EC2, vpc, spec.AWS.SecurityGroupID); err != nil {
+			if _, err = getSecurityGroupByID(ctx, client.EC2, vpc, spec.AWS.SecurityGroupID); err != nil {
 				return err
 			}
 		}
@@ -120,22 +121,22 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (a *AmazonEC2) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// Initialization should only occur once.
 	firstInitialization := !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer)
 
-	return a.reconcileCluster(cluster, update, false, firstInitialization)
+	return a.reconcileCluster(ctx, cluster, update, false, firstInitialization)
 }
 
-func (a *AmazonEC2) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return a.reconcileCluster(cluster, update, true, true)
+func (a *AmazonEC2) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return a.reconcileCluster(ctx, cluster, update, true, true)
 }
 
-func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, setTags bool) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, setTags bool) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %w", err)
@@ -150,7 +151,7 @@ func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provi
 
 	// update VPC ID
 	if force || cluster.Spec.Cloud.AWS.VPCID == "" {
-		cluster, err = reconcileVPC(client.EC2, cluster, update)
+		cluster, err = reconcileVPC(ctx, client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +159,7 @@ func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provi
 
 	// update route table ID
 	if force || cluster.Spec.Cloud.AWS.RouteTableID == "" {
-		cluster, err = reconcileRouteTable(client.EC2, cluster, update)
+		cluster, err = reconcileRouteTable(ctx, client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -166,7 +167,7 @@ func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provi
 
 	// All machines will live in one dedicated security group.
 	if force || cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		cluster, err = reconcileSecurityGroup(client.EC2, cluster, update)
+		cluster, err = reconcileSecurityGroup(ctx, client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +175,7 @@ func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provi
 
 	// We create a dedicated role for the control plane.
 	if force || cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
-		cluster, err = reconcileControlPlaneRole(client.IAM, cluster, update)
+		cluster, err = reconcileControlPlaneRole(ctx, client.IAM, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +183,7 @@ func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provi
 
 	// instance profile and role for worker nodes
 	if force || cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
-		cluster, err = reconcileWorkerInstanceProfile(client.IAM, cluster, update)
+		cluster, err = reconcileWorkerInstanceProfile(ctx, client.IAM, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -196,14 +197,14 @@ func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provi
 	}
 
 	// update resource ownership for older clusters
-	cluster, err = backfillOwnershipTags(client, cluster, update)
+	cluster, err = backfillOwnershipTags(ctx, client, cluster, update)
 	if err != nil {
 		return nil, err
 	}
 
 	// tag all resources
 	if setTags {
-		cluster, err = reconcileClusterTags(client.EC2, cluster, update)
+		cluster, err = reconcileClusterTags(ctx, client.EC2, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -212,24 +213,24 @@ func (a *AmazonEC2) reconcileCluster(cluster *kubermaticv1.Cluster, update provi
 	return cluster, nil
 }
 
-func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %w", err)
 	}
 
 	// worker instance profile + role
-	if err := cleanUpWorkerInstanceProfile(client.IAM, cluster); err != nil {
+	if err := cleanUpWorkerInstanceProfile(ctx, client.IAM, cluster); err != nil {
 		return nil, fmt.Errorf("failed to clean up worker instance profile: %w", err)
 	}
 
 	// control plane role
-	if err := cleanUpControlPlaneRole(client.IAM, cluster); err != nil {
+	if err := cleanUpControlPlaneRole(ctx, client.IAM, cluster); err != nil {
 		return nil, fmt.Errorf("failed to clean up control plane role: %w", err)
 	}
 
 	// security group
-	if err := cleanUpSecurityGroup(client.EC2, cluster); err != nil {
+	if err := cleanUpSecurityGroup(ctx, client.EC2, cluster); err != nil {
 		return nil, fmt.Errorf("failed to clean up security group: %w", err)
 	}
 
@@ -237,7 +238,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 	// No cleanup required for the VPC itself.
 
 	// remove cluster tags
-	if err := cleanUpTags(client.EC2, cluster); err != nil {
+	if err := cleanUpTags(ctx, client.EC2, cluster); err != nil {
 		return nil, fmt.Errorf("failed to clean up tags: %w", err)
 	}
 

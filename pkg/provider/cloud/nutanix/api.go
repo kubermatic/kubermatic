@@ -24,8 +24,8 @@ import (
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
 )
 
-func GetClusters(client *ClientSet) ([]nutanixv3.ClusterIntentResponse, error) {
-	resp, err := client.Prism.V3.ListAllCluster(context.TODO(), "")
+func GetClusters(ctx context.Context, client *ClientSet) ([]nutanixv3.ClusterIntentResponse, error) {
+	resp, err := client.Prism.V3.ListAllCluster(ctx, "")
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}
@@ -43,8 +43,8 @@ func GetClusters(client *ClientSet) ([]nutanixv3.ClusterIntentResponse, error) {
 	return clusters, nil
 }
 
-func GetProjects(client *ClientSet) ([]nutanixv3.Project, error) {
-	resp, err := client.Prism.V3.ListAllProject(context.TODO(), "")
+func GetProjects(ctx context.Context, client *ClientSet) ([]nutanixv3.Project, error) {
+	resp, err := client.Prism.V3.ListAllProject(ctx, "")
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}
@@ -62,8 +62,8 @@ func GetProjects(client *ClientSet) ([]nutanixv3.Project, error) {
 	return projects, nil
 }
 
-func GetSubnets(client *ClientSet, clusterName, projectName string) ([]nutanixv3.SubnetIntentResponse, error) {
-	resp, err := client.Prism.V3.ListAllSubnet(context.TODO(), "")
+func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName string) ([]nutanixv3.SubnetIntentResponse, error) {
+	resp, err := client.Prism.V3.ListAllSubnet(ctx, "")
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}
@@ -77,7 +77,7 @@ func GetSubnets(client *ClientSet, clusterName, projectName string) ([]nutanixv3
 	// want to return the full information of subnets, so we only use this list of names as
 	// constraints for our loop later on.
 	if projectName != "" {
-		project, err := GetProjectByName(client, projectName)
+		project, err := GetProjectByName(ctx, client, projectName)
 		if err != nil {
 			return nil, err
 		}

@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -27,7 +28,7 @@ import (
 func TestGetDefaultVPC(t *testing.T) {
 	cs := getTestClientSet(t)
 
-	result, err := getDefaultVPC(cs.EC2)
+	result, err := getDefaultVPC(context.Background(), cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
@@ -39,16 +40,17 @@ func TestGetDefaultVPC(t *testing.T) {
 
 func TestGetVPCByID(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
 	t.Run("default-vpc", func(t *testing.T) {
-		defaultVPC, err := getDefaultVPC(cs.EC2)
+		defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 		if err != nil {
 			t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 		}
 
 		vpcID := *defaultVPC.VpcId
 
-		other, err := getVPCByID(cs.EC2, vpcID)
+		other, err := getVPCByID(ctx, cs.EC2, vpcID)
 		if err != nil {
 			t.Fatalf("getVPCByID should not have errored, but returned %v", err)
 		}
@@ -59,7 +61,7 @@ func TestGetVPCByID(t *testing.T) {
 	})
 
 	t.Run("nonexisting-vpc", func(t *testing.T) {
-		if _, err := getVPCByID(cs.EC2, "does-not-exist"); err == nil {
+		if _, err := getVPCByID(ctx, cs.EC2, "does-not-exist"); err == nil {
 			t.Fatalf("getVPCByID should have errored, but returned %v", err)
 		}
 	})
@@ -67,8 +69,9 @@ func TestGetVPCByID(t *testing.T) {
 
 func TestReconcileVPC(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
@@ -80,7 +83,7 @@ func TestReconcileVPC(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileVPC(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileVPC(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileVPC should not have errored, but returned %v", err)
 		}
@@ -93,7 +96,7 @@ func TestReconcileVPC(t *testing.T) {
 	t.Run("no-vpc-set-in-cluster", func(t *testing.T) {
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 
-		cluster, err = reconcileVPC(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileVPC(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileVPC should not have errored, but returned %v", err)
 		}
@@ -108,7 +111,7 @@ func TestReconcileVPC(t *testing.T) {
 			VPCID: "does-not-exist",
 		})
 
-		if _, err = reconcileVPC(cs.EC2, cluster, testClusterUpdater(cluster)); err == nil {
+		if _, err = reconcileVPC(ctx, cs.EC2, cluster, testClusterUpdater(cluster)); err == nil {
 			t.Fatalf("reconcileVPC should have errored, but returned %v", err)
 		}
 	})
