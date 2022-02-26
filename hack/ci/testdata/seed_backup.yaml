@@ -26,8 +26,6 @@ apiVersion: kubermatic.k8c.io/v1
 metadata:
   name: "__SEED_NAME__"
   namespace: kubermatic
-  labels:
-    worker-name: "__BUILD_ID__"
 spec:
   etcdBackupRestore:
     defaultDestination: minio
