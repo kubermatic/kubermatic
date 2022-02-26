@@ -43,7 +43,7 @@ import (
 
 const allZones = "-"
 
-func GetCLusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.Config, error) {
+func GetClusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.Config, error) {
 	svc, project, err := ConnectToContainerService(sa)
 	if err != nil {
 		return nil, err

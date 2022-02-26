@@ -262,7 +262,7 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	config, err := gke.GetCLusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
+	config, err := gke.GetClusterConfig(ctx, cred.ServiceAccount, cloud.GKE.Name, cloud.GKE.Zone)
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	config, err := aks.GetCLusterConfig(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup)
+	config, err := aks.GetClusterConfig(ctx, cred, cloud.AKS.Name, cloud.AKS.ResourceGroup)
 	if err != nil {
 		return err
 	}
