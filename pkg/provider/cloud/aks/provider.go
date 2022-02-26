@@ -33,7 +33,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-func GetCLusterConfig(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName string) (*api.Config, error) {
+func GetClusterConfig(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName string) (*api.Config, error) {
 	var err error
 	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
 	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
