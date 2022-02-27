@@ -3633,11 +3633,6 @@
         "parameters": [
           {
             "type": "string",
-            "name": "Region",
-            "in": "header"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -3656,6 +3651,11 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
           }
         ],
         "responses": {
@@ -22086,7 +22086,7 @@
           "x-go-name": "ClusterID"
         },
         "destination": {
-          "description": "Destination indicates where the backup will be stored. The destination name should correspond to a destination in\nthe cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination in Seed.Spec.BackupRestore",
+          "description": "Destination indicates where the backup will be stored. The destination name should correspond to a destination in\nthe cluster's Seed.Spec.EtcdBackupRestore.",
           "type": "string",
           "x-go-name": "Destination"
         },
@@ -22219,7 +22219,7 @@
           "x-go-name": "ClusterID"
         },
         "destination": {
-          "description": "Destination indicates where the backup was stored. The destination name should correspond to a destination in\nthe cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination configured in Seed.Spec.BackupRestore",
+          "description": "Destination indicates where the backup was stored. The destination name should correspond to a destination in\nthe cluster's Seed.Spec.EtcdBackupRestore.",
           "type": "string",
           "x-go-name": "Destination"
         }
