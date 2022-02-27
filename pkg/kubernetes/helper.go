@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -184,25 +184,41 @@ func IsDeploymentRolloutComplete(deployment *appsv1.Deployment, revision int64) 
 			return false, fmt.Errorf("desired revision (%d) is different from the running revision (%d)", revision, deploymentRev)
 		}
 	}
+
 	if deployment.Generation <= deployment.Status.ObservedGeneration {
 		cond := GetDeploymentCondition(deployment.Status, appsv1.DeploymentProgressing)
 		if cond != nil && cond.Reason == "ProgressDeadlineExceeded" {
 			return false, fmt.Errorf("deployment %q exceeded its progress deadline", deployment.Name)
 		}
+
+		desiredReplicas := int32(1)
+		if deployment.Spec.Replicas != nil {
+			desiredReplicas = *deployment.Spec.Replicas
+		}
+
+		logger := kubermaticlog.Logger.With(
+			"deployment", deployment.Name,
+			"desired", desiredReplicas,
+			"updated", deployment.Status.UpdatedReplicas,
+			"available", deployment.Status.AvailableReplicas,
+		)
+
 		if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
-			klog.Infof("Deployment %q rollout did not complete: %d out of %d new replicas have been updated...", deployment.Name, deployment.Status.UpdatedReplicas, *deployment.Spec.Replicas)
+			logger.Info("deployment rollout did not complete: not all replicas have been updated")
 			return false, nil
 		}
 		if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
-			klog.Infof("Deployment %q rollout did not complete: %d old replicas are pending termination...", deployment.Name, deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
+			logger.Infow("deployment rollout did not complete: old replicas are pending termination", "pending", deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
 			return false, nil
 		}
 		if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
-			klog.Infof("Deployment %q rollout did not complete: %d of %d updated replicas are available...", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas)
+			logger.Info("deployment rollout did not complete: not enough updated replicas available")
 			return false, nil
 		}
+
 		return true, nil
 	}
+
 	return false, nil
 }
 
