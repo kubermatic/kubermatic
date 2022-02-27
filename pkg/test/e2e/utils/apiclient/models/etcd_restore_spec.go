@@ -28,7 +28,7 @@ type EtcdRestoreSpec struct {
 	ClusterID string `json:"clusterId,omitempty"`
 
 	// Destination indicates where the backup was stored. The destination name should correspond to a destination in
-	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination configured in Seed.Spec.BackupRestore
+	// the cluster's Seed.Spec.EtcdBackupRestore.
 	Destination string `json:"destination,omitempty"`
 }
 
