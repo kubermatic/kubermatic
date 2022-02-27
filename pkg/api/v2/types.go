@@ -288,7 +288,7 @@ type EtcdBackupConfigSpec struct {
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
 	// Destination indicates where the backup will be stored. The destination name should correspond to a destination in
-	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination in Seed.Spec.BackupRestore
+	// the cluster's Seed.Spec.EtcdBackupRestore.
 	Destination string `json:"destination,omitempty"`
 }
 
@@ -317,7 +317,7 @@ type EtcdRestoreSpec struct {
 	// credentials needed to download the backup
 	BackupDownloadCredentialsSecret string `json:"backupDownloadCredentialsSecret,omitempty"`
 	// Destination indicates where the backup was stored. The destination name should correspond to a destination in
-	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination configured in Seed.Spec.BackupRestore
+	// the cluster's Seed.Spec.EtcdBackupRestore.
 	Destination string `json:"destination,omitempty"`
 }
 
