@@ -305,12 +305,12 @@ func getVsphereCloudConfig(
 	dc *kubermaticv1.Datacenter,
 	credentials resources.Credentials,
 ) (*vsphere.CloudConfig, error) {
-	vspherURL, err := url.Parse(dc.Spec.VSphere.Endpoint)
+	vsphereURL, err := url.Parse(dc.Spec.VSphere.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse vsphere endpoint: %w", err)
 	}
 	port := "443"
-	if urlPort := vspherURL.Port(); urlPort != "" {
+	if urlPort := vsphereURL.Port(); urlPort != "" {
 		port = urlPort
 	}
 	datastore := dc.Spec.VSphere.DefaultDatastore
@@ -325,13 +325,13 @@ func getVsphereCloudConfig(
 		Global: vsphere.GlobalOpts{
 			User:             credentials.VSphere.Username,
 			Password:         credentials.VSphere.Password,
-			VCenterIP:        vspherURL.Hostname(),
+			VCenterIP:        vsphereURL.Hostname(),
 			VCenterPort:      port,
 			InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			DefaultDatastore: datastore,
 			WorkingDir:       cluster.Name,
-			ClusterID:        dc.Spec.VSphere.Cluster,
+			ClusterID:        cluster.Name,
 		},
 		Workspace: vsphere.WorkspaceOpts{
 			// This is redundant with what the Vsphere cloud provider itself does:
@@ -340,7 +340,7 @@ func getVsphereCloudConfig(
 			// are marked as deprecated even thought the code checks
 			// if they are set and will make the controller-manager crash
 			// if they are not - But maybe that will change at some point
-			VCenterIP:        vspherURL.Hostname(),
+			VCenterIP:        vsphereURL.Hostname(),
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			Folder:           cluster.Spec.Cloud.VSphere.Folder,
 			DefaultDatastore: datastore,
@@ -349,7 +349,7 @@ func getVsphereCloudConfig(
 			SCSIControllerType: "pvscsi",
 		},
 		VirtualCenter: map[string]*vsphere.VirtualCenterConfig{
-			vspherURL.Hostname(): {
+			vsphereURL.Hostname(): {
 				User:        credentials.VSphere.Username,
 				Password:    credentials.VSphere.Password,
 				VCenterPort: port,
