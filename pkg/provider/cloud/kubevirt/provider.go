@@ -114,12 +114,10 @@ func (k *kubevirt) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		if err := deleteNamespace(cluster.Status.NamespaceName, client); err != nil && !kerrors.IsNotFound(err) {
 			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
 		}
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
 		})
-		if err != nil {
-			return nil, err
-		}
+
 	}
 
 	return cluster, nil

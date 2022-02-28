@@ -64,9 +64,5 @@ func deleteNamespace(name string, client ctrlruntimeclient.Client) error {
 		return fmt.Errorf("failed to reconcile Namespace: %w", err)
 	}
 
-	if err := client.Delete(ctx, ns); err != nil {
-		return err
-	}
-
-	return nil
+	return client.Delete(ctx, ns)
 }
