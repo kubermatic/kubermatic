@@ -19,14 +19,22 @@ package kubevirt
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// FinalizerNamespace will ensure the deletion of the dedicated namespace.
+	FinalizerNamespace = "kubermatic.k8c.io/cleanup-kubevirt-namespace"
 )
 
 type kubevirt struct {
@@ -82,6 +90,12 @@ func (k *kubevirt) reconcileCluster(cluster *kubermaticv1.Cluster, update provid
 	if err != nil {
 		return cluster, err
 	}
+
+	cluster, err = reconcileNamespace(cluster.Status.NamespaceName, cluster, update, client)
+	if err != nil {
+		return cluster, err
+	}
+
 	err = ReconcileCSIRoleRoleBinding(client, restConfig)
 	if err != nil {
 		return cluster, err
@@ -90,8 +104,22 @@ func (k *kubevirt) reconcileCluster(cluster *kubermaticv1.Cluster, update provid
 	return cluster, nil
 }
 
-func (k *kubevirt) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (k *kubevirt) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	client, _, err := k.GetClientWithRestConfigForCluster(cluster)
+	if err != nil {
+		return cluster, err
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
+		if err := deleteNamespace(cluster.Status.NamespaceName, client); err != nil && !kerrors.IsNotFound(err) {
+			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
+		}
+		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
+		})
+	}
+
+	return cluster, nil
 }
 
 func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
