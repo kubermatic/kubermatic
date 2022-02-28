@@ -164,7 +164,6 @@ func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, applicationDef *appkub
 func applicationDefCreatorGetter(applicationDef *appkubermaticv1.ApplicationDefinition) reconciling.NamedAppKubermaticV1ApplicationDefinitionCreatorGetter {
 	return func() (string, reconciling.AppKubermaticV1ApplicationDefinitionCreator) {
 		return applicationDef.Name, func(a *appkubermaticv1.ApplicationDefinition) (*appkubermaticv1.ApplicationDefinition, error) {
-			a.Name = applicationDef.Name
 			a.Labels = applicationDef.Labels
 			a.Annotations = applicationDef.Annotations
 			a.Spec = applicationDef.Spec
