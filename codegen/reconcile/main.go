@@ -202,6 +202,12 @@ func main() {
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
 			},
+			{
+				ResourceName:       "ApplicationDefinition",
+				ImportAlias:        "appkubermaticv1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1",
+				APIVersionPrefix:   "AppKubermaticV1",
+			},
 		},
 	}
 

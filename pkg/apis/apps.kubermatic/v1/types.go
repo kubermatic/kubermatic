@@ -18,6 +18,11 @@ package v1
 
 import corev1 "k8s.io/api/core/v1"
 
+const (
+	// ApplicationDefinitionSeedCleanupFinalizer indicates that synced application definition on seed clusters need cleanup.
+	ApplicationDefinitionSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-application-definition"
+)
+
 // GlobalSecretKeySelector is needed as we can not use v1.SecretKeySelector
 // because it is not cross namespace.
 type GlobalSecretKeySelector struct {
