@@ -319,7 +319,7 @@ func (r *ruleGroupController) ensureRuleGroup(ctx context.Context, ruleGroup *ku
 		return err
 	}
 	expectedRuleGroup := map[string]interface{}{}
-	if err := yaml.Unmarshal(ruleGroup.Spec.Data, &expectedRuleGroup); err != nil {
+	if err := yaml.UnmarshalStrict(ruleGroup.Spec.Data, &expectedRuleGroup); err != nil {
 		return fmt.Errorf("unable to unmarshal expected rule group: %w", err)
 	}
 	if reflect.DeepEqual(currentRuleGroup, expectedRuleGroup) {

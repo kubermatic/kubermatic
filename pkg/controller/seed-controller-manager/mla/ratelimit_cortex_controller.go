@@ -165,7 +165,7 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 		return errors.New("unable to find runtime config file in configmap")
 	}
 	or := &Overrides{}
-	if err := yaml.Unmarshal([]byte(config), or); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(config), or); err != nil {
 		return fmt.Errorf("unable to unmarshal runtime config[%s]: %w", config, err)
 	}
 
@@ -226,7 +226,7 @@ func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap
 		return errors.New("unable to find runtime config file in configmap")
 	}
 	or := &Overrides{}
-	if err := yaml.Unmarshal([]byte(config), or); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(config), or); err != nil {
 		return fmt.Errorf("unable to unmarshal runtime config[%s]: %w", config, err)
 	}
 	if _, ok := or.Overrides[mlaAdminSetting.Spec.ClusterName]; ok {

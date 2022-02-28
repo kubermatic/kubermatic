@@ -126,7 +126,6 @@ status:
     openvpn: HealthStatusDown
     scheduler: HealthStatusDown
     userClusterControllerManager: HealthStatusDown
-  kubermaticVersion: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
   lastUpdated: null
   namespaceName: cluster-nmxjm7ngzw
   userEmail: user@example.com

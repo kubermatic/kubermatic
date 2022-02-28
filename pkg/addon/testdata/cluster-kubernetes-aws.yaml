@@ -130,16 +130,15 @@ status:
       lastHeartbeatTime: "2020-04-01T23:19:14Z"
       lastTransitionTime: "2020-04-01T23:19:14Z"
       status: "True"
-    extendedHealth:
-      apiserver: HealthStatusDown
-      cloudProviderInfrastructure: HealthStatusDown
-      controller: HealthStatusDown
-      etcd: HealthStatusUp
-      machineController: HealthStatusDown
-      openvpn: HealthStatusDown
-      scheduler: HealthStatusDown
-      userClusterControllerManager: HealthStatusDown
-  kubermaticVersion: 1d08a9926fa112f7684b6ba692b41c81cf8a8dc1
+  extendedHealth:
+    apiserver: HealthStatusDown
+    cloudProviderInfrastructure: HealthStatusDown
+    controller: HealthStatusDown
+    etcd: HealthStatusUp
+    machineController: HealthStatusDown
+    openvpn: HealthStatusDown
+    scheduler: HealthStatusDown
+    userClusterControllerManager: HealthStatusDown
   lastUpdated: null
   namespaceName: cluster-bbc8sc24wb
   userEmail: user@example.com

@@ -349,7 +349,7 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 		return err
 	}
 	expectedConfig := map[string]interface{}{}
-	if err := yaml.Unmarshal(config, &expectedConfig); err != nil {
+	if err := yaml.UnmarshalStrict(config, &expectedConfig); err != nil {
 		return fmt.Errorf("unable to unmarshal expected config: %w", err)
 	}
 	if reflect.DeepEqual(currentConfig, expectedConfig) {
