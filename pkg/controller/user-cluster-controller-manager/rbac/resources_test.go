@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -35,25 +35,25 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 	}{
 		{
 			name:              "scenario 1: check resources for owners",
-			resourceName:      genResourceName(rbac.OwnerGroupNamePrefix),
+			resourceName:      genResourceName(rbaccontroller.OwnerGroupNamePrefix),
 			expectedResources: []string{"*"},
 			expectError:       false,
 		},
 		{
 			name:              "scenario 2: check resources for editors",
-			resourceName:      genResourceName(rbac.EditorGroupNamePrefix),
+			resourceName:      genResourceName(rbaccontroller.EditorGroupNamePrefix),
 			expectedResources: []string{"*"},
 			expectError:       false,
 		},
 		{
 			name:              "scenario 3: check resources for viewers",
-			resourceName:      genResourceName(rbac.ViewerGroupNamePrefix),
+			resourceName:      genResourceName(rbaccontroller.ViewerGroupNamePrefix),
 			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
 			expectError:       false,
 		},
 		{
 			name:         "scenario 4: incorrect resource name",
-			resourceName: rbac.ViewerGroupNamePrefix,
+			resourceName: rbaccontroller.ViewerGroupNamePrefix,
 			expectError:  true,
 		},
 	}
@@ -89,25 +89,25 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 		// test for any named resource
 		{
 			name:          "scenario 1: generate verbs for owners",
-			resourceName:  genResourceName(rbac.OwnerGroupNamePrefix),
+			resourceName:  genResourceName(rbaccontroller.OwnerGroupNamePrefix),
 			expectedVerbs: []string{"*"},
 			expectError:   false,
 		},
 		{
 			name:          "scenario 2: generate verbs for editors",
-			resourceName:  genResourceName(rbac.EditorGroupNamePrefix),
+			resourceName:  genResourceName(rbaccontroller.EditorGroupNamePrefix),
 			expectedVerbs: []string{"*"},
 			expectError:   false,
 		},
 		{
 			name:          "scenario 3: generate verbs for viewers",
-			resourceName:  genResourceName(rbac.ViewerGroupNamePrefix),
+			resourceName:  genResourceName(rbaccontroller.ViewerGroupNamePrefix),
 			expectedVerbs: []string{"list", "get", "watch"},
 			expectError:   false,
 		},
 		{
 			name:         "scenario 4: incorrect resource name",
-			resourceName: rbac.ViewerGroupNamePrefix,
+			resourceName: rbaccontroller.ViewerGroupNamePrefix,
 			expectError:  true,
 		},
 	}
@@ -142,21 +142,21 @@ func TestGroupName(t *testing.T) {
 	}{
 		{
 			name:              "scenario 1: get group name for owners",
-			resourceName:      genResourceName(rbac.OwnerGroupNamePrefix),
+			resourceName:      genResourceName(rbaccontroller.OwnerGroupNamePrefix),
 			expectError:       false,
-			expectedGroupName: rbac.OwnerGroupNamePrefix,
+			expectedGroupName: rbaccontroller.OwnerGroupNamePrefix,
 		},
 		{
 			name:              "scenario 2: get group name for viewers",
-			resourceName:      genResourceName(rbac.ViewerGroupNamePrefix),
+			resourceName:      genResourceName(rbaccontroller.ViewerGroupNamePrefix),
 			expectError:       false,
-			expectedGroupName: rbac.ViewerGroupNamePrefix,
+			expectedGroupName: rbaccontroller.ViewerGroupNamePrefix,
 		},
 		{
 			name:              "scenario 3: get group name for editors",
-			resourceName:      genResourceName(rbac.EditorGroupNamePrefix),
+			resourceName:      genResourceName(rbaccontroller.EditorGroupNamePrefix),
 			expectError:       false,
-			expectedGroupName: rbac.EditorGroupNamePrefix,
+			expectedGroupName: rbaccontroller.EditorGroupNamePrefix,
 		},
 		{
 			name:         "scenario 4: incorrect resource name",
@@ -187,5 +187,5 @@ func TestGroupName(t *testing.T) {
 }
 
 func genResourceName(groupName string) string {
-	return fmt.Sprintf("system:%s:%s", rbac.RBACResourcesNamePrefix, groupName)
+	return fmt.Sprintf("system:%s:%s", rbaccontroller.RBACResourcesNamePrefix, groupName)
 }

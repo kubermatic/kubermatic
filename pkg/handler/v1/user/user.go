@@ -32,7 +32,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -170,7 +170,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 		}
 
 		currentMemberBinding := memberList[0]
-		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
+		generatedGroupName := rbaccontroller.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
 		currentMemberBinding.Spec.Group = generatedGroupName
 		updatedMemberBinding, err := updateBinding(ctx, userInfoGetter, memberProvider, privilegedMemberProvider, req.ProjectID, currentMemberBinding)
 		if err != nil {
@@ -269,7 +269,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
 		}
 
-		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
+		generatedGroupName := rbaccontroller.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
 		generatedBinding, err := createBinding(ctx, userInfoGetter, memberProvider, privilegedMemberProvider, project, userToInvite.Spec.Email, generatedGroupName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -421,7 +421,7 @@ func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 		return k8cerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
 	}
 	isRequestedGroupPrefixValid := false
-	for _, existingGroupPrefix := range rbac.AllGroupsPrefixes {
+	for _, existingGroupPrefix := range rbaccontroller.AllGroupsPrefixes {
 		if existingGroupPrefix == projectFromRequest.GroupPrefix {
 			isRequestedGroupPrefixValid = true
 			break

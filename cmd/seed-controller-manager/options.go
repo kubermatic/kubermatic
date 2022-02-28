@@ -31,7 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
+	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup-controller"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"

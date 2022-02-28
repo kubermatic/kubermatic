@@ -62,7 +62,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
@@ -663,7 +663,7 @@ func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provide
 			defaultImpersonationClientForSeed.CreateImpersonatedClient,
 			userClusterConnectionProvider,
 			options.workerName,
-			rbac.ExtractGroupPrefix,
+			rbaccontroller.ExtractGroupPrefix,
 			seedCtrlruntimeClient,
 			kubeClient,
 			options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),

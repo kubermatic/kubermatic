@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 /*
-Package masterconstrainttemplatecontroller contains a controller that is responsible for ensuring that the
-kubermatic constraint templates are synced from master to the seed clusters.
-
+Package masterconstrainttemplatecontroller contains a controller that is
+responsible for ensuring that the KKP constraint templates are synced
+from master to the seed clusters.
 */
 package masterconstrainttemplatecontroller

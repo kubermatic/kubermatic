@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package masterconstraintsynchronizer
+package masterconstraintcontroller
 
 import (
 	"context"
@@ -42,7 +42,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraints on the master cluster to the seed clusters.
-	ControllerName = "master-constraint-controller"
+	ControllerName = "kkp-master-constraint-controller"
 )
 
 type reconciler struct {

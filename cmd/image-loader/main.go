@@ -36,9 +36,9 @@ import (
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	seedoperatorkubermatic "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	seedoperatornodeportproxy "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes-controller"
+	mlacontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla-controller"
+	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring-controller"
 	"k8c.io/kubermatic/v2/pkg/docker"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -268,10 +268,10 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	}
 
 	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false, false)
-	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
+	statefulsetCreators = append(statefulsetCreators, monitoringcontroller.GetStatefulSetCreators(templateData)...)
 
 	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)
-	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
+	deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(templateData)...)
 	deploymentCreators = append(deploymentCreators, masteroperator.APIDeploymentCreator(config, "", kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, masteroperator.MasterControllerManagerDeploymentCreator(config, "", kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, masteroperator.UIDeploymentCreator(config, kubermaticVersions))
@@ -281,7 +281,7 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.AdmissionControllerDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
+	deploymentCreators = append(deploymentCreators, mlacontroller.GatewayDeploymentCreator(templateData, nil))
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 

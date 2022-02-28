@@ -29,7 +29,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -100,7 +100,7 @@ func createProjectByServiceAccount(saEmail string, projectReq projectReq, member
 		return nil, kubermaticerrors.New(http.StatusInternalServerError, fmt.Sprintf("no bindings for service account user %s", saEmail))
 	}
 	saBinding := bindings[0]
-	if !strings.HasPrefix(saBinding.Spec.Group, rbac.ProjectManagerGroupNamePrefix) {
+	if !strings.HasPrefix(saBinding.Spec.Group, rbaccontroller.ProjectManagerGroupNamePrefix) {
 		return nil, kubermaticerrors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
 	}
 	if len(projectReq.Body.Users) == 0 {
@@ -122,7 +122,7 @@ func createProjectByServiceAccount(saEmail string, projectReq projectReq, member
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	generatedGroupName := rbac.GenerateActualGroupNameFor(kubermaticProject.Name, rbac.ProjectManagerGroupNamePrefix)
+	generatedGroupName := rbaccontroller.GenerateActualGroupNameFor(kubermaticProject.Name, rbaccontroller.ProjectManagerGroupNamePrefix)
 
 	_, err = memberProvider.CreateUnsecuredForServiceAccount(kubermaticProject, saEmail, generatedGroupName)
 	if err != nil {

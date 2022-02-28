@@ -23,7 +23,7 @@ import (
 	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	configv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -41,11 +41,11 @@ const (
 // generateVerbsForGroup generates a set of verbs for a group.
 func generateVerbsForGroup(groupName string) ([]string, error) {
 	// verbs for owners
-	if groupName == rbac.OwnerGroupNamePrefix || groupName == rbac.EditorGroupNamePrefix {
+	if groupName == rbaccontroller.OwnerGroupNamePrefix || groupName == rbaccontroller.EditorGroupNamePrefix {
 		return []string{"*"}, nil
 	}
 
-	if groupName == rbac.ViewerGroupNamePrefix {
+	if groupName == rbaccontroller.ViewerGroupNamePrefix {
 		return []string{"list", "get", "watch"}, nil
 	}
 
@@ -156,7 +156,7 @@ func CreateClusterRole(resourceName string, cr *rbacv1.ClusterRole) (*rbacv1.Clu
 		},
 	}
 
-	if groupName == rbac.OwnerGroupNamePrefix || groupName == rbac.EditorGroupNamePrefix {
+	if groupName == rbaccontroller.OwnerGroupNamePrefix || groupName == rbaccontroller.EditorGroupNamePrefix {
 		cr.Rules = []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"*"},
@@ -201,7 +201,7 @@ func CreateClusterRoleBinding(resourceName string, crb *rbacv1.ClusterRoleBindin
 	return crb, nil
 }
 
-var groupNameRegex = regexp.MustCompile(fmt.Sprintf("system:%s:(%s|%s|%s)", rbac.RBACResourcesNamePrefix, rbac.OwnerGroupNamePrefix, rbac.EditorGroupNamePrefix, rbac.ViewerGroupNamePrefix))
+var groupNameRegex = regexp.MustCompile(fmt.Sprintf("system:%s:(%s|%s|%s)", rbaccontroller.RBACResourcesNamePrefix, rbaccontroller.OwnerGroupNamePrefix, rbaccontroller.EditorGroupNamePrefix, rbaccontroller.ViewerGroupNamePrefix))
 
 func getGroupName(resourceName string) (string, error) {
 	match := groupNameRegex.FindStringSubmatch(resourceName)

@@ -24,7 +24,7 @@ import (
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -130,7 +130,7 @@ func generateUserProjectBinding(name string, deleted bool) *kubermaticv1.UserPro
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			ProjectID: "test-project",
-			Group:     rbac.EditorGroupNamePrefix + "test-project",
+			Group:     rbaccontroller.EditorGroupNamePrefix + "test-project",
 			UserEmail: "test@test.com",
 		},
 	}

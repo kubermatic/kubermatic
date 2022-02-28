@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
+	eecontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -34,7 +34,7 @@ import (
 
 const (
 	// This controller creates corresponding OPA Constraint Templates and Default Constraints based on AllowedRegistry data.
-	ControllerName = "allowed-registry-controller"
+	ControllerName = "kkp-allowed-registry-controller"
 )
 
 func Add(mgr manager.Manager,
@@ -42,7 +42,7 @@ func Add(mgr manager.Manager,
 	numWorkers int,
 	namespace string,
 ) error {
-	reconciler := allowedregistrycontroller.NewReconciler(
+	reconciler := eecontroller.NewReconciler(
 		log.Named(ControllerName),
 		mgr.GetEventRecorderFor(ControllerName),
 		mgr.GetClient(),

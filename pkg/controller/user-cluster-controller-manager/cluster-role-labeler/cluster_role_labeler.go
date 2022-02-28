@@ -104,23 +104,17 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clusterRole *rbacv1.ClusterRole) error {
+	if clusterRole.Labels[handlercommon.UserClusterComponentKey] == handlercommon.UserClusterRoleComponentValue {
+		log.Debugw("label exists, not updating cluster role", "label", handlercommon.UserClusterRoleLabelSelector)
+		return nil
+	}
+
 	oldClusterRole := clusterRole.DeepCopy()
 	if clusterRole.Labels == nil {
 		clusterRole.Labels = map[string]string{}
 	}
 
-	if value, ok := clusterRole.Labels[handlercommon.UserClusterComponentKey]; ok {
-		if value == handlercommon.UserClusterRoleComponentValue {
-			log.Debug("label ", handlercommon.UserClusterRoleLabelSelector, " exists, not updating cluster role: ", clusterRole.Name)
-			return nil
-		}
-	}
-
 	clusterRole.Labels[handlercommon.UserClusterComponentKey] = handlercommon.UserClusterRoleComponentValue
 
-	if err := r.client.Patch(ctx, clusterRole, ctrlruntimeclient.MergeFrom(oldClusterRole)); err != nil {
-		return fmt.Errorf("failed to update cluster role: %w", err)
-	}
-
-	return nil
+	return r.client.Patch(ctx, clusterRole, ctrlruntimeclient.MergeFrom(oldClusterRole))
 }

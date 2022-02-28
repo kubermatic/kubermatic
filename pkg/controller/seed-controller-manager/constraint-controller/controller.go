@@ -48,7 +48,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraints to constraint on the user cluster.
-	ControllerName = "constraint-controller"
+	ControllerName = "kkp-constraint-controller"
 	finalizer      = kubermaticapiv1.KubermaticUserClusterNsDefaultConstraintCleanupFinalizer
 	Key            = "default"
 	AddAction      = "add"
@@ -178,7 +178,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, constraint, log)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
-		r.recorder.Eventf(constraint, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(constraint, corev1.EventTypeWarning, "ReconcilingError", "reconciling failed: %v", err)
 	}
 
 	return reconcile.Result{}, err

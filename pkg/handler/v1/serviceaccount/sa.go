@@ -27,18 +27,18 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // serviceAccountGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for service account.
 var serviceAccountGroupsPrefixes = []string{
-	rbac.EditorGroupNamePrefix,
-	rbac.ViewerGroupNamePrefix,
-	rbac.ProjectManagerGroupNamePrefix,
+	rbaccontroller.EditorGroupNamePrefix,
+	rbaccontroller.ViewerGroupNamePrefix,
+	rbaccontroller.ProjectManagerGroupNamePrefix,
 }
 
 // CreateEndpoint adds the given service account to the given project.
@@ -102,7 +102,7 @@ func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	if err != nil {
 		return nil, err
 	}
-	groupName := rbac.GenerateActualGroupNameFor(project.Name, sa.Group)
+	groupName := rbaccontroller.GenerateActualGroupNameFor(project.Name, sa.Group)
 	if adminUserInfo.IsAdmin {
 		return privilegedServiceAccount.CreateUnsecuredProjectServiceAccount(project, sa.Name, groupName)
 	}
@@ -202,12 +202,12 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		newGroup := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
+		newGroup := rbaccontroller.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
 		if newGroup != currentGroup {
 			if sa.Labels == nil {
 				sa.Labels = map[string]string{}
 			}
-			sa.Labels[serviceaccount.ServiceAccountLabelGroup] = newGroup
+			sa.Labels[kubernetes.ServiceAccountLabelGroup] = newGroup
 		}
 
 		updatedSA, err := updateSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, sa)
@@ -451,13 +451,13 @@ func convertInternalServiceAccountToExternal(internal *kubermaticv1.User) *apiv1
 				return nil
 			}(),
 		},
-		Group:  internal.Labels[serviceaccount.ServiceAccountLabelGroup],
+		Group:  internal.Labels[kubernetes.ServiceAccountLabelGroup],
 		Status: getStatus(internal),
 	}
 }
 
 func getStatus(serviceAccount *kubermaticv1.User) string {
-	if _, ok := serviceAccount.Labels[serviceaccount.ServiceAccountLabelGroup]; ok {
+	if _, ok := serviceAccount.Labels[kubernetes.ServiceAccountLabelGroup]; ok {
 		return apiv1.ServiceAccountInactive
 	}
 	return apiv1.ServiceAccountActive

@@ -35,7 +35,7 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
+	mlacontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -145,7 +145,7 @@ func TestMLAIntegration(t *testing.T) {
 			t.Fatalf("failed to get project: %v", err)
 		}
 
-		_, ok := p.GetAnnotations()[mla.GrafanaOrgAnnotationKey]
+		_, ok := p.GetAnnotations()[mlacontroller.GrafanaOrgAnnotationKey]
 		return ok
 	}) {
 		t.Fatalf("waiting for project annotation %+v", p)
@@ -164,13 +164,13 @@ func TestMLAIntegration(t *testing.T) {
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
 		t.Fatalf("failed to get Grafana Secret: %v", err)
 	}
-	adminName, ok := secret.Data[mla.GrafanaUserKey]
+	adminName, ok := secret.Data[mlacontroller.GrafanaUserKey]
 	if !ok {
-		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, mla.GrafanaUserKey)
+		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, mlacontroller.GrafanaUserKey)
 	}
-	adminPass, ok := secret.Data[mla.GrafanaPasswordKey]
+	adminPass, ok := secret.Data[mlacontroller.GrafanaPasswordKey]
 	if !ok {
-		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, mla.GrafanaPasswordKey)
+		t.Fatalf("Grafana Secret %q does not contain %s key", grafanaSecret, mlacontroller.GrafanaPasswordKey)
 	}
 	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
 	httpClient := &http.Client{Timeout: 15 * time.Second}
@@ -180,7 +180,7 @@ func TestMLAIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to initialize grafana client")
 	}
-	orgID, ok := p.GetAnnotations()[mla.GrafanaOrgAnnotationKey]
+	orgID, ok := p.GetAnnotations()[mlacontroller.GrafanaOrgAnnotationKey]
 	if !ok {
 		t.Fatal("project should have grafana org annotation set")
 	}
@@ -201,10 +201,10 @@ func TestMLAIntegration(t *testing.T) {
 	grafanaClient.SetOrgIDHeader(org.ID)
 	t.Log("waiting for datasource added to grafana")
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", mla.PrometheusType, cluster.Name))
+		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", mlacontroller.PrometheusType, cluster.Name))
 		return err == nil
 	}) {
-		t.Fatalf("waiting for grafana datasource %s-%s", mla.PrometheusType, cluster.Name)
+		t.Fatalf("waiting for grafana datasource %s-%s", mlacontroller.PrometheusType, cluster.Name)
 	}
 
 	user := grafanasdk.User{}
@@ -219,7 +219,7 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("user[%v] expected to be Grafana Admin and has orgID=%d", user, org.ID)
 	}
 
-	orgUser, err := mla.GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
+	orgUser, err := mlacontroller.GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
 	if err != nil {
 		t.Fatalf("failed to get grafana org user: %v", err)
 	}
@@ -250,14 +250,14 @@ rules:
 	if err != nil {
 		t.Fatalf("unable to create logs rule group: %v", err)
 	}
-	logRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3003", mla.LogRuleGroupConfigEndpoint, "/default")
+	logRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3003", mlacontroller.LogRuleGroupConfigEndpoint, "/default")
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
 		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", logRuleGroupURL, "test-rule"), nil)
 		if err != nil {
 			t.Fatalf("unable to create rule group request: %v", err)
 		}
-		req.Header.Add(mla.RuleGroupTenantHeaderName, cluster.Name)
+		req.Header.Add(mlacontroller.RuleGroupTenantHeaderName, cluster.Name)
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
@@ -290,14 +290,14 @@ rules:
 	if err != nil {
 		t.Fatalf("unable to create metric rule group: %v", err)
 	}
-	metricRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3002", mla.MetricsRuleGroupConfigEndpoint, "/default")
+	metricRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3002", mlacontroller.MetricsRuleGroupConfigEndpoint, "/default")
 
 	if !utils.WaitFor(1*time.Second, timeout, func() bool {
 		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", metricRuleGroupURL, "test-metric-rule"), nil)
 		if err != nil {
 			t.Fatalf("unable to create rule group request: %v", err)
 		}
-		req.Header.Add(mla.RuleGroupTenantHeaderName, cluster.Name)
+		req.Header.Add(mlacontroller.RuleGroupTenantHeaderName, cluster.Name)
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
@@ -335,7 +335,7 @@ rules:
 		t.Fatalf("has alertmanager status: %v", *cluster.Status.ExtendedHealth.AlertmanagerConfig)
 	}
 
-	alertmanagerURL := "http://localhost:3001" + mla.AlertmanagerConfigEndpoint
+	alertmanagerURL := "http://localhost:3001" + mlacontroller.AlertmanagerConfigEndpoint
 	expectedConfig := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(testAlertmanagerConfig), &expectedConfig); err != nil {
 		t.Fatalf("unable to unmarshal expected config: %v", err)
@@ -345,7 +345,7 @@ rules:
 		if err != nil {
 			t.Fatalf("unable to create request to get alertmanager config: %v", err)
 		}
-		req.Header.Add(mla.AlertmanagerTenantHeaderName, cluster.Name)
+		req.Header.Add(mlacontroller.AlertmanagerTenantHeaderName, cluster.Name)
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			t.Fatalf("unable to get alertmanager config: %v", err)
@@ -394,11 +394,11 @@ rules:
 		}
 
 		configMap := &corev1.ConfigMap{}
-		if err := seedClient.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mla.RuntimeConfigMap}, configMap); err != nil {
+		if err := seedClient.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mlacontroller.RuntimeConfigMap}, configMap); err != nil {
 			t.Fatalf("unable to get configMap: %v", err)
 		}
-		actualOverrides := &mla.Overrides{}
-		if err := yaml.Unmarshal([]byte(configMap.Data[mla.RuntimeConfigFileName]), actualOverrides); err != nil {
+		actualOverrides := &mlacontroller.Overrides{}
+		if err := yaml.Unmarshal([]byte(configMap.Data[mlacontroller.RuntimeConfigFileName]), actualOverrides); err != nil {
 			t.Fatalf("unable to unmarshal rate limit config map")
 		}
 		actualRateLimits, ok := actualOverrides.Overrides[cluster.Name]

@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -145,8 +145,8 @@ func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName 
 
 // Update updates the given binding.
 func (p *ProjectMemberProvider) Update(userInfo *provider.UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
-	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
-		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
+	if rbaccontroller.ExtractGroupPrefix(binding.Spec.Group) == rbaccontroller.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbaccontroller.CleanupFinalizerName) {
+		kuberneteshelper.AddFinalizer(binding, rbaccontroller.CleanupFinalizerName)
 	}
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -211,7 +211,7 @@ func (p *ProjectMemberProvider) CreateUnsecured(project *kubermaticv1.Project, m
 // CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
 // This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecuredForServiceAccount(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
-	if p.isServiceAccountFunc(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
+	if p.isServiceAccountFunc(memberEmail) && !strings.HasPrefix(group, rbaccontroller.ProjectManagerGroupNamePrefix) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
@@ -234,8 +234,8 @@ func (p *ProjectMemberProvider) DeleteUnsecured(bindingName string) error {
 // UpdateUnsecured updates the given binding
 // This function is unsafe in a sense that it uses privileged account to update the resource.
 func (p *ProjectMemberProvider) UpdateUnsecured(binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
-	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
-		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
+	if rbaccontroller.ExtractGroupPrefix(binding.Spec.Group) == rbaccontroller.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbaccontroller.CleanupFinalizerName) {
+		kuberneteshelper.AddFinalizer(binding, rbaccontroller.CleanupFinalizerName)
 	}
 
 	if err := p.clientPrivileged.Update(context.Background(), binding); err != nil {
@@ -246,8 +246,8 @@ func (p *ProjectMemberProvider) UpdateUnsecured(binding *kubermaticv1.UserProjec
 
 func genBinding(project *kubermaticv1.Project, memberEmail, group string) *kubermaticv1.UserProjectBinding {
 	finalizers := []string{}
-	if rbac.ExtractGroupPrefix(group) == rbac.OwnerGroupNamePrefix {
-		finalizers = append(finalizers, rbac.CleanupFinalizerName)
+	if rbaccontroller.ExtractGroupPrefix(group) == rbaccontroller.OwnerGroupNamePrefix {
+		finalizers = append(finalizers, rbaccontroller.CleanupFinalizerName)
 	}
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{

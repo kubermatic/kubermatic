@@ -46,7 +46,7 @@ import (
 
 const (
 	// ControllerName is the name of this very controller.
-	ControllerName = "master-controller"
+	ControllerName = "kkp-master-operator"
 )
 
 func Add(

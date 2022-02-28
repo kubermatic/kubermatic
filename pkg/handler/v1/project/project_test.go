@@ -30,7 +30,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
@@ -503,7 +503,7 @@ func TestListProjectMethod(t *testing.T) {
 				fakeImpersonationClient,
 				fUserClusterConnection,
 				"",
-				rbac.ExtractGroupPrefix,
+				rbaccontroller.ExtractGroupPrefix,
 				fakeClient,
 				kubernetesClient,
 				false,

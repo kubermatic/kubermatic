@@ -24,19 +24,19 @@ import (
 
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/allowed-registry-controller"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
-	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
+	externalclustercontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster-controller"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
 	projectsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-synchronizer"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
-	seedsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-sync"
-	serviceaccount "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/service-account"
-	userprojectbinding "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
+	seedproxycontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy-controller"
+	seedsynccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-sync-controller"
+	serviceaccountcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/serviceaccount-controller"
+	userprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding-controller"
 	userprojectbindingsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding-synchronizer"
 	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkeyssynchronizer"
+	usersshkeyssynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkeys-synchronizer"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -82,19 +82,19 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)
 	}
-	if err := userprojectbinding.Add(ctrlCtx.mgr); err != nil {
+	if err := userprojectbindingcontroller.Add(ctrlCtx.mgr); err != nil {
 		return fmt.Errorf("failed to create userprojectbinding controller: %w", err)
 	}
-	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
+	if err := serviceaccountcontroller.Add(ctrlCtx.mgr); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
 	}
-	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
+	if err := seedsynccontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
 		return fmt.Errorf("failed to create seedsync controller: %w", err)
 	}
-	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.configGetter); err != nil {
+	if err := seedproxycontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.configGetter); err != nil {
 		return fmt.Errorf("failed to create seedproxy controller: %w", err)
 	}
-	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
+	if err := externalclustercontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create external cluster controller: %w", err)
 	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
@@ -115,11 +115,11 @@ func rbacControllerFactoryCreator(
 	selectorOps func(*metav1.ListOptions),
 	workerNamePredicate predicate.Predicate,
 ) seedcontrollerlifecycle.ControllerFactory {
-	rbacMetrics := rbac.NewMetrics()
+	rbacMetrics := rbaccontroller.NewMetrics()
 	prometheus.MustRegister(rbacMetrics.Workers)
 
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		_, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
+		_, err := rbaccontroller.New(ctx, rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
 		if err != nil {
 			return "", fmt.Errorf("failed to create rbac controller: %w", err)
 		}

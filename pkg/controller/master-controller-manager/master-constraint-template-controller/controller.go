@@ -47,7 +47,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint templates on the master cluster to the seed clusters.
-	ControllerName = "master-constraint-template-controller"
+	ControllerName = "kkp-master-constraint-template-controller"
 )
 
 type reconciler struct {
@@ -117,7 +117,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, log, constraintTemplate)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", "reconciling failed: %v", err)
 	}
 	return reconcile.Result{}, err
 }

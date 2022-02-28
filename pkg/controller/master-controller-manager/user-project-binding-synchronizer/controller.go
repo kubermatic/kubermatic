@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	ControllerName = "user-project-binding-synchronizer-controller"
+	ControllerName = "kkp-user-project-binding-synchronizer"
 )
 
 type reconciler struct {
@@ -127,7 +127,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	})
 
 	if err != nil {
-		r.recorder.Eventf(userProjectBinding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(userProjectBinding, corev1.EventTypeWarning, "ReconcilingError", "reconciling failed: %v", err)
 		return reconcile.Result{}, fmt.Errorf("reconciled userprojectbinding: %s: %w", userProjectBinding.Name, err)
 	}
 	return reconcile.Result{}, nil

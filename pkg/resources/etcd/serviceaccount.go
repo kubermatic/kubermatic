@@ -17,7 +17,7 @@ limitations under the License.
 package etcd
 
 import (
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +25,7 @@ import (
 
 // ServiceAccountCreator returns a func to create/update the ServiceAccount used by etcd launcher.
 func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
-	return rbac.EtcdLauncherServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+	return rbaccontroller.EtcdLauncherServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }

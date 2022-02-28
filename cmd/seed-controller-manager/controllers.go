@@ -22,22 +22,22 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
-	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
-	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
+	addoncontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon-controller"
+	addoninstallercontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon-installer-controller"
+	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup-controller"
+	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud-controller"
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
-	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
-	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initialmachinedeployment"
-	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
-	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
+	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcd-backup-controller"
+	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcd-restore-controller"
+	initialmachinedeploymentcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-machinedeployment-controller"
+	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes-controller"
+	mlacontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla-controller"
+	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring-controller"
+	pvwatchercontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher-controller"
+	seedresourcesuptodatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodate-controller"
+	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
 	"k8c.io/kubermatic/v2/pkg/features"
 )
 
@@ -45,22 +45,22 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller.
 var AllControllers = map[string]controllerCreator{
-	kubernetescontroller.ControllerName:           createKubernetesController,
-	updatecontroller.ControllerName:               createUpdateController,
-	addon.ControllerName:                          createAddonController,
-	addoninstaller.ControllerName:                 createAddonInstallerController,
-	etcdbackupcontroller.ControllerName:           createEtcdBackupController,
-	backupcontroller.ControllerName:               createBackupController,
-	etcdrestorecontroller.ControllerName:          createEtcdRestoreController,
-	monitoring.ControllerName:                     createMonitoringController,
-	cloudcontroller.ControllerName:                createCloudController,
-	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
-	pvwatcher.ControllerName:                      createPvWatcherController,
-	seedconstraintsynchronizer.ControllerName:     createConstraintController,
-	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
-	initialmachinedeployment.ControllerName:       createInitialMachineDeploymentController,
-	mla.ControllerName:                            createMLAController,
-	clustertemplatecontroller.ControllerName:      createClusterTemplateController,
+	kubernetescontroller.ControllerName:               createKubernetesController,
+	updatecontroller.ControllerName:                   createUpdateController,
+	addoncontroller.ControllerName:                    createAddonController,
+	addoninstallercontroller.ControllerName:           createAddonInstallerController,
+	etcdbackupcontroller.ControllerName:               createEtcdBackupController,
+	backupcontroller.ControllerName:                   createBackupController,
+	etcdrestorecontroller.ControllerName:              createEtcdRestoreController,
+	monitoringcontroller.ControllerName:               createMonitoringController,
+	cloudcontroller.ControllerName:                    createCloudController,
+	seedresourcesuptodatecontroller.ControllerName:    createSeedConditionUpToDateController,
+	pvwatchercontroller.ControllerName:                createPvWatcherController,
+	seedconstraintsynchronizer.ControllerName:         createConstraintController,
+	constrainttemplatecontroller.ControllerName:       createConstraintTemplateController,
+	initialmachinedeploymentcontroller.ControllerName: createInitialMachineDeploymentController,
+	mlacontroller.ControllerName:                      createMLAController,
+	clustertemplatecontroller.ControllerName:          createClusterTemplateController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -75,7 +75,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 }
 
 func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
-	return seedresourcesuptodatecondition.Add(
+	return seedresourcesuptodatecontroller.Add(
 		ctrlCtx.ctx,
 		ctrlCtx.log,
 		ctrlCtx.mgr,
@@ -189,7 +189,7 @@ func createEtcdRestoreController(ctrlCtx *controllerContext) error {
 }
 
 func createMonitoringController(ctrlCtx *controllerContext) error {
-	return monitoring.Add(
+	return monitoringcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
@@ -201,7 +201,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
-		monitoring.Features{
+		monitoringcontroller.Features{
 			VPA:          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 			Konnectivity: ctrlCtx.runOptions.featureGates.Enabled(features.KonnectivityService),
 		},
@@ -222,7 +222,7 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
-	return addon.Add(
+	return addoncontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
@@ -241,7 +241,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonInstallerController(ctrlCtx *controllerContext) error {
-	return addoninstaller.Add(
+	return addoninstallercontroller.Add(
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
@@ -252,7 +252,7 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 }
 
 func createPvWatcherController(ctrlCtx *controllerContext) error {
-	return pvwatcher.Add(
+	return pvwatchercontroller.Add(
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
@@ -272,7 +272,7 @@ func createConstraintTemplateController(ctrlCtx *controllerContext) error {
 }
 
 func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error {
-	return initialmachinedeployment.Add(
+	return initialmachinedeploymentcontroller.Add(
 		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
@@ -288,7 +288,7 @@ func createMLAController(ctrlCtx *controllerContext) error {
 	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
 		return nil
 	}
-	return mla.Add(
+	return mlacontroller.Add(
 		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.log,

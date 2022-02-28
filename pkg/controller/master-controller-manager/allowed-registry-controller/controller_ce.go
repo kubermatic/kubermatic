@@ -25,10 +25,6 @@ import (
 )
 
 // Not implemented for CE version
-func Add(mgr manager.Manager,
-	log *zap.SugaredLogger,
-	numWorkers int,
-	namespace string) error {
-
+func Add(mgr manager.Manager, log *zap.SugaredLogger, numWorkers int, namespace string) error {
 	return nil
 }

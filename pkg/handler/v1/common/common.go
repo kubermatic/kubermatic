@@ -31,7 +31,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -257,7 +257,7 @@ func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Proj
 	}
 	projectOwners := []apiv1.User{}
 	for _, projectMember := range allProjectMembers {
-		if rbac.ExtractGroupPrefix(projectMember.Spec.Group) == rbac.OwnerGroupNamePrefix {
+		if rbaccontroller.ExtractGroupPrefix(projectMember.Spec.Group) == rbaccontroller.OwnerGroupNamePrefix {
 			user, err := userProvider.UserByEmail(projectMember.Spec.UserEmail)
 			if err != nil {
 				continue

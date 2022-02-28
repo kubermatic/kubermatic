@@ -49,7 +49,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint templates to gatekeeper constraint templates on the user cluster.
-	ControllerName = "constraint-template-controller"
+	ControllerName = "kkp-constraint-template-controller"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -132,8 +132,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, log, constraintTemplate)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", "reconciling failed: %v", err)
 	}
+
 	return reconcile.Result{}, err
 }
 

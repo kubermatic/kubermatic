@@ -25,7 +25,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	rbaccontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac-controller"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -94,7 +94,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Name:   name,
 				Labels: podLabels,
 			}
-			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
+			set.Spec.Template.Spec.ServiceAccountName = rbaccontroller.EtcdLauncherServiceAccountName
 
 			etcdEnv := []corev1.EnvVar{
 				{

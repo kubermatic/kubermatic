@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	ControllerName = "user-synchronizer-controller"
+	ControllerName = "kkp-user-synchronizer"
 )
 
 type reconciler struct {
@@ -153,7 +153,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return nil
 	})
 	if err != nil {
-		r.recorder.Eventf(user, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(user, corev1.EventTypeWarning, "ReconcilingError", "reconciling failed: %v", err)
 		return reconcile.Result{}, fmt.Errorf("reconciled user: %s: %w", user.Name, err)
 	}
 	return reconcile.Result{}, nil

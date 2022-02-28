@@ -50,7 +50,7 @@ import (
 
 const (
 	// ControllerName is the name of this very controller.
-	ControllerName = "seed-controller"
+	ControllerName = "kkp-seed-operator"
 )
 
 func Add(
