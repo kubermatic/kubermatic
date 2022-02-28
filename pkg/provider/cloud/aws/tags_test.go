@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -27,8 +28,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func assertTagExistence(t *testing.T, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, vpc *ec2.Vpc, expected bool) {
-	rt, err := getDefaultRouteTable(client, *vpc.VpcId)
+func assertTagExistence(t *testing.T, ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, vpc *ec2.Vpc, expected bool) {
+	rt, err := getDefaultRouteTable(ctx, client, *vpc.VpcId)
 	if err != nil {
 		t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
 	}
@@ -43,7 +44,7 @@ func assertTagExistence(t *testing.T, client ec2iface.EC2API, cluster *kubermati
 
 	securityGroupID := cluster.Spec.Cloud.AWS.SecurityGroupID
 
-	group, err := getSecurityGroupByID(client, vpc, securityGroupID)
+	group, err := getSecurityGroupByID(ctx, client, vpc, securityGroupID)
 	if err != nil {
 		t.Fatalf("getSecurityGroupByID should not have errored, but returned %v", err)
 	}
@@ -76,19 +77,20 @@ func assertTagExistence(t *testing.T, client ec2iface.EC2API, cluster *kubermati
 
 func TestReconcileClusterTags(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
 
-	defaultRT, err := getDefaultRouteTable(cs.EC2, *defaultVPC.VpcId)
+	defaultRT, err := getDefaultRouteTable(ctx, cs.EC2, *defaultVPC.VpcId)
 	if err != nil {
 		t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
 	}
 
 	// to properly test, we need the ID of a pre-existing security group
-	sGroups, err := getSecurityGroupsWithClient(cs.EC2)
+	sGroups, err := getSecurityGroupsWithClient(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getSecurityGroupsWithClient should not have errored, but returned %v", err)
 	}
@@ -106,37 +108,38 @@ func TestReconcileClusterTags(t *testing.T) {
 		SecurityGroupID: securityGroupID,
 	})
 
-	cluster, err = reconcileClusterTags(cs.EC2, cluster, testClusterUpdater(cluster))
+	cluster, err = reconcileClusterTags(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("reconcileClusterTags should not have errored, but returned %v", err)
 	}
 
-	assertTagExistence(t, cs.EC2, cluster, defaultVPC, true)
+	assertTagExistence(t, ctx, cs.EC2, cluster, defaultVPC, true)
 
 	// reconciling again should not do anything, and also not fail
-	_, err = reconcileClusterTags(cs.EC2, cluster, testClusterUpdater(cluster))
+	_, err = reconcileClusterTags(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("reconcileClusterTags (2) should not have errored, but returned %v", err)
 	}
 
-	assertTagExistence(t, cs.EC2, cluster, defaultVPC, true)
+	assertTagExistence(t, ctx, cs.EC2, cluster, defaultVPC, true)
 }
 
 func TestCleanUpTags(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
 
-	defaultRT, err := getDefaultRouteTable(cs.EC2, *defaultVPC.VpcId)
+	defaultRT, err := getDefaultRouteTable(ctx, cs.EC2, *defaultVPC.VpcId)
 	if err != nil {
 		t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
 	}
 
 	// to properly test, we need the ID of a pre-existing security group
-	sGroups, err := getSecurityGroupsWithClient(cs.EC2)
+	sGroups, err := getSecurityGroupsWithClient(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getSecurityGroupsWithClient should not have errored, but returned %v", err)
 	}
@@ -156,21 +159,21 @@ func TestCleanUpTags(t *testing.T) {
 		})
 
 		// create resources and tag them
-		cluster, err = reconcileClusterTags(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileClusterTags(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileClusterTags should not have errored, but returned %v", err)
 		}
 
 		// ensure all tags are set
-		assertTagExistence(t, cs.EC2, cluster, defaultVPC, true)
+		assertTagExistence(t, ctx, cs.EC2, cluster, defaultVPC, true)
 
 		// and now get rid of them again
-		if err = cleanUpTags(cs.EC2, cluster); err != nil {
+		if err = cleanUpTags(ctx, cs.EC2, cluster); err != nil {
 			t.Fatalf("cleanUpTags should not have errored, but returned %v", err)
 		}
 
 		// ensure all tags are gone
-		assertTagExistence(t, cs.EC2, cluster, defaultVPC, false)
+		assertTagExistence(t, ctx, cs.EC2, cluster, defaultVPC, false)
 	})
 
 	t.Run("recover-and-untag-resources", func(t *testing.T) {
@@ -181,13 +184,13 @@ func TestCleanUpTags(t *testing.T) {
 		})
 
 		// create resources and tag them
-		cluster, err = reconcileClusterTags(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileClusterTags(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileClusterTags should not have errored, but returned %v", err)
 		}
 
 		// ensure all tags are set
-		assertTagExistence(t, cs.EC2, cluster, defaultVPC, true)
+		assertTagExistence(t, ctx, cs.EC2, cluster, defaultVPC, true)
 
 		// demonstrate that deleting tags works even when the cluster object is broken
 		backup := cluster.DeepCopy()
@@ -196,11 +199,11 @@ func TestCleanUpTags(t *testing.T) {
 		cluster.Spec.Cloud.AWS.SecurityGroupID = ""
 
 		// and now get rid of them again
-		if err = cleanUpTags(cs.EC2, cluster); err != nil {
+		if err = cleanUpTags(ctx, cs.EC2, cluster); err != nil {
 			t.Fatalf("cleanUpTags should not have errored, but returned %v", err)
 		}
 
 		// ensure all tags are gone
-		assertTagExistence(t, cs.EC2, backup, defaultVPC, false)
+		assertTagExistence(t, ctx, cs.EC2, backup, defaultVPC, false)
 	})
 }

@@ -56,7 +56,7 @@ type Deployer struct {
 	resources []ctrlruntimeclient.Object
 }
 
-func (d *Deployer) SetUp() error {
+func (d *Deployer) SetUp(ctx context.Context) error {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: d.Namespace,
@@ -66,7 +66,7 @@ func (d *Deployer) SetUp() error {
 		ns.ObjectMeta.GenerateName = "nodeport-proxy-"
 	}
 	d.Log.Debugw("Creating namespace", "service", ns)
-	if err := d.Client.Create(context.TODO(), ns); err != nil {
+	if err := d.Client.Create(ctx, ns); err != nil {
 		return errors.Wrap(err, "failed to create namespace")
 	}
 	d.Namespace = ns.Name
@@ -104,43 +104,43 @@ func (d *Deployer) SetUp() error {
 		return errors.Wrap(err, "failed to default seed")
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(context.TODO(),
+	if err := reconciling.ReconcileServiceAccounts(ctx,
 		[]reconciling.NamedServiceAccountCreatorGetter{
 			nodeportproxy.ServiceAccountCreator(cfg),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile ServiceAcconts")
 	}
-	if err := reconciling.ReconcileRoles(context.TODO(),
+	if err := reconciling.ReconcileRoles(ctx,
 		[]reconciling.NamedRoleCreatorGetter{
 			nodeportproxy.RoleCreator(),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile Role")
 	}
-	if err := reconciling.ReconcileRoleBindings(context.TODO(),
+	if err := reconciling.ReconcileRoleBindings(ctx,
 		[]reconciling.NamedRoleBindingCreatorGetter{
 			nodeportproxy.RoleBindingCreator(cfg),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile RoleBinding")
 	}
-	if err := reconciling.ReconcileClusterRoles(context.TODO(),
+	if err := reconciling.ReconcileClusterRoles(ctx,
 		[]reconciling.NamedClusterRoleCreatorGetter{
 			nodeportproxy.ClusterRoleCreator(cfg),
 		}, "", d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile ClusterRole")
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(context.TODO(),
+	if err := reconciling.ReconcileClusterRoleBindings(ctx,
 		[]reconciling.NamedClusterRoleBindingCreatorGetter{
 			nodeportproxy.ClusterRoleBindingCreator(cfg),
 		}, "", d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile ClusterRoleBinding")
 	}
-	if err := reconciling.ReconcileServices(context.TODO(),
+	if err := reconciling.ReconcileServices(ctx,
 		[]reconciling.NamedServiceCreatorGetter{
 			nodeportproxy.ServiceCreator(seed)},
 		d.Namespace, d.Client, recorderFunc); err != nil {
 		return errors.Wrap(err, "failed to reconcile Services")
 	}
-	if err := reconciling.ReconcileDeployments(context.TODO(),
+	if err := reconciling.ReconcileDeployments(ctx,
 		[]reconciling.NamedDeploymentCreatorGetter{
 			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, false, d.Versions),
 			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, d.Versions),
@@ -151,11 +151,11 @@ func (d *Deployer) SetUp() error {
 	// Wait for pods to be ready
 	for _, o := range d.resources {
 		if dep, ok := o.(*appsv1.Deployment); ok {
-			pods, err := d.waitForPodsCreated(dep)
+			pods, err := d.waitForPodsCreated(ctx, dep)
 			if err != nil {
 				return errors.Wrap(err, "failed to create pods")
 			}
-			if err := d.waitForPodsReady(pods...); err != nil {
+			if err := d.waitForPodsReady(ctx, pods...); err != nil {
 				return errors.Wrap(err, "failed waiting for pods to be running")
 			}
 		}
@@ -165,29 +165,29 @@ func (d *Deployer) SetUp() error {
 }
 
 // CleanUp deletes the resources.
-func (d *Deployer) CleanUp() error {
+func (d *Deployer) CleanUp(ctx context.Context) error {
 	for _, o := range d.resources {
 		// TODO handle better errors
-		_ = d.Client.Delete(context.TODO(), o)
+		_ = d.Client.Delete(ctx, o)
 	}
 	return nil
 }
 
 // GetLbService returns the service used to expose the nodeport proxy pods.
-func (d *Deployer) GetLbService() *corev1.Service {
+func (d *Deployer) GetLbService(ctx context.Context) *corev1.Service {
 	svc := corev1.Service{}
-	if err := d.Client.Get(context.TODO(), types.NamespacedName{Name: nodeportproxy.ServiceName, Namespace: d.Namespace}, &svc); err != nil {
+	if err := d.Client.Get(ctx, types.NamespacedName{Name: nodeportproxy.ServiceName, Namespace: d.Namespace}, &svc); err != nil {
 		return nil
 	}
 	return &svc
 }
 
-func (d *Deployer) waitForPodsCreated(dep *appsv1.Deployment) ([]string, error) {
-	return e2eutils.WaitForPodsCreated(d.Client, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
+func (d *Deployer) waitForPodsCreated(ctx context.Context, dep *appsv1.Deployment) ([]string, error) {
+	return e2eutils.WaitForPodsCreated(ctx, d.Client, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
 }
 
-func (d *Deployer) waitForPodsReady(pods ...string) error {
-	if !e2eutils.CheckPodsRunningReady(d.Client, d.Namespace, pods, podReadinessTimeout) {
+func (d *Deployer) waitForPodsReady(ctx context.Context, pods ...string) error {
+	if !e2eutils.CheckPodsRunningReady(ctx, d.Client, d.Namespace, pods, podReadinessTimeout) {
 		return fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
 	}
 	return nil

@@ -433,7 +433,7 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 		return err
 	}
 
-	err = kubevirt.ReconcileCSIRoleRoleBinding(client, restConfig)
+	err = kubevirt.ReconcileCSIRoleRoleBinding(ctx, client, restConfig)
 	if err != nil {
 		return err
 	}

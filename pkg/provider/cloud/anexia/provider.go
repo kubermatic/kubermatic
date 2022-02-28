@@ -17,6 +17,7 @@ limitations under the License.
 package anexia
 
 import (
+	"context"
 	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -29,6 +30,8 @@ type Anexia struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
+var _ provider.CloudProvider = &Anexia{}
+
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Anexia, error) {
 	if dc.Spec.Anexia == nil {
 		return nil, errors.New("datacenter is not an Anexia datacenter")
@@ -39,11 +42,11 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
-func (a *Anexia) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *Anexia) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Anexia) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (a *Anexia) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	_, err := GetCredentialsForCluster(spec, a.secretKeySelector)
 	if err != nil {
 		return err
@@ -51,15 +54,15 @@ func (a *Anexia) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Anexia) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (a *Anexia) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
-func (a *Anexia) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (a *Anexia) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
-func (a *Anexia) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (a *Anexia) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 

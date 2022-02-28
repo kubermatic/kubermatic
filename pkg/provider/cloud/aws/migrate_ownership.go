@@ -17,6 +17,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -46,7 +47,7 @@ import (
 // unused finalizer afterwards. This should happen after the other
 // reconciling functions have been called, so that this function can
 // assume this like the security group ID are set and valid.
-func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	ec2Tag := ec2OwnershipTag(cluster.Name)
 	iamTag := iamOwnershipTag(cluster.Name)
 
@@ -60,18 +61,18 @@ func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater
 
 	// security group
 	if kuberneteshelper.HasFinalizer(cluster, securityGroupCleanupFinalizer) {
-		vpc, err := getVPCByID(cs.EC2, cluster.Spec.Cloud.AWS.VPCID)
+		vpc, err := getVPCByID(ctx, cs.EC2, cluster.Spec.Cloud.AWS.VPCID)
 		if err != nil {
 			return cluster, fmt.Errorf("failed to get VPC: %w", err)
 		}
 
-		group, err := getSecurityGroupByID(cs.EC2, vpc, cluster.Spec.Cloud.AWS.SecurityGroupID)
+		group, err := getSecurityGroupByID(ctx, cs.EC2, vpc, cluster.Spec.Cloud.AWS.SecurityGroupID)
 		if err != nil {
 			return cluster, fmt.Errorf("failed to get security group: %w", err)
 		}
 
 		if !hasEC2Tag(ec2Tag, group.Tags) {
-			_, err = cs.EC2.CreateTags(&ec2.CreateTagsInput{
+			_, err = cs.EC2.CreateTagsWithContext(ctx, &ec2.CreateTagsInput{
 				Resources: []*string{group.GroupId},
 				Tags:      []*ec2.Tag{ec2Tag},
 			})
@@ -90,13 +91,13 @@ func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater
 
 	// instance profile
 	if kuberneteshelper.HasFinalizer(cluster, instanceProfileCleanupFinalizer) {
-		profile, err := getInstanceProfile(cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
+		profile, err := getInstanceProfile(ctx, cs.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName)
 		if err != nil {
 			return cluster, fmt.Errorf("failed to get instance profile: %w", err)
 		}
 
 		if !hasIAMTag(iamTag, profile.Tags) {
-			_, err = cs.IAM.TagInstanceProfile(&iam.TagInstanceProfileInput{
+			_, err = cs.IAM.TagInstanceProfileWithContext(ctx, &iam.TagInstanceProfileInput{
 				InstanceProfileName: profile.InstanceProfileName,
 				Tags:                []*iam.Tag{iamTag},
 			})
@@ -115,13 +116,13 @@ func backfillOwnershipTags(cs *ClientSet, cluster *kubermaticv1.Cluster, updater
 
 	// control plane role
 	if kuberneteshelper.HasFinalizer(cluster, controlPlaneRoleCleanupFinalizer) {
-		role, err := getRole(cs.IAM, cluster.Spec.Cloud.AWS.ControlPlaneRoleARN)
+		role, err := getRole(ctx, cs.IAM, cluster.Spec.Cloud.AWS.ControlPlaneRoleARN)
 		if err != nil {
 			return cluster, fmt.Errorf("failed to get control plane role: %w", err)
 		}
 
 		if !hasIAMTag(iamTag, role.Tags) {
-			_, err = cs.IAM.TagRole(&iam.TagRoleInput{
+			_, err = cs.IAM.TagRoleWithContext(ctx, &iam.TagRoleInput{
 				RoleName: role.RoleName,
 				Tags:     []*iam.Tag{iamTag},
 			})

@@ -17,6 +17,7 @@ limitations under the License.
 package gcp
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -31,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
-func reconcileFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, svc *compute.Service, projectID string) error {
+func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, svc *compute.Service, projectID string) error {
 	// Retrieve nodePort range from cluster
 	nodePortRangeLow, nodePortRangeHigh := resources.NewTemplateDataBuilder().
 		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
@@ -74,7 +75,7 @@ func reconcileFirewallRules(cluster *kubermaticv1.Cluster, update provider.Clust
 			IPProtocol: "ipip",
 		},
 	}
-	err := createOrPatchFirewall(firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, "", update, cluster, firewallSelfCleanupFinalizer)
+	err := createOrPatchFirewall(ctx, firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, "", update, cluster, firewallSelfCleanupFinalizer)
 	if err != nil {
 		return err
 	}
@@ -84,7 +85,7 @@ func reconcileFirewallRules(cluster *kubermaticv1.Cluster, update provider.Clust
 			IPProtocol: "icmp",
 		},
 	}
-	err = createOrPatchFirewall(firewallService, projectID, icmpRuleName, tag, "", allowedProtocols, "0.0.0.0/0", update, cluster, firewallICMPCleanupFinalizer)
+	err = createOrPatchFirewall(ctx, firewallService, projectID, icmpRuleName, tag, "", allowedProtocols, "0.0.0.0/0", update, cluster, firewallICMPCleanupFinalizer)
 	if err != nil {
 		return err
 	}
@@ -99,7 +100,7 @@ func reconcileFirewallRules(cluster *kubermaticv1.Cluster, update provider.Clust
 			Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
 		},
 	}
-	err = createOrPatchFirewall(firewallService, projectID, nodePortRuleName, tag, "", allowedProtocols, nodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
+	err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "", allowedProtocols, nodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
 	if err != nil {
 		return err
 	}
@@ -107,7 +108,8 @@ func reconcileFirewallRules(cluster *kubermaticv1.Cluster, update provider.Clust
 	return nil
 }
 
-func createOrPatchFirewall(firewallService *compute.FirewallsService,
+func createOrPatchFirewall(ctx context.Context,
+	firewallService *compute.FirewallsService,
 	projectID string,
 	firewallName string,
 	targetTag string,
@@ -130,10 +132,10 @@ func createOrPatchFirewall(firewallService *compute.FirewallsService,
 		firewall.SourceRanges = []string{allowedIPRange}
 	}
 
-	existingFirewall, err := firewallService.Get(projectID, firewallName).Do()
+	existingFirewall, err := firewallService.Get(projectID, firewallName).Context(ctx).Do()
 	switch {
 	case isHTTPError(err, http.StatusNotFound):
-		if _, err = firewallService.Insert(projectID, firewall).Do(); err != nil {
+		if _, err = firewallService.Insert(projectID, firewall).Context(ctx).Do(); err != nil {
 			return fmt.Errorf("failed to create new firewall %s for cluster %s, %w", firewallName, cluster.Name, err)
 		}
 	case err == nil:
@@ -142,7 +144,7 @@ func createOrPatchFirewall(firewallService *compute.FirewallsService,
 			!reflect.DeepEqual(existingFirewall.TargetTags, firewall.TargetTags) ||
 			!reflect.DeepEqual(existingFirewall.SourceTags, firewall.SourceTags) ||
 			!reflect.DeepEqual(existingFirewall.SourceRanges, firewall.SourceRanges) {
-			_, err = firewallService.Patch(projectID, firewallName, firewall).Do()
+			_, err = firewallService.Patch(projectID, firewallName, firewall).Context(ctx).Do()
 			if err != nil {
 				return fmt.Errorf("failed to patch firewall %s for cluster %s, %w", firewallName, cluster.Name, err)
 			}
@@ -170,7 +172,7 @@ func createOrPatchFirewall(firewallService *compute.FirewallsService,
 	return nil
 }
 
-func deleteFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, log *zap.SugaredLogger, svc *compute.Service, projectID string) (*kubermaticv1.Cluster, error) {
+func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, log *zap.SugaredLogger, svc *compute.Service, projectID string) (*kubermaticv1.Cluster, error) {
 	firewallService := compute.NewFirewallsService(svc)
 
 	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
@@ -178,7 +180,7 @@ func deleteFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
-		_, err := firewallService.Delete(projectID, selfRuleName).Do()
+		_, err := firewallService.Delete(projectID, selfRuleName).Context(ctx).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", selfRuleName, err)
@@ -193,7 +195,7 @@ func deleteFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallICMPCleanupFinalizer) {
-		_, err := firewallService.Delete(projectID, icmpRuleName).Do()
+		_, err := firewallService.Delete(projectID, icmpRuleName).Context(ctx).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", icmpRuleName, err)
@@ -209,7 +211,7 @@ func deleteFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 
 	// remove the nodeport firewall rule
 	if kuberneteshelper.HasFinalizer(cluster, firewallNodePortCleanupFinalizer) {
-		_, err := firewallService.Delete(projectID, nodePortRuleName).Do()
+		_, err := firewallService.Delete(projectID, nodePortRuleName).Context(ctx).Do()
 		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", nodePortRuleName, err)
@@ -224,7 +226,7 @@ func deleteFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, routesCleanupFinalizer) {
-		err := cleanUnusedRoutes(cluster, log, svc, projectID)
+		err := cleanUnusedRoutes(ctx, cluster, log, svc, projectID)
 		if err != nil {
 			return nil, err
 		}

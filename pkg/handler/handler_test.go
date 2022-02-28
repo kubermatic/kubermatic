@@ -38,7 +38,7 @@ func TestEncodeJSON(t *testing.T) {
 		{12, `12`},
 	}
 
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	for _, testcase := range testcases {
 		writer := httptest.NewRecorder()

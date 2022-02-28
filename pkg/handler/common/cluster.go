@@ -198,7 +198,7 @@ func GenerateCluster(
 
 	// Create the Cluster object.
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
-	spec, err := cluster.Spec(body.Cluster, defaultingTemplate, seed, dc, config, secretKeyGetter, caBundle, features)
+	spec, err := cluster.Spec(ctx, body.Cluster, defaultingTemplate, seed, dc, config, secretKeyGetter, caBundle, features)
 	if err != nil {
 		return nil, kubermaticerrors.NewBadRequest("invalid cluster: %v", err)
 	}
@@ -500,7 +500,7 @@ func PatchEndpoint(
 	}
 
 	// apply default values to the new cluster
-	if err := defaulting.DefaultClusterSpec(&newInternalCluster.Spec, defaultingTemplate, seed, config, cloudProvider); err != nil {
+	if err := defaulting.DefaultClusterSpec(ctx, &newInternalCluster.Spec, defaultingTemplate, seed, config, cloudProvider); err != nil {
 		return nil, err
 	}
 

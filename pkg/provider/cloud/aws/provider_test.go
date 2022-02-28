@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -47,8 +48,9 @@ func newCloudProvider(t *testing.T) *AmazonEC2 {
 
 func TestValidateCloudSpec(t *testing.T) {
 	provider := newCloudProvider(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(provider.clientSet.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, provider.clientSet.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
@@ -56,7 +58,7 @@ func TestValidateCloudSpec(t *testing.T) {
 	defaultVPCID := *defaultVPC.VpcId
 
 	// to properly test, we need the ID of a pre-existing security group
-	sGroups, err := getSecurityGroupsWithClient(provider.clientSet.EC2)
+	sGroups, err := getSecurityGroupsWithClient(ctx, provider.clientSet.EC2)
 	if err != nil {
 		t.Fatalf("getSecurityGroupsWithClient should not have errored, but returned %v", err)
 	}
@@ -124,7 +126,7 @@ func TestValidateCloudSpec(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
-			err := provider.ValidateCloudSpec(kubermaticv1.CloudSpec{AWS: testcase.cloudSpec})
+			err := provider.ValidateCloudSpec(ctx, kubermaticv1.CloudSpec{AWS: testcase.cloudSpec})
 			if (err != nil) != testcase.expectErr {
 				if testcase.expectErr {
 					t.Error("Expected spec to fail, but no error was returned.")
@@ -140,7 +142,7 @@ func TestInitializeCloudProvider(t *testing.T) {
 	provider := newCloudProvider(t)
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 
-	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.InitializeCloudProvider(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("InitializeCloudProvider should not have failed, but returned: %v", err)
 	}
@@ -193,7 +195,7 @@ func TestInitializeCloudProviderKeepsAnyData(t *testing.T) {
 	// Otherwise the code would try to tag the non-existing resources and fail.
 	kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
 
-	cluster, err := provider.InitializeCloudProvider(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.InitializeCloudProvider(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("InitializeCloudProvider should not have failed, but returned: %v", err)
 	}
@@ -223,7 +225,7 @@ func TestReconcileCluster(t *testing.T) {
 	provider := newCloudProvider(t)
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 
-	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
@@ -263,7 +265,7 @@ func TestReconcileClusterFixesProblems(t *testing.T) {
 		SecurityGroupID: "does-not-exist",
 	})
 
-	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
@@ -278,7 +280,7 @@ func TestCleanUpCloudProvider(t *testing.T) {
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 
 	// create a vanilla cluster
-	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
@@ -289,7 +291,7 @@ func TestCleanUpCloudProvider(t *testing.T) {
 	}
 
 	// clean it up
-	cluster, err = provider.CleanUpCloudProvider(cluster, testClusterUpdater(cluster))
+	cluster, err = provider.CleanUpCloudProvider(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("CleanUpCloudProvider should not have failed, but returned: %v", err)
 	}

@@ -118,7 +118,7 @@ func ValidateEKSCredentials(ctx context.Context, credential EKSCredential) error
 func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSubnetIDList, error) {
 	subnetIDs := apiv2.EKSSubnetIDList{}
 
-	subnetResults, err := awsprovider.GetSubnets(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func ListEKSSubnetIDs(ctx context.Context, cred EKSCredential, vpcID string) (ap
 func ListEKSVPC(ctx context.Context, cred EKSCredential) (apiv2.EKSVPCList, error) {
 	vpcs := apiv2.EKSVPCList{}
 
-	vpcResults, err := awsprovider.GetVPCS(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	vpcResults, err := awsprovider.GetVPCS(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func ListEKSRegions(ctx context.Context, cred EKSCredential) (apiv2.EKSRegions, 
 func ListEKSSecurityGroupIDs(ctx context.Context, cred EKSCredential, vpcID string) (apiv2.EKSSecurityGroupIDList, error) {
 	securityGroupID := apiv2.EKSSecurityGroupIDList{}
 
-	securityGroups, err := awsprovider.GetSecurityGroupsByVPC(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	securityGroups, err := awsprovider.GetSecurityGroupsByVPC(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get security groups: %w", err)
 	}

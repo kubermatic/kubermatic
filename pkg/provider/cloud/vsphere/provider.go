@@ -77,8 +77,8 @@ type Session struct {
 }
 
 // Logout closes the idling vCenter connections.
-func (s *Session) Logout() {
-	if err := s.Client.Logout(context.Background()); err != nil {
+func (s *Session) Logout(ctx context.Context) {
+	if err := s.Client.Logout(ctx); err != nil {
 		kruntime.HandleError(fmt.Errorf("vSphere client failed to logout: %w", err))
 	}
 }
@@ -140,9 +140,7 @@ func getVMRootPath(dc *kubermaticv1.DatacenterSpecVSphere) string {
 }
 
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
-func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	ctx := context.Background()
-
+func (v *Provider) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	username, password, err := GetCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
 	if err != nil {
 		return nil, err
@@ -151,7 +149,7 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
-	defer session.Logout()
+	defer session.Logout(ctx)
 
 	rootPath := getVMRootPath(v.dc)
 	if cluster.Spec.Cloud.VSphere.Folder == "" {
@@ -180,8 +178,7 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 // }
 
 // GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
-func GetNetworks(dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]NetworkInfo, error) {
-	ctx := context.Background()
+func GetNetworks(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]NetworkInfo, error) {
 	// For the GetNetworks request we use dc.Spec.VSphere.InfraManagementUser
 	// if set because that is the user which will ultimatively configure
 	// the networks - But it means users in the UI can see vsphere
@@ -190,20 +187,18 @@ func GetNetworks(dc *kubermaticv1.DatacenterSpecVSphere, username, password stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
-	defer session.Logout()
+	defer session.Logout(ctx)
 
 	return getPossibleVMNetworks(ctx, session)
 }
 
 // GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
-func GetVMFolders(dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
-	ctx := context.TODO()
-
+func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
 	session, err := newSession(ctx, dc, username, password, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
-	defer session.Logout()
+	defer session.Logout(ctx)
 
 	// We simply list all folders & filter out afterwards.
 	// Filtering here is not possible as vCenter only lists the first level when giving a path.
@@ -228,13 +223,13 @@ func GetVMFolders(dc *kubermaticv1.DatacenterSpecVSphere, username, password str
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
-func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+func (v *Provider) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec validates whether a vsphere client can be constructed for
 // the passed cloudspec and perform some additional checks on datastore config.
-func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (v *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
 	username, password, err := GetCredentialsForCluster(spec, v.secretKeySelector, v.dc)
 	if err != nil {
 		return err
@@ -248,12 +243,11 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		return errors.New("either datastore or datastore cluster can be selected")
 	}
 
-	ctx := context.Background()
 	session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 	if err != nil {
 		return fmt.Errorf("failed to create vCenter session: %w", err)
 	}
-	defer session.Logout()
+	defer session.Logout(ctx)
 
 	if ds := v.dc.DefaultDatastore; ds != "" {
 		if _, err := session.Finder.Datastore(ctx, ds); err != nil {
@@ -285,8 +279,7 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 // CleanUpCloudProvider we always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it.
-func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	ctx := context.TODO()
+func (v *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	username, password, err := GetCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
 	if err != nil {
 		return nil, err
@@ -296,7 +289,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
-	defer session.Logout()
+	defer session.Logout(ctx)
 
 	if kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
 		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
@@ -314,19 +307,17 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (v *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (v *Provider) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // GetDatastoreList returns a slice of Datastore of the datacenter from the passed cloudspec.
-func GetDatastoreList(dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]*object.Datastore, error) {
-	ctx := context.TODO()
-
+func GetDatastoreList(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]*object.Datastore, error) {
 	session, err := newSession(ctx, dc, username, password, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 	}
-	defer session.Logout()
+	defer session.Logout(ctx)
 
 	datastoreList, err := session.Finder.DatastoreList(ctx, "*")
 	if err != nil {

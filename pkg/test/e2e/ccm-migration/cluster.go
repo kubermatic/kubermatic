@@ -70,23 +70,23 @@ type credentials struct {
 	network        string
 }
 
-func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials credentials) error {
+func (c *ClusterJig) SetUp(ctx context.Context, cloudSpec kubermaticv1.CloudSpec, osCredentials credentials) error {
 	c.Log.Debugw("Setting up new cluster", "name", c.Name)
 
-	if err := c.createSecret(cloudSpec.Openstack.CredentialsReference.Name, osCredentials); err != nil {
+	if err := c.createSecret(ctx, cloudSpec.Openstack.CredentialsReference.Name, osCredentials); err != nil {
 		return err
 	}
 	c.Log.Debugw("secret created", "name", cloudSpec.Openstack.CredentialsReference.Name)
 
-	if err := c.createCluster(cloudSpec); err != nil {
+	if err := c.createCluster(ctx, cloudSpec); err != nil {
 		return err
 	}
 	c.Log.Debugw("Cluster created", "name", c.Name)
 
-	return c.waitForClusterControlPlaneReady(c.Cluster)
+	return c.waitForClusterControlPlaneReady(ctx, c.Cluster)
 }
 
-func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client, osCredentials credentials) error {
+func (c *ClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client, osCredentials credentials) error {
 	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s","password": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
 		osCredentials.authURL,
 		osCredentials.username,
@@ -127,10 +127,10 @@ func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client
 			},
 		},
 	}
-	return userClient.Create(context.TODO(), machineDeployment)
+	return userClient.Create(ctx, machineDeployment)
 }
 
-func (c *ClusterJig) createSecret(secretName string, osCredentials credentials) error {
+func (c *ClusterJig) createSecret(ctx context.Context, secretName string, osCredentials credentials) error {
 	secretData := map[string][]byte{
 		resources.OpenstackUsername:                    []byte(osCredentials.username),
 		resources.OpenstackPassword:                    []byte(osCredentials.password),
@@ -153,14 +153,14 @@ func (c *ClusterJig) createSecret(secretName string, osCredentials credentials) 
 		Data: secretData,
 	}
 
-	if err := c.SeedClient.Create(context.TODO(), credentialSecret); err != nil {
+	if err := c.SeedClient.Create(ctx, credentialSecret); err != nil {
 		return errors.Wrap(err, "failed to create credential secret")
 	}
 
 	return nil
 }
 
-func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
+func (c *ClusterJig) createCluster(ctx context.Context, cloudSpec kubermaticv1.CloudSpec) error {
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: c.Name,
@@ -203,11 +203,11 @@ func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
 			Version:               c.Version,
 		},
 	}
-	if err := c.SeedClient.Create(context.TODO(), c.Cluster); err != nil {
+	if err := c.SeedClient.Create(ctx, c.Cluster); err != nil {
 		return errors.Wrap(err, "failed to create cluster")
 	}
 
-	if err := kubermaticv1helper.UpdateClusterStatus(context.TODO(), c.SeedClient, c.Cluster, func(c *kubermaticv1.Cluster) {
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.SeedClient, c.Cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
 		return errors.Wrap(err, "failed to update cluster status")
@@ -217,9 +217,7 @@ func (c *ClusterJig) createCluster(cloudSpec kubermaticv1.CloudSpec) error {
 }
 
 // CleanUp deletes the cluster.
-func (c *ClusterJig) CleanUp() error {
-	ctx := context.TODO()
-
+func (c *ClusterJig) CleanUp(ctx context.Context) error {
 	clusterClientProvider, err := clusterclient.NewExternal(c.SeedClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to get user cluster client provider")
@@ -300,11 +298,11 @@ func (c *ClusterJig) CleanUp() error {
 	})
 }
 
-func (c *ClusterJig) waitForClusterControlPlaneReady(cl *kubermaticv1.Cluster) error {
+func (c *ClusterJig) waitForClusterControlPlaneReady(ctx context.Context, cl *kubermaticv1.Cluster) error {
 	c.Log.Debug("Waiting for control plane to become ready...")
 
 	return wait.PollImmediate(clusterReadinessCheckPeriod, clusterReadinessTimeout, func() (bool, error) {
-		if err := c.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: c.Name, Namespace: cl.Namespace}, cl); err != nil {
+		if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: c.Name, Namespace: cl.Namespace}, cl); err != nil {
 			return false, err
 		}
 

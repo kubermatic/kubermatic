@@ -77,7 +77,7 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 		return nil, err
 	}
 
-	subnetList, err := ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, cluster.Spec.Cloud.AWS.VPCID, dc)
+	subnetList, err := ListAWSSubnets(ctx, accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, cluster.Spec.Cloud.AWS.VPCID, dc)
 	if err != nil {
 		return nil, err
 	}
@@ -125,12 +125,12 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 	return AWSSizes(dc.Spec.AWS.Region, architecture, settings.Spec.MachineDeploymentVMResourceQuota)
 }
 
-func ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
+func ListAWSSubnets(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, datacenter.Spec.AWS.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(ctx, accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, datacenter.Spec.AWS.Region, vpcID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get subnets: %w", err)
 	}

@@ -200,7 +200,7 @@ func TestReconcilingSeed(t *testing.T) {
 			existingSeeds: existingSeeds,
 			validate: func(_, _ *kubermaticv1.Seed, masterClient, seedClient ctrlruntimeclient.Client) error {
 				cfg := &kubermaticv1.KubermaticConfiguration{}
-				err := seedClient.Get(context.TODO(), types.NamespacedName{
+				err := seedClient.Get(context.Background(), types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      "kubermatic",
 				}, cfg)

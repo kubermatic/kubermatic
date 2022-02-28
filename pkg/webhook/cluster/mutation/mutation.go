@@ -153,7 +153,7 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cl
 		return err
 	}
 
-	return defaulting.DefaultClusterSpec(&c.Spec, defaultTemplate, seed, config, provider)
+	return defaulting.DefaultClusterSpec(ctx, &c.Spec, defaultTemplate, seed, config, provider)
 }
 
 // mutateCreate is an addition to regular defaulting for new clusters.

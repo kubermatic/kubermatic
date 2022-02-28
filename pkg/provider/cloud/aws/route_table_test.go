@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -26,14 +27,15 @@ import (
 
 func TestGetDefaultRouteTable(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
 
 	t.Run("valid-vpc", func(t *testing.T) {
-		rt, err := getDefaultRouteTable(cs.EC2, *defaultVPC.VpcId)
+		rt, err := getDefaultRouteTable(ctx, cs.EC2, *defaultVPC.VpcId)
 		if err != nil {
 			t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
 		}
@@ -44,7 +46,7 @@ func TestGetDefaultRouteTable(t *testing.T) {
 	})
 
 	t.Run("invalid-vpc", func(t *testing.T) {
-		_, err := getDefaultRouteTable(cs.EC2, "does-not-exist")
+		_, err := getDefaultRouteTable(ctx, cs.EC2, "does-not-exist")
 		if err == nil {
 			t.Fatalf("getDefaultRouteTable should have errored, but returned %v", err)
 		}
@@ -53,13 +55,14 @@ func TestGetDefaultRouteTable(t *testing.T) {
 
 func TestReconcileRouteTable(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
 
-	defaultRT, err := getDefaultRouteTable(cs.EC2, *defaultVPC.VpcId)
+	defaultRT, err := getDefaultRouteTable(ctx, cs.EC2, *defaultVPC.VpcId)
 	if err != nil {
 		t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
 	}
@@ -73,7 +76,7 @@ func TestReconcileRouteTable(t *testing.T) {
 			RouteTableID: defaultRouteTableID,
 		})
 
-		cluster, err = reconcileRouteTable(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileRouteTable(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileRouteTable should not have errored, but returned %v", err)
 		}
@@ -92,7 +95,7 @@ func TestReconcileRouteTable(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileRouteTable(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileRouteTable(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileRouteTable should not have errored, but returned %v", err)
 		}
@@ -112,7 +115,7 @@ func TestReconcileRouteTable(t *testing.T) {
 			RouteTableID: "does-not-exist",
 		})
 
-		cluster, err = reconcileRouteTable(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileRouteTable(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileRouteTable should not have errored, but returned %v", err)
 		}

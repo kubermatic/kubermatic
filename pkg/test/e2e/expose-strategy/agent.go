@@ -55,22 +55,22 @@ type AgentConfig struct {
 }
 
 // DeployAgentPod deploys the pod to be used to verify tunneling expose strategy.
-func (a *AgentConfig) DeployAgentPod() error {
+func (a *AgentConfig) DeployAgentPod(ctx context.Context) error {
 	agentCm := a.newAgentConfigMap(a.Namespace)
-	if err := a.Client.Create(context.TODO(), agentCm); err != nil {
+	if err := a.Client.Create(ctx, agentCm); err != nil {
 		return errors.Wrap(err, "failed to create agent config map")
 	}
 	a.AgentConfigMap = agentCm
 	agentPod := a.newAgentPod(a.Namespace)
-	if err := a.Client.Create(context.TODO(), agentPod); err != nil {
+	if err := a.Client.Create(ctx, agentPod); err != nil {
 		return errors.Wrap(err, "failed to create agent pod")
 	}
 
-	if !e2eutils.CheckPodsRunningReady(a.Client, a.Namespace, []string{agentPod.Name}, agentDeployTimeout) {
+	if !e2eutils.CheckPodsRunningReady(ctx, a.Client, a.Namespace, []string{agentPod.Name}, agentDeployTimeout) {
 		return errors.New("timeout occurred while waiting for agent pod readiness")
 	}
 
-	if err := a.Client.Get(context.TODO(), ctrlruntimeclient.ObjectKey{
+	if err := a.Client.Get(ctx, ctrlruntimeclient.ObjectKey{
 		Namespace: agentPod.Namespace,
 		Name:      agentPod.Name,
 	}, agentPod); err != nil {
@@ -81,12 +81,12 @@ func (a *AgentConfig) DeployAgentPod() error {
 }
 
 // CleanUp deletes the resources.
-func (a *AgentConfig) CleanUp() error {
+func (a *AgentConfig) CleanUp(ctx context.Context) error {
 	if a.AgentPod != nil {
-		return a.Client.Delete(context.TODO(), a.AgentPod)
+		return a.Client.Delete(ctx, a.AgentPod)
 	}
 	if a.AgentConfigMap != nil {
-		return a.Client.Delete(context.TODO(), a.AgentConfigMap)
+		return a.Client.Delete(ctx, a.AgentConfigMap)
 	}
 	return nil
 }

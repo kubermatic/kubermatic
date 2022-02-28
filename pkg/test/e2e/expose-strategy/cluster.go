@@ -50,7 +50,7 @@ type ClusterJig struct {
 	Cluster *kubermaticv1.Cluster
 }
 
-func (c *ClusterJig) SetUp() error {
+func (c *ClusterJig) SetUp(ctx context.Context) error {
 	c.Log.Debugw("Creating cluster", "name", c.Name)
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -97,11 +97,11 @@ func (c *ClusterJig) SetUp() error {
 			Version:               c.Version,
 		},
 	}
-	if err := c.Client.Create(context.TODO(), c.Cluster); err != nil {
+	if err := c.Client.Create(ctx, c.Cluster); err != nil {
 		return errors.Wrap(err, "failed to create cluster")
 	}
 
-	if err := kubermaticv1helper.UpdateClusterStatus(context.TODO(), c.Client, c.Cluster, func(c *kubermaticv1.Cluster) {
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.Client, c.Cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
 		return errors.Wrap(err, "failed to update cluster status")
@@ -111,8 +111,8 @@ func (c *ClusterJig) SetUp() error {
 }
 
 // CleanUp deletes the cluster.
-func (c *ClusterJig) CleanUp() error {
-	return c.Client.Delete(context.TODO(), c.Cluster)
+func (c *ClusterJig) CleanUp(ctx context.Context) error {
+	return c.Client.Delete(ctx, c.Cluster)
 }
 
 func (c *ClusterJig) waitForClusterControlPlaneReady(cl *kubermaticv1.Cluster) error {

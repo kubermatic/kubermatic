@@ -155,7 +155,7 @@ func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 		if err != nil {
 			return nil, err
 		}
-		return providercommon.GetOpenstackNetworks(userInfo, seedsGetter, cred, req.DatacenterName, caBundle)
+		return providercommon.GetOpenstackNetworks(ctx, userInfo, seedsGetter, cred, req.DatacenterName, caBundle)
 	}
 }
 
@@ -180,7 +180,7 @@ func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, presetProv
 		if err != nil {
 			return nil, err
 		}
-		return providercommon.GetOpenstackSecurityGroups(userInfo, seedsGetter, cred, req.DatacenterName, caBundle)
+		return providercommon.GetOpenstackSecurityGroups(ctx, userInfo, seedsGetter, cred, req.DatacenterName, caBundle)
 	}
 }
 
@@ -205,7 +205,7 @@ func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 		if err != nil {
 			return nil, err
 		}
-		return providercommon.GetOpenstackSubnets(userInfo, seedsGetter, cred, req.NetworkID, req.DatacenterName, caBundle)
+		return providercommon.GetOpenstackSubnets(ctx, userInfo, seedsGetter, cred, req.NetworkID, req.DatacenterName, caBundle)
 	}
 }
 

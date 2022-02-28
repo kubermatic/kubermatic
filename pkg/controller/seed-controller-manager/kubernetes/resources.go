@@ -17,8 +17,12 @@ limitations under the License.
 package kubernetes
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net"
+	"net/url"
+	"sort"
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -481,19 +485,46 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			apiserver.EctdAllowCreator(c),
 			apiserver.MachineControllerWebhookCreator(c),
 		}
+
+		// one shared limited context for all hostname resolutions
+		resolverCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
 		if data.IsKonnectivityEnabled() {
-			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.ClusterExternalAddrAllowCreator(c))
+			// allow egress traffic to all resolved cluster external IPs
+			ipList, err := hostnameToIPList(resolverCtx, c.Address.ExternalName)
+			if err != nil {
+				return fmt.Errorf("failed to resolve cluster external name %q: %w", c.Address.ExternalName, err)
+			}
+
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.ClusterExternalAddrAllowCreator(ipList))
 		} else {
 			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
 				apiserver.OpenVPNServerAllowCreator(c),
 				apiserver.MetricsServerAllowCreator(c),
 			)
 		}
-		if c.Spec.OIDC.IssuerURL != "" {
-			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(c.Spec.OIDC.IssuerURL))
-		} else if r.features.KubernetesOIDCAuthentication {
-			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(data.OIDCIssuerURL()))
+
+		issuerURL := c.Spec.OIDC.IssuerURL
+		if issuerURL == "" && r.features.KubernetesOIDCAuthentication {
+			issuerURL = data.OIDCIssuerURL()
 		}
+
+		if issuerURL != "" {
+			u, err := url.Parse(issuerURL)
+			if err != nil {
+				return fmt.Errorf("failed to parse OIDC issuer URL %q: %w", issuerURL, err)
+			}
+
+			// allow egress traffic to OIDC issuer's external IPs
+			ipList, err := hostnameToIPList(resolverCtx, u.Hostname())
+			if err != nil {
+				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
+			}
+
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(ipList))
+		}
+
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
@@ -730,4 +761,30 @@ func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	return nil
+}
+
+// hostnameToIPList returns a list of IP addresses used to reach the provided hostname.
+// If it is an IP address, returns it. If it is a domain name, resolves it.
+// The returned list of IPs is always sorted to produce the same result on each resolution attempt.
+func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
+	if ip := net.ParseIP(hostname); ip != nil {
+		// hostname is an IP address
+		return []net.IP{ip}, nil
+	}
+
+	// hostname is a domain name - resolve it
+	var r net.Resolver
+	ipList, err := r.LookupIP(ctx, "ip", hostname)
+	if err != nil {
+		return nil, err
+	}
+	if len(ipList) == 0 {
+		return nil, fmt.Errorf("no resolved IP address for hostname %s", hostname)
+	}
+
+	sort.Slice(ipList, func(i, j int) bool {
+		return bytes.Compare(ipList[i], ipList[j]) < 0
+	})
+
+	return ipList, nil
 }

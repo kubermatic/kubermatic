@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -30,20 +31,21 @@ import (
 
 func TestGetSecurityGroupByID(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
 
 	t.Run("invalid-vpc-invalid-sg", func(t *testing.T) {
-		if _, err := getSecurityGroupByID(cs.EC2, nil, "does-not-exist"); err == nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, nil, "does-not-exist"); err == nil {
 			t.Fatalf("getSecurityGroupByID should have errored, but returned %v", err)
 		}
 	})
 
 	t.Run("valid-vpc-invalid-sg", func(t *testing.T) {
-		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, "does-not-exist"); err == nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, "does-not-exist"); err == nil {
 			t.Fatalf("getSecurityGroupByID should have errored, but returned %v", err)
 		}
 	})
@@ -101,19 +103,20 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 
 func TestReconcileSecurityGroup(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
 
-	defaultRT, err := getDefaultRouteTable(cs.EC2, *defaultVPC.VpcId)
+	defaultRT, err := getDefaultRouteTable(ctx, cs.EC2, *defaultVPC.VpcId)
 	if err != nil {
 		t.Fatalf("getDefaultRouteTable should not have errored, but returned %v", err)
 	}
 
 	// to properly test, we need the ID of a pre-existing security group
-	sGroups, err := getSecurityGroupsWithClient(cs.EC2)
+	sGroups, err := getSecurityGroupsWithClient(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getSecurityGroupsWithClient should not have errored, but returned %v", err)
 	}
@@ -132,7 +135,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 			SecurityGroupID: securityGroupID,
 		})
 
-		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileSecurityGroup(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
@@ -149,7 +152,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 			t.Errorf("cloud spec should have retained security group ID %q, but is now %q", securityGroupID, cluster.Spec.Cloud.AWS.SecurityGroupID)
 		}
 
-		group, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
+		group, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
 		if err != nil {
 			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
 		}
@@ -164,7 +167,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 			RouteTableID: defaultRouteTableID,
 		})
 
-		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileSecurityGroup(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
@@ -181,7 +184,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 			t.Fatalf("cloud spec should have created a security group and stored its ID, but the field is empty")
 		}
 
-		group, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
+		group, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
 		if err != nil {
 			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
 		}
@@ -196,7 +199,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 			SecurityGroupID: "does-not-exist",
 		})
 
-		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileSecurityGroup(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
@@ -213,7 +216,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 			t.Fatalf("cloud spec should have created a security group and stored its ID, but the field is empty")
 		}
 
-		group, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
+		group, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
 		if err != nil {
 			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
 		}
@@ -228,7 +231,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 		})
 
 		// reconcile once to create a security group
-		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileSecurityGroup(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
@@ -239,7 +242,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 			t.Fatalf("cloud spec should have created a security group and stored its ID, but the field is empty")
 		}
 
-		group, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
+		group, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID)
 		if err != nil {
 			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
 		}
@@ -249,7 +252,7 @@ func TestReconcileSecurityGroup(t *testing.T) {
 		// reconcile again to see if we find the group
 		cluster.Spec.Cloud.AWS.SecurityGroupID = ""
 
-		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileSecurityGroup(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
@@ -264,8 +267,9 @@ func TestReconcileSecurityGroup(t *testing.T) {
 
 func TestCleanUpSecurityGroup(t *testing.T) {
 	cs := getTestClientSet(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
@@ -278,23 +282,23 @@ func TestCleanUpSecurityGroup(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileSecurityGroup(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
 
 		// assert that the group exists now
-		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
 			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
 		}
 
 		// and now get rid of it again
-		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+		if err = cleanUpSecurityGroup(ctx, cs.EC2, cluster); err != nil {
 			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
 		}
 
 		// assert that the group is gone
-		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err == nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err == nil {
 			t.Fatal("getSecurityGroupByID should have errored, but did not")
 		}
 	})
@@ -305,13 +309,13 @@ func TestCleanUpSecurityGroup(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileSecurityGroup(cs.EC2, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileSecurityGroup(ctx, cs.EC2, cluster, testClusterUpdater(cluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
 
 		// assert that the group exists now
-		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
 			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
 		}
 
@@ -319,12 +323,12 @@ func TestCleanUpSecurityGroup(t *testing.T) {
 		cluster.Spec.Cloud.AWS.SecurityGroupID = ""
 
 		// and now get rid of it again
-		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+		if err = cleanUpSecurityGroup(ctx, cs.EC2, cluster); err != nil {
 			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
 		}
 
 		// assert that the group is gone
-		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err == nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, cluster.Spec.Cloud.AWS.SecurityGroupID); err == nil {
 			t.Fatal("getSecurityGroupByID should have errored, but did not")
 		}
 	})
@@ -335,7 +339,7 @@ func TestCleanUpSecurityGroup(t *testing.T) {
 		})
 
 		// this should not do anything
-		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+		if err = cleanUpSecurityGroup(ctx, cs.EC2, cluster); err != nil {
 			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
 		}
 	})
@@ -347,7 +351,7 @@ func TestCleanUpSecurityGroup(t *testing.T) {
 		})
 
 		// this should not do anything
-		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+		if err = cleanUpSecurityGroup(ctx, cs.EC2, cluster); err != nil {
 			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
 		}
 	})
@@ -356,13 +360,13 @@ func TestCleanUpSecurityGroup(t *testing.T) {
 		// reconcile a dummy cluster to create a security group
 		dummyCluster := makeCluster(&kubermaticv1.AWSCloudSpec{VPCID: defaultVPCID})
 
-		dummyCluster, err = reconcileSecurityGroup(cs.EC2, dummyCluster, testClusterUpdater(dummyCluster))
+		dummyCluster, err = reconcileSecurityGroup(ctx, cs.EC2, dummyCluster, testClusterUpdater(dummyCluster))
 		if err != nil {
 			t.Fatalf("reconcileSecurityGroup should not have errored, but returned %v", err)
 		}
 
 		// assert that the group exists now
-		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, dummyCluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, dummyCluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
 			t.Fatalf("getSecurityGroupByID should have not errored, but returned %v", err)
 		}
 
@@ -373,12 +377,12 @@ func TestCleanUpSecurityGroup(t *testing.T) {
 		})
 
 		// clean up
-		if err = cleanUpSecurityGroup(cs.EC2, cluster); err != nil {
+		if err = cleanUpSecurityGroup(ctx, cs.EC2, cluster); err != nil {
 			t.Fatalf("cleanUpSecurityGroup should not have errored, but returned %v", err)
 		}
 
 		// assert that the group still exists
-		if _, err := getSecurityGroupByID(cs.EC2, defaultVPC, dummyCluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
+		if _, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, dummyCluster.Spec.Cloud.AWS.SecurityGroupID); err != nil {
 			t.Fatal("getSecurityGroupByID should have remained, but was removed")
 		}
 	})

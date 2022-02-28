@@ -90,9 +90,7 @@ func csiRoleBindingCreator(name, namespace string) reconciling.NamedRoleBindingC
 }
 
 // reconcileCSIRoleRoleBinding reconciles the Role and Rolebindings needed by CSI driver.
-func ReconcileCSIRoleRoleBinding(client ctrlruntimeclient.Client, restConfig *restclient.Config) error {
-	ctx := context.Background()
-
+func ReconcileCSIRoleRoleBinding(ctx context.Context, client ctrlruntimeclient.Client, restConfig *restclient.Config) error {
 	roleCreators := []reconciling.NamedRoleCreatorGetter{
 		csiRoleCreator(csiResourceName),
 	}

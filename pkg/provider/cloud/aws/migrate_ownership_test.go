@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -38,7 +39,7 @@ func TestBackfillOwnershipTags(t *testing.T) {
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
-	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.ReconcileCluster(context.Background(), cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
@@ -61,14 +62,15 @@ func TestBackfillOwnershipTags(t *testing.T) {
 func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	cs := getTestClientSet(t)
 	provider := newCloudProvider(t)
+	ctx := context.Background()
 
-	defaultVPC, err := getDefaultVPC(cs.EC2)
+	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
 		t.Fatalf("getDefaultVPC should not have errored, but returned %v", err)
 	}
 
 	// to properly test, we need the ID of a pre-existing security group
-	sGroups, err := getSecurityGroupsWithClient(provider.clientSet.EC2)
+	sGroups, err := getSecurityGroupsWithClient(ctx, provider.clientSet.EC2)
 	if err != nil {
 		t.Fatalf("getSecurityGroupsWithClient should not have errored, but returned %v", err)
 	}
@@ -84,7 +86,7 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
 		SecurityGroupID: securityGroupID,
 	})
-	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
@@ -92,7 +94,7 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	ownerTag := ec2OwnershipTag(cluster.Name)
 
 	// assert that there really is no owner tag
-	group, err := getSecurityGroupByID(cs.EC2, defaultVPC, securityGroupID)
+	group, err := getSecurityGroupByID(ctx, cs.EC2, defaultVPC, securityGroupID)
 	if err != nil {
 		t.Fatalf("Failed to get security group: %v", err)
 	}
@@ -110,7 +112,7 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
 	// migrate!
-	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
 	}
@@ -121,7 +123,7 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	}
 
 	// and an owner tag should have appeared
-	group, err = getSecurityGroupByID(cs.EC2, defaultVPC, securityGroupID)
+	group, err = getSecurityGroupByID(ctx, cs.EC2, defaultVPC, securityGroupID)
 	if err != nil {
 		t.Fatalf("Failed to get security group: %v", err)
 	}
@@ -134,7 +136,7 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
 	// This should be a NOP.
-	if _, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster)); err != nil {
+	if _, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster)); err != nil {
 		t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
 	}
 }
@@ -142,6 +144,7 @@ func TestBackfillOwnershipTagsAdoptsSecurityGroup(t *testing.T) {
 func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 	cs := getTestClientSet(t)
 	provider := newCloudProvider(t)
+	ctx := context.Background()
 
 	profileName := "adopt-me-" + rand.String(10)
 	finalizer := instanceProfileCleanupFinalizer
@@ -159,7 +162,7 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
 		InstanceProfileName: profileName,
 	})
-	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
@@ -167,7 +170,7 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 	ownerTag := iamOwnershipTag(cluster.Name)
 
 	// assert that there really is no owner tag
-	profile, err := getInstanceProfile(cs.IAM, profileName)
+	profile, err := getInstanceProfile(ctx, cs.IAM, profileName)
 	if err != nil {
 		t.Fatalf("Failed to get instance profile: %v", err)
 	}
@@ -185,7 +188,7 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
 	// migrate!
-	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
 	}
@@ -196,7 +199,7 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 	}
 
 	// and an owner tag should have appeared
-	profile, err = getInstanceProfile(cs.IAM, profileName)
+	profile, err = getInstanceProfile(ctx, cs.IAM, profileName)
 	if err != nil {
 		t.Fatalf("Failed to get instance profile: %v", err)
 	}
@@ -209,7 +212,7 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
 	// This should be a NOP.
-	if _, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster)); err != nil {
+	if _, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster)); err != nil {
 		t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
 	}
 }
@@ -217,6 +220,7 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 	cs := getTestClientSet(t)
 	provider := newCloudProvider(t)
+	ctx := context.Background()
 
 	roleName := "adopt-me-" + rand.String(10)
 	finalizer := controlPlaneRoleCleanupFinalizer
@@ -235,7 +239,7 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
 		ControlPlaneRoleARN: roleName,
 	})
-	cluster, err := provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err := provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}
@@ -243,7 +247,7 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 	ownerTag := iamOwnershipTag(cluster.Name)
 
 	// assert that there really is no owner tag
-	role, err := getRole(cs.IAM, roleName)
+	role, err := getRole(ctx, cs.IAM, roleName)
 	if err != nil {
 		t.Fatalf("Failed to get role: %v", err)
 	}
@@ -261,7 +265,7 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
 	// migrate!
-	cluster, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster))
+	cluster, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster (2) should not have failed, but returned: %v", err)
 	}
@@ -272,7 +276,7 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 	}
 
 	// and an owner tag should have appeared
-	role, err = getRole(cs.IAM, roleName)
+	role, err = getRole(ctx, cs.IAM, roleName)
 	if err != nil {
 		t.Fatalf("Failed to get role: %v", err)
 	}
@@ -285,7 +289,7 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 	kuberneteshelper.AddFinalizer(cluster, finalizer)
 
 	// This should be a NOP.
-	if _, err = provider.ReconcileCluster(cluster, testClusterUpdater(cluster)); err != nil {
+	if _, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster)); err != nil {
 		t.Fatalf("ReconcileCluster (3) should not have failed, but returned: %v", err)
 	}
 }

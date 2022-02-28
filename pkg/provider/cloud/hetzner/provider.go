@@ -42,12 +42,12 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 var _ provider.CloudProvider = &hetzner{}
 
 // DefaultCloudSpec.
-func (h *hetzner) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (h *hetzner) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec.
-func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (h *hetzner) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
 	hetznerToken, err := GetCredentialsForCluster(spec, h.secretKeySelector)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	client := hcloud.NewClient(hcloud.WithToken(hetznerToken))
 
-	timeout, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+	timeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	if spec.Hetzner.Network == "" {
@@ -70,17 +70,17 @@ func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // InitializeCloudProvider.
-func (h *hetzner) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (h *hetzner) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
 // CleanUpCloudProvider.
-func (h *hetzner) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (h *hetzner) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (h *hetzner) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (h *hetzner) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 

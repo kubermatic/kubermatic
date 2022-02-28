@@ -17,6 +17,7 @@ limitations under the License.
 package kubevirt
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -47,13 +48,13 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
-var _ provider.CloudProvider = &kubevirt{}
+var _ provider.ReconcilingCloudProvider = &kubevirt{}
 
-func (k *kubevirt) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
 	kubeconfig, err := GetCredentialsForCluster(spec, k.secretKeySelector)
 	if err != nil {
 		return err
@@ -76,27 +77,27 @@ func (k *kubevirt) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return k.reconcileCluster(cluster, update)
+func (k *kubevirt) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return k.reconcileCluster(ctx, cluster, update)
 }
 
-func (k *kubevirt) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return k.reconcileCluster(cluster, update)
+func (k *kubevirt) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return k.reconcileCluster(ctx, cluster, update)
 }
 
-func (k *kubevirt) reconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// Reconcile CSI access: Role and Rolebinding
 	client, restConfig, err := k.GetClientWithRestConfigForCluster(cluster)
 	if err != nil {
 		return cluster, err
 	}
 
-	cluster, err = reconcileNamespace(cluster.Status.NamespaceName, cluster, update, client)
+	cluster, err = reconcileNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = ReconcileCSIRoleRoleBinding(client, restConfig)
+	err = ReconcileCSIRoleRoleBinding(ctx, client, restConfig)
 	if err != nil {
 		return cluster, err
 	}
@@ -104,14 +105,14 @@ func (k *kubevirt) reconcileCluster(cluster *kubermaticv1.Cluster, update provid
 	return cluster, nil
 }
 
-func (k *kubevirt) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	client, _, err := k.GetClientWithRestConfigForCluster(cluster)
 	if err != nil {
 		return cluster, err
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
-		if err := deleteNamespace(cluster.Status.NamespaceName, client); err != nil && !kerrors.IsNotFound(err) {
+		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !kerrors.IsNotFound(err) {
 			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
 		}
 		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -122,7 +123,7 @@ func (k *kubevirt) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	return cluster, nil
 }
 
-func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (k *kubevirt) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 

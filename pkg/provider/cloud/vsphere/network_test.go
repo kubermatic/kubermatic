@@ -19,6 +19,7 @@ limitations under the License.
 package vsphere
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -44,7 +45,7 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword, nil)
+			networkInfos, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

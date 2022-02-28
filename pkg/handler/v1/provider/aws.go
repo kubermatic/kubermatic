@@ -237,7 +237,7 @@ func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provi
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		subnetList, err := providercommon.ListAWSSubnets(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, vpcID, dc)
+		subnetList, err := providercommon.ListAWSSubnets(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, vpcID, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -277,7 +277,7 @@ func AWSVPCEndpoint(presetProvider provider.PresetProvider, seedsGetter provider
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return listAWSVPCS(credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter)
+		return listAWSVPCS(ctx, credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter)
 	}
 }
 
@@ -301,14 +301,14 @@ func AWSSecurityGroupsEndpoint(presetProvider provider.PresetProvider, seedsGett
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return listSecurityGroup(credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter.Spec.AWS.Region, credentials.vpcID)
+		return listSecurityGroup(ctx, credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter.Spec.AWS.Region, credentials.vpcID)
 	}
 }
 
-func listSecurityGroup(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) (*apiv1.AWSSecurityGroupList, error) {
+func listSecurityGroup(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc string) (*apiv1.AWSSecurityGroupList, error) {
 	securityGroupList := &apiv1.AWSSecurityGroupList{}
 
-	securityGroups, err := awsprovider.GetSecurityGroups(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc)
+	securityGroups, err := awsprovider.GetSecurityGroups(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get Security Groups: %v", err))
 	}
@@ -363,12 +363,12 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 	}, nil
 }
 
-func listAWSVPCS(accessKeyID, secretAccessKey string, assumeRoleARN string, assumeRoleExternalID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSVPCList, error) {
+func listAWSVPCS(ctx context.Context, accessKeyID, secretAccessKey string, assumeRoleARN string, assumeRoleExternalID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSVPCList, error) {
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	vpcsResults, err := awsprovider.GetVPCS(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, datacenter.Spec.AWS.Region)
+	vpcsResults, err := awsprovider.GetVPCS(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, datacenter.Spec.AWS.Region)
 	if err != nil {
 		return nil, err
 	}

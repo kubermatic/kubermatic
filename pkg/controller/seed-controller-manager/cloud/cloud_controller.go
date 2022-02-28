@@ -163,7 +163,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 
-		if _, err := prov.CleanUpCloudProvider(cluster, r.updateCluster); err != nil {
+		if _, err := prov.CleanUpCloudProvider(ctx, cluster, r.updateCluster); err != nil {
 			return nil, fmt.Errorf("failed cloud provider cleanup: %w", err)
 		}
 
@@ -219,7 +219,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
 
 			// reconcile
-			cluster, err = betterProvider.ReconcileCluster(cluster, r.updateCluster)
+			cluster, err = betterProvider.ReconcileCluster(ctx, cluster, r.updateCluster)
 			if err != nil {
 				return handleProviderError(err)
 			}
@@ -237,7 +237,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	} else {
 		// the provider only offers a one-time init :-(
-		cluster, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
+		cluster, err = prov.InitializeCloudProvider(ctx, cluster, r.updateCluster)
 		if err != nil {
 			return handleProviderError(err)
 		}
@@ -255,12 +255,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
 	switch prov := cloudProvider.(type) {
 	case *openstack.Provider:
-		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
+		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
 		}
 		log.Info("Successfully ensured ICMP rules in security group of cluster")
 	case *azure.Azure:
-		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
+		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
 		}
 		log.Info("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)

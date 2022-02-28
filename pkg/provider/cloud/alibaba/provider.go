@@ -17,6 +17,7 @@ limitations under the License.
 package alibaba
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -32,6 +33,8 @@ type Alibaba struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
+var _ provider.CloudProvider = &Alibaba{}
+
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Alibaba, error) {
 	if dc.Spec.Alibaba == nil {
 		return nil, errors.New("datacenter is not an Alibaba datacenter")
@@ -42,11 +45,11 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
-func (a *Alibaba) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *Alibaba) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (a *Alibaba) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	accessKeyID, accessKeySecret, err := GetCredentialsForCluster(spec, a.secretKeySelector, a.dc)
 	if err != nil {
 		return err
@@ -59,15 +62,15 @@ func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Alibaba) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (a *Alibaba) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
-func (a *Alibaba) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (a *Alibaba) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
-func (a *Alibaba) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (a *Alibaba) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 

@@ -17,13 +17,8 @@ limitations under the License.
 package apiserver
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"net"
-	"net/url"
-	"sort"
-	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -232,7 +227,7 @@ func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 // ClusterExternalAddrAllowCreator returns a func to create/update the apiserver cluster-external-addr-allow egress policy.
 // This policy is necessary in Konnectivity setup, so that konnectivity-server can connect to the apiserver via
 // the external URL (used as service-account-issuer) to validate konnectivity-agent authentication token.
-func ClusterExternalAddrAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
+func ClusterExternalAddrAllowCreator(egressIPs []net.IP) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return resources.NetworkPolicyClusterExternalAddrAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -246,43 +241,26 @@ func ClusterExternalAddrAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedN
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								// allow egress traffic to the nodeport-proxy as for some CNI + kube-proxy mode
-								// combinations a local path to it may be used to reach the external apiserver address
-								NamespaceSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{
-										common.NameLabel: nodeportproxy.EnvoyDeploymentName,
-									},
+						To: append(ipListToPeers(egressIPs), networkingv1.NetworkPolicyPeer{
+							// allow egress traffic to the nodeport-proxy as for some CNI + kube-proxy mode
+							// combinations a local path to it may be used to reach the external apiserver address
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									common.NameLabel: nodeportproxy.EnvoyDeploymentName,
 								},
 							},
-						},
+						}),
 					},
 				},
 			}
-			// allow egress traffic to all resolved cluster external IPs
-			ipList, err := hostnameToIPList(c.Address.ExternalName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to resolve cluster external name %s: %w", c.Address.ExternalName, err)
-			}
-			for _, ip := range ipList {
-				cidr := fmt.Sprintf("%s/%d", ip.String(), net.IPv4len*8)
-				if ip.To4() == nil {
-					cidr = fmt.Sprintf("%s/%d", ip.String(), net.IPv6len*8)
-				}
-				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
-					IPBlock: &networkingv1.IPBlock{
-						CIDR: cidr,
-					},
-				})
-			}
+
 			return np, nil
 		}
 	}
 }
 
 // OIDCIssuerAllowCreator returns a func to create/update the apiserver oidc-issuer-allow egress policy.
-func OIDCIssuerAllowCreator(issuerURL string) reconciling.NamedNetworkPolicyCreatorGetter {
+func OIDCIssuerAllowCreator(egressIPs []net.IP) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return resources.NetworkPolicyOIDCIssuerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -296,70 +274,38 @@ func OIDCIssuerAllowCreator(issuerURL string) reconciling.NamedNetworkPolicyCrea
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								// allow egress traffic to the nginx-ingress-controller as for some CNI + kube-proxy
-								// mode combinations a local path to it may be used to reach OIDC issuer installed in KKP
-								NamespaceSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{
-										corev1.LabelMetadataName: kubermaticmaster.NginxIngressControllerNamespace,
-									},
+						To: append(ipListToPeers(egressIPs), networkingv1.NetworkPolicyPeer{
+							// allow egress traffic to the nginx-ingress-controller as for some CNI + kube-proxy
+							// mode combinations a local path to it may be used to reach OIDC issuer installed in KKP
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									corev1.LabelMetadataName: kubermaticmaster.NginxIngressControllerNamespace,
 								},
 							},
-						},
+						}),
 					},
 				},
 			}
-			// allow egress traffic to OIDC issuer's external IPs
-			u, err := url.Parse(issuerURL)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse OIDC issuer URL %s: %w", issuerURL, err)
-			}
-			ipList, err := hostnameToIPList(u.Hostname())
-			if err != nil {
-				return nil, fmt.Errorf("failed to resolve OIDC issuer hostname %s: %w", u.Hostname(), err)
-			}
-			for _, ip := range ipList {
-				cidr := fmt.Sprintf("%s/%d", ip.String(), net.IPv4len*8)
-				if ip.To4() == nil {
-					cidr = fmt.Sprintf("%s/%d", ip.String(), net.IPv6len*8)
-				}
-				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
-					IPBlock: &networkingv1.IPBlock{
-						CIDR: cidr,
-					},
-				})
-			}
+
 			return np, nil
 		}
 	}
 }
 
-// hostnameToIPList returns a list of IP addresses used to reach the provided hostname.
-// If it is an IP address, returns it. If it is a domain name, resolves it.
-// The returned list of IPs is always sorted to produce the same result on each resolution attempt.
-func hostnameToIPList(hostname string) ([]net.IP, error) {
-	if ip := net.ParseIP(hostname); ip != nil {
-		// hostname is an IP address
-		return []net.IP{ip}, nil
-	}
-	// hostname is a domain name - resolve it
-	ipList, err := lookupIPWithTimeout(hostname, 5*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	if len(ipList) == 0 {
-		return nil, fmt.Errorf("no resolved IP address for hostname %s", hostname)
-	}
-	sort.Slice(ipList, func(i, j int) bool {
-		return bytes.Compare(ipList[i], ipList[j]) < 0
-	})
-	return ipList, nil
-}
+func ipListToPeers(ips []net.IP) []networkingv1.NetworkPolicyPeer {
+	result := []networkingv1.NetworkPolicyPeer{}
 
-func lookupIPWithTimeout(host string, timeout time.Duration) ([]net.IP, error) {
-	var r net.Resolver
-	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
-	defer cancel() // to avoid possible resource leak
-	return r.LookupIP(ctx, "ip", host)
+	for _, ip := range ips {
+		cidr := fmt.Sprintf("%s/%d", ip.String(), net.IPv4len*8)
+		if ip.To4() == nil {
+			cidr = fmt.Sprintf("%s/%d", ip.String(), net.IPv6len*8)
+		}
+		result = append(result, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR: cidr,
+			},
+		})
+	}
+
+	return result
 }
