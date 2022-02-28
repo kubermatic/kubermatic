@@ -124,6 +124,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	// there is no annotation anymore
+	request := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]
+	if request == "" {
+		return nil, nil
+	}
+
 	// If cluster is not healthy yet there is nothing to do.
 	// If it gets healthy we'll get notified by the event. No need to requeue.
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
@@ -131,17 +137,13 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, nil
 	}
 
-	nodeDeployment, err := r.parseNodeDeployment(cluster)
+	nodeDeployment, err := r.parseNodeDeployment(cluster, request)
 	if err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
 			return nil, fmt.Errorf("failed to remove invalid (%v) initial MachineDeployment annotation: %w", err, removeErr)
 		}
 
 		return nil, err
-	}
-
-	if nodeDeployment == nil {
-		return nil, nil
 	}
 
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
@@ -160,12 +162,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster) (*v1.NodeDeployment, error) {
-	request := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]
-	if request == "" {
-		return nil, nil
-	}
-
+func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster, request string) (*v1.NodeDeployment, error) {
 	var nodeDeployment *v1.NodeDeployment
 	if err := json.Unmarshal([]byte(request), &nodeDeployment); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal initial MachineDeployment request: %w", err)

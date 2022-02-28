@@ -73,9 +73,10 @@ func main() {
 		os.Exit(1)
 	}
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	log := rawLog.Sugar().With(
-		"worker-name", options.workerName,
-	)
+	log := rawLog.Sugar()
+	if options.workerName != "" {
+		log = log.With("worker-name", options.workerName)
+	}
 	defer func() {
 		if err := log.Sync(); err != nil {
 			fmt.Println(err)
