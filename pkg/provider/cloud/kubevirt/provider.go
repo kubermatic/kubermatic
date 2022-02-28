@@ -97,7 +97,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = ReconcileCSIRoleRoleBinding(ctx, client, restConfig)
+	err = reconcileCSIRoleRoleBinding(ctx, cluster.Status.NamespaceName, client, restConfig)
 	if err != nil {
 		return cluster, err
 	}
