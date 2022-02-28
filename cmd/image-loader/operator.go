@@ -22,11 +22,12 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
+
+	"sigs.k8s.io/yaml"
 )
 
 func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
