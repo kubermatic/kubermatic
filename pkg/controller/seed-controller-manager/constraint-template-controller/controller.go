@@ -19,7 +19,6 @@ package constrainttemplatecontroller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"go.uber.org/zap"
@@ -27,7 +26,6 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -122,9 +120,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("constraint template not found, returning")
 			return reconcile.Result{}, nil
 		}
-		if controllerutil.IsCacheNotStarted(err) {
-			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-		}
 
 		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %w", constraintTemplate.Name, err)
 	}
@@ -149,10 +144,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 					Name: constraintTemplate.Name,
 				},
 			})
-			if kerrors.IsNotFound(err) {
-				return nil
-			}
-			return err
+
+			return ctrlruntimeclient.IgnoreNotFound(err)
 		})
 		if err != nil {
 			return err
@@ -186,36 +179,40 @@ func (r *reconciler) syncAllClusters(
 	}
 
 	for _, userCluster := range clusterList.Items {
-		if userCluster.Status.NamespaceName == "" {
-			log.Debugw("Cluster has no namespace name yet, skipping", "cluster", userCluster.Spec.HumanReadableName)
-			continue
-		}
+		clusterLog := log.With("cluster", userCluster.Name)
 
 		if userCluster.Spec.Pause {
-			log.Debugw("Cluster paused, skipping", "cluster", userCluster.Spec.HumanReadableName)
+			clusterLog.Debug("Cluster is paused, skipping")
 			continue
 		}
 
-		if userCluster.Spec.OPAIntegration != nil && userCluster.Spec.OPAIntegration.Enabled {
-			// Get user cluster client from map, if it does not exist yet, create it
-			var err error
-			userClusterClient, ok := r.userClusterClients[userCluster.Name]
-			if !ok {
-				userClusterClient, err = r.userClusterClientProvider.GetClient(ctx, &userCluster)
-				if err != nil {
-					return fmt.Errorf("error getting client for cluster %s: %w", userCluster.Spec.HumanReadableName, err)
-				}
-				r.userClusterClients[userCluster.Name] = userClusterClient
-			}
-
-			err = action(userClusterClient, constraintTemplate)
-			if err != nil {
-				return fmt.Errorf("failed syncing constraint template for cluster %s: %w", userCluster.Spec.HumanReadableName, err)
-			}
-			log.Debugw("Reconciled constraint template with cluster", "cluster", userCluster.Spec.HumanReadableName)
-		} else {
-			log.Debugw("Cluster does not integrate with OPA, skipping", "cluster", userCluster.Spec.HumanReadableName)
+		// if the control plane is not healthy, we cannot possibly create a functioning usercluster client
+		if !userCluster.Status.ExtendedHealth.ControlPlaneHealthy() {
+			clusterLog.Debug("Cluster control-plane is not healthy yet, skipping")
+			continue
 		}
+
+		if userCluster.Spec.OPAIntegration == nil || !userCluster.Spec.OPAIntegration.Enabled {
+			clusterLog.Debug("Cluster does not integrate with OPA, skipping")
+			continue
+		}
+
+		// Get user cluster client from map, if it does not exist yet, create it
+		var err error
+		userClusterClient, ok := r.userClusterClients[userCluster.Name]
+		if !ok {
+			userClusterClient, err = r.userClusterClientProvider.GetClient(ctx, &userCluster)
+			if err != nil {
+				return fmt.Errorf("error getting client for cluster %s: %w", userCluster.Name, err)
+			}
+			r.userClusterClients[userCluster.Name] = userClusterClient
+		}
+
+		err = action(userClusterClient, constraintTemplate)
+		if err != nil {
+			return fmt.Errorf("failed syncing constraint template for cluster %s: %w", userCluster.Name, err)
+		}
+		clusterLog.Debug("Reconciled constraint template with cluster")
 	}
 
 	return nil

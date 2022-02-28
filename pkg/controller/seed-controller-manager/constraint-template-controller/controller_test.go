@@ -277,6 +277,12 @@ func genCluster(name string, opaEnabled bool) *kubermaticv1.Cluster {
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: kubernetes.NamespaceName(name),
+			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+				Etcd:       kubermaticv1.HealthStatusUp,
+				Apiserver:  kubermaticv1.HealthStatusUp,
+				Controller: kubermaticv1.HealthStatusUp,
+				Scheduler:  kubermaticv1.HealthStatusUp,
+			},
 		},
 	}
 }
