@@ -21,7 +21,7 @@ type EtcdBackupConfigSpec struct {
 	ClusterID string `json:"clusterId,omitempty"`
 
 	// Destination indicates where the backup will be stored. The destination name should correspond to a destination in
-	// the cluster's Seed.Spec.EtcdBackupRestore. If empty, it will use the legacy destination in Seed.Spec.BackupRestore
+	// the cluster's Seed.Spec.EtcdBackupRestore.
 	Destination string `json:"destination,omitempty"`
 
 	// Keep is the number of backups to keep around before deleting the oldest one
