@@ -117,7 +117,6 @@ func (k *kubevirt) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
 		})
-
 	}
 
 	return cluster, nil
