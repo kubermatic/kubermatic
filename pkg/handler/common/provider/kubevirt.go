@@ -29,37 +29,37 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
-	kubevirtcli "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/kubevirtcli/client/versioned"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var NewKubeVirtClientSet = func(kubeconfig string) (kubevirtcli.Interface, kubernetes.Interface, error) {
+var NewKubeVirtClient = func(kubeconfig string) (ctrlruntimeclient.Client, error) {
 	config, err := base64.StdEncoding.DecodeString(kubeconfig)
 	if err != nil {
 		// should not happen, always sent base64 encoded
-		return nil, nil, err
+		return nil, err
 	}
+
 	clientConfig, err := clientcmd.RESTConfigFromKubeConfig(config)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	kubevirtcli, err := kubevirtcli.NewForConfig(clientConfig)
+	client, err := ctrlruntimeclient.New(clientConfig, ctrlruntimeclient.Options{})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	k8scli, err := kubernetes.NewForConfig(clientConfig)
-	if err != nil {
-		return kubevirtcli, nil, err
-	}
-	return kubevirtcli, k8scli, nil
 
+	if err := kubevirtv1.AddToScheme(client.Scheme()); err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -89,14 +89,16 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 }
 
 func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
-	kvClient, _, err := NewKubeVirtClientSet(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
-	vmiPresets, err := kvClient.KubevirtV1().VirtualMachineInstancePresets(metav1.NamespaceDefault).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
+
+	vmiPresets := kubevirtv1.VirtualMachineInstancePresetList{}
+	if err := client.List(context.TODO(), &vmiPresets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
 		return nil, err
 	}
+
 	res := apiv2.VirtualMachineInstancePresetList{}
 	for _, vmiPreset := range vmiPresets.Items {
 		preset, err := newAPIVirtualMachineInstancePreset(&vmiPreset)
@@ -139,12 +141,13 @@ func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
 }
 
 func KubeVirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
-	_, cli, err := NewKubeVirtClientSet(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
-	storageClassList, err := cli.StorageV1().StorageClasses().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
+
+	storageClassList := storagev1.StorageClassList{}
+	if err := client.List(context.TODO(), &storageClassList); err != nil {
 		return nil, err
 	}
 
