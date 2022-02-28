@@ -144,10 +144,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 					Name: constraintTemplate.Name,
 				},
 			})
-			if kerrors.IsNotFound(err) {
-				return nil
-			}
-			return err
+
+			return ctrlruntimeclient.IgnoreNotFound(err)
 		})
 		if err != nil {
 			return err
@@ -189,7 +187,7 @@ func (r *reconciler) syncAllClusters(
 		}
 
 		// if the control plane is not healthy, we cannot possibly create a functioning usercluster client
-		if userCluster.Status.ExtendedHealth.ControlPlaneHealthy() {
+		if !userCluster.Status.ExtendedHealth.ControlPlaneHealthy() {
 			clusterLog.Debug("Cluster control-plane is not healthy yet, skipping")
 			continue
 		}
