@@ -19,6 +19,7 @@ package applicationdefinitionsynchronizer
 import (
 	"context"
 	"fmt"
+
 	"go.uber.org/zap"
 
 	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -77,7 +78,7 @@ func Add(
 	return nil
 }
 
-// Reconcile reconciles ApplicationDefinition objects from master cluster to all seed clusters
+// Reconcile reconciles ApplicationDefinition objects from master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("resource", request.Name)
 	log.Debug("Processing")
