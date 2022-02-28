@@ -606,13 +606,25 @@ type EKSCluster struct {
 	IsImported bool   `json:"imported"`
 }
 
-// EKSClusterList represents an list of EKS clusters.
+// EKSClusterList represents a list of EKS clusters.
 // swagger:model EKSClusterList
 type EKSClusterList []EKSCluster
 
-// Regions represents an list of EKS regions.
+// Regions represents a list of EKS regions.
 // swagger:model EKSRegions
 type EKSRegions []string
+
+// EKSAMITypes represents a list of EKS AMI Types for node group.
+// swagger:model EKSAMITypes
+type EKSAMITypes []string
+
+// EKSCapacityTypes represents a list of EKS Capacity Types for node group.
+// swagger:model EKSCapacityTypes
+type EKSCapacityTypes []string
+
+// EKSInstanceTypes represents a list of EKS Instance Types for node group.
+// swagger:model EKSInstanceTypes
+type EKSInstanceTypes []string
 
 // EKSSubnetIDList represents an array of EKS subnetID.
 // swagger:model EKSSubnetIDList

@@ -9250,6 +9250,70 @@
         }
       }
     },
+    "/api/v2/eks/amitypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Gets the EKS AMI types for node group.",
+        "operationId": "listEKSAMITypes",
+        "responses": {
+          "200": {
+            "description": "EKSAMITypes",
+            "schema": {
+              "$ref": "#/definitions/EKSAMITypes"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/eks/capacitytypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Gets the EKS Capacity types for node group.",
+        "operationId": "listEKSCapacityTypes",
+        "responses": {
+          "200": {
+            "description": "EKSCapacityTypes",
+            "schema": {
+              "$ref": "#/definitions/EKSCapacityTypes"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/featuregates": {
       "get": {
         "description": "Status of feature gates",
@@ -16585,6 +16649,155 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/instancetypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Gets the EKS Instance types for node group.",
+        "operationId": "listEKSInstanceTypesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSInstanceTypes",
+            "schema": {
+              "$ref": "#/definitions/EKSInstanceTypes"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Gets the EKS Subnets for node group.",
+        "operationId": "listEKSSubnetsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSSubnetIDList",
+            "schema": {
+              "$ref": "#/definitions/EKSSubnetIDList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/vpcs": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "eks"
+        ],
+        "summary": "Gets the EKS vpc's for node group.",
+        "operationId": "listEKSVPCsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EKSVPCList",
+            "schema": {
+              "$ref": "#/definitions/EKSVPCList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/disktypes": {
       "get": {
         "produces": [
@@ -17451,6 +17664,28 @@
         ],
         "summary": "List EKS regions.",
         "operationId": "listEKSRegions",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSRegions",
@@ -17486,6 +17721,33 @@
         ],
         "summary": "List EKS securitygroup's ID list.",
         "operationId": "listEKSSecurityGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSSecurityGroupIDList",
@@ -17518,6 +17780,33 @@
         ],
         "summary": "Lists EKS subnet's ID list.",
         "operationId": "listEKSSubnets",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "VpcId",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSSubnetIDList",
@@ -17589,6 +17878,28 @@
           "eks"
         ],
         "operationId": "listEKSVPCS",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "EKSVPCList",
@@ -21758,6 +22069,22 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "EKSAMITypes": {
+      "type": "array",
+      "title": "EKSAMITypes represents a list of EKS AMI Types for node group.",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSCapacityTypes": {
+      "type": "array",
+      "title": "EKSCapacityTypes represents a list of EKS Capacity Types for node group.",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "EKSCloudSpec": {
       "type": "object",
       "properties": {
@@ -21804,7 +22131,7 @@
     },
     "EKSClusterList": {
       "type": "array",
-      "title": "EKSClusterList represents an list of EKS clusters.",
+      "title": "EKSClusterList represents a list of EKS clusters.",
       "items": {
         "$ref": "#/definitions/EKSCluster"
       },
@@ -21826,6 +22153,14 @@
         "vpcConfigRequest": {
           "$ref": "#/definitions/VpcConfigRequest"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EKSInstanceTypes": {
+      "type": "array",
+      "title": "EKSInstanceTypes represents a list of EKS Instance Types for node group.",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
@@ -21914,7 +22249,7 @@
     },
     "EKSRegions": {
       "type": "array",
-      "title": "Regions represents an list of EKS regions.",
+      "title": "Regions represents a list of EKS regions.",
       "items": {
         "type": "string"
       },

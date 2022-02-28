@@ -168,3 +168,18 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 	return accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, nil
 }
+
+// GetInstanceTypes returns the list of instancetypes.
+func GetInstanceTypes(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region string) ([]*ec2.InstanceTypeOffering, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, "", "", region)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := client.EC2.DescribeInstanceTypeOfferings(&ec2.DescribeInstanceTypeOfferingsInput{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list instance types: %w", err)
+	}
+
+	return out.InstanceTypeOfferings, nil
+}
