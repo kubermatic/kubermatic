@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const controllerName = "kubermatic_sync_projectbinding_controller"
+const controllerName = "user-project-binding-controller"
 
 func Add(mgr manager.Manager) error {
 	r := &reconcileSyncProjectBinding{Client: mgr.GetClient()}

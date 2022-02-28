@@ -50,7 +50,7 @@ import (
 
 const (
 	// ControllerName is the name of this very controller.
-	ControllerName = "kubermatic-seed-operator"
+	ControllerName = "seed-controller"
 )
 
 func Add(

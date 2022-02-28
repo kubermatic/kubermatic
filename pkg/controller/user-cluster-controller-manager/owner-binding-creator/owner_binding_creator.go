@@ -43,7 +43,7 @@ import (
 
 const (
 	// This controller creates cluster role bindings for the API roles.
-	controllerName = "owner_binding_controller"
+	controllerName = "owner-binding-controller"
 )
 
 type reconciler struct {

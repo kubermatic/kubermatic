@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	ControllerName = "usersshkeys_synchronizer"
+	ControllerName = "usersshkeys-synchronizer-controller"
 
 	UserSSHKeysClusterIDsCleanupFinalizer = "kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids"
 )

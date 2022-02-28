@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	ControllerName = "user-project-binding-sync-controller"
+	ControllerName = "user-project-binding-synchronizer-controller"
 )
 
 type reconciler struct {

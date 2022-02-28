@@ -46,7 +46,7 @@ import (
 
 const (
 	// ControllerName is the name of this very controller.
-	ControllerName = "kubermatic-master-operator"
+	ControllerName = "master-controller"
 )
 
 func Add(

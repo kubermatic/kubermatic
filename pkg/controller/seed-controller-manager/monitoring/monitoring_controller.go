@@ -49,7 +49,7 @@ const (
 	// before adding the monitoring components to the clusters.
 	healthCheckPeriod = 5 * time.Second
 
-	ControllerName = "kubermatic_monitoring_controller"
+	ControllerName = "monitoring-controller"
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.

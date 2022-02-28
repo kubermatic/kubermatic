@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_kubelet_dnat_controller"
+	ControllerName = "kubeletdnat-controller"
 )
 
 // Reconciler updates iptable rules to match node addresses.

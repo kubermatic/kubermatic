@@ -41,7 +41,7 @@ type cleaner interface {
 }
 
 const (
-	ControllerName     = "kubermatic_mla_controller"
+	ControllerName     = "mla-controller"
 	mlaFinalizer       = "kubermatic.k8c.io/mla"
 	defaultOrgID       = 1
 	GrafanaUserKey     = "admin-user"

@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_flatcar_controller"
+	ControllerName = "flatcar-controller"
 )
 
 type Reconciler struct {

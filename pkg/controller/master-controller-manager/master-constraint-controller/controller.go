@@ -42,7 +42,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraints on the master cluster to the seed clusters.
-	ControllerName = "master_constraint_syncing_controller"
+	ControllerName = "master-constraint-controller"
 )
 
 type reconciler struct {

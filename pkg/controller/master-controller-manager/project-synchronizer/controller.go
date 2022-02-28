@@ -40,7 +40,7 @@ import (
 )
 
 const (
-	ControllerName = "project-sync-controller"
+	ControllerName = "project-synchronizer-controller"
 )
 
 type reconciler struct {

@@ -49,7 +49,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint templates to gatekeeper constraint templates on the user cluster.
-	ControllerName = "gatekeeper_constraint_template_controller"
+	ControllerName = "constraint-template-controller"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.

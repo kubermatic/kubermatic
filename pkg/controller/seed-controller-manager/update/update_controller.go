@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_update_controller"
+	ControllerName = "update-controller"
 )
 
 type Reconciler struct {

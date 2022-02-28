@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	controllerName     = "rbac-user-cluster-controller"
+	controllerName     = "rbac-controller"
 	ResourceOwnerName  = "system:kubermatic:owners"
 	ResourceEditorName = "system:kubermatic:editors"
 	ResourceViewerName = "system:kubermatic:viewers"

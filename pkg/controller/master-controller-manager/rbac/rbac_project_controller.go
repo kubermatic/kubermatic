@@ -68,7 +68,7 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 	}
 
 	// Create a new controller
-	cc, err := controller.New("rbac_generator_for_project", mgr, controller.Options{Reconciler: c})
+	cc, err := controller.New("rbac-generator-for-project-controller", mgr, controller.Options{Reconciler: c})
 	if err != nil {
 		return err
 	}

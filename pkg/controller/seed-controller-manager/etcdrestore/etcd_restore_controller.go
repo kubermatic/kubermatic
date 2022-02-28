@@ -51,7 +51,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_etcd_restore_controller"
+	ControllerName = "etcd-restore-controller"
 
 	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset.
 	FinishRestoreFinalizer = "kubermatic.k8c.io/finish-restore"

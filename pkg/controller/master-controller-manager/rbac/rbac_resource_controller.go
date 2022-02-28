@@ -61,7 +61,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 		}
 
 		// Create a new controller
-		rcc, err := controller.New("rbac_generator_resources", mgr, controller.Options{Reconciler: mc})
+		rcc, err := controller.New("rbac-generator-resources-controller", mgr, controller.Options{Reconciler: mc})
 		if err != nil {
 			return nil, err
 		}

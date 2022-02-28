@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	ControllerName = "user-synchronizer"
+	ControllerName = "user-synchronizer-controller"
 )
 
 type reconciler struct {

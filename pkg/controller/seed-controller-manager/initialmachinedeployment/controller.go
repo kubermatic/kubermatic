@@ -45,7 +45,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_initialmachinedeployment_controller"
+	ControllerName = "initialmachinedeployment-controller"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.

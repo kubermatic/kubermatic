@@ -45,7 +45,7 @@ import (
 
 const (
 	// This controller duplicate roles with label component=userClusterRole for all namespaces.
-	controllerName = "clone_role_controller"
+	controllerName = "clone-role-controller"
 )
 
 type reconciler struct {

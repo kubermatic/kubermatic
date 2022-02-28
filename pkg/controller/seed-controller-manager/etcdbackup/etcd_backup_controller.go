@@ -61,7 +61,7 @@ import (
 
 const (
 	// ControllerName name of etcd backup controller.
-	ControllerName = "kubermatic_etcd_backup_controller"
+	ControllerName = "etcd-backup-controller"
 
 	// DeleteAllBackupsFinalizer indicates that the backups still need to be deleted in the backend.
 	DeleteAllBackupsFinalizer = "kubermatic.k8c.io/delete-all-backups"

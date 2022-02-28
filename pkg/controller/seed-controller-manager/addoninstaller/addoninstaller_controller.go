@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	ControllerName  = "kubermatic_addoninstaller_controller"
+	ControllerName  = "addoninstaller-controller"
 	addonDefaultKey = ".spec.isDefault"
 
 	kubeProxyAddonName = "kube-proxy"

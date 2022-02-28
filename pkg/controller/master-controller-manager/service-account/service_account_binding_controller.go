@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	controllerName    = "kubermatic_serviceaccount_projectbinding_controller"
+	controllerName    = "serviceaccount-controller"
 	ServiceAcountName = "serviceaccount"
 )
 
