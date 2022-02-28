@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -63,6 +64,7 @@ func Add(
 	workerName string,
 ) error {
 	namespacePredicate := predicateutil.ByNamespace(namespace)
+	workerNamePredicate := workerlabel.Predicates(workerName)
 	versionChangedPredicate := predicate.ResourceVersionChangedPredicate{}
 
 	reconciler := &Reconciler{
@@ -110,7 +112,7 @@ func Add(
 	})
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate, workerNamePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", config, err)
 	}
 
@@ -124,6 +126,11 @@ func Add(
 			return nil
 		}
 		if config == nil {
+			return nil
+		}
+
+		if config.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
+			log.Debugf("KubermaticConfiguration does not have matching %s label", kubermaticv1.WorkerNameLabelKey)
 			return nil
 		}
 
@@ -167,7 +174,7 @@ func Add(
 
 	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
 	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate, versionChangedPredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate, workerNamePredicate, versionChangedPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
@@ -176,7 +183,7 @@ func Add(
 		reconciler.seedClients[key] = manager.GetClient()
 		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
 
-		if err := createSeedWatches(c, key, manager, namespace); err != nil {
+		if err := createSeedWatches(c, key, manager, namespace, workerName); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %w", key, err)
 		}
 	}
@@ -184,7 +191,7 @@ func Add(
 	return nil
 }
 
-func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string) error {
+func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string, workerName string) error {
 	cache := seedManager.GetCache()
 	eventHandler := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{{
@@ -237,7 +244,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 
 	// Seeds are not managed by the operator, but we still need to be notified when
 	// they are marked for deletion inside seed clusters
-	if err := watch(&kubermaticv1.Seed{}, predicateutil.ByNamespace(namespace)); err != nil {
+	if err := watch(&kubermaticv1.Seed{}, predicateutil.ByNamespace(namespace), workerlabel.Predicates(workerName)); err != nil {
 		return err
 	}
 

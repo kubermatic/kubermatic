@@ -94,6 +94,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return nil
 	}
 
+	if seed.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debugf("seed does not have matching %s label", kubermaticv1.WorkerNameLabelKey)
+		return nil
+	}
+
 	// to allow a step-by-step migration of seed clusters, it's possible to
 	// disable the operator's reconciling logic for seeds
 	if _, ok := seed.Annotations[common.SkipReconcilingAnnotation]; ok {

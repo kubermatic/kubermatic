@@ -194,8 +194,6 @@ apiVersion: kubermatic.k8c.io/v1
 metadata:
   name: "${SEED_NAME}"
   namespace: kubermatic
-  labels:
-    worker-name: ""
 spec:
   country: Germany
   location: Hamburg
