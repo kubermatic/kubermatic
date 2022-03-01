@@ -37,6 +37,9 @@ GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFL
 GOBUILDIMAGE ?= golang:1.17.5
 DOCKER_BIN := $(shell which docker)
 
+AGENT_LDFLAGS ?= -w -extldflags '-static'
+AGENT_GOTOOLFLAGS ?= -ldflags '$(AGENT_LDFLAGS)' -v
+
 .PHONY: all
 all: build test
 
@@ -51,7 +54,7 @@ $(BUILD_DEST)/%: cmd/% download-gocache
 
 .PHONY: user-ssh-keys-agent
 user-ssh-keys-agent:
-	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/user-ssh-keys-agent
+	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(AGENT_GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/user-ssh-keys-agent
 
 .PHONY: install
 install:
