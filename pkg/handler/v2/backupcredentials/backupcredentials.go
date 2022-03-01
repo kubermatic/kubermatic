@@ -27,6 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -49,12 +50,26 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 			return userInfo, errors.New(http.StatusForbidden, "Only admins are allowed to create backup credentials")
 		}
 
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting seeds: %v", err))
+		}
+		seed, ok := seeds[req.SeedName]
+		if !ok {
+			return nil, errors.NewBadRequest("seed %q not found", req.SeedName)
+		}
+
+		backupDest, ok := seed.Spec.EtcdBackupRestore.Destinations[req.Body.BackupCredentials.Destination]
+		if !ok {
+			return nil, errors.NewBadRequest("backup destination %q in seed %q not found", req.Body.BackupCredentials.Destination, req.SeedName)
+		}
+
 		backupCredentialsProvider, ok := ctx.Value(middleware.BackupCredentialsProviderContextKey).(provider.BackupCredentialsProvider)
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "can't find backup credentials provider")
 		}
 
-		bc := convertAPIToInternalBackupCredentials(&req.Body.BackupCredentials)
+		bc := convertAPIToInternalBackupCredentials(&req.Body.BackupCredentials, backupDest)
 
 		// Update if already exists
 		_, err = backupCredentialsProvider.GetUnsecured(bc.Name)
@@ -70,22 +85,8 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 			}
 		}
 
-		// if destination is set, means we are using the new multiple backup destinations
-		if len(req.Body.BackupCredentials.Destination) != 0 {
-			seeds, err := seedsGetter()
-			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting seeds: %v", err))
-			}
-			seed, ok := seeds[req.SeedName]
-			if !ok {
-				return nil, errors.NewBadRequest("seed %q not found", req.SeedName)
-			}
-
-			backupDest, ok := seed.Spec.EtcdBackupRestore.Destinations[req.Body.BackupCredentials.Destination]
-			if !ok {
-				return nil, errors.NewBadRequest("backup destination %q in seed %q not found", req.Body.BackupCredentials.Destination, req.SeedName)
-			}
-
+		// if credentials reference in the seed destination is not set yet, set it
+		if backupDest.Credentials == nil {
 			backupDest.Credentials = &corev1.SecretReference{
 				Name:      bc.Name,
 				Namespace: bc.Namespace,
@@ -136,10 +137,10 @@ func DecodeBackupCredentialsReq(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *corev1.Secret {
+func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials, backupDest *v1.BackupDestination) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      GenBackupCredentialsSecretName(bc.Destination),
+			Name:      GenBackupCredentialsSecretName(bc.Destination, backupDest),
 			Namespace: metav1.NamespaceSystem,
 		},
 		StringData: map[string]string{
@@ -150,9 +151,9 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials) *corev1.
 }
 
 // GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret.
-func GenBackupCredentialsSecretName(destination string) string {
-	if len(destination) != 0 {
-		return fmt.Sprintf("%s-etcd-backup-credentials", destination)
+func GenBackupCredentialsSecretName(destinationName string, backupDestination *v1.BackupDestination) string {
+	if backupDestination.Credentials != nil {
+		return backupDestination.Credentials.Name
 	}
-	return resources.EtcdRestoreS3CredentialsSecret
+	return fmt.Sprintf("%s-etcd-backup-credentials", destinationName)
 }

@@ -1961,9 +1961,10 @@ func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 			CreationTimestamp: apiv1.Date(0001, 01, 01, 00, 00, 0, 0, time.UTC),
 		},
 		Spec: apiv2.EtcdBackupConfigSpec{
-			ClusterID: clusterID,
-			Schedule:  "5 * * * * *",
-			Keep:      &keep,
+			ClusterID:   clusterID,
+			Schedule:    "5 * * * * *",
+			Keep:        &keep,
+			Destination: "s3",
 		},
 	}
 }
@@ -1981,10 +1982,11 @@ func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster, projectID s
 			},
 		},
 		Spec: kubermaticv1.EtcdBackupConfigSpec{
-			Name:     name,
-			Cluster:  *clusterObjectRef,
-			Schedule: "5 * * * * *",
-			Keep:     &keep,
+			Name:        name,
+			Cluster:     *clusterObjectRef,
+			Schedule:    "5 * * * * *",
+			Keep:        &keep,
+			Destination: "s3",
 		},
 	}
 }
@@ -2028,6 +2030,7 @@ func GenDefaultAPIBackupCredentials() *apiv2.BackupCredentials {
 			AccessKeyID:     "accessKeyId",
 			SecretAccessKey: "secretAccessKey",
 		},
+		Destination: "s3",
 	}
 }
 
