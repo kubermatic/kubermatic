@@ -28,6 +28,16 @@ export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export ARCHITECTURES=${ARCHITECTURES:-amd64 arm64}
 export TAG_NAME=test
 
+# prepare gocaches for each arch
+gocaches="$(mktemp -d)"
+for ARCH in ${ARCHITECTURES}; do
+  cacheDir="$gocaches/$ARCH"
+  mkdir -p "$cacheDir"
+
+  # try to get a gocache for this arch; this can "fail" but still exit with 0
+  TARGET_DIRECTORY="$cacheDir" GOARCH="$ARCH" ./hack/ci/download-gocache.sh
+done
+
 # build multi-arch images
 buildah manifest create "${DOCKER_REPO}/user-ssh-keys-agent:${TAG_NAME}"
 for ARCH in ${ARCHITECTURES}; do
@@ -41,10 +51,12 @@ for ARCH in ${ARCHITECTURES}; do
     --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${TAG_NAME}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
     --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
+    --build-arg "GOCACHE=/gocache" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
     --format=docker \
     --file cmd/user-ssh-keys-agent/Dockerfile.multiarch \
+    --volume "$gocaches/$ARCH:/gocache" \
     .
   buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${TAG_NAME}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${TAG_NAME}"
 done
