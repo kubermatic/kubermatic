@@ -18,7 +18,6 @@ package resources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -58,9 +57,6 @@ func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc,
 			dep.Spec.Template.ObjectMeta.Labels = labels
 			dep.Spec.Template.Spec.ServiceAccountName = OperatorServiceAccountName
 
-			// The operator should only run on Flatcar nodes
-			dep.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue}
-
 			env := []corev1.EnvVar{
 				{
 					Name: "POD_NAMESPACE",
@@ -93,17 +89,6 @@ func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc,
 					Image:   registryWithOverwrite(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
 					Command: []string{"/bin/update-operator"},
 					Env:     env,
-				},
-			}
-
-			dep.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Operator: corev1.TolerationOpExists,
-				},
-				{
-					Effect:   corev1.TaintEffectNoExecute,
-					Operator: corev1.TolerationOpExists,
 				},
 			}
 
