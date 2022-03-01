@@ -110,7 +110,6 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-shellcheck
-    optional: true
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -397,7 +396,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-azure-ubuntu-1.22
     decorate: true
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-azure: "true"
@@ -444,7 +442,6 @@ presubmits:
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.22
     decorate: true
     always_run: false
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -488,7 +485,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.22-psp
     decorate: true
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -537,7 +533,6 @@ presubmits:
   - name: pre-kubermatic-e2e-do-centos-1.22
     decorate: true
     always_run: false
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"
@@ -581,7 +576,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-packet-ubuntu-1.22
     decorate: true
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-packet: "true"
@@ -625,7 +619,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-kubevirt-centos-1.22
     decorate: true
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-kubevirt: "true"
@@ -669,7 +662,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-hetzner-ubuntu-1.22
     decorate: true
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-hetzner: "true"
@@ -715,7 +707,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.22
     decorate: true
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-openstack: "true"
@@ -761,7 +752,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-openstack-centos-1.22
     decorate: true
-    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-openstack: "true"
@@ -851,7 +841,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-customfolder
     decorate: true
-    optional: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -898,7 +887,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-datastore-cluster
     decorate: true
-    optional: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -945,7 +933,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-nutanix-ubuntu-1.22
     decorate: true
-    optional: true
     run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -990,7 +977,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-nutanix-centos-1.22
     decorate: true
-    optional: true
     run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
