@@ -669,3 +669,102 @@ func genGKECluster(gkeCloudSpec *apiv2.GKECloudSpec) *container.Cluster {
 
 	return newCluster
 }
+
+func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalCluster, error) {
+	sa, err := secretKeySelector(cloudSpec.GKE.CredentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return nil, err
+	}
+	svc, project, err := gke.ConnectToContainerService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := svc.Projects.Zones.Clusters.Get(project, cloudSpec.GKE.Zone, cloudSpec.GKE.Name)
+	resp, err := req.Context(ctx).Do()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get cluster for project=%s: %w", project, err)
+	}
+
+	clusterSpec := &apiv2.GKEClusterSpec{
+		ClusterIpv4Cidr:       resp.ClusterIpv4Cidr,
+		EnableKubernetesAlpha: resp.EnableKubernetesAlpha,
+		EnableTpu:             resp.EnableTpu,
+		InitialClusterVersion: resp.InitialClusterVersion,
+		InitialNodeCount:      resp.InitialNodeCount,
+		Locations:             resp.Locations,
+		Network:               resp.Network,
+		Subnetwork:            resp.Subnetwork,
+		TpuIpv4CidrBlock:      resp.TpuIpv4CidrBlock,
+	}
+
+	if resp.DefaultMaxPodsConstraint != nil {
+		clusterSpec.DefaultMaxPodsConstraint = &resp.DefaultMaxPodsConstraint.MaxPodsPerNode
+	}
+	if resp.Autopilot != nil {
+		clusterSpec.Autopilot = resp.Autopilot.Enabled
+	}
+	if resp.VerticalPodAutoscaling != nil {
+		clusterSpec.VerticalPodAutoscaling = resp.VerticalPodAutoscaling.Enabled
+	}
+	if resp.NodeConfig != nil {
+		clusterSpec.NodeConfig = &apiv2.GKENodeConfig{
+			DiskSizeGb:    resp.NodeConfig.DiskSizeGb,
+			DiskType:      resp.NodeConfig.DiskType,
+			ImageType:     resp.NodeConfig.ImageType,
+			Labels:        resp.NodeConfig.Labels,
+			LocalSsdCount: resp.NodeConfig.LocalSsdCount,
+			MachineType:   resp.NodeConfig.MachineType,
+			Preemptible:   resp.NodeConfig.Preemptible,
+		}
+	}
+	if resp.Autoscaling != nil {
+		clusterSpec.Autoscaling = &apiv2.GKEClusterAutoscaling{
+			AutoprovisioningLocations:  resp.Autoscaling.AutoprovisioningLocations,
+			EnableNodeAutoprovisioning: resp.Autoscaling.EnableNodeAutoprovisioning,
+		}
+		if resp.Autoscaling.AutoprovisioningNodePoolDefaults != nil {
+			clusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults = &apiv2.GKEAutoprovisioningNodePoolDefaults{
+				BootDiskKmsKey: resp.Autoscaling.AutoprovisioningNodePoolDefaults.BootDiskKmsKey,
+				DiskSizeGb:     resp.Autoscaling.AutoprovisioningNodePoolDefaults.DiskSizeGb,
+				DiskType:       resp.Autoscaling.AutoprovisioningNodePoolDefaults.DiskType,
+				MinCpuPlatform: resp.Autoscaling.AutoprovisioningNodePoolDefaults.MinCpuPlatform,
+				OauthScopes:    resp.Autoscaling.AutoprovisioningNodePoolDefaults.OauthScopes,
+				ServiceAccount: resp.Autoscaling.AutoprovisioningNodePoolDefaults.ServiceAccount,
+			}
+			if resp.Autoscaling.AutoprovisioningNodePoolDefaults.Management != nil {
+				clusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.Management = &apiv2.GKENodeManagement{
+					AutoRepair:  resp.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoRepair,
+					AutoUpgrade: resp.Autoscaling.AutoprovisioningNodePoolDefaults.Management.AutoUpgrade,
+				}
+			}
+			if resp.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig != nil {
+				clusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig = &apiv2.GKEShieldedInstanceConfig{
+					EnableIntegrityMonitoring: resp.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableIntegrityMonitoring,
+					EnableSecureBoot:          resp.Autoscaling.AutoprovisioningNodePoolDefaults.ShieldedInstanceConfig.EnableSecureBoot,
+				}
+			}
+			if resp.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings != nil {
+				clusterSpec.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings = &apiv2.GKEUpgradeSettings{
+					MaxSurge:       resp.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxSurge,
+					MaxUnavailable: resp.Autoscaling.AutoprovisioningNodePoolDefaults.UpgradeSettings.MaxUnavailable,
+				}
+			}
+		}
+
+		if resp.Autoscaling.ResourceLimits != nil {
+			clusterSpec.Autoscaling.ResourceLimits = make([]*apiv2.GKEResourceLimit, 0)
+			for _, limit := range resp.Autoscaling.ResourceLimits {
+				clusterSpec.Autoscaling.ResourceLimits = append(clusterSpec.Autoscaling.ResourceLimits, &apiv2.GKEResourceLimit{
+					Maximum:      limit.Maximum,
+					Minimum:      limit.Minimum,
+					ResourceType: limit.ResourceType,
+				})
+			}
+		}
+	}
+
+	apiCluster.Cloud.GKE.ClusterSpec = clusterSpec
+
+	return apiCluster, nil
+}
