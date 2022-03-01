@@ -19,7 +19,6 @@ package usersshkeyssynchronizer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -129,9 +128,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)
-	if controllerutil.IsCacheNotStarted(err) {
-		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
 	if err != nil {
 		log.Errorw("Reconciliation failed", zap.Error(err))
 	}
@@ -149,10 +145,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	// find all clusters in this seed
 	cluster := &kubermaticv1.Cluster{}
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
-		if controllerutil.IsCacheNotStarted(err) {
-			return err
-		}
-
 		if kubeapierrors.IsNotFound(err) {
 			log.Debug("Could not find cluster")
 			return nil
