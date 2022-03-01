@@ -22,9 +22,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/go-kit/log"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
 

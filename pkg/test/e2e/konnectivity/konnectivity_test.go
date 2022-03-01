@@ -264,13 +264,49 @@ func TestKonnectivity(t *testing.T) {
 
 	t.Log("check if konnectivity-agents are deployed")
 	{
-		pods, err := getPods(ctx, userClient, "konnectivity-agent")
-		if err != nil {
-			t.Errorf("failed to get konnectivity-agent pods: %s", err)
-		}
+		err := wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
+			pods, err := getPods(ctx, userClient, "konnectivity-agent")
+			if err != nil {
+				t.Logf("failed to get konnectivity-agent pods: %s", err)
+				return false, nil
+			}
 
-		if len(pods) != 2 {
-			t.Errorf("expected 2 konnectivity-agent pods got: %d", len(pods))
+			if len(pods) != 2 {
+				t.Logf("expected 2 konnectivity-agent pods got: %d", len(pods))
+				return false, nil
+			}
+
+			// check if they are running and healthy
+			allHealthy := true
+			for _, pod := range pods {
+				if pod.Status.Phase != corev1.PodRunning {
+					allHealthy = false
+				}
+				for _, c := range pod.Status.Conditions {
+					if c.Type == corev1.PodReady {
+						if c.Status != corev1.ConditionTrue {
+							allHealthy = false
+							t.Log("not ready", pod.Name, c.Type, c.Status)
+						}
+					} else if c.Type == corev1.ContainersReady {
+						if c.Status != corev1.ConditionTrue {
+							allHealthy = false
+							t.Log("not container ready", pod.Name, c.Type, c.Status)
+						}
+					}
+				}
+				t.Log(pod.Name, pod.Status.Phase)
+			}
+
+			if !allHealthy {
+				t.Logf("not all pods running yet...")
+				return false, nil
+			}
+
+			return true, nil
+		})
+		if err != nil {
+			t.Fatalf("konnectivity agents never became healthy: %v", err)
 		}
 	}
 
@@ -463,7 +499,7 @@ func createUsercluster(t *testing.T) (string, string, func(), error) {
 	// create a usercluster on aws
 	cluster, err := apicli.CreateAWSCluster(project.ID, seed, userclusterName,
 		secretAccessKey, accessKeyID, utils.KubernetesVersion(),
-		"aws-eu-central-1a", "eu-central-1a", 1, true)
+		"aws-eu-central-1a", "eu-central-1a", "", 1, true, nil)
 	if err != nil {
 		return "", "", nil, err
 	}
