@@ -18,7 +18,6 @@ package util
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -28,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/util/workqueue"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -185,10 +183,4 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
 
 	return clustersUpdatingInProgressCount >= limit, nil
-}
-
-// IsCacheNotStarted returns true if the given error is not nil and an instance of
-// cache.ErrCacheNotStarted.
-func IsCacheNotStarted(err error) bool {
-	return errors.Is(err, &cache.ErrCacheNotStarted{})
 }

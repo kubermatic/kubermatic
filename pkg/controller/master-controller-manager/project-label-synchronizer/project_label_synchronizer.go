@@ -19,13 +19,11 @@ package projectlabelsynchronizer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -128,9 +126,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)
-	if controllerutil.IsCacheNotStarted(err) {
-		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -140,10 +135,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	project := &kubermaticv1.Project{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
-		if controllerutil.IsCacheNotStarted(err) {
-			return err
-		}
-
 		if kerrors.IsNotFound(err) {
 			log.Debug("Didn't find project, returning")
 			return nil
@@ -180,12 +171,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 		unfilteredClusters := &kubermaticv1.ClusterList{}
 		if err := seedClient.List(ctx, unfilteredClusters, listOpts); err != nil {
-			if controllerutil.IsCacheNotStarted(err) {
-				log.Debug("cache for seed client was not yet started, cannot list Clusters")
-			} else {
-				errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %w", seedName, err))
-			}
-
+			errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %w", seedName, err))
 			continue
 		}
 
