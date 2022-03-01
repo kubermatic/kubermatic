@@ -47,6 +47,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -109,6 +112,13 @@ func main() {
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
+		NewClient: func(c ctrlruntimecache.Cache, config *rest.Config, options ctrlruntimeclient.Options, uncachedObjects ...ctrlruntimeclient.Object) (ctrlruntimeclient.Client, error) {
+			// get rid of warnings related to
+			// policy/v1beta1 PodDisruptionBudget is deprecated in v1.21+, unavailable in v1.25+; use policy/v1 PodDisruptionBudget
+			options.Opts.SuppressWarnings = true
+
+			return ctrlruntimecluster.DefaultNewClient(c, config, options, uncachedObjects...)
+		},
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
