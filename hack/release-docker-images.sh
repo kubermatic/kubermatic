@@ -70,7 +70,7 @@ for ARCH in ${ARCHITECTURES}; do
 
   # amd64 has been downloaded into $GOCACHE already, do not download it again
   if [ "$ARCH" == "amd64" ]; then
-    cp -ar "$(go env GOCACHE)/*" "$cacheDir"
+    cp -ar "$(go env GOCACHE)"/* "$cacheDir"
     continue
   fi
 
