@@ -89,7 +89,7 @@ func GetSubnets(client *ClientSet, clusterName, projectName string) ([]nutanixv3
 		}
 	}
 
-	cluster, err := GetClusterByName(ctx, client, clusterName)
+	cluster, err := GetClusterByName(client, clusterName)
 	if err != nil {
 		return nil, err
 	}
