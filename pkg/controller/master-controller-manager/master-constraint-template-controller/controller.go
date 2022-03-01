@@ -19,13 +19,11 @@ package masterconstrainttemplatecontroller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -107,10 +105,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("constraint template not found, returning")
 			return reconcile.Result{}, nil
 		}
-		if controllerutil.IsCacheNotStarted(err) {
-			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-		}
-
 		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %w", constraintTemplate.Name, err)
 	}
 
