@@ -89,7 +89,7 @@ func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName
 		}
 	}
 
-	cluster, err := GetClusterByName(client, clusterName)
+	cluster, err := GetClusterByName(ctx, client, clusterName)
 	if err != nil {
 		return nil, err
 	}
