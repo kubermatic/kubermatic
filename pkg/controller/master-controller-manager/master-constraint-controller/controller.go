@@ -19,13 +19,11 @@ package masterconstraintsynchronizer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -104,9 +102,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)
-	if controllerutil.IsCacheNotStarted(err) {
-		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -132,10 +127,6 @@ func (r *reconciler) syncAllSeeds(ctx context.Context, log *zap.SugaredLogger, c
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	constraint := &kubermaticv1.Constraint{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, constraint); err != nil {
-		if controllerutil.IsCacheNotStarted(err) {
-			return err
-		}
-
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
