@@ -49,6 +49,10 @@ $(CMD): %: $(BUILD_DEST)/%
 $(BUILD_DEST)/%: cmd/% download-gocache
 	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
 
+.PHONY: user-ssh-keys-agent
+user-ssh-keys-agent:
+	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/user-ssh-keys-agent
+
 .PHONY: install
 install:
 	go install $(GOTOOLFLAGS) ./cmd/...
