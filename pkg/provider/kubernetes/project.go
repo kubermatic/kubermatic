@@ -19,6 +19,7 @@ package kubernetes
 import (
 	"context"
 	"errors"
+	"reflect"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
@@ -96,13 +97,27 @@ func (p *ProjectProvider) New(users []*kubermaticv1.User, projectName string, la
 		return nil, err
 	}
 
+	key := ctrlruntimeclient.ObjectKeyFromObject(project)
+
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		oldProject := project.DeepCopy()
+		// fetch the current state of Project
+		if err := p.clientPrivileged.Get(context.Background(), key, project); err != nil {
+			return err
+		}
+
+		// update status
+		original := project.DeepCopy()
 		project.Status = kubermaticv1.ProjectStatus{
 			Phase: kubermaticv1.ProjectInactive,
 		}
 
-		return p.clientPrivileged.Status().Patch(context.Background(), project, ctrlruntimeclient.MergeFromWithOptions(oldProject, ctrlruntimeclient.MergeFromWithOptimisticLock{}))
+		// ensure that the value has been modified
+		if reflect.DeepEqual(original.Status, project.Status) {
+			return nil
+		}
+
+		// patch the status
+		return p.clientPrivileged.Status().Patch(context.Background(), project, ctrlruntimeclient.MergeFrom(original))
 	}); err != nil {
 		return nil, err
 	}
