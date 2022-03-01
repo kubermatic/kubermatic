@@ -304,11 +304,15 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 	newCluster := genExternalCluster(name, project.Name)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		AKS: &kubermaticv1.ExternalClusterAKSCloudSpec{
-			Name:          cloud.AKS.Name,
-			ResourceGroup: cloud.AKS.ResourceGroup,
+			Name:           cloud.AKS.Name,
+			ResourceGroup:  cloud.AKS.ResourceGroup,
+			TenantID:       cloud.AKS.TenantID,
+			SubscriptionID: cloud.AKS.SubscriptionID,
+			ClientID:       cloud.AKS.ClientID,
+			ClientSecret:   cloud.AKS.ClientSecret,
 		},
 	}
-	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
+	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, newCluster, project.Name, newCluster.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

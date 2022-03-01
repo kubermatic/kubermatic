@@ -64,6 +64,7 @@ type ExternalClusterSpec struct {
 
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 	CloudSpec           *ExternalClusterCloudSpec               `json:"cloudSpec,omitempty"`
+	KubeOneSpec         *ExternalClusterKubeOneSpec             `json:"kubeoneSpec,omitempty"`
 }
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
@@ -71,6 +72,13 @@ type ExternalClusterCloudSpec struct {
 	GKE *ExternalClusterGKECloudSpec `json:"gke,omitempty"`
 	EKS *ExternalClusterEKSCloudSpec `json:"eks,omitempty"`
 	AKS *ExternalClusterAKSCloudSpec `json:"aks,omitempty"`
+}
+
+// ExternalClusterKubeOneSpec mutually stores access data to a KubeOne cluster.
+type ExternalClusterKubeOneSpec struct {
+	Name                 string                                  `json:"name"`
+	SSHPrivateKey        string                                  `json:"sshPrivateKey"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 }
 
 type ExternalClusterGKECloudSpec struct {
@@ -102,6 +110,10 @@ func (i *ExternalCluster) GetKubeconfigSecretName() string {
 	return fmt.Sprintf("kubeconfig-external-cluster-%s", i.Name)
 }
 
+func (i *ExternalCluster) GetKubeOneSecretName() string {
+	return fmt.Sprintf("credential-kubeone-%s", i.Name)
+}
+
 func (i *ExternalCluster) GetCredentialsSecretName() string {
 	// The kubermatic cluster `GetSecretName` method is used to get credential secret name for external cluster
 	// The same is used for the external cluster creation when secret is created
@@ -121,6 +133,9 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 		cluster.Spec.Cloud.GCP = &GCPCloudSpec{}
 	}
 	if cloud.EKS != nil {
+		cluster.Spec.Cloud.AWS = &AWSCloudSpec{}
+	}
+	if cloud.AKS != nil {
 		cluster.Spec.Cloud.AWS = &AWSCloudSpec{}
 	}
 	return cluster.GetSecretName()

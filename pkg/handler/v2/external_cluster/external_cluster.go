@@ -110,6 +110,15 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, newCluster, req.Body.Kubeconfig); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
+			if req.Body.SSHPrivateKey != "" {
+				newCluster.Spec.KubeOneSpec = &kubermaticv1.ExternalClusterKubeOneSpec{}
+				newCluster.Spec.KubeOneSpec.SSHPrivateKey = req.Body.SSHPrivateKey
+				keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, newCluster, project.Name, newCluster.Name)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				newCluster.Spec.KubeOneSpec.CredentialsReference = keyRef
+			}
 
 			createdCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 			if err != nil {
@@ -1008,8 +1017,9 @@ type body struct {
 	// Name is human readable name for the external cluster
 	Name string `json:"name"`
 	// Kubeconfig Base64 encoded kubeconfig
-	Kubeconfig string                          `json:"kubeconfig,omitempty"`
-	Cloud      *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
+	Kubeconfig    string                          `json:"kubeconfig,omitempty"`
+	SSHPrivateKey string                          `json:"ssh-privatekey,omitempty"`
+	Cloud         *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
 }
 
 func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {

@@ -256,11 +256,12 @@ func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter p
 	newCluster := genExternalCluster(name, project.Name)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		GKE: &kubermaticv1.ExternalClusterGKECloudSpec{
-			Name: cloud.GKE.Name,
-			Zone: cloud.GKE.Zone,
+			Name:           cloud.GKE.Name,
+			Zone:           cloud.GKE.Zone,
+			ServiceAccount: cloud.GKE.ServiceAccount,
 		},
 	}
-	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
+	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, newCluster, project.Name, newCluster.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

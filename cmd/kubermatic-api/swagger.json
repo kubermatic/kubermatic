@@ -13159,13 +13159,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13177,6 +13170,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -27619,6 +27619,10 @@
           "description": "Name is human readable name for the external cluster",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "ssh-privatekey": {
+          "type": "string",
+          "x-go-name": "SSHPrivateKey"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"

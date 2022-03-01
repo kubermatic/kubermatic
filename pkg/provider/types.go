@@ -778,7 +778,7 @@ type ExternalClusterProvider interface {
 
 	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error
 
-	CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error)
+	CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error)
 
 	GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 

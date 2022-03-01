@@ -24,6 +24,9 @@ type Body struct {
 	// Name is human readable name for the external cluster
 	Name string `json:"name,omitempty"`
 
+	// SSH private key
+	SSHPrivateKey string `json:"ssh-privatekey,omitempty"`
+
 	// cloud
 	Cloud *ExternalClusterCloudSpec `json:"cloud,omitempty"`
 }

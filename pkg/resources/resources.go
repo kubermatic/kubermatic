@@ -552,6 +552,8 @@ const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
 
+	KubeOneSSHPrivateKey = "ssh-privatekey"
+
 	AzureTenantID       = "tenantID"
 	AzureSubscriptionID = "subscriptionID"
 	AzureClientID       = "clientID"
