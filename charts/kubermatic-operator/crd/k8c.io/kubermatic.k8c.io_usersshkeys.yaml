@@ -23,6 +23,9 @@ spec:
     - jsonPath: .spec.owner
       name: Owner
       type: string
+    - jsonPath: .spec.fingerprint
+      name: Fingerprint
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
