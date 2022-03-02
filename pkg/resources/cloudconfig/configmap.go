@@ -321,6 +321,19 @@ func getVsphereCloudConfig(
 	if cluster.Spec.Cloud.VSphere.Datastore != "" {
 		datastore = cluster.Spec.Cloud.VSphere.Datastore
 	}
+
+	// Originally, we have been setting cluster-id to the vSphere Compute Cluster name
+	// (provided via the Datacenter object), however, this is supposed to identify the
+	// Kubernetes cluster, therefore it must be unique. This feature flag is enabled by
+	// default for new vSphere clusters, while existing vSphere clusters must be
+	// migrated manually (preferably by following advice here:
+	// https://kb.vmware.com/s/article/84446).
+	clusterID := dc.Spec.VSphere.Cluster
+	clusterIDFlag, ok := cluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID]
+	if ok && clusterIDFlag {
+		clusterID = cluster.Name
+	}
+
 	return &vsphere.CloudConfig{
 		Global: vsphere.GlobalOpts{
 			User:             credentials.VSphere.Username,
@@ -331,7 +344,7 @@ func getVsphereCloudConfig(
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			DefaultDatastore: datastore,
 			WorkingDir:       cluster.Name,
-			ClusterID:        cluster.Name,
+			ClusterID:        clusterID,
 		},
 		Workspace: vsphere.WorkspaceOpts{
 			// This is redundant with what the Vsphere cloud provider itself does:
