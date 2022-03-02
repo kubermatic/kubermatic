@@ -1142,6 +1142,7 @@ func GenTestAddon(name string, variables *runtime.RawExtension, cluster *kuberma
 		Spec: kubermaticv1.AddonSpec{
 			Name:      name,
 			Variables: variables,
+			// in reality, the addon webhook would ensure this objectRef
 			Cluster: corev1.ObjectReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       kubermaticv1.ClusterKindName,

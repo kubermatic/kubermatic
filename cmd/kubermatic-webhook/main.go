@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
@@ -140,6 +141,11 @@ func main() {
 
 	// mutation cannot, because we require separate defaulting for CREATE and UPDATE operations
 	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup Addon webhook
+
+	addonmutation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks
