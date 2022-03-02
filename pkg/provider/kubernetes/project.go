@@ -27,7 +27,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -93,17 +92,6 @@ func (p *ProjectProvider) New(users []*kubermaticv1.User, projectName string, la
 	}
 
 	if err := p.clientPrivileged.Create(context.Background(), project); err != nil {
-		return nil, err
-	}
-
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		oldProject := project.DeepCopy()
-		project.Status = kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectInactive,
-		}
-
-		return p.clientPrivileged.Status().Patch(context.Background(), project, ctrlruntimeclient.MergeFromWithOptions(oldProject, ctrlruntimeclient.MergeFromWithOptimisticLock{}))
-	}); err != nil {
 		return nil, err
 	}
 
