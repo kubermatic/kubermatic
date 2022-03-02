@@ -734,7 +734,7 @@ func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
 	}
 
 	// Docker is supported until 1.24.0, excluding 1.24.0
-	gteKube124Condition, _ := semver.NewConstraint(">= 1.24.0")
+	gteKube124Condition, _ := semver.NewConstraint(">= 1.24")
 	if spec.ContainerRuntime == "docker" && gteKube124Condition.Check(spec.Version.Semver()) {
 		return fmt.Errorf("docker not supported from version 1.24: %s", spec.ContainerRuntime)
 	}
