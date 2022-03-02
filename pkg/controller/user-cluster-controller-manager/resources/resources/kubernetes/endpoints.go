@@ -26,14 +26,18 @@ import (
 )
 
 const (
-	// ServiceName is the name of the kubernetes service in the default namespace.
-	ServiceName = "kubernetes"
+	// serviceName is the name of the kubernetes service in the default namespace.
+	serviceName = "kubernetes"
+
+	// endpointSliceName is the name of the endpoint slice for the kubernetes service in the default namespace.
+	// To be aligned with upstream endpoint reconcilers we name it as the service itself.
+	endpointSliceName = serviceName
 )
 
 // EndpointsCreator returns the func to create/update the endpoints of the kubernetes service.
 func EndpointsCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointsCreatorGetter {
 	return func() (string, reconciling.EndpointsCreator) {
-		return ServiceName, func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
+		return serviceName, func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
 			// our controller is reconciling the endpoint slice, do not mirror with EndpointSliceMirroring controller
 			ep.Labels = map[string]string{
 				discovery.LabelSkipMirror: "true",
@@ -62,10 +66,10 @@ func EndpointsCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.N
 // EndpointSliceCreator returns the func to create/update the endpoint slice of the kubernetes service.
 func EndpointSliceCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointSliceCreatorGetter {
 	return func() (string, reconciling.EndpointSliceCreator) {
-		return ServiceName, func(es *discovery.EndpointSlice) (*discovery.EndpointSlice, error) {
+		return endpointSliceName, func(es *discovery.EndpointSlice) (*discovery.EndpointSlice, error) {
 			es.AddressType = discovery.AddressTypeIPv4
 			es.Labels = map[string]string{
-				discovery.LabelServiceName: ServiceName,
+				discovery.LabelServiceName: serviceName,
 			}
 			es.Endpoints = []discovery.Endpoint{
 				{

@@ -666,19 +666,20 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileEndpoints(ctx context.Context, data reconcileData) error {
-	if data.reconcileK8sSvcEndpoints {
-		epCreators := []reconciling.NamedEndpointsCreatorGetter{
-			kubernetesresources.EndpointsCreator(data.clusterAddress),
-		}
-		if err := reconciling.ReconcileEndpoints(ctx, epCreators, metav1.NamespaceDefault, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Endpoints: %w", err)
-		}
-		epSliceCreators := []reconciling.NamedEndpointSliceCreatorGetter{
-			kubernetesresources.EndpointSliceCreator(data.clusterAddress),
-		}
-		if err := reconciling.ReconcileEndpointSlices(ctx, epSliceCreators, metav1.NamespaceDefault, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile EndpointSlices: %w", err)
-		}
+	if !data.reconcileK8sSvcEndpoints {
+		return nil
+	}
+	epCreators := []reconciling.NamedEndpointsCreatorGetter{
+		kubernetesresources.EndpointsCreator(data.clusterAddress),
+	}
+	if err := reconciling.ReconcileEndpoints(ctx, epCreators, metav1.NamespaceDefault, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Endpoints: %w", err)
+	}
+	epSliceCreators := []reconciling.NamedEndpointSliceCreatorGetter{
+		kubernetesresources.EndpointSliceCreator(data.clusterAddress),
+	}
+	if err := reconciling.ReconcileEndpointSlices(ctx, epSliceCreators, metav1.NamespaceDefault, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile EndpointSlices: %w", err)
 	}
 	return nil
 }
