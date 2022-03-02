@@ -35,6 +35,7 @@ import (
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
 	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
+	usersshkeymutation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/mutation"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -139,6 +140,11 @@ func main() {
 
 	// mutation cannot, because we require separate defaulting for CREATE and UPDATE operations
 	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup UserSSHKey webhooks
+
+	usersshkeymutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup OSM webhooks
