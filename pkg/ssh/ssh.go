@@ -20,9 +20,9 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // UserSSHKeyBuilder is builder to create ssh key structs including validation.
@@ -75,14 +75,9 @@ func (sb *UserSSHKeyBuilder) Build() (*kubermaticv1.UserSSHKey, error) {
 		return nil, fmt.Errorf("key is not valid: %w", err)
 	}
 
-	name, err := uuid.UUID()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create name: %w", err)
-	}
-
 	userSSHKey := &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("key-%s", name),
+			Name: fmt.Sprintf("key-%s", rand.String(10)),
 		},
 		Spec: kubermaticv1.SSHKeySpec{
 			Owner:     sb.owner,

@@ -23,9 +23,9 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -107,14 +107,9 @@ func (p *PrivilegedSSHKeyProvider) CreateUnsecured(project *kubermaticv1.Project
 }
 
 func genUserSSHKey(project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error) {
-	name, err := uuid.UUID()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create name: %w", err)
-	}
-
 	return &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("key-%s", name),
+			Name: fmt.Sprintf("key-%s", rand.String(10)),
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
