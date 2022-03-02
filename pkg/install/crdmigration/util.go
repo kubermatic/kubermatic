@@ -117,6 +117,13 @@ func reverseKinds(kinds []Kind) []Kind {
 }
 
 func isNamespacedKind(name string) bool {
+	// KubermaticConfiguration is special, as is its own API group and the only one
+	// that is moved to a totally different API group during the migration, which is
+	// why it's not part of the big kind list.
+	if name == "KubermaticConfiguration" {
+		return true
+	}
+
 	return getKind(name).Namespaced
 }
 

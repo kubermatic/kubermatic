@@ -1448,10 +1448,15 @@ func cloneEtcdBackupConfigResourcesInCluster(ctx context.Context, logger logrus.
 				newObject.Status.Conditions = map[newv1.EtcdBackupConfigConditionType]newv1.EtcdBackupConfigCondition{}
 			}
 
+			heartbeat := condition.LastHeartbeatTime
+			if heartbeat.IsZero() {
+				heartbeat = metav1.Now()
+			}
+
 			conditionType := newv1.EtcdBackupConfigConditionType(condition.Type)
 			newObject.Status.Conditions[conditionType] = newv1.EtcdBackupConfigCondition{
 				Status:             condition.Status,
-				LastHeartbeatTime:  condition.LastHeartbeatTime,
+				LastHeartbeatTime:  heartbeat,
 				LastTransitionTime: condition.LastTransitionTime,
 				Reason:             condition.Reason,
 				Message:            condition.Message,
