@@ -21,8 +21,8 @@ aliases:
   sig-cluster-management:
     - ahmedwaleedmalik
     - embik
-    - imharshita
     - hdurand0710
+    - imharshita
     - kron4eg
     - mfranczy
     - mlavacca
@@ -45,7 +45,7 @@ aliases:
 
   sig-virtualization:
     - mfranczy
-    - moadqassem
+    - moad  qassem
 
   # temporary SIG to oversee the API group migration
   sig-crd:
