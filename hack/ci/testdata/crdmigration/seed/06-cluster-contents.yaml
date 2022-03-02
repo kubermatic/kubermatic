@@ -59,6 +59,7 @@ spec:
   keep: 20
   name: default-backups
   schedule: '@every 20m'
+  destination: s3
 status:
   conditions:
     - lastHeartbeatTime: null

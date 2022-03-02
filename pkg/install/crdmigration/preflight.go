@@ -402,7 +402,7 @@ func validateEtcdBackupConfiguration(ctx context.Context, logger logrus.FieldLog
 			return fmt.Errorf("Seed %s uses the deprecated `backupRestore` configuration; please migrate to the `etcdBackupRestore` configuration before proceeding, as the deprecated options have been removed in KKP 2.20", name)
 		}
 
-		if seed.Spec.EtcdBackupRestore.DefaultDestination == nil {
+		if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.DefaultDestination == nil {
 			return fmt.Errorf("Seed %s does not set a default backup destination in `etcdBackupRestore`; please configure a default destination", name)
 		}
 	}
