@@ -497,7 +497,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				return fmt.Errorf("failed to resolve cluster external name %q: %w", c.Address.ExternalName, err)
 			}
 
-			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.ClusterExternalAddrAllowCreator(ipList))
+			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.ClusterExternalAddrAllowCreator(ipList, c.Spec.ExposeStrategy))
 		} else {
 			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
 				apiserver.OpenVPNServerAllowCreator(c),
