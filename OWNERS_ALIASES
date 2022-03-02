@@ -45,7 +45,7 @@ aliases:
 
   sig-virtualization:
     - mfranczy
-    - moad  qassem
+    - moadqassem
 
   # temporary SIG to oversee the API group migration
   sig-crd:
