@@ -700,9 +700,10 @@ func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
 		return fmt.Errorf("container runtime not supported: %s", spec.ContainerRuntime)
 	}
 
-	dockerSupportLimit := semver.MustParse("1.22.1")
-	if spec.ContainerRuntime == "docker" && !spec.Version.Semver().LessThan(dockerSupportLimit) {
-		return fmt.Errorf("docker not supported from version 1.22: %s", spec.ContainerRuntime)
+	// Docker is supported until 1.24.0, excluding 1.24.0
+	gteKube124Condition, _ := semver.NewConstraint(">= 1.24.0")
+	if spec.ContainerRuntime == "docker" && gteKube124Condition.Check(spec.Version.Semver()) {
+		return fmt.Errorf("docker not supported from version 1.24: %s", spec.ContainerRuntime)
 	}
 
 	return nil
