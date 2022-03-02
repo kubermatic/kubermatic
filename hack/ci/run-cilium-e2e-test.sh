@@ -59,6 +59,6 @@ appendTrap print_kubermatic_logs EXIT
 
 echodate "Running cilium tests..."
 
-go test -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/...
+go test -race -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium/... --userconfig "$KUBECONFIG"
 
 echodate "Cilium tests done."
