@@ -206,9 +206,7 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 				Domain: "example.com",
 			},
 			FeatureGates: map[string]bool{},
-			API: kubermaticv1.KubermaticAPIConfiguration{
-				AccessibleAddons: []string{},
-			},
+			API:          kubermaticv1.KubermaticAPIConfiguration{},
 			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
 				BackupStoreContainer:   defaults.DefaultBackupStoreContainer,
 				BackupCleanupContainer: defaults.DefaultBackupCleanupContainer,
