@@ -249,16 +249,20 @@ func ClusterExternalAddrAllowCreator(egressIPs []net.IP, exposeStrategy kubermat
 			// allow egress traffic to the nodeport-proxy as for some CNI + kube-proxy mode
 			// combinations a local path to it may be used to reach the external apiserver address
 			if exposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-				// allows traffic to the nodeport-proxy running in the user cluster namespace
-				// (deployed only in case of the LoadBalancer expose strategy)
+				// allows traffic to the nodeport-proxy running in the user cluster namespace used for the LB expose strategy
 				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
 					PodSelector: &metav1.LabelSelector{
 						MatchLabels: resources.BaseAppLabels(resources.NodePortProxyEnvoyDeploymentName, nil),
 					},
 				})
 			} else {
-				// allows traffic to the seed-level nodeport-proxy used for other expose strategies
+				// allows traffic to the nodeport-proxy running in the kubermatic namespace used for other expose strategies
 				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							corev1.LabelMetadataName: resources.KubermaticNamespace,
+						},
+					},
 					PodSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							common.NameLabel: nodeportproxy.EnvoyDeploymentName,
