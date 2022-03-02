@@ -541,7 +541,26 @@ type MeteringConfiguration struct {
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
+	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// +kubebuilder:default:=`0 1 * * 6`
+	Schedule string `json:"schedule,omitempty"`
+	// Interval defines period for metering timestamps
+	// +kubebuilder:default:=week
+	Interval Interval `json:"interval,omitempty"`
+	// IntervalInDays defines period for metering timestamps. Overwrites Interval.
+	IntervalInDays int `json:"intervalInDays,omitempty"`
+	// Retention specify number of days after which reports are deleted. -1 keeps reports forever.
+	Retention int `json:"retention,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=day;week;month
+type Interval string
+
+const (
+	Day   Interval = "day"
+	Week  Interval = "week"
+	Month Interval = "month"
+)
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
 func (s *Seed) IsDefaultEtcdAutomaticBackupEnabled() bool {

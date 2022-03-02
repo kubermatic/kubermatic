@@ -25,6 +25,9 @@
 package metering
 
 import (
+	"strconv"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -34,11 +37,11 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// cronJobCreator returns the func to create/update the etcd defragger cronjob.
-func cronJobCreator(seedName string, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
+// cronJobCreator returns the func to create/update the metering report cronjob.
+func cronJobCreator(seedName string, mc *kubermaticv1.MeteringConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
-			job.Spec.Schedule = "0 6 * * 1"
+			job.Spec.Schedule = mc.Schedule
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = meteringToolName
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
@@ -124,7 +127,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"-c",
 						`/usr/local/bin/kubermatic-metering-report -workdir=/metering-data \
                                                           -reportdir=/report \
-                                                          -last-week \
+                                                          ` + intervalToFlag(mc.IntervalInDays, mc.Interval) + ` \
                                                           -seed=` + seedName + ` \
                                                           -scrape-interval=300
                         touch /report/finished`,
@@ -237,5 +240,28 @@ mc mirror /report s3/$S3_BUCKET`,
 
 			return job, nil
 		}
+	}
+}
+
+const (
+	Yesterday        = "-yesterday"
+	LastWeek         = "-last-week"
+	LastMonth        = "-last-month"
+	LastNumberOfDays = "-last-number-of-days="
+)
+
+func intervalToFlag(intervalInDays int, interval kubermaticv1.Interval) string {
+	if intervalInDays > 0 {
+		return LastNumberOfDays + strconv.Itoa(intervalInDays)
+	}
+	switch interval {
+	case kubermaticv1.Day:
+		return Yesterday
+	case kubermaticv1.Month:
+		return LastMonth
+	case kubermaticv1.Week:
+		fallthrough
+	default:
+		return LastWeek
 	}
 }

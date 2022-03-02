@@ -77,7 +77,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
 	}
 	if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
-		cronJobCreator(seed.Name, overwriter),
+		cronJobCreator(seed.Name, seed.Spec.Metering, overwriter),
 	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering CronJob: %w", err)
 	}

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/robfig/cron"
 	"sync"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -189,6 +190,12 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 
 		if _, exists := subject.Spec.EtcdBackupRestore.Destinations[subject.Spec.EtcdBackupRestore.DefaultDestination]; !exists {
 			return fmt.Errorf("invalid etcd backup configuration: default destination %q does not exist", subject.Spec.EtcdBackupRestore.DefaultDestination)
+		}
+	}
+
+	if subject.Spec.Metering != nil && subject.Spec.Metering.Schedule != "" {
+		if _, err := cron.ParseStandard(subject.Spec.Metering.Schedule); err != nil {
+			return fmt.Errorf("invalid cron expression format: %s", subject.Spec.Metering.Schedule)
 		}
 	}
 
