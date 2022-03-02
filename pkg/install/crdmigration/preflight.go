@@ -72,6 +72,11 @@ func PerformPreflightChecks(ctx context.Context, logger logrus.FieldLogger, opt 
 		success = false
 	}
 
+	if err := validateSeedDatacenters(ctx, logger, opt); err != nil {
+		logger.Errorf("seed datacenter check failed: %v", err)
+		success = false
+	}
+
 	if err := validateEtcdBackupConfiguration(ctx, logger, opt); err != nil {
 		logger.Errorf("etcd backup configuration check failed: %v", err)
 		success = false
@@ -389,6 +394,42 @@ func validateCRDsExist(ctx context.Context, logger logrus.FieldLogger, opt *Opti
 
 	if checklist.Len() > 0 {
 		return fmt.Errorf("could not find files containing the CRDs for %v", checklist.List())
+	}
+
+	return nil
+}
+
+func validateSeedDatacenters(ctx context.Context, logger logrus.FieldLogger, opt *Options) error {
+	logger.Info("Validating seed datacenters…")
+
+	seedProblems := []string{}
+
+	for seedName, seed := range opt.Seeds {
+		dcProblems := []string{}
+
+		for dcName, dc := range seed.Spec.Datacenters {
+			provProblems := []string{}
+
+			if dc.Spec.Openstack != nil && len(dc.Spec.Openstack.DNSServers) == 0 {
+				provProblems = append(provProblems, "dns_servers must be configured")
+			}
+
+			if dc.Spec.GCP != nil && len(dc.Spec.GCP.ZoneSuffixes) == 0 {
+				provProblems = append(provProblems, "zone_suffixes must be configured")
+			}
+
+			if len(provProblems) > 0 {
+				dcProblems = append(dcProblems, fmt.Sprintf("datacenter %s is invalid: %v", dcName, provProblems))
+			}
+		}
+
+		if len(dcProblems) > 0 {
+			seedProblems = append(seedProblems, fmt.Sprintf("Seed %s is invalid: %v", seedName, dcProblems))
+		}
+	}
+
+	if len(seedProblems) > 0 {
+		return fmt.Errorf("one or more Seeds require additional configuration to be compatible with KKP 2.20: %v", seedProblems)
 	}
 
 	return nil
