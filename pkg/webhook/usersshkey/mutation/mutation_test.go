@@ -38,32 +38,6 @@ import (
 
 var (
 	testScheme = runtime.NewScheme()
-	config     = kubermaticv1.KubermaticConfiguration{}
-	seed       = kubermaticv1.Seed{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-seed",
-			Namespace: "kubermatic",
-		},
-		Spec: kubermaticv1.SeedSpec{
-			Datacenters: map[string]kubermaticv1.Datacenter{
-				"openstack-dc": {
-					Spec: kubermaticv1.DatacenterSpec{
-						Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
-					},
-				},
-				"hetzner-dc": {
-					Spec: kubermaticv1.DatacenterSpec{
-						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
-					},
-				},
-				"kubevirt-dc": {
-					Spec: kubermaticv1.DatacenterSpec{
-						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
-					},
-				},
-			},
-		},
-	}
 )
 
 func init() {
