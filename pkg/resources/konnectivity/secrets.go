@@ -56,7 +56,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 					return se, nil
 				}
 
-				if oldConf.Clusters[0].Cluster.CertificateAuthorityData == encodedCACert {
+				if string(oldConf.Clusters[0].Cluster.CertificateAuthorityData) == string(encodedCACert) {
 					return se, nil
 				}
 			}
