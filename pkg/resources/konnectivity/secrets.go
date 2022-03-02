@@ -32,6 +32,13 @@ import (
 func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KonnectivityKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			ca, err := data.GetRootCA()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cluster CA: %w", err)
+			}
+
+			encodedCACert := triple.EncodeCertPEM(ca.Cert)
+
 			oldConfData, exists := se.Data[resources.KonnectivityServerConf]
 
 			if exists {
@@ -48,11 +55,10 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 				if oldConf.Clusters[0].Cluster.Server == data.Cluster().Address.URL {
 					return se, nil
 				}
-			}
 
-			ca, err := data.GetRootCA()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get cluster CA: %w", err)
+				if oldConf.Clusters[0].Cluster.CertificateAuthorityData == encodedCACert {
+					return se, nil
+				}
 			}
 
 			clientKeyPair, err := triple.NewClientKeyPair(ca, "system:konnectivity-server", nil)
@@ -67,7 +73,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 					{
 						Name: "kubernetes",
 						Cluster: v1.Cluster{
-							CertificateAuthorityData: triple.EncodeCertPEM(ca.Cert),
+							CertificateAuthorityData: encodedCACert,
 							Server:                   data.Cluster().Address.URL,
 						},
 					},
