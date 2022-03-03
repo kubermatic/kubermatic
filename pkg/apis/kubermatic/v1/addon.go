@@ -61,7 +61,7 @@ type AddonSpec struct {
 	// Cluster is the reference to the cluster the addon should be installed in
 	Cluster corev1.ObjectReference `json:"cluster"`
 	// Variables is free form data to use for parsing the manifest templates
-	Variables runtime.RawExtension `json:"variables,omitempty"`
+	Variables *runtime.RawExtension `json:"variables,omitempty"`
 	// RequiredResourceTypes allows to indicate that this addon needs some resource type before it
 	// can be installed. This can be used to indicate that a specific CRD and/or extension
 	// apiserver must be installed before this addon can be installed. The addon will not

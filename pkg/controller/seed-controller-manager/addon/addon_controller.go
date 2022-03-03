@@ -308,7 +308,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		variables = sub.(map[string]interface{})
 	}
 
-	if len(addon.Spec.Variables.Raw) > 0 {
+	if addon.Spec.Variables != nil && len(addon.Spec.Variables.Raw) > 0 {
 		if err = json.Unmarshal(addon.Spec.Variables.Raw, &variables); err != nil {
 			return nil, err
 		}
