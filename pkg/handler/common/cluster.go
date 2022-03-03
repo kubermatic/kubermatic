@@ -117,7 +117,7 @@ func CreateEndpoint(
 		return nil, kubermaticerrors.NewAlreadyExists("cluster", partialCluster.Spec.HumanReadableName)
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, false); err != nil {
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
 		return nil, err
 	}
 	kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
@@ -504,7 +504,12 @@ func PatchEndpoint(
 		return nil, err
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, seedClient, newInternalCluster, true); err != nil {
+	validate := &kubernetesprovider.ValidateCredentials{
+		Datacenter: dc,
+		CABundle:   caBundle,
+	}
+
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForClusterWithValidation(ctx, seedClient, newInternalCluster, validate); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 

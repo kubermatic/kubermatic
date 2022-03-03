@@ -810,3 +810,15 @@ func ignoreRouterAlreadyHasPortInSubnetError(err error, subnetID string) error {
 
 	return nil
 }
+
+func ValidateCredentials(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) error {
+	computeClient, err := getComputeClient(authURL, region, credentials, caBundle)
+	if err != nil {
+		return err
+	}
+	_, err = getAvailabilityZones(computeClient)
+	if err != nil {
+		return err
+	}
+	return nil
+}
