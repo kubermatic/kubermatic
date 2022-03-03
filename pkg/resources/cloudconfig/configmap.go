@@ -307,8 +307,7 @@ func getVsphereCloudConfig(
 	// migrated manually (preferably by following advice here:
 	// https://kb.vmware.com/s/article/84446).
 	clusterID := dc.Spec.VSphere.Cluster
-	clusterIDFlag, ok := cluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID]
-	if ok && clusterIDFlag {
+	if cluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] {
 		clusterID = cluster.Name
 	}
 
