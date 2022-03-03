@@ -15,6 +15,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	discovery "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -202,6 +203,80 @@ func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAc
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ServiceAccount{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ServiceAccount %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// EndpointsCreator defines an interface to create/update Endpointss
+type EndpointsCreator = func(existing *corev1.Endpoints) (*corev1.Endpoints, error)
+
+// NamedEndpointsCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedEndpointsCreatorGetter = func() (name string, create EndpointsCreator)
+
+// EndpointsObjectWrapper adds a wrapper so the EndpointsCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func EndpointsObjectWrapper(create EndpointsCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*corev1.Endpoints))
+		}
+		return create(&corev1.Endpoints{})
+	}
+}
+
+// ReconcileEndpoints will create and update the Endpoints coming from the passed EndpointsCreator slice
+func ReconcileEndpoints(ctx context.Context, namedGetters []NamedEndpointsCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := EndpointsObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Endpoints{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Endpoints %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// EndpointSliceCreator defines an interface to create/update EndpointSlices
+type EndpointSliceCreator = func(existing *discovery.EndpointSlice) (*discovery.EndpointSlice, error)
+
+// NamedEndpointSliceCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedEndpointSliceCreatorGetter = func() (name string, create EndpointSliceCreator)
+
+// EndpointSliceObjectWrapper adds a wrapper so the EndpointSliceCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func EndpointSliceObjectWrapper(create EndpointSliceCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*discovery.EndpointSlice))
+		}
+		return create(&discovery.EndpointSlice{})
+	}
+}
+
+// ReconcileEndpointSlices will create and update the EndpointSlices coming from the passed EndpointSliceCreator slice
+func ReconcileEndpointSlices(ctx context.Context, namedGetters []NamedEndpointSliceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := EndpointSliceObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &discovery.EndpointSlice{}, false); err != nil {
+			return fmt.Errorf("failed to ensure EndpointSlice %s/%s: %w", namespace, name, err)
 		}
 	}
 
