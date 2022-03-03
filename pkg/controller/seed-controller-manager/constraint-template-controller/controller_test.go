@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -46,7 +46,7 @@ import (
 const ctName = "requiredlabels"
 
 func TestReconcile(t *testing.T) {
-	sch, err := v1beta1.SchemeBuilder.Build()
+	sch, err := constrainttemplatev1.SchemeBuilder.Build()
 	if err != nil {
 		t.Fatalf("building gatekeeper scheme failed: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			ct := &v1beta1.ConstraintTemplate{}
+			ct := &constrainttemplatev1.ConstraintTemplate{}
 			err := tc.userClient.Get(ctx, request.NamespacedName, ct)
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
@@ -152,7 +152,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
-	sch, err := v1beta1.SchemeBuilder.Build()
+	sch, err := constrainttemplatev1.SchemeBuilder.Build()
 	if err != nil {
 		t.Fatalf("building gatekeeper scheme failed: %v", err)
 	}
@@ -188,7 +188,7 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 		t.Fatalf("reconciling failed: %v", err)
 	}
 
-	err = userClient.Get(ctx, request.NamespacedName, &v1beta1.ConstraintTemplate{})
+	err = userClient.Get(ctx, request.NamespacedName, &constrainttemplatev1.ConstraintTemplate{})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -211,10 +211,10 @@ func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTe
 	return ct
 }
 
-func genGKConstraintTemplate(name string) *v1beta1.ConstraintTemplate {
-	ct := &v1beta1.ConstraintTemplate{}
+func genGKConstraintTemplate(name string) *constrainttemplatev1.ConstraintTemplate {
+	ct := &constrainttemplatev1.ConstraintTemplate{}
 	ct.Name = name
-	ct.Spec = v1beta1.ConstraintTemplateSpec{
+	ct.Spec = constrainttemplatev1.ConstraintTemplateSpec{
 		CRD:     genCTSpec().CRD,
 		Targets: genCTSpec().Targets,
 	}
@@ -224,13 +224,13 @@ func genGKConstraintTemplate(name string) *v1beta1.ConstraintTemplate {
 
 func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 	return kubermaticv1.ConstraintTemplateSpec{
-		CRD: v1beta1.CRD{
-			Spec: v1beta1.CRDSpec{
-				Names: v1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &v1beta1.Validation{
+				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
 						Properties: map[string]apiextensionv1.JSONSchemaProps{
 							"labels": {
@@ -246,7 +246,7 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 				},
 			},
 		},
-		Targets: []v1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `

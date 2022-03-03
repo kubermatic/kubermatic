@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"gopkg.in/square/go-jose.v2/jwt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -269,15 +269,15 @@ func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 	ct.Name = name
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: v1beta1.CRD{
-			Spec: v1beta1.CRDSpec{
-				Names: v1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
 			},
 		},
-		Targets: []v1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `

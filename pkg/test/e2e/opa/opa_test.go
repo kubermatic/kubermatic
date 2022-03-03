@@ -20,13 +20,14 @@ package opa
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -35,25 +36,28 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	datacenter             = "kubermatic"
-	location               = "hetzner-hel1"
-	version                = utils.KubernetesVersion()
-	credential             = "e2e-hetzner"
-	ctKind                 = "RequiredLabels"
-	masterNamespace        = "kubermatic"
-	defaultConstraintName  = "testconstraint"
-	constraintTemplateName = "requiredlabels"
+	datacenter            = "kubermatic"
+	location              = "hetzner-hel1"
+	version               = utils.KubernetesVersion()
+	credential            = "e2e-hetzner"
+	ctKind                = "RequiredLabels"
+	masterNamespace       = "kubermatic"
+	defaultConstraintName = "testconstraint"
+
+	//go:embed constraint_template.yaml
+	testCT string
 )
 
 func TestOPAIntegration(t *testing.T) {
 	ctx := context.Background()
 
-	if err := constrainttemplatev1beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err := constrainttemplatev1.AddToScheme(scheme.Scheme); err != nil {
 		t.Fatalf("failed to register gatekeeper scheme: %v", err)
 	}
 
@@ -117,10 +121,11 @@ func TestOPAIntegration(t *testing.T) {
 
 	// Create CT
 	t.Log("creating Constraint Template...")
-	ct, err := masterAdminClient.CreateCT(constraintTemplateName, ctKind)
+	ct, err := createTestConstraintTemplate(ctx, seedClient)
 	if err != nil {
 		t.Fatalf("error creating Constraint Template: %v", getErrorResponse(err))
 	}
+	t.Logf("created Constraint Template %v", *ct)
 
 	t.Log("creating client for user cluster...")
 	userClient, err := masterClient.GetUserClusterClient(datacenter, project.ID, apiCluster.ID)
@@ -248,7 +253,7 @@ func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclien
 
 func waitForCTSync(ctx context.Context, userClient ctrlruntimeclient.Client, ctName string, deleted bool) error {
 	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
-		gatekeeperCT := &constrainttemplatev1beta1.ConstraintTemplate{}
+		gatekeeperCT := &constrainttemplatev1.ConstraintTemplate{}
 		err := userClient.Get(ctx, types.NamespacedName{Name: ctName}, gatekeeperCT)
 
 		if deleted {
@@ -293,4 +298,14 @@ func cleanupProject(t *testing.T, id string) {
 	}
 
 	utils.NewTestClient(token, t).CleanupProject(t, id)
+}
+
+func createTestConstraintTemplate(ctx context.Context, client ctrlruntimeclient.Client) (*kubermaticv1.ConstraintTemplate, error) {
+	var ct *kubermaticv1.ConstraintTemplate
+	err := yaml.Unmarshal([]byte(testCT), &ct)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling Constraint Template: %w", err)
+	}
+
+	return ct, client.Create(ctx, ct)
 }
