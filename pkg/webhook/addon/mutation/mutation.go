@@ -26,26 +26,28 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	v1 "k8s.io/api/core/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // AdmissionHandler for mutating Kubermatic Addon2 CRD.
 type AdmissionHandler struct {
-	log     logr.Logger
-	decoder *admission.Decoder
-	client  ctrlruntimeclient.Client
+	log              logr.Logger
+	decoder          *admission.Decoder
+	seedGetter       provider.SeedGetter
+	seedClientGetter provider.SeedClientGetter
 }
 
 // NewAdmissionHandler returns a new Addon AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
+func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *AdmissionHandler {
 	return &AdmissionHandler{
-		client: client,
+		seedGetter:       seedGetter,
+		seedClientGetter: seedClientGetter,
 	}
 }
 
@@ -65,25 +67,13 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
 	addon := &kubermaticv1.Addon{}
-	oldAddon := &kubermaticv1.Addon{}
 
 	switch req.Operation {
 	case admissionv1.Create:
-		if err := h.decoder.Decode(req, addon); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-
-		err := h.applyDefaults(ctx, addon)
-		if err != nil {
-			h.log.Info("addon mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
-		}
+		fallthrough
 
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, addon); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		if err := h.decoder.DecodeRaw(req.OldObject, oldAddon); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
@@ -101,17 +91,30 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on addon resources", req.Operation))
 	}
 
-	mutatedKey, err := json.Marshal(addon)
+	mutatedAddon, err := json.Marshal(addon)
 	if err != nil {
 		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling addon object failed: %w", err))
 	}
 
-	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedKey)
+	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedAddon)
 }
 
 func (h *AdmissionHandler) applyDefaults(ctx context.Context, addon *kubermaticv1.Addon) error {
+	seed, err := h.seedGetter()
+	if err != nil {
+		return fmt.Errorf("failed to get current Seed: %w", err)
+	}
+	if seed == nil {
+		return errors.New("webhook not configured for a Seed cluster, cannot validate Addon resources")
+	}
+
+	client, err := h.seedClientGetter(seed)
+	if err != nil {
+		return fmt.Errorf("failed to get Seed client: %w", err)
+	}
+
 	clusters := kubermaticv1.ClusterList{}
-	if err := h.client.List(ctx, &clusters); err != nil {
+	if err := client.List(ctx, &clusters); err != nil {
 		return fmt.Errorf("failed to list Cluster objects: %w", err)
 	}
 

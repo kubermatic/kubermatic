@@ -145,7 +145,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup Addon webhook
 
-	addonmutation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
+	addonmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks
