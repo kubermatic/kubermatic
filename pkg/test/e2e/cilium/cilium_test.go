@@ -300,7 +300,6 @@ func testUserCluster(t *testing.T, config *rest.Config) {
 	if err != nil {
 		t.Fatalf("hubble ui observe test failed: %v", err)
 	}
-
 }
 
 func waitForPods(t *testing.T, client *kubernetes.Clientset, namespace string, key string, names []string) error {
