@@ -227,7 +227,7 @@ func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 // ClusterExternalAddrAllowCreator returns a func to create/update the apiserver cluster-external-addr-allow egress policy.
 // This policy is necessary in Konnectivity setup, so that konnectivity-server can connect to the apiserver via
 // the external URL (used as service-account-issuer) to validate konnectivity-agent authentication token.
-func ClusterExternalAddrAllowCreator(egressIPs []net.IP) reconciling.NamedNetworkPolicyCreatorGetter {
+func ClusterExternalAddrAllowCreator(egressIPs []net.IP, exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return resources.NetworkPolicyClusterExternalAddrAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -241,17 +241,34 @@ func ClusterExternalAddrAllowCreator(egressIPs []net.IP) reconciling.NamedNetwor
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
-						To: append(ipListToPeers(egressIPs), networkingv1.NetworkPolicyPeer{
-							// allow egress traffic to the nodeport-proxy as for some CNI + kube-proxy mode
-							// combinations a local path to it may be used to reach the external apiserver address
-							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									common.NameLabel: nodeportproxy.EnvoyDeploymentName,
-								},
-							},
-						}),
+						To: ipListToPeers(egressIPs),
 					},
 				},
+			}
+
+			// allow egress traffic to the nodeport-proxy as for some CNI + kube-proxy mode
+			// combinations a local path to it may be used to reach the external apiserver address
+			if exposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+				// allows traffic to the nodeport-proxy running in the user cluster namespace used for the LB expose strategy
+				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+					PodSelector: &metav1.LabelSelector{
+						MatchLabels: resources.BaseAppLabels(resources.NodePortProxyEnvoyDeploymentName, nil),
+					},
+				})
+			} else {
+				// allows traffic to the nodeport-proxy running in the kubermatic namespace used for other expose strategies
+				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							corev1.LabelMetadataName: resources.KubermaticNamespace,
+						},
+					},
+					PodSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							common.NameLabel: nodeportproxy.EnvoyDeploymentName,
+						},
+					},
+				})
 			}
 
 			return np, nil
