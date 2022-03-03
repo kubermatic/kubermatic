@@ -125,7 +125,7 @@ func TestCiliumClusters(t *testing.T) {
 	for _, test := range tests {
 		proxyMode := test.proxyMode
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 			mu.Lock()
 			config, _, cleanup, err := createUsercluster(t, proxyMode)
 			mu.Unlock()
@@ -430,7 +430,7 @@ func runCiliumConnectivityTests(t *testing.T, userClient *kubernetes.Clientset, 
 
 func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, nodeIP string) string {
 	expectedNodes := 2
-	err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
+	err := wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
 		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			t.Logf("failed to get nodes list: %s", err)
