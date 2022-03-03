@@ -1107,8 +1107,11 @@ func cloneAddonResourcesInCluster(ctx context.Context, logger logrus.FieldLogger
 				Name:      oldObject.Spec.Name,
 				Cluster:   migrateObjectReference(oldObject.Spec.Cluster, ""),
 				IsDefault: oldObject.Spec.IsDefault,
-				Variables: oldObject.Spec.Variables,
 			},
+		}
+
+		if oldObject.Spec.Variables.Raw != nil {
+			newObject.Spec.Variables = oldObject.Spec.Variables.DeepCopy()
 		}
 
 		for _, t := range oldObject.Spec.RequiredResourceTypes {
