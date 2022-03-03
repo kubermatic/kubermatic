@@ -37,7 +37,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -77,13 +76,6 @@ func NewTemplateData(
 		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}
 
-	// Ensure IPVS configuration is set
-	if cluster.Spec.ClusterNetwork.IPVS == nil {
-		cluster.Spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(resources.IPVSStrictArp)}
-	} else if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
-		cluster.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
-	}
-
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
@@ -93,7 +85,6 @@ func NewTemplateData(
 	}
 
 	var csiOptions CSIOptions
-
 	if cluster.Spec.Cloud.VSphere != nil {
 		csiOptions.StoragePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
 	}
@@ -132,7 +123,7 @@ func NewTemplateData(
 				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
 				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
 				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
-				StrictArp:         *cluster.Spec.ClusterNetwork.IPVS.StrictArp,
+				StrictArp:         cluster.Spec.ClusterNetwork.IPVS.StrictArp,
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
@@ -207,7 +198,7 @@ type ClusterNetwork struct {
 	PodCIDRBlocks     []string
 	ServiceCIDRBlocks []string
 	ProxyMode         string
-	StrictArp         bool
+	StrictArp         *bool
 }
 
 type CNIPlugin struct {
