@@ -32,7 +32,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -93,11 +92,8 @@ func Add(
 			grafanaSecret, n)
 	}
 	secret := corev1.Secret{}
-	client, err := ctrlruntimeclient.New(mgr.GetConfig(), ctrlruntimeclient.Options{})
-	if err != nil {
-		return err
-	}
-	if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
+
+	if err := mgr.GetClient().Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
 		if !mlaEnabled {
 			return nil // do not return an error if MLA is disabled (e.g. if MLA is not installed in Seed)
 		}
