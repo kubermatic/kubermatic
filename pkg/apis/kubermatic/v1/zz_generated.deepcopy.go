@@ -277,7 +277,11 @@ func (in *AddonList) DeepCopyObject() runtime.Object {
 func (in *AddonSpec) DeepCopyInto(out *AddonSpec) {
 	*out = *in
 	out.Cluster = in.Cluster
-	in.Variables.DeepCopyInto(&out.Variables)
+	if in.Variables != nil {
+		in, out := &in.Variables, &out.Variables
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.RequiredResourceTypes != nil {
 		in, out := &in.RequiredResourceTypes, &out.RequiredResourceTypes
 		*out = make([]GroupVersionKind, len(*in))

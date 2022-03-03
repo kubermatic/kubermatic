@@ -147,7 +147,7 @@ func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtim
 				APIVersion: cluster.APIVersion,
 				Kind:       "Cluster",
 			},
-			Variables: *variables,
+			Variables: variables,
 		},
 	}, nil
 }

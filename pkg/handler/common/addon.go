@@ -49,7 +49,7 @@ func PatchAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	apiAddon.Spec.Variables = *rawVars
+	apiAddon.Spec.Variables = rawVars
 
 	if apiAddon.Labels == nil {
 		apiAddon.Labels = map[string]string{}
@@ -287,7 +287,7 @@ func convertInternalAddonToExternal(internalAddon *kubermaticv1.Addon) (*apiv1.A
 			IsDefault: internalAddon.Spec.IsDefault,
 		},
 	}
-	if len(internalAddon.Spec.Variables.Raw) > 0 {
+	if internalAddon.Spec.Variables != nil && len(internalAddon.Spec.Variables.Raw) > 0 {
 		if err := k8sjson.Unmarshal(internalAddon.Spec.Variables.Raw, &result.Spec.Variables); err != nil {
 			return nil, err
 		}
