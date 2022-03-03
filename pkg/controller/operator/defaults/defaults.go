@@ -383,7 +383,8 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *configCopy.Spec.UserCluster.APIServerReplicas)
 	}
 
-	if len(configCopy.Spec.API.AccessibleAddons) == 0 {
+	// only default the accessible addons if they are not configured at all (nil)
+	if configCopy.Spec.API.AccessibleAddons == nil {
 		configCopy.Spec.API.AccessibleAddons = DefaultAccessibleAddons
 		logger.Debugw("Defaulting field", "field", "api.accessibleAddons", "value", configCopy.Spec.API.AccessibleAddons)
 	}
