@@ -954,6 +954,7 @@ func (r *testRunner) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	}
 	cluster.Cluster.Name += scenario.Name() + "-"
 	cluster.Cluster.Name += rand.String(8)
+	cluster.Cluster.Spec.ClusterNetwork.KonnectivityEnabled = true
 
 	cluster.Cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = r.pspEnabled
 
