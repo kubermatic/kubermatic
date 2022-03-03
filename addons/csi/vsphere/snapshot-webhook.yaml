@@ -18,6 +18,8 @@
 #   - template function to replace base registry
 #   - remove ValidatingWebhookConfiguration (handled in code)
 #   - change webhook-certs secret name
+#   - add seccomp profile
+
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -54,6 +56,9 @@ spec:
       labels:
         app: snapshot-validation
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: snapshot-validation
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-validation-webhook:v4.0.0 # change the image if you wish to use your own custom validation server image

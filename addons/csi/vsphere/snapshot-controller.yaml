@@ -18,8 +18,7 @@
 # Modifications:
 #   - Set image tag to 5.0.1 to match the release version
 #   - template function to replace base registry
-#   - Set args --kube-api-qps=100
-#   - Set args --kube-api-burst=100
+#   - add seccomp profile
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -140,6 +139,9 @@ spec:
         app: snapshot-controller
     spec:
       serviceAccount: snapshot-controller
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: snapshot-controller
           image: {{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-controller:v4.0.0
