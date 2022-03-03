@@ -1141,7 +1141,7 @@ func GenTestAddon(name string, variables *runtime.RawExtension, cluster *kuberma
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name:      name,
-			Variables: *variables,
+			Variables: variables,
 			Cluster: corev1.ObjectReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       kubermaticv1.ClusterKindName,
