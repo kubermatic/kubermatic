@@ -84,7 +84,8 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 		// apply defaults to the existing sshKey
-		err := h.applyDefaults(ctx, sshKey, oldKey.Spec.PublicKey != sshKey.Spec.PublicKey)
+		recalc := (oldKey.Spec.PublicKey != sshKey.Spec.PublicKey) || (oldKey.Spec.Fingerprint != sshKey.Spec.Fingerprint)
+		err := h.applyDefaults(ctx, sshKey, recalc)
 		if err != nil {
 			h.log.Info("usersshkey mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))

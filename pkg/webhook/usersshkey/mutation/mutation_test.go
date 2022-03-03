@@ -181,6 +181,38 @@ func TestHandle(t *testing.T) {
 			},
 		},
 		{
+			name: "Reject breaking the fingerprint",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "UserSSHKey",
+					},
+					Name: "foo",
+					OldObject: runtime.RawExtension{
+						Raw: rawKeyGen{
+							Name:        "UserSSHKey",
+							PublicKey:   "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCoimncCXKFYqIvfwZcOpv416VGLPPZsbpx1pvycYVCMomBDz0t8WOk8jziGAi+NWfTI23OuPGgCf9AGKWqW2zoPLuu2lr0JM4RLtWIbG2SL2j8+eTtmGulbtThWjlletega5Wr87zOU5g9YTzmX1TVQijP2S+6tgJiUZG1AMUvv0R1ub+HA6eMykBZ0/eTydlIrNSUqfzc9Bg/FYf3qXoI8BRSNfNf2FNjjGOW3UnoGSuxQt8sjSRLYrI9twl3LgkHVpI5Q+WBbye9OZJUeK2QqL2C5z9pjXUtKMDe6Bbzl5uGwDw+3MgR3D6SDHRXpCupr9pNETarwEXyF1xaV3cyKm2D+UQCQL63vIpgiV40Eka15F+VjaSAqNqYA9oWUs4y2Bbajnl6ywtZFRobQE8G4k4rFa4XHUIRj6O8F3XzOVsdVehOM9W/+hcJCwryRqCkWqYuHHwmMMdF825M+jo/trFpQLaobR1eA9MFq4rU4Dx+aCbfxZeV86D36LABY8k= test@example.com",
+							Fingerprint: "1c:07:99:4f:c8:4b:08:48:2a:95:51:14:ac:5c:aa:11",
+						}.Do(),
+					},
+					Object: runtime.RawExtension{
+						Raw: rawKeyGen{
+							Name:        "UserSSHKey",
+							PublicKey:   "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCoimncCXKFYqIvfwZcOpv416VGLPPZsbpx1pvycYVCMomBDz0t8WOk8jziGAi+NWfTI23OuPGgCf9AGKWqW2zoPLuu2lr0JM4RLtWIbG2SL2j8+eTtmGulbtThWjlletega5Wr87zOU5g9YTzmX1TVQijP2S+6tgJiUZG1AMUvv0R1ub+HA6eMykBZ0/eTydlIrNSUqfzc9Bg/FYf3qXoI8BRSNfNf2FNjjGOW3UnoGSuxQt8sjSRLYrI9twl3LgkHVpI5Q+WBbye9OZJUeK2QqL2C5z9pjXUtKMDe6Bbzl5uGwDw+3MgR3D6SDHRXpCupr9pNETarwEXyF1xaV3cyKm2D+UQCQL63vIpgiV40Eka15F+VjaSAqNqYA9oWUs4y2Bbajnl6ywtZFRobQE8G4k4rFa4XHUIRj6O8F3XzOVsdVehOM9W/+hcJCwryRqCkWqYuHHwmMMdF825M+jo/trFpQLaobR1eA9MFq4rU4Dx+aCbfxZeV86D36LABY8k= test@example.com",
+							Fingerprint: "XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX",
+						}.Do(),
+					},
+				},
+			},
+			wantError: false,
+			wantPatches: []jsonpatch.JsonPatchOperation{
+				jsonpatch.NewOperation("replace", "/spec/fingerprint", "1c:07:99:4f:c8:4b:08:48:2a:95:51:14:ac:5c:aa:11"),
+			},
+		},
+		{
 			name: "Error out on invalid keys",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
