@@ -738,12 +738,12 @@ env:
 - name: ACCESS_KEY_ID
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: ACCESS_KEY_ID
 - name: SECRET_ACCESS_KEY
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: SECRET_ACCESS_KEY
 volumeMounts:
 - name: etcd-backup
@@ -829,12 +829,12 @@ env:
 - name: ACCESS_KEY_ID
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: ACCESS_KEY_ID
 - name: SECRET_ACCESS_KEY
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: SECRET_ACCESS_KEY
 `
 

@@ -177,7 +177,7 @@ func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunti
 	logger.Info("📦 Deploying Minio…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "minio"))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, MinioChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -204,7 +204,7 @@ func deployS3Exporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 	logger.Info("📦 Deploying S3 Exporter…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "s3-exporter"))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, S3ExporterChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
