@@ -72,6 +72,7 @@ func podIsReady(p *corev1.Pod) bool {
 			return c.Status == corev1.ConditionTrue
 		}
 	}
+    // remove this comment, its just to trigger test in prow
 	return false
 }
 
