@@ -117,7 +117,7 @@ func Add(
 	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
 	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, mlaNamespace, grafanaClient)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
-	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
+	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), grafanaClient, mlaNamespace, log, overwriteRegistry)
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
 	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL, mlaNamespace)
 	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, grafanaClient)
