@@ -146,8 +146,8 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 
 type datasourceGrafanaController struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
-	mlaNamespace  string
+	clientProvider grafanaClientProvider
+	mlaNamespace   string
 
 	log               *zap.SugaredLogger
 	overwriteRegistry string
@@ -155,16 +155,16 @@ type datasourceGrafanaController struct {
 
 func newDatasourceGrafanaController(
 	client ctrlruntimeclient.Client,
-	grafanaClient *grafanasdk.Client,
+	clientProvider grafanaClientProvider,
 	mlaNamespace string,
 
 	log *zap.SugaredLogger,
 	overwriteRegistry string,
 ) *datasourceGrafanaController {
 	return &datasourceGrafanaController{
-		Client:        client,
-		mlaNamespace:  mlaNamespace,
-		grafanaClient: grafanaClient,
+		Client:         client,
+		mlaNamespace:   mlaNamespace,
+		clientProvider: clientProvider,
 
 		log:               log,
 		overwriteRegistry: overwriteRegistry,
@@ -181,28 +181,36 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		return nil, fmt.Errorf("unable to get project name from label")
 	}
 
+	grafanaClient, err := r.clientProvider(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+	if grafanaClient == nil {
+		return nil, nil
+	}
+
 	project := &kubermaticv1.Project{}
-	err := r.Get(ctx, types.NamespacedName{Name: projectID}, project)
+	err = r.Get(ctx, types.NamespacedName{Name: projectID}, project)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// if project removed before cluster we need only to remove resources and finalizer
-			if err := r.handleDeletion(ctx, cluster, false); err != nil {
+			if err := r.handleDeletion(ctx, cluster, nil); err != nil {
 				return nil, fmt.Errorf("handling deletion: %w", err)
 			}
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
-	org, err := getOrgByProject(ctx, r.grafanaClient, project)
+	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
 		return nil, err
 	}
 	// set header from the very beginning so all other calls will be within this organization
-	r.grafanaClient.SetOrgIDHeader(org.ID)
+	grafanaClient.SetOrgIDHeader(org.ID)
 
 	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
 	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
-		if err := r.handleDeletion(ctx, cluster, true); err != nil {
+		if err := r.handleDeletion(ctx, cluster, grafanaClient); err != nil {
 			return nil, fmt.Errorf("handling deletion: %w", err)
 		}
 		return nil, nil
@@ -249,7 +257,7 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
 	}
-	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS); err != nil {
+	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS, grafanaClient); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
 	}
 
@@ -261,19 +269,19 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 	}
-	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled, prometheusDS); err != nil {
+	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled, prometheusDS, grafanaClient); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
 	}
 
 	return nil, nil
 }
 
-func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource) error {
+func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource, grafanaClient *grafanasdk.Client) error {
 	if enabled {
-		ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
+		ds, err := grafanaClient.GetDatasourceByUID(ctx, expected.UID)
 		if err != nil {
 			if errors.As(err, &grafanasdk.ErrNotFound{}) {
-				status, err := r.grafanaClient.CreateDatasource(ctx, expected)
+				status, err := grafanaClient.CreateDatasource(ctx, expected)
 				if err != nil {
 					return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
 						err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
@@ -282,7 +290,7 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 					return nil
 				}
 				// possibly already exists with such name
-				ds, err = r.grafanaClient.GetDatasourceByName(ctx, expected.Name)
+				ds, err = grafanaClient.GetDatasourceByName(ctx, expected.Name)
 				if err != nil {
 					return fmt.Errorf("unable to get datasource by name %s", expected.Name)
 				}
@@ -290,12 +298,12 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 		}
 		expected.ID = ds.ID
 		if !reflect.DeepEqual(ds, expected) {
-			if status, err := r.grafanaClient.UpdateDatasource(ctx, expected); err != nil {
+			if status, err := grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 				return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			}
 		}
-	} else if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
+	} else if status, err := grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
 		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
@@ -347,7 +355,7 @@ func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		if err := r.handleDeletion(ctx, &cluster, false); err != nil {
+		if err := r.handleDeletion(ctx, &cluster, nil); err != nil {
 			return err
 		}
 	}
@@ -365,14 +373,14 @@ func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.
 	})
 }
 
-func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster, cleanup bool) error {
-	if cleanup {
+func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster, grafanaClient *grafanasdk.Client) error {
+	if grafanaClient != nil {
 		// that's mostly means that Grafana organization doesn't exists anymore
-		if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
-		if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil {
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}

@@ -59,7 +59,9 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 		t.Fatalf("unable to initialize grafana client: %v", err)
 	}
 
-	datasourceGrafanaController := newDatasourceGrafanaController(dynamicClient, grafanaClient, "mla", kubermaticlog.Logger, "")
+	datasourceGrafanaController := newDatasourceGrafanaController(dynamicClient, func(ctx context.Context) (*grafanasdk.Client, error) {
+		return grafanaClient, nil
+	}, "mla", kubermaticlog.Logger, "")
 	reconciler := datasourceGrafanaReconciler{
 		Client:                      dynamicClient,
 		log:                         kubermaticlog.Logger,

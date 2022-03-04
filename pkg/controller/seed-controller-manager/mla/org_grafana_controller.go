@@ -102,8 +102,16 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
+	grafanaClient, err := r.orgGrafanaController.clientProvider(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+	if grafanaClient == nil {
+		return reconcile.Result{}, nil
+	}
+
 	if !project.DeletionTimestamp.IsZero() {
-		if err := r.orgGrafanaController.handleDeletion(ctx, project); err != nil {
+		if err := r.orgGrafanaController.handleDeletion(ctx, project, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
@@ -116,12 +124,12 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 	org := grafanasdk.Org{
 		Name: getOrgNameForProject(project),
 	}
-	orgID, err := r.orgGrafanaController.ensureOrganization(ctx, log, project, org, GrafanaOrgAnnotationKey)
+	orgID, err := r.orgGrafanaController.ensureOrganization(ctx, log, project, org, GrafanaOrgAnnotationKey, grafanaClient)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Organization: %w", err)
 	}
 
-	if err := r.orgGrafanaController.ensureDashboards(ctx, log, orgID); err != nil {
+	if err := r.orgGrafanaController.ensureDashboards(ctx, log, orgID, grafanaClient); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Dashboards: %w", err)
 	}
 
@@ -130,8 +138,8 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 
 type orgGrafanaController struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
-	mlaNamespace  string
+	clientProvider grafanaClientProvider
+	mlaNamespace   string
 
 	log *zap.SugaredLogger
 }
@@ -140,12 +148,12 @@ func newOrgGrafanaController(
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,
 	mlaNamespace string,
-	grafanaClient *grafanasdk.Client,
+	clientProvider grafanaClientProvider,
 ) *orgGrafanaController {
 	return &orgGrafanaController{
-		Client:        client,
-		grafanaClient: grafanaClient,
-		mlaNamespace:  mlaNamespace,
+		Client:         client,
+		clientProvider: clientProvider,
+		mlaNamespace:   mlaNamespace,
 
 		log: log,
 	}
@@ -156,15 +164,22 @@ func (r *orgGrafanaController) CleanUp(ctx context.Context) error {
 	if err := r.List(ctx, projectList); err != nil {
 		return err
 	}
+	grafanaClient, err := r.clientProvider(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+	if grafanaClient == nil {
+		return nil
+	}
 	for _, project := range projectList.Items {
-		if err := r.handleDeletion(ctx, &project); err != nil {
+		if err := r.handleDeletion(ctx, &project, grafanaClient); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kubermaticv1.Project) error {
+func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kubermaticv1.Project, grafanaClient *grafanasdk.Client) error {
 	oldProject := project.DeepCopy()
 	update := false
 	orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
@@ -175,7 +190,7 @@ func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kube
 		if err != nil {
 			return err
 		}
-		_, err = r.grafanaClient.DeleteOrg(ctx, uint(id))
+		_, err = grafanaClient.DeleteOrg(ctx, uint(id))
 		if err != nil {
 			return err
 		}
@@ -192,15 +207,15 @@ func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kube
 	return nil
 }
 
-func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected grafanasdk.Org) (grafanasdk.Org, error) {
-	status, err := r.grafanaClient.CreateOrg(ctx, expected)
+func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected grafanasdk.Org, grafanaClient *grafanasdk.Client) (grafanasdk.Org, error) {
+	status, err := grafanaClient.CreateOrg(ctx, expected)
 	if err != nil {
 		return expected, fmt.Errorf("unable to add organization: %w (status: %s, message: %s)",
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 	if status.OrgID == nil {
 		// possibly organization already exists
-		org, err := r.grafanaClient.GetOrgByOrgName(ctx, expected.Name)
+		org, err := grafanaClient.GetOrgByOrgName(ctx, expected.Name)
 		if err != nil {
 			return org, fmt.Errorf("unable to get organization by name %+v %w", expected, err)
 		}
@@ -216,11 +231,11 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 		if !user.Spec.IsAdmin {
 			continue
 		}
-		grafanaUser, err := r.grafanaClient.LookupUser(ctx, user.Spec.Email)
+		grafanaUser, err := grafanaClient.LookupUser(ctx, user.Spec.Email)
 		if err != nil {
 			return expected, err
 		}
-		if err := addUserToOrg(ctx, r.grafanaClient, expected, &grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
+		if err := addUserToOrg(ctx, grafanaClient, expected, &grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
 			return expected, err
 		}
 	}
@@ -228,7 +243,7 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 	return expected, nil
 }
 
-func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, orgID uint) error {
+func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, orgID uint, grafanaClient *grafanasdk.Client) error {
 	configMapList := &corev1.ConfigMapList{}
 	if err := r.List(ctx, configMapList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return fmt.Errorf("Failed to list configmaps: %w", err)
@@ -237,24 +252,24 @@ func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.Su
 		if !strings.HasPrefix(configMap.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			continue
 		}
-		if err := addDashboards(ctx, log, r.grafanaClient.WithOrgIDHeader(orgID), &configMap); err != nil {
+		if err := addDashboards(ctx, log, grafanaClient.WithOrgIDHeader(orgID), &configMap); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string) (uint, error) {
+func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string, grafanaClient *grafanasdk.Client) (uint, error) {
 	orgID, ok := project.GetAnnotations()[annotationKey]
 	if !ok {
-		org, err := r.createGrafanaOrg(ctx, expected)
+		org, err := r.createGrafanaOrg(ctx, expected, grafanaClient)
 		if err != nil {
 			return 0, fmt.Errorf("unable to create grafana org: %w", err)
 		}
 		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
 			// revert org creation, if deletion failed, we can't do much about it
 			// if we failed at this moment and the project would be renamed quickly, that organization will be orphaned and we will never remove it.
-			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
+			if status, err := grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
 				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			}
@@ -267,16 +282,16 @@ func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.
 		return 0, err
 	}
 
-	org, err := r.grafanaClient.GetOrgById(ctx, uint(id))
+	org, err := grafanaClient.GetOrgById(ctx, uint(id))
 	if err != nil {
 		// possibly not found
-		org, err := r.createGrafanaOrg(ctx, expected)
+		org, err := r.createGrafanaOrg(ctx, expected, grafanaClient)
 		if err != nil {
 			return 0, fmt.Errorf("unable to create grafana org: %w", err)
 		}
 		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
 			// revert org creation, if deletion failed, we can't do much about it
-			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
+			if status, err := grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
 				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			}
@@ -286,7 +301,7 @@ func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.
 	}
 	expected.ID = uint(id)
 	if !reflect.DeepEqual(org, expected) {
-		if status, err := r.grafanaClient.UpdateOrg(ctx, expected, uint(id)); err != nil {
+		if status, err := grafanaClient.UpdateOrg(ctx, expected, uint(id)); err != nil {
 			return 0, fmt.Errorf("unable to update organization: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}

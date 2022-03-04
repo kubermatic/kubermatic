@@ -104,8 +104,16 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
+	grafanaClient, err := r.userGrafanaController.clientProvider(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+	if grafanaClient == nil {
+		return reconcile.Result{}, nil
+	}
+
 	if !user.DeletionTimestamp.IsZero() {
-		if err := r.userGrafanaController.handleDeletion(ctx, user); err != nil {
+		if err := r.userGrafanaController.handleDeletion(ctx, user, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
@@ -115,7 +123,7 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if err := r.userGrafanaController.ensureGrafanaUser(ctx, user); err != nil {
+	if err := r.userGrafanaController.ensureGrafanaUser(ctx, user, grafanaClient); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to add grafana user: %w", err)
 	}
 	return reconcile.Result{}, nil
@@ -123,8 +131,8 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 
 type userGrafanaController struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
-	httpClient    *http.Client
+	clientProvider grafanaClientProvider
+	httpClient     *http.Client
 
 	log           *zap.SugaredLogger
 	grafanaURL    string
@@ -134,15 +142,15 @@ type userGrafanaController struct {
 func newUserGrafanaController(
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,
-	grafanaClient *grafanasdk.Client,
+	clientProvider grafanaClientProvider,
 	httpClient *http.Client,
 	grafanaURL string,
 	grafanaHeader string,
 ) *userGrafanaController {
 	return &userGrafanaController{
-		Client:        client,
-		grafanaClient: grafanaClient,
-		httpClient:    httpClient,
+		Client:         client,
+		clientProvider: clientProvider,
+		httpClient:     httpClient,
 
 		log:           log,
 		grafanaURL:    grafanaURL,
@@ -155,21 +163,28 @@ func (r *userGrafanaController) CleanUp(ctx context.Context) error {
 	if err := r.List(ctx, userList); err != nil {
 		return err
 	}
+	grafanaClient, err := r.clientProvider(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+	if grafanaClient == nil {
+		return nil
+	}
 	for _, user := range userList.Items {
-		if err := r.handleDeletion(ctx, &user); err != nil {
+		if err := r.handleDeletion(ctx, &user, grafanaClient); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kubermaticv1.User) error {
-	grafanaUser, err := r.grafanaClient.LookupUser(ctx, user.Spec.Email)
+func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kubermaticv1.User, grafanaClient *grafanasdk.Client) error {
+	grafanaUser, err := grafanaClient.LookupUser(ctx, user.Spec.Email)
 	if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 		return err
 	}
 	if err == nil {
-		status, err := r.grafanaClient.DeleteGlobalUser(ctx, grafanaUser.ID)
+		status, err := grafanaClient.DeleteGlobalUser(ctx, grafanaUser.ID)
 		if err != nil {
 			return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
@@ -179,7 +194,7 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 	return kubernetes.TryRemoveFinalizer(ctx, r, user, mlaFinalizer)
 }
 
-func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User) error {
+func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User, grafanaClient *grafanasdk.Client) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", r.grafanaURL+"/api/user", nil)
 	if err != nil {
 		return err
@@ -200,7 +215,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	}
 
 	// delete user from default org
-	if status, err := r.grafanaClient.DeleteOrgUser(ctx, defaultOrgID, grafanaUser.ID); err != nil {
+	if status, err := grafanaClient.DeleteOrgUser(ctx, defaultOrgID, grafanaUser.ID); err != nil {
 		return fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 	if grafanaUser.IsGrafanaAdmin != user.Spec.IsAdmin {
@@ -211,16 +226,16 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		}
 		// we also needs to remove user if IsAdmin is false, but keep in orgs with userprojectbingings
 		for _, project := range projectList.Items {
-			org, err := getOrgByProject(ctx, r.grafanaClient, &project)
+			org, err := getOrgByProject(ctx, grafanaClient, &project)
 			if err != nil {
 				return err
 			}
 			if grafanaUser.IsGrafanaAdmin {
-				if err := addUserToOrg(ctx, r.grafanaClient, org, grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
+				if err := addUserToOrg(ctx, grafanaClient, org, grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
 					return err
 				}
 			} else {
-				if err := removeUserFromOrg(ctx, r.grafanaClient, org, grafanaUser); err != nil {
+				if err := removeUserFromOrg(ctx, grafanaClient, org, grafanaUser); err != nil {
 					return err
 				}
 			}
@@ -238,12 +253,12 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 				if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
 					return fmt.Errorf("failed to get project: %w", err)
 				}
-				if err := ensureOrgUser(ctx, r.grafanaClient, project, &userProjectBinding); err != nil {
+				if err := ensureOrgUser(ctx, grafanaClient, project, &userProjectBinding); err != nil {
 					return err
 				}
 			}
 		}
-		status, err := r.grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
+		status, err := grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
