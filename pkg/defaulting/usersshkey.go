@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"golang.org/x/crypto/ssh"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
