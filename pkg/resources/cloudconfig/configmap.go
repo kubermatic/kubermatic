@@ -242,7 +242,7 @@ func CloudConfig(
 		tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 
 		if len(dc.Spec.GCP.ZoneSuffixes) == 0 {
-			return "", errors.New("empty zone_suffixes")
+			return "", errors.New("empty zoneSuffixes")
 		}
 
 		localZone := dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
