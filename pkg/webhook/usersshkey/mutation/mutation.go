@@ -19,14 +19,13 @@ package mutation
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/go-logr/logr"
-	"golang.org/x/crypto/ssh"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -69,7 +68,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		err := h.applyDefaults(ctx, sshKey, true)
+		err := h.applyDefaults(ctx, sshKey, nil)
 		if err != nil {
 			h.log.Info("usersshkey mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
@@ -84,8 +83,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 		// apply defaults to the existing sshKey
-		recalc := (oldKey.Spec.PublicKey != sshKey.Spec.PublicKey) || (oldKey.Spec.Fingerprint != sshKey.Spec.Fingerprint)
-		err := h.applyDefaults(ctx, sshKey, recalc)
+		err := h.applyDefaults(ctx, sshKey, oldKey)
 		if err != nil {
 			h.log.Info("usersshkey mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
@@ -106,21 +104,8 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedKey)
 }
 
-func (h *AdmissionHandler) applyDefaults(ctx context.Context, key *kubermaticv1.UserSSHKey, pubkeyChanged bool) error {
-	if pubkeyChanged {
-		if key.Spec.PublicKey == "" {
-			return errors.New("spec.publicKey cannot be empty")
-		}
+func (h *AdmissionHandler) applyDefaults(ctx context.Context, key *kubermaticv1.UserSSHKey, oldKey *kubermaticv1.UserSSHKey) error {
+	_, err := defaulting.DefaultUserSSHKey(key, oldKey)
 
-		// parse the key
-		pubKeyParsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.Spec.PublicKey))
-		if err != nil {
-			return fmt.Errorf("the provided SSH key is invalid: %w", err)
-		}
-
-		// calculate the fingerprint
-		key.Spec.Fingerprint = ssh.FingerprintLegacyMD5(pubKeyParsed)
-	}
-
-	return nil
+	return err
 }
