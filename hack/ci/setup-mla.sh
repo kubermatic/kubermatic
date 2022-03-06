@@ -38,6 +38,23 @@ trap "rm -rf '$tempdir'" EXIT
 git clone "$URL" "$tempdir"
 (
   cd "$tempdir"
+
+  # due to the anti affinities, getting more than 1 replica can take forever in kind,
+  # so we reduce the replica count for all those components
+  yq write --inplace config/cortex/values.yaml ingester.replicas 1
+  yq write --inplace config/cortex/values.yaml distrbutor.replicas 1
+  yq write --inplace config/cortex/values.yaml alertmanager.replicas 1
+
+  yq write --inplace config/cortex/values.yaml ingester.startupProbe.initialDelaySeconds 30
+  yq write --inplace config/cortex/values.yaml ingester.startupProbe.periodSeconds 5
+  yq write --inplace config/cortex/values.yaml compactor.startupProbe.initialDelaySeconds 30
+  yq write --inplace config/cortex/values.yaml compactor.startupProbe.periodSeconds 5
+  yq write --inplace config/cortex/values.yaml store_gateway.startupProbe.initialDelaySeconds 30
+  yq write --inplace config/cortex/values.yaml store_gateway.startupProbe.periodSeconds 5
+
+  yq write --inplace config/loki/values.yaml ingester.replicas 1
+  yq write --inplace config/loki/values.yaml distributor.replicas 1
+
   helm --namespace mla upgrade --atomic --create-namespace --install mla-secrets charts/mla-secrets --values config/mla-secrets/values.yaml
   helm --namespace mla upgrade --atomic --create-namespace --install minio charts/minio --values config/minio/values.yaml
   helm --namespace mla upgrade --atomic --create-namespace --install grafana charts/grafana --values config/grafana/values.yaml
@@ -45,8 +62,8 @@ git clone "$URL" "$tempdir"
   kubectl create -n mla configmap cortex-runtime-config --from-file=config/cortex/runtime-config.yaml || true
   helm dependency update charts/cortex # need that to store memcached in charts directory
   helm --namespace mla upgrade --atomic --create-namespace --install consul charts/consul --values config/consul/values.yaml
-  helm --namespace mla upgrade --atomic --create-namespace --install cortex charts/cortex --values config/cortex/values.yaml --timeout 1200s
-  helm --namespace mla upgrade --atomic --create-namespace --install loki-distributed charts/loki-distributed --values config/loki/values.yaml --set ingester.replicas=1 --set distributor.replicas=1 --timeout 600s
+  helm --namespace mla upgrade --atomic --create-namespace --install cortex charts/cortex --values config/cortex/values.yaml --timeout 20m
+  helm --namespace mla upgrade --atomic --create-namespace --install loki-distributed charts/loki-distributed --values config/loki/values.yaml --timeout 10m
   helm --namespace mla upgrade --atomic --create-namespace --install alertmanager-proxy charts/alertmanager-proxy
   helm --namespace mla upgrade --atomic --create-namespace --install minio-lifecycle-mgr charts/minio-lifecycle-mgr --values config/minio-lifecycle-mgr/values.yaml
   ./hack/deploy-seed.sh
