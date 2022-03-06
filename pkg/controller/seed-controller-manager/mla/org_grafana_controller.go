@@ -106,14 +106,15 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return reconcile.Result{}, nil
-	}
 
 	if !project.DeletionTimestamp.IsZero() {
 		if err := r.orgGrafanaController.handleDeletion(ctx, project, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
+		return reconcile.Result{}, nil
+	}
+
+	if grafanaClient == nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -168,9 +169,6 @@ func (r *orgGrafanaController) CleanUp(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return nil
-	}
 	for _, project := range projectList.Items {
 		if err := r.handleDeletion(ctx, &project, grafanaClient); err != nil {
 			return err
@@ -190,9 +188,11 @@ func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kube
 		if err != nil {
 			return err
 		}
-		_, err = grafanaClient.DeleteOrg(ctx, uint(id))
-		if err != nil {
-			return err
+		if grafanaClient != nil {
+			_, err = grafanaClient.DeleteOrg(ctx, uint(id))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if kubernetes.HasFinalizer(project, mlaFinalizer) {

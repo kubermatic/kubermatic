@@ -27,9 +27,9 @@ import (
 	"testing"
 	"time"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
 	"github.com/stretchr/testify/assert"
 
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"

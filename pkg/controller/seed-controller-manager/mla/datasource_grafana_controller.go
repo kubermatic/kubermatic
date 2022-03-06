@@ -185,9 +185,6 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return nil, nil
-	}
 
 	project := &kubermaticv1.Project{}
 	err = r.Get(ctx, types.NamespacedName{Name: projectID}, project)
@@ -201,6 +198,11 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		}
 		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
+
+	if grafanaClient == nil {
+		return nil, nil
+	}
+
 	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
 		return nil, err

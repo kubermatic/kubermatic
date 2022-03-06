@@ -108,14 +108,15 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return reconcile.Result{}, nil
-	}
 
 	if !user.DeletionTimestamp.IsZero() {
 		if err := r.userGrafanaController.handleDeletion(ctx, user, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
+		return reconcile.Result{}, nil
+	}
+
+	if grafanaClient == nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -167,9 +168,6 @@ func (r *userGrafanaController) CleanUp(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return nil
-	}
 	for _, user := range userList.Items {
 		if err := r.handleDeletion(ctx, &user, grafanaClient); err != nil {
 			return err
@@ -179,15 +177,17 @@ func (r *userGrafanaController) CleanUp(ctx context.Context) error {
 }
 
 func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kubermaticv1.User, grafanaClient *grafanasdk.Client) error {
-	grafanaUser, err := grafanaClient.LookupUser(ctx, user.Spec.Email)
-	if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
-		return err
-	}
-	if err == nil {
-		status, err := grafanaClient.DeleteGlobalUser(ctx, grafanaUser.ID)
-		if err != nil {
-			return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+	if grafanaClient != nil {
+		grafanaUser, err := grafanaClient.LookupUser(ctx, user.Spec.Email)
+		if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
+			return err
+		}
+		if err == nil {
+			status, err := grafanaClient.DeleteGlobalUser(ctx, grafanaUser.ID)
+			if err != nil {
+				return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
+					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			}
 		}
 	}
 

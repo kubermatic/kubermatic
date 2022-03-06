@@ -22,9 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
 	"go.uber.org/zap"
 
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -114,14 +114,15 @@ func (r *dashboardGrafanaReconciler) Reconcile(ctx context.Context, request reco
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return reconcile.Result{}, nil
-	}
 
 	if !configMap.DeletionTimestamp.IsZero() {
 		if err := r.dashboardGrafanaController.handleDeletion(ctx, log, configMap, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
+		return reconcile.Result{}, nil
+	}
+
+	if grafanaClient == nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -168,9 +169,6 @@ func (r *dashboardGrafanaController) CleanUp(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return nil
-	}
 	for _, configMap := range configMapList.Items {
 		if !strings.HasPrefix(configMap.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			continue
@@ -183,23 +181,25 @@ func (r *dashboardGrafanaController) CleanUp(ctx context.Context) error {
 }
 
 func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap, grafanaClient *grafanasdk.Client) error {
-	projectList := &kubermaticv1.ProjectList{}
-	if err := r.List(ctx, projectList); err != nil {
-		return fmt.Errorf("failed to list Projects: %w", err)
-	}
-	for _, project := range projectList.Items {
-		orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
-		if !ok {
-			// looks like corresponding Grafana Org already remove, so we can skip this project
-			log.Debugf("project %+v doesn't have grafana org annotation, skipping", project)
-			continue
+	if grafanaClient != nil {
+		projectList := &kubermaticv1.ProjectList{}
+		if err := r.List(ctx, projectList); err != nil {
+			return fmt.Errorf("failed to list Projects: %w", err)
 		}
-		id, err := strconv.ParseUint(orgID, 10, 32)
-		if err != nil {
-			return fmt.Errorf("unable to parse grafana org annotation %s: %w", orgID, err)
-		}
-		if err := deleteDashboards(ctx, log, grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
-			return err
+		for _, project := range projectList.Items {
+			orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
+			if !ok {
+				// looks like corresponding Grafana Org already remove, so we can skip this project
+				log.Debugf("project %+v doesn't have grafana org annotation, skipping", project)
+				continue
+			}
+			id, err := strconv.ParseUint(orgID, 10, 32)
+			if err != nil {
+				return fmt.Errorf("unable to parse grafana org annotation %s: %w", orgID, err)
+			}
+			if err := deleteDashboards(ctx, log, grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
+				return err
+			}
 		}
 	}
 

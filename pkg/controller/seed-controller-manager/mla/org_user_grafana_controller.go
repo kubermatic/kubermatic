@@ -106,14 +106,15 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return reconcile.Result{}, nil
-	}
 
 	if !userProjectBinding.DeletionTimestamp.IsZero() {
 		if err := r.orgUserGrafanaController.handleDeletion(ctx, userProjectBinding, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
+		return reconcile.Result{}, nil
+	}
+
+	if grafanaClient == nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -157,9 +158,6 @@ func (r *orgUserGrafanaController) CleanUp(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Grafana client: %w", err)
 	}
-	if grafanaClient == nil {
-		return nil
-	}
 	for _, userProjectBinding := range userProjectBindingList.Items {
 		if err := r.handleDeletion(ctx, &userProjectBinding, grafanaClient); err != nil {
 			return err
@@ -169,20 +167,22 @@ func (r *orgUserGrafanaController) CleanUp(ctx context.Context) error {
 }
 
 func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding, grafanaClient *grafanasdk.Client) error {
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get project: %w", err)
-	}
-	org, err := getOrgByProject(ctx, grafanaClient, project)
-	if err == nil {
-		user, err := grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
-		if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
-			return err
+	if grafanaClient != nil {
+		project := &kubermaticv1.Project{}
+		if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get project: %w", err)
 		}
+		org, err := getOrgByProject(ctx, grafanaClient, project)
 		if err == nil {
-			status, err := grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
-			if err != nil {
-				return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			user, err := grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
+			if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
+				return err
+			}
+			if err == nil {
+				status, err := grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
+				if err != nil {
+					return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				}
 			}
 		}
 	}
