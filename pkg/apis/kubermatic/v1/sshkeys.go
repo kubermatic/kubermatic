@@ -18,6 +18,7 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -52,29 +53,15 @@ type SSHKeySpec struct {
 }
 
 func (sk *UserSSHKey) IsUsedByCluster(clustername string) bool {
-	if sk.Spec.Clusters == nil {
-		return false
-	}
-	for _, name := range sk.Spec.Clusters {
-		if name == clustername {
-			return true
-		}
-	}
-	return false
+	return sets.NewString(sk.Spec.Clusters...).Has(clustername)
 }
 
 func (sk *UserSSHKey) RemoveFromCluster(clustername string) {
-	for i, cl := range sk.Spec.Clusters {
-		if cl != clustername {
-			continue
-		}
-		// Don't break we don't check for duplicates when adding clusters!
-		sk.Spec.Clusters = append(sk.Spec.Clusters[:i], sk.Spec.Clusters[i+1:]...)
-	}
+	sk.Spec.Clusters = sets.NewString(sk.Spec.Clusters...).Delete(clustername).List()
 }
 
 func (sk *UserSSHKey) AddToCluster(clustername string) {
-	sk.Spec.Clusters = append(sk.Spec.Clusters, clustername)
+	sk.Spec.Clusters = sets.NewString(sk.Spec.Clusters...).Insert(clustername).List()
 }
 
 // +kubebuilder:object:generate=true

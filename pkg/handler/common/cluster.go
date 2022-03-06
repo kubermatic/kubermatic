@@ -352,18 +352,6 @@ func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	clusterSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	for _, clusterSSHKey := range clusterSSHKeys {
-		clusterSSHKey.RemoveFromCluster(clusterID)
-		if err := UpdateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, projectID); err != nil {
-			return nil, err
-		}
-	}
-
 	existingCluster, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})
 	if err != nil {
 		return nil, err
