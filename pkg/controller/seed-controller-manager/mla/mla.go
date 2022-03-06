@@ -65,15 +65,13 @@ func newGrafanaClientProvider(client ctrlruntimeclient.Client, httpClient *http.
 		return nil, fmt.Errorf("splitting value of %q didn't yield two but %d results", secretName, n)
 	}
 
-	if !enabled {
-		return func(ctx context.Context) (*grafanasdk.Client, error) {
-			return nil, nil
-		}, nil
-	}
-
 	return func(ctx context.Context) (*grafanasdk.Client, error) {
 		secret := corev1.Secret{}
 		if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
+			if !enabled {
+				return nil, nil
+			}
+
 			return nil, fmt.Errorf("failed to get Grafana Secret: %w", err)
 		}
 
