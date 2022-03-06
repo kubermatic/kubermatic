@@ -17,10 +17,12 @@ The quotas would restrict:
 Resources that will be under quota:
 - vCPU
 - RAM
-- storage
+- storage (node disk size)
 
 ## Non-Goals
-
+- The quotas won't work for imported external clusters.
+- The quotas won't restrict the usage of resources for the control plane on the seed cluster.
+- Nodes which join the cluster using other means then through KKP are not supported in the quotas.
 
 ## Motivation and Background
 
@@ -49,6 +51,8 @@ Rules:
   - project
   - user who created the node (not the one who deleted it)
   - project datacenter
+- If the quota is exceeded(by lowering the quota under current capacity for example), it is not the responsibility of KKP to remove nodes. Admins should fix that in communication with the project/user.
+- The storage quota targets just the disk size of the node. It will only affect node-local PV storage.
 
 Questions?
 - how should this work for external clusters?
@@ -75,13 +79,33 @@ controller updates the resource usage, thus bypassing the limit. In this case we
 - admins could notice/get informed about it and react according to their company policy
 - add a "pending"/"reserved" resource mechanism to the API. So as soon as a NodeDeployment request is received in the API, it would reserve some of the quota. Later the NodeDeployment controller could move this from reserved to real usage.
 
+### How to get node size
+
+The NodeDeployments for different providers only have node flavours in their spec. So the question is how to get the real node size.
+
+Fortunately, we already have a feature which uses this, the ability for admins to limit the minimum and maximum node CPU and RAM. 
+It uses provider clients to get node sizes and the filters if they fit. We can use the same provider clients, although not all providers
+have this option.
+
+Below is a table of providers and how to get the node size.
+
+| Provider     | Provider-client node size | Alternative                                            | Comment                          |
+|--------------|---------------------------|--------------------------------------------------------|----------------------------------|
+| Alibaba      | Y                         |                                                        |                                  |
+| AWS          | Y                         |                                                        | Not dynamic, loaded from library |
+| Azure        | Y                         |                                                        |                                  |
+| DigitalOcean | Y                         |                                                        |                                  |
+| GCP          | Y                         |                                                        |                                  |
+| Hetzner      | Y                         |                                                        |                                  |
+| Openstack    | Y                         |                                                        |                                  |
+| KubeVirt     | N                         | We set the requested size directly into NodeDeployment |                                  |
+| Nutanix      | TBD                       | TBD                                                    |                                  |
+| Equinox      | Y                         |                                                        |                                  |
+| vSphere      | N                         | We set the requested size directly into NodeDeployment |                                  |
 
 ### CRD Changes
 
 Add a new flexible ResourceQuota CRD which will hold the desired quota and current consumption of the quota. 
-
-The ResourceQuota will need to have an OwnerReference to a Project or User to which the quota applies to. If a specific datacenter is targeted for a project,
-the Datacenter field needs to be set.
 
 ```go
 type ResourceQuota struct {
@@ -93,10 +117,19 @@ type ResourceQuota struct {
 }
 
 type ResourceQuotaSpec struct {
+	// QuotaSubject describes the object (user or project) for which the quota is applied to.
+	QuotaSubject *QuotaSubject `json:"quotaSubject"`
 	// Datacenter is the name of the datacenter for which a resource quota should be set.
     Datacenter     string          `json:"datacenter,omitempty"`
 	// ResourceQuotas is a map of maximum resource quotas per resource
     ResourceQuotas corev1.ResourceList `json:"resourceQuotas"`
+}
+
+type QuotaSubject struct {
+    // Type of the subject, can be `user` or `project`
+    Type string `json:"type"`
+    // Name of the quota subject
+    Name string `json:"name"`
 }
 
 type ResourceQuotaStatus struct {
@@ -107,8 +140,9 @@ type ResourceQuotaStatus struct {
 
 ### Possible Enhancements in the future
 
-1. Try to make the resourcequtas bulletproof by adding a mechanism of "pending"/"reserved" quota which is filled before the NodeDeployment creation
+1. Try to make the resourcequotas bulletproof by adding a mechanism of "pending"/"reserved" quota which is filled before the NodeDeployment creation
 2. Add a possibility to set user groups and set quotas per group
+3. Possibility to set `maxClusters` for a project/user
 
 ## Tasks and effort
 
