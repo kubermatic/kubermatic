@@ -16,7 +16,7 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220302182402-4b7a873a84cf
-	github.com/digitalocean/godo v1.65.0
+	github.com/digitalocean/godo v1.75.0
 	github.com/distribution/distribution/v3 v3.0.0-20220208183205-a4d9db5a884b
 	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
 	github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021
