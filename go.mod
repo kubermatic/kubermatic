@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1509
 	github.com/anexia-it/go-anxcloud v0.3.8
-	github.com/aws/aws-sdk-go v1.42.27
+	github.com/aws/aws-sdk-go v1.43.12
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
@@ -256,7 +256,7 @@ require (
 	go.uber.org/multierr v1.7.0 // indirect
 	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
 	golang.org/x/mod v0.5.0 // indirect
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
