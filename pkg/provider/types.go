@@ -938,18 +938,18 @@ type PrivilegedAlertmanagerProvider interface {
 
 // ClusterTemplateProvider declares the set of method for interacting with cluster templates.
 type ClusterTemplateProvider interface {
-	New(userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
-	List(userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
-	Get(userInfo *UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error)
-	Delete(userInfo *UserInfo, projectID, templateID string) error
+	New(ctx context.Context, userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
+	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
+	Get(ctx context.Context, userInfo *UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error)
+	Delete(ctx context.Context, userInfo *UserInfo, projectID, templateID string) error
 }
 
 // ClusterTemplateInstanceProvider declares the set of method for interacting with cluster templates.
 type ClusterTemplateInstanceProvider interface {
-	Create(userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
-	Get(userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
-	List(userInfo *UserInfo, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
-	Patch(userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
+	Create(ctx context.Context, userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	Get(ctx context.Context, userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
+	List(ctx context.Context, userInfo *UserInfo, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
+	Patch(ctx context.Context, userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // PrivilegedClusterTemplateInstanceProvider declares the set of methods for interacting with the cluster template instances

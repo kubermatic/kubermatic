@@ -45,6 +45,8 @@ type ClusterTemplateInstanceProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
+var _ provider.ClusterTemplateInstanceProvider = &ClusterTemplateInstanceProvider{}
+
 // ClusterTemplateInstanceProvider returns provider.
 func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {
 	return &ClusterTemplateInstanceProvider{
@@ -71,21 +73,21 @@ func ClusterTemplateInstanceProviderFactory(mapper meta.RESTMapper, seedKubeconf
 	}
 }
 
-func (r ClusterTemplateInstanceProvider) Create(userInfo *provider.UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
+func (r ClusterTemplateInstanceProvider) Create(ctx context.Context, userInfo *provider.UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 	instance := createClusterTemplateInstance(template, project, replicas)
 
-	err = impersonationClient.Create(context.Background(), instance)
+	err = impersonationClient.Create(ctx, instance)
 	return instance, err
 }
 
-func (r ClusterTemplateInstanceProvider) CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
+func (r ClusterTemplateInstanceProvider) CreateUnsecured(ctx context.Context, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
 	instance := createClusterTemplateInstance(template, project, replicas)
 
-	err := r.privilegedClient.Create(context.Background(), instance)
+	err := r.privilegedClient.Create(ctx, instance)
 	return instance, err
 }
 
@@ -107,9 +109,9 @@ func createClusterTemplateInstance(template *kubermaticv1.ClusterTemplate, proje
 	return instance
 }
 
-func (r ClusterTemplateInstanceProvider) GetUnsecured(name string) (*kubermaticv1.ClusterTemplateInstance, error) {
+func (r ClusterTemplateInstanceProvider) GetUnsecured(ctx context.Context, name string) (*kubermaticv1.ClusterTemplateInstance, error) {
 	instance := &kubermaticv1.ClusterTemplateInstance{}
-	if err := r.privilegedClient.Get(context.Background(), types.NamespacedName{
+	if err := r.privilegedClient.Get(ctx, types.NamespacedName{
 		Name: name,
 	}, instance); err != nil {
 		return nil, err
@@ -117,7 +119,7 @@ func (r ClusterTemplateInstanceProvider) GetUnsecured(name string) (*kubermaticv
 	return instance, nil
 }
 
-func (r ClusterTemplateInstanceProvider) ListUnsecured(options provider.ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error) {
+func (r ClusterTemplateInstanceProvider) ListUnsecured(ctx context.Context, options provider.ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error) {
 	instanceList := &kubermaticv1.ClusterTemplateInstanceList{}
 
 	labelSelector := ctrlruntimeclient.MatchingLabels{}
@@ -129,19 +131,19 @@ func (r ClusterTemplateInstanceProvider) ListUnsecured(options provider.ClusterT
 		labelSelector[ClusterTemplateLabelKey] = options.TemplateID
 	}
 
-	if err := r.privilegedClient.List(context.Background(), instanceList, labelSelector); err != nil {
+	if err := r.privilegedClient.List(ctx, instanceList, labelSelector); err != nil {
 		return nil, err
 	}
 	return instanceList, nil
 }
 
-func (r ClusterTemplateInstanceProvider) Get(userInfo *provider.UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error) {
+func (r ClusterTemplateInstanceProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 	instance := &kubermaticv1.ClusterTemplateInstance{}
-	if err := impersonationClient.Get(context.Background(), types.NamespacedName{
+	if err := impersonationClient.Get(ctx, types.NamespacedName{
 		Name: name,
 	}, instance); err != nil {
 		return nil, err
@@ -149,7 +151,7 @@ func (r ClusterTemplateInstanceProvider) Get(userInfo *provider.UserInfo, name s
 	return instance, nil
 }
 
-func (r ClusterTemplateInstanceProvider) List(userInfo *provider.UserInfo, options provider.ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error) {
+func (r ClusterTemplateInstanceProvider) List(ctx context.Context, userInfo *provider.UserInfo, options provider.ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error) {
 	instanceList := &kubermaticv1.ClusterTemplateInstanceList{}
 
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
@@ -166,39 +168,39 @@ func (r ClusterTemplateInstanceProvider) List(userInfo *provider.UserInfo, optio
 		labelSelector[ClusterTemplateLabelKey] = options.TemplateID
 	}
 
-	if err := impersonationClient.List(context.Background(), instanceList, labelSelector); err != nil {
+	if err := impersonationClient.List(ctx, instanceList, labelSelector); err != nil {
 		return nil, err
 	}
 
 	return instanceList, nil
 }
 
-func (r ClusterTemplateInstanceProvider) Patch(userInfo *provider.UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error) {
+func (r ClusterTemplateInstanceProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	oldInstance, err := r.Get(userInfo, instance.Name)
+	oldInstance, err := r.Get(ctx, userInfo, instance.Name)
 	if err != nil {
 		return nil, err
 	}
 	oldInstance = oldInstance.DeepCopy()
 
-	if err := impersonationClient.Patch(context.Background(), instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+	if err := impersonationClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
 		return nil, err
 	}
 
 	return instance, nil
 }
 
-func (r ClusterTemplateInstanceProvider) PatchUnsecured(instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error) {
-	oldInstance, err := r.GetUnsecured(instance.Name)
+func (r ClusterTemplateInstanceProvider) PatchUnsecured(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error) {
+	oldInstance, err := r.GetUnsecured(ctx, instance.Name)
 	if err != nil {
 		return nil, err
 	}
 	oldInstance = oldInstance.DeepCopy()
-	if err := r.privilegedClient.Patch(context.Background(), instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+	if err := r.privilegedClient.Patch(ctx, instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
 		return nil, err
 	}
 
