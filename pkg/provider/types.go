@@ -1232,25 +1232,25 @@ type PrivilegedMLAAdminSettingProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error)
 
 	// CreateUnsecured creates the given MLAAdminSetting
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(mlaAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
+	CreateUnsecured(ctx context.Context, mlaAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
 
 	// UpdateUnsecured updates an MLAAdminSetting
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(newMLAAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
+	UpdateUnsecured(ctx context.Context, newMLAAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
 
 	// DeleteUnsecured deletes the MLAAdminSetting with the given name
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error
 }
 
 type SeedProvider interface {

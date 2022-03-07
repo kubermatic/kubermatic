@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,7 +70,7 @@ func TestGetMLAAdminSetting(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 			mlaAdminSettingProvider := kubernetes.NewPrivilegedMLAAdminSettingProvider(client)
-			mlaAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(tc.cluster)
+			mlaAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(context.Background(), tc.cluster)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -118,12 +119,12 @@ func TestCreateMLAAdminSetting(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 			mlaAdminSettingProvider := kubernetes.NewPrivilegedMLAAdminSettingProvider(client)
-			_, err := mlaAdminSettingProvider.CreateUnsecured(tc.expectedMLAAdminSetting)
+			_, err := mlaAdminSettingProvider.CreateUnsecured(context.Background(), tc.expectedMLAAdminSetting)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
 				}
-				mlaAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(tc.cluster)
+				mlaAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(context.Background(), tc.cluster)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -171,22 +172,22 @@ func TestUpdateMLAAdminSetting(t *testing.T) {
 				Build()
 			mlaAdminSettingProvider := kubernetes.NewPrivilegedMLAAdminSettingProvider(client)
 			if len(tc.expectedError) == 0 {
-				currentMLAAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(tc.cluster)
+				currentMLAAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(context.Background(), tc.cluster)
 				if err != nil {
 					t.Fatal(err)
 				}
 				tc.expectedMLAAdminSetting.ResourceVersion = currentMLAAdminSetting.ResourceVersion
-				_, err = mlaAdminSettingProvider.UpdateUnsecured(tc.expectedMLAAdminSetting)
+				_, err = mlaAdminSettingProvider.UpdateUnsecured(context.Background(), tc.expectedMLAAdminSetting)
 				if err != nil {
 					t.Fatal(err)
 				}
-				mlaAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(tc.cluster)
+				mlaAdminSetting, err := mlaAdminSettingProvider.GetUnsecured(context.Background(), tc.cluster)
 				if err != nil {
 					t.Fatal(err)
 				}
 				assert.Equal(t, tc.expectedMLAAdminSetting, mlaAdminSetting)
 			} else {
-				_, err := mlaAdminSettingProvider.UpdateUnsecured(tc.expectedMLAAdminSetting)
+				_, err := mlaAdminSettingProvider.UpdateUnsecured(context.Background(), tc.expectedMLAAdminSetting)
 				if err == nil {
 					t.Fatalf("expected error message")
 				}
@@ -231,12 +232,12 @@ func TestDeleteMLAAdminSetting(t *testing.T) {
 				WithObjects(tc.existingObjects...).
 				Build()
 			mlaAdminSettingProvider := kubernetes.NewPrivilegedMLAAdminSettingProvider(client)
-			err := mlaAdminSettingProvider.DeleteUnsecured(tc.cluster)
+			err := mlaAdminSettingProvider.DeleteUnsecured(context.Background(), tc.cluster)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
 				}
-				_, err = mlaAdminSettingProvider.GetUnsecured(tc.cluster)
+				_, err = mlaAdminSettingProvider.GetUnsecured(context.Background(), tc.cluster)
 				assert.True(t, errors.IsNotFound(err))
 			} else {
 				if err == nil {
