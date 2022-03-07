@@ -73,7 +73,7 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 		}
 
 		images := apiv2.GKEImageList{}
-		svc, gcpProject, err := gke.ConnectToContainerService(sa)
+		svc, gcpProject, err := gke.ConnectToContainerService(ctx, sa)
 		if err != nil {
 			return nil, err
 		}
@@ -275,7 +275,7 @@ func patchGKECluster(ctx context.Context, oldCluster, newCluster *apiv2.External
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +388,7 @@ func getGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func getGKENodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nod
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -438,7 +438,7 @@ func deleteGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 	if err != nil {
 		return err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return err
 	}
@@ -453,7 +453,7 @@ func patchGKEMachineDeployment(ctx context.Context, oldMD, newMD *apiv2.External
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +515,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -574,7 +574,7 @@ func createGKENodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluste
 }
 
 func createNewGKECluster(ctx context.Context, gkeCloudSpec *apiv2.GKECloudSpec) error {
-	svc, project, err := gke.ConnectToContainerService(gkeCloudSpec.ServiceAccount)
+	svc, project, err := gke.ConnectToContainerService(ctx, gkeCloudSpec.ServiceAccount)
 	if err != nil {
 		return err
 	}
@@ -675,7 +675,7 @@ func getGKEClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := gke.ConnectToContainerService(sa)
+	svc, project, err := gke.ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}

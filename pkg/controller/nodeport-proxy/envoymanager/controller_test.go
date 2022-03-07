@@ -537,7 +537,7 @@ func makeCluster(t *testing.T, name string, portValue uint32, addresses ...strin
 	}
 }
 
-func TestEndpointToService(t *testing.T) {
+func TestNewEndpointHandler(t *testing.T) {
 	tests := []struct {
 		name          string
 		eps           *corev1.Endpoints
@@ -584,11 +584,13 @@ func TestEndpointToService(t *testing.T) {
 				WithObjects(tt.resources...).
 				Build()
 
-			res := (&Reconciler{
+			handler := (&Reconciler{
 				Options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
 				Client:  client,
 				log:     log,
-			}).endpointsToService(tt.eps)
+			}).newEndpointHandler(context.Background())
+
+			res := handler(tt.eps)
 
 			if diff := deep.Equal(res, tt.expectResults); diff != nil {
 				t.Errorf("Got unexpected results. Diff to expected: %v", diff)

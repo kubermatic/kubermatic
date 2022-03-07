@@ -95,7 +95,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: filePrefix}, nil
 }
 
-func GetKubeconfigEndpoint(cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
+func GetKubeconfigEndpoint(ctx context.Context, cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
 	filePrefix := "external-cluster"
 
 	kubeconfigReference := cluster.Spec.KubeconfigReference
@@ -103,7 +103,7 @@ func GetKubeconfigEndpoint(cluster *kubermaticv1.ExternalCluster, privilegedClus
 		return nil, fmt.Errorf("kubeconfig not available for the Cluster")
 	}
 
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), privilegedClusterProvider.GetMasterClient())
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 	rawKubeconfig, err := secretKeyGetter(kubeconfigReference, resources.KubeconfigSecretKey)
 	if err != nil {

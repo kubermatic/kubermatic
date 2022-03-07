@@ -130,7 +130,7 @@ func newAlertmanagerReconciler(
 		}
 		if alertmanager.Spec.ConfigSecret.Name == a.GetName() {
 			clusterList := &kubermaticv1.ClusterList{}
-			if err := client.List(context.Background(), clusterList); err != nil {
+			if err := client.List(ctx, clusterList); err != nil {
 				log.Errorw("Failed to list clusters", zap.Error(err))
 				utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			}

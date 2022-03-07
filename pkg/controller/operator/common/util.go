@@ -194,9 +194,8 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 // CleanupClusterResource attempts to find a cluster-wide resource and
 // deletes it if it was found. If no resource with the given name exists,
 // nil is returned.
-func CleanupClusterResource(client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, name string) error {
+func CleanupClusterResource(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, name string) error {
 	key := types.NamespacedName{Name: name}
-	ctx := context.Background()
 
 	if err := client.Get(ctx, key, obj); err != nil {
 		if !kerrors.IsNotFound(err) {

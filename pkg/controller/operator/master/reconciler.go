@@ -168,11 +168,11 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 
 	logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
 
-	if err := common.CleanupClusterResource(r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
+	if err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
+	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
 		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
 	}
 

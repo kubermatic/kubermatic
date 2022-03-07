@@ -214,31 +214,33 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manag
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.log})).
 		Watches(&source.Kind{Type: &corev1.Endpoints{}},
-			handler.EnqueueRequestsFromMapFunc(r.endpointsToService)).
+			handler.EnqueueRequestsFromMapFunc(r.newEndpointHandler(ctx))).
 		Complete(r)
 }
 
-func (r *Reconciler) endpointsToService(obj ctrlruntimeclient.Object) []ctrlruntime.Request {
-	svcName := types.NamespacedName{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-	}
-	// Get the service associated to the Endpoints
-	svc := corev1.Service{}
-	if err := r.Client.Get(context.Background(), svcName, &svc); err != nil {
-		// Avoid enqueuing events for endpoints that do not have an associated
-		// service (e.g. leader election).
-		if !apierrors.IsNotFound(err) {
-			r.log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+func (r *Reconciler) newEndpointHandler(ctx context.Context) handler.MapFunc {
+	return func(obj ctrlruntimeclient.Object) []ctrlruntime.Request {
+		svcName := types.NamespacedName{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
 		}
-		return nil
-	}
+		// Get the service associated to the Endpoints
+		svc := corev1.Service{}
+		if err := r.Client.Get(ctx, svcName, &svc); err != nil {
+			// Avoid enqueuing events for endpoints that do not have an associated
+			// service (e.g. leader election).
+			if !apierrors.IsNotFound(err) {
+				r.log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+			}
+			return nil
+		}
 
-	// Avoid enqueuing events for services that are not exposed.
-	if !isExposed(&svc, r.ExposeAnnotationKey) {
-		return nil
+		// Avoid enqueuing events for services that are not exposed.
+		if !isExposed(&svc, r.ExposeAnnotationKey) {
+			return nil
+		}
+		return []ctrlruntime.Request{{NamespacedName: svcName}}
 	}
-	return []ctrlruntime.Request{{NamespacedName: svcName}}
 }
 
 // exposeAnnotationPredicate is used to filter out events associated to

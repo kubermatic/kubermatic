@@ -107,6 +107,7 @@ func ProxyEndpoint(
 
 			// Ideally we would cache these to not open a port for every single request
 			portforwarder, closeChan, err := common.GetPortForwarder(
+				ctx,
 				clusterProvider.GetSeedClusterAdminClient().CoreV1(),
 				clusterProvider.SeedAdminConfig(),
 				userCluster.Status.NamespaceName,

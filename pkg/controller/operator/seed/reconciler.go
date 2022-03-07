@@ -173,35 +173,35 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 
 	log.Debug("Seed was deleted, cleaning up cluster-wide resources")
 
-	if err := common.CleanupClusterResource(client, &rbacv1.ClusterRoleBinding{}, kubermaticseed.ClusterRoleBindingName(cfg)); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRoleBinding{}, kubermaticseed.ClusterRoleBindingName(cfg)); err != nil {
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(client, &rbacv1.ClusterRoleBinding{}, nodeportproxy.ClusterRoleBindingName(cfg)); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRoleBinding{}, nodeportproxy.ClusterRoleBindingName(cfg)); err != nil {
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(client, &rbacv1.ClusterRole{}, nodeportproxy.ClusterRoleName(cfg)); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRole{}, nodeportproxy.ClusterRoleName(cfg)); err != nil {
 		return fmt.Errorf("failed to clean up ClusterRole: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
 		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
 		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
 		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSCAdmissionWebhookName); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSCAdmissionWebhookName); err != nil {
 		return fmt.Errorf("failed to clean up OSC ValidatingWebhookConfiguration: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSPAdmissionWebhookName); err != nil {
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSPAdmissionWebhookName); err != nil {
 		return fmt.Errorf("failed to clean up OSP ValidatingWebhookConfiguration: %w", err)
 	}
 

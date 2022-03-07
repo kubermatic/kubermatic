@@ -169,7 +169,7 @@ func (r *dashboardGrafanaController) CleanUp(ctx context.Context) error {
 
 func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap) error {
 	projectList := &kubermaticv1.ProjectList{}
-	if err := r.List(context.Background(), projectList); err != nil {
+	if err := r.List(ctx, projectList); err != nil {
 		return fmt.Errorf("failed to list Projects: %w", err)
 	}
 	for _, project := range projectList.Items {
@@ -193,7 +193,7 @@ func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *za
 
 func (r *dashboardGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap) error {
 	projectList := &kubermaticv1.ProjectList{}
-	if err := r.List(context.Background(), projectList); err != nil {
+	if err := r.List(ctx, projectList); err != nil {
 		return fmt.Errorf("failed to list Projects: %w", err)
 	}
 	for _, project := range projectList.Items {

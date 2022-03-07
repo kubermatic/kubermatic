@@ -1033,6 +1033,6 @@ func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return handlercommon.GetKubeconfigEndpoint(cluster, privilegedClusterProvider)
+		return handlercommon.GetKubeconfigEndpoint(ctx, cluster, privilegedClusterProvider)
 	}
 }
