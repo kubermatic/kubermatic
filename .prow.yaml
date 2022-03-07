@@ -130,22 +130,6 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
 
-  - name: pre-kubermatic-verify-boilerplate
-    always_run: true
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-goproxy: "true"
-    spec:
-      containers:
-      - image: quay.io/kubermatic-labs/boilerplate:v0.2.0
-        command:
-        - ./hack/verify-boilerplate.sh
-        resources:
-          requests:
-            memory: 256Mi
-            cpu: 100m
-
   - name: pre-kubermatic-simulate-github-release
     run_if_changed: "hack/ci/github-release.sh"
     decorate: true
