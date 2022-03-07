@@ -737,8 +737,8 @@ type SettingsProvider interface {
 
 // AdminProvider declares the set of methods for interacting with admin.
 type AdminProvider interface {
-	SetAdmin(userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
-	GetAdmins(userInfo *UserInfo) ([]kubermaticv1.User, error)
+	SetAdmin(ctx context.Context, userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
+	GetAdmins(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.User, error)
 }
 
 // PresetProvider declares the set of methods for interacting with presets.
