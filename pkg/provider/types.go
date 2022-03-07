@@ -1132,16 +1132,16 @@ type PrivilegedEtcdBackupConfigProvider interface {
 // EtcdRestoreProvider declares the set of method for interacting with etcd backup restores.
 type EtcdRestoreProvider interface {
 	// Create creates the given etcdRestore
-	Create(userInfo *UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
+	Create(ctx context.Context, userInfo *UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
 
 	// Get gets the given etcdRestore
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
 
 	// List gets a list of etcdRestore for a given cluster
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
 
 	// Delete deletes the given etcdRestore
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 }
 
 // PrivilegedEtcdRestoreProvider declares the set of method for interacting with etcd backup configs using a privileged client.
@@ -1150,25 +1150,25 @@ type PrivilegedEtcdRestoreProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
+	CreateUnsecured(ctx context.Context, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
 
 	// GetUnsecured gets the given etcdRestore
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
 
 	// ListUnsecured gets a list of all etcdRestores for a given cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
+	ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
 
 	// DeleteUnsecured deletes the given etcdRestore
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error
 }
 
 // EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs across projects and its seeds.
@@ -1189,7 +1189,7 @@ type PrivilegedEtcdBackupConfigProjectProvider interface {
 // EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores across projects and its seeds.
 type EtcdRestoreProjectProvider interface {
 	// List gets a list of etcdRestore for a given project
-	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
+	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
 // PrivilegedEtcdRestoreProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds.
@@ -1198,7 +1198,7 @@ type PrivilegedEtcdRestoreProjectProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
+	ListUnsecured(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
 // FeatureGatesProvider declares the set of method for getting currently subset of provided feature gates.

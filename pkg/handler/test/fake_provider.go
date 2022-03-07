@@ -331,18 +331,20 @@ type FakeEtcdRestoreProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeEtcdRestoreProvider) Create(userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
-	return p.Provider.Create(userInfo, ebc)
+var _ provider.EtcdRestoreProvider = &FakeEtcdRestoreProvider{}
+
+func (p *FakeEtcdRestoreProvider) Create(ctx context.Context, userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
+	return p.Provider.Create(ctx, userInfo, ebc)
 }
 
-func (p *FakeEtcdRestoreProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
-	return p.Provider.Get(userInfo, cluster, name)
+func (p *FakeEtcdRestoreProvider) Get(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
+	return p.Provider.Get(ctx, userInfo, cluster, name)
 }
 
-func (p *FakeEtcdRestoreProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
-	return p.Provider.List(userInfo, cluster)
+func (p *FakeEtcdRestoreProvider) List(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
+	return p.Provider.List(ctx, userInfo, cluster)
 }
 
-func (p *FakeEtcdRestoreProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
-	return p.Provider.Delete(userInfo, cluster, name)
+func (p *FakeEtcdRestoreProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
+	return p.Provider.Delete(ctx, userInfo, cluster, name)
 }
