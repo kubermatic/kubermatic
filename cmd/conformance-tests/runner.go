@@ -1342,10 +1342,9 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 }
 
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {
-	// list does not contain AWS because since 2022-Mar-02, we were
-	// expecting problems while detaching volumes from instances
 	return cluster.Spec.Cloud.Openstack != nil ||
 		cluster.Spec.Cloud.Azure != nil ||
+		cluster.Spec.Cloud.AWS != nil ||
 		cluster.Spec.Cloud.VSphere != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
 		cluster.Spec.Cloud.Hetzner != nil ||
