@@ -1051,31 +1051,31 @@ type PrivilegedAllowedRegistryProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
+	CreateUnsecured(ctx context.Context, ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
 	// GetUnsecured gets the given allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string) (*kubermaticv1.AllowedRegistry, error)
+	GetUnsecured(ctx context.Context, name string) (*kubermaticv1.AllowedRegistry, error)
 
 	// ListUnsecured gets a list of all allowed registries
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured() (*kubermaticv1.AllowedRegistryList, error)
+	ListUnsecured(ctx context.Context) (*kubermaticv1.AllowedRegistryList, error)
 
 	// UpdateUnsecured updates the allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
+	UpdateUnsecured(ctx context.Context, ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
 	// DeleteUnsecured deletes the allowed registry with the given name
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(name string) error
+	DeleteUnsecured(ctx context.Context, name string) error
 }
 
 // EtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs.

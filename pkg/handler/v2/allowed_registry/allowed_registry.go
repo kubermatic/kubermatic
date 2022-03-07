@@ -56,7 +56,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvi
 			Spec: req.Body.AllowedRegistrySpec,
 		}
 
-		wr, err = allowedRegistryProvider.CreateUnsecured(wr)
+		wr, err = allowedRegistryProvider.CreateUnsecured(ctx, wr)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -102,7 +102,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvider
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		wr, err := allowedRegistryProvider.GetUnsecured(req.AllowedRegistryName)
+		wr, err := allowedRegistryProvider.GetUnsecured(ctx, req.AllowedRegistryName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -142,7 +142,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvide
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		allowedRegistryList, err := allowedRegistryProvider.ListUnsecured()
+		allowedRegistryList, err := allowedRegistryProvider.ListUnsecured(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -176,7 +176,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvi
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		err = allowedRegistryProvider.DeleteUnsecured(req.AllowedRegistryName)
+		err = allowedRegistryProvider.DeleteUnsecured(ctx, req.AllowedRegistryName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -224,7 +224,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 		}
 
 		// get WR
-		allowedRegistry, err := allowedRegistryProvider.GetUnsecured(req.AllowedRegistryName)
+		allowedRegistry, err := allowedRegistryProvider.GetUnsecured(ctx, req.AllowedRegistryName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -256,7 +256,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 		allowedRegistry.Spec = patched.Spec
 
 		// apply patch
-		allowedRegistry, err = allowedRegistryProvider.UpdateUnsecured(allowedRegistry)
+		allowedRegistry, err = allowedRegistryProvider.UpdateUnsecured(ctx, allowedRegistry)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
