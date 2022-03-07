@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/ghodss/yaml"
 	"go.uber.org/zap"
 
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
@@ -59,6 +58,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sigs.k8s.io/yaml"
 )
 
 const (

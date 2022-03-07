@@ -20,7 +20,6 @@ require (
 	github.com/distribution/distribution/v3 v3.0.0-20220208183205-a4d9db5a884b
 	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
 	github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-kit/kit v0.12.0
 	github.com/go-logr/logr v1.2.0
 	github.com/go-logr/zapr v1.2.0
