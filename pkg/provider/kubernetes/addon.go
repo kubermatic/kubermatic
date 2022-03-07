@@ -239,7 +239,6 @@ func (p *AddonProvider) Update(ctx context.Context, userInfo *provider.UserInfo,
 		return nil, err
 	}
 
-	addon.Namespace = cluster.Status.NamespaceName
 	if err := seedImpersonatedClient.Update(ctx, addon); err != nil {
 		return nil, err
 	}
@@ -270,7 +269,6 @@ func (p *AddonProvider) UpdateUnsecured(ctx context.Context, cluster *kubermatic
 		return nil, err
 	}
 
-	addon.Namespace = cluster.Status.NamespaceName
 	if err := p.clientPrivileged.Update(ctx, addon); err != nil {
 		return nil, err
 	}
