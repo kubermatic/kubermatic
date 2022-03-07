@@ -37,7 +37,7 @@ func WriteUser(ctx context.Context, providers watcher.Providers, ws *websocket.C
 		return
 	}
 
-	bindings, err := providers.MemberMapper.MappingsFor(initialUser.Spec.Email)
+	bindings, err := providers.MemberMapper.MappingsFor(ctx, initialUser.Spec.Email)
 	if err != nil {
 		log.Logger.Debug("cannot get project mappings for user %s: %v", initialUser.Name, err)
 		return
@@ -70,7 +70,7 @@ func WriteUser(ctx context.Context, providers watcher.Providers, ws *websocket.C
 				return
 			}
 
-			bindings, err := providers.MemberMapper.MappingsFor(user.Spec.Email)
+			bindings, err := providers.MemberMapper.MappingsFor(ctx, user.Spec.Email)
 			if err != nil {
 				log.Logger.Debug("cannot get project mappings for user %s: %v", user.Name, err)
 				return

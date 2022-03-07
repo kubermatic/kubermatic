@@ -372,39 +372,39 @@ type ProjectMemberListOptions struct {
 // ProjectMemberProvider binds users with projects.
 type ProjectMemberProvider interface {
 	// Create creates a binding for the given member and the given project
-	Create(userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+	Create(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
 	// List gets all members of the given project
-	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ProjectMemberListOptions) ([]*kubermaticv1.UserProjectBinding, error)
+	List(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, options *ProjectMemberListOptions) ([]*kubermaticv1.UserProjectBinding, error)
 
 	// Delete deletes the given binding
 	// Note:
 	// Use List to get binding for the specific member of the given project
-	Delete(userInfo *UserInfo, bindinName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, bindinName string) error
 
 	// Update updates the given binding
-	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+	Update(ctx context.Context, userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
 // PrivilegedProjectMemberProvider binds users with projects and uses privileged account for it.
 type PrivilegedProjectMemberProvider interface {
 	// CreateUnsecured creates a binding for the given member and the given project
 	// This function is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+	CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
 	// CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
 	// This function is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecuredForServiceAccount(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+	CreateUnsecuredForServiceAccount(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
 	// DeleteUnsecured deletes the given binding
 	// Note:
 	// Use List to get binding for the specific member of the given project
 	// This function is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(bindingName string) error
+	DeleteUnsecured(ctx context.Context, bindingName string) error
 
 	// UpdateUnsecured updates the given binding
 	// This function is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+	UpdateUnsecured(ctx context.Context, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
 // ProjectMemberMapper exposes method that knows how to map
@@ -412,11 +412,11 @@ type PrivilegedProjectMemberProvider interface {
 type ProjectMemberMapper interface {
 	// MapUserToGroup maps the given user to a specific group of the given project
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
-	MapUserToGroup(userEmail string, projectID string) (string, error)
+	MapUserToGroup(ctx context.Context, userEmail string, projectID string) (string, error)
 
 	// MappingsFor returns the list of projects (bindings) for the given user
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
-	MappingsFor(userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
+	MappingsFor(ctx context.Context, userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

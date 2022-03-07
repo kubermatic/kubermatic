@@ -240,7 +240,7 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 				uInfo := &provider.UserInfo{Email: user.Spec.Email, IsAdmin: true}
 				return next(context.WithValue(ctx, UserInfoContextKey, uInfo), request)
 			}
-			uInfo, err := createUserInfo(user, projectID, userProjectMapper)
+			uInfo, err := createUserInfo(ctx, user, projectID, userProjectMapper)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -375,11 +375,11 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	}
 }
 
-func createUserInfo(user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
+func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
 	var group string
 	if projectID != "" {
 		var err error
-		group, err = userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
+		group, err = userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
 		if err != nil {
 			return nil, err
 		}

@@ -91,7 +91,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 
 func createProjectByServiceAccount(ctx context.Context, saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
 	var humanUserOwnerList []*kubermaticv1.User
-	bindings, err := memberMapper.MappingsFor(saEmail)
+	bindings, err := memberMapper.MappingsFor(ctx, saEmail)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -124,7 +124,7 @@ func createProjectByServiceAccount(ctx context.Context, saEmail string, projectR
 	}
 	generatedGroupName := rbac.GenerateActualGroupNameFor(kubermaticProject.Name, rbac.ProjectManagerGroupNamePrefix)
 
-	_, err = memberProvider.CreateUnsecuredForServiceAccount(kubermaticProject, saEmail, generatedGroupName)
+	_, err = memberProvider.CreateUnsecuredForServiceAccount(ctx, kubermaticProject, saEmail, generatedGroupName)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -159,7 +159,7 @@ func validateUserProjectsLimit(ctx context.Context, user *kubermaticv1.User, set
 		return nil
 	}
 
-	userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
+	userMappings, err := memberMapper.MappingsFor(ctx, user.Spec.Email)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
@@ -219,7 +219,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			return getAllProjectsForAdmin(ctx, userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
 		}
 		projects := []*apiv1.Project{}
-		userMappings, err := memberMapper.MappingsFor(userInfo.Email)
+		userMappings, err := memberMapper.MappingsFor(ctx, userInfo.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

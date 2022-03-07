@@ -144,7 +144,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 				continue
 			}
 
-			group, err := memberMapper.MapUserToGroup(sa.Spec.Email, project.Name)
+			group, err := memberMapper.MapUserToGroup(ctx, sa.Spec.Email, project.Name)
 			if err != nil {
 				errorList = append(errorList, err.Error())
 			} else {
@@ -197,7 +197,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			sa.Spec.Name = saFromRequest.Name
 		}
 
-		currentGroup, err := memberMapper.MapUserToGroup(sa.Spec.Email, project.Name)
+		currentGroup, err := memberMapper.MapUserToGroup(ctx, sa.Spec.Email, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

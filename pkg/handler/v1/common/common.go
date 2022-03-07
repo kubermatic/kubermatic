@@ -251,7 +251,7 @@ func ForwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) e
 }
 
 func GetOwnersForProject(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
-	allProjectMembers, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
+	allProjectMembers, err := memberProvider.List(ctx, userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
 	if err != nil {
 		return nil, err
 	}
