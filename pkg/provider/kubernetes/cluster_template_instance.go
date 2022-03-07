@@ -46,6 +46,7 @@ type ClusterTemplateInstanceProvider struct {
 }
 
 var _ provider.ClusterTemplateInstanceProvider = &ClusterTemplateInstanceProvider{}
+var _ provider.PrivilegedClusterTemplateInstanceProvider = &ClusterTemplateInstanceProvider{}
 
 // ClusterTemplateInstanceProvider returns provider.
 func NewClusterTemplateInstanceProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *ClusterTemplateInstanceProvider {

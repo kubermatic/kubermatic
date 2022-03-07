@@ -959,25 +959,25 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	CreateUnsecured(ctx context.Context, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 
 	// GetUnsecured gets cluster template instance
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string) (*kubermaticv1.ClusterTemplateInstance, error)
+	GetUnsecured(ctx context.Context, name string) (*kubermaticv1.ClusterTemplateInstance, error)
 
 	// ListUnsecured lists cluster template instances
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	ListUnsecured(options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
+	ListUnsecured(ctx context.Context, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
 
 	// PatchUnsecured patches cluster template instances
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	PatchUnsecured(instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
+	PatchUnsecured(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // ClusterTemplateInstanceListOptions allows to set filters that will be applied to filter the result.
