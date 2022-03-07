@@ -231,24 +231,26 @@ type FakeConstraintProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeConstraintProvider) List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error) {
-	return p.Provider.List(cluster)
+var _ provider.ConstraintProvider = &FakeConstraintProvider{}
+
+func (p *FakeConstraintProvider) List(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error) {
+	return p.Provider.List(ctx, cluster)
 }
 
-func (p *FakeConstraintProvider) Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Get(cluster, name)
+func (p *FakeConstraintProvider) Get(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Get(ctx, cluster, name)
 }
 
-func (p *FakeConstraintProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo, name string) error {
-	return p.Provider.Delete(cluster, userInfo, name)
+func (p *FakeConstraintProvider) Delete(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo, name string) error {
+	return p.Provider.Delete(ctx, cluster, userInfo, name)
 }
 
-func (p *FakeConstraintProvider) Create(userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Create(userInfo, constraint)
+func (p *FakeConstraintProvider) Create(ctx context.Context, userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Create(ctx, userInfo, constraint)
 }
 
-func (p *FakeConstraintProvider) Update(userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Update(userInfo, constraint)
+func (p *FakeConstraintProvider) Update(ctx context.Context, userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Update(ctx, userInfo, constraint)
 }
 
 type FakeDefaultConstraintProvider struct {
@@ -256,24 +258,26 @@ type FakeDefaultConstraintProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeDefaultConstraintProvider) Create(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Create(ct)
+var _ provider.DefaultConstraintProvider = &FakeDefaultConstraintProvider{}
+
+func (p *FakeDefaultConstraintProvider) Create(ctx context.Context, ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Create(ctx, ct)
 }
 
-func (p *FakeDefaultConstraintProvider) List() (*kubermaticv1.ConstraintList, error) {
-	return p.Provider.List()
+func (p *FakeDefaultConstraintProvider) List(ctx context.Context) (*kubermaticv1.ConstraintList, error) {
+	return p.Provider.List(ctx)
 }
 
-func (p *FakeDefaultConstraintProvider) Get(name string) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Get(name)
+func (p *FakeDefaultConstraintProvider) Get(ctx context.Context, name string) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Get(ctx, name)
 }
 
-func (p *FakeDefaultConstraintProvider) Delete(name string) error {
-	return p.Provider.Delete(name)
+func (p *FakeDefaultConstraintProvider) Delete(ctx context.Context, name string) error {
+	return p.Provider.Delete(ctx, name)
 }
 
-func (p *FakeDefaultConstraintProvider) Update(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Update(constraint)
+func (p *FakeDefaultConstraintProvider) Update(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Update(ctx, constraint)
 }
 
 type FakePrivilegedAllowedRegistryProvider struct {

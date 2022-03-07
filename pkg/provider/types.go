@@ -847,19 +847,19 @@ type ConstraintProvider interface {
 	// List gets a list of constraints
 	//
 	// Note that the list is taken from the cache
-	List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
+	List(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
 
 	// Get gets the given constraints
-	Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
+	Get(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
 
 	// Create creates the given constraint
-	Create(userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Create(ctx context.Context, userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 
 	// Delete deletes the given constraint
-	Delete(cluster *kubermaticv1.Cluster, userInfo *UserInfo, name string) error
+	Delete(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *UserInfo, name string) error
 
 	// Update updates the given constraint
-	Update(userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Update(ctx context.Context, userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
 // PrivilegedConstraintProvider declares a set of methods for interacting with constraints using a privileged client.
@@ -868,19 +868,19 @@ type PrivilegedConstraintProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	CreateUnsecured(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 
 	// DeleteUnsecured deletes a constraint using a privileged client
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error
 
 	// UpdateUnsecured updates the given constraint using a privileged client
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	UpdateUnsecured(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
 // DefaultConstraintProvider declares the set of method for interacting with default constraints.
@@ -888,19 +888,19 @@ type DefaultConstraintProvider interface {
 	// List gets a list of default constraints
 	//
 	// Note that the list is taken from the cache
-	List() (*kubermaticv1.ConstraintList, error)
+	List(ctx context.Context) (*kubermaticv1.ConstraintList, error)
 
 	// Get gets the given default constraints
-	Get(name string) (*kubermaticv1.Constraint, error)
+	Get(ctx context.Context, name string) (*kubermaticv1.Constraint, error)
 
 	// Create creates the given default constraint
-	Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Create(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 
 	// Delete deletes the given default constraint
-	Delete(name string) error
+	Delete(ctx context.Context, name string) error
 
 	// Update a default constraint
-	Update(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Update(ctx context.Context, ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
 // AlertmanagerProvider declares the set of method for interacting with alertmanagers.
