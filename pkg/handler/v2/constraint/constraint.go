@@ -308,7 +308,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 
 		constraint := convertAPIToInternalConstraint(req.Body.Name, clus.Status.NamespaceName, req.Body.Spec)
-		err = validateConstraint(constraintTemplateProvider, constraint)
+		err = validateConstraint(ctx, constraintTemplateProvider, constraint)
 		if err != nil {
 			return nil, err
 		}
@@ -373,8 +373,8 @@ func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func validateConstraint(constraintTemplateProvider provider.ConstraintTemplateProvider, constraint *kubermaticv1.Constraint) error {
-	ct, err := constraintTemplateProvider.Get(strings.ToLower(constraint.Spec.ConstraintType))
+func validateConstraint(ctx context.Context, constraintTemplateProvider provider.ConstraintTemplateProvider, constraint *kubermaticv1.Constraint) error {
+	ct, err := constraintTemplateProvider.Get(ctx, strings.ToLower(constraint.Spec.ConstraintType))
 	if err != nil {
 		return utilerrors.NewBadRequest("Validation failed, constraint needs to have an existing constraint template: %v", err)
 	}
@@ -489,7 +489,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		// restore ResourceVersion to make patching safer and tests work more easily
 		patchedConstraint.ResourceVersion = originalConstraint.ResourceVersion
 
-		err = validateConstraint(constraintTemplateProvider, patchedConstraint)
+		err = validateConstraint(ctx, constraintTemplateProvider, patchedConstraint)
 		if err != nil {
 			return nil, err
 		}
@@ -574,7 +574,7 @@ func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 			},
 			Spec: req.Body.Spec,
 		}
-		err = validateConstraint(constraintTemplateProvider, constraint)
+		err = validateConstraint(ctx, constraintTemplateProvider, constraint)
 		if err != nil {
 			return nil, err
 		}
@@ -746,7 +746,7 @@ func PatchDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 		}
 
 		// validate
-		if err := validateConstraint(constraintTemplateProvider, patchedDC); err != nil {
+		if err := validateConstraint(ctx, constraintTemplateProvider, patchedDC); err != nil {
 			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("patched default constraint validation failed: %v", err))
 		}
 

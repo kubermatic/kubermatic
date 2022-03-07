@@ -827,19 +827,19 @@ type ConstraintTemplateProvider interface {
 	// List gets a list of constraint templates, by default it returns all resources.
 	//
 	// Note that the list is taken from the cache
-	List() (*kubermaticv1.ConstraintTemplateList, error)
+	List(ctx context.Context) (*kubermaticv1.ConstraintTemplateList, error)
 
 	// Get gets the given constraint template
-	Get(name string) (*kubermaticv1.ConstraintTemplate, error)
+	Get(ctx context.Context, name string) (*kubermaticv1.ConstraintTemplate, error)
 
 	// Create a Constraint Template
-	Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
+	Create(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
 
 	// Update a Constraint Template
-	Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
+	Update(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
 
 	// Delete a Constraint Template
-	Delete(ct *kubermaticv1.ConstraintTemplate) error
+	Delete(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) error
 }
 
 // ConstraintProvider declares the set of method for interacting with constraints.

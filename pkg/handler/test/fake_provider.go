@@ -206,24 +206,26 @@ type FakeConstraintTemplateProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateList, error) {
-	return p.Provider.List()
+var _ provider.ConstraintTemplateProvider = &FakeConstraintTemplateProvider{}
+
+func (p *FakeConstraintTemplateProvider) List(ctx context.Context) (*kubermaticv1.ConstraintTemplateList, error) {
+	return p.Provider.List(ctx)
 }
 
-func (p *FakeConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintTemplate, error) {
-	return p.Provider.Get(name)
+func (p *FakeConstraintTemplateProvider) Get(ctx context.Context, name string) (*kubermaticv1.ConstraintTemplate, error) {
+	return p.Provider.Get(ctx, name)
 }
 
-func (p *FakeConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-	return p.Provider.Create(ct)
+func (p *FakeConstraintTemplateProvider) Create(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
+	return p.Provider.Create(ctx, ct)
 }
 
-func (p *FakeConstraintTemplateProvider) Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-	return p.Provider.Update(ct)
+func (p *FakeConstraintTemplateProvider) Update(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
+	return p.Provider.Update(ctx, ct)
 }
 
-func (p *FakeConstraintTemplateProvider) Delete(ct *kubermaticv1.ConstraintTemplate) error {
-	return p.Provider.Delete(ct)
+func (p *FakeConstraintTemplateProvider) Delete(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) error {
+	return p.Provider.Delete(ctx, ct)
 }
 
 type FakeConstraintProvider struct {
