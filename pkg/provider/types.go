@@ -268,38 +268,38 @@ type SSHKeyProvider interface {
 	//
 	// Note:
 	// After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
-	List(project *kubermaticv1.Project, options *SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error)
+	List(ctx context.Context, project *kubermaticv1.Project, options *SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error)
 
 	// Create creates a ssh key that belongs to the given project
-	Create(userInfo *UserInfo, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
+	Create(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
 
 	// Delete deletes the given ssh key
-	Delete(userInfo *UserInfo, keyName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, keyName string) error
 
 	// Get returns a key with the given name
-	Get(userInfo *UserInfo, keyName string) (*kubermaticv1.UserSSHKey, error)
+	Get(ctx context.Context, userInfo *UserInfo, keyName string) (*kubermaticv1.UserSSHKey, error)
 
 	// Update simply updates the given key
-	Update(userInfo *UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+	Update(ctx context.Context, userInfo *UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys and uses privileged account for it.
 type PrivilegedSSHKeyProvider interface {
 	// GetUnsecured returns a key with the given name
 	// This function is unsafe in a sense that it uses privileged account to get the ssh key
-	GetUnsecured(keyName string) (*kubermaticv1.UserSSHKey, error)
+	GetUnsecured(ctx context.Context, keyName string) (*kubermaticv1.UserSSHKey, error)
 
 	// UpdateUnsecured update a specific ssh key and returns the updated ssh key
 	// This function is unsafe in a sense that it uses privileged account to update the ssh key
-	UpdateUnsecured(sshKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+	UpdateUnsecured(ctx context.Context, sshKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
 
 	// Create creates a ssh key that belongs to the given project
 	// This function is unsafe in a sense that it uses privileged account to create the ssh key
-	CreateUnsecured(project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
+	CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
 
 	// Delete deletes the given ssh key
 	// This function is unsafe in a sense that it uses privileged account to delete the ssh key
-	DeleteUnsecured(keyName string) error
+	DeleteUnsecured(ctx context.Context, keyName string) error
 }
 
 // UserProvider declares the set of methods for interacting with kubermatic users.

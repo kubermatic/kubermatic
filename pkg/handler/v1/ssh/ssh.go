@@ -44,7 +44,7 @@ func CreateEndpoint(keyProvider provider.SSHKeyProvider, privilegedSSHKeyProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingKeys, err := keyProvider.List(project, &provider.SSHKeyListOptions{SSHKeyName: req.Key.Name})
+		existingKeys, err := keyProvider.List(ctx, project, &provider.SSHKeyListOptions{SSHKeyName: req.Key.Name})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -78,13 +78,13 @@ func createUserSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedSSHKeyProvider.CreateUnsecured(project, keyName, pubKey)
+		return privilegedSSHKeyProvider.CreateUnsecured(ctx, project, keyName, pubKey)
 	}
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return keyProvider.Create(userInfo, project, keyName, pubKey)
+	return keyProvider.Create(ctx, userInfo, project, keyName, pubKey)
 }
 
 func DeleteEndpoint(keyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -110,13 +110,13 @@ func deleteUserSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedSSHKeyProvider.DeleteUnsecured(keyName)
+		return privilegedSSHKeyProvider.DeleteUnsecured(ctx, keyName)
 	}
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return err
 	}
-	return keyProvider.Delete(userInfo, keyName)
+	return keyProvider.Delete(ctx, userInfo, keyName)
 }
 
 func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -134,7 +134,7 @@ func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		keys, err := keyProvider.List(project, nil)
+		keys, err := keyProvider.List(ctx, project, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
