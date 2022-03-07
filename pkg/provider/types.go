@@ -317,40 +317,40 @@ type UserProvider interface {
 type PrivilegedProjectProvider interface {
 	// GetUnsecured returns the project with the given name
 	// This function is unsafe in a sense that it uses privileged account to get project with the given name
-	GetUnsecured(projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+	GetUnsecured(ctx context.Context, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
 
 	// DeleteUnsecured deletes any given project
 	// This function is unsafe in a sense that it uses privileged account to delete project with the given name
-	DeleteUnsecured(projectInternalName string) error
+	DeleteUnsecured(ctx context.Context, projectInternalName string) error
 
 	// UpdateUnsecured update an existing project and returns it
 	// This function is unsafe in a sense that it uses privileged account to update project
-	UpdateUnsecured(project *kubermaticv1.Project) (*kubermaticv1.Project, error)
+	UpdateUnsecured(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.Project, error)
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project.
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
-	New(users []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
+	New(ctx context.Context, users []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
 
 	// Delete deletes the given project as the given user
 	//
 	// Note:
 	// Before deletion project's status.phase is set to ProjectTerminating
-	Delete(userInfo *UserInfo, projectInternalName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, projectInternalName string) error
 
 	// Get returns the project with the given name
-	Get(userInfo *UserInfo, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+	Get(ctx context.Context, userInfo *UserInfo, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
 
 	// Update update an existing project and returns it
-	Update(userInfo *UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error)
+	Update(ctx context.Context, userInfo *UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error)
 
 	// List gets a list of projects, by default it returns all resources.
 	// If you want to filter the result please set ProjectListOptions
 	//
 	// Note that the list is taken from the cache
-	List(options *ProjectListOptions) ([]*kubermaticv1.Project, error)
+	List(ctx context.Context, options *ProjectListOptions) ([]*kubermaticv1.Project, error)
 }
 
 // UserInfo represent authenticated user.

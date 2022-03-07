@@ -280,7 +280,7 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 	}
 
 	// check first if project exist
-	adminProject, err := privilegedProjectProvider.GetUnsecured(projectID, options)
+	adminProject, err := privilegedProjectProvider.GetUnsecured(ctx, projectID, options)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 	if err != nil {
 		return nil, err
 	}
-	return projectProvider.Get(userInfo, projectID, options)
+	return projectProvider.Get(ctx, userInfo, projectID, options)
 }
 
 func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticv1.Cluster, projectID string) (ctrlruntimeclient.Client, error) {
