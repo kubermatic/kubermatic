@@ -75,7 +75,7 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 				userClusterConnProvider: &fakeUserClusterConnectionProvider{client: userClusterClient},
 			}
 
-			if err := p.RevokeAdminKubeconfig(tc.cluster); err != nil {
+			if err := p.RevokeAdminKubeconfig(context.Background(), tc.cluster); err != nil {
 				t.Fatalf("error calling revokeClusterAdminKubeconfig: %v", err)
 			}
 			if err := tc.verify(seedClient, userClusterClient); err != nil {

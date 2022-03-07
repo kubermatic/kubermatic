@@ -101,10 +101,13 @@ type ClusterProvider struct {
 	seedName             string
 }
 
+var _ provider.ClusterProvider = &ClusterProvider{}
+var _ provider.PrivilegedClusterProvider = &ClusterProvider{}
+
 // New creates a brand new cluster that is bound to the given project.
 //
 // Note that the admin privileges are used to set the cluster status.
-func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) New(ctx context.Context, project *kubermaticv1.Project, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if project == nil || userInfo == nil || cluster == nil {
 		return nil, errors.New("project and/or userInfo and/or cluster is missing but required")
 	}
@@ -112,8 +115,6 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	if p.oidcKubeConfEndpoint && !reflect.DeepEqual(cluster.Spec.OIDC, kubermaticv1.OIDCSettings{}) {
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
-
-	ctx := context.Background()
 
 	newCluster := genAPICluster(project, cluster, p.workerName, p.versions)
 
@@ -139,7 +140,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 // NewUnsecured creates a brand new cluster that is bound to the given project.
 //
 // Note that the admin privileges are used to create cluster.
-func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) NewUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error) {
 	if project == nil || cluster == nil {
 		return nil, errors.New("project and/or cluster is missing but required")
 	}
@@ -148,7 +149,6 @@ func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *k
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
-	ctx := context.Background()
 	newCluster := genAPICluster(project, cluster, p.workerName, p.versions)
 
 	err := p.client.Create(ctx, newCluster)
@@ -210,7 +210,7 @@ func getClusterLabels(specifiedLabels map[string]string, projectName, workerName
 // Note:
 // After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.ClusterListOptions) (*kubermaticv1.ClusterList, error) {
+func (p *ClusterProvider) List(ctx context.Context, project *kubermaticv1.Project, options *provider.ClusterListOptions) (*kubermaticv1.ClusterList, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
@@ -218,7 +218,7 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 	projectClusters := &kubermaticv1.ClusterList{}
 	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-	if err := p.client.List(context.Background(), projectClusters, listOpts); err != nil {
+	if err := p.client.List(ctx, projectClusters, listOpts); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
@@ -237,7 +237,7 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 }
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to.
-func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) Get(ctx context.Context, userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	if options == nil {
 		options = &provider.ClusterGetOptions{}
 	}
@@ -247,7 +247,7 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 	}
 
 	cluster := &kubermaticv1.Cluster{}
-	if err := seedImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
+	if err := seedImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
 		return nil, err
 	}
 	if options.CheckInitStatus {
@@ -260,15 +260,15 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 }
 
 // IsCluster checks if cluster exist with the given name.
-func (p *ClusterProvider) IsCluster(clusterName string) bool {
-	if err := p.client.Get(context.Background(), types.NamespacedName{Name: clusterName}, &kubermaticv1.Cluster{}); err != nil {
+func (p *ClusterProvider) IsCluster(ctx context.Context, clusterName string) bool {
+	if err := p.client.Get(ctx, types.NamespacedName{Name: clusterName}, &kubermaticv1.Cluster{}); err != nil {
 		return false
 	}
 	return true
 }
 
 // Delete deletes the given cluster.
-func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
+func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, clusterName string) error {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
@@ -280,31 +280,31 @@ func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string
 	delOpts := &ctrlruntimeclient.DeleteOptions{
 		PropagationPolicy: &policy,
 	}
-	return seedImpersonatedClient.Delete(context.Background(), &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}}, delOpts)
+	return seedImpersonatedClient.Delete(ctx, &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}}, delOpts)
 }
 
 // Update updates a cluster.
-func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) Update(ctx context.Context, project *kubermaticv1.Project, userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, "") // Do not update worker name.
-	if err := seedImpersonatedClient.Update(context.Background(), newCluster); err != nil {
+	if err := seedImpersonatedClient.Update(ctx, newCluster); err != nil {
 		return nil, err
 	}
 	return newCluster, nil
 }
 
 // GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster.
-func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
 	secret := &corev1.Secret{}
 	name := types.NamespacedName{
 		Namespace: c.Status.NamespaceName,
 		Name:      resources.AdminKubeconfigSecretName,
 	}
-	if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), name, secret); err != nil {
+	if err := p.GetSeedClusterAdminRuntimeClient().Get(ctx, name, secret); err != nil {
 		return nil, err
 	}
 
@@ -312,10 +312,10 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.C
 }
 
 // GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster.
-func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(ctx context.Context, c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
 	s := &corev1.Secret{}
 
-	if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
+	if err := p.GetSeedClusterAdminRuntimeClient().Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
 		return nil, err
 	}
 
@@ -328,7 +328,7 @@ func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.
 }
 
 // RevokeViewerKubeconfig revokes the viewer token and kubeconfig.
-func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
+func (p *ClusterProvider) RevokeViewerKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
 	s := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.ViewerTokenSecretName,
@@ -336,15 +336,14 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error 
 		},
 	}
 
-	if err := p.GetSeedClusterAdminRuntimeClient().Delete(context.Background(), s); err != nil {
+	if err := p.GetSeedClusterAdminRuntimeClient().Delete(ctx, s); err != nil {
 		return err
 	}
 	return nil
 }
 
 // RevokeAdminKubeconfig revokes the viewer token and kubeconfig.
-func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
-	ctx := context.Background()
+func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
 	oldCluster := c.DeepCopy()
 	c.Address.AdminToken = kuberneteshelper.GenerateToken()
 	if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
@@ -416,7 +415,7 @@ func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuser
 // GetUnsecured returns a cluster for the project and given name.
 //
 // Note that the admin privileges are used to get cluster.
-func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) GetUnsecured(ctx context.Context, project *kubermaticv1.Project, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
@@ -425,7 +424,7 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 	}
 
 	cluster := &kubermaticv1.Cluster{}
-	if err := p.client.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
+	if err := p.client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		return nil, err
 	}
 	if cluster.Labels[kubermaticv1.ProjectIDLabelKey] == project.Name {
@@ -443,12 +442,12 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 // UpdateUnsecured updates a cluster.
 //
 // Note that the admin privileges are used to update cluster.
-func (p *ClusterProvider) UpdateUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) UpdateUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
 	cluster.Labels = getClusterLabels(cluster.Labels, project.Name, "") // Do not update worker name.
-	err := p.client.Update(context.Background(), cluster)
+	err := p.client.Update(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -458,14 +457,14 @@ func (p *ClusterProvider) UpdateUnsecured(project *kubermaticv1.Project, cluster
 // DeleteUnsecured deletes a cluster.
 //
 // Note that the admin privileges are used to delete cluster.
-func (p *ClusterProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster) error {
+func (p *ClusterProvider) DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
 	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
 	policy := metav1.DeletePropagationBackground
 	delOpts := &ctrlruntimeclient.DeleteOptions{
 		PropagationPolicy: &policy,
 	}
-	return p.client.Delete(context.Background(), cluster, delOpts)
+	return p.client.Delete(ctx, cluster, delOpts)
 }
 
 // SeedAdminConfig return an admin kubeconfig for the seed. This function does not perform any kind
@@ -477,9 +476,9 @@ func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
 // ListAll gets all clusters
 //
 // Note that the admin privileges are used to list all clusters.
-func (p *ClusterProvider) ListAll() (*kubermaticv1.ClusterList, error) {
+func (p *ClusterProvider) ListAll(ctx context.Context) (*kubermaticv1.ClusterList, error) {
 	projectClusters := &kubermaticv1.ClusterList{}
-	if err := p.client.List(context.Background(), projectClusters); err != nil {
+	if err := p.client.List(ctx, projectClusters); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 

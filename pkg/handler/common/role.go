@@ -41,7 +41,7 @@ func ListClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func ListClusterRoleNamesEndpoint(ctx context.Context, userInfoGetter provider.U
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func ListRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func ListRoleNamesEndpoint(ctx context.Context, userInfoGetter provider.UserInfo
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	cluster, err := clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return nil, err
 	}

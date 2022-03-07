@@ -311,7 +311,7 @@ func Addons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderG
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			addonProvider, err := getAddonProvider(clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			addonProvider, err := getAddonProvider(ctx, clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -326,7 +326,7 @@ func PrivilegedAddons(clusterProviderGetter provider.ClusterProviderGetter, addo
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			addonProvider, err := getAddonProvider(clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			addonProvider, err := getAddonProvider(ctx, clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -337,7 +337,7 @@ func PrivilegedAddons(clusterProviderGetter provider.ClusterProviderGetter, addo
 	}
 }
 
-func getAddonProvider(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AddonProvider, error) {
+func getAddonProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AddonProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -349,7 +349,7 @@ func getAddonProvider(clusterProviderGetter provider.ClusterProviderGetter, addo
 			if err != nil {
 				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -421,7 +421,7 @@ func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kuberm
 		if err != nil {
 			return nil, ctx, k8cerrors.NewNotFound("cluster-provider", clusterID)
 		}
-		if clusterProvider.IsCluster(clusterID) {
+		if clusterProvider.IsCluster(ctx, clusterID) {
 			return clusterProvider, ctx, nil
 		}
 	}
@@ -461,7 +461,7 @@ func Constraints(clusterProviderGetter provider.ClusterProviderGetter, constrain
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			constraintProvider, err := getConstraintProvider(clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			constraintProvider, err := getConstraintProvider(ctx, clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -476,7 +476,7 @@ func PrivilegedConstraints(clusterProviderGetter provider.ClusterProviderGetter,
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			constraintProvider, err := getConstraintProvider(clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			constraintProvider, err := getConstraintProvider(ctx, clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -487,7 +487,7 @@ func PrivilegedConstraints(clusterProviderGetter provider.ClusterProviderGetter,
 	}
 }
 
-func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.ConstraintProvider, error) {
+func getConstraintProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.ConstraintProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -499,7 +499,7 @@ func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter,
 			if err != nil {
 				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -520,7 +520,7 @@ func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertma
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			alertmanagerProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			alertmanagerProvider, err := getAlertmanagerProvider(ctx, clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -535,7 +535,7 @@ func PrivilegedAlertmanagers(clusterProviderGetter provider.ClusterProviderGette
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			alertmanagerProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			alertmanagerProvider, err := getAlertmanagerProvider(ctx, clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -546,7 +546,7 @@ func PrivilegedAlertmanagers(clusterProviderGetter provider.ClusterProviderGette
 	}
 }
 
-func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AlertmanagerProvider, error) {
+func getAlertmanagerProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AlertmanagerProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -558,7 +558,7 @@ func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGette
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -579,7 +579,7 @@ func RuleGroups(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupP
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			ruleGroupProvider, err := getRuleGroupProvider(clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ruleGroupProvider, err := getRuleGroupProvider(ctx, clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -594,7 +594,7 @@ func PrivilegedRuleGroups(clusterProviderGetter provider.ClusterProviderGetter, 
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			ruleGroupProvider, err := getRuleGroupProvider(clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ruleGroupProvider, err := getRuleGroupProvider(ctx, clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -605,7 +605,7 @@ func PrivilegedRuleGroups(clusterProviderGetter provider.ClusterProviderGetter, 
 	}
 }
 
-func getRuleGroupProvider(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.RuleGroupProvider, error) {
+func getRuleGroupProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.RuleGroupProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -617,7 +617,7 @@ func getRuleGroupProvider(clusterProviderGetter provider.ClusterProviderGetter, 
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -638,7 +638,7 @@ func EtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGetter, etcd
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			etcdBackupConfigProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			etcdBackupConfigProvider, err := getEtcdBackupConfigProvider(ctx, clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -653,7 +653,7 @@ func PrivilegedEtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGe
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			ebcProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ebcProvider, err := getEtcdBackupConfigProvider(ctx, clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -664,7 +664,7 @@ func PrivilegedEtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGe
 	}
 }
 
-func getEtcdBackupConfigProvider(clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdBackupConfigProvider, error) {
+func getEtcdBackupConfigProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdBackupConfigProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -676,7 +676,7 @@ func getEtcdBackupConfigProvider(clusterProviderGetter provider.ClusterProviderG
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -697,7 +697,7 @@ func EtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdResto
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			etcdRestoreProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			etcdRestoreProvider, err := getEtcdRestoreProvider(ctx, clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -712,7 +712,7 @@ func PrivilegedEtcdRestore(clusterProviderGetter provider.ClusterProviderGetter,
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			erProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			erProvider, err := getEtcdRestoreProvider(ctx, clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -723,7 +723,7 @@ func PrivilegedEtcdRestore(clusterProviderGetter provider.ClusterProviderGetter,
 	}
 }
 
-func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdRestoreProvider, error) {
+func getEtcdRestoreProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdRestoreProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -735,7 +735,7 @@ func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -858,7 +858,7 @@ func PrivilegedMLAAdminSetting(clusterProviderGetter provider.ClusterProviderGet
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			privilegedMLAAdminSettingProvider, err := getPrivilegedMLAAdminSettingProvider(clusterProviderGetter, mlaAdminSettingProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			privilegedMLAAdminSettingProvider, err := getPrivilegedMLAAdminSettingProvider(ctx, clusterProviderGetter, mlaAdminSettingProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -868,7 +868,7 @@ func PrivilegedMLAAdminSetting(clusterProviderGetter provider.ClusterProviderGet
 	}
 }
 
-func getPrivilegedMLAAdminSettingProvider(clusterProviderGetter provider.ClusterProviderGetter, mlaAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.PrivilegedMLAAdminSettingProvider, error) {
+func getPrivilegedMLAAdminSettingProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, mlaAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.PrivilegedMLAAdminSettingProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -880,7 +880,7 @@ func getPrivilegedMLAAdminSettingProvider(clusterProviderGetter provider.Cluster
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}

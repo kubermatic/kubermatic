@@ -163,7 +163,7 @@ type ProjectListOptions struct {
 // This provider is Project and RBAC compliant.
 type ClusterProvider interface {
 	// New creates a brand new cluster that is bound to the given project
-	New(project *kubermaticv1.Project, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	New(ctx context.Context, project *kubermaticv1.Project, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// List gets all clusters that belong to the given project
 	// If you want to filter the result please take a look at ClusterListOptions
@@ -171,31 +171,31 @@ type ClusterProvider interface {
 	// Note:
 	// After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 	// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-	List(project *kubermaticv1.Project, options *ClusterListOptions) (*kubermaticv1.ClusterList, error)
+	List(ctx context.Context, project *kubermaticv1.Project, options *ClusterListOptions) (*kubermaticv1.ClusterList, error)
 
 	// ListAll gets all clusters for the seed
-	ListAll() (*kubermaticv1.ClusterList, error)
+	ListAll(ctx context.Context) (*kubermaticv1.ClusterList, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-	Get(userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
+	Get(ctx context.Context, userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// Update updates a cluster
-	Update(project *kubermaticv1.Project, userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	Update(ctx context.Context, project *kubermaticv1.Project, userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// Delete deletes the given cluster
-	Delete(userInfo *UserInfo, clusterName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, clusterName string) error
 
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
-	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+	GetAdminKubeconfigForCustomerCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
 	// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
-	GetViewerKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+	GetViewerKubeconfigForCustomerCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
 	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
-	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+	RevokeViewerKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
 
 	// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
-	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
+	RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
 
 	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
@@ -212,7 +212,7 @@ type ClusterProvider interface {
 	GetTokenForCustomerCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (string, error)
 
 	// IsCluster checks if cluster exist with the given name
-	IsCluster(clusterName string) bool
+	IsCluster(ctx context.Context, clusterName string) bool
 
 	// GetSeedName gets the seed name of the cluster
 	GetSeedName() string
@@ -234,22 +234,22 @@ type PrivilegedClusterProvider interface {
 	// GetUnsecured returns a cluster for the project and given name.
 	//
 	// Note that the admin privileges are used to get cluster
-	GetUnsecured(project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
+	GetUnsecured(ctx context.Context, project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// UpdateUnsecured updates a cluster.
 	//
 	// Note that the admin privileges are used to update cluster
-	UpdateUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	UpdateUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// DeleteUnsecured deletes a cluster.
 	//
 	// Note that the admin privileges are used to delete cluster
-	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error
 
 	// NewUnsecured creates a brand new cluster that is bound to the given project.
 	//
 	// Note that the admin privileges are used to create cluster
-	NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error)
+	NewUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.

@@ -51,7 +51,7 @@ func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +86,7 @@ func CreateRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -264,7 +264,7 @@ func GetClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -291,7 +291,7 @@ func GetRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -319,7 +319,7 @@ func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -351,7 +351,7 @@ func DeleteRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -463,7 +463,7 @@ func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -558,7 +558,7 @@ func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.E
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
