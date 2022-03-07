@@ -39,7 +39,7 @@ import (
 	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
-	rolecloner "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner"
+	roleclonercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -349,10 +349,10 @@ func main() {
 	}
 	log.Info("Registered clusterrolelabeler controller")
 
-	if err := rolecloner.Add(rootCtx, log, mgr, isPausedChecker); err != nil {
-		log.Fatalw("Failed to register rolecloner controller", zap.Error(err))
+	if err := roleclonercontroller.Add(rootCtx, log, mgr, isPausedChecker); err != nil {
+		log.Fatalw("Failed to register role-cloner controller", zap.Error(err))
 	}
-	log.Info("Registered rolecloner controller")
+	log.Info("Registered role-cloner controller")
 
 	if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))
