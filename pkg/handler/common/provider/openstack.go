@@ -386,6 +386,15 @@ func getOpenstackAuthURLAndRegion(userInfo *provider.UserInfo, seedsGetter provi
 	if err != nil {
 		return "", "", fmt.Errorf("failed to find datacenter %q: %w", datacenterName, err)
 	}
+
+	if len(dc.Spec.Openstack.AuthURL) == 0 {
+		return "", "", fmt.Errorf("empty authURL in datacenter %q", datacenterName)
+	}
+
+	if len(dc.Spec.Openstack.Region) == 0 {
+		return "", "", fmt.Errorf("empty region in datacenter %q", datacenterName)
+	}
+
 	return dc.Spec.Openstack.AuthURL, dc.Spec.Openstack.Region, nil
 }
 
