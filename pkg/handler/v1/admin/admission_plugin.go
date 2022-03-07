@@ -39,7 +39,7 @@ func ListAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissi
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		admissionPluginList, err := admissionPluginProvider.List(userInfo)
+		admissionPluginList, err := admissionPluginProvider.List(ctx, userInfo)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -63,7 +63,7 @@ func GetAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissio
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		admissionPlugin, err := admissionPluginProvider.Get(userInfo, req.Name)
+		admissionPlugin, err := admissionPluginProvider.Get(ctx, userInfo, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -83,7 +83,7 @@ func DeleteAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		err = admissionPluginProvider.Delete(userInfo, req.Name)
+		err = admissionPluginProvider.Delete(ctx, userInfo, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -108,7 +108,7 @@ func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		currentPlugin, err := admissionPluginProvider.Get(userInfo, req.Name)
+		currentPlugin, err := admissionPluginProvider.Get(ctx, userInfo, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -116,7 +116,7 @@ func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 		currentPlugin.Spec.PluginName = req.Body.Plugin
 		currentPlugin.Spec.FromVersion = req.Body.FromVersion
 
-		editedAdmissionPlugin, err := admissionPluginProvider.Update(userInfo, currentPlugin)
+		editedAdmissionPlugin, err := admissionPluginProvider.Update(ctx, userInfo, currentPlugin)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

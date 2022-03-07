@@ -241,11 +241,11 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
 	clusterProviderGetter := clusterProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, seedClientGetter, options)
 
-	presetProvider, err := kubernetesprovider.NewPresetProvider(ctx, client)
+	presetProvider, err := kubernetesprovider.NewPresetProvider(client)
 	if err != nil {
 		return providers{}, err
 	}
-	admissionPluginProvider := kubernetesprovider.NewAdmissionPluginsProvider(ctx, client)
+	admissionPluginProvider := kubernetesprovider.NewAdmissionPluginsProvider(client)
 	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
 	go func() {
 		seeds, err := seedsGetter()

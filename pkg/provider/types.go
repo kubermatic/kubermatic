@@ -753,11 +753,11 @@ type PresetProvider interface {
 
 // AdmissionPluginsProvider declares the set of methods for interacting with admission plugins.
 type AdmissionPluginsProvider interface {
-	List(userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
-	Get(userInfo *UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error)
-	Delete(userInfo *UserInfo, name string) error
-	Update(userInfo *UserInfo, admissionPlugin *kubermaticv1.AdmissionPlugin) (*kubermaticv1.AdmissionPlugin, error)
-	ListPluginNamesFromVersion(fromVersion string) ([]string, error)
+	List(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
+	Get(ctx context.Context, userInfo *UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error)
+	Delete(ctx context.Context, userInfo *UserInfo, name string) error
+	Update(ctx context.Context, userInfo *UserInfo, admissionPlugin *kubermaticv1.AdmissionPlugin) (*kubermaticv1.AdmissionPlugin, error)
+	ListPluginNamesFromVersion(ctx context.Context, fromVersion string) ([]string, error)
 }
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster.

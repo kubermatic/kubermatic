@@ -33,7 +33,7 @@ import (
 func GetAdmissionPluginEndpoint(admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(admissionPluginReq)
-		pluginResponse, err := admissionPluginProvider.ListPluginNamesFromVersion(req.Version)
+		pluginResponse, err := admissionPluginProvider.ListPluginNamesFromVersion(ctx, req.Version)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
