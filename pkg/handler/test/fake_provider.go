@@ -287,24 +287,24 @@ type FakePrivilegedAllowedRegistryProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) CreateUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
-	return p.Provider.CreateUnsecured(wr)
+func (p *FakePrivilegedAllowedRegistryProvider) CreateUnsecured(ctx context.Context, wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
+	return p.Provider.CreateUnsecured(ctx, wr)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) GetUnsecured(name string) (*kubermaticv1.AllowedRegistry, error) {
-	return p.Provider.GetUnsecured(name)
+func (p *FakePrivilegedAllowedRegistryProvider) GetUnsecured(ctx context.Context, name string) (*kubermaticv1.AllowedRegistry, error) {
+	return p.Provider.GetUnsecured(ctx, name)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) ListUnsecured() (*kubermaticv1.AllowedRegistryList, error) {
-	return p.Provider.ListUnsecured()
+func (p *FakePrivilegedAllowedRegistryProvider) ListUnsecured(ctx context.Context) (*kubermaticv1.AllowedRegistryList, error) {
+	return p.Provider.ListUnsecured(ctx)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) UpdateUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
-	return p.Provider.UpdateUnsecured(wr)
+func (p *FakePrivilegedAllowedRegistryProvider) UpdateUnsecured(ctx context.Context, wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
+	return p.Provider.UpdateUnsecured(ctx, wr)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) DeleteUnsecured(name string) error {
-	return p.Provider.DeleteUnsecured(name)
+func (p *FakePrivilegedAllowedRegistryProvider) DeleteUnsecured(ctx context.Context, name string) error {
+	return p.Provider.DeleteUnsecured(ctx, name)
 }
 
 type FakeEtcdBackupConfigProvider struct {
