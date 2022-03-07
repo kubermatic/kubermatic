@@ -44,7 +44,7 @@ import (
 const allZones = "-"
 
 func GetClusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.Config, error) {
-	svc, project, err := ConnectToContainerService(sa)
+	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func GetClusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.C
 		Contexts:   map[string]*api.Context{},  // Contexts is a map of referencable names to context configs
 	}
 
-	cred, err := getCredentials(sa)
+	cred, err := getCredentials(ctx, sa)
 	if err != nil {
 		return nil, fmt.Errorf("can't get credentials %w", err)
 	}
@@ -93,8 +93,7 @@ func GetClusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.C
 }
 
 // ConnectToContainerService establishes a service connection to the Container Engine.
-func ConnectToContainerService(serviceAccount string) (*container.Service, string, error) {
-	ctx := context.Background()
+func ConnectToContainerService(ctx context.Context, serviceAccount string) (*container.Service, string, error) {
 	client, projectID, err := createClient(ctx, serviceAccount, container.CloudPlatformScope)
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot create Google Cloud client: %w", err)
@@ -111,7 +110,7 @@ func GetGKEClusterStatus(ctx context.Context, secretKeySelector provider.SecretK
 	if err != nil {
 		return nil, err
 	}
-	svc, project, err := ConnectToContainerService(sa)
+	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +159,7 @@ func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		}
 	}
 
-	svc, gkeProject, err := ConnectToContainerService(sa)
+	svc, gkeProject, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return clusters, err
 	}
@@ -184,7 +183,7 @@ func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvid
 
 func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
-	svc, project, err := ConnectToContainerService(sa)
+	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +240,7 @@ func ListGKEUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.Maste
 
 func ListGKEMachineDeploymentUpgrades(ctx context.Context, sa, zone, clusterName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
 	upgrades := make([]*apiv1.MasterVersion, 0)
-	svc, project, err := ConnectToContainerService(sa)
+	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +298,7 @@ func isValidVersion(currentVersion, newVersion *semverlib.Version) bool {
 
 func ListGKEImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, error) {
 	images := apiv2.GKEImageList{}
-	svc, project, err := ConnectToContainerService(sa)
+	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +319,7 @@ func ListGKEImages(ctx context.Context, sa, zone string) (apiv2.GKEImageList, er
 }
 
 func ValidateGKECredentials(ctx context.Context, sa string) error {
-	svc, project, err := ConnectToContainerService(sa)
+	svc, project, err := ConnectToContainerService(ctx, sa)
 	if err != nil {
 		return err
 	}
@@ -346,8 +345,7 @@ func convertGKEStatus(status string) apiv2.ExternalClusterState {
 	}
 }
 
-func getCredentials(serviceAccount string) (*google.Credentials, error) {
-	ctx := context.Background()
+func getCredentials(ctx context.Context, serviceAccount string) (*google.Credentials, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding service account: %w", err)
