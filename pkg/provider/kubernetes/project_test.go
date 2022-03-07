@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -154,7 +155,7 @@ func TestListProjects(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			result, err := target.List(tc.listOptions)
+			result, err := target.List(context.Background(), tc.listOptions)
 
 			// validate
 			if err != nil {
@@ -235,7 +236,7 @@ func TestGetUnsecuredProjects(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			result, err := target.GetUnsecured(tc.projectName, tc.getOptions)
+			result, err := target.GetUnsecured(context.Background(), tc.projectName, tc.getOptions)
 
 			if len(tc.expectedError) == 0 {
 				// validate

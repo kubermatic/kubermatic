@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -75,7 +76,7 @@ func TestCreateProjectServiceAccount(t *testing.T) {
 			// act
 			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
-			sa, err := target.CreateProjectServiceAccount(tc.userInfo, tc.project, tc.saName, tc.saGroup)
+			sa, err := target.CreateProjectServiceAccount(context.Background(), tc.userInfo, tc.project, tc.saName, tc.saGroup)
 
 			// validate
 			if err != nil {
@@ -147,7 +148,7 @@ func TestListProjectServiceAccount(t *testing.T) {
 			// act
 			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
-			saList, err := target.ListProjectServiceAccount(tc.userInfo, tc.project, &provider.ServiceAccountListOptions{ServiceAccountName: tc.saName})
+			saList, err := target.ListProjectServiceAccount(context.Background(), tc.userInfo, tc.project, &provider.ServiceAccountListOptions{ServiceAccountName: tc.saName})
 			// validate
 			if err != nil {
 				t.Fatal(err)
@@ -211,7 +212,7 @@ func TestGetProjectServiceAccount(t *testing.T) {
 			// act
 			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
-			sa, err := target.GetProjectServiceAccount(tc.userInfo, tc.saName, nil)
+			sa, err := target.GetProjectServiceAccount(context.Background(), tc.userInfo, tc.saName, nil)
 			// validate
 			if err != nil {
 				t.Fatal(err)
@@ -272,14 +273,14 @@ func TestUpdateProjectServiceAccount(t *testing.T) {
 			// act
 			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
-			sa, err := target.GetProjectServiceAccount(tc.userInfo, tc.saName, nil)
+			sa, err := target.GetProjectServiceAccount(context.Background(), tc.userInfo, tc.saName, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			sa.Spec.Name = tc.newName
 
-			expectedSA, err := target.UpdateProjectServiceAccount(tc.userInfo, sa)
+			expectedSA, err := target.UpdateProjectServiceAccount(context.Background(), tc.userInfo, sa)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -327,12 +328,12 @@ func TestDeleteProjectServiceAccount(t *testing.T) {
 			// act
 			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
-			err := target.DeleteProjectServiceAccount(tc.userInfo, tc.saName)
+			err := target.DeleteProjectServiceAccount(context.Background(), tc.userInfo, tc.saName)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			_, err = target.GetProjectServiceAccount(tc.userInfo, tc.saName, nil)
+			_, err = target.GetProjectServiceAccount(context.Background(), tc.userInfo, tc.saName, nil)
 			if err == nil {
 				t.Fatal("expected error")
 			}

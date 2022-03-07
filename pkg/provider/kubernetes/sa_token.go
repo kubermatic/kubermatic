@@ -53,8 +53,11 @@ type ServiceAccountTokenProvider struct {
 	kubernetesClientPrivileged ctrlruntimeclient.Client
 }
 
+var _ provider.ServiceAccountTokenProvider = &ServiceAccountTokenProvider{}
+var _ provider.PrivilegedServiceAccountTokenProvider = &ServiceAccountTokenProvider{}
+
 // Create creates a new token for service account.
-func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) (*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) Create(ctx context.Context, userInfo *provider.UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) (*corev1.Secret, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -69,7 +72,7 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	if err := kubernetesImpersonatedClient.Create(context.Background(), secret); err != nil {
+	if err := kubernetesImpersonatedClient.Create(ctx, secret); err != nil {
 		return nil, err
 	}
 	secret.Name = removeTokenPrefix(secret.Name)
@@ -80,7 +83,7 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to create the resource.
-func (p *ServiceAccountTokenProvider) CreateUnsecured(sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) (*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) CreateUnsecured(ctx context.Context, sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) (*corev1.Secret, error) {
 	if sa == nil {
 		return nil, kerrors.NewBadRequest("service account cannot be nil")
 	}
@@ -88,7 +91,7 @@ func (p *ServiceAccountTokenProvider) CreateUnsecured(sa *kubermaticv1.User, pro
 	secret := genToken(sa, projectID, tokenName, tokenID, token)
 	secret.Namespace = resources.KubermaticNamespace
 
-	if err := p.kubernetesClientPrivileged.Create(context.Background(), secret); err != nil {
+	if err := p.kubernetesClientPrivileged.Create(ctx, secret); err != nil {
 		return nil, err
 	}
 	secret.Name = removeTokenPrefix(secret.Name)
@@ -117,7 +120,7 @@ func genToken(sa *kubermaticv1.User, projectID, tokenName, tokenID, token string
 }
 
 // List  gets tokens for the given service account and project.
-func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *provider.ServiceAccountTokenListOptions) ([]*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) List(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *provider.ServiceAccountTokenListOptions) ([]*corev1.Secret, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -132,7 +135,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 	}
 
 	allSecrets := &corev1.SecretList{}
-	if err := p.kubernetesClientPrivileged.List(context.Background(), allSecrets, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: project.Name}); err != nil {
+	if err := p.kubernetesClientPrivileged.List(ctx, allSecrets, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: project.Name}); err != nil {
 		return nil, err
 	}
 
@@ -157,7 +160,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		}
 
 		tokenToGet := resultList[0]
-		if err = kubernetesImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tokenToGet.Name, Namespace: resources.KubermaticNamespace}, &corev1.Secret{}); err != nil {
+		if err = kubernetesImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: tokenToGet.Name, Namespace: resources.KubermaticNamespace}, &corev1.Secret{}); err != nil {
 			return nil, err
 		}
 	}
@@ -189,7 +192,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to get the resource
 // gets resources from the cache.
-func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAccountTokenListOptions) ([]*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) ListUnsecured(ctx context.Context, options *provider.ServiceAccountTokenListOptions) ([]*corev1.Secret, error) {
 	labelSelector := labels.Everything()
 	if options != nil {
 		if options.LabelSelector != nil {
@@ -197,7 +200,7 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 		}
 	}
 	allSecrets := &corev1.SecretList{}
-	if err := p.kubernetesClientPrivileged.List(context.Background(), allSecrets, ctrlruntimeclient.MatchingLabelsSelector{Selector: labelSelector}); err != nil {
+	if err := p.kubernetesClientPrivileged.List(ctx, allSecrets, ctrlruntimeclient.MatchingLabelsSelector{Selector: labelSelector}); err != nil {
 		return nil, err
 	}
 	allTokens := []*corev1.Secret{}
@@ -258,7 +261,7 @@ func isToken(secret *corev1.Secret) bool {
 }
 
 // Get method returns token by name.
-func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name string) (*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*corev1.Secret, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -273,7 +276,7 @@ func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name stri
 	}
 
 	token := &corev1.Secret{}
-	if err := kubernetesImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: name, Namespace: resources.KubermaticNamespace}, token); err != nil {
+	if err := kubernetesImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: name, Namespace: resources.KubermaticNamespace}, token); err != nil {
 		return nil, err
 	}
 	token.Name = removeTokenPrefix(token.Name)
@@ -284,14 +287,14 @@ func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name stri
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to get the resource.
-func (p *ServiceAccountTokenProvider) GetUnsecured(name string) (*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) GetUnsecured(ctx context.Context, name string) (*corev1.Secret, error) {
 	if len(name) == 0 {
 		return nil, kerrors.NewBadRequest("token name cannot be empty")
 	}
 	name = addTokenPrefix(name)
 
 	token := &corev1.Secret{}
-	if err := p.kubernetesClientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: resources.KubermaticNamespace, Name: name}, token); err != nil {
+	if err := p.kubernetesClientPrivileged.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: resources.KubermaticNamespace, Name: name}, token); err != nil {
 		return nil, err
 	}
 	token.Name = removeTokenPrefix(token.Name)
@@ -299,7 +302,7 @@ func (p *ServiceAccountTokenProvider) GetUnsecured(name string) (*corev1.Secret,
 }
 
 // Update method updates given token.
-func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret *corev1.Secret) (*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) Update(ctx context.Context, userInfo *provider.UserInfo, secret *corev1.Secret) (*corev1.Secret, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -315,7 +318,7 @@ func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	if err := kubernetesImpersonatedClient.Update(context.Background(), secretCpy); err != nil {
+	if err := kubernetesImpersonatedClient.Update(ctx, secretCpy); err != nil {
 		return nil, err
 	}
 	secretCpy.Name = removeTokenPrefix(secretCpy.Name)
@@ -326,7 +329,7 @@ func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to get the resource.
-func (p *ServiceAccountTokenProvider) UpdateUnsecured(secret *corev1.Secret) (*corev1.Secret, error) {
+func (p *ServiceAccountTokenProvider) UpdateUnsecured(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error) {
 	if secret == nil {
 		return nil, kerrors.NewBadRequest("secret cannot be empty")
 	}
@@ -334,7 +337,7 @@ func (p *ServiceAccountTokenProvider) UpdateUnsecured(secret *corev1.Secret) (*c
 	secretCpy.Name = addTokenPrefix(secretCpy.Name)
 	secretCpy.Namespace = resources.KubermaticNamespace
 
-	if err := p.kubernetesClientPrivileged.Update(context.Background(), secretCpy); err != nil {
+	if err := p.kubernetesClientPrivileged.Update(ctx, secretCpy); err != nil {
 		return nil, err
 	}
 
@@ -343,7 +346,7 @@ func (p *ServiceAccountTokenProvider) UpdateUnsecured(secret *corev1.Secret) (*c
 }
 
 // Delete method deletes given token.
-func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name string) error {
+func (p *ServiceAccountTokenProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, name string) error {
 	if userInfo == nil {
 		return kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -356,14 +359,14 @@ func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name s
 	if err != nil {
 		return kerrors.NewInternalError(err)
 	}
-	return kubernetesImpersonatedClient.Delete(context.Background(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: resources.KubermaticNamespace}})
+	return kubernetesImpersonatedClient.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: resources.KubermaticNamespace}})
 }
 
 // DeleteUnsecured deletes the token
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to delete the resource.
-func (p *ServiceAccountTokenProvider) DeleteUnsecured(name string) error {
+func (p *ServiceAccountTokenProvider) DeleteUnsecured(ctx context.Context, name string) error {
 	if len(name) == 0 {
 		return kerrors.NewBadRequest("token name cannot be empty")
 	}
@@ -374,7 +377,7 @@ func (p *ServiceAccountTokenProvider) DeleteUnsecured(name string) error {
 			Namespace: resources.KubermaticNamespace,
 		},
 	}
-	return p.kubernetesClientPrivileged.Delete(context.Background(), secret)
+	return p.kubernetesClientPrivileged.Delete(ctx, secret)
 }
 
 // removeTokenPrefix removes "sa-token-" from a token's ID

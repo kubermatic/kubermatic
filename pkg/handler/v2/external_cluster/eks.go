@@ -299,7 +299,7 @@ func getEKSCredentialsFromReq(ctx context.Context, req EKSTypesReq, userInfoGett
 
 	presetName := req.Credential
 	if len(presetName) > 0 {
-		preset, err := presetProvider.GetPreset(userInfo, presetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, presetName)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", presetName, userInfo.Email))
 		}

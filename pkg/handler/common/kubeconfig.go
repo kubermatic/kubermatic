@@ -466,7 +466,7 @@ func getClusterForOIDCEndpoint(ctx context.Context, projectProvider provider.Pro
 	}
 	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-	project, err := getProjectForOIDCEndpoint(userInfo, projectProvider, privilegedProjectProvider, projectID)
+	project, err := getProjectForOIDCEndpoint(ctx, userInfo, projectProvider, privilegedProjectProvider, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -478,13 +478,13 @@ func getClusterForOIDCEndpoint(ctx context.Context, projectProvider provider.Pro
 	return clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
 }
 
-func getProjectForOIDCEndpoint(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
+func getProjectForOIDCEndpoint(ctx context.Context, userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
 	if userInfo.IsAdmin {
 		// get any project for admin
-		return privilegedProjectProvider.GetUnsecured(projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+		return privilegedProjectProvider.GetUnsecured(ctx, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 	}
 
-	return projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+	return projectProvider.Get(ctx, userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 }
 
 type encodeKubeConifgResponse struct {

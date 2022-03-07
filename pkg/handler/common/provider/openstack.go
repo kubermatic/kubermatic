@@ -59,7 +59,7 @@ func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGe
 		return nil, err
 	}
 
-	settings, err := settingsProvider.GetGlobalSettings()
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

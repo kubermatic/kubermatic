@@ -47,7 +47,7 @@ const GKENodepoolNameLabel = "cloud.google.com/gke-nodepool"
 
 func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -96,7 +96,7 @@ func GKEImagesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGet
 
 func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -153,7 +153,7 @@ func GKEZonesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 
 func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -177,7 +177,7 @@ func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, err
 		}
 
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -188,7 +188,7 @@ func GKESizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 
 func GKEDiskTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 

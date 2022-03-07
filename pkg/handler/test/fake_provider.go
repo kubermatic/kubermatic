@@ -49,8 +49,12 @@ const (
 type FakePrivilegedProjectProvider struct {
 }
 
+var _ provider.PrivilegedProjectProvider = &FakePrivilegedProjectProvider{}
+
 type FakeProjectProvider struct {
 }
+
+var _ provider.ProjectProvider = &FakeProjectProvider{}
 
 func NewFakeProjectProvider() *FakeProjectProvider {
 	return &FakeProjectProvider{}
@@ -60,7 +64,7 @@ func NewFakePrivilegedProjectProvider() *FakePrivilegedProjectProvider {
 	return &FakePrivilegedProjectProvider{}
 }
 
-func (f *FakeProjectProvider) New(user []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error) {
+func (f *FakeProjectProvider) New(ctx context.Context, user []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -68,12 +72,12 @@ func (f *FakeProjectProvider) New(user []*kubermaticv1.User, name string, labels
 //
 // Note:
 // Before deletion project's status.phase is set to ProjectTerminating.
-func (f *FakeProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalName string) error {
+func (f *FakeProjectProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, projectInternalName string) error {
 	return errors.New("not implemented")
 }
 
 // Get returns the project with the given name.
-func (f *FakeProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticv1.Project, error) {
+func (f *FakeProjectProvider) Get(ctx context.Context, userInfo *provider.UserInfo, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticv1.Project, error) {
 	if NoExistingFakeProjectID == projectInternalName || ForbiddenFakeProjectID == projectInternalName {
 		return nil, createError(http.StatusForbidden, ImpersonatedClientErrorMsg)
 	}
@@ -82,7 +86,7 @@ func (f *FakeProjectProvider) Get(userInfo *provider.UserInfo, projectInternalNa
 }
 
 // Update update an existing project and returns it.
-func (f *FakeProjectProvider) Update(userInfo *provider.UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error) {
+func (f *FakeProjectProvider) Update(ctx context.Context, userInfo *provider.UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -90,13 +94,13 @@ func (f *FakeProjectProvider) Update(userInfo *provider.UserInfo, newProject *ku
 // If you want to filter the result please set ProjectListOptions
 //
 // Note that the list is taken from the cache.
-func (f *FakeProjectProvider) List(options *provider.ProjectListOptions) ([]*kubermaticv1.Project, error) {
+func (f *FakeProjectProvider) List(ctx context.Context, options *provider.ProjectListOptions) ([]*kubermaticv1.Project, error) {
 	return nil, errors.New("not implemented")
 }
 
 // GetUnsecured returns the project with the given name
 // This function is unsafe in a sense that it uses privileged account to get project with the given name.
-func (f *FakePrivilegedProjectProvider) GetUnsecured(projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticv1.Project, error) {
+func (f *FakePrivilegedProjectProvider) GetUnsecured(ctx context.Context, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticv1.Project, error) {
 	if NoExistingFakeProjectID == projectInternalName {
 		return nil, createError(http.StatusNotFound, "")
 	}
@@ -109,13 +113,13 @@ func (f *FakePrivilegedProjectProvider) GetUnsecured(projectInternalName string,
 
 // DeleteUnsecured deletes any given project
 // This function is unsafe in a sense that it uses privileged account to delete project with the given name.
-func (f *FakePrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) error {
+func (f *FakePrivilegedProjectProvider) DeleteUnsecured(ctx context.Context, projectInternalName string) error {
 	return nil
 }
 
 // UpdateUnsecured update an existing project and returns it
 // This function is unsafe in a sense that it uses privileged account to update project.
-func (f *FakePrivilegedProjectProvider) UpdateUnsecured(project *kubermaticv1.Project) (*kubermaticv1.Project, error) {
+func (f *FakePrivilegedProjectProvider) UpdateUnsecured(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.Project, error) {
 	return project, nil
 }
 

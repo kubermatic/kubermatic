@@ -81,7 +81,7 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, k8cerrors.NewBadRequest("You cannot create a node deployment for KubeAdm provider")
 	}
 
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: clusterID})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -490,7 +490,7 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 		return nil, fmt.Errorf("error getting dc: %w", err)
 	}
 
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: clusterID})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

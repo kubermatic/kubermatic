@@ -171,7 +171,7 @@ func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGet
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
@@ -696,7 +696,7 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 
 func AKSNodeVersionsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 

@@ -378,7 +378,7 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 
 	// SSH check
 	if len(userSSHKeys) > 0 && scope == kubermaticv1.ProjectClusterTemplateScope {
-		projectSSHKeys, err := sshKeyProvider.List(project, nil)
+		projectSSHKeys, err := sshKeyProvider.List(ctx, project, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

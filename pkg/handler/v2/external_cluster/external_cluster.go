@@ -54,7 +54,7 @@ const (
 
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -74,7 +74,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 		var preset *kubermaticv1.Preset
 		if len(req.Credential) > 0 {
-			preset, err = presetProvider.GetPreset(userInfo, req.Credential)
+			preset, err = presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -214,7 +214,7 @@ func (req createClusterReq) Validate() error {
 
 func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -277,7 +277,7 @@ func (req deleteClusterReq) Validate() error {
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -333,7 +333,7 @@ func (req listClusterReq) Validate() error {
 
 func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -431,7 +431,7 @@ func (req GetClusterReq) Validate() error {
 
 func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -480,7 +480,7 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -635,7 +635,7 @@ func (req updateClusterReq) Validate() error {
 
 func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -695,7 +695,7 @@ func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 
 func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -995,8 +995,8 @@ func updateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	return clusterProvider.Update(userInfo, cluster)
 }
 
-func AreExternalClustersEnabled(provider provider.SettingsProvider) bool {
-	settings, err := provider.GetGlobalSettings()
+func AreExternalClustersEnabled(ctx context.Context, provider provider.SettingsProvider) bool {
+	settings, err := provider.GetGlobalSettings(ctx)
 	if err != nil {
 		return false
 	}
@@ -1014,7 +1014,7 @@ type body struct {
 
 func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
