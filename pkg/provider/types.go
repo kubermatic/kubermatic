@@ -675,20 +675,20 @@ type EventRecorderProvider interface {
 // AddonProvider declares the set of methods for interacting with addons.
 type AddonProvider interface {
 	// New creates a new addon in the given cluster
-	New(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
+	New(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
 
 	// List gets all addons that belong to the given cluster
 	// If you want to filter the result please take a look at ClusterListOptions
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
 
 	// Get returns the given addon
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
 
 	// Update updates an addon
-	Update(userInfo *UserInfo, cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
+	Update(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
 
 	// Delete deletes the given addon
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
 }
 
 type PrivilegedAddonProvider interface {
@@ -697,31 +697,31 @@ type PrivilegedAddonProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
+	ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
 
 	// NewUnsecured creates a new addon in the given cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
+	NewUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
 
 	// GetUnsecured returns the given addon
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
 
 	// UpdateUnsecured updates an addon
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
+	UpdateUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
 
 	// DeleteUnsecured deletes the given addon
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, addonName string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, addonName string) error
 }
 
 type AddonConfigProvider interface {

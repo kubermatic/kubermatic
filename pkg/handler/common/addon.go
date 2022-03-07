@@ -191,14 +191,14 @@ func deleteAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.DeleteUnsecured(cluster, addonID)
+		return privilegedAddonProvider.DeleteUnsecured(ctx, cluster, addonID)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.Delete(userInfo, cluster, addonID)
+	return addonProvider.Delete(ctx, userInfo, cluster, addonID)
 }
 
 func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon, projectID string) (*kubermaticv1.Addon, error) {
@@ -208,14 +208,14 @@ func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.UpdateUnsecured(cluster, addon)
+		return privilegedAddonProvider.UpdateUnsecured(ctx, cluster, addon)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.Update(userInfo, cluster, addon)
+	return addonProvider.Update(ctx, userInfo, cluster, addon)
 }
 
 func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, rawVars *runtime.RawExtension, labels map[string]string, projectID, name string) (*kubermaticv1.Addon, error) {
@@ -225,14 +225,14 @@ func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.NewUnsecured(cluster, name, rawVars, labels)
+		return privilegedAddonProvider.NewUnsecured(ctx, cluster, name, rawVars, labels)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.New(userInfo, cluster, name, rawVars, labels)
+	return addonProvider.New(ctx, userInfo, cluster, name, rawVars, labels)
 }
 
 func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, addonID string) (*kubermaticv1.Addon, error) {
@@ -242,14 +242,14 @@ func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, clust
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.GetUnsecured(cluster, addonID)
+		return privilegedAddonProvider.GetUnsecured(ctx, cluster, addonID)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.Get(userInfo, cluster, addonID)
+	return addonProvider.Get(ctx, userInfo, cluster, addonID)
 }
 
 func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) ([]*kubermaticv1.Addon, error) {
@@ -259,14 +259,14 @@ func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, clu
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.ListUnsecured(cluster)
+		return privilegedAddonProvider.ListUnsecured(ctx, cluster)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.List(userInfo, cluster)
+	return addonProvider.List(ctx, userInfo, cluster)
 }
 
 func convertInternalAddonToExternal(internalAddon *kubermaticv1.Addon) (*apiv1.Addon, error) {
