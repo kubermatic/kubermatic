@@ -65,7 +65,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type WebsocketSettingsWriter func(providers watcher.Providers, ws *websocket.Conn)
+type WebsocketSettingsWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
@@ -99,7 +99,7 @@ func getSettingsWatchHandler(writer WebsocketSettingsWriter, providers watcher.P
 			return
 		}
 
-		go writer(providers, ws)
+		go writer(req.Context(), providers, ws)
 		requestLoggingReader(ws)
 	}
 }

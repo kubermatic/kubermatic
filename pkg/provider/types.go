@@ -731,8 +731,8 @@ type AddonConfigProvider interface {
 
 // SettingsProvider declares the set of methods for interacting global settings.
 type SettingsProvider interface {
-	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
-	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
+	GetGlobalSettings(ctx context.Context) (*kubermaticv1.KubermaticSetting, error)
+	UpdateGlobalSettings(ctx context.Context, userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
 }
 
 // AdminProvider declares the set of methods for interacting with admin.

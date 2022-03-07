@@ -93,7 +93,7 @@ func PacketSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter 
 			}
 		}
 
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

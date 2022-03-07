@@ -223,7 +223,7 @@ func GCPSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter prov
 				sa = credentials.ServiceAccount
 			}
 		}
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

@@ -119,7 +119,7 @@ func AlibabaInstanceTypesEndpoint(presetProvider provider.PresetProvider, userIn
 			}
 		}
 
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

@@ -61,7 +61,7 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 		return nil, err
 	}
 
-	settings, err := settingsProvider.GetGlobalSettings()
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

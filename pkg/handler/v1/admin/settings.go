@@ -35,7 +35,7 @@ import (
 // KubermaticSettingsEndpoint returns global settings.
 func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		globalSettings, err := settingsProvider.GetGlobalSettings()
+		globalSettings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -47,7 +47,7 @@ func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endp
 // KubermaticCustomLinksEndpoint returns custom links.
 func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		globalSettings, err := settingsProvider.GetGlobalSettings()
+		globalSettings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -65,7 +65,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingGlobalSettings, err := settingsProvider.GetGlobalSettings()
+		existingGlobalSettings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -85,7 +85,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 		}
 
 		existingGlobalSettings.Spec = *patchedGlobalSettingsSpec
-		globalSettings, err := settingsProvider.UpdateGlobalSettings(userInfo, existingGlobalSettings)
+		globalSettings, err := settingsProvider.UpdateGlobalSettings(ctx, userInfo, existingGlobalSettings)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

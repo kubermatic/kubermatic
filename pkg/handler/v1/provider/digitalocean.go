@@ -56,7 +56,7 @@ func DigitaloceanSizeEndpoint(presetProvider provider.PresetProvider, userInfoGe
 			}
 		}
 
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

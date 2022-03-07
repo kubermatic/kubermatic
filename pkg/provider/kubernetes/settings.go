@@ -34,6 +34,8 @@ type SettingsProvider struct {
 	runtimeClient ctrlruntimeclient.Client
 }
 
+var _ provider.SettingsProvider = &SettingsProvider{}
+
 // NewUserProvider returns a user provider.
 func NewSettingsProvider(runtimeClient ctrlruntimeclient.Client) *SettingsProvider {
 	return &SettingsProvider{
@@ -41,29 +43,29 @@ func NewSettingsProvider(runtimeClient ctrlruntimeclient.Client) *SettingsProvid
 	}
 }
 
-func (s *SettingsProvider) GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error) {
+func (s *SettingsProvider) GetGlobalSettings(ctx context.Context) (*kubermaticv1.KubermaticSetting, error) {
 	settings := &kubermaticv1.KubermaticSetting{}
-	err := s.runtimeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: kubermaticv1.GlobalSettingsName}, settings)
+	err := s.runtimeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: kubermaticv1.GlobalSettingsName}, settings)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return s.createDefaultGlobalSettings()
+			return s.createDefaultGlobalSettings(ctx)
 		}
 		return nil, err
 	}
 	return settings, nil
 }
 
-func (s *SettingsProvider) UpdateGlobalSettings(userInfo *provider.UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error) {
+func (s *SettingsProvider) UpdateGlobalSettings(ctx context.Context, userInfo *provider.UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error) {
 	if !userInfo.IsAdmin {
 		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
-	if err := s.runtimeClient.Update(context.Background(), settings); err != nil {
+	if err := s.runtimeClient.Update(ctx, settings); err != nil {
 		return nil, err
 	}
 	return settings, nil
 }
 
-func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.KubermaticSetting, error) {
+func (s *SettingsProvider) createDefaultGlobalSettings(ctx context.Context) (*kubermaticv1.KubermaticSetting, error) {
 	defaultSettings := &kubermaticv1.KubermaticSetting{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: kubermaticv1.GlobalSettingsName,
@@ -92,7 +94,7 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 			},
 		},
 	}
-	if err := s.runtimeClient.Create(context.Background(), defaultSettings); err != nil {
+	if err := s.runtimeClient.Create(ctx, defaultSettings); err != nil {
 		return nil, err
 	}
 	return defaultSettings, nil

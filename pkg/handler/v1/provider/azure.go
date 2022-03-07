@@ -62,7 +62,7 @@ func AzureSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 				tenantID = credentials.TenantID
 			}
 		}
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

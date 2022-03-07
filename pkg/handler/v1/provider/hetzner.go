@@ -54,7 +54,7 @@ func HetznerSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter 
 				token = credentials.Token
 			}
 		}
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
