@@ -609,11 +609,11 @@ type ServiceAccountListOptions struct {
 
 // ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token.
 type ServiceAccountTokenProvider interface {
-	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
-	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
-	Get(userInfo *UserInfo, name string) (*corev1.Secret, error)
-	Update(userInfo *UserInfo, secret *corev1.Secret) (*corev1.Secret, error)
-	Delete(userInfo *UserInfo, name string) error
+	Create(ctx context.Context, userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
+	List(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
+	Get(ctx context.Context, userInfo *UserInfo, name string) (*corev1.Secret, error)
+	Update(ctx context.Context, userInfo *UserInfo, secret *corev1.Secret) (*corev1.Secret, error)
+	Delete(ctx context.Context, userInfo *UserInfo, name string) error
 }
 
 // ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.
@@ -638,31 +638,31 @@ type PrivilegedServiceAccountTokenProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	// gets resources from the cache
-	ListUnsecured(*ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
+	ListUnsecured(context.Context, *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
 
 	// CreateUnsecured creates a new token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
+	CreateUnsecured(ctx context.Context, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
 
 	// GetUnsecured gets the token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string) (*corev1.Secret, error)
+	GetUnsecured(ctx context.Context, name string) (*corev1.Secret, error)
 
 	// UpdateUnsecured updates the token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	UpdateUnsecured(secret *corev1.Secret) (*corev1.Secret, error)
+	UpdateUnsecured(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error)
 
 	// DeleteUnsecured deletes the token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(name string) error
+	DeleteUnsecured(ctx context.Context, name string) error
 }
 
 // EventRecorderProvider allows to record events for objects that can be read using K8S API.
