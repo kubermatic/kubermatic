@@ -56,7 +56,7 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		user, err := userProvider.UserByID(req.UserID)
+		user, err := userProvider.UserByID(ctx, req.UserID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -151,7 +151,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		memberToUpdate, err := userProvider.UserByEmail(currentMemberFromRequest.Email)
+		memberToUpdate, err := userProvider.UserByEmail(ctx, currentMemberFromRequest.Email)
 		if err != nil && errors.Is(err, provider.ErrNotFound) {
 			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
@@ -222,7 +222,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 
 		externalUsers := []*apiv1.User{}
 		for _, memberOfProjectBinding := range membersOfProjectBindings {
-			user, err := userProvider.UserByEmail(memberOfProjectBinding.Spec.UserEmail)
+			user, err := userProvider.UserByEmail(ctx, memberOfProjectBinding.Spec.UserEmail)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -250,7 +250,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		apiUserFromRequest := req.Body
 		projectFromRequest := apiUserFromRequest.Projects[0]
 
-		userToInvite, err := userProvider.UserByEmail(apiUserFromRequest.Email)
+		userToInvite, err := userProvider.UserByEmail(ctx, apiUserFromRequest.Email)
 		if err != nil && errors.Is(err, provider.ErrNotFound) {
 			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
@@ -296,7 +296,7 @@ func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 		if !ok {
 			return nil, k8cerrors.NewNotAuthorized()
 		}
-		return nil, userProvider.InvalidateToken(authenticatedUser, token, expiry)
+		return nil, userProvider.InvalidateToken(ctx, authenticatedUser, token, expiry)
 	}
 }
 
@@ -366,7 +366,7 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 		}
 
 		existingUser.Spec.Settings = patchedSettings
-		updatedUser, err := userProvider.UpdateUser(existingUser)
+		updatedUser, err := userProvider.UpdateUser(ctx, existingUser)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

@@ -17,6 +17,7 @@ limitations under the License.
 package handler
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"net/url"
@@ -65,7 +66,7 @@ var upgrader = websocket.Upgrader{
 }
 
 type WebsocketSettingsWriter func(providers watcher.Providers, ws *websocket.Conn)
-type WebsocketUserWriter func(providers watcher.Providers, ws *websocket.Conn, userEmail string)
+type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
@@ -117,7 +118,7 @@ func getUserWatchHandler(writer WebsocketUserWriter, providers watcher.Providers
 			return
 		}
 
-		go writer(providers, ws, user.Email)
+		go writer(req.Context(), providers, ws, user.Email)
 		requestLoggingReader(ws)
 	}
 }

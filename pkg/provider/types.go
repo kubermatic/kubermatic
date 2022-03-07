@@ -304,13 +304,13 @@ type PrivilegedSSHKeyProvider interface {
 
 // UserProvider declares the set of methods for interacting with kubermatic users.
 type UserProvider interface {
-	UserByEmail(email string) (*kubermaticv1.User, error)
-	CreateUser(id, name, email string) (*kubermaticv1.User, error)
-	UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error)
-	UserByID(id string) (*kubermaticv1.User, error)
-	InvalidateToken(user *kubermaticv1.User, token string, expiry apiv1.Time) error
-	GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error)
-	List() ([]kubermaticv1.User, error)
+	UserByEmail(ctx context.Context, email string) (*kubermaticv1.User, error)
+	CreateUser(ctx context.Context, id, name, email string) (*kubermaticv1.User, error)
+	UpdateUser(ctx context.Context, user *kubermaticv1.User) (*kubermaticv1.User, error)
+	UserByID(ctx context.Context, id string) (*kubermaticv1.User, error)
+	InvalidateToken(ctx context.Context, user *kubermaticv1.User, token string, expiry apiv1.Time) error
+	GetInvalidatedTokens(ctx context.Context, user *kubermaticv1.User) ([]string, error)
+	List(ctx context.Context) ([]kubermaticv1.User, error)
 }
 
 // PrivilegedProjectProvider declares the set of method for interacting with kubermatic's project and uses privileged account for it.

@@ -62,13 +62,13 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, err
 		}
 
-		if err := validateUserProjectsLimit(user, settings, projectProvider, privilegedProjectProvider, memberMapper, memberProvider, userProvider); err != nil {
+		if err := validateUserProjectsLimit(ctx, user, settings, projectProvider, privilegedProjectProvider, memberMapper, memberProvider, userProvider); err != nil {
 			return nil, err
 		}
 
 		userEmail := user.Spec.Email
 		if kubernetes.IsProjectServiceAccount(userEmail) {
-			return createProjectByServiceAccount(userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
+			return createProjectByServiceAccount(ctx, userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
 		}
 
 		kubermaticProject, err := projectProvider.New([]*kubermaticv1.User{user}, projectRq.Body.Name, projectRq.Body.Labels)
@@ -89,7 +89,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func createProjectByServiceAccount(saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
+func createProjectByServiceAccount(ctx context.Context, saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
 	var humanUserOwnerList []*kubermaticv1.User
 	bindings, err := memberMapper.MappingsFor(saEmail)
 	if err != nil {
@@ -111,7 +111,7 @@ func createProjectByServiceAccount(saEmail string, projectReq projectReq, member
 		if kubernetes.IsProjectServiceAccount(userEmail) {
 			return nil, kubermaticerrors.New(http.StatusBadRequest, "user email list should contain only human users")
 		}
-		humanUserOwner, err := userProvider.UserByEmail(userEmail)
+		humanUserOwner, err := userProvider.UserByEmail(ctx, userEmail)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -151,7 +151,7 @@ func checkProjectRestriction(user *kubermaticv1.User, settings *kubermaticv1.Kub
 	return nil
 }
 
-func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.KubermaticSetting, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) error {
+func validateUserProjectsLimit(ctx context.Context, user *kubermaticv1.User, settings *kubermaticv1.KubermaticSetting, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) error {
 	if user.Spec.IsAdmin {
 		return nil
 	}
@@ -183,7 +183,7 @@ func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.K
 			continue
 		}
 		// get only owned projects
-		projectOwners, err := common.GetOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, userInfo, projectInternal, memberProvider, userProvider)
 		if err != nil {
 			return common.KubernetesErrorToHTTPError(err)
 		}
@@ -216,7 +216,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		}
 
 		if req.DisplayAll && userInfo.IsAdmin {
-			return getAllProjectsForAdmin(userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
+			return getAllProjectsForAdmin(ctx, userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
 		}
 		projects := []*apiv1.Project{}
 		userMappings, err := memberMapper.MappingsFor(userInfo.Email)
@@ -245,7 +245,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 				continue
 			}
 
-			projectOwners, err := common.GetOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
+			projectOwners, err := common.GetOwnersForProject(ctx, userInfo, projectInternal, memberProvider, userProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -263,7 +263,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 	}
 }
 
-func getAllProjectsForAdmin(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) ([]*apiv1.Project, error) {
+func getAllProjectsForAdmin(ctx context.Context, userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) ([]*apiv1.Project, error) {
 	projects := []*apiv1.Project{}
 	projectList, err := projectProvider.List(nil)
 	if err != nil {
@@ -275,7 +275,7 @@ func getAllProjectsForAdmin(userInfo *provider.UserInfo, projectProvider provide
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	for _, project := range projectList {
-		projectOwners, err := common.GetOwnersForProject(userInfo, project, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, userInfo, project, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -357,7 +357,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		projectOwners, err := common.GetOwnersForProject(adminUserInfo, kubermaticProject, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, adminUserInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -406,7 +406,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		projectOwners, err := common.GetOwnersForProject(adminUserInfo, kubermaticProject, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, adminUserInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

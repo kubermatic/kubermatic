@@ -250,7 +250,7 @@ func ForwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) e
 	return nil
 }
 
-func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
+func GetOwnersForProject(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
 	allProjectMembers, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
 	if err != nil {
 		return nil, err
@@ -258,7 +258,7 @@ func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Proj
 	projectOwners := []apiv1.User{}
 	for _, projectMember := range allProjectMembers {
 		if rbac.ExtractGroupPrefix(projectMember.Spec.Group) == rbac.OwnerGroupNamePrefix {
-			user, err := userProvider.UserByEmail(projectMember.Spec.UserEmail)
+			user, err := userProvider.UserByEmail(ctx, projectMember.Spec.UserEmail)
 			if err != nil {
 				continue
 			}
