@@ -306,24 +306,26 @@ type FakeEtcdBackupConfigProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeEtcdBackupConfigProvider) Create(userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-	return p.Provider.Create(userInfo, ebc)
+var _ provider.EtcdBackupConfigProvider = &FakeEtcdBackupConfigProvider{}
+
+func (p *FakeEtcdBackupConfigProvider) Create(ctx context.Context, userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	return p.Provider.Create(ctx, userInfo, ebc)
 }
 
-func (p *FakeEtcdBackupConfigProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
-	return p.Provider.Get(userInfo, cluster, name)
+func (p *FakeEtcdBackupConfigProvider) Get(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
+	return p.Provider.Get(ctx, userInfo, cluster, name)
 }
 
-func (p *FakeEtcdBackupConfigProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
-	return p.Provider.List(userInfo, cluster)
+func (p *FakeEtcdBackupConfigProvider) List(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
+	return p.Provider.List(ctx, userInfo, cluster)
 }
 
-func (p *FakeEtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
-	return p.Provider.Delete(userInfo, cluster, name)
+func (p *FakeEtcdBackupConfigProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
+	return p.Provider.Delete(ctx, userInfo, cluster, name)
 }
 
-func (p *FakeEtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-	return p.Provider.Patch(userInfo, oldConfig, newConfig)
+func (p *FakeEtcdBackupConfigProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	return p.Provider.Patch(ctx, userInfo, oldConfig, newConfig)
 }
 
 type FakeEtcdRestoreProvider struct {

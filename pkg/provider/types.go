@@ -1081,19 +1081,19 @@ type PrivilegedAllowedRegistryProvider interface {
 // EtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs.
 type EtcdBackupConfigProvider interface {
 	// Create creates the given etcdBackupConfig
-	Create(userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	Create(ctx context.Context, userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// Get gets the given etcdBackupConfig
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// List gets a list of etcdBackupConfig for a given cluster
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
 
 	// Delete deletes the given etcdBackupConfig
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 
 	// Patch updates the given etcdBackupConfig
-	Patch(userInfo *UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	Patch(ctx context.Context, userInfo *UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
 // PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client.
@@ -1102,31 +1102,31 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	CreateUnsecured(ctx context.Context, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// GetUnsecured gets the given etcdBackupConfig
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// ListUnsecured gets a list of all etcdBackupConfigs for a given cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
+	ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
 
 	// DeleteUnsecured deletes the given etcdBackupConfig
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error
 
 	// PatchUnsecured patches the given etcdBackupConfig
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to patch the resource
-	PatchUnsecured(oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	PatchUnsecured(ctx context.Context, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
 // EtcdRestoreProvider declares the set of method for interacting with etcd backup restores.
@@ -1174,7 +1174,7 @@ type PrivilegedEtcdRestoreProvider interface {
 // EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs across projects and its seeds.
 type EtcdBackupConfigProjectProvider interface {
 	// List gets a list of etcdBackupConfig for a given project
-	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
+	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
 // PrivilegedEtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds.
@@ -1183,7 +1183,7 @@ type PrivilegedEtcdBackupConfigProjectProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
+	ListUnsecured(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
 // EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores across projects and its seeds.
