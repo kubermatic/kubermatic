@@ -645,8 +645,9 @@ github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7Do
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/creack/pty v1.1.11 h1:07n33Z8lZxZ2qwegKbObQohDhXDQxiMMz1NOUGYlesw=
 github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
-github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4 h1:uPdJfcX6oBDV/n7KYnXipTvZr0Mll06CnH0FYsY5vYY=
 github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4/go.mod h1:0yCjO4zBzlwWSGh/zGfW2Zq1NX605qCYVBHD1fPXKNs=
+github.com/cristim/ec2-instances-info v0.0.0-20220302182402-4b7a873a84cf h1:/0fth76qMtSWpTbkOLRKHX/k6KgUAK6HMbXArUi7dTc=
+github.com/cristim/ec2-instances-info v0.0.0-20220302182402-4b7a873a84cf/go.mod h1:0yCjO4zBzlwWSGh/zGfW2Zq1NX605qCYVBHD1fPXKNs=
 github.com/cyphar/filepath-securejoin v0.2.2/go.mod h1:FpkQEhXnPnOthhzymB7CGsFk2G9VLXONKD9G7QGMM+4=
 github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c/go.mod h1:Ct2BUK8SB0YC1SMSibvLzxjeJLnrYEVLULFNiHY9YfQ=
 github.com/d2g/dhcp4client v1.0.0/go.mod h1:j0hNfjhrt2SxUOw55nL0ATM/z4Yt3t2Kd1mW34z5W5s=
