@@ -92,7 +92,7 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 				Namespace: bc.Namespace,
 			}
 
-			_, err = seedProvider.UpdateUnsecured(seed)
+			_, err = seedProvider.UpdateUnsecured(ctx, seed)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error setting seed backup destination credentials: %v", err))
 			}
