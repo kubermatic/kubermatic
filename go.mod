@@ -38,7 +38,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hetznercloud/hcloud-go v1.32.0
+	github.com/hetznercloud/hcloud-go v1.33.1
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.11
