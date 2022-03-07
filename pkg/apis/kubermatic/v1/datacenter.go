@@ -549,8 +549,6 @@ type MeteringConfiguration struct {
 	Interval Interval `json:"interval,omitempty"`
 	// IntervalInDays defines period for metering timestamps. Overwrites Interval.
 	IntervalInDays int `json:"intervalInDays,omitempty"`
-	// Retention specify number of days after which reports are deleted. -1 keeps reports forever.
-	Retention int `json:"retention,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=day;week;month

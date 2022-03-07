@@ -384,19 +384,32 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
 }
 
-func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.ClusterAddress, k8sServiceApi *net.IP, err error) {
+func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.ClusterAddress, k8sServiceApi *net.IP, reconcileK8sSvcEndpoints bool, err error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err = r.seedClient.Get(ctx, types.NamespacedName{
 		Name: r.clusterName,
 	}, cluster); err != nil {
-		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
+		return nil, nil, false, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
 	ip, err := resources.InClusterApiserverIP(cluster)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
+		return nil, nil, false, fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
 	}
-	return &cluster.Address, ip, nil
+
+	// Reconcile kubernetes service endpoints, unless it is not supported or disabled in the apiserver override settings.
+	reconcileK8sSvcEndpoints = true
+	if cluster.Spec.Version.Semver().Major() <= 1 && cluster.Spec.Version.Semver().Minor() < 21 {
+		// Do not reconcile for kubernetes versions below v1.21+
+		// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
+		reconcileK8sSvcEndpoints = false
+	}
+	if cluster.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil && *cluster.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled {
+		// Do not reconcile if explicitly disabled.
+		reconcileK8sSvcEndpoints = false
+	}
+
+	return &cluster.Address, ip, reconcileK8sSvcEndpoints, nil
 }
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false.

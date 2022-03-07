@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
@@ -1141,7 +1141,7 @@ func GenTestAddon(name string, variables *runtime.RawExtension, cluster *kuberma
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name:      name,
-			Variables: *variables,
+			Variables: variables,
 			Cluster: corev1.ObjectReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       kubermaticv1.ClusterKindName,
@@ -1474,13 +1474,13 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 	return apiv2.ConstraintTemplate{
 		Name: name,
 		Spec: kubermaticv1.ConstraintTemplateSpec{
-			CRD: constrainttemplatev1beta1.CRD{
-				Spec: constrainttemplatev1beta1.CRDSpec{
-					Names: constrainttemplatev1beta1.Names{
+			CRD: constrainttemplatev1.CRD{
+				Spec: constrainttemplatev1.CRDSpec{
+					Names: constrainttemplatev1.Names{
 						Kind:       "labelconstraint",
 						ShortNames: []string{"lc"},
 					},
-					Validation: &constrainttemplatev1beta1.Validation{
+					Validation: &constrainttemplatev1.Validation{
 						OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
 							Properties: map[string]apiextensionv1.JSONSchemaProps{
 								"labels": {
@@ -1497,7 +1497,7 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 					},
 				},
 			},
-			Targets: []constrainttemplatev1beta1.Target{
+			Targets: []constrainttemplatev1.Target{
 				{
 					Target: "admission.k8s.gatekeeper.sh",
 					Rego: `
@@ -1541,13 +1541,13 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1beta1.CRD{
-			Spec: constrainttemplatev1beta1.CRDSpec{
-				Names: constrainttemplatev1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &constrainttemplatev1beta1.Validation{
+				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
 						Properties: map[string]apiextensionv1.JSONSchemaProps{
 							"labels": {
@@ -1564,7 +1564,7 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 				},
 			},
 		},
-		Targets: []constrainttemplatev1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `

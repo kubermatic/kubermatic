@@ -33,7 +33,7 @@ import (
 
 // NewInternal returns a new instance of the client connection provider that
 // only works from within the seed cluster but has the advantage that it doesn't leave
-// the seed clusters network.
+// the seed cluster's network.
 func NewInternal(seedClient ctrlruntimeclient.Client) (*Provider, error) {
 	return &Provider{
 		seedClient:         seedClient,

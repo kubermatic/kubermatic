@@ -56,7 +56,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_kubernetes_controller"
+	ControllerName = "kkp-kubernetes-controller"
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.

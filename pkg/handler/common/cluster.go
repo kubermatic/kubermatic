@@ -265,6 +265,9 @@ func GenerateCluster(
 		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {
 			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
 		}
+		if partialCluster.Spec.Cloud.VSphere != nil {
+			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
+		}
 	}
 
 	return partialCluster, nil
@@ -350,18 +353,6 @@ func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	clusterSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	for _, clusterSSHKey := range clusterSSHKeys {
-		clusterSSHKey.RemoveFromCluster(clusterID)
-		if err := UpdateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, projectID); err != nil {
-			return nil, err
-		}
 	}
 
 	existingCluster, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})

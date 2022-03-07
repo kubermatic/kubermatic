@@ -125,7 +125,7 @@ func TestCiliumClusters(t *testing.T) {
 	for _, test := range tests {
 		proxyMode := test.proxyMode
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 			mu.Lock()
 			config, _, cleanup, err := createUsercluster(t, proxyMode)
 			mu.Unlock()
@@ -152,10 +152,11 @@ func testUserCluster(t *testing.T, config *rest.Config) {
 		t.Fatalf("failed to create client: %s", err)
 	}
 
-	var nodeIP string
-
 	t.Logf("waiting for nodes to come up")
-	nodeIP = checkNodeReadiness(t, userClient, nodeIP)
+	_, err = checkNodeReadiness(t, userClient)
+	if err != nil {
+		t.Fatalf("nodes never became ready: %v", err)
+	}
 
 	t.Logf("waiting for pods to get ready")
 	err = waitForPods(t, userClient, "kube-system", "k8s-app", []string{
@@ -221,10 +222,17 @@ func testUserCluster(t *testing.T, config *rest.Config) {
 	}
 
 	t.Logf("test hubble relay observe")
-	{
+	err = wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
+		nodeIP, err := checkNodeReadiness(t, userClient)
+		if err != nil {
+			t.Logf("nodes never became ready: %v", err)
+			return false, nil
+		}
+
 		conn, err := grpc.Dial(fmt.Sprintf("%s:%d", nodeIP, 30077), grpc.WithInsecure())
 		if err != nil {
-			t.Fatalf("failed to dial to hubble relay: %v", err)
+			t.Logf("failed to dial to hubble relay: %v", err)
+			return false, nil
 		}
 		defer conn.Close()
 
@@ -232,43 +240,65 @@ func testUserCluster(t *testing.T, config *rest.Config) {
 		flowsClient, err := observer.NewObserverClient(conn).
 			GetFlows(context.Background(), &observer.GetFlowsRequest{Number: uint64(nFlows)})
 		if err != nil {
-			t.Fatalf("failed to get flow client:%v", err)
+			t.Logf("failed to get flow client:%v", err)
+			return false, nil
 		}
 
 		for c := 0; c < nFlows; c++ {
 			flow, err := flowsClient.Recv()
 			if err != nil {
-				t.Fatalf("failed to get flow:%v", err)
+				t.Logf("failed to get flow:%v", err)
+				return false, nil
 			}
 			fmt.Println(flow)
 		}
+		return true, nil
+	})
+	if err != nil {
+		t.Fatalf("hubble relay observe test failed: %v", err)
 	}
 
 	t.Logf("test hubble ui observe")
-	{
+	err = wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
+		nodeIP, err := checkNodeReadiness(t, userClient)
+		if err != nil {
+			t.Logf("nodes never became ready: %v", err)
+			return false, nil
+		}
+
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet,
 			fmt.Sprintf("http://%s:%d", nodeIP, 30007), nil)
 		if err != nil {
-			t.Fatalf("failed to construct request to hubble ui: %v", err)
+			t.Logf("failed to construct request to hubble ui: %v", err)
+			return false, nil
 		}
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			t.Fatalf("failed to get response from hubble ui: %v", err)
+			t.Logf("failed to get response from hubble ui: %v", err)
+			return false, nil
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			t.Errorf("expected: 200 OK, got: %d", resp.StatusCode)
+			t.Logf("expected: 200 OK, got: %d", resp.StatusCode)
+			return false, nil
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			t.Fatalf("failed to read response body:%v", err)
+			t.Logf("failed to read response body:%v", err)
+			return false, nil
 		}
 
 		if !strings.Contains(string(body), "Hubble") {
-			t.Fatalf("failed to find Hubble in the body")
+			t.Logf("failed to find Hubble in the body")
+			return false, nil
 		}
+
+		return true, nil
+	})
+	if err != nil {
+		t.Fatalf("hubble ui observe test failed: %v", err)
 	}
 }
 
@@ -428,9 +458,11 @@ func runCiliumConnectivityTests(t *testing.T, userClient *kubernetes.Clientset, 
 	}
 }
 
-func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, nodeIP string) string {
+func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset) (string, error) {
 	expectedNodes := 2
-	err := wait.Poll(30*time.Second, 5*time.Minute, func() (bool, error) {
+	var nodeIP string
+
+	err := wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
 		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			t.Logf("failed to get nodes list: %s", err)
@@ -464,10 +496,8 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, nodeIP s
 		}
 		return true, nil
 	})
-	if err != nil {
-		t.Fatalf("nodes never became ready: %v", err)
-	}
-	return nodeIP
+
+	return nodeIP, err
 }
 
 func makeScheme() *runtime.Scheme {

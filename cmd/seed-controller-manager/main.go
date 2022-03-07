@@ -25,7 +25,7 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
-	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -102,6 +102,10 @@ func main() {
 		log.Fatalw("Failed to get kubeconfig", zap.Error(err))
 	}
 
+	// get rid of warnings related to
+	// policy/v1beta1 PodDisruptionBudget is deprecated in v1.21+, unavailable in v1.25+; use policy/v1 PodDisruptionBudget
+	suppressWarnings()
+
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
 	mgr, err := manager.New(cfg, manager.Options{
@@ -123,8 +127,8 @@ func main() {
 	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
-	if err := gatekeeperv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatekeeperv1beta1.SchemeGroupVersion), zap.Error(err))
+	if err := constrainttemplatesv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", constrainttemplatesv1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
@@ -225,4 +229,19 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 func isInternalConfig(cfg *rest.Config) bool {
 	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
 	return cfg.Host == "https://"+net.JoinHostPort(host, port)
+}
+
+func suppressWarnings() {
+	// Set a WarningHandler, the default WarningHandler
+	// is log.KubeAPIWarningLogger with deduplication enabled.
+	// See log.KubeAPIWarningLoggerOptions for considerations
+	// regarding deduplication.
+	rest.SetDefaultWarningHandler(
+		ctrlruntimelog.NewKubeAPIWarningLogger(
+			ctrlruntimelog.Log.WithName("KubeAPIWarningLogger"),
+			ctrlruntimelog.KubeAPIWarningLoggerOptions{
+				Deduplicate: true,
+			},
+		),
+	)
 }

@@ -1644,62 +1644,6 @@ func convertDefaultConstraint(constraint *models.Constraint) (*kubermaticv1.Cons
 	return Constraint, nil
 }
 
-func (r *TestClient) CreateCT(name, ctKind string) (*kubermaticv1.ConstraintTemplate, error) {
-	spec := models.ConstraintTemplateSpec{
-		Crd: &models.CRD{
-			Spec: &models.CRDSpec{
-				Names: &models.Names{
-					Kind: ctKind,
-				},
-				Validation: &models.Validation{
-					OpenAPIV3Schema: &models.JSONSchemaProps{
-						Properties: map[string]models.JSONSchemaProps{
-							"labels": {
-								Type: "array",
-								Items: &models.JSONSchemaPropsOrArray{
-									Schema: &models.JSONSchemaProps{
-										Type: "string",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Targets: []*models.Target{
-			{
-				Target: "admission.k8s.gatekeeper.sh",
-				Rego:   "package requiredlabels\nviolation[{\"msg\": msg, \"details\": {\"missing_labels\": missing}}] {\n  provided := {label | input.review.object.metadata.labels[label]}\n  required := {label | label := input.parameters.labels[_]}\n  missing := required - provided\n  count(missing) > 0\n  msg := sprintf(\"you must provide labels: %v\", [missing])\n}",
-			},
-		},
-	}
-	params := &constrainttemplates.CreateConstraintTemplateParams{
-		Body: &models.CtBody{
-			Name: name,
-			Spec: &spec,
-		},
-	}
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-
-	r.test.Logf("Creating constraint template %s...", name)
-	ct, err := r.client.Constrainttemplates.CreateConstraintTemplate(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-	return convertDefaultConstraintTemplate(ct.Payload)
-}
-
-func convertDefaultConstraintTemplate(constraintTemplate *models.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-	Constraint := &kubermaticv1.ConstraintTemplate{}
-	Constraint.Name = constraintTemplate.Name
-	return Constraint, nil
-}
-
 func (r *TestClient) DeleteConstraintTemplate(name string) error {
 	r.test.Log("Deleting constraint template...")
 

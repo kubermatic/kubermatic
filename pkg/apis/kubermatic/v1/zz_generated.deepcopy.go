@@ -24,7 +24,7 @@ package v1
 import (
 	"encoding/json"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -277,7 +277,11 @@ func (in *AddonList) DeepCopyObject() runtime.Object {
 func (in *AddonSpec) DeepCopyInto(out *AddonSpec) {
 	*out = *in
 	out.Cluster = in.Cluster
-	in.Variables.DeepCopyInto(&out.Variables)
+	if in.Variables != nil {
+		in, out := &in.Variables, &out.Variables
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.RequiredResourceTypes != nil {
 		in, out := &in.RequiredResourceTypes, &out.RequiredResourceTypes
 		*out = make([]GroupVersionKind, len(*in))
@@ -1526,7 +1530,7 @@ func (in *ConstraintTemplateSpec) DeepCopyInto(out *ConstraintTemplateSpec) {
 	in.CRD.DeepCopyInto(&out.CRD)
 	if in.Targets != nil {
 		in, out := &in.Targets, &out.Targets
-		*out = make([]v1beta1.Target, len(*in))
+		*out = make([]templatesv1.Target, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

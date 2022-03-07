@@ -32,7 +32,7 @@ import (
 
 func init() {
 	// Kubernetes Objects can be deeper than the default 10 levels.
-	deep.MaxDepth = 25
+	deep.MaxDepth = 30
 	deep.LogErrors = true
 }
 
