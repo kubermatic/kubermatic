@@ -48,7 +48,7 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 	// of the resource. Since there is nothing in the route table we could compare to eventually reconcile (the subnet setting
 	// you see later on is ineffective), we skip all of that and return early if we found a route table during our API call earlier.
 	if !isNotFound(routeTable.Response) {
-		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
 			// this is a special case; because we cannot determine if a route table was created by
 			// the controller or not, we only add the finalizer if by the beginning of this loop, the
@@ -64,7 +64,7 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 		return cluster, err
 	}
 
-	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
 		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerRouteTable)
 	})

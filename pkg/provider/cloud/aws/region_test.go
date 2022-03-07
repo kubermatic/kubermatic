@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -31,7 +32,7 @@ func TestReconcileRegionAnnotation(t *testing.T) {
 
 	// reconcile
 	var err error
-	cluster, err = reconcileRegionAnnotation(cluster, updater, region)
+	cluster, err = reconcileRegionAnnotation(context.Background(), cluster, updater, region)
 	if err != nil {
 		t.Fatalf("reconcileRegionAnnotation should not have errored, but returned %v", err)
 	}
@@ -52,7 +53,7 @@ func TestReconcileRegionAnnotationFixingBadAnnotation(t *testing.T) {
 
 	// fix it
 	var err error
-	cluster, err = reconcileRegionAnnotation(cluster, updater, region)
+	cluster, err = reconcileRegionAnnotation(context.Background(), cluster, updater, region)
 	if err != nil {
 		t.Fatalf("reconcileRegionAnnotation should not have errored, but returned %v", err)
 	}

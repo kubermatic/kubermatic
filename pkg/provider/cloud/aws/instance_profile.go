@@ -91,7 +91,7 @@ func reconcileWorkerInstanceProfile(ctx context.Context, client iamiface.IAMAPI,
 		}
 	}
 
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Cloud.AWS.InstanceProfileName = profileName
 	})
 }

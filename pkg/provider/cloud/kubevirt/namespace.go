@@ -48,7 +48,7 @@ func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.
 		return cluster, fmt.Errorf("failed to reconcile Namespace: %w", err)
 	}
 
-	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerNamespace)
 	})
 }

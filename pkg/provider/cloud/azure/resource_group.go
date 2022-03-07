@@ -49,7 +49,7 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 	// of the resource. Since there is nothing in the resource group we could compare to eventually reconcile, we
 	// skip all of that and return early if we found a resource group during our API call earlier.
 	if !isNotFound(resourceGroup.Response) {
-		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
 			// this is a special case; because we cannot determine if a resource group was created by
 			// the controller or not, we only add the finalizer if by the beginning of this loop, the
@@ -64,7 +64,7 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 		return nil, err
 	}
 
-	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
 		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerResourceGroup)
 	})

@@ -171,11 +171,11 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 // to the Cluster resource at the moment, and to avoid race conditions we
 // need to use optimistic locking and return immediately in case of
 // conflicts to retry later.
-func ensureFinalizers(cluster *kubermaticv1.Cluster, finalizers []string, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func ensureFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finalizers []string, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 
 	if len(finalizers) > 0 {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.AddFinalizer(cluster, finalizers...)
 		}, provider.UpdaterOptionOptimisticLock)
 		if err != nil {
@@ -220,7 +220,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 		}
 	}
 
-	cluster, err = ensureFinalizers(cluster, finalizers, update)
+	cluster, err = ensureFinalizers(ctx, cluster, finalizers, update)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ensure finalizers: %w", err)
 	}
@@ -230,7 +230,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 		if err != nil {
 			return nil, fmt.Errorf("failed to get external network: %w", err)
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
 		})
@@ -262,7 +262,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %w", err)
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SecurityGroups = secGroupName
 		})
 		if err != nil {
@@ -275,7 +275,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic network: %w", err)
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.Network = network.Name
 		})
 		if err != nil {
@@ -294,7 +294,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 			return nil, fmt.Errorf("failed to create the kubermatic subnet: %w", err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
 		})
 		if err != nil {
@@ -309,7 +309,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 			if err != nil {
 				return nil, fmt.Errorf("failed to create the kubermatic router: %w", err)
 			}
-			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				cluster.Spec.Cloud.Openstack.RouterID = router.ID
 			})
 			if err != nil {
@@ -317,7 +317,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 			}
 		} else {
 			// A router already exists -> Reuse it but don't clean it up
-			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				cluster.Spec.Cloud.Openstack.RouterID = routerID
 			})
 			if err != nil {
@@ -398,7 +398,7 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 
 	// Relying on the idempotence of the clean-up steps we remove all finalizers in
 	// one shot only when the clean-up is completed.
-	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.RemoveFinalizer(
 			cluster,
 			SecurityGroupCleanupFinalizer,

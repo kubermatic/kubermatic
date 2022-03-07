@@ -95,7 +95,7 @@ func (c *UpdaterOptions) Apply(opts ...UpdaterOption) *UpdaterOptions {
 }
 
 // ClusterUpdater defines a function to persist an update to a cluster.
-type ClusterUpdater func(string, func(*kubermaticv1.Cluster), ...UpdaterOption) (*kubermaticv1.Cluster, error)
+type ClusterUpdater func(context.Context, string, func(*kubermaticv1.Cluster), ...UpdaterOption) (*kubermaticv1.Cluster, error)
 
 // ClusterListOptions allows to set filters that will be applied to filter the result.
 type ClusterListOptions struct {
