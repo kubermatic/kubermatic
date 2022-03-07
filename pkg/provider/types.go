@@ -1212,19 +1212,19 @@ type BackupCredentialsProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(credentials *corev1.Secret) (*corev1.Secret, error)
+	CreateUnsecured(ctx context.Context, credentials *corev1.Secret) (*corev1.Secret, error)
 
 	// GetUnsecured gets the backup credentials
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(credentialName string) (*corev1.Secret, error)
+	GetUnsecured(ctx context.Context, credentialName string) (*corev1.Secret, error)
 
 	// UpdateUnsecured updates the backup credentials
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(newSecret *corev1.Secret) (*corev1.Secret, error)
+	UpdateUnsecured(ctx context.Context, newSecret *corev1.Secret) (*corev1.Secret, error)
 }
 
 type PrivilegedMLAAdminSettingProvider interface {
