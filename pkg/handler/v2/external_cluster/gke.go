@@ -312,7 +312,7 @@ func getGKENodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 
 	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(resp.NodePools))
 
-	nodes, err := clusterProvider.ListNodes(cluster)
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -414,7 +414,7 @@ func getGKENodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nod
 
 	var nodesV1 []apiv2.ExternalClusterNode
 
-	nodes, err := clusterProvider.ListNodes(cluster)
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -493,7 +493,7 @@ func getGKEMachineDeployment(ctx context.Context, svc *container.Service, projec
 		return nil, err
 	}
 
-	nodes, err := clusterProvider.ListNodes(cluster)
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

@@ -373,13 +373,13 @@ func getAKSNodePools(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
 
 	poolProfiles := *aksCluster.ManagedClusterProperties.AgentPoolProfiles
 
-	return getAKSMachineDeployments(poolProfiles, cluster, clusterProvider)
+	return getAKSMachineDeployments(ctx, poolProfiles, cluster, clusterProvider)
 }
 
-func getAKSMachineDeployments(poolProfiles []containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
+func getAKSMachineDeployments(ctx context.Context, poolProfiles []containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
 	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(poolProfiles))
 
-	nodes, err := clusterProvider.ListNodes(cluster)
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -429,11 +429,11 @@ func getAKSNodePool(ctx context.Context, cluster *kubermaticv1.ExternalCluster, 
 		return nil, fmt.Errorf("no nodePool found with the name: %v", nodePoolName)
 	}
 
-	return getAKSMachineDeployment(poolProfile, cluster, clusterProvider)
+	return getAKSMachineDeployment(ctx, poolProfile, cluster, clusterProvider)
 }
 
-func getAKSMachineDeployment(poolProfile containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
-	nodes, err := clusterProvider.ListNodes(cluster)
+func getAKSMachineDeployment(ctx context.Context, poolProfile containerservice.ManagedClusterAgentPoolProfile, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -508,10 +508,10 @@ func createMachineDeploymentFromAKSNodePoll(nodePool containerservice.ManagedClu
 	return md
 }
 
-func getAKSNodes(cluster *kubermaticv1.ExternalCluster, nodePoolName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
+func getAKSNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodePoolName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
 	var nodesV1 []apiv2.ExternalClusterNode
 
-	nodes, err := clusterProvider.ListNodes(cluster)
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

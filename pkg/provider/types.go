@@ -762,31 +762,31 @@ type AdmissionPluginsProvider interface {
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster.
 type ExternalClusterProvider interface {
-	New(userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	New(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
-	Get(userInfo *UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error)
+	Get(ctx context.Context, userInfo *UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error)
 
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
 
-	Update(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	Update(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
-	List(project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
+	List(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
 
 	GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error)
 
-	GetClient(cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
+	GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
 
 	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error
 
 	CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error)
 
-	GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
+	GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 
-	ListNodes(cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
+	ListNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
 
-	GetNode(cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error)
+	GetNode(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error)
 
-	IsMetricServerAvailable(cluster *kubermaticv1.ExternalCluster) (bool, error)
+	IsMetricServerAvailable(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (bool, error)
 }
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster.
@@ -795,25 +795,25 @@ type PrivilegedExternalClusterProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resources
-	NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	NewUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
 	// DeleteUnsecured deletes an external cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resources
-	DeleteUnsecured(cluster *kubermaticv1.ExternalCluster) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error
 
 	// GetUnsecured gets an external cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	GetUnsecured(clusterName string) (*kubermaticv1.ExternalCluster, error)
+	GetUnsecured(ctx context.Context, clusterName string) (*kubermaticv1.ExternalCluster, error)
 
 	// UpdateUnsecured updates an external cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resources
-	UpdateUnsecured(cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	UpdateUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
 	// GetMasterClient returns master client
 	//

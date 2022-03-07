@@ -64,7 +64,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 			return nodesV1, nil
 		}
 
-		nodes, err := clusterProvider.ListNodes(cluster)
+		nodes, err := clusterProvider.ListNodes(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -112,13 +112,13 @@ func getClusterNodesMetrics(ctx context.Context, userInfoGetter provider.UserInf
 		return nodeMetrics, nil
 	}
 
-	isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
+	isMetricServer, err := clusterProvider.IsMetricServerAvailable(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	if isMetricServer {
-		client, err := clusterProvider.GetClient(cluster)
+		client, err := clusterProvider.GetClient(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -202,7 +202,7 @@ func GetNodeEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		node, err := clusterProvider.GetNode(cluster, req.NodeID)
+		node, err := clusterProvider.GetNode(ctx, cluster, req.NodeID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -246,7 +246,7 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				machineDeployments = np
 			}
 			if cloud.EKS != nil {
-				np, err := getEKSNodeGroups(cluster, secretKeySelector, clusterProvider)
+				np, err := getEKSNodeGroups(ctx, cluster, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -304,14 +304,14 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 			nodes = n
 		}
 		if cloud.EKS != nil {
-			n, err := getEKSNodes(cluster, machineDeploymentID, clusterProvider)
+			n, err := getEKSNodes(ctx, cluster, machineDeploymentID, clusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			nodes = n
 		}
 		if cloud.AKS != nil {
-			n, err := getAKSNodes(cluster, machineDeploymentID, clusterProvider)
+			n, err := getAKSNodes(ctx, cluster, machineDeploymentID, clusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -632,7 +632,7 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.EKS != nil {
-				np, err := getEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
+				np, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -686,7 +686,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 			patchedMD := apiv2.ExternalClusterMachineDeployment{}
 
 			if cloud.EKS != nil {
-				md, err := getEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
+				md, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, err
 				}

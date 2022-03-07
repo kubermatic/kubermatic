@@ -135,7 +135,7 @@ func ListGKEClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	clusterList, err := clusterProvider.List(project)
+	clusterList, err := clusterProvider.List(ctx, project)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
