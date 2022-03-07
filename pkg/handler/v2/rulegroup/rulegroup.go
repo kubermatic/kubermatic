@@ -154,13 +154,13 @@ func getRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, c
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.GetUnsecured(ruleGroupID, cluster.Status.NamespaceName)
+		return privilegedRuleGroupProvider.GetUnsecured(ctx, ruleGroupID, cluster.Status.NamespaceName)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.Get(userInfo, cluster, ruleGroupID)
+	return alertmanagerProvider.Get(ctx, userInfo, cluster, ruleGroupID)
 }
 
 func listRuleGroups(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
@@ -169,13 +169,13 @@ func listRuleGroups(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.ListUnsecured(cluster.Status.NamespaceName, options)
+		return privilegedRuleGroupProvider.ListUnsecured(ctx, cluster.Status.NamespaceName, options)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.List(userInfo, cluster, options)
+	return alertmanagerProvider.List(ctx, userInfo, cluster, options)
 }
 
 func createRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
@@ -184,13 +184,13 @@ func createRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.CreateUnsecured(ruleGroup)
+		return privilegedRuleGroupProvider.CreateUnsecured(ctx, ruleGroup)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.Create(userInfo, ruleGroup)
+	return alertmanagerProvider.Create(ctx, userInfo, ruleGroup)
 }
 
 func updateRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
@@ -199,13 +199,13 @@ func updateRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.UpdateUnsecured(ruleGroup)
+		return privilegedRuleGroupProvider.UpdateUnsecured(ctx, ruleGroup)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.Update(userInfo, ruleGroup)
+	return alertmanagerProvider.Update(ctx, userInfo, ruleGroup)
 }
 
 func deleteRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, ruleGroupID string) error {
@@ -214,13 +214,13 @@ func deleteRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.DeleteUnsecured(ruleGroupID, cluster.Status.NamespaceName)
+		return privilegedRuleGroupProvider.DeleteUnsecured(ctx, ruleGroupID, cluster.Status.NamespaceName)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return err
 	}
-	return alertmanagerProvider.Delete(userInfo, cluster, ruleGroupID)
+	return alertmanagerProvider.Delete(ctx, userInfo, cluster, ruleGroupID)
 }
 
 func convertAPIToInternalRuleGroup(cluster *kubermaticv1.Cluster, ruleGroup *apiv2.RuleGroup, ruleGroupID string) (*kubermaticv1.RuleGroup, error) {

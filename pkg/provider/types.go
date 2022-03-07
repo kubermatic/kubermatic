@@ -996,20 +996,20 @@ type RuleGroupListOptions struct {
 // RuleGroupProvider declares the set of methods for interacting with ruleGroups.
 type RuleGroupProvider interface {
 	// Get gets the given ruleGroup
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
 
 	// List gets a list of ruleGroups, by default it returns all ruleGroup objects.
 	// If you would like to filer the result, please set RuleGroupListOptions
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
 
 	// Create creates the given ruleGroup
-	Create(userInfo *UserInfo, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	Create(ctx context.Context, userInfo *UserInfo, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// Update updates an ruleGroup
-	Update(userInfo *UserInfo, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	Update(ctx context.Context, userInfo *UserInfo, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// Delete deletes the ruleGroup with the given name
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) error
 }
 
 type PrivilegedRuleGroupProvider interface {
@@ -1017,32 +1017,32 @@ type PrivilegedRuleGroupProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(ruleGroupName, namespace string) (*kubermaticv1.RuleGroup, error)
+	GetUnsecured(ctx context.Context, ruleGroupName, namespace string) (*kubermaticv1.RuleGroup, error)
 
 	// ListUnsecured gets a list of ruleGroups, by default it returns all ruleGroup objects.
 	// If you would like to filer the result, please set RuleGroupListOptions
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured(namespace string, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
+	ListUnsecured(ctx context.Context, namespace string, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
 
 	// CreateUnsecured creates the given ruleGroup
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	CreateUnsecured(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// UpdateUnsecured updates an ruleGroup
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	UpdateUnsecured(ctx context.Context, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// DeleteUnsecured deletes the ruleGroup with the given name
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(ruleGroupName, namespace string) error
+	DeleteUnsecured(ctx context.Context, ruleGroupName, namespace string) error
 }
 
 // PrivilegedAllowedRegistryProvider declares the set of method for interacting with allowed registries.
