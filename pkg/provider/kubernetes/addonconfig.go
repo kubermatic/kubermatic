@@ -20,6 +20,7 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -29,6 +30,8 @@ type AddonConfigProvider struct {
 	client ctrlruntimeclient.Client
 }
 
+var _ provider.AddonConfigProvider = &AddonConfigProvider{}
+
 // NewAddonConfigProvider returns a new AddonConfigProvider.
 func NewAddonConfigProvider(client ctrlruntimeclient.Client) *AddonConfigProvider {
 	return &AddonConfigProvider{
@@ -37,18 +40,18 @@ func NewAddonConfigProvider(client ctrlruntimeclient.Client) *AddonConfigProvide
 }
 
 // Get addon configuration.
-func (p *AddonConfigProvider) Get(addonName string) (*kubermaticv1.AddonConfig, error) {
+func (p *AddonConfigProvider) Get(ctx context.Context, addonName string) (*kubermaticv1.AddonConfig, error) {
 	addonConfig := &kubermaticv1.AddonConfig{}
-	if err := p.client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: addonName}, addonConfig); err != nil {
+	if err := p.client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: addonName}, addonConfig); err != nil {
 		return nil, err
 	}
 	return addonConfig, nil
 }
 
 // List available addon configurations.
-func (p *AddonConfigProvider) List() (*kubermaticv1.AddonConfigList, error) {
+func (p *AddonConfigProvider) List(ctx context.Context) (*kubermaticv1.AddonConfigList, error) {
 	addonConfigList := &kubermaticv1.AddonConfigList{}
-	if err := p.client.List(context.Background(), addonConfigList); err != nil {
+	if err := p.client.List(ctx, addonConfigList); err != nil {
 		return nil, err
 	}
 	return addonConfigList, nil

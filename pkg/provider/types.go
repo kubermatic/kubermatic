@@ -725,8 +725,8 @@ type PrivilegedAddonProvider interface {
 }
 
 type AddonConfigProvider interface {
-	Get(addonName string) (*kubermaticv1.AddonConfig, error)
-	List() (*kubermaticv1.AddonConfigList, error)
+	Get(ctx context.Context, addonName string) (*kubermaticv1.AddonConfig, error)
+	List(ctx context.Context) (*kubermaticv1.AddonConfigList, error)
 }
 
 // SettingsProvider declares the set of methods for interacting global settings.

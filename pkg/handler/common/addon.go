@@ -166,8 +166,8 @@ func DeleteAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	return nil, common.KubernetesErrorToHTTPError(deleteAddon(ctx, userInfoGetter, cluster, projectID, addonID))
 }
 
-func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider, addonID string) (interface{}, error) {
-	addon, err := addonConfigProvider.Get(addonID)
+func GetAddonConfigEndpoint(ctx context.Context, addonConfigProvider provider.AddonConfigProvider, addonID string) (interface{}, error) {
+	addon, err := addonConfigProvider.Get(ctx, addonID)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -175,8 +175,8 @@ func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider, ad
 	return convertInternalAddonConfigToExternal(addon)
 }
 
-func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) (interface{}, error) {
-	list, err := addonConfigProvider.List()
+func ListAddonConfigsEndpoint(ctx context.Context, addonConfigProvider provider.AddonConfigProvider) (interface{}, error) {
+	list, err := addonConfigProvider.List(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
