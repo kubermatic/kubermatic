@@ -20,15 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-
-	"golang.org/x/crypto/ssh"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -114,16 +111,9 @@ func (p *PrivilegedSSHKeyProvider) CreateUnsecured(ctx context.Context, project 
 }
 
 func genUserSSHKey(project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error) {
-	pubKeyParsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubKey))
-	if err != nil {
-		return nil, fmt.Errorf("the provided ssh key is invalid: %w", err)
-	}
-	sshKeyHash := ssh.FingerprintLegacyMD5(pubKeyParsed)
-
-	keyInternalName := fmt.Sprintf("key-%s-%s", strings.NewReplacer(":", "").Replace(sshKeyHash), uuid.ShortUID(4))
 	return &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyInternalName,
+			Name: fmt.Sprintf("key-%s", rand.String(10)),
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -134,10 +124,9 @@ func genUserSSHKey(project *kubermaticv1.Project, keyName, pubKey string) (*kube
 			},
 		},
 		Spec: kubermaticv1.SSHKeySpec{
-			PublicKey:   pubKey,
-			Fingerprint: sshKeyHash,
-			Name:        keyName,
-			Clusters:    []string{},
+			PublicKey: pubKey,
+			Name:      keyName,
+			Clusters:  []string{},
 		},
 	}, nil
 }

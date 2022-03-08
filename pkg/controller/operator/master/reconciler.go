@@ -150,7 +150,11 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
-	if err := r.reconcileAdmissionWebhooks(ctx, defaulted, logger); err != nil {
+	if err := r.reconcileValidatingWebhooks(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
+	if err := r.reconcileMutatingWebhooks(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
@@ -376,7 +380,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 	return nil
 }
 
-func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Validating Webhooks")
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
@@ -385,6 +389,20 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *kub
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Validating Webhooks: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling Mutating Webhooks")
+
+	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
+		kubermatic.UserSSHKeyMutatingWebhookConfigurationCreator(config, r.Client),
+	}
+
+	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Mutating Webhooks: %w", err)
 	}
 
 	return nil
