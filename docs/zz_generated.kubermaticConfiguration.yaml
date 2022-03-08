@@ -35,7 +35,7 @@ spec:
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
         cpu: 100m
-        memory: 512Mi
+        memory: 150Mi
   # Auth defines keys and URLs for Dex.
   auth:
     clientID: kubermatic
@@ -115,7 +115,7 @@ spec:
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
         cpu: 100m
-        memory: 256Mi
+        memory: 400Mi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
       # otherwise to an implementation-defined value.
@@ -276,7 +276,7 @@ spec:
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
         cpu: 200m
-        memory: 512Mi
+        memory: 100Mi
   # UI configures the dashboard.
   ui:
     # Config sets flags for various dashboard features.
