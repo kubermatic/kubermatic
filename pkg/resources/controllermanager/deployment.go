@@ -215,6 +215,7 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	}
 
 	flags := []string{
+		"--v", "8",
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",

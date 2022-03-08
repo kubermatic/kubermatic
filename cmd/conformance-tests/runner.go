@@ -657,28 +657,28 @@ func (r *testRunner) testCluster(
 	// var err error
 	log.Info("Starting to test cluster...")
 
-	ginkgoRuns, err := r.getGinkgoRuns(log, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get Ginkgo runs: %w", err)
-	}
-	for _, run := range ginkgoRuns {
-		if err := junitReporterWrapper(
-			fmt.Sprintf("[Ginkgo] Run ginkgo tests %q", run.name),
-			report,
-			func() error {
-				ginkgoRes, err := r.executeGinkgoRunWithRetries(ctx, log, scenario, run, userClusterClient)
-				if ginkgoRes != nil {
-					// We append the report from Ginkgo to our scenario wide report
-					appendReport(report, ginkgoRes.report)
-				}
-				return err
-			},
-		); err != nil {
-			log.Errorf("Ginkgo scenario '%s' failed, giving up retrying: %w", err)
-			// We still want to run potential next runs
-			continue
-		}
-	}
+	// ginkgoRuns, err := r.getGinkgoRuns(log, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get Ginkgo runs: %w", err)
+	// }
+	// for _, run := range ginkgoRuns {
+	// 	if err := junitReporterWrapper(
+	// 		fmt.Sprintf("[Ginkgo] Run ginkgo tests %q", run.name),
+	// 		report,
+	// 		func() error {
+	// 			ginkgoRes, err := r.executeGinkgoRunWithRetries(ctx, log, scenario, run, userClusterClient)
+	// 			if ginkgoRes != nil {
+	// 				// We append the report from Ginkgo to our scenario wide report
+	// 				appendReport(report, ginkgoRes.report)
+	// 			}
+	// 			return err
+	// 		},
+	// 	); err != nil {
+	// 		log.Errorf("Ginkgo scenario '%s' failed, giving up retrying: %w", err)
+	// 		// We still want to run potential next runs
+	// 		continue
+	// 	}
+	// }
 
 	defaultLabels := prometheus.Labels{
 		"scenario": scenario.Name(),
@@ -704,23 +704,23 @@ func (r *testRunner) testCluster(
 	}
 
 	// Do a simple LB test - with retries
-	if supportsLBs(cluster) {
-		if err := junitReporterWrapper(
-			"[Kubermatic] [CloudProvider] Test LoadBalancers",
-			report,
-			measuredRetryNAttempts(
-				lbtestRuntimeMetric.MustCurryWith(defaultLabels),
-				lbtestAttemptsMetric.With(defaultLabels),
-				log,
-				maxTestAttempts,
-				func(attempt int) error {
-					return r.testLB(ctx, log, userClusterClient, attempt)
-				},
-			),
-		); err != nil {
-			log.Errorf("Failed to verify that LB's work: %v", err)
-		}
-	}
+	// if supportsLBs(cluster) {
+	// 	if err := junitReporterWrapper(
+	// 		"[Kubermatic] [CloudProvider] Test LoadBalancers",
+	// 		report,
+	// 		measuredRetryNAttempts(
+	// 			lbtestRuntimeMetric.MustCurryWith(defaultLabels),
+	// 			lbtestAttemptsMetric.With(defaultLabels),
+	// 			log,
+	// 			maxTestAttempts,
+	// 			func(attempt int) error {
+	// 				return r.testLB(ctx, log, userClusterClient, attempt)
+	// 			},
+	// 		),
+	// 	); err != nil {
+	// 		log.Errorf("Failed to verify that LB's work: %v", err)
+	// 	}
+	// }
 
 	// Do user cluster RBAC controller test - with retries
 	if err := junitReporterWrapper(
