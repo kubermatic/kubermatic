@@ -93,7 +93,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv1.AllowedRegistry) error {
 	finalizer := kubermaticapiv1.AllowedRegistryCleanupFinalizer
 
-	regSet, err := r.getRegistrySet()
+	regSet, err := r.getRegistrySet(ctx)
 	if err != nil {
 		return fmt.Errorf("error getting registry set from AllowedRegistries: %w", err)
 	}
@@ -208,9 +208,9 @@ func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.Name
 	}
 }
 
-func (r *Reconciler) getRegistrySet() (sets.String, error) {
+func (r *Reconciler) getRegistrySet(ctx context.Context) (sets.String, error) {
 	var arList kubermaticv1.AllowedRegistryList
-	if err := r.masterClient.List(context.Background(), &arList); err != nil {
+	if err := r.masterClient.List(ctx, &arList); err != nil {
 		return nil, err
 	}
 

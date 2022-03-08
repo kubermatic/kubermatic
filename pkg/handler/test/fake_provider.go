@@ -137,54 +137,56 @@ type FakeExternalClusterProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
+var _ provider.ExternalClusterProvider = &FakeExternalClusterProvider{}
+
 func (p *FakeExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error) {
 	return p.Provider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, projectID, clusterID)
 }
 
-func (p *FakeExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticv1.ExternalCluster) (bool, error) {
+func (p *FakeExternalClusterProvider) IsMetricServerAvailable(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (bool, error) {
 	return true, nil
 }
 
-func (p *FakeExternalClusterProvider) GetNode(cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error) {
+func (p *FakeExternalClusterProvider) GetNode(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error) {
 	node := &corev1.Node{}
-	if err := p.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: nodeName}, node); err != nil {
+	if err := p.FakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: nodeName}, node); err != nil {
 		return nil, err
 	}
 
 	return node, nil
 }
 
-func (p *FakeExternalClusterProvider) ListNodes(cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error) {
+func (p *FakeExternalClusterProvider) ListNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error) {
 	nodes := &corev1.NodeList{}
-	if err := p.FakeClient.List(context.Background(), nodes); err != nil {
+	if err := p.FakeClient.List(ctx, nodes); err != nil {
 		return nil, err
 	}
 
 	return nodes, nil
 }
 
-func (p *FakeExternalClusterProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
-	return p.Provider.Update(userInfo, cluster)
+func (p *FakeExternalClusterProvider) Update(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
+	return p.Provider.Update(ctx, userInfo, cluster)
 }
 
-func (p *FakeExternalClusterProvider) GetVersion(cluster *kubermaticv1.ExternalCluster) (*semver.Semver, error) {
+func (p *FakeExternalClusterProvider) GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*semver.Semver, error) {
 	return semver.NewSemver(DefaultKubernetesVersion)
 }
 
-func (p *FakeExternalClusterProvider) GetClient(cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
+func (p *FakeExternalClusterProvider) GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
 	return p.FakeClient, nil
 }
 
-func (p *FakeExternalClusterProvider) List(project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error) {
-	return p.Provider.List(project)
+func (p *FakeExternalClusterProvider) List(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error) {
+	return p.Provider.List(ctx, project)
 }
 
-func (p *FakeExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error) {
-	return p.Provider.Get(userInfo, clusterName)
+func (p *FakeExternalClusterProvider) Get(ctx context.Context, userInfo *provider.UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error) {
+	return p.Provider.Get(ctx, userInfo, clusterName)
 }
 
-func (p *FakeExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) error {
-	return p.Provider.Delete(userInfo, cluster)
+func (p *FakeExternalClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) error {
+	return p.Provider.Delete(ctx, userInfo, cluster)
 }
 
 func (p *FakeExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error) {
@@ -195,8 +197,8 @@ func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(c
 	return p.Provider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, kubeconfig)
 }
 
-func (p *FakeExternalClusterProvider) New(userInfo *provider.UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
-	return p.Provider.New(userInfo, project, cluster)
+func (p *FakeExternalClusterProvider) New(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
+	return p.Provider.New(ctx, userInfo, project, cluster)
 }
 
 type FakeConstraintTemplateProvider struct {
@@ -204,24 +206,26 @@ type FakeConstraintTemplateProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateList, error) {
-	return p.Provider.List()
+var _ provider.ConstraintTemplateProvider = &FakeConstraintTemplateProvider{}
+
+func (p *FakeConstraintTemplateProvider) List(ctx context.Context) (*kubermaticv1.ConstraintTemplateList, error) {
+	return p.Provider.List(ctx)
 }
 
-func (p *FakeConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintTemplate, error) {
-	return p.Provider.Get(name)
+func (p *FakeConstraintTemplateProvider) Get(ctx context.Context, name string) (*kubermaticv1.ConstraintTemplate, error) {
+	return p.Provider.Get(ctx, name)
 }
 
-func (p *FakeConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-	return p.Provider.Create(ct)
+func (p *FakeConstraintTemplateProvider) Create(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
+	return p.Provider.Create(ctx, ct)
 }
 
-func (p *FakeConstraintTemplateProvider) Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-	return p.Provider.Update(ct)
+func (p *FakeConstraintTemplateProvider) Update(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
+	return p.Provider.Update(ctx, ct)
 }
 
-func (p *FakeConstraintTemplateProvider) Delete(ct *kubermaticv1.ConstraintTemplate) error {
-	return p.Provider.Delete(ct)
+func (p *FakeConstraintTemplateProvider) Delete(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) error {
+	return p.Provider.Delete(ctx, ct)
 }
 
 type FakeConstraintProvider struct {
@@ -229,24 +233,26 @@ type FakeConstraintProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeConstraintProvider) List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error) {
-	return p.Provider.List(cluster)
+var _ provider.ConstraintProvider = &FakeConstraintProvider{}
+
+func (p *FakeConstraintProvider) List(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error) {
+	return p.Provider.List(ctx, cluster)
 }
 
-func (p *FakeConstraintProvider) Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Get(cluster, name)
+func (p *FakeConstraintProvider) Get(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Get(ctx, cluster, name)
 }
 
-func (p *FakeConstraintProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo, name string) error {
-	return p.Provider.Delete(cluster, userInfo, name)
+func (p *FakeConstraintProvider) Delete(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo, name string) error {
+	return p.Provider.Delete(ctx, cluster, userInfo, name)
 }
 
-func (p *FakeConstraintProvider) Create(userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Create(userInfo, constraint)
+func (p *FakeConstraintProvider) Create(ctx context.Context, userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Create(ctx, userInfo, constraint)
 }
 
-func (p *FakeConstraintProvider) Update(userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Update(userInfo, constraint)
+func (p *FakeConstraintProvider) Update(ctx context.Context, userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Update(ctx, userInfo, constraint)
 }
 
 type FakeDefaultConstraintProvider struct {
@@ -254,24 +260,26 @@ type FakeDefaultConstraintProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeDefaultConstraintProvider) Create(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Create(ct)
+var _ provider.DefaultConstraintProvider = &FakeDefaultConstraintProvider{}
+
+func (p *FakeDefaultConstraintProvider) Create(ctx context.Context, ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Create(ctx, ct)
 }
 
-func (p *FakeDefaultConstraintProvider) List() (*kubermaticv1.ConstraintList, error) {
-	return p.Provider.List()
+func (p *FakeDefaultConstraintProvider) List(ctx context.Context) (*kubermaticv1.ConstraintList, error) {
+	return p.Provider.List(ctx)
 }
 
-func (p *FakeDefaultConstraintProvider) Get(name string) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Get(name)
+func (p *FakeDefaultConstraintProvider) Get(ctx context.Context, name string) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Get(ctx, name)
 }
 
-func (p *FakeDefaultConstraintProvider) Delete(name string) error {
-	return p.Provider.Delete(name)
+func (p *FakeDefaultConstraintProvider) Delete(ctx context.Context, name string) error {
+	return p.Provider.Delete(ctx, name)
 }
 
-func (p *FakeDefaultConstraintProvider) Update(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-	return p.Provider.Update(constraint)
+func (p *FakeDefaultConstraintProvider) Update(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	return p.Provider.Update(ctx, constraint)
 }
 
 type FakePrivilegedAllowedRegistryProvider struct {
@@ -279,24 +287,24 @@ type FakePrivilegedAllowedRegistryProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) CreateUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
-	return p.Provider.CreateUnsecured(wr)
+func (p *FakePrivilegedAllowedRegistryProvider) CreateUnsecured(ctx context.Context, wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
+	return p.Provider.CreateUnsecured(ctx, wr)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) GetUnsecured(name string) (*kubermaticv1.AllowedRegistry, error) {
-	return p.Provider.GetUnsecured(name)
+func (p *FakePrivilegedAllowedRegistryProvider) GetUnsecured(ctx context.Context, name string) (*kubermaticv1.AllowedRegistry, error) {
+	return p.Provider.GetUnsecured(ctx, name)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) ListUnsecured() (*kubermaticv1.AllowedRegistryList, error) {
-	return p.Provider.ListUnsecured()
+func (p *FakePrivilegedAllowedRegistryProvider) ListUnsecured(ctx context.Context) (*kubermaticv1.AllowedRegistryList, error) {
+	return p.Provider.ListUnsecured(ctx)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) UpdateUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
-	return p.Provider.UpdateUnsecured(wr)
+func (p *FakePrivilegedAllowedRegistryProvider) UpdateUnsecured(ctx context.Context, wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error) {
+	return p.Provider.UpdateUnsecured(ctx, wr)
 }
 
-func (p *FakePrivilegedAllowedRegistryProvider) DeleteUnsecured(name string) error {
-	return p.Provider.DeleteUnsecured(name)
+func (p *FakePrivilegedAllowedRegistryProvider) DeleteUnsecured(ctx context.Context, name string) error {
+	return p.Provider.DeleteUnsecured(ctx, name)
 }
 
 type FakeEtcdBackupConfigProvider struct {
@@ -304,24 +312,26 @@ type FakeEtcdBackupConfigProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeEtcdBackupConfigProvider) Create(userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-	return p.Provider.Create(userInfo, ebc)
+var _ provider.EtcdBackupConfigProvider = &FakeEtcdBackupConfigProvider{}
+
+func (p *FakeEtcdBackupConfigProvider) Create(ctx context.Context, userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	return p.Provider.Create(ctx, userInfo, ebc)
 }
 
-func (p *FakeEtcdBackupConfigProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
-	return p.Provider.Get(userInfo, cluster, name)
+func (p *FakeEtcdBackupConfigProvider) Get(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
+	return p.Provider.Get(ctx, userInfo, cluster, name)
 }
 
-func (p *FakeEtcdBackupConfigProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
-	return p.Provider.List(userInfo, cluster)
+func (p *FakeEtcdBackupConfigProvider) List(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
+	return p.Provider.List(ctx, userInfo, cluster)
 }
 
-func (p *FakeEtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
-	return p.Provider.Delete(userInfo, cluster, name)
+func (p *FakeEtcdBackupConfigProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
+	return p.Provider.Delete(ctx, userInfo, cluster, name)
 }
 
-func (p *FakeEtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-	return p.Provider.Patch(userInfo, oldConfig, newConfig)
+func (p *FakeEtcdBackupConfigProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	return p.Provider.Patch(ctx, userInfo, oldConfig, newConfig)
 }
 
 type FakeEtcdRestoreProvider struct {
@@ -329,18 +339,20 @@ type FakeEtcdRestoreProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeEtcdRestoreProvider) Create(userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
-	return p.Provider.Create(userInfo, ebc)
+var _ provider.EtcdRestoreProvider = &FakeEtcdRestoreProvider{}
+
+func (p *FakeEtcdRestoreProvider) Create(ctx context.Context, userInfo *provider.UserInfo, ebc *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
+	return p.Provider.Create(ctx, userInfo, ebc)
 }
 
-func (p *FakeEtcdRestoreProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
-	return p.Provider.Get(userInfo, cluster, name)
+func (p *FakeEtcdRestoreProvider) Get(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
+	return p.Provider.Get(ctx, userInfo, cluster, name)
 }
 
-func (p *FakeEtcdRestoreProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
-	return p.Provider.List(userInfo, cluster)
+func (p *FakeEtcdRestoreProvider) List(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
+	return p.Provider.List(ctx, userInfo, cluster)
 }
 
-func (p *FakeEtcdRestoreProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
-	return p.Provider.Delete(userInfo, cluster, name)
+func (p *FakeEtcdRestoreProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
+	return p.Provider.Delete(ctx, userInfo, cluster, name)
 }

@@ -354,11 +354,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
 	}
 
-	credentialsManager, err := kubernetes.NewPresetProvider(ctx, fakeClient)
+	credentialsManager, err := kubernetes.NewPresetProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(ctx, fakeClient)
+	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(fakeClient)
 
 	if seedsGetter == nil {
 		seedsGetter = CreateTestSeedsGetter(ctx, fakeClient)

@@ -95,7 +95,7 @@ func (c *UpdaterOptions) Apply(opts ...UpdaterOption) *UpdaterOptions {
 }
 
 // ClusterUpdater defines a function to persist an update to a cluster.
-type ClusterUpdater func(string, func(*kubermaticv1.Cluster), ...UpdaterOption) (*kubermaticv1.Cluster, error)
+type ClusterUpdater func(context.Context, string, func(*kubermaticv1.Cluster), ...UpdaterOption) (*kubermaticv1.Cluster, error)
 
 // ClusterListOptions allows to set filters that will be applied to filter the result.
 type ClusterListOptions struct {
@@ -163,7 +163,7 @@ type ProjectListOptions struct {
 // This provider is Project and RBAC compliant.
 type ClusterProvider interface {
 	// New creates a brand new cluster that is bound to the given project
-	New(project *kubermaticv1.Project, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	New(ctx context.Context, project *kubermaticv1.Project, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// List gets all clusters that belong to the given project
 	// If you want to filter the result please take a look at ClusterListOptions
@@ -171,31 +171,31 @@ type ClusterProvider interface {
 	// Note:
 	// After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 	// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-	List(project *kubermaticv1.Project, options *ClusterListOptions) (*kubermaticv1.ClusterList, error)
+	List(ctx context.Context, project *kubermaticv1.Project, options *ClusterListOptions) (*kubermaticv1.ClusterList, error)
 
 	// ListAll gets all clusters for the seed
-	ListAll() (*kubermaticv1.ClusterList, error)
+	ListAll(ctx context.Context) (*kubermaticv1.ClusterList, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-	Get(userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
+	Get(ctx context.Context, userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// Update updates a cluster
-	Update(project *kubermaticv1.Project, userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	Update(ctx context.Context, project *kubermaticv1.Project, userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// Delete deletes the given cluster
-	Delete(userInfo *UserInfo, clusterName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, clusterName string) error
 
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
-	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+	GetAdminKubeconfigForCustomerCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
 	// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
-	GetViewerKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+	GetViewerKubeconfigForCustomerCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
 	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
-	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+	RevokeViewerKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
 
 	// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
-	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
+	RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error
 
 	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
@@ -212,7 +212,7 @@ type ClusterProvider interface {
 	GetTokenForCustomerCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (string, error)
 
 	// IsCluster checks if cluster exist with the given name
-	IsCluster(clusterName string) bool
+	IsCluster(ctx context.Context, clusterName string) bool
 
 	// GetSeedName gets the seed name of the cluster
 	GetSeedName() string
@@ -234,22 +234,22 @@ type PrivilegedClusterProvider interface {
 	// GetUnsecured returns a cluster for the project and given name.
 	//
 	// Note that the admin privileges are used to get cluster
-	GetUnsecured(project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
+	GetUnsecured(ctx context.Context, project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// UpdateUnsecured updates a cluster.
 	//
 	// Note that the admin privileges are used to update cluster
-	UpdateUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	UpdateUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// DeleteUnsecured deletes a cluster.
 	//
 	// Note that the admin privileges are used to delete cluster
-	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error
 
 	// NewUnsecured creates a brand new cluster that is bound to the given project.
 	//
 	// Note that the admin privileges are used to create cluster
-	NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error)
+	NewUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.
@@ -372,39 +372,39 @@ type ProjectMemberListOptions struct {
 // ProjectMemberProvider binds users with projects.
 type ProjectMemberProvider interface {
 	// Create creates a binding for the given member and the given project
-	Create(userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+	Create(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
 	// List gets all members of the given project
-	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ProjectMemberListOptions) ([]*kubermaticv1.UserProjectBinding, error)
+	List(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, options *ProjectMemberListOptions) ([]*kubermaticv1.UserProjectBinding, error)
 
 	// Delete deletes the given binding
 	// Note:
 	// Use List to get binding for the specific member of the given project
-	Delete(userInfo *UserInfo, bindinName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, bindinName string) error
 
 	// Update updates the given binding
-	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+	Update(ctx context.Context, userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
 // PrivilegedProjectMemberProvider binds users with projects and uses privileged account for it.
 type PrivilegedProjectMemberProvider interface {
 	// CreateUnsecured creates a binding for the given member and the given project
 	// This function is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+	CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
 	// CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
 	// This function is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecuredForServiceAccount(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+	CreateUnsecuredForServiceAccount(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
 	// DeleteUnsecured deletes the given binding
 	// Note:
 	// Use List to get binding for the specific member of the given project
 	// This function is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(bindingName string) error
+	DeleteUnsecured(ctx context.Context, bindingName string) error
 
 	// UpdateUnsecured updates the given binding
 	// This function is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+	UpdateUnsecured(ctx context.Context, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
 // ProjectMemberMapper exposes method that knows how to map
@@ -412,11 +412,11 @@ type PrivilegedProjectMemberProvider interface {
 type ProjectMemberMapper interface {
 	// MapUserToGroup maps the given user to a specific group of the given project
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
-	MapUserToGroup(userEmail string, projectID string) (string, error)
+	MapUserToGroup(ctx context.Context, userEmail string, projectID string) (string, error)
 
 	// MappingsFor returns the list of projects (bindings) for the given user
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
-	MappingsFor(userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
+	MappingsFor(ctx context.Context, userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
@@ -675,20 +675,20 @@ type EventRecorderProvider interface {
 // AddonProvider declares the set of methods for interacting with addons.
 type AddonProvider interface {
 	// New creates a new addon in the given cluster
-	New(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
+	New(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
 
 	// List gets all addons that belong to the given cluster
 	// If you want to filter the result please take a look at ClusterListOptions
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
 
 	// Get returns the given addon
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
 
 	// Update updates an addon
-	Update(userInfo *UserInfo, cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
+	Update(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
 
 	// Delete deletes the given addon
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
 }
 
 type PrivilegedAddonProvider interface {
@@ -697,36 +697,36 @@ type PrivilegedAddonProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
+	ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
 
 	// NewUnsecured creates a new addon in the given cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
+	NewUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
 
 	// GetUnsecured returns the given addon
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
 
 	// UpdateUnsecured updates an addon
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
+	UpdateUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, newAddon *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
 
 	// DeleteUnsecured deletes the given addon
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, addonName string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, addonName string) error
 }
 
 type AddonConfigProvider interface {
-	Get(addonName string) (*kubermaticv1.AddonConfig, error)
-	List() (*kubermaticv1.AddonConfigList, error)
+	Get(ctx context.Context, addonName string) (*kubermaticv1.AddonConfig, error)
+	List(ctx context.Context) (*kubermaticv1.AddonConfigList, error)
 }
 
 // SettingsProvider declares the set of methods for interacting global settings.
@@ -737,8 +737,8 @@ type SettingsProvider interface {
 
 // AdminProvider declares the set of methods for interacting with admin.
 type AdminProvider interface {
-	SetAdmin(userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
-	GetAdmins(userInfo *UserInfo) ([]kubermaticv1.User, error)
+	SetAdmin(ctx context.Context, userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
+	GetAdmins(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.User, error)
 }
 
 // PresetProvider declares the set of methods for interacting with presets.
@@ -753,40 +753,40 @@ type PresetProvider interface {
 
 // AdmissionPluginsProvider declares the set of methods for interacting with admission plugins.
 type AdmissionPluginsProvider interface {
-	List(userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
-	Get(userInfo *UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error)
-	Delete(userInfo *UserInfo, name string) error
-	Update(userInfo *UserInfo, admissionPlugin *kubermaticv1.AdmissionPlugin) (*kubermaticv1.AdmissionPlugin, error)
-	ListPluginNamesFromVersion(fromVersion string) ([]string, error)
+	List(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
+	Get(ctx context.Context, userInfo *UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error)
+	Delete(ctx context.Context, userInfo *UserInfo, name string) error
+	Update(ctx context.Context, userInfo *UserInfo, admissionPlugin *kubermaticv1.AdmissionPlugin) (*kubermaticv1.AdmissionPlugin, error)
+	ListPluginNamesFromVersion(ctx context.Context, fromVersion string) ([]string, error)
 }
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster.
 type ExternalClusterProvider interface {
-	New(userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	New(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
-	Get(userInfo *UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error)
+	Get(ctx context.Context, userInfo *UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error)
 
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
 
-	Update(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	Update(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
-	List(project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
+	List(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
 
 	GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error)
 
-	GetClient(cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
+	GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
 
 	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error
 
 	CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error)
 
-	GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
+	GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 
-	ListNodes(cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
+	ListNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
 
-	GetNode(cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error)
+	GetNode(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error)
 
-	IsMetricServerAvailable(cluster *kubermaticv1.ExternalCluster) (bool, error)
+	IsMetricServerAvailable(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (bool, error)
 }
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster.
@@ -795,25 +795,25 @@ type PrivilegedExternalClusterProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resources
-	NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	NewUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
 	// DeleteUnsecured deletes an external cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resources
-	DeleteUnsecured(cluster *kubermaticv1.ExternalCluster) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error
 
 	// GetUnsecured gets an external cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	GetUnsecured(clusterName string) (*kubermaticv1.ExternalCluster, error)
+	GetUnsecured(ctx context.Context, clusterName string) (*kubermaticv1.ExternalCluster, error)
 
 	// UpdateUnsecured updates an external cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resources
-	UpdateUnsecured(cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+	UpdateUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
 	// GetMasterClient returns master client
 	//
@@ -827,19 +827,19 @@ type ConstraintTemplateProvider interface {
 	// List gets a list of constraint templates, by default it returns all resources.
 	//
 	// Note that the list is taken from the cache
-	List() (*kubermaticv1.ConstraintTemplateList, error)
+	List(ctx context.Context) (*kubermaticv1.ConstraintTemplateList, error)
 
 	// Get gets the given constraint template
-	Get(name string) (*kubermaticv1.ConstraintTemplate, error)
+	Get(ctx context.Context, name string) (*kubermaticv1.ConstraintTemplate, error)
 
 	// Create a Constraint Template
-	Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
+	Create(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
 
 	// Update a Constraint Template
-	Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
+	Update(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
 
 	// Delete a Constraint Template
-	Delete(ct *kubermaticv1.ConstraintTemplate) error
+	Delete(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) error
 }
 
 // ConstraintProvider declares the set of method for interacting with constraints.
@@ -847,19 +847,19 @@ type ConstraintProvider interface {
 	// List gets a list of constraints
 	//
 	// Note that the list is taken from the cache
-	List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
+	List(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
 
 	// Get gets the given constraints
-	Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
+	Get(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
 
 	// Create creates the given constraint
-	Create(userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Create(ctx context.Context, userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 
 	// Delete deletes the given constraint
-	Delete(cluster *kubermaticv1.Cluster, userInfo *UserInfo, name string) error
+	Delete(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *UserInfo, name string) error
 
 	// Update updates the given constraint
-	Update(userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Update(ctx context.Context, userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
 // PrivilegedConstraintProvider declares a set of methods for interacting with constraints using a privileged client.
@@ -868,19 +868,19 @@ type PrivilegedConstraintProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	CreateUnsecured(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 
 	// DeleteUnsecured deletes a constraint using a privileged client
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error
 
 	// UpdateUnsecured updates the given constraint using a privileged client
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	UpdateUnsecured(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
 // DefaultConstraintProvider declares the set of method for interacting with default constraints.
@@ -888,31 +888,31 @@ type DefaultConstraintProvider interface {
 	// List gets a list of default constraints
 	//
 	// Note that the list is taken from the cache
-	List() (*kubermaticv1.ConstraintList, error)
+	List(ctx context.Context) (*kubermaticv1.ConstraintList, error)
 
 	// Get gets the given default constraints
-	Get(name string) (*kubermaticv1.Constraint, error)
+	Get(ctx context.Context, name string) (*kubermaticv1.Constraint, error)
 
 	// Create creates the given default constraint
-	Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Create(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 
 	// Delete deletes the given default constraint
-	Delete(name string) error
+	Delete(ctx context.Context, name string) error
 
 	// Update a default constraint
-	Update(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+	Update(ctx context.Context, ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
 // AlertmanagerProvider declares the set of method for interacting with alertmanagers.
 type AlertmanagerProvider interface {
 	// Get gets the given alertmanager and the config secret
-	Get(cluster *kubermaticv1.Cluster, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+	Get(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
 
 	// Update updates the given alertmanager and the config secret
-	Update(alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+	Update(ctx context.Context, alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
 
 	// Reset resets the given alertmanager to default
-	Reset(cluster *kubermaticv1.Cluster, userInfo *UserInfo) error
+	Reset(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *UserInfo) error
 }
 
 // PrivilegedAlertmanagerProvider declares the set of method for interacting with alertmanagers using a privileged client.
@@ -921,35 +921,35 @@ type PrivilegedAlertmanagerProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
 
 	// UpdateUnsecured updates the given alertmanager and the config secret using a privileged client
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+	UpdateUnsecured(ctx context.Context, alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
 
 	// ResetUnsecured resets the given alertmanager to default using a privileged client
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to reset the resource
-	ResetUnsecured(cluster *kubermaticv1.Cluster) error
+	ResetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error
 }
 
 // ClusterTemplateProvider declares the set of method for interacting with cluster templates.
 type ClusterTemplateProvider interface {
-	New(userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
-	List(userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
-	Get(userInfo *UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error)
-	Delete(userInfo *UserInfo, projectID, templateID string) error
+	New(ctx context.Context, userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
+	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
+	Get(ctx context.Context, userInfo *UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error)
+	Delete(ctx context.Context, userInfo *UserInfo, projectID, templateID string) error
 }
 
 // ClusterTemplateInstanceProvider declares the set of method for interacting with cluster templates.
 type ClusterTemplateInstanceProvider interface {
-	Create(userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
-	Get(userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
-	List(userInfo *UserInfo, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
-	Patch(userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
+	Create(ctx context.Context, userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	Get(ctx context.Context, userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
+	List(ctx context.Context, userInfo *UserInfo, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
+	Patch(ctx context.Context, userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // PrivilegedClusterTemplateInstanceProvider declares the set of methods for interacting with the cluster template instances
@@ -959,25 +959,25 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	CreateUnsecured(ctx context.Context, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 
 	// GetUnsecured gets cluster template instance
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string) (*kubermaticv1.ClusterTemplateInstance, error)
+	GetUnsecured(ctx context.Context, name string) (*kubermaticv1.ClusterTemplateInstance, error)
 
 	// ListUnsecured lists cluster template instances
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	ListUnsecured(options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
+	ListUnsecured(ctx context.Context, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
 
 	// PatchUnsecured patches cluster template instances
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	PatchUnsecured(instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
+	PatchUnsecured(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // ClusterTemplateInstanceListOptions allows to set filters that will be applied to filter the result.
@@ -1051,49 +1051,49 @@ type PrivilegedAllowedRegistryProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
+	CreateUnsecured(ctx context.Context, ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
 	// GetUnsecured gets the given allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string) (*kubermaticv1.AllowedRegistry, error)
+	GetUnsecured(ctx context.Context, name string) (*kubermaticv1.AllowedRegistry, error)
 
 	// ListUnsecured gets a list of all allowed registries
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured() (*kubermaticv1.AllowedRegistryList, error)
+	ListUnsecured(ctx context.Context) (*kubermaticv1.AllowedRegistryList, error)
 
 	// UpdateUnsecured updates the allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
+	UpdateUnsecured(ctx context.Context, ar *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
 	// DeleteUnsecured deletes the allowed registry with the given name
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(name string) error
+	DeleteUnsecured(ctx context.Context, name string) error
 }
 
 // EtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs.
 type EtcdBackupConfigProvider interface {
 	// Create creates the given etcdBackupConfig
-	Create(userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	Create(ctx context.Context, userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// Get gets the given etcdBackupConfig
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// List gets a list of etcdBackupConfig for a given cluster
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
 
 	// Delete deletes the given etcdBackupConfig
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 
 	// Patch updates the given etcdBackupConfig
-	Patch(userInfo *UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	Patch(ctx context.Context, userInfo *UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
 // PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client.
@@ -1102,46 +1102,46 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	CreateUnsecured(ctx context.Context, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// GetUnsecured gets the given etcdBackupConfig
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
 
 	// ListUnsecured gets a list of all etcdBackupConfigs for a given cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
+	ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
 
 	// DeleteUnsecured deletes the given etcdBackupConfig
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error
 
 	// PatchUnsecured patches the given etcdBackupConfig
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to patch the resource
-	PatchUnsecured(oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+	PatchUnsecured(ctx context.Context, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
 // EtcdRestoreProvider declares the set of method for interacting with etcd backup restores.
 type EtcdRestoreProvider interface {
 	// Create creates the given etcdRestore
-	Create(userInfo *UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
+	Create(ctx context.Context, userInfo *UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
 
 	// Get gets the given etcdRestore
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
 
 	// List gets a list of etcdRestore for a given cluster
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
 
 	// Delete deletes the given etcdRestore
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 }
 
 // PrivilegedEtcdRestoreProvider declares the set of method for interacting with etcd backup configs using a privileged client.
@@ -1150,31 +1150,31 @@ type PrivilegedEtcdRestoreProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
+	CreateUnsecured(ctx context.Context, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error)
 
 	// GetUnsecured gets the given etcdRestore
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error)
 
 	// ListUnsecured gets a list of all etcdRestores for a given cluster
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
+	ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error)
 
 	// DeleteUnsecured deletes the given etcdRestore
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error
 }
 
 // EtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs across projects and its seeds.
 type EtcdBackupConfigProjectProvider interface {
 	// List gets a list of etcdBackupConfig for a given project
-	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
+	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
 // PrivilegedEtcdBackupConfigProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds.
@@ -1183,13 +1183,13 @@ type PrivilegedEtcdBackupConfigProjectProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
+	ListUnsecured(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error)
 }
 
 // EtcdRestoreProjectProvider declares the set of method for interacting with etcd backup restores across projects and its seeds.
 type EtcdRestoreProjectProvider interface {
 	// List gets a list of etcdRestore for a given project
-	List(userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
+	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
 // PrivilegedEtcdRestoreProjectProvider declares the set of method for interacting with etcd backup configs using a privileged client across projects and its seeds.
@@ -1198,7 +1198,7 @@ type PrivilegedEtcdRestoreProjectProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to list the resources
-	ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
+	ListUnsecured(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdRestoreList, error)
 }
 
 // FeatureGatesProvider declares the set of method for getting currently subset of provided feature gates.
@@ -1212,19 +1212,19 @@ type BackupCredentialsProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(credentials *corev1.Secret) (*corev1.Secret, error)
+	CreateUnsecured(ctx context.Context, credentials *corev1.Secret) (*corev1.Secret, error)
 
 	// GetUnsecured gets the backup credentials
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(credentialName string) (*corev1.Secret, error)
+	GetUnsecured(ctx context.Context, credentialName string) (*corev1.Secret, error)
 
 	// UpdateUnsecured updates the backup credentials
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(newSecret *corev1.Secret) (*corev1.Secret, error)
+	UpdateUnsecured(ctx context.Context, newSecret *corev1.Secret) (*corev1.Secret, error)
 }
 
 type PrivilegedMLAAdminSettingProvider interface {
@@ -1232,25 +1232,25 @@ type PrivilegedMLAAdminSettingProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error)
+	GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error)
 
 	// CreateUnsecured creates the given MLAAdminSetting
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(mlaAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
+	CreateUnsecured(ctx context.Context, mlaAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
 
 	// UpdateUnsecured updates an MLAAdminSetting
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(newMLAAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
+	UpdateUnsecured(ctx context.Context, newMLAAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error)
 
 	// DeleteUnsecured deletes the MLAAdminSetting with the given name
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
+	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error
 }
 
 type SeedProvider interface {

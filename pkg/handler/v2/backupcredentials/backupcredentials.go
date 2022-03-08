@@ -72,14 +72,14 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 		bc := convertAPIToInternalBackupCredentials(&req.Body.BackupCredentials, backupDest)
 
 		// Update if already exists
-		_, err = backupCredentialsProvider.GetUnsecured(bc.Name)
+		_, err = backupCredentialsProvider.GetUnsecured(ctx, bc.Name)
 		if err != nil {
-			_, err = backupCredentialsProvider.CreateUnsecured(bc)
+			_, err = backupCredentialsProvider.CreateUnsecured(ctx, bc)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		} else {
-			_, err = backupCredentialsProvider.UpdateUnsecured(bc)
+			_, err = backupCredentialsProvider.UpdateUnsecured(ctx, bc)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}

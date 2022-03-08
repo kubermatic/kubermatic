@@ -160,7 +160,7 @@ func (v *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberma
 			return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
 			cluster.Spec.Cloud.VSphere.Folder = clusterFolder
 		})
@@ -295,7 +295,7 @@ func (v *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
 			return nil, err
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
 		})
 		if err != nil {

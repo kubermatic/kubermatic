@@ -34,6 +34,8 @@ type BackupCredentialsProvider struct {
 	clientPrivileged ctrlruntimeclient.Client
 }
 
+var _ provider.BackupCredentialsProvider = &BackupCredentialsProvider{}
+
 // NewBackupCredentialsProvider returns a  backup credential provider.
 func NewBackupCredentialsProvider(client ctrlruntimeclient.Client) *BackupCredentialsProvider {
 	return &BackupCredentialsProvider{
@@ -55,21 +57,21 @@ func BackupCredentialsProviderFactory(mapper meta.RESTMapper, seedKubeconfigGett
 	}
 }
 
-func (p *BackupCredentialsProvider) CreateUnsecured(credentials *corev1.Secret) (*corev1.Secret, error) {
-	err := p.clientPrivileged.Create(context.Background(), credentials)
+func (p *BackupCredentialsProvider) CreateUnsecured(ctx context.Context, credentials *corev1.Secret) (*corev1.Secret, error) {
+	err := p.clientPrivileged.Create(ctx, credentials)
 	return credentials, err
 }
 
-func (p *BackupCredentialsProvider) GetUnsecured(credentialName string) (*corev1.Secret, error) {
+func (p *BackupCredentialsProvider) GetUnsecured(ctx context.Context, credentialName string) (*corev1.Secret, error) {
 	credentials := &corev1.Secret{}
-	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{
+	err := p.clientPrivileged.Get(ctx, types.NamespacedName{
 		Name:      credentialName,
 		Namespace: metav1.NamespaceSystem,
 	}, credentials)
 	return credentials, err
 }
 
-func (p *BackupCredentialsProvider) UpdateUnsecured(newSecret *corev1.Secret) (*corev1.Secret, error) {
-	err := p.clientPrivileged.Update(context.Background(), newSecret)
+func (p *BackupCredentialsProvider) UpdateUnsecured(ctx context.Context, newSecret *corev1.Secret) (*corev1.Secret, error) {
+	err := p.clientPrivileged.Update(ctx, newSecret)
 	return newSecret, err
 }

@@ -49,7 +49,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, utilerrors.NewNotAuthorized()
 		}
 		privilegedMLAAdminSettingProvider := ctx.Value(middleware.PrivilegedMLAAdminSettingProviderContextKey).(provider.PrivilegedMLAAdminSettingProvider)
-		mlaAdminSetting, err := privilegedMLAAdminSettingProvider.GetUnsecured(c)
+		mlaAdminSetting, err := privilegedMLAAdminSettingProvider.GetUnsecured(ctx, c)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -77,7 +77,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		resMLAAdminSetting, err := privilegedMLAAdminSettingProvider.CreateUnsecured(mlaAdminSetting)
+		resMLAAdminSetting, err := privilegedMLAAdminSettingProvider.CreateUnsecured(ctx, mlaAdminSetting)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -101,7 +101,7 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, utilerrors.NewNotAuthorized()
 		}
 		privilegedMLAAdminSettingProvider := ctx.Value(middleware.PrivilegedMLAAdminSettingProviderContextKey).(provider.PrivilegedMLAAdminSettingProvider)
-		currentMLAAdminSetting, err := privilegedMLAAdminSettingProvider.GetUnsecured(c)
+		currentMLAAdminSetting, err := privilegedMLAAdminSettingProvider.GetUnsecured(ctx, c)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -110,7 +110,7 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		currentMLAAdminSetting.Spec = newMLAAdminSetting.Spec
-		resMLAAdminSetting, err := privilegedMLAAdminSettingProvider.UpdateUnsecured(currentMLAAdminSetting)
+		resMLAAdminSetting, err := privilegedMLAAdminSettingProvider.UpdateUnsecured(ctx, currentMLAAdminSetting)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -134,7 +134,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, utilerrors.NewNotAuthorized()
 		}
 		privilegedMLAAdminSettingProvider := ctx.Value(middleware.PrivilegedMLAAdminSettingProviderContextKey).(provider.PrivilegedMLAAdminSettingProvider)
-		if err = privilegedMLAAdminSettingProvider.DeleteUnsecured(c); err != nil {
+		if err = privilegedMLAAdminSettingProvider.DeleteUnsecured(ctx, c); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return nil, nil

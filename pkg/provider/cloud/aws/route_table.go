@@ -59,7 +59,7 @@ func reconcileRouteTable(ctx context.Context, client ec2iface.EC2API, cluster *k
 		return nil, fmt.Errorf("failed to get default route table: %w", err)
 	}
 
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Cloud.AWS.RouteTableID = *table.RouteTableId
 	})
 }

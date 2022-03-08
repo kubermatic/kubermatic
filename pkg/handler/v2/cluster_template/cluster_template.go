@@ -173,7 +173,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 
 		result := apiv2.ClusterTemplateList{}
 
-		templates, err := clusterTemplateProvider.List(userInfo, project.Name)
+		templates, err := clusterTemplateProvider.List(ctx, userInfo, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -243,7 +243,7 @@ func getClusterTemplate(ctx context.Context, projectProvider provider.ProjectPro
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	template, err := clusterTemplateProvider.Get(userInfo, project.Name, clusterTemplateID)
+	template, err := clusterTemplateProvider.Get(ctx, userInfo, project.Name, clusterTemplateID)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -400,7 +400,7 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 		}
 	}
 
-	ct, err := clusterTemplateProvider.New(adminUserInfo, newClusterTemplate, scope, project.Name)
+	ct, err := clusterTemplateProvider.New(ctx, adminUserInfo, newClusterTemplate, scope, project.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -424,7 +424,7 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		if err := clusterTemplateProvider.Delete(userInfo, project.Name, req.ClusterTemplateID); err != nil {
+		if err := clusterTemplateProvider.Delete(ctx, userInfo, project.Name, req.ClusterTemplateID); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
@@ -447,7 +447,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		ct, err := clusterTemplateProvider.Get(adminUserInfo, project.Name, req.ClusterTemplateID)
+		ct, err := clusterTemplateProvider.Get(ctx, adminUserInfo, project.Name, req.ClusterTemplateID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -464,7 +464,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 
 		if adminUserInfo.IsAdmin {
 			privilegedclusterTemplateInstanceProvider := clusterTemplateInstanceProvider.(provider.PrivilegedClusterTemplateInstanceProvider)
-			instance, err := privilegedclusterTemplateInstanceProvider.CreateUnsecured(ct, project, req.Body.Replicas)
+			instance, err := privilegedclusterTemplateInstanceProvider.CreateUnsecured(ctx, ct, project, req.Body.Replicas)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -479,7 +479,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		instance, err := clusterTemplateInstanceProvider.Create(userInfo, ct, project, req.Body.Replicas)
+		instance, err := clusterTemplateInstanceProvider.Create(ctx, userInfo, ct, project, req.Body.Replicas)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

@@ -85,7 +85,7 @@ func (n *Nutanix) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 			return nil, err
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, categoryCleanupFinalizer)
 		})
 
@@ -151,7 +151,7 @@ func (n *Nutanix) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil, fmt.Errorf("failed to reconcile category and cluster value: %w", err)
 	}
 
-	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kuberneteshelper.AddFinalizer(cluster, categoryCleanupFinalizer)
 	})
 

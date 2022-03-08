@@ -95,7 +95,7 @@ func TestGetAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, client)
 
-			alertmanager, configSecret, err := alertmanagerProvider.Get(tc.cluster, tc.userInfo)
+			alertmanager, configSecret, err := alertmanagerProvider.Get(context.Background(), tc.cluster, tc.userInfo)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -186,7 +186,7 @@ func TestUpdateAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, client)
 
-			alertmanager, configSecret, err := alertmanagerProvider.Update(tc.expectedAlertmanager, tc.expectedConfigSecret, tc.userInfo)
+			alertmanager, configSecret, err := alertmanagerProvider.Update(context.Background(), tc.expectedAlertmanager, tc.expectedConfigSecret, tc.userInfo)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -268,7 +268,7 @@ func TestResetAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, client)
 
-			err := alertmanagerProvider.Reset(tc.cluster, tc.userInfo)
+			err := alertmanagerProvider.Reset(context.Background(), tc.cluster, tc.userInfo)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)

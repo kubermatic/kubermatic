@@ -95,14 +95,14 @@ func deleteBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedMemberProvider.DeleteUnsecured(bindingID)
+		return privilegedMemberProvider.DeleteUnsecured(ctx, bindingID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return err
 	}
-	return memberProvider.Delete(userInfo, bindingID)
+	return memberProvider.Delete(ctx, userInfo, bindingID)
 }
 
 func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, project *kubermaticv1.Project, userEmail string) ([]*kubermaticv1.UserProjectBinding, error) {
@@ -126,7 +126,7 @@ func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		options = &provider.ProjectMemberListOptions{MemberEmail: userEmail, SkipPrivilegeVerification: skipPrivilegeVerification}
 	}
 
-	return memberProvider.List(userInfo, project, options)
+	return memberProvider.List(ctx, userInfo, project, options)
 }
 
 // EditEndpoint changes the group the given user/member belongs in the given project.
@@ -189,14 +189,14 @@ func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedMemberProvider.UpdateUnsecured(binding)
+		return privilegedMemberProvider.UpdateUnsecured(ctx, binding)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return memberProvider.Update(userInfo, binding)
+	return memberProvider.Update(ctx, userInfo, binding)
 }
 
 // ListEndpoint returns user/members of the given project.
@@ -306,14 +306,14 @@ func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedMemberProvider.CreateUnsecured(project, email, group)
+		return privilegedMemberProvider.CreateUnsecured(ctx, project, email, group)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return memberProvider.Create(userInfo, project, email, group)
+	return memberProvider.Create(ctx, userInfo, project, email, group)
 }
 
 // GetEndpoint returns info about the current user.
@@ -321,7 +321,7 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
-		bindings, err := memberMapper.MappingsFor(authenticatedUser.Spec.Email)
+		bindings, err := memberMapper.MappingsFor(ctx, authenticatedUser.Spec.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

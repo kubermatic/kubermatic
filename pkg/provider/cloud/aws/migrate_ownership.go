@@ -52,7 +52,7 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 	iamTag := iamOwnershipTag(cluster.Name)
 
 	// the tag finalizer is of no use at all
-	cluster, err := updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err := updater(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
 	})
 	if err != nil {
@@ -81,7 +81,7 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 			}
 		}
 
-		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = updater(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, securityGroupCleanupFinalizer)
 		})
 		if err != nil {
@@ -106,7 +106,7 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 			}
 		}
 
-		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = updater(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, instanceProfileCleanupFinalizer)
 		})
 		if err != nil {
@@ -131,7 +131,7 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 			}
 		}
 
-		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = updater(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
 		})
 		if err != nil {

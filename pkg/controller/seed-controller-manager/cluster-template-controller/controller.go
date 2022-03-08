@@ -190,7 +190,7 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	newStatus := newCluster.Status.DeepCopy()
 
 	// Here partialCluster is used to copy credentials to the new cluster
-	err := resources.CopyCredentials(resources.NewCredentialsData(context.Background(), partialCluster, r.seedClient), newCluster)
+	err := resources.CopyCredentials(resources.NewCredentialsData(ctx, partialCluster, r.seedClient), newCluster)
 	if err != nil {
 		return fmt.Errorf("failed to get credentials: %w", err)
 	}

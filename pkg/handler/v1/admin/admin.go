@@ -37,7 +37,7 @@ func GetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		admins, err := adminProvider.GetAdmins(userInfo)
+		admins, err := adminProvider.GetAdmins(ctx, userInfo)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -68,7 +68,7 @@ func SetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		admin, err := adminProvider.SetAdmin(userInfo, req.Body.Email, req.Body.IsAdmin)
+		admin, err := adminProvider.SetAdmin(ctx, userInfo, req.Body.Email, req.Body.IsAdmin)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

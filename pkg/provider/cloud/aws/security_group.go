@@ -159,7 +159,7 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 		}
 	}
 
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Cloud.AWS.SecurityGroupID = groupID
 	})
 }

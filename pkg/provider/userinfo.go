@@ -38,7 +38,7 @@ func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGette
 		var group string
 		if projectID != "" {
 			var err error
-			group, err = userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
+			group, err = userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
 			if err != nil {
 				return nil, err
 			}

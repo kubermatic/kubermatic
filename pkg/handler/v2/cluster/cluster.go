@@ -197,7 +197,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, privileg
 			return nil, err
 		}
 
-		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(cluster))
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(ctx, cluster))
 	}
 }
 
@@ -211,7 +211,7 @@ func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider, privile
 			return nil, err
 		}
 
-		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(cluster))
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(ctx, cluster))
 	}
 }
 

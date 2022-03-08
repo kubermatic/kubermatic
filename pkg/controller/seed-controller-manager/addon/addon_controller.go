@@ -296,7 +296,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		return nil, err
 	}
 
-	credentials, err := resources.GetCredentials(resources.NewCredentialsData(context.Background(), cluster, r.Client))
+	credentials, err := resources.GetCredentials(resources.NewCredentialsData(ctx, cluster, r.Client))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}

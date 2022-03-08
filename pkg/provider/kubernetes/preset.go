@@ -89,7 +89,7 @@ type PresetProvider struct {
 
 var _ provider.PresetProvider = &PresetProvider{}
 
-func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client) (*PresetProvider, error) {
+func NewPresetProvider(client ctrlruntimeclient.Client) (*PresetProvider, error) {
 	getter, err := presetsGetterFactory(client)
 	if err != nil {
 		return nil, err

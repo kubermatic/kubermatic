@@ -143,7 +143,7 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	for deletedLB := range deletedLoadBalancers {
 		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
 		events := &corev1.EventList{}
-		if err := userClusterClient.List(context.Background(), events, &ctrlruntimeclient.ListOptions{FieldSelector: selector}); err != nil {
+		if err := userClusterClient.List(ctx, events, &ctrlruntimeclient.ListOptions{FieldSelector: selector}); err != nil {
 			return false, fmt.Errorf("failed to get service events: %w", err)
 		}
 		for _, event := range events.Items {

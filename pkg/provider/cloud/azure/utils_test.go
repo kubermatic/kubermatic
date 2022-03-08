@@ -19,6 +19,8 @@ limitations under the License.
 package azure
 
 import (
+	"context"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/uuid"
@@ -85,7 +87,7 @@ func makeCluster(name string, cloudSpec *kubermaticv1.AzureCloudSpec, credential
 }
 
 func testClusterUpdater(cluster *kubermaticv1.Cluster) provider.ClusterUpdater {
-	return func(clusterName string, patcher func(*kubermaticv1.Cluster), opts ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+	return func(_ context.Context, clusterName string, patcher func(*kubermaticv1.Cluster), opts ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
 		patcher(cluster)
 		return cluster, nil
 	}
