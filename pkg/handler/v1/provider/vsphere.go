@@ -45,7 +45,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetProvider pr
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -84,7 +84,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetProvider pro
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

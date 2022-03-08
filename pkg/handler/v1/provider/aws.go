@@ -186,7 +186,7 @@ func DecodeAWSSecurityGroupsReq(c context.Context, r *http.Request) (interface{}
 func AWSSizeEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSizeReq)
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -219,7 +219,7 @@ func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provi
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -341,7 +341,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

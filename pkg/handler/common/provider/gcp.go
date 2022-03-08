@@ -59,7 +59,7 @@ func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter p
 		return nil, err
 	}
 
-	settings, err := settingsProvider.GetGlobalSettings()
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

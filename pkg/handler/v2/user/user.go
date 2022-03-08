@@ -41,7 +41,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, userProvider provider.
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
 		}
 
-		list, err := userProvider.List()
+		list, err := userProvider.List(ctx)
 		if err != nil {
 			return nil, err
 		}

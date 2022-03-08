@@ -105,7 +105,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 		}
 		options.LabelSelector = labelSelector
 		options.ServiceAccountID = sa.Name
-		tokens, err := privilegedServiceAccountTokenProvider.ListUnsecured(options)
+		tokens, err := privilegedServiceAccountTokenProvider.ListUnsecured(ctx, options)
 		if kerrors.IsNotFound(err) {
 			return make([]*corev1.Secret, 0), nil
 		}
@@ -116,7 +116,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountTokenProvider.List(userInfo, project, sa, options)
+	return serviceAccountTokenProvider.List(ctx, userInfo, project, sa, options)
 }
 
 func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error) {
@@ -125,14 +125,14 @@ func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccountTokenProvider.CreateUnsecured(sa, projectID, tokenName, tokenID, tokenData)
+		return privilegedServiceAccountTokenProvider.CreateUnsecured(ctx, sa, projectID, tokenName, tokenID, tokenData)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountTokenProvider.Create(userInfo, sa, projectID, tokenName, tokenID, tokenData)
+	return serviceAccountTokenProvider.Create(ctx, userInfo, sa, projectID, tokenName, tokenID, tokenData)
 }
 
 // ListTokenEndpoint gets token for the service account.
@@ -264,14 +264,14 @@ func deleteSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccountTokenProvider.DeleteUnsecured(tokenID)
+		return privilegedServiceAccountTokenProvider.DeleteUnsecured(ctx, tokenID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return err
 	}
-	return serviceAccountTokenProvider.Delete(userInfo, tokenID)
+	return serviceAccountTokenProvider.Delete(ctx, userInfo, tokenID)
 }
 
 func getSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, projectID, tokenID string) (*corev1.Secret, error) {
@@ -280,14 +280,14 @@ func getSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, ser
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccountTokenProvider.GetUnsecured(tokenID)
+		return privilegedServiceAccountTokenProvider.GetUnsecured(ctx, tokenID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountTokenProvider.Get(userInfo, tokenID)
+	return serviceAccountTokenProvider.Get(ctx, userInfo, tokenID)
 }
 
 func updateEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider,
@@ -352,14 +352,14 @@ func updateSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccountTokenProvider.UpdateUnsecured(token)
+		return privilegedServiceAccountTokenProvider.UpdateUnsecured(ctx, token)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountTokenProvider.Update(userInfo, token)
+	return serviceAccountTokenProvider.Update(ctx, userInfo, token)
 }
 
 // addTokenReq defines HTTP request for addTokenToServiceAccount

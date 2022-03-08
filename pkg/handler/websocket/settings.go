@@ -17,6 +17,7 @@ limitations under the License.
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/gorilla/websocket"
@@ -27,9 +28,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/watcher"
 )
 
-func WriteSettings(providers watcher.Providers, ws *websocket.Conn) {
+func WriteSettings(ctx context.Context, providers watcher.Providers, ws *websocket.Conn) {
 	// There can be a race here if the settings change between getting the initial data and setting up the subscription
-	initialSettings, err := providers.SettingsProvider.GetGlobalSettings()
+	initialSettings, err := providers.SettingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		log.Logger.Debug(err)
 		return

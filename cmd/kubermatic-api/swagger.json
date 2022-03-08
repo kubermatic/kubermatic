@@ -13159,13 +13159,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13177,6 +13170,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -23844,6 +23844,11 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "Interval": {
+      "description": "+kubebuilder:validation:Enum=day;week;month",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "JSON": {
       "description": "These types are supported: bool, int64, float64, string, []interface{}, map[string]interface{} and nil.",
       "type": "object",
@@ -24567,6 +24572,21 @@
         "enabled": {
           "type": "boolean",
           "x-go-name": "Enabled"
+        },
+        "interval": {
+          "$ref": "#/definitions/Interval"
+        },
+        "intervalInDays": {
+          "description": "IntervalInDays defines period for metering timestamps. Overwrites Interval.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "IntervalInDays"
+        },
+        "schedule": {
+          "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.",
+          "type": "string",
+          "default": "=`0 1 * * 6`",
+          "x-go-name": "Schedule"
         },
         "storageClassName": {
           "description": "StorageClassName is the name of the storage class that the metering tool uses to save processed files before\nexporting it to s3 bucket. Default value is kubermatic-fast.",

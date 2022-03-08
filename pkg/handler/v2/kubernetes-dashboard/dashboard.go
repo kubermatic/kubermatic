@@ -55,7 +55,7 @@ func ProxyEndpoint(
 		log := log.With("endpoint", "kubernetes-dashboard-proxy", "uri", r.URL.Path)
 		ctx := extractor(r.Context(), r)
 
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "could not read global settings"))
 			return

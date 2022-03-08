@@ -23,14 +23,14 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	// soon we are going to change the default namespace to cluster namespace.
-	csiResourceNamespace = "default"
-	csiResourceName      = "kubevirt-csi"
+	csiServiceAccountNamespace = metav1.NamespaceDefault
+	csiResourceName            = "kubevirt-csi"
 )
 
 func csiServiceAccountCreator(name string) reconciling.NamedServiceAccountCreatorGetter {
@@ -90,18 +90,18 @@ func csiRoleBindingCreator(name, namespace string) reconciling.NamedRoleBindingC
 }
 
 // reconcileCSIRoleRoleBinding reconciles the Role and Rolebindings needed by CSI driver.
-func ReconcileCSIRoleRoleBinding(ctx context.Context, client ctrlruntimeclient.Client, restConfig *restclient.Config) error {
+func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client ctrlruntimeclient.Client, restConfig *restclient.Config) error {
 	roleCreators := []reconciling.NamedRoleCreatorGetter{
 		csiRoleCreator(csiResourceName),
 	}
-	if err := reconciling.ReconcileRoles(ctx, roleCreators, csiResourceNamespace, client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, roleCreators, namespace, client); err != nil {
 		return err
 	}
 
 	roleBindingCreators := []reconciling.NamedRoleBindingCreatorGetter{
-		csiRoleBindingCreator(csiResourceName, csiResourceNamespace),
+		csiRoleBindingCreator(csiResourceName, csiServiceAccountNamespace),
 	}
-	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, csiResourceNamespace, client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, namespace, client); err != nil {
 		return err
 	}
 

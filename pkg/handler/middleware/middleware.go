@@ -173,18 +173,18 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 			}
 			authenticatedUser := rawAuthenticatesUser.(apiv1.User)
 
-			user, err := userProvider.UserByEmail(authenticatedUser.Email)
+			user, err := userProvider.UserByEmail(ctx, authenticatedUser.Email)
 			if err != nil {
 				if !errors.Is(err, provider.ErrNotFound) {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
-				user, err = userProvider.CreateUser(authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
+				user, err = userProvider.CreateUser(ctx, authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
 				if err != nil {
 					if !kerrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
 					}
-					if user, err = userProvider.UserByEmail(authenticatedUser.Email); err != nil {
+					if user, err = userProvider.UserByEmail(ctx, authenticatedUser.Email); err != nil {
 						return nil, common.KubernetesErrorToHTTPError(err)
 					}
 				}
@@ -199,7 +199,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			updatedUser := user.DeepCopy()
 			updatedUser.Status.LastSeen = metav1.NewTime(now)
-			updatedUser, err = userProvider.UpdateUser(updatedUser)
+			updatedUser, err = userProvider.UpdateUser(ctx, updatedUser)
 
 			// Ignore conflict error during update of the lastSeen field as it is not super important.
 			// It can be updated next time.
@@ -231,7 +231,7 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 			}
 			userID := userIDGetter.GetUserID()
 			projectID := prjIDGetter.GetProjectID()
-			user, err := userProvider.UserByID(userID)
+			user, err := userProvider.UserByID(ctx, userID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -295,7 +295,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 				return nil, k8cerrors.NewNotAuthorized()
 			}
 
-			if err := checkBlockedTokens(claims.Email, token, userProvider); err != nil {
+			if err := checkBlockedTokens(ctx, claims.Email, token, userProvider); err != nil {
 				return nil, err
 			}
 
@@ -428,15 +428,15 @@ func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kuberm
 	return nil, ctx, k8cerrors.NewNotFound("cluster-provider", clusterID)
 }
 
-func checkBlockedTokens(email, token string, userProvider provider.UserProvider) error {
-	user, err := userProvider.UserByEmail(email)
+func checkBlockedTokens(ctx context.Context, email, token string, userProvider provider.UserProvider) error {
+	user, err := userProvider.UserByEmail(ctx, email)
 	if err != nil {
 		if !errors.Is(err, provider.ErrNotFound) {
 			return common.KubernetesErrorToHTTPError(err)
 		}
 		return nil
 	}
-	blockedTokens, err := userProvider.GetInvalidatedTokens(user)
+	blockedTokens, err := userProvider.GetInvalidatedTokens(ctx, user)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}

@@ -268,89 +268,89 @@ type SSHKeyProvider interface {
 	//
 	// Note:
 	// After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
-	List(project *kubermaticv1.Project, options *SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error)
+	List(ctx context.Context, project *kubermaticv1.Project, options *SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error)
 
 	// Create creates a ssh key that belongs to the given project
-	Create(userInfo *UserInfo, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
+	Create(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
 
 	// Delete deletes the given ssh key
-	Delete(userInfo *UserInfo, keyName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, keyName string) error
 
 	// Get returns a key with the given name
-	Get(userInfo *UserInfo, keyName string) (*kubermaticv1.UserSSHKey, error)
+	Get(ctx context.Context, userInfo *UserInfo, keyName string) (*kubermaticv1.UserSSHKey, error)
 
 	// Update simply updates the given key
-	Update(userInfo *UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+	Update(ctx context.Context, userInfo *UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys and uses privileged account for it.
 type PrivilegedSSHKeyProvider interface {
 	// GetUnsecured returns a key with the given name
 	// This function is unsafe in a sense that it uses privileged account to get the ssh key
-	GetUnsecured(keyName string) (*kubermaticv1.UserSSHKey, error)
+	GetUnsecured(ctx context.Context, keyName string) (*kubermaticv1.UserSSHKey, error)
 
 	// UpdateUnsecured update a specific ssh key and returns the updated ssh key
 	// This function is unsafe in a sense that it uses privileged account to update the ssh key
-	UpdateUnsecured(sshKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+	UpdateUnsecured(ctx context.Context, sshKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
 
 	// Create creates a ssh key that belongs to the given project
 	// This function is unsafe in a sense that it uses privileged account to create the ssh key
-	CreateUnsecured(project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
+	CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
 
 	// Delete deletes the given ssh key
 	// This function is unsafe in a sense that it uses privileged account to delete the ssh key
-	DeleteUnsecured(keyName string) error
+	DeleteUnsecured(ctx context.Context, keyName string) error
 }
 
 // UserProvider declares the set of methods for interacting with kubermatic users.
 type UserProvider interface {
-	UserByEmail(email string) (*kubermaticv1.User, error)
-	CreateUser(id, name, email string) (*kubermaticv1.User, error)
-	UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error)
-	UserByID(id string) (*kubermaticv1.User, error)
-	InvalidateToken(user *kubermaticv1.User, token string, expiry apiv1.Time) error
-	GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error)
-	List() ([]kubermaticv1.User, error)
+	UserByEmail(ctx context.Context, email string) (*kubermaticv1.User, error)
+	CreateUser(ctx context.Context, id, name, email string) (*kubermaticv1.User, error)
+	UpdateUser(ctx context.Context, user *kubermaticv1.User) (*kubermaticv1.User, error)
+	UserByID(ctx context.Context, id string) (*kubermaticv1.User, error)
+	InvalidateToken(ctx context.Context, user *kubermaticv1.User, token string, expiry apiv1.Time) error
+	GetInvalidatedTokens(ctx context.Context, user *kubermaticv1.User) ([]string, error)
+	List(ctx context.Context) ([]kubermaticv1.User, error)
 }
 
 // PrivilegedProjectProvider declares the set of method for interacting with kubermatic's project and uses privileged account for it.
 type PrivilegedProjectProvider interface {
 	// GetUnsecured returns the project with the given name
 	// This function is unsafe in a sense that it uses privileged account to get project with the given name
-	GetUnsecured(projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+	GetUnsecured(ctx context.Context, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
 
 	// DeleteUnsecured deletes any given project
 	// This function is unsafe in a sense that it uses privileged account to delete project with the given name
-	DeleteUnsecured(projectInternalName string) error
+	DeleteUnsecured(ctx context.Context, projectInternalName string) error
 
 	// UpdateUnsecured update an existing project and returns it
 	// This function is unsafe in a sense that it uses privileged account to update project
-	UpdateUnsecured(project *kubermaticv1.Project) (*kubermaticv1.Project, error)
+	UpdateUnsecured(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.Project, error)
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project.
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
-	New(users []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
+	New(ctx context.Context, users []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
 
 	// Delete deletes the given project as the given user
 	//
 	// Note:
 	// Before deletion project's status.phase is set to ProjectTerminating
-	Delete(userInfo *UserInfo, projectInternalName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, projectInternalName string) error
 
 	// Get returns the project with the given name
-	Get(userInfo *UserInfo, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+	Get(ctx context.Context, userInfo *UserInfo, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
 
 	// Update update an existing project and returns it
-	Update(userInfo *UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error)
+	Update(ctx context.Context, userInfo *UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error)
 
 	// List gets a list of projects, by default it returns all resources.
 	// If you want to filter the result please set ProjectListOptions
 	//
 	// Note that the list is taken from the cache
-	List(options *ProjectListOptions) ([]*kubermaticv1.Project, error)
+	List(ctx context.Context, options *ProjectListOptions) ([]*kubermaticv1.Project, error)
 }
 
 // UserInfo represent authenticated user.
@@ -551,11 +551,11 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 
 // ServiceAccountProvider declares the set of methods for interacting with kubermatic service account.
 type ServiceAccountProvider interface {
-	CreateProjectServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
-	ListProjectServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
-	GetProjectServiceAccount(userInfo *UserInfo, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
-	UpdateProjectServiceAccount(userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
-	DeleteProjectServiceAccount(userInfo *UserInfo, name string) error
+	CreateProjectServiceAccount(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
+	ListProjectServiceAccount(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+	GetProjectServiceAccount(ctx context.Context, userInfo *UserInfo, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
+	UpdateProjectServiceAccount(ctx context.Context, userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
+	DeleteProjectServiceAccount(ctx context.Context, userInfo *UserInfo, name string) error
 }
 
 // PrivilegedServiceAccountProvider declares the set of methods for interacting with kubermatic service account.
@@ -564,32 +564,32 @@ type PrivilegedServiceAccountProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resources
-	CreateUnsecuredProjectServiceAccount(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
+	CreateUnsecuredProjectServiceAccount(ctx context.Context, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
 
 	// ListUnsecuredProjectServiceAccount gets all project service accounts
 	// If you want to filter the result please take a look at ServiceAccountListOptions
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecuredProjectServiceAccount(project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+	ListUnsecuredProjectServiceAccount(ctx context.Context, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
 
 	// GetUnsecuredProjectServiceAccount get the project service account
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecuredProjectServiceAccount(name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
+	GetUnsecuredProjectServiceAccount(ctx context.Context, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
 
 	// UpdateUnsecuredProjectServiceAccount updates the project service account
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecuredProjectServiceAccount(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
+	UpdateUnsecuredProjectServiceAccount(ctx context.Context, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
 
 	// DeleteUnsecuredProjectServiceAccount deletes the project service account
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecuredProjectServiceAccount(name string) error
+	DeleteUnsecuredProjectServiceAccount(ctx context.Context, name string) error
 }
 
 // ServiceAccountGetOptions allows to set filters that will be applied to filter the get result.
@@ -609,11 +609,11 @@ type ServiceAccountListOptions struct {
 
 // ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token.
 type ServiceAccountTokenProvider interface {
-	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
-	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
-	Get(userInfo *UserInfo, name string) (*corev1.Secret, error)
-	Update(userInfo *UserInfo, secret *corev1.Secret) (*corev1.Secret, error)
-	Delete(userInfo *UserInfo, name string) error
+	Create(ctx context.Context, userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
+	List(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
+	Get(ctx context.Context, userInfo *UserInfo, name string) (*corev1.Secret, error)
+	Update(ctx context.Context, userInfo *UserInfo, secret *corev1.Secret) (*corev1.Secret, error)
+	Delete(ctx context.Context, userInfo *UserInfo, name string) error
 }
 
 // ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.
@@ -638,31 +638,31 @@ type PrivilegedServiceAccountTokenProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	// gets resources from the cache
-	ListUnsecured(*ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
+	ListUnsecured(context.Context, *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
 
 	// CreateUnsecured creates a new token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
+	CreateUnsecured(ctx context.Context, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
 
 	// GetUnsecured gets the token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string) (*corev1.Secret, error)
+	GetUnsecured(ctx context.Context, name string) (*corev1.Secret, error)
 
 	// UpdateUnsecured updates the token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	UpdateUnsecured(secret *corev1.Secret) (*corev1.Secret, error)
+	UpdateUnsecured(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error)
 
 	// DeleteUnsecured deletes the token
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(name string) error
+	DeleteUnsecured(ctx context.Context, name string) error
 }
 
 // EventRecorderProvider allows to record events for objects that can be read using K8S API.
@@ -731,8 +731,8 @@ type AddonConfigProvider interface {
 
 // SettingsProvider declares the set of methods for interacting global settings.
 type SettingsProvider interface {
-	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
-	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
+	GetGlobalSettings(ctx context.Context) (*kubermaticv1.KubermaticSetting, error)
+	UpdateGlobalSettings(ctx context.Context, userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
 }
 
 // AdminProvider declares the set of methods for interacting with admin.
@@ -743,12 +743,12 @@ type AdminProvider interface {
 
 // PresetProvider declares the set of methods for interacting with presets.
 type PresetProvider interface {
-	CreatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
-	UpdatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
-	GetPresets(userInfo *UserInfo) ([]kubermaticv1.Preset, error)
-	GetPreset(userInfo *UserInfo, name string) (*kubermaticv1.Preset, error)
-	DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
-	SetCloudCredentials(userInfo *UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
+	CreatePreset(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+	UpdatePreset(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+	GetPresets(ctx context.Context, userInfo *UserInfo) ([]kubermaticv1.Preset, error)
+	GetPreset(ctx context.Context, userInfo *UserInfo, name string) (*kubermaticv1.Preset, error)
+	DeletePreset(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+	SetCloudCredentials(ctx context.Context, userInfo *UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
 }
 
 // AdmissionPluginsProvider declares the set of methods for interacting with admission plugins.
@@ -996,20 +996,20 @@ type RuleGroupListOptions struct {
 // RuleGroupProvider declares the set of methods for interacting with ruleGroups.
 type RuleGroupProvider interface {
 	// Get gets the given ruleGroup
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
+	Get(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
 
 	// List gets a list of ruleGroups, by default it returns all ruleGroup objects.
 	// If you would like to filer the result, please set RuleGroupListOptions
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
+	List(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
 
 	// Create creates the given ruleGroup
-	Create(userInfo *UserInfo, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	Create(ctx context.Context, userInfo *UserInfo, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// Update updates an ruleGroup
-	Update(userInfo *UserInfo, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	Update(ctx context.Context, userInfo *UserInfo, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// Delete deletes the ruleGroup with the given name
-	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) error
 }
 
 type PrivilegedRuleGroupProvider interface {
@@ -1017,32 +1017,32 @@ type PrivilegedRuleGroupProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(ruleGroupName, namespace string) (*kubermaticv1.RuleGroup, error)
+	GetUnsecured(ctx context.Context, ruleGroupName, namespace string) (*kubermaticv1.RuleGroup, error)
 
 	// ListUnsecured gets a list of ruleGroups, by default it returns all ruleGroup objects.
 	// If you would like to filer the result, please set RuleGroupListOptions
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured(namespace string, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
+	ListUnsecured(ctx context.Context, namespace string, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
 
 	// CreateUnsecured creates the given ruleGroup
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	CreateUnsecured(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// UpdateUnsecured updates an ruleGroup
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+	UpdateUnsecured(ctx context.Context, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
 	// DeleteUnsecured deletes the ruleGroup with the given name
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(ruleGroupName, namespace string) error
+	DeleteUnsecured(ctx context.Context, ruleGroupName, namespace string) error
 }
 
 // PrivilegedAllowedRegistryProvider declares the set of method for interacting with allowed registries.
@@ -1254,10 +1254,9 @@ type PrivilegedMLAAdminSettingProvider interface {
 }
 
 type SeedProvider interface {
-
 	// UpdateUnsecured updates a Seed
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
+	UpdateUnsecured(ctx context.Context, seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
 }

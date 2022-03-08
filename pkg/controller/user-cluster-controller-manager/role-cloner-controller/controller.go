@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rolecloner
+package roleclonercontroller
 
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"go.uber.org/zap"
 
@@ -27,6 +26,7 @@ import (
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -45,7 +45,7 @@ import (
 
 const (
 	// This controller duplicate roles with label component=userClusterRole for all namespaces.
-	controllerName = "clone_role_controller"
+	controllerName = "kkp-role-cloner-controller"
 )
 
 type reconciler struct {
@@ -71,12 +71,28 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
+	// enqueues the roles from kube-system namespace and special label component=userClusterRole.
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		roleList := &rbacv1.RoleList{}
+		if err := r.client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %w", err))
+			return []reconcile.Request{}
+		}
+
+		request := []reconcile.Request{}
+		for _, role := range roleList.Items {
+			request = append(request, reconcile.Request{NamespacedName: types.NamespacedName{Name: role.Name, Namespace: role.Namespace}})
+		}
+
+		return request
+	})
+
 	// Watch for changes to Roles and Namespaces
-	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, enqueueTemplateRoles(mgr.GetClient())); err != nil {
-		return fmt.Errorf("failed to establish watch for the Roles %w", err)
+	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, eventHandler); err != nil {
+		return fmt.Errorf("failed to establish watch for Roles: %w", err)
 	}
-	if err = c.Watch(&source.Kind{Type: &corev1.Namespace{}}, enqueueTemplateRoles(mgr.GetClient())); err != nil {
-		return fmt.Errorf("failed to establish watch for the Namespace %w", err)
+	if err = c.Watch(&source.Kind{Type: &corev1.Namespace{}}, eventHandler); err != nil {
+		return fmt.Errorf("failed to establish watch for Namespaces: %w", err)
 	}
 
 	return nil
@@ -149,7 +165,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 					if kerrors.IsNotFound(err) {
 						continue
 					}
-					return fmt.Errorf("failed to delete role: %w", err)
+					return fmt.Errorf("failed to delete Role in namespace %q: %w", namespace, err)
 				}
 			}
 		}
@@ -162,60 +178,21 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	for _, namespace := range namespaces {
-		log := log.With("namespace", namespace)
-		wasCreated := false
-		role := &rbacv1.Role{}
-		if err := r.client.Get(ctx, ctrlruntimeclient.ObjectKey{
-			Namespace: namespace,
-			Name:      oldRole.Name,
-		}, role); err != nil {
-			if kerrors.IsNotFound(err) {
-				log.Debug("role not found, creating")
-				newRole := &rbacv1.Role{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      oldRole.Name,
-						Namespace: namespace,
-						Labels:    oldRole.Labels,
-					},
-					Rules: oldRole.Rules,
+		creatorGetters := []reconciling.NamedRoleCreatorGetter{
+			func() (name string, create func(*rbacv1.Role) (*rbacv1.Role, error)) {
+				return oldRole.Name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+					r.Rules = oldRole.Rules
+					r.Labels = oldRole.Labels
+
+					return r, nil
 				}
-				if err := r.client.Create(ctx, newRole); err != nil {
-					return fmt.Errorf("failed to create role: %w", err)
-				}
-				wasCreated = true
-			} else {
-				return fmt.Errorf("failed to get role: %w", err)
-			}
+			},
 		}
 
-		// update only existing roles, not already created
-		if !wasCreated {
-			if !reflect.DeepEqual(role.Rules, oldRole.Rules) {
-				log.Debug("Role was changed, updating")
-				role.Rules = oldRole.Rules
-				if err := r.client.Update(ctx, role); err != nil {
-					return fmt.Errorf("failed to update role: %w", err)
-				}
-			}
+		if err := reconciling.ReconcileRoles(ctx, creatorGetters, namespace, r.client); err != nil {
+			return fmt.Errorf("failed to reconcile Role in namespace %q: %w", namespace, err)
 		}
 	}
 
 	return nil
-}
-
-// enqueueTemplateRoles enqueues the roles from kube-system namespace and special label component=userClusterRole.
-func enqueueTemplateRoles(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		roleList := &rbacv1.RoleList{}
-		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %w", err))
-			return []reconcile.Request{}
-		}
-
-		request := []reconcile.Request{}
-		for _, role := range roleList.Items {
-			request = append(request, reconcile.Request{NamespacedName: types.NamespacedName{Name: role.Name, Namespace: role.Namespace}})
-		}
-		return request
-	})
 }

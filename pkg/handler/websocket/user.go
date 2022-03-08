@@ -17,6 +17,7 @@ limitations under the License.
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 
 	"code.cloudfoundry.org/go-pubsub"
@@ -28,9 +29,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/watcher"
 )
 
-func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string) {
+func WriteUser(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string) {
 	// There can be a race here if the user changes between getting the initial data and setting up the subscription
-	initialUser, err := providers.UserProvider.UserByEmail(userEmail)
+	initialUser, err := providers.UserProvider.UserByEmail(ctx, userEmail)
 	if err != nil {
 		log.Logger.Debug(err)
 		return

@@ -337,6 +337,12 @@ spec:
   # Metering configures the metering tool on user clusters across the seed.
   metering:
     enabled: false
+    # Interval defines period for metering timestamps
+    interval: ""
+    # IntervalInDays defines period for metering timestamps. Overwrites Interval.
+    intervalInDays: 0
+    # Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+    schedule: ""
     # StorageClassName is the name of the storage class that the metering tool uses to save processed files before
     # exporting it to s3 bucket. Default value is kubermatic-fast.
     storageClassName: kubermatic-fast

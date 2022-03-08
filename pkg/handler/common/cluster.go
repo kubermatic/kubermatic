@@ -182,7 +182,7 @@ func GenerateCluster(
 
 	credentialName := body.Cluster.Credential
 	if len(credentialName) > 0 {
-		cloudSpec, err := credentialManager.SetCloudCredentials(adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
+		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
 		if err != nil {
 			return nil, kubermaticerrors.NewBadRequest("invalid credentials: %v", err)
 		}
@@ -723,7 +723,7 @@ func AssignSSHKeyEndpoint(ctx context.Context, userInfoGetter provider.UserInfoG
 	// sanity check, make sure that the key belongs to the project
 	// alternatively we could examine the owner references
 	{
-		projectSSHKeys, err := sshKeyProvider.List(project, nil)
+		projectSSHKeys, err := sshKeyProvider.List(ctx, project, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -780,7 +780,7 @@ func DetachSSHKeyEndpoint(ctx context.Context, userInfoGetter provider.UserInfoG
 	// sanity check, make sure that the key belongs to the project
 	// alternatively we could examine the owner references
 	{
-		projectSSHKeys, err := sshKeyProvider.List(project, nil)
+		projectSSHKeys, err := sshKeyProvider.List(ctx, project, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -821,7 +821,7 @@ func ListSSHKeysEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: clusterID})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -835,7 +835,7 @@ func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	if adminUserInfo.IsAdmin {
-		if _, err := privilegedSSHKeyProvider.UpdateUnsecured(clusterSSHKey); err != nil {
+		if _, err := privilegedSSHKeyProvider.UpdateUnsecured(ctx, clusterSSHKey); err != nil {
 			return common.KubernetesErrorToHTTPError(err)
 		}
 		return nil
@@ -844,7 +844,7 @@ func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGe
 	if err != nil {
 		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
-	if _, err = sshKeyProvider.Update(userInfo, clusterSSHKey); err != nil {
+	if _, err = sshKeyProvider.Update(ctx, userInfo, clusterSSHKey); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
 	return nil
@@ -1099,13 +1099,13 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 		return nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedSSHKeyProvider.GetUnsecured(keyName)
+		return privilegedSSHKeyProvider.GetUnsecured(ctx, keyName)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
-	return sshKeyProvider.Get(userInfo, keyName)
+	return sshKeyProvider.Get(ctx, userInfo, keyName)
 }
 
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, incompatibilities ...*version.ProviderIncompatibility) apiv1.ExternalCCMMigrationStatus {

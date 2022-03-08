@@ -1030,6 +1030,22 @@ spec:
                 properties:
                   enabled:
                     type: boolean
+                  interval:
+                    default: week
+                    description: Interval defines period for metering timestamps
+                    enum:
+                    - day
+                    - week
+                    - month
+                    type: string
+                  intervalInDays:
+                    description: IntervalInDays defines period for metering timestamps.
+                      Overwrites Interval.
+                    type: integer
+                  schedule:
+                    default: 0 1 * * 6
+                    description: Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+                    type: string
                   storageClassName:
                     description: StorageClassName is the name of the storage class
                       that the metering tool uses to save processed files before exporting
