@@ -71,15 +71,14 @@ selected for a user cluster and this value is set, it will be used as a fallback
 ## Implementation
 
 There are quite some similarities to the implementation of the [SSH key feature][ssh key agent].
-Writing the containerd config on every worker node of a user cluster based on credentials managed
-and selected in the dashboard sounds quite familiar. This opens up qute some potential for
-refactoring the current SSH key agent into a more general Agent controlling files on worker node's
-filesystem.
+Writing the containerd-config on every worker node of a user cluster based on credentials managed
+and selected in the dashboard sounds quite familiar. This opens up some potential for refactoring
+the current SSH key agent into a more general Agent controlling files on worker node's file system.
 
 ### KubermaticConfiguration
 
 A new configuration field to set default fallback registry credentials for any user cluster where no
-credentials are explicitly selected. For consisteny this could be in the format of
+credentials are explicitly selected. For consistency this could be in the format of
 `spec.imagePullSecret`:
 
 ```yaml
@@ -147,7 +146,7 @@ stringData:
 
 ### Master Cluster
 
-* A controller that synchronzies selected credentials into the cluster namespace on the seed
+* A controller that synchronizes selected credentials into the cluster namespace on the seed
 cluster
 
 ### Seed Cluster
@@ -170,7 +169,7 @@ config always contain the selected credentials.
 
 #### Refactoring potential
 
-The general funtionality of the user registry credentials agent is very similar to the SSH key
+The general functionality of the user registry credentials agent is very similar to the SSH key
 agent: They watch some kubernetes resource and local files and have a reconciliation process that
 makes sure the content of the local files always match the content of the resources.
 
@@ -208,7 +207,7 @@ does not cover reconciled KKP components nor user apps. So this approach would n
 with at least one of the 2 above.
 
 ## Task & effort
-* tbd
+* tbd.
 
 [#6231]: https://github.com/kubermatic/kubermatic/issues/6231
 [dockershim deprecation]: https://kubernetes.io/blog/2020/12/02/dockershim-faq/
