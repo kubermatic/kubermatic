@@ -194,7 +194,7 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	if err != nil {
 		return fmt.Errorf("failed to get credentials: %w", err)
 	}
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster, false); err != nil {
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
 		return err
 	}
 	kuberneteshelper.AddFinalizer(newCluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)

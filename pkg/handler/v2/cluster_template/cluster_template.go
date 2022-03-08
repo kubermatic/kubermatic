@@ -357,7 +357,7 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 		Spec:                   partialCluster.Spec,
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, false); err != nil {
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
 		return nil, err
 	}
 
