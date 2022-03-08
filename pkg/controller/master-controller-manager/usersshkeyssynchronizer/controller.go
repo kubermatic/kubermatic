@@ -185,9 +185,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	if cluster.DeletionTimestamp != nil {
-		if err := r.cleanupUserSSHKeys(ctx, userSSHKeys.Items, cluster.Name); err != nil {
-			return fmt.Errorf("failed reconciling usersshkey: %w", err)
-		}
+		// if err := r.cleanupUserSSHKeys(ctx, userSSHKeys.Items, cluster.Name); err != nil {
+		// 	return fmt.Errorf("failed reconciling usersshkey: %w", err)
+		// }
 
 		return kubernetes.TryRemoveFinalizer(ctx, seedClient, cluster, UserSSHKeysClusterIDsCleanupFinalizer)
 	}
