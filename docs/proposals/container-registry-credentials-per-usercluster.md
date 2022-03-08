@@ -4,6 +4,26 @@
 
 **Status**: Draft proposal; prototype in progress.
 
+
+* [Goals](#goals)
+* [Non-Goals](#non-goals)
+* [Motivation and Background](#motivation-and-background)
+  * [Current state](#current-state)
+  * [Proposed feature](#proposed-feature)
+* [Implementation](#implementation)
+  * [KubermaticConfiguration](#kubermaticconfiguration)
+  * [Custom Resources](#custom-resources)
+  * [Master Cluster](#master-cluster)
+  * [Seed Cluster](#seed-cluster)
+  * [User Cluster](#user-cluster)
+  * [Agent](#agent)
+  * [UI](#ui)
+* [Alternatives considered](#alternatives-considered)
+  * [Reconciliation of all Pods running on user clusters](#reconciliation-of-all-pods-running-on-user-clusters)
+  * [Setting imagePullSecrets on ServiceAccounts](#setting-imagepullsecrets-on-serviceaccounts)
+  * [Extension of addon templates with imagePullSecrets](#extension-of-addon-templates-with-imagepullsecrets)
+* [Task & effort](#task-&-effort)
+
 ## Goals
 
 Defining separate container registry credentials per user cluster so cluster owners can make use of
