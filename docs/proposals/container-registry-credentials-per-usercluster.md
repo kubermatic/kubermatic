@@ -164,7 +164,7 @@ set).
 ### Agent
 
 Similar to the SSH key agent this agent watches a named Secret containing registry credentials and
-also the containerd config on the node the agent is running on. It makes sure that the containerd
+also the containerd-config on the node the agent is running on. It makes sure that the containerd-
 config always contain the selected credentials.
 
 #### Refactoring potential
