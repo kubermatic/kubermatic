@@ -180,7 +180,7 @@ func getNodeAddresses(node corev1.Node) []string {
 	addresses := []string{}
 	for _, addressType := range addressTypes {
 		for _, address := range node.Status.Addresses {
-			if address.Type == addressType {
+			if address.Type == addressType && isIPv4(address.Address) {
 				addresses = append(addresses, address.Address)
 			}
 		}
@@ -190,11 +190,16 @@ func getNodeAddresses(node corev1.Node) []string {
 
 func getInternalNodeAddress(node corev1.Node) (string, error) {
 	for _, address := range node.Status.Addresses {
-		if address.Type == corev1.NodeInternalIP {
+		if address.Type == corev1.NodeInternalIP && isIPv4(address.Address) {
 			return address.Address, nil
 		}
 	}
 	return "", fmt.Errorf("no internal address found; known addresses: %v", node.Status.Addresses)
+}
+
+func isIPv4(address string) bool {
+	ip := net.ParseIP(address)
+	return ip != nil && ip.To4() != nil
 }
 
 // getRulesForNode determines the used kubelet address of a node
