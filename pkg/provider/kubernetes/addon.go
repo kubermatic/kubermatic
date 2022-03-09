@@ -24,7 +24,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -142,14 +141,7 @@ func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtim
 			Labels:    labels,
 		},
 		Spec: kubermaticv1.AddonSpec{
-			Name: addonName,
-			Cluster: corev1.ObjectReference{
-				Name:       cluster.Name,
-				Namespace:  "",
-				UID:        cluster.UID,
-				APIVersion: cluster.APIVersion,
-				Kind:       "Cluster",
-			},
+			Name:      addonName,
 			Variables: variables,
 		},
 	}, nil
@@ -247,7 +239,6 @@ func (p *AddonProvider) Update(ctx context.Context, userInfo *provider.UserInfo,
 		return nil, err
 	}
 
-	addon.Namespace = cluster.Status.NamespaceName
 	if err := seedImpersonatedClient.Update(ctx, addon); err != nil {
 		return nil, err
 	}
@@ -278,7 +269,6 @@ func (p *AddonProvider) UpdateUnsecured(ctx context.Context, cluster *kubermatic
 		return nil, err
 	}
 
-	addon.Namespace = cluster.Status.NamespaceName
 	if err := p.clientPrivileged.Update(ctx, addon); err != nil {
 		return nil, err
 	}

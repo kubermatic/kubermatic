@@ -604,6 +604,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 
 	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		kubermaticseed.ClusterMutatingWebhookConfigurationCreator(cfg, client),
+		kubermaticseed.AddonMutatingWebhookConfigurationCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {
