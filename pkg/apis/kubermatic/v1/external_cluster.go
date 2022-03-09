@@ -68,9 +68,17 @@ type ExternalClusterSpec struct {
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
 type ExternalClusterCloudSpec struct {
-	GKE *ExternalClusterGKECloudSpec `json:"gke,omitempty"`
-	EKS *ExternalClusterEKSCloudSpec `json:"eks,omitempty"`
-	AKS *ExternalClusterAKSCloudSpec `json:"aks,omitempty"`
+	GKE     *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
+	EKS     *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
+	AKS     *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
+	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
+}
+
+type ExternalClusterKubeOneCloudSpec struct {
+	Name                 string                                 `json:"name"`
+	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
+	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
 }
 
 type ExternalClusterGKECloudSpec struct {
