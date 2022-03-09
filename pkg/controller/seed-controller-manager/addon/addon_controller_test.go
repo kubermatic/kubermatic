@@ -209,7 +209,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifestKubeDNS), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifestKubeDNS), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -264,7 +264,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -303,7 +303,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -340,7 +340,7 @@ func TestController_getAddonManifests(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -349,7 +349,7 @@ func TestController_getAddonManifests(t *testing.T) {
 	multilineManifest := fmt.Sprintf(`%s
 ---
 %s`, testManifests[1], testManifests[2])
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest2.yaml"), []byte(multilineManifest), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest2.yaml"), []byte(multilineManifest), 0644); err != nil {
 		t.Fatal(err)
 	}
 

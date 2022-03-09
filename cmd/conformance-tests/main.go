@@ -582,7 +582,7 @@ func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 
 	privatePEM := pem.EncodeToMemory(&privBlock)
 	// Needs to be google_compute_engine as its hardcoded in the kubernetes e2e tests
-	if err := ioutil.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine"), privatePEM, 0400); err != nil {
+	if err := os.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine"), privatePEM, 0400); err != nil {
 		return "", nil, err
 	}
 
@@ -592,7 +592,7 @@ func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 	}
 
 	pubKeyBytes := ssh.MarshalAuthorizedKey(publicRsaKey)
-	if err := ioutil.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine.pub"), pubKeyBytes, 0400); err != nil {
+	if err := os.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine.pub"), pubKeyBytes, 0400); err != nil {
 		return "", nil, err
 	}
 

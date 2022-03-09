@@ -22,8 +22,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"text/template"
 
@@ -232,7 +232,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile("zz_generated_reconcile.go", fmtB, 0644); err != nil {
+	if err := os.WriteFile("zz_generated_reconcile.go", fmtB, 0644); err != nil {
 		log.Fatal(err)
 	}
 }

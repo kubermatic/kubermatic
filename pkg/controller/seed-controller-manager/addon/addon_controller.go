@@ -408,7 +408,7 @@ func getFileDeleteFinalizer(log *zap.SugaredLogger, filename string) fileHandlin
 func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *bytes.Buffer, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write combined Manifest to disk
 	manifestFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-%s.yaml", cluster.Name, addon.Name))
-	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %w", manifestFilename, err)
 	}
 	log.Debugw("Wrote combined manifest", "file", manifestFilename)
@@ -423,7 +423,7 @@ func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredL
 		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %w", cluster.Name, err)
 	}
 	kubeconfigFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-addon-%s-kubeconfig", cluster.Name, addon.Name))
-	if err := ioutil.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
+	if err := os.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write admin kubeconfig for cluster %s: %w", cluster.Name, err)
 	}
 	log.Debugw("Wrote admin kubeconfig", "file", kubeconfigFilename)
