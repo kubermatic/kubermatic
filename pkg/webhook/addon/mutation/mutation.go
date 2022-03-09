@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// AdmissionHandler for mutating Kubermatic Addon2 CRD.
+// AdmissionHandler for mutating Kubermatic Addon CRD.
 type AdmissionHandler struct {
 	log              logr.Logger
 	decoder          *admission.Decoder

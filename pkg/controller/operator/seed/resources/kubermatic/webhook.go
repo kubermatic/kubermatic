@@ -170,7 +170,7 @@ func AddonMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfig
 					FailurePolicy:           &failurePolicy,
 					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32Ptr(30),
+					TimeoutSeconds:          pointer.Int32Ptr(10),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
