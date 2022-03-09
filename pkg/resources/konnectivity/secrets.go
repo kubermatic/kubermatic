@@ -52,11 +52,8 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 					return nil, fmt.Errorf("old config has no clusters")
 				}
 
-				if oldConf.Clusters[0].Cluster.Server == data.Cluster().Address.URL {
-					return se, nil
-				}
-
-				if string(oldConf.Clusters[0].Cluster.CertificateAuthorityData) == string(encodedCACert) {
+				if oldConf.Clusters[0].Cluster.Server == data.Cluster().Address.URL &&
+					string(oldConf.Clusters[0].Cluster.CertificateAuthorityData) == string(encodedCACert) {
 					return se, nil
 				}
 			}
