@@ -2036,19 +2036,6 @@ func GenDefaultAPIBackupCredentials() *apiv2.BackupCredentials {
 	}
 }
 
-func GenDefaultBackupCredentials() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.EtcdRestoreS3CredentialsSecret,
-			Namespace: metav1.NamespaceSystem,
-		},
-		StringData: map[string]string{
-			resources.EtcdBackupAndRestoreS3AccessKeyIDKey:        resources.AWSAccessKeyID,
-			resources.EtcdBackupAndRestoreS3SecretKeyAccessKeyKey: resources.AWSSecretAccessKey,
-		},
-	}
-}
-
 func GenMLAAdminSetting(name, clusterName string, value int32) *kubermaticv1.MLAAdminSetting {
 	return &kubermaticv1.MLAAdminSetting{
 		ObjectMeta: metav1.ObjectMeta{
