@@ -104,13 +104,9 @@ spec:
                       tenantID:
                         type: string
                     required:
-                    - clientID
-                    - clientSecret
                     - credentialsReference
                     - name
                     - resourceGroup
-                    - subscriptionID
-                    - tenantID
                     type: object
                   eks:
                     properties:
@@ -163,10 +159,9 @@ spec:
                       secretAccessKey:
                         type: string
                     required:
-                    - accessKeyID
+                    - credentialsReference
                     - name
                     - region
-                    - secretAccessKey
                     type: object
                   gke:
                     properties:
@@ -217,8 +212,9 @@ spec:
                       zone:
                         type: string
                     required:
+                    - credentialsReference
                     - name
-                    - serviceAccount
+                    - zone
                     type: object
                 type: object
               humanReadableName:
@@ -428,6 +424,8 @@ spec:
                                 type: string
                             type: object
                           token:
+                            description: Token is used to authenticate with the DigitalOcean
+                              API.
                             type: string
                         required:
                         - credentialsReference
@@ -592,22 +590,25 @@ spec:
                                 type: string
                             type: object
                           elementEndpoint:
-                            description: Prism Element Endpoint to access Nutanix
-                              Prism Element for csi driver
+                            description: PrismElementEndpoint to access Nutanix Prism
+                              Element for the CSI driver
                             type: string
                           elementPassword:
-                            description: Prism Element Password for csi driver
+                            description: PrismElementPassword to be used for the CSI
+                              driver
                             type: string
                           elementUsername:
-                            description: Prism Element Username for csi driver
+                            description: PrismElementUsername to be used for the CSI
+                              driver
                             type: string
                           endpoint:
-                            description: The Nutanix API (Prism Central) endpoint
+                            description: Endpoint is the Nutanix API (Prism Central)
+                              endpoint
                             type: string
                           password:
                             type: string
                           port:
-                            description: The Nutanix API (Prism Central) port
+                            description: Port is the Nutanix API (Prism Central) port
                             type: string
                           proxyURL:
                             type: string
@@ -673,10 +674,10 @@ spec:
                           password:
                             type: string
                           project:
-                            description: project, formally known as tenant.
+                            description: Project, formally known as tenant.
                             type: string
                           projectID:
-                            description: project id, formally known as tenantID.
+                            description: ProjectID, formally known as tenantID.
                             type: string
                           username:
                             type: string

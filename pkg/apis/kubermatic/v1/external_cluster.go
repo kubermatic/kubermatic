@@ -114,7 +114,8 @@ type KubeOneAzureCloudSpec struct {
 type KubeOneDigitaloceanCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 
-	Token string `json:"token,omitempty"` // Token is used to authenticate with the DigitalOcean API.
+	// Token is used to authenticate with the DigitalOcean API.
+	Token string `json:"token,omitempty"`
 }
 
 // KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.
@@ -125,9 +126,9 @@ type KubeOneOpenstackCloudSpec struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	// project, formally known as tenant.
+	// Project, formally known as tenant.
 	Project string `json:"project"`
-	// project id, formally known as tenantID.
+	// ProjectID, formally known as tenantID.
 	ProjectID string `json:"projectID"`
 
 	Domain string `json:"domain"`
@@ -169,18 +170,18 @@ type KubeOneNutanixCloudSpec struct {
 
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
-	// The Nutanix API (Prism Central) endpoint
+	// Endpoint is the Nutanix API (Prism Central) endpoint
 	Endpoint string `json:"endpoint"`
-	// The Nutanix API (Prism Central) port
+	// Port is the Nutanix API (Prism Central) port
 	Port string `json:"port"`
 
-	// Prism Element Username for csi driver
+	// PrismElementUsername to be used for the CSI driver
 	PrismElementUsername string `json:"elementUsername,omitempty"`
 
-	// Prism Element Password for csi driver
+	// PrismElementPassword to be used for the CSI driver
 	PrismElementPassword string `json:"elementPassword,omitempty"`
 
-	// Prism Element Endpoint to access Nutanix Prism Element for csi driver
+	// PrismElementEndpoint to access Nutanix Prism Element for the CSI driver
 	PrismElementEndpoint string `json:"elementEndpoint"`
 }
 
@@ -193,25 +194,25 @@ type ExternalClusterCloudSpec struct {
 
 type ExternalClusterGKECloudSpec struct {
 	Name                 string                                  `json:"name"`
-	ServiceAccount       string                                  `json:"serviceAccount"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
-	Zone                 string                                  `json:"zone,omitempty"`
+	ServiceAccount       string                                  `json:"serviceAccount,omitempty"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	Zone                 string                                  `json:"zone"`
 }
 
 type ExternalClusterEKSCloudSpec struct {
 	Name                 string                                  `json:"name"`
-	AccessKeyID          string                                  `json:"accessKeyID"`
-	SecretAccessKey      string                                  `json:"secretAccessKey"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	AccessKeyID          string                                  `json:"accessKeyID,omitempty"`
+	SecretAccessKey      string                                  `json:"secretAccessKey,omitempty"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 	Region               string                                  `json:"region"`
 }
 
 type ExternalClusterAKSCloudSpec struct {
 	Name                 string                                  `json:"name"`
-	TenantID             string                                  `json:"tenantID"`
-	SubscriptionID       string                                  `json:"subscriptionID"`
-	ClientID             string                                  `json:"clientID"`
-	ClientSecret         string                                  `json:"clientSecret"`
+	TenantID             string                                  `json:"tenantID,omitempty"`
+	SubscriptionID       string                                  `json:"subscriptionID,omitempty"`
+	ClientID             string                                  `json:"clientID,omitempty"`
+	ClientSecret         string                                  `json:"clientSecret,omitempty"`
 	ResourceGroup        string                                  `json:"resourceGroup"`
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 }
