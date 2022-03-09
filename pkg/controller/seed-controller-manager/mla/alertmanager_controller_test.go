@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -184,7 +184,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 						bytes.NewBuffer([]byte(generateAlertmanagerConfig("test-user")))),
 					response: &http.Response{
 						StatusCode: http.StatusBadRequest, // any StatusCode != http.StatusCreated
-						Body:       ioutil.NopCloser(strings.NewReader(`"error validating Alertmanager config: some explanation"`))},
+						Body:       io.NopCloser(strings.NewReader(`"error validating Alertmanager config: some explanation"`))},
 				},
 			},
 			hasFinalizer:                     true,
@@ -264,7 +264,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 						nil),
 					response: &http.Response{
 						StatusCode: http.StatusBadRequest, // any StatusCode != http.StatusOK
-						Body:       ioutil.NopCloser(strings.NewReader(`"error validating Alertmanager config: some explanation"`))},
+						Body:       io.NopCloser(strings.NewReader(`"error validating Alertmanager config: some explanation"`))},
 				},
 			},
 			hasFinalizer:                     false,

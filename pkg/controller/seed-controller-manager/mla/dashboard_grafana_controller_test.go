@@ -19,7 +19,7 @@ package mla
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -117,7 +117,7 @@ func TestDashboardGrafanaReconcile(t *testing.T) {
 				{
 					name:     "set dashboard",
 					request:  httptest.NewRequest(http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "dashboard set"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "dashboard set"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -196,7 +196,7 @@ func TestDashboardGrafanaReconcile(t *testing.T) {
 				{
 					name:     "delete dashboard",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/dashboards/uid/"+"unique", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "Dashboard dashboard deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "Dashboard dashboard deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},

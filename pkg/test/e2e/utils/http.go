@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -115,7 +116,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 		requestClone := request.WithContext(ctx)
 
 		if bodyBytes != nil {
-			requestClone.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
+			requestClone.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
 
 		// perform request
