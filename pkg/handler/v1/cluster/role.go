@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -541,7 +541,7 @@ func DecodePatchRoleReq(c context.Context, r *http.Request) (interface{}, error)
 	}
 	req.Namespace = namespace
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
@@ -628,7 +628,7 @@ func DecodePatchClusterRoleReq(c context.Context, r *http.Request) (interface{},
 	}
 	req.RoleID = roleID
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

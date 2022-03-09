@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -285,7 +285,7 @@ func DecodePatchGatekeeperConfigReq(c context.Context, r *http.Request) (interfa
 	}
 	req.gatekeeperConfigReq = ctReq.(gatekeeperConfigReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

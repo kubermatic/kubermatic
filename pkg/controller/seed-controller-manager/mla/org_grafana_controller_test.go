@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -364,9 +363,9 @@ func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bo
 func bodyEqual(t *testing.T, expectedRequest, request *http.Request) bool {
 	defer expectedRequest.Body.Close()
 	defer request.Body.Close()
-	expectedBody, err := ioutil.ReadAll(expectedRequest.Body)
+	expectedBody, err := io.ReadAll(expectedRequest.Body)
 	assert.Nil(t, err)
-	body, err := ioutil.ReadAll(request.Body)
+	body, err := io.ReadAll(request.Body)
 	assert.Nil(t, err)
 	if bytes.Equal(expectedBody, body) {
 		return true

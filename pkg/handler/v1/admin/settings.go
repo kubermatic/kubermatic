@@ -19,7 +19,7 @@ package admin
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -105,7 +105,7 @@ func DecodePatchKubermaticSettingsReq(c context.Context, r *http.Request) (inter
 	var req patchKubermaticSettingsReq
 	var err error
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

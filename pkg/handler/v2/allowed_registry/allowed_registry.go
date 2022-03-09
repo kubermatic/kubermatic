@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -203,7 +203,7 @@ func DecodePatchAllowedRegistryReq(c context.Context, r *http.Request) (interfac
 	}
 	req.getAllowedRegistryReq = wrReq.(getAllowedRegistryReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -548,7 +548,7 @@ func DecodePatchSettingsReq(c context.Context, r *http.Request) (interface{}, er
 	var req PatchSettingsReq
 	var err error
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
