@@ -36,7 +36,7 @@ import (
 )
 
 func TestReconcileUserSSHKeys(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "sshkeys")
+	tmpDir, err := os.MkdirTemp("", "sshkeys")
 	if err != nil {
 		t.Fatalf("error while creating test base dir: %v", err)
 	}

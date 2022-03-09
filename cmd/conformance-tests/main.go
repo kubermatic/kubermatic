@@ -547,7 +547,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 	// Setup temporary home dir (Because the e2e tests have some filenames hardcoded - which might conflict with the user files)
 	// We'll set the env-var $HOME to this directory when executing the tests
-	homeDir, err := ioutil.TempDir("/tmp", "e2e-home-")
+	homeDir, err := os.MkdirTemp("/tmp", "e2e-home-")
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to setup temporary home dir: %w", err)
 	}

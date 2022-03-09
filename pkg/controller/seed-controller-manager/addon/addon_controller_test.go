@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -200,7 +199,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("kube-dns")
 
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +254,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
 
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +293,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
 
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,7 +330,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 func TestController_getAddonManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
