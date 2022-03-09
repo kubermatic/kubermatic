@@ -319,6 +319,8 @@ spec:
                             type: object
                           secretAccessKey:
                             type: string
+                        required:
+                        - credentialsReference
                         type: object
                       azure:
                         description: KubeOneAzureCloudSpec specifies access credentials
@@ -375,6 +377,8 @@ spec:
                             type: string
                           tenantID:
                             type: string
+                        required:
+                        - credentialsReference
                         type: object
                       digitalocean:
                         description: KubeOneDigitaloceanCloudSpec specifies access
@@ -425,6 +429,8 @@ spec:
                             type: object
                           token:
                             type: string
+                        required:
+                        - credentialsReference
                         type: object
                       gcp:
                         description: KubeOneGCPCloudSpec specifies access data to
@@ -475,6 +481,8 @@ spec:
                             type: object
                           serviceAccount:
                             type: string
+                        required:
+                        - credentialsReference
                         type: object
                       hetzner:
                         description: KubeOneHetznerCloudSpec specifies access data
@@ -527,6 +535,8 @@ spec:
                             description: Token is used to authenticate with the Hetzner
                               cloud API.
                             type: string
+                        required:
+                        - credentialsReference
                         type: object
                       nutanix:
                         description: KubeOneNutanixCloudSpec specifies the access
@@ -581,23 +591,16 @@ spec:
                                 description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                                 type: string
                             type: object
-                          csi:
-                            description: KubeOneNutanixCSIConfig for csi driver that
-                              connects to a prism element
-                            properties:
-                              endpoint:
-                                description: Prism Element Endpoint to access Nutanix
-                                  Prism Element for csi driver
-                                type: string
-                              password:
-                                description: Prism Element Password for csi driver
-                                type: string
-                              username:
-                                description: Prism Element Username for csi driver
-                                type: string
-                            required:
-                            - endpoint
-                            type: object
+                          elementEndpoint:
+                            description: Prism Element Endpoint to access Nutanix
+                              Prism Element for csi driver
+                            type: string
+                          elementPassword:
+                            description: Prism Element Password for csi driver
+                            type: string
+                          elementUsername:
+                            description: Prism Element Username for csi driver
+                            type: string
                           endpoint:
                             description: The Nutanix API (Prism Central) endpoint
                             type: string
@@ -611,8 +614,10 @@ spec:
                           username:
                             type: string
                         required:
-                        - clusterName
+                        - credentialsReference
+                        - elementEndpoint
                         - endpoint
+                        - port
                         type: object
                       openstack:
                         description: KubeOneOpenstackCloudSpec specifies access data
@@ -675,6 +680,11 @@ spec:
                             type: string
                           username:
                             type: string
+                        required:
+                        - credentialsReference
+                        - domain
+                        - project
+                        - projectID
                         type: object
                       packet:
                         description: KubeOnePacketCloudSpec specifies access data
@@ -727,6 +737,10 @@ spec:
                             type: object
                           projectID:
                             type: string
+                        required:
+                        - apiKey
+                        - credentialsReference
+                        - projectID
                         type: object
                       vsphere:
                         description: KubeOneVSphereCloudSpec credentials represents
@@ -781,6 +795,9 @@ spec:
                             type: string
                           username:
                             type: string
+                        required:
+                        - credentialsReference
+                        - server
                         type: object
                     type: object
                   manifestReference:
