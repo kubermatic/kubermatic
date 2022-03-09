@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -1264,7 +1263,7 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 	}
 
 	// Make sure we write to a file instead of a byte buffer as the logs are pretty big
-	file, err := ioutil.TempFile("/tmp", run.name+"-log")
+	file, err := os.CreateTemp("/tmp", run.name+"-log")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open logfile: %w", err)
 	}
