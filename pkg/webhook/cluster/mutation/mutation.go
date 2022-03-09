@@ -223,6 +223,28 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		}
 	}
 
+	// This part handles Canal version upgrade for clusters with Kubernetes version 1.23 and higher,
+	// where the minimal Canal version is v3.22.
+	cniVersion, err := semver.NewVersion(newCluster.Spec.CNIPlugin.Version)
+	if err != nil {
+		return fmt.Errorf("CNI plugin version parsing failed: %w", err)
+	}
+	lowerThan322, err := semver.NewConstraint("< 3.22")
+	if err != nil {
+		return fmt.Errorf("semver constraint parsing failed: %w", err)
+	}
+	equalOrHigherThan123, err := semver.NewConstraint(">= 1.23")
+	if err != nil {
+		return fmt.Errorf("semver constraint parsing failed: %w", err)
+	}
+	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal && lowerThan322.Check(cniVersion) &&
+		newCluster.Spec.Version.String() != "" && equalOrHigherThan123.Check(newCluster.Spec.Version.Semver()) {
+		newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+			Type:    kubermaticv1.CNIPluginTypeCanal,
+			Version: "v3.22",
+		}
+	}
+
 	return nil
 }
 

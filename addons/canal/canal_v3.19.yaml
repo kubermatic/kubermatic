@@ -17,7 +17,7 @@
 #   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (Which we don't use).
 #   - Add envoyagent interface to the exclusion list for Calico IP autodetection.
 #   - Add custom network policy
-#   - Canal image bumped to v0.15.1
+#   - Flannel image bumped to v0.15.1
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.19" }}

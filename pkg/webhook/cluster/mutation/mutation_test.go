@@ -696,6 +696,81 @@ func TestHandle(t *testing.T) {
 			),
 		},
 		{
+			name: "CNI plugin version bump to v3.22 on k8s version upgrade to 1.23",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:    "foo",
+							Version: *semver.NewSemverOrDie("1.23"),
+							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.21",
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:    "foo",
+							Version: *semver.NewSemverOrDie("1.22"),
+							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.21",
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: append(
+				defaultPatches,
+				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", "v3.22"),
+			),
+		},
+		{
 			name: "Default network configuration for any cloud provider except KubeVirt",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
