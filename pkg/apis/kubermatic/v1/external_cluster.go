@@ -75,10 +75,10 @@ type ExternalClusterCloudSpec struct {
 }
 
 type ExternalClusterKubeOneCloudSpec struct {
-	Name                 string                                  `json:"name"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-	SSHReference         *providerconfig.GlobalSecretKeySelector `json:"sshReference"`
-	ManifestReference    *providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
+	Name                 string                                 `json:"name"`
+	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
+	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
 }
 
 type ExternalClusterGKECloudSpec struct {
