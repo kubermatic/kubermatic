@@ -19,7 +19,6 @@ package test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -46,7 +45,7 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 			t.Fatalf("failed to write updated fixture: %v", err)
 		}
 	}
-	expected, err := ioutil.ReadFile(golden)
+	expected, err := os.ReadFile(golden)
 	if err != nil {
 		t.Fatalf("failed to read .golden file: %v", err)
 	}

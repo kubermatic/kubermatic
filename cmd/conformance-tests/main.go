@@ -25,7 +25,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -292,7 +291,7 @@ func main() {
 	}
 
 	if kubevirtKubeconfigFile != "" {
-		content, err := ioutil.ReadFile(kubevirtKubeconfigFile)
+		content, err := os.ReadFile(kubevirtKubeconfigFile)
 		if err != nil {
 			log.Fatalw("Failed to read kubevirt kubeconfig file", zap.Error(err))
 		}
@@ -397,7 +396,7 @@ func main() {
 	log.Infow("Enabled cloud providers", "providers", opts.providers.List())
 
 	if pubKeyPath != "" {
-		keyData, err := ioutil.ReadFile(pubKeyPath)
+		keyData, err := os.ReadFile(pubKeyPath)
 		if err != nil {
 			log.Fatalw("Failed to load ssh key", zap.Error(err))
 		}

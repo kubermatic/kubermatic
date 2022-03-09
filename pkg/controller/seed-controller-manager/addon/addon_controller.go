@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -485,7 +484,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	}
 	defer done()
 
-	d, err := ioutil.ReadFile(manifestFilename)
+	d, err := os.ReadFile(manifestFilename)
 	if err != nil {
 		return err
 	}

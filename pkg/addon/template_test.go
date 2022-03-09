@@ -46,7 +46,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 
 	clusters := []kubermaticv1.Cluster{}
 	for _, filename := range clusterFiles {
-		content, err := ioutil.ReadFile(filename)
+		content, err := os.ReadFile(filename)
 		if err != nil {
 			t.Fatal(err)
 		}

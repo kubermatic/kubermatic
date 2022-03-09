@@ -258,7 +258,7 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 
 		infoLog.Debug("Processing file")
 
-		fbytes, err := ioutil.ReadFile(filename)
+		fbytes, err := os.ReadFile(filename)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 		}

@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -60,7 +59,7 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 		return nil, nil, errors.New("no file specified via --config flag")
 	}
 
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -19,7 +19,6 @@ package usersshkeysagent
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -158,7 +157,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 }
 
 func readAuthorizedKeysFile(path string) (string, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}

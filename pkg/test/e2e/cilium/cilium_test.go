@@ -511,7 +511,7 @@ func makeScheme() *runtime.Scheme {
 }
 
 func resourcesFromYaml(filename string, s *runtime.Scheme) ([]runtime.Object, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

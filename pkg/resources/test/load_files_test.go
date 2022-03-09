@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,7 +81,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 		}
 	}
 
-	exp, err := ioutil.ReadFile(path)
+	exp, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}

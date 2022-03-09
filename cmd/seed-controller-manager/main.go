@@ -20,7 +20,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 
@@ -153,7 +152,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	// TODO: Do not create secret and image pull secret if empty
 	dockerPullConfigJSON := []byte("{}")
 	if options.dockerPullConfigJSONFile != "" {
-		dockerPullConfigJSON, err = ioutil.ReadFile(options.dockerPullConfigJSONFile)
+		dockerPullConfigJSON, err = os.ReadFile(options.dockerPullConfigJSONFile)
 		if err != nil {
 			log.Fatalw(
 				"Failed to read docker pull config file",
