@@ -101,3 +101,16 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 	return accessKeyID, accessKeySecret, nil
 }
+
+func ValidateCredentials(region, accessKeyID, accessKeySecret string) error {
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return err
+	}
+
+	requestZones := ecs.CreateDescribeZonesRequest()
+	requestZones.Scheme = "https"
+
+	_, err = client.DescribeZones(requestZones)
+	return err
+}

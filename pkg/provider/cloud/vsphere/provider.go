@@ -412,3 +412,15 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 	return username, password, nil
 }
+
+func ValidateCredentials(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) error {
+	session, err := newSession(ctx, dc, username, password, caBundle)
+	if err != nil {
+		return err
+	}
+	defer session.Logout(ctx)
+
+	_, err = session.Finder.DefaultFolder(ctx)
+
+	return err
+}
