@@ -19,7 +19,6 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -28,7 +27,7 @@ import (
 )
 
 func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) {
-	files, err := ioutil.ReadDir(reportsDir)
+	files, err := os.ReadDir(reportsDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list files in reportsDir '%s': %w", reportsDir, err)
 	}

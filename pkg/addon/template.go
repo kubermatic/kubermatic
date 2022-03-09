@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -238,7 +237,7 @@ type CSIOptions struct {
 func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {
 	var allManifests []runtime.RawExtension
 
-	infos, err := ioutil.ReadDir(manifestPath)
+	infos, err := os.ReadDir(manifestPath)
 	if err != nil {
 		return nil, err
 	}

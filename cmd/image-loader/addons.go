@@ -18,7 +18,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 
 	"go.uber.org/zap"
@@ -40,7 +40,7 @@ func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kub
 		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}
 
-	infos, err := ioutil.ReadDir(addonsPath)
+	infos, err := os.ReadDir(addonsPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list addons: %w", err)
 	}
