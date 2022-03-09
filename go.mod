@@ -13,6 +13,8 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1509
 	github.com/anexia-it/go-anxcloud v0.3.8
 	github.com/aws/aws-sdk-go v1.43.12
+	github.com/aws/aws-sdk-go-v2/service/eks v1.18.0
+	github.com/cilium/cilium v1.11.1
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220302182402-4b7a873a84cf
@@ -20,7 +22,9 @@ require (
 	github.com/distribution/distribution/v3 v3.0.0-20220208183205-a4d9db5a884b
 	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
 	github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021
+	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-kit/kit v0.12.0
+	github.com/go-kit/log v0.2.0
 	github.com/go-logr/logr v1.2.0
 	github.com/go-logr/zapr v1.2.0
 	github.com/go-openapi/errors v0.20.1
@@ -98,12 +102,23 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/aws/aws-sdk-go-v2/service/eks v1.18.0
-
-require (
-	github.com/cilium/cilium v1.11.1
-	github.com/evanphx/json-patch v5.6.0+incompatible
-	github.com/go-kit/log v0.2.0
+replace (
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20210428205234-a8389931bee7
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
+	github.com/openshift/library-go => github.com/mhenriks/library-go v0.0.0-20210511195009-51ba86622560
+	github.com/operator-framework/operator-lifecycle-manager => github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190128024246-5eb7ae5bdb7a
+	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
+	go.universe.tf/metallb => github.com/cilium/metallb v0.1.1-0.20210831235406-48667b93284d
+	k8s.io/api => k8s.io/api v0.23.0
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.0
+	k8s.io/apimachinery => k8s.io/apimachinery v0.23.0
+	k8s.io/client-go => k8s.io/client-go v0.23.0
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.0
+	k8s.io/code-generator => k8s.io/code-generator v0.23.0
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.0
+	k8s.io/kubectl => k8s.io/kubectl v0.23.0
+	k8s.io/kubelet => k8s.io/kubelet v0.23.0
+	k8s.io/metrics => k8s.io/metrics v0.23.0
 )
 
 require (
@@ -278,26 +293,4 @@ require (
 	sigs.k8s.io/kustomize/api v0.10.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
-)
-
-replace (
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20210428205234-a8389931bee7
-	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
-	github.com/openshift/library-go => github.com/mhenriks/library-go v0.0.0-20210511195009-51ba86622560
-	github.com/operator-framework/operator-lifecycle-manager => github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190128024246-5eb7ae5bdb7a
-	k8s.io/api => k8s.io/api v0.23.0
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.23.0
-	k8s.io/client-go => k8s.io/client-go v0.23.0
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.0
-	k8s.io/code-generator => k8s.io/code-generator v0.23.0
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.0
-	k8s.io/kubectl => k8s.io/kubectl v0.23.0
-	k8s.io/kubelet => k8s.io/kubelet v0.23.0
-	k8s.io/metrics => k8s.io/metrics v0.23.0
-)
-
-replace (
-	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
-	go.universe.tf/metallb => github.com/cilium/metallb v0.1.1-0.20210831235406-48667b93284d
 )
