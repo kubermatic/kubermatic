@@ -64,155 +64,44 @@ type ExternalClusterSpec struct {
 
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 	CloudSpec           *ExternalClusterCloudSpec               `json:"cloudSpec,omitempty"`
-	KubeOneSpec         *ExternalClusterKubeOneSpec             `json:"kubeoneSpec,omitempty"`
-}
-
-type ExternalClusterKubeOneSpec struct {
-	SSHReference      *providerconfig.GlobalSecretKeySelector `json:"sshReference,omitempty"`
-	ManifestReference *providerconfig.GlobalSecretKeySelector `json:"manifestReference,omitempty"`
-	CloudSpec         *KubeOneCloudSpec                       `json:"cloudSpec,omitempty"`
-}
-
-type KubeOneCloudSpec struct {
-	AWS          *KubeOneAWSCloudSpec          `json:"aws,omitempty"`
-	GCP          *KubeOneGCPCloudSpec          `json:"gcp,omitempty"`
-	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
-	Digitalocean *KubeOneDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
-	Openstack    *KubeOneOpenstackCloudSpec    `json:"openstack,omitempty"`
-	Packet       *KubeOnePacketCloudSpec       `json:"packet,omitempty"`
-	Hetzner      *KubeOneHetznerCloudSpec      `json:"hetzner,omitempty"`
-	VSphere      *KubeOneVSphereCloudSpec      `json:"vsphere,omitempty"`
-	Nutanix      *KubeOneNutanixCloudSpec      `json:"nutanix,omitempty"`
-}
-
-// KubeOneAWSCloudSpec specifies access data to Amazon Web Services.
-type KubeOneAWSCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	AccessKeyID     string `json:"accessKeyID,omitempty"`
-	SecretAccessKey string `json:"secretAccessKey,omitempty"`
-}
-
-// KubeOneGCPCloudSpec specifies access data to GCP.
-type KubeOneGCPCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	ServiceAccount string `json:"serviceAccount,omitempty"`
-}
-
-// KubeOneAzureCloudSpec specifies access credentials to Azure cloud.
-type KubeOneAzureCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	TenantID       string `json:"tenantID,omitempty"`
-	SubscriptionID string `json:"subscriptionID,omitempty"`
-	ClientID       string `json:"clientID,omitempty"`
-	ClientSecret   string `json:"clientSecret,omitempty"`
-}
-
-// KubeOneDigitaloceanCloudSpec specifies access data to DigitalOcean.
-type KubeOneDigitaloceanCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	// Token is used to authenticate with the DigitalOcean API.
-	Token string `json:"token,omitempty"`
-}
-
-// KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.
-type KubeOneOpenstackCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	AuthURL  string `json:"authURL,omitempty"`
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-
-	// Project, formally known as tenant.
-	Project string `json:"project"`
-	// ProjectID, formally known as tenantID.
-	ProjectID string `json:"projectID"`
-
-	Domain string `json:"domain"`
-}
-
-// KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.
-type KubeOneVSphereCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	Server   string `json:"server"`
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-}
-
-// KubeOnePacketCloudSpec specifies access data to a Packet cloud.
-type KubeOnePacketCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	APIKey    string `json:"apiKey"`
-	ProjectID string `json:"projectID"`
-}
-
-// KubeOneHetznerCloudSpec specifies access data to hetzner cloud.
-type KubeOneHetznerCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	// Token is used to authenticate with the Hetzner cloud API.
-	Token string `json:"token,omitempty"`
-}
-
-// KubeOneNutanixCloudSpec specifies the access data to Nutanix.
-type KubeOneNutanixCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-
-	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
-	ClusterName   string `json:"clusterName,omitempty"`
-	AllowInsecure bool   `json:"allowInsecure,omitempty"`
-	ProxyURL      string `json:"proxyURL,omitempty"`
-
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	// Endpoint is the Nutanix API (Prism Central) endpoint
-	Endpoint string `json:"endpoint"`
-	// Port is the Nutanix API (Prism Central) port
-	Port string `json:"port"`
-
-	// PrismElementUsername to be used for the CSI driver
-	PrismElementUsername string `json:"elementUsername,omitempty"`
-
-	// PrismElementPassword to be used for the CSI driver
-	PrismElementPassword string `json:"elementPassword,omitempty"`
-
-	// PrismElementEndpoint to access Nutanix Prism Element for the CSI driver
-	PrismElementEndpoint string `json:"elementEndpoint"`
 }
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
 type ExternalClusterCloudSpec struct {
-	GKE *ExternalClusterGKECloudSpec `json:"gke,omitempty"`
-	EKS *ExternalClusterEKSCloudSpec `json:"eks,omitempty"`
-	AKS *ExternalClusterAKSCloudSpec `json:"aks,omitempty"`
+	GKE     *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
+	EKS     *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
+	AKS     *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
+	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
+}
+
+type ExternalClusterKubeOneCloudSpec struct {
+	Name                 string                                  `json:"name"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	SSHReference         *providerconfig.GlobalSecretKeySelector `json:"sshReference"`
+	ManifestReference    *providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
 }
 
 type ExternalClusterGKECloudSpec struct {
 	Name                 string                                  `json:"name"`
-	ServiceAccount       string                                  `json:"serviceAccount,omitempty"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-	Zone                 string                                  `json:"zone"`
+	ServiceAccount       string                                  `json:"serviceAccount"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	Zone                 string                                  `json:"zone,omitempty"`
 }
 
 type ExternalClusterEKSCloudSpec struct {
 	Name                 string                                  `json:"name"`
-	AccessKeyID          string                                  `json:"accessKeyID,omitempty"`
-	SecretAccessKey      string                                  `json:"secretAccessKey,omitempty"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	AccessKeyID          string                                  `json:"accessKeyID"`
+	SecretAccessKey      string                                  `json:"secretAccessKey"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 	Region               string                                  `json:"region"`
 }
 
 type ExternalClusterAKSCloudSpec struct {
 	Name                 string                                  `json:"name"`
-	TenantID             string                                  `json:"tenantID,omitempty"`
-	SubscriptionID       string                                  `json:"subscriptionID,omitempty"`
-	ClientID             string                                  `json:"clientID,omitempty"`
-	ClientSecret         string                                  `json:"clientSecret,omitempty"`
+	TenantID             string                                  `json:"tenantID"`
+	SubscriptionID       string                                  `json:"subscriptionID"`
+	ClientID             string                                  `json:"clientID"`
+	ClientSecret         string                                  `json:"clientSecret"`
 	ResourceGroup        string                                  `json:"resourceGroup"`
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 }

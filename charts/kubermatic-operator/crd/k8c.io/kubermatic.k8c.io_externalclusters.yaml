@@ -104,9 +104,13 @@ spec:
                       tenantID:
                         type: string
                     required:
+                    - clientID
+                    - clientSecret
                     - credentialsReference
                     - name
                     - resourceGroup
+                    - subscriptionID
+                    - tenantID
                     type: object
                   eks:
                     properties:
@@ -159,9 +163,10 @@ spec:
                       secretAccessKey:
                         type: string
                     required:
-                    - credentialsReference
+                    - accessKeyID
                     - name
                     - region
+                    - secretAccessKey
                     type: object
                   gke:
                     properties:
@@ -212,9 +217,138 @@ spec:
                       zone:
                         type: string
                     required:
-                    - credentialsReference
                     - name
-                    - zone
+                    - serviceAccount
+                    type: object
+                  kubeone:
+                    properties:
+                      credentialsReference:
+                        description: GlobalObjectKeySelector is needed as we can not
+                          use v1.SecretKeySelector because it is not cross namespace
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          fieldPath:
+                            description: 'If referring to a piece of an object instead
+                              of an entire object, this string should contain a valid
+                              JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                              For example, if the object reference is to a container
+                              within a pod, this would take on a value like: "spec.containers{name}"
+                              (where "name" refers to the name of the container that
+                              triggered the event) or if no container name is specified
+                              "spec.containers[2]" (container with index 2 in this
+                              pod). This syntax is chosen only to have some well-defined
+                              way of referencing a part of an object. TODO: this design
+                              is not final and this field is subject to change in
+                              the future.'
+                            type: string
+                          key:
+                            type: string
+                          kind:
+                            description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          namespace:
+                            description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                            type: string
+                          resourceVersion:
+                            description: 'Specific resourceVersion to which this reference
+                              is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                            type: string
+                          uid:
+                            description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                            type: string
+                        type: object
+                      manifestReference:
+                        description: GlobalObjectKeySelector is needed as we can not
+                          use v1.SecretKeySelector because it is not cross namespace
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          fieldPath:
+                            description: 'If referring to a piece of an object instead
+                              of an entire object, this string should contain a valid
+                              JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                              For example, if the object reference is to a container
+                              within a pod, this would take on a value like: "spec.containers{name}"
+                              (where "name" refers to the name of the container that
+                              triggered the event) or if no container name is specified
+                              "spec.containers[2]" (container with index 2 in this
+                              pod). This syntax is chosen only to have some well-defined
+                              way of referencing a part of an object. TODO: this design
+                              is not final and this field is subject to change in
+                              the future.'
+                            type: string
+                          key:
+                            type: string
+                          kind:
+                            description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          namespace:
+                            description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                            type: string
+                          resourceVersion:
+                            description: 'Specific resourceVersion to which this reference
+                              is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                            type: string
+                          uid:
+                            description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                            type: string
+                        type: object
+                      name:
+                        type: string
+                      sshReference:
+                        description: GlobalObjectKeySelector is needed as we can not
+                          use v1.SecretKeySelector because it is not cross namespace
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          fieldPath:
+                            description: 'If referring to a piece of an object instead
+                              of an entire object, this string should contain a valid
+                              JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                              For example, if the object reference is to a container
+                              within a pod, this would take on a value like: "spec.containers{name}"
+                              (where "name" refers to the name of the container that
+                              triggered the event) or if no container name is specified
+                              "spec.containers[2]" (container with index 2 in this
+                              pod). This syntax is chosen only to have some well-defined
+                              way of referencing a part of an object. TODO: this design
+                              is not final and this field is subject to change in
+                              the future.'
+                            type: string
+                          key:
+                            type: string
+                          kind:
+                            description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          namespace:
+                            description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                            type: string
+                          resourceVersion:
+                            description: 'Specific resourceVersion to which this reference
+                              is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                            type: string
+                          uid:
+                            description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                            type: string
+                        type: object
+                    required:
+                    - credentialsReference
+                    - manifestReference
+                    - name
+                    - sshReference
                     type: object
                 type: object
               humanReadableName:
@@ -259,626 +393,6 @@ spec:
                   uid:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
-                type: object
-              kubeoneSpec:
-                properties:
-                  cloudSpec:
-                    properties:
-                      aws:
-                        description: KubeOneAWSCloudSpec specifies access data to
-                          Amazon Web Services.
-                        properties:
-                          accessKeyID:
-                            type: string
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          secretAccessKey:
-                            type: string
-                        required:
-                        - credentialsReference
-                        type: object
-                      azure:
-                        description: KubeOneAzureCloudSpec specifies access credentials
-                          to Azure cloud.
-                        properties:
-                          clientID:
-                            type: string
-                          clientSecret:
-                            type: string
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          subscriptionID:
-                            type: string
-                          tenantID:
-                            type: string
-                        required:
-                        - credentialsReference
-                        type: object
-                      digitalocean:
-                        description: KubeOneDigitaloceanCloudSpec specifies access
-                          data to DigitalOcean.
-                        properties:
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          token:
-                            description: Token is used to authenticate with the DigitalOcean
-                              API.
-                            type: string
-                        required:
-                        - credentialsReference
-                        type: object
-                      gcp:
-                        description: KubeOneGCPCloudSpec specifies access data to
-                          GCP.
-                        properties:
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          serviceAccount:
-                            type: string
-                        required:
-                        - credentialsReference
-                        type: object
-                      hetzner:
-                        description: KubeOneHetznerCloudSpec specifies access data
-                          to hetzner cloud.
-                        properties:
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          token:
-                            description: Token is used to authenticate with the Hetzner
-                              cloud API.
-                            type: string
-                        required:
-                        - credentialsReference
-                        type: object
-                      nutanix:
-                        description: KubeOneNutanixCloudSpec specifies the access
-                          data to Nutanix.
-                        properties:
-                          allowInsecure:
-                            type: boolean
-                          clusterName:
-                            description: ClusterName is the Nutanix cluster that this
-                              user cluster will be deployed to.
-                            type: string
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          elementEndpoint:
-                            description: PrismElementEndpoint to access Nutanix Prism
-                              Element for the CSI driver
-                            type: string
-                          elementPassword:
-                            description: PrismElementPassword to be used for the CSI
-                              driver
-                            type: string
-                          elementUsername:
-                            description: PrismElementUsername to be used for the CSI
-                              driver
-                            type: string
-                          endpoint:
-                            description: Endpoint is the Nutanix API (Prism Central)
-                              endpoint
-                            type: string
-                          password:
-                            type: string
-                          port:
-                            description: Port is the Nutanix API (Prism Central) port
-                            type: string
-                          proxyURL:
-                            type: string
-                          username:
-                            type: string
-                        required:
-                        - credentialsReference
-                        - elementEndpoint
-                        - endpoint
-                        - port
-                        type: object
-                      openstack:
-                        description: KubeOneOpenstackCloudSpec specifies access data
-                          to an OpenStack cloud.
-                        properties:
-                          authURL:
-                            type: string
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          domain:
-                            type: string
-                          password:
-                            type: string
-                          project:
-                            description: Project, formally known as tenant.
-                            type: string
-                          projectID:
-                            description: ProjectID, formally known as tenantID.
-                            type: string
-                          username:
-                            type: string
-                        required:
-                        - credentialsReference
-                        - domain
-                        - project
-                        - projectID
-                        type: object
-                      packet:
-                        description: KubeOnePacketCloudSpec specifies access data
-                          to a Packet cloud.
-                        properties:
-                          apiKey:
-                            type: string
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          projectID:
-                            type: string
-                        required:
-                        - apiKey
-                        - credentialsReference
-                        - projectID
-                        type: object
-                      vsphere:
-                        description: KubeOneVSphereCloudSpec credentials represents
-                          a credential for accessing vSphere.
-                        properties:
-                          credentialsReference:
-                            description: GlobalObjectKeySelector is needed as we can
-                              not use v1.SecretKeySelector because it is not cross
-                              namespace
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: 'If referring to a piece of an object
-                                  instead of an entire object, this string should
-                                  contain a valid JSON/Go field access statement,
-                                  such as desiredState.manifest.containers[2]. For
-                                  example, if the object reference is to a container
-                                  within a pod, this would take on a value like: "spec.containers{name}"
-                                  (where "name" refers to the name of the container
-                                  that triggered the event) or if no container name
-                                  is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only
-                                  to have some well-defined way of referencing a part
-                                  of an object. TODO: this design is not final and
-                                  this field is subject to change in the future.'
-                                type: string
-                              key:
-                                type: string
-                              kind:
-                                description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                                type: string
-                              name:
-                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                                type: string
-                              namespace:
-                                description: 'Namespace of the referent. More info:
-                                  https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                                type: string
-                              resourceVersion:
-                                description: 'Specific resourceVersion to which this
-                                  reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                                type: string
-                              uid:
-                                description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                                type: string
-                            type: object
-                          password:
-                            type: string
-                          server:
-                            type: string
-                          username:
-                            type: string
-                        required:
-                        - credentialsReference
-                        - server
-                        type: object
-                    type: object
-                  manifestReference:
-                    description: GlobalObjectKeySelector is needed as we can not use
-                      v1.SecretKeySelector because it is not cross namespace
-                    properties:
-                      apiVersion:
-                        description: API version of the referent.
-                        type: string
-                      fieldPath:
-                        description: 'If referring to a piece of an object instead
-                          of an entire object, this string should contain a valid
-                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                          For example, if the object reference is to a container within
-                          a pod, this would take on a value like: "spec.containers{name}"
-                          (where "name" refers to the name of the container that triggered
-                          the event) or if no container name is specified "spec.containers[2]"
-                          (container with index 2 in this pod). This syntax is chosen
-                          only to have some well-defined way of referencing a part
-                          of an object. TODO: this design is not final and this field
-                          is subject to change in the future.'
-                        type: string
-                      key:
-                        type: string
-                      kind:
-                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                        type: string
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                        type: string
-                      namespace:
-                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                        type: string
-                      resourceVersion:
-                        description: 'Specific resourceVersion to which this reference
-                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                        type: string
-                      uid:
-                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                        type: string
-                    type: object
-                  sshReference:
-                    description: GlobalObjectKeySelector is needed as we can not use
-                      v1.SecretKeySelector because it is not cross namespace
-                    properties:
-                      apiVersion:
-                        description: API version of the referent.
-                        type: string
-                      fieldPath:
-                        description: 'If referring to a piece of an object instead
-                          of an entire object, this string should contain a valid
-                          JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                          For example, if the object reference is to a container within
-                          a pod, this would take on a value like: "spec.containers{name}"
-                          (where "name" refers to the name of the container that triggered
-                          the event) or if no container name is specified "spec.containers[2]"
-                          (container with index 2 in this pod). This syntax is chosen
-                          only to have some well-defined way of referencing a part
-                          of an object. TODO: this design is not final and this field
-                          is subject to change in the future.'
-                        type: string
-                      key:
-                        type: string
-                      kind:
-                        description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                        type: string
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
-                        type: string
-                      namespace:
-                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
-                        type: string
-                      resourceVersion:
-                        description: 'Specific resourceVersion to which this reference
-                          is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
-                        type: string
-                      uid:
-                        description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
-                        type: string
-                    type: object
                 type: object
             required:
             - humanReadableName
