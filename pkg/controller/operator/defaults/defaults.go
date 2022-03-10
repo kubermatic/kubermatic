@@ -287,6 +287,13 @@ var (
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
 			{
+				// Applies to all providers.
+				Provider:  "",
+				Version:   "1.23.*",
+				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
+			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
 				Version:   "1.23.*",
 				Condition: kubermaticv1.AlwaysCondition,
