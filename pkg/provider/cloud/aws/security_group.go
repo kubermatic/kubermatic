@@ -193,22 +193,22 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 	}
 
 	// tcp:22 from everywhere
-	sshPermissions := &ec2.IpPermission{
+	sshPermission := &ec2.IpPermission{
 		IpProtocol: aws.String("tcp"),
 		FromPort:   aws.Int64(provider.DefaultSSHPort),
 		ToPort:     aws.Int64(provider.DefaultSSHPort),
 	}
 	if ipv4Permissions {
-		sshPermissions.IpRanges = []*ec2.IpRange{{
+		sshPermission.IpRanges = []*ec2.IpRange{{
 			CidrIp: aws.String("0.0.0.0/0"),
 		}}
 	}
 	if ipv6Permissions {
-		sshPermissions.Ipv6Ranges = []*ec2.Ipv6Range{{
+		sshPermission.Ipv6Ranges = []*ec2.Ipv6Range{{
 			CidrIpv6: aws.String("::/0"),
 		}}
 	}
-	permissions = append(permissions, sshPermissions)
+	permissions = append(permissions, sshPermission)
 
 	// ICMP (v4) from/to everywhere
 	if ipv4Permissions {
@@ -238,35 +238,35 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 }
 
 func getNodePortSecurityGroupPermissions(lowPort, highPort int, ipv4IPRange, ipv6IPRange string) []*ec2.IpPermission {
-	tcpNodePortPerms := &ec2.IpPermission{
+	tcpNodePortPermission := &ec2.IpPermission{
 		IpProtocol: aws.String("tcp"),
 		FromPort:   aws.Int64(int64(lowPort)),
 		ToPort:     aws.Int64(int64(highPort)),
 	}
-	udpNodePortPerms := &ec2.IpPermission{
+	udpNodePortPermission := &ec2.IpPermission{
 		IpProtocol: aws.String("udp"),
 		FromPort:   aws.Int64(int64(lowPort)),
 		ToPort:     aws.Int64(int64(highPort)),
 	}
 
 	if ipv4IPRange != "" {
-		tcpNodePortPerms.IpRanges = []*ec2.IpRange{{
+		tcpNodePortPermission.IpRanges = []*ec2.IpRange{{
 			CidrIp: aws.String(ipv4IPRange),
 		}}
-		udpNodePortPerms.IpRanges = []*ec2.IpRange{{
+		udpNodePortPermission.IpRanges = []*ec2.IpRange{{
 			CidrIp: aws.String(ipv4IPRange),
 		}}
 	}
 	if ipv6IPRange != "" {
-		tcpNodePortPerms.Ipv6Ranges = []*ec2.Ipv6Range{{
+		tcpNodePortPermission.Ipv6Ranges = []*ec2.Ipv6Range{{
 			CidrIpv6: aws.String(ipv6IPRange),
 		}}
-		udpNodePortPerms.Ipv6Ranges = []*ec2.Ipv6Range{{
+		udpNodePortPermission.Ipv6Ranges = []*ec2.Ipv6Range{{
 			CidrIpv6: aws.String(ipv6IPRange),
 		}}
 	}
 
-	return []*ec2.IpPermission{tcpNodePortPerms, udpNodePortPerms}
+	return []*ec2.IpPermission{tcpNodePortPermission, udpNodePortPermission}
 }
 
 func cleanUpSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster) error {
