@@ -52,14 +52,19 @@ addons nor user deployed applications by default.
 
 ### Proposed feature
 
-Similar to the SSH key feature users cluster admins are able to create sets of container registry
-credentials. Like SSH keys these credentials can be selected for user clusters. Now the kubelet uses
-all available credentials for authentication when pulling images from container registries to create
-pods of any source: KKP user cluster components, addons or user applications.
+Similar to the [SSH key feature][ssh key agent] container registry credentials can be managed in the KKP
+dashboard.
+
+* **KKP admins** can create credentials to be made available for KKP projects
+* **KKP admins** can define default fallback credentials for KKP projects
+* **Project Owners/Editors** can create or select credentials to be made available for user clusters
+* **Project Owners/Editors** can define default fallback credentials for user clusters
+* **User cluster admins** can create or select credentials to be used in all kinds of Pods on the
+user cluster
 
 There is a possibility to define a default fallback set of credentials in the
 `KubermaticConfiguration` at `spec.userCluster.imagePullSecret`. If there are no credentials
-selected for a user cluster and this value is set, it will be used as a fallback.
+selected on any elvel, this will be used as a fallback.
 
 #### Limitations
 
