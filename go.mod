@@ -34,18 +34,18 @@ require (
 	github.com/go-swagger/go-swagger v0.27.0
 	github.com/go-test/deep v1.0.7
 	github.com/google/go-cmp v0.5.6
-	github.com/gophercloud/gophercloud v0.20.0
+	github.com/gophercloud/gophercloud v0.24.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hetznercloud/hcloud-go v1.32.0
+	github.com/hetznercloud/hcloud-go v1.33.1
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.11
-	github.com/kubermatic/machine-controller v1.42.1
+	github.com/kubermatic/machine-controller v1.45.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.5
@@ -68,7 +68,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.etcd.io/etcd/etcdutl/v3 v3.5.1
 	go.uber.org/zap v1.19.1
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/tools v0.1.6-0.20210820212750-d4cc65f0b2ff
 	gomodules.xyz/jsonpatch/v2 v2.2.0
@@ -81,7 +81,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8c.io/operating-system-manager v0.3.9
+	k8c.io/operating-system-manager v0.4.0
 	k8s.io/api v0.23.0
 	k8s.io/apiextensions-apiserver v0.23.0
 	k8s.io/apimachinery v0.23.0
