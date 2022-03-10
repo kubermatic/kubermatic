@@ -47,7 +47,7 @@ func DigitaloceanSizeEndpoint(presetProvider provider.PresetProvider, userInfoGe
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -56,7 +56,7 @@ func DigitaloceanSizeEndpoint(presetProvider provider.PresetProvider, userInfoGe
 			}
 		}
 
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

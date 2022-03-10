@@ -18,14 +18,11 @@ package ssh
 
 import (
 	"fmt"
-	"strings"
-
-	"golang.org/x/crypto/ssh"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // UserSSHKeyBuilder is builder to create ssh key structs including validation.
@@ -77,24 +74,18 @@ func (sb *UserSSHKeyBuilder) Build() (*kubermaticv1.UserSSHKey, error) {
 	if err := sb.Validate(); err != nil {
 		return nil, fmt.Errorf("key is not valid: %w", err)
 	}
-	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(sb.publicKey))
-	if err != nil {
-		return nil, fmt.Errorf("the provided ssh key is invalid: %w", err)
-	}
-	sshKeyHash := ssh.FingerprintLegacyMD5(pubKey)
-	// Construct a key with the name containing the hash fragment for people to recognize it faster.
-	keyName := fmt.Sprintf("key-%s-%s", strings.NewReplacer(":", "").Replace(sshKeyHash), uuid.ShortUID(4))
+
 	userSSHKey := &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyName,
+			Name: fmt.Sprintf("key-%s", rand.String(10)),
 		},
 		Spec: kubermaticv1.SSHKeySpec{
-			Owner:       sb.owner,
-			PublicKey:   sb.publicKey,
-			Fingerprint: sshKeyHash,
-			Name:        sb.name,
-			Clusters:    []string{},
+			Owner:     sb.owner,
+			PublicKey: sb.publicKey, // webhook will add the fingerprint later
+			Name:      sb.name,
+			Clusters:  []string{},
 		},
 	}
+
 	return userSSHKey, nil
 }

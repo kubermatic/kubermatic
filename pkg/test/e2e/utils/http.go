@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -86,7 +86,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 	if request.Body != nil {
 		var err error
 
-		bodyBytes, err = ioutil.ReadAll(request.Body)
+		bodyBytes, err = io.ReadAll(request.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read request body: %w", err)
 		}
@@ -115,7 +115,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 		requestClone := request.WithContext(ctx)
 
 		if bodyBytes != nil {
-			requestClone.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
+			requestClone.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
 
 		// perform request
@@ -128,7 +128,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 
 		// ignore transient errors
 		if r.isTransientError(response) {
-			body, err := ioutil.ReadAll(response.Body)
+			body, err := io.ReadAll(response.Body)
 			if err != nil {
 				multiErr = multierror.Append(multiErr, errors.Wrapf(err, "HTTP %s", response.Status))
 			} else {

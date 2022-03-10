@@ -36,6 +36,9 @@ type EtcdRestoreProvider struct {
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
+var _ provider.EtcdRestoreProvider = &EtcdRestoreProvider{}
+var _ provider.PrivilegedEtcdRestoreProvider = &EtcdRestoreProvider{}
+
 // NewEtcdRestoreProvider returns a etcd restore provider.
 func NewEtcdRestoreProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *EtcdRestoreProvider {
 	return &EtcdRestoreProvider{
@@ -62,56 +65,56 @@ func EtcdRestoreProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter pro
 	}
 }
 
-func (p *EtcdRestoreProvider) Create(userInfo *provider.UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
+func (p *EtcdRestoreProvider) Create(ctx context.Context, userInfo *provider.UserInfo, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	err = impersonationClient.Create(context.Background(), etcdRestore)
+	err = impersonationClient.Create(ctx, etcdRestore)
 	return etcdRestore, err
 }
 
-func (p *EtcdRestoreProvider) CreateUnsecured(etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
-	err := p.clientPrivileged.Create(context.Background(), etcdRestore)
+func (p *EtcdRestoreProvider) CreateUnsecured(ctx context.Context, etcdRestore *kubermaticv1.EtcdRestore) (*kubermaticv1.EtcdRestore, error) {
+	err := p.clientPrivileged.Create(ctx, etcdRestore)
 	return etcdRestore, err
 }
 
-func (p *EtcdRestoreProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
+func (p *EtcdRestoreProvider) Get(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	er := &kubermaticv1.EtcdRestore{}
-	err = impersonationClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, er)
+	err = impersonationClient.Get(ctx, types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, er)
 	return er, err
 }
 
-func (p *EtcdRestoreProvider) GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
+func (p *EtcdRestoreProvider) GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdRestore, error) {
 	er := &kubermaticv1.EtcdRestore{}
-	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, er)
+	err := p.clientPrivileged.Get(ctx, types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, er)
 	return er, err
 }
 
-func (p *EtcdRestoreProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
+func (p *EtcdRestoreProvider) List(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	erList := &kubermaticv1.EtcdRestoreList{}
-	err = impersonationClient.List(context.Background(), erList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	err = impersonationClient.List(ctx, erList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
 	return erList, err
 }
 
-func (p *EtcdRestoreProvider) ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
+func (p *EtcdRestoreProvider) ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestoreList, error) {
 	erList := &kubermaticv1.EtcdRestoreList{}
-	err := p.clientPrivileged.List(context.Background(), erList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	err := p.clientPrivileged.List(ctx, erList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
 	return erList, err
 }
 
-func (p *EtcdRestoreProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
+func (p *EtcdRestoreProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
@@ -123,17 +126,17 @@ func (p *EtcdRestoreProvider) Delete(userInfo *provider.UserInfo, cluster *kuber
 			Namespace: cluster.Status.NamespaceName,
 		},
 	}
-	return impersonationClient.Delete(context.Background(), er)
+	return impersonationClient.Delete(ctx, er)
 }
 
-func (p *EtcdRestoreProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error {
+func (p *EtcdRestoreProvider) DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error {
 	er := &kubermaticv1.EtcdRestore{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 		},
 	}
-	return p.clientPrivileged.Delete(context.Background(), er)
+	return p.clientPrivileged.Delete(ctx, er)
 }
 
 // EtcdRestoreProjectProvider struct that holds required components in order manage etcd backup restores across projects.
@@ -143,6 +146,9 @@ type EtcdRestoreProjectProvider struct {
 	createSeedImpersonatedClients map[string]ImpersonationClient
 	clientsPrivileged             map[string]ctrlruntimeclient.Client
 }
+
+var _ provider.EtcdRestoreProjectProvider = &EtcdRestoreProjectProvider{}
+var _ provider.PrivilegedEtcdRestoreProjectProvider = &EtcdRestoreProjectProvider{}
 
 // NewEtcdRestoreProjectProvider returns an etcd restore global provider.
 func NewEtcdRestoreProjectProvider(createSeedImpersonatedClients map[string]ImpersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdRestoreProjectProvider {
@@ -177,7 +183,7 @@ func EtcdRestoreProjectProviderFactory(mapper meta.RESTMapper, seedKubeconfigGet
 	}
 }
 
-func (p *EtcdRestoreProjectProvider) List(userInfo *provider.UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
+func (p *EtcdRestoreProjectProvider) List(ctx context.Context, userInfo *provider.UserInfo, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
 	var etcdRestoreLists []*kubermaticv1.EtcdRestoreList
 	for _, createSeedImpersonationClient := range p.createSeedImpersonatedClients {
 		impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, createSeedImpersonationClient)
@@ -186,7 +192,7 @@ func (p *EtcdRestoreProjectProvider) List(userInfo *provider.UserInfo, projectID
 		}
 
 		erList := &kubermaticv1.EtcdRestoreList{}
-		err = impersonationClient.List(context.Background(), erList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
+		err = impersonationClient.List(ctx, erList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
 			return nil, err
 		}
@@ -196,11 +202,11 @@ func (p *EtcdRestoreProjectProvider) List(userInfo *provider.UserInfo, projectID
 	return etcdRestoreLists, nil
 }
 
-func (p *EtcdRestoreProjectProvider) ListUnsecured(projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
+func (p *EtcdRestoreProjectProvider) ListUnsecured(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
 	var etcdRestoreLists []*kubermaticv1.EtcdRestoreList
 	for _, clientPrivileged := range p.clientsPrivileged {
 		erList := &kubermaticv1.EtcdRestoreList{}
-		err := clientPrivileged.List(context.Background(), erList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
+		err := clientPrivileged.List(ctx, erList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
 			return nil, err
 		}

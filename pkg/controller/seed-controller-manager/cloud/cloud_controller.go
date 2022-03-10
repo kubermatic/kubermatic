@@ -149,7 +149,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !found {
 		return nil, fmt.Errorf("couldn't find datacenter %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}
-	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue, r.caBundle)
+	prov, err := cloud.Provider(datacenter.DeepCopy(), r.makeGlobalSecretKeySelectorValue(ctx), r.caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cloud provider: %w", err)
 	}
@@ -163,7 +163,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 
-		if _, err := prov.CleanUpCloudProvider(ctx, cluster, r.updateCluster); err != nil {
+		if _, err := prov.CleanUpCloudProvider(ctx, cluster, r.clusterUpdater); err != nil {
 			return nil, fmt.Errorf("failed cloud provider cleanup: %w", err)
 		}
 
@@ -219,7 +219,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
 
 			// reconcile
-			cluster, err = betterProvider.ReconcileCluster(ctx, cluster, r.updateCluster)
+			cluster, err = betterProvider.ReconcileCluster(ctx, cluster, r.clusterUpdater)
 			if err != nil {
 				return handleProviderError(err)
 			}
@@ -237,7 +237,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	} else {
 		// the provider only offers a one-time init :-(
-		cluster, err = prov.InitializeCloudProvider(ctx, cluster, r.updateCluster)
+		cluster, err = prov.InitializeCloudProvider(ctx, cluster, r.clusterUpdater)
 		if err != nil {
 			return handleProviderError(err)
 		}
@@ -275,9 +275,9 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 	return nil
 }
 
-func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster), options ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify func(*kubermaticv1.Cluster), options ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
-	if err := r.Get(context.Background(), types.NamespacedName{Name: name}, cluster); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: name}, cluster); err != nil {
 		return nil, err
 	}
 
@@ -299,13 +299,15 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 		patch = ctrlruntimeclient.MergeFrom(oldCluster)
 	}
 
-	if err := r.Patch(context.Background(), cluster, patch); err != nil {
+	if err := r.Patch(ctx, cluster, patch); err != nil {
 		return nil, err
 	}
 
 	return cluster, nil
 }
 
-func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-	return provider.SecretKeySelectorValueFuncFactory(context.Background(), r.Client)(configVar, key)
+func (r *Reconciler) makeGlobalSecretKeySelectorValue(ctx context.Context) provider.SecretKeySelectorValueFunc {
+	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+		return provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)(configVar, key)
+	}
 }

@@ -18,7 +18,7 @@ package handler
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -48,7 +48,7 @@ func TestEncodeJSON(t *testing.T) {
 			t.Errorf("failed to encode %#v as JSON: %v", testcase.input, err)
 		}
 
-		encoded, err := ioutil.ReadAll(writer.Body)
+		encoded, err := io.ReadAll(writer.Body)
 		if err != nil {
 			t.Fatal("unable to read response body")
 		}

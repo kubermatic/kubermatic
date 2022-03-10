@@ -8,13 +8,14 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	discovery "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -202,6 +203,80 @@ func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAc
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ServiceAccount{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ServiceAccount %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// EndpointsCreator defines an interface to create/update Endpointss
+type EndpointsCreator = func(existing *corev1.Endpoints) (*corev1.Endpoints, error)
+
+// NamedEndpointsCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedEndpointsCreatorGetter = func() (name string, create EndpointsCreator)
+
+// EndpointsObjectWrapper adds a wrapper so the EndpointsCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func EndpointsObjectWrapper(create EndpointsCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*corev1.Endpoints))
+		}
+		return create(&corev1.Endpoints{})
+	}
+}
+
+// ReconcileEndpoints will create and update the Endpoints coming from the passed EndpointsCreator slice
+func ReconcileEndpoints(ctx context.Context, namedGetters []NamedEndpointsCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := EndpointsObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Endpoints{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Endpoints %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// EndpointSliceCreator defines an interface to create/update EndpointSlices
+type EndpointSliceCreator = func(existing *discovery.EndpointSlice) (*discovery.EndpointSlice, error)
+
+// NamedEndpointSliceCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedEndpointSliceCreatorGetter = func() (name string, create EndpointSliceCreator)
+
+// EndpointSliceObjectWrapper adds a wrapper so the EndpointSliceCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func EndpointSliceObjectWrapper(create EndpointSliceCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*discovery.EndpointSlice))
+		}
+		return create(&discovery.EndpointSlice{})
+	}
+}
+
+// ReconcileEndpointSlices will create and update the EndpointSlices coming from the passed EndpointSliceCreator slice
+func ReconcileEndpointSlices(ctx context.Context, namedGetters []NamedEndpointSliceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := EndpointSliceObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &discovery.EndpointSlice{}, false); err != nil {
+			return fmt.Errorf("failed to ensure EndpointSlice %s/%s: %w", namespace, name, err)
 		}
 	}
 
@@ -879,7 +954,7 @@ func ReconcileEtcdBackupConfigs(ctx context.Context, namedGetters []NamedEtcdBac
 }
 
 // ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
-type ConstraintTemplateCreator = func(existing *gatekeeperv1beta1.ConstraintTemplate) (*gatekeeperv1beta1.ConstraintTemplate, error)
+type ConstraintTemplateCreator = func(existing *gatekeeperv1.ConstraintTemplate) (*gatekeeperv1.ConstraintTemplate, error)
 
 // NamedConstraintTemplateCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedConstraintTemplateCreatorGetter = func() (name string, create ConstraintTemplateCreator)
@@ -889,9 +964,9 @@ type NamedConstraintTemplateCreatorGetter = func() (name string, create Constrai
 func ConstraintTemplateObjectWrapper(create ConstraintTemplateCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*gatekeeperv1beta1.ConstraintTemplate))
+			return create(existing.(*gatekeeperv1.ConstraintTemplate))
 		}
-		return create(&gatekeeperv1beta1.ConstraintTemplate{})
+		return create(&gatekeeperv1.ConstraintTemplate{})
 	}
 }
 
@@ -907,7 +982,7 @@ func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConst
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &gatekeeperv1beta1.ConstraintTemplate{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &gatekeeperv1.ConstraintTemplate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %w", namespace, name, err)
 		}
 	}

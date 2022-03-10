@@ -26,7 +26,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -189,6 +191,16 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 
 		if _, exists := subject.Spec.EtcdBackupRestore.Destinations[subject.Spec.EtcdBackupRestore.DefaultDestination]; !exists {
 			return fmt.Errorf("invalid etcd backup configuration: default destination %q does not exist", subject.Spec.EtcdBackupRestore.DefaultDestination)
+		}
+
+		for name, dest := range subject.Spec.EtcdBackupRestore.Destinations {
+			if dest.Credentials != nil {
+				etcdBackupSecret := corev1.Secret{}
+				if err := seedClient.Get(ctx, types.NamespacedName{Name: dest.Credentials.Name,
+					Namespace: dest.Credentials.Namespace}, &etcdBackupSecret); err != nil {
+					return fmt.Errorf("invalid etcd backup configuration: invalid destination %q credentials %s: %w", name, dest.Credentials.Name, err)
+				}
+			}
 		}
 	}
 

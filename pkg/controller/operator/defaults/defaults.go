@@ -211,15 +211,18 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.21.8"),
+		Default: semver.NewSemverOrDie("v1.21.10"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.20
 			newSemver("v1.20.13"),
 			newSemver("v1.20.14"),
+			newSemver("v1.20.15"),
 			// Kubernetes 1.21
 			newSemver("v1.21.8"),
+			newSemver("v1.21.10"),
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
+			newSemver("v1.22.7"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.19 =======
@@ -383,7 +386,8 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *configCopy.Spec.UserCluster.APIServerReplicas)
 	}
 
-	if len(configCopy.Spec.API.AccessibleAddons) == 0 {
+	// only default the accessible addons if they are not configured at all (nil)
+	if configCopy.Spec.API.AccessibleAddons == nil {
 		configCopy.Spec.API.AccessibleAddons = DefaultAccessibleAddons
 		logger.Debugw("Defaulting field", "field", "api.accessibleAddons", "value", configCopy.Spec.API.AccessibleAddons)
 	}
@@ -737,12 +741,12 @@ env:
 - name: ACCESS_KEY_ID
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: ACCESS_KEY_ID
 - name: SECRET_ACCESS_KEY
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: SECRET_ACCESS_KEY
 volumeMounts:
 - name: etcd-backup
@@ -828,12 +832,12 @@ env:
 - name: ACCESS_KEY_ID
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: ACCESS_KEY_ID
 - name: SECRET_ACCESS_KEY
   valueFrom:
     secretKeyRef:
-      name: s3-credentials
+      name: kubermatic-s3-credentials
       key: SECRET_ACCESS_KEY
 `
 

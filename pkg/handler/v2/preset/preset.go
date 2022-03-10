@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // listPresetsReq represents a request for a list of presets
@@ -63,7 +64,7 @@ func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider
 		}
 
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
-		presets, err := presetProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -144,14 +145,14 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 			return nil, errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		if len(req.Provider) == 0 {
 			preset.Spec.SetEnabled(req.Body.Enabled)
-			_, err = presetProvider.UpdatePreset(preset)
+			_, err = presetProvider.UpdatePreset(ctx, preset)
 			return nil, err
 		}
 
@@ -160,7 +161,7 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 		}
 
 		kubermaticv1helper.SetProviderEnabled(preset, kubermaticv1.ProviderType(req.Provider), req.Body.Enabled)
-		_, err = presetProvider.UpdatePreset(preset)
+		_, err = presetProvider.UpdatePreset(ctx, preset)
 		return nil, err
 	}
 }
@@ -225,7 +226,7 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 		}
 
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
-		presets, err := presetProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -265,7 +266,7 @@ type createPresetReq struct {
 	ProviderName string `json:"provider_name"`
 	// in: body
 	// required: true
-	Body kubermaticv1.Preset
+	Body v2.PresetBody
 }
 
 // Validate validates createPresetReq request.
@@ -282,11 +283,11 @@ func (r createPresetReq) Validate() error {
 		return fmt.Errorf("preset name cannot be empty")
 	}
 
-	if hasProvider, _ := kubermaticv1helper.HasProvider(&r.Body, kubermaticv1.ProviderType(r.ProviderName)); !hasProvider {
+	if hasProvider, _ := kubermaticv1helper.HasProvider(convertAPIToInternalPreset(r.Body), kubermaticv1.ProviderType(r.ProviderName)); !hasProvider {
 		return fmt.Errorf("missing provider configuration for: %s", r.ProviderName)
 	}
 
-	err := kubermaticv1helper.Validate(&r.Body, kubermaticv1.ProviderType(r.ProviderName))
+	err := kubermaticv1helper.Validate(convertAPIToInternalPreset(r.Body), kubermaticv1.ProviderType(r.ProviderName))
 	if err != nil {
 		return err
 	}
@@ -296,7 +297,7 @@ func (r createPresetReq) Validate() error {
 			continue
 		}
 
-		if hasProvider, _ := kubermaticv1helper.HasProvider(&r.Body, providerType); hasProvider {
+		if hasProvider, _ := kubermaticv1helper.HasProvider(convertAPIToInternalPreset(r.Body), providerType); hasProvider {
 			return fmt.Errorf("found unexpected provider configuration for: %s", providerType)
 		}
 	}
@@ -337,9 +338,9 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetProvider.GetPreset(userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
 		if k8serrors.IsNotFound(err) {
-			return presetProvider.CreatePreset(&req.Body)
+			return presetProvider.CreatePreset(ctx, convertAPIToInternalPreset(req.Body))
 		}
 
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -350,8 +351,8 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return nil, errors.New(http.StatusConflict, fmt.Sprintf("%s provider configuration already exists for preset %s", req.ProviderName, preset.Name))
 		}
 
-		preset = mergePresets(preset, &req.Body, kubermaticv1.ProviderType(req.ProviderName))
-		preset, err = presetProvider.UpdatePreset(preset)
+		preset = mergePresets(preset, convertAPIToInternalPreset(req.Body), kubermaticv1.ProviderType(req.ProviderName))
+		preset, err = presetProvider.UpdatePreset(ctx, preset)
 		if err != nil {
 			return nil, err
 		}
@@ -406,13 +407,13 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", errors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
-		preset, err := presetProvider.GetPreset(userInfo, req.Body.Name)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
 		if err != nil {
 			return nil, err
 		}
 
-		preset = mergePresets(preset, &req.Body, kubermaticv1.ProviderType(req.ProviderName))
-		preset, err = presetProvider.UpdatePreset(preset)
+		preset = mergePresets(preset, convertAPIToInternalPreset(req.Body), kubermaticv1.ProviderType(req.ProviderName))
+		preset, err = presetProvider.UpdatePreset(ctx, preset)
 		if err != nil {
 			return nil, err
 		}
@@ -469,7 +470,7 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if k8serrors.IsNotFound(err) {
 			return nil, errors.NewNotFound("Preset", "preset was not found.")
 		}
@@ -478,7 +479,7 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return nil, err
 		}
 
-		_, err = presetProvider.DeletePreset(preset)
+		_, err = presetProvider.DeletePreset(ctx, preset)
 
 		return nil, err
 	}
@@ -542,7 +543,7 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 			return nil, errors.New(http.StatusForbidden, "only admins can delete preset providers")
 		}
 
-		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if k8serrors.IsNotFound(err) {
 			return nil, errors.NewNotFound("Preset", "preset was not found.")
 		}
@@ -557,7 +558,7 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 		}
 
 		preset = kubermaticv1helper.RemoveProvider(preset, providerName)
-		_, err = presetProvider.UpdatePreset(preset)
+		_, err = presetProvider.UpdatePreset(ctx, preset)
 
 		return preset, err
 	}
@@ -622,7 +623,7 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
-		preset, err := presetProvider.GetPreset(userInfo, req.PresetName)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if k8serrors.IsNotFound(err) {
 			return nil, errors.NewBadRequest("preset was not found.")
 		}
@@ -637,12 +638,12 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 		existingProviders := kubermaticv1helper.GetProviderList(preset)
 		if len(existingProviders) > 0 {
 			// Case: Remove provider from the preset
-			preset, err = presetProvider.UpdatePreset(preset)
+			preset, err = presetProvider.UpdatePreset(ctx, preset)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			preset, err = presetProvider.DeletePreset(preset)
+			preset, err = presetProvider.DeletePreset(ctx, preset)
 			if err != nil {
 				return nil, err
 			}
@@ -671,4 +672,13 @@ func newAPIPreset(preset *kubermaticv1.Preset, enabled bool) v2.Preset {
 	}
 
 	return v2.Preset{Name: preset.Name, Enabled: enabled, Providers: providers}
+}
+
+func convertAPIToInternalPreset(preset v2.PresetBody) *kubermaticv1.Preset {
+	return &kubermaticv1.Preset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: preset.Name,
+		},
+		Spec: preset.Spec,
+	}
 }

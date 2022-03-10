@@ -64,7 +64,7 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 		return userInfo, credentials, nil
 	}
 	// Preset is used
-	cred, err = getPresetCredentials(userInfo, presetName, presetProvider, token)
+	cred, err = getPresetCredentials(ctx, userInfo, presetName, presetProvider, token)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting preset credentials for OpenStack: %w", err)
 	}
@@ -87,7 +87,7 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetProvider prov
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %w", err)
 		}
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -438,8 +438,8 @@ func DecodeOpenstackTenantReq(_ context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func getPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider, token string) (*resources.OpenstackCredentials, error) {
-	p, err := presetProvider.GetPreset(userInfo, presetName)
+func getPresetCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider, token string) (*resources.OpenstackCredentials, error) {
+	p, err := presetProvider.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
 	}

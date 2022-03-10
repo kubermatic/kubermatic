@@ -78,7 +78,7 @@ func (g *gcp) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluste
 func (g *gcp) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force, setTags bool) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.GCP.Network = DefaultNetwork
 		})
 		if err != nil {
@@ -102,7 +102,7 @@ func (g *gcp) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	// add the routes cleanup finalizer
 	if !kuberneteshelper.HasFinalizer(cluster, routesCleanupFinalizer) {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, routesCleanupFinalizer)
 		})
 		if err != nil {

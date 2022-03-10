@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -56,7 +56,7 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		user, err := userProvider.UserByID(req.UserID)
+		user, err := userProvider.UserByID(ctx, req.UserID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -95,14 +95,14 @@ func deleteBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedMemberProvider.DeleteUnsecured(bindingID)
+		return privilegedMemberProvider.DeleteUnsecured(ctx, bindingID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return err
 	}
-	return memberProvider.Delete(userInfo, bindingID)
+	return memberProvider.Delete(ctx, userInfo, bindingID)
 }
 
 func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, project *kubermaticv1.Project, userEmail string) ([]*kubermaticv1.UserProjectBinding, error) {
@@ -126,7 +126,7 @@ func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		options = &provider.ProjectMemberListOptions{MemberEmail: userEmail, SkipPrivilegeVerification: skipPrivilegeVerification}
 	}
 
-	return memberProvider.List(userInfo, project, options)
+	return memberProvider.List(ctx, userInfo, project, options)
 }
 
 // EditEndpoint changes the group the given user/member belongs in the given project.
@@ -151,7 +151,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		memberToUpdate, err := userProvider.UserByEmail(currentMemberFromRequest.Email)
+		memberToUpdate, err := userProvider.UserByEmail(ctx, currentMemberFromRequest.Email)
 		if err != nil && errors.Is(err, provider.ErrNotFound) {
 			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
@@ -189,14 +189,14 @@ func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedMemberProvider.UpdateUnsecured(binding)
+		return privilegedMemberProvider.UpdateUnsecured(ctx, binding)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return memberProvider.Update(userInfo, binding)
+	return memberProvider.Update(ctx, userInfo, binding)
 }
 
 // ListEndpoint returns user/members of the given project.
@@ -222,7 +222,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 
 		externalUsers := []*apiv1.User{}
 		for _, memberOfProjectBinding := range membersOfProjectBindings {
-			user, err := userProvider.UserByEmail(memberOfProjectBinding.Spec.UserEmail)
+			user, err := userProvider.UserByEmail(ctx, memberOfProjectBinding.Spec.UserEmail)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -250,7 +250,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		apiUserFromRequest := req.Body
 		projectFromRequest := apiUserFromRequest.Projects[0]
 
-		userToInvite, err := userProvider.UserByEmail(apiUserFromRequest.Email)
+		userToInvite, err := userProvider.UserByEmail(ctx, apiUserFromRequest.Email)
 		if err != nil && errors.Is(err, provider.ErrNotFound) {
 			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
@@ -296,7 +296,7 @@ func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 		if !ok {
 			return nil, k8cerrors.NewNotAuthorized()
 		}
-		return nil, userProvider.InvalidateToken(authenticatedUser, token, expiry)
+		return nil, userProvider.InvalidateToken(ctx, authenticatedUser, token, expiry)
 	}
 }
 
@@ -306,14 +306,14 @@ func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedMemberProvider.CreateUnsecured(project, email, group)
+		return privilegedMemberProvider.CreateUnsecured(ctx, project, email, group)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return memberProvider.Create(userInfo, project, email, group)
+	return memberProvider.Create(ctx, userInfo, project, email, group)
 }
 
 // GetEndpoint returns info about the current user.
@@ -321,7 +321,7 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticv1.User)
 
-		bindings, err := memberMapper.MappingsFor(authenticatedUser.Spec.Email)
+		bindings, err := memberMapper.MappingsFor(ctx, authenticatedUser.Spec.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -366,7 +366,7 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 		}
 
 		existingUser.Spec.Settings = patchedSettings
-		updatedUser, err := userProvider.UpdateUser(existingUser)
+		updatedUser, err := userProvider.UpdateUser(ctx, existingUser)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -548,7 +548,7 @@ func DecodePatchSettingsReq(c context.Context, r *http.Request) (interface{}, er
 	var req PatchSettingsReq
 	var err error
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

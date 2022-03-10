@@ -121,7 +121,7 @@ func getRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, r
 	if err != nil {
 		return nil, err
 	}
-	return privilegedRuleGroupProvider.GetUnsecured(ruleGroupID, namespace)
+	return privilegedRuleGroupProvider.GetUnsecured(ctx, ruleGroupID, namespace)
 }
 
 func listRuleGroups(ctx context.Context, userInfoGetter provider.UserInfoGetter, namespace string, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
@@ -129,7 +129,7 @@ func listRuleGroups(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 	if err != nil {
 		return nil, err
 	}
-	return privilegedRuleGroupProvider.ListUnsecured(namespace, options)
+	return privilegedRuleGroupProvider.ListUnsecured(ctx, namespace, options)
 }
 
 func createRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
@@ -137,7 +137,7 @@ func createRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 	if err != nil {
 		return nil, err
 	}
-	return privilegedRuleGroupProvider.CreateUnsecured(ruleGroup)
+	return privilegedRuleGroupProvider.CreateUnsecured(ctx, ruleGroup)
 }
 
 func updateRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
@@ -145,7 +145,7 @@ func updateRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 	if err != nil {
 		return nil, err
 	}
-	return privilegedRuleGroupProvider.UpdateUnsecured(ruleGroup)
+	return privilegedRuleGroupProvider.UpdateUnsecured(ctx, ruleGroup)
 }
 
 func deleteRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, ruleGroupID, namespace string) error {
@@ -153,7 +153,7 @@ func deleteRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 	if err != nil {
 		return err
 	}
-	return privilegedRuleGroupProvider.DeleteUnsecured(ruleGroupID, namespace)
+	return privilegedRuleGroupProvider.DeleteUnsecured(ctx, ruleGroupID, namespace)
 }
 
 func convertAPIToInternalRuleGroup(ruleGroup *apiv2.RuleGroup, ruleGroupID string) (*kubermaticv1.RuleGroup, error) {

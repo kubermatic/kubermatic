@@ -29,7 +29,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -93,7 +93,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv1.AllowedRegistry) error {
 	finalizer := kubermaticapiv1.AllowedRegistryCleanupFinalizer
 
-	regSet, err := r.getRegistrySet()
+	regSet, err := r.getRegistrySet(ctx)
 	if err != nil {
 		return fmt.Errorf("error getting registry set from AllowedRegistries: %w", err)
 	}
@@ -147,12 +147,12 @@ func allowedRegistryCTCreatorGetter() reconciling.NamedKubermaticV1ConstraintTem
 		return AllowedRegistryCTName, func(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
 			ct.Name = AllowedRegistryCTName
 			ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-				CRD: constrainttemplatev1beta1.CRD{
-					Spec: constrainttemplatev1beta1.CRDSpec{
-						Names: constrainttemplatev1beta1.Names{
+				CRD: constrainttemplatev1.CRD{
+					Spec: constrainttemplatev1.CRDSpec{
+						Names: constrainttemplatev1.Names{
 							Kind: AllowedRegistryCTName,
 						},
-						Validation: &constrainttemplatev1beta1.Validation{
+						Validation: &constrainttemplatev1.Validation{
 							OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 								Properties: map[string]apiextensionsv1.JSONSchemaProps{
 									AllowedRegistryField: {
@@ -168,7 +168,7 @@ func allowedRegistryCTCreatorGetter() reconciling.NamedKubermaticV1ConstraintTem
 						},
 					},
 				},
-				Targets: []constrainttemplatev1beta1.Target{
+				Targets: []constrainttemplatev1.Target{
 					{
 						Target: "admission.k8s.gatekeeper.sh",
 						Rego:   "package allowedregistry\n\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.containers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.initContainers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}",
@@ -208,9 +208,9 @@ func allowedRegistryConstraintCreatorGetter(regSet sets.String) reconciling.Name
 	}
 }
 
-func (r *Reconciler) getRegistrySet() (sets.String, error) {
+func (r *Reconciler) getRegistrySet(ctx context.Context) (sets.String, error) {
 	var arList kubermaticv1.AllowedRegistryList
-	if err := r.masterClient.List(context.Background(), &arList); err != nil {
+	if err := r.masterClient.List(ctx, &arList); err != nil {
 		return nil, err
 	}
 

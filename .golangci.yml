@@ -33,6 +33,7 @@ linters:
     - bidichk
     - bodyclose
     - deadcode
+    - depguard
     - durationcheck
     - errcheck
     - errname
@@ -84,3 +85,9 @@ linters-settings:
       rules:
         json: goCamel
         yaml: goCamel
+
+  depguard:
+    include-go-root: true
+    packages:
+      - io/ioutil # https://go.dev/doc/go1.16#ioutil
+      - github.com/ghodss/yaml # use sigs.k8s.io/yaml instead

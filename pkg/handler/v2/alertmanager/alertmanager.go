@@ -200,13 +200,13 @@ func getAlertmanagerConfig(ctx context.Context, userInfoGetter provider.UserInfo
 		return nil, nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedAlertmanagerProvider.GetUnsecured(cluster)
+		return privilegedAlertmanagerProvider.GetUnsecured(ctx, cluster)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoAlertmanagerProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, nil, err
 	}
-	return alertmanagerProvider.Get(cluster, userInfo)
+	return alertmanagerProvider.Get(ctx, cluster, userInfo)
 }
 
 func updateAlertmanagerConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, alertmanager *kubermaticv1.Alertmanager, config *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
@@ -215,13 +215,13 @@ func updateAlertmanagerConfig(ctx context.Context, userInfoGetter provider.UserI
 		return nil, nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedAlertmanagerProvider.UpdateUnsecured(alertmanager, config)
+		return privilegedAlertmanagerProvider.UpdateUnsecured(ctx, alertmanager, config)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoAlertmanagerProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, nil, err
 	}
-	return alertmanagerProvider.Update(alertmanager, config, userInfo)
+	return alertmanagerProvider.Update(ctx, alertmanager, config, userInfo)
 }
 
 func resetAlertmanagerConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, cluster *kubermaticv1.Cluster) error {
@@ -230,13 +230,13 @@ func resetAlertmanagerConfig(ctx context.Context, userInfoGetter provider.UserIn
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedAlertmanagerProvider.ResetUnsecured(cluster)
+		return privilegedAlertmanagerProvider.ResetUnsecured(ctx, cluster)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoAlertmanagerProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return err
 	}
-	return alertmanagerProvider.Reset(cluster, userInfo)
+	return alertmanagerProvider.Reset(ctx, cluster, userInfo)
 }
 
 func getAdminUserInfoPrivilegedAlertmanagerProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedAlertmanagerProvider, error) {

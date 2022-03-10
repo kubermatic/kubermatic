@@ -244,7 +244,7 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(nil, r)
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
+	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get SSH keys: %w", err)
 	}

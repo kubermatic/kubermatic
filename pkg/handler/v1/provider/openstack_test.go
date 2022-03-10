@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -462,7 +462,7 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 	var expectedResponse interface{}
 
 	// var err error
-	bBytes, err := ioutil.ReadAll(res.Body)
+	bBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
 	}

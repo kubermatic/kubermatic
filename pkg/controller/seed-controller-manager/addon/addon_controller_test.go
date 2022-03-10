@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -200,7 +199,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("kube-dns")
 
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +208,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifestKubeDNS), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifestKubeDNS), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -255,7 +254,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
 
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +263,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -294,7 +293,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
 
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,7 +302,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -331,7 +330,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 func TestController_getAddonManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
-	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,7 +339,7 @@ func TestController_getAddonManifests(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -349,7 +348,7 @@ func TestController_getAddonManifests(t *testing.T) {
 	multilineManifest := fmt.Sprintf(`%s
 ---
 %s`, testManifests[1], testManifests[2])
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest2.yaml"), []byte(multilineManifest), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest2.yaml"), []byte(multilineManifest), 0644); err != nil {
 		t.Fatal(err)
 	}
 

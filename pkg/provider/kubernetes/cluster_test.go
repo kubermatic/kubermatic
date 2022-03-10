@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -119,7 +120,7 @@ func TestCreateCluster(t *testing.T) {
 				partialCluster.Finalizers = tc.expectedCluster.Finalizers
 			}
 
-			cluster, err := target.New(tc.project, tc.userInfo, partialCluster)
+			cluster, err := target.New(context.Background(), tc.project, tc.userInfo, partialCluster)
 			if len(tc.expectedError) > 0 {
 				if err == nil {
 					t.Fatalf("expected error: %s", tc.expectedError)

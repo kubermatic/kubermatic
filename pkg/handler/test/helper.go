@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -31,7 +30,7 @@ import (
 	"testing"
 	"time"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
@@ -354,11 +353,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
 	}
 
-	credentialsManager, err := kubernetes.NewPresetProvider(ctx, fakeClient)
+	credentialsManager, err := kubernetes.NewPresetProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(ctx, fakeClient)
+	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(fakeClient)
 
 	if seedsGetter == nil {
 		seedsGetter = CreateTestSeedsGetter(ctx, fakeClient)
@@ -792,7 +791,7 @@ func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 // CompareWithResult a convenience function for comparing http.Body content with response.
 func CompareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
 	t.Helper()
-	bBytes, err := ioutil.ReadAll(res.Body)
+	bBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
 	}
@@ -1141,7 +1140,8 @@ func GenTestAddon(name string, variables *runtime.RawExtension, cluster *kuberma
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name:      name,
-			Variables: *variables,
+			Variables: variables,
+			// in reality, the addon webhook would ensure this objectRef
 			Cluster: corev1.ObjectReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       kubermaticv1.ClusterKindName,
@@ -1474,13 +1474,13 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 	return apiv2.ConstraintTemplate{
 		Name: name,
 		Spec: kubermaticv1.ConstraintTemplateSpec{
-			CRD: constrainttemplatev1beta1.CRD{
-				Spec: constrainttemplatev1beta1.CRDSpec{
-					Names: constrainttemplatev1beta1.Names{
+			CRD: constrainttemplatev1.CRD{
+				Spec: constrainttemplatev1.CRDSpec{
+					Names: constrainttemplatev1.Names{
 						Kind:       "labelconstraint",
 						ShortNames: []string{"lc"},
 					},
-					Validation: &constrainttemplatev1beta1.Validation{
+					Validation: &constrainttemplatev1.Validation{
 						OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
 							Properties: map[string]apiextensionv1.JSONSchemaProps{
 								"labels": {
@@ -1497,7 +1497,7 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 					},
 				},
 			},
-			Targets: []constrainttemplatev1beta1.Target{
+			Targets: []constrainttemplatev1.Target{
 				{
 					Target: "admission.k8s.gatekeeper.sh",
 					Rego: `
@@ -1541,13 +1541,13 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1beta1.CRD{
-			Spec: constrainttemplatev1beta1.CRDSpec{
-				Names: constrainttemplatev1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &constrainttemplatev1beta1.Validation{
+				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
 						Properties: map[string]apiextensionv1.JSONSchemaProps{
 							"labels": {
@@ -1564,7 +1564,7 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 				},
 			},
 		},
-		Targets: []constrainttemplatev1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `
@@ -2033,19 +2033,6 @@ func GenDefaultAPIBackupCredentials() *apiv2.BackupCredentials {
 			SecretAccessKey: "secretAccessKey",
 		},
 		Destination: "s3",
-	}
-}
-
-func GenDefaultBackupCredentials() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.EtcdRestoreS3CredentialsSecret,
-			Namespace: metav1.NamespaceSystem,
-		},
-		StringData: map[string]string{
-			resources.EtcdBackupAndRestoreS3AccessKeyIDKey:        resources.AWSAccessKeyID,
-			resources.EtcdBackupAndRestoreS3SecretKeyAccessKeyKey: resources.AWSSecretAccessKey,
-		},
 	}
 }
 

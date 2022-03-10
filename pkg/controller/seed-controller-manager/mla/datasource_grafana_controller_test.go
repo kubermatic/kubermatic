@@ -19,7 +19,7 @@ package mla
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -113,7 +113,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "get datasource by uid",
@@ -129,10 +129,10 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					request: &http.Request{
 						Method: http.MethodPost,
 						URL:    &url.URL{Path: "/api/datasources"},
-						Body:   ioutil.NopCloser(strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+						Body:   io.NopCloser(strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 1}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 1}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "get datasource by uid",
@@ -148,10 +148,10 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					request: &http.Request{
 						Method: http.MethodPost,
 						URL:    &url.URL{Path: "/api/datasources"},
-						Body:   ioutil.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+						Body:   io.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 2}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 2}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -192,7 +192,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "delete loki datasource",
@@ -201,7 +201,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/loki-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "delete prometheus datasource",
@@ -210,7 +210,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/prometheus-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -252,7 +252,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "get loki datasource by uid",
@@ -261,17 +261,17 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/loki-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":1, "isDefault":false, "jsonData":null, "secureJsonData":null}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":1, "isDefault":false, "jsonData":null, "secureJsonData":null}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "update loki datasource",
 					request: &http.Request{
 						Method: http.MethodPut,
 						URL:    &url.URL{Path: "/api/datasources/1"},
-						Body:   ioutil.NopCloser(strings.NewReader(`{"name":"Loki New Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":1, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+						Body:   io.NopCloser(strings.NewReader(`{"name":"Loki New Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":1, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource updated", "id": 1}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource updated", "id": 1}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "get prometheus datasource by uid",
@@ -280,17 +280,17 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/prometheus-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":2, "isDefault":false, "jsonData":null, "secureJsonData":null}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":2, "isDefault":false, "jsonData":null, "secureJsonData":null}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "update prometheus datasource",
 					request: &http.Request{
 						Method: http.MethodPut,
 						URL:    &url.URL{Path: "/api/datasources/2"},
-						Body:   ioutil.NopCloser(strings.NewReader(`{"name":"Prometheus New Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":2, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+						Body:   io.NopCloser(strings.NewReader(`{"name":"Prometheus New Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":2, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource updated", "id": 2}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource updated", "id": 2}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -349,7 +349,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "delete loki datasource",
@@ -358,7 +358,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/loki-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "delete prometheus datasource",
@@ -367,7 +367,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/prometheus-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -413,7 +413,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "delete loki datasource",
@@ -422,7 +422,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/loki-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "get datasource by uid",
@@ -438,10 +438,10 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					request: &http.Request{
 						Method: http.MethodPost,
 						URL:    &url.URL{Path: "/api/datasources"},
-						Body:   ioutil.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+						Body:   io.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 2}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 2}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -486,7 +486,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "get datasource by uid",
@@ -502,10 +502,10 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					request: &http.Request{
 						Method: http.MethodPost,
 						URL:    &url.URL{Path: "/api/datasources"},
-						Body:   ioutil.NopCloser(strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+						Body:   io.NopCloser(strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 1}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 1}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name: "delete prometheus datasource",
@@ -514,7 +514,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						URL:    &url.URL{Path: "/api/datasources/uid/prometheus-clusterUID"},
 						Header: map[string][]string{"X-Grafana-Org-Id": {"1"}},
 					},
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},

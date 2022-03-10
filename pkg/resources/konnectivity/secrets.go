@@ -32,13 +32,30 @@ import (
 func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KonnectivityKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
-			if _, exists := se.Data[resources.KonnectivityServerConf]; exists {
-				return se, nil
-			}
-
 			ca, err := data.GetRootCA()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get cluster CA: %w", err)
+			}
+
+			encodedCACert := triple.EncodeCertPEM(ca.Cert)
+
+			oldConfData, exists := se.Data[resources.KonnectivityServerConf]
+
+			if exists {
+				oldConf := new(v1.Config)
+				err := json.Unmarshal(oldConfData, &oldConf)
+				if err != nil {
+					return nil, fmt.Errorf("failed to unmarshal old config: %w", err)
+				}
+
+				if len(oldConf.Clusters) == 0 {
+					return nil, fmt.Errorf("old config has no clusters")
+				}
+
+				if oldConf.Clusters[0].Cluster.Server == data.Cluster().Address.URL &&
+					string(oldConf.Clusters[0].Cluster.CertificateAuthorityData) == string(encodedCACert) {
+					return se, nil
+				}
 			}
 
 			clientKeyPair, err := triple.NewClientKeyPair(ca, "system:konnectivity-server", nil)
@@ -53,7 +70,7 @@ func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreato
 					{
 						Name: "kubernetes",
 						Cluster: v1.Cluster{
-							CertificateAuthorityData: triple.EncodeCertPEM(ca.Cert),
+							CertificateAuthorityData: encodedCACert,
 							Server:                   data.Cluster().Address.URL,
 						},
 					},

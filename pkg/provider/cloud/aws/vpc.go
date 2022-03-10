@@ -65,7 +65,7 @@ func reconcileVPC(ctx context.Context, client ec2iface.EC2API, cluster *kubermat
 		return nil, fmt.Errorf("failed to get default VPC: %w", err)
 	}
 
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Cloud.AWS.VPCID = *defaultVPC.VpcId
 	})
 }

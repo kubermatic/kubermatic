@@ -55,7 +55,7 @@ func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (To
 	}
 
 	tokenExpiredMsg := fmt.Sprintf("sa: the token %s has been revoked for %s", customClaims.TokenID, customClaims.Email)
-	tokenList, err := s.saTokenProvider.ListUnsecured(&provider.ServiceAccountTokenListOptions{TokenID: customClaims.TokenID})
+	tokenList, err := s.saTokenProvider.ListUnsecured(ctx, &provider.ServiceAccountTokenListOptions{TokenID: customClaims.TokenID})
 	if kerrors.IsNotFound(err) {
 		return TokenClaims{}, &TokenExpiredError{msg: tokenExpiredMsg}
 	}

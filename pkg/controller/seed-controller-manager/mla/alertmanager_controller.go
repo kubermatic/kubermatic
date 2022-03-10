@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"time"
@@ -130,7 +130,7 @@ func newAlertmanagerReconciler(
 		}
 		if alertmanager.Spec.ConfigSecret.Name == a.GetName() {
 			clusterList := &kubermaticv1.ClusterList{}
-			if err := client.List(context.Background(), clusterList); err != nil {
+			if err := client.List(ctx, clusterList); err != nil {
 				log.Errorw("Failed to list clusters", zap.Error(err))
 				utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			}
@@ -287,7 +287,7 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(ctx context.Co
 	// https://cortexmetrics.io/docs/api/#delete-alertmanager-configuration
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
@@ -371,7 +371,7 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 	// https://cortexmetrics.io/docs/api/#set-alertmanager-configuration
 	if resp.StatusCode != http.StatusCreated {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
@@ -457,7 +457,7 @@ func (r *alertmanagerController) getCurrentAlertmanagerConfig(ctx context.Contex
 		return nil, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}

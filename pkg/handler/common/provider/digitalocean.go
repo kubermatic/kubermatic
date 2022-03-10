@@ -61,7 +61,7 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 		return nil, err
 	}
 
-	settings, err := settingsProvider.GetGlobalSettings()
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -71,7 +71,7 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 
 func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.DigitaloceanSizeList, error) {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
+	client := godo.NewClient(oauth2.NewClient(ctx, static))
 
 	listOptions := &godo.ListOptions{
 		Page:    1,

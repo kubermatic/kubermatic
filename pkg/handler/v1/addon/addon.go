@@ -212,7 +212,7 @@ func DeleteAddonEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 
 func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return handlercommon.ListAddonConfigsEndpoint(addonConfigProvider)
+		return handlercommon.ListAddonConfigsEndpoint(ctx, addonConfigProvider)
 	}
 }
 
@@ -220,6 +220,6 @@ func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider) en
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getConfigReq)
 
-		return handlercommon.GetAddonConfigEndpoint(addonConfigProvider, req.AddonID)
+		return handlercommon.GetAddonConfigEndpoint(ctx, addonConfigProvider, req.AddonID)
 	}
 }

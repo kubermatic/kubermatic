@@ -20,15 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-
-	"golang.org/x/crypto/ssh"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -37,6 +34,8 @@ type PrivilegedSSHKeyProvider struct {
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client
 }
+
+var _ provider.PrivilegedSSHKeyProvider = &PrivilegedSSHKeyProvider{}
 
 // NewPrivilegedSSHKeyProvider returns a privileged ssh key provider.
 func NewPrivilegedSSHKeyProvider(client ctrlruntimeclient.Client) (*PrivilegedSSHKeyProvider, error) {
@@ -61,8 +60,10 @@ type SSHKeyProvider struct {
 	client ctrlruntimeclient.Client
 }
 
+var _ provider.SSHKeyProvider = &SSHKeyProvider{}
+
 // Create creates a ssh key that will belong to the given project.
-func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) Create(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error) {
 	if keyName == "" {
 		return nil, fmt.Errorf("the ssh key name is missing but required")
 	}
@@ -82,7 +83,7 @@ func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermatic
 	if err != nil {
 		return nil, err
 	}
-	if err := masterImpersonatedClient.Create(context.Background(), sshKey); err != nil {
+	if err := masterImpersonatedClient.Create(ctx, sshKey); err != nil {
 		return nil, err
 	}
 	return sshKey, nil
@@ -90,7 +91,7 @@ func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermatic
 
 // Create creates a ssh key that belongs to the given project
 // This function is unsafe in a sense that it uses privileged account to create the ssh key.
-func (p *PrivilegedSSHKeyProvider) CreateUnsecured(project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error) {
+func (p *PrivilegedSSHKeyProvider) CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error) {
 	if keyName == "" {
 		return nil, fmt.Errorf("the ssh key name is missing but required")
 	}
@@ -103,23 +104,16 @@ func (p *PrivilegedSSHKeyProvider) CreateUnsecured(project *kubermaticv1.Project
 		return nil, err
 	}
 
-	if err := p.clientPrivileged.Create(context.Background(), sshKey); err != nil {
+	if err := p.clientPrivileged.Create(ctx, sshKey); err != nil {
 		return nil, err
 	}
 	return sshKey, nil
 }
 
 func genUserSSHKey(project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error) {
-	pubKeyParsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubKey))
-	if err != nil {
-		return nil, fmt.Errorf("the provided ssh key is invalid: %w", err)
-	}
-	sshKeyHash := ssh.FingerprintLegacyMD5(pubKeyParsed)
-
-	keyInternalName := fmt.Sprintf("key-%s-%s", strings.NewReplacer(":", "").Replace(sshKeyHash), uuid.ShortUID(4))
 	return &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: keyInternalName,
+			Name: fmt.Sprintf("key-%s", rand.String(10)),
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -130,10 +124,9 @@ func genUserSSHKey(project *kubermaticv1.Project, keyName, pubKey string) (*kube
 			},
 		},
 		Spec: kubermaticv1.SSHKeySpec{
-			PublicKey:   pubKey,
-			Fingerprint: sshKeyHash,
-			Name:        keyName,
-			Clusters:    []string{},
+			PublicKey: pubKey,
+			Name:      keyName,
+			Clusters:  []string{},
 		},
 	}, nil
 }
@@ -144,12 +137,12 @@ func genUserSSHKey(project *kubermaticv1.Project, keyName, pubKey string) (*kube
 // Note:
 // After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *SSHKeyProvider) List(project *kubermaticv1.Project, options *provider.SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) List(ctx context.Context, project *kubermaticv1.Project, options *provider.SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error) {
 	if project == nil {
 		return nil, errors.New("a project is missing but required")
 	}
 	allKeys := &kubermaticv1.UserSSHKeyList{}
-	err := p.client.List(context.Background(), allKeys)
+	err := p.client.List(ctx, allKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -195,42 +188,42 @@ func (p *SSHKeyProvider) List(project *kubermaticv1.Project, options *provider.S
 }
 
 // Get returns a key with the given name.
-func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kubermaticv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) Get(ctx context.Context, userInfo *provider.UserInfo, keyName string) (*kubermaticv1.UserSSHKey, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 	userKey := &kubermaticv1.UserSSHKey{}
-	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: keyName}, userKey); err != nil {
+	if err := masterImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: keyName}, userKey); err != nil {
 		return nil, err
 	}
 	return userKey, nil
 }
 
 // Delete simply deletes the given key.
-func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) error {
+func (p *SSHKeyProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, keyName string) error {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
-	return masterImpersonatedClient.Delete(context.Background(), &kubermaticv1.UserSSHKey{ObjectMeta: metav1.ObjectMeta{Name: keyName}})
+	return masterImpersonatedClient.Delete(ctx, &kubermaticv1.UserSSHKey{ObjectMeta: metav1.ObjectMeta{Name: keyName}})
 }
 
 // Delete deletes the given ssh key
 // This function is unsafe in a sense that it uses privileged account to delete the ssh key.
-func (p *PrivilegedSSHKeyProvider) DeleteUnsecured(keyName string) error {
-	return p.clientPrivileged.Delete(context.Background(), &kubermaticv1.UserSSHKey{
+func (p *PrivilegedSSHKeyProvider) DeleteUnsecured(ctx context.Context, keyName string) error {
+	return p.clientPrivileged.Delete(ctx, &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{Name: keyName},
 	})
 }
 
 // Update simply updates the given key.
-func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) Update(ctx context.Context, userInfo *provider.UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	if err := masterImpersonatedClient.Update(context.Background(), newKey); err != nil {
+	if err := masterImpersonatedClient.Update(ctx, newKey); err != nil {
 		return nil, err
 	}
 	return newKey, nil
@@ -238,8 +231,8 @@ func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticv
 
 // UpdateUnsecured update a specific ssh key and returns the updated ssh key
 // This function is unsafe in a sense that it uses privileged account to update the ssh key.
-func (p *PrivilegedSSHKeyProvider) UpdateUnsecured(sshKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {
-	if err := p.clientPrivileged.Update(context.Background(), sshKey); err != nil {
+func (p *PrivilegedSSHKeyProvider) UpdateUnsecured(ctx context.Context, sshKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {
+	if err := p.clientPrivileged.Update(ctx, sshKey); err != nil {
 		return nil, err
 	}
 	return sshKey, nil
@@ -247,9 +240,9 @@ func (p *PrivilegedSSHKeyProvider) UpdateUnsecured(sshKey *kubermaticv1.UserSSHK
 
 // GetUnsecured returns a key with the given name
 // This function is unsafe in a sense that it uses privileged account to get the ssh key.
-func (p *PrivilegedSSHKeyProvider) GetUnsecured(keyName string) (*kubermaticv1.UserSSHKey, error) {
+func (p *PrivilegedSSHKeyProvider) GetUnsecured(ctx context.Context, keyName string) (*kubermaticv1.UserSSHKey, error) {
 	userSSHKey := &kubermaticv1.UserSSHKey{}
-	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: keyName}, userSSHKey); err != nil {
+	if err := p.clientPrivileged.Get(ctx, ctrlruntimeclient.ObjectKey{Name: keyName}, userSSHKey); err != nil {
 		return nil, err
 	}
 	return userSSHKey, nil

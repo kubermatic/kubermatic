@@ -78,7 +78,7 @@ func CredentialEndpoint(presetProvider provider.PresetProvider, userInfoGetter p
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		presets, err := presetProvider.GetPresets(userInfo)
+		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}

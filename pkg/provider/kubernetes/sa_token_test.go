@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"testing"
@@ -81,7 +82,7 @@ func TestCreateToken(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			secret, err := target.Create(tc.userInfo, tc.saToSync, tc.projectToSync, tc.tokenName, tc.tokenID, token)
+			secret, err := target.Create(context.Background(), tc.userInfo, tc.saToSync, tc.projectToSync, tc.tokenName, tc.tokenID, token)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -172,7 +173,7 @@ func TestListTokens(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			resultList, err := target.List(tc.userInfo, tc.projectToSync, tc.saToSync, &provider.ServiceAccountTokenListOptions{TokenID: tc.tokenName})
+			resultList, err := target.List(context.Background(), tc.userInfo, tc.projectToSync, tc.saToSync, &provider.ServiceAccountTokenListOptions{TokenID: tc.tokenName})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -258,7 +259,7 @@ func TestGetToken(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			result, err := target.Get(tc.userInfo, tc.tokenToGet)
+			result, err := target.Get(context.Background(), tc.userInfo, tc.tokenToGet)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -334,12 +335,12 @@ func TestUpdateToken(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			result, err := target.Get(tc.userInfo, tc.tokenToUpdate)
+			result, err := target.Get(context.Background(), tc.userInfo, tc.tokenToUpdate)
 			if err != nil {
 				t.Fatal(err)
 			}
 			result.Labels["name"] = tc.tokenNewName
-			updated, err := target.Update(tc.userInfo, result)
+			updated, err := target.Update(context.Background(), tc.userInfo, result)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -406,18 +407,18 @@ func TestDeleteToken(t *testing.T) {
 			}
 
 			// check if token exists first
-			existingToken, err := target.Get(tc.userInfo, tc.tokenToDelete)
+			existingToken, err := target.Get(context.Background(), tc.userInfo, tc.tokenToDelete)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// delete token
-			if err := target.Delete(tc.userInfo, existingToken.Name); err != nil {
+			if err := target.Delete(context.Background(), tc.userInfo, existingToken.Name); err != nil {
 				t.Fatal(err)
 			}
 
 			// validate
-			_, err = target.Get(tc.userInfo, tc.tokenToDelete)
+			_, err = target.Get(context.Background(), tc.userInfo, tc.tokenToDelete)
 			if !errors.IsNotFound(err) {
 				t.Fatalf("expected not found error")
 			}

@@ -473,13 +473,13 @@ func createEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInf
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdBackupConfigProvider.CreateUnsecured(etcdBackupConfig)
+		return privilegedEtcdBackupConfigProvider.CreateUnsecured(ctx, etcdBackupConfig)
 	}
 	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdBackupConfigProvider.Create(userInfo, etcdBackupConfig)
+	return etcdBackupConfigProvider.Create(ctx, userInfo, etcdBackupConfig)
 }
 
 func getEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdBackupConfigName string) (*kubermaticv1.EtcdBackupConfig, error) {
@@ -488,13 +488,13 @@ func getEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdBackupConfigProvider.GetUnsecured(cluster, etcdBackupConfigName)
+		return privilegedEtcdBackupConfigProvider.GetUnsecured(ctx, cluster, etcdBackupConfigName)
 	}
 	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdBackupConfigProvider.Get(userInfo, cluster, etcdBackupConfigName)
+	return etcdBackupConfigProvider.Get(ctx, userInfo, cluster, etcdBackupConfigName)
 }
 
 func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) (*kubermaticv1.EtcdBackupConfigList, error) {
@@ -503,13 +503,13 @@ func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoG
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdBackupConfigProvider.ListUnsecured(cluster)
+		return privilegedEtcdBackupConfigProvider.ListUnsecured(ctx, cluster)
 	}
 	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdBackupConfigProvider.List(userInfo, cluster)
+	return etcdBackupConfigProvider.List(ctx, userInfo, cluster)
 }
 
 func listProjectEtcdBackupConfig(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
@@ -517,7 +517,7 @@ func listProjectEtcdBackupConfig(ctx context.Context, projectID string) ([]*kube
 	if privilegedEtcdBackupConfigProjectProvider == nil {
 		return nil, errors.New(http.StatusInternalServerError, "error getting privileged provider")
 	}
-	return privilegedEtcdBackupConfigProjectProvider.ListUnsecured(projectID)
+	return privilegedEtcdBackupConfigProjectProvider.ListUnsecured(ctx, projectID)
 }
 
 func deleteEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdBackupConfigName string) error {
@@ -526,13 +526,13 @@ func deleteEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInf
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdBackupConfigProvider.DeleteUnsecured(cluster, etcdBackupConfigName)
+		return privilegedEtcdBackupConfigProvider.DeleteUnsecured(ctx, cluster, etcdBackupConfigName)
 	}
 	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return err
 	}
-	return etcdBackupConfigProvider.Delete(userInfo, cluster, etcdBackupConfigName)
+	return etcdBackupConfigProvider.Delete(ctx, userInfo, cluster, etcdBackupConfigName)
 }
 
 func patchEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
@@ -541,13 +541,13 @@ func patchEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfo
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdBackupConfigProvider.PatchUnsecured(oldConfig, newConfig)
+		return privilegedEtcdBackupConfigProvider.PatchUnsecured(ctx, oldConfig, newConfig)
 	}
 	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdBackupConfigProvider.Patch(userInfo, oldConfig, newConfig)
+	return etcdBackupConfigProvider.Patch(ctx, userInfo, oldConfig, newConfig)
 }
 
 func getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdBackupConfigProvider, error) {

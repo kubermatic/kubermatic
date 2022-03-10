@@ -51,7 +51,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, kubermaticerrors.NewBadRequest("the name of the project cannot be empty")
 		}
 
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -62,16 +62,16 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, err
 		}
 
-		if err := validateUserProjectsLimit(user, settings, projectProvider, privilegedProjectProvider, memberMapper, memberProvider, userProvider); err != nil {
+		if err := validateUserProjectsLimit(ctx, user, settings, projectProvider, privilegedProjectProvider, memberMapper, memberProvider, userProvider); err != nil {
 			return nil, err
 		}
 
 		userEmail := user.Spec.Email
 		if kubernetes.IsProjectServiceAccount(userEmail) {
-			return createProjectByServiceAccount(userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
+			return createProjectByServiceAccount(ctx, userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
 		}
 
-		kubermaticProject, err := projectProvider.New([]*kubermaticv1.User{user}, projectRq.Body.Name, projectRq.Body.Labels)
+		kubermaticProject, err := projectProvider.New(ctx, []*kubermaticv1.User{user}, projectRq.Body.Name, projectRq.Body.Labels)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -89,9 +89,9 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func createProjectByServiceAccount(saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
+func createProjectByServiceAccount(ctx context.Context, saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
 	var humanUserOwnerList []*kubermaticv1.User
-	bindings, err := memberMapper.MappingsFor(saEmail)
+	bindings, err := memberMapper.MappingsFor(ctx, saEmail)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -111,20 +111,20 @@ func createProjectByServiceAccount(saEmail string, projectReq projectReq, member
 		if kubernetes.IsProjectServiceAccount(userEmail) {
 			return nil, kubermaticerrors.New(http.StatusBadRequest, "user email list should contain only human users")
 		}
-		humanUserOwner, err := userProvider.UserByEmail(userEmail)
+		humanUserOwner, err := userProvider.UserByEmail(ctx, userEmail)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		humanUserOwnerList = append(humanUserOwnerList, humanUserOwner)
 	}
 
-	kubermaticProject, err := projectProvider.New(humanUserOwnerList, projectReq.Body.Name, projectReq.Body.Labels)
+	kubermaticProject, err := projectProvider.New(ctx, humanUserOwnerList, projectReq.Body.Name, projectReq.Body.Labels)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	generatedGroupName := rbac.GenerateActualGroupNameFor(kubermaticProject.Name, rbac.ProjectManagerGroupNamePrefix)
 
-	_, err = memberProvider.CreateUnsecuredForServiceAccount(kubermaticProject, saEmail, generatedGroupName)
+	_, err = memberProvider.CreateUnsecuredForServiceAccount(ctx, kubermaticProject, saEmail, generatedGroupName)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -151,7 +151,7 @@ func checkProjectRestriction(user *kubermaticv1.User, settings *kubermaticv1.Kub
 	return nil
 }
 
-func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.KubermaticSetting, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) error {
+func validateUserProjectsLimit(ctx context.Context, user *kubermaticv1.User, settings *kubermaticv1.KubermaticSetting, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) error {
 	if user.Spec.IsAdmin {
 		return nil
 	}
@@ -159,7 +159,7 @@ func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.K
 		return nil
 	}
 
-	userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
+	userMappings, err := memberMapper.MappingsFor(ctx, user.Spec.Email)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
@@ -167,7 +167,7 @@ func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.K
 	var projectsCounter int64
 	for _, mapping := range userMappings {
 		userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
-		projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+		projectInternal, err := projectProvider.Get(ctx, userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
 			// Next request with privileged user checks if the project doesn't exist or some other error occurred.
@@ -175,7 +175,7 @@ func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.K
 				errorList = append(errorList, err.Error())
 				continue
 			}
-			_, errGetUnsecured := privilegedProjectProvider.GetUnsecured(mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			_, errGetUnsecured := privilegedProjectProvider.GetUnsecured(ctx, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if !isStatus(errGetUnsecured, http.StatusNotFound) {
 				// store original error
 				errorList = append(errorList, err.Error())
@@ -183,7 +183,7 @@ func validateUserProjectsLimit(user *kubermaticv1.User, settings *kubermaticv1.K
 			continue
 		}
 		// get only owned projects
-		projectOwners, err := common.GetOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, userInfo, projectInternal, memberProvider, userProvider)
 		if err != nil {
 			return common.KubernetesErrorToHTTPError(err)
 		}
@@ -216,17 +216,17 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		}
 
 		if req.DisplayAll && userInfo.IsAdmin {
-			return getAllProjectsForAdmin(userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
+			return getAllProjectsForAdmin(ctx, userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
 		}
 		projects := []*apiv1.Project{}
-		userMappings, err := memberMapper.MappingsFor(userInfo.Email)
+		userMappings, err := memberMapper.MappingsFor(ctx, userInfo.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		var errorList []string
 		for _, mapping := range userMappings {
 			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
-			projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			projectInternal, err := projectProvider.Get(ctx, userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
 				if isStatus(err, http.StatusNotFound) {
 					continue
@@ -237,7 +237,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 					errorList = append(errorList, err.Error())
 					continue
 				}
-				_, errGetUnsecured := privilegedProjectProvider.GetUnsecured(mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+				_, errGetUnsecured := privilegedProjectProvider.GetUnsecured(ctx, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 				if !isStatus(errGetUnsecured, http.StatusNotFound) {
 					// store original error
 					errorList = append(errorList, err.Error())
@@ -245,11 +245,11 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 				continue
 			}
 
-			projectOwners, err := common.GetOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
+			projectOwners, err := common.GetOwnersForProject(ctx, userInfo, projectInternal, memberProvider, userProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			clustersNumber, err := getNumberOfClustersForProject(clusterProviderGetter, seedsGetter, projectInternal)
+			clustersNumber, err := getNumberOfClustersForProject(ctx, clusterProviderGetter, seedsGetter, projectInternal)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -263,19 +263,19 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 	}
 }
 
-func getAllProjectsForAdmin(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) ([]*apiv1.Project, error) {
+func getAllProjectsForAdmin(ctx context.Context, userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) ([]*apiv1.Project, error) {
 	projects := []*apiv1.Project{}
-	projectList, err := projectProvider.List(nil)
+	projectList, err := projectProvider.List(ctx, nil)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	clustersNumbers, err := getNumberOfClusters(clusterProviderGetter, seedsGetter)
+	clustersNumbers, err := getNumberOfClusters(ctx, clusterProviderGetter, seedsGetter)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	for _, project := range projectList {
-		projectOwners, err := common.GetOwnersForProject(userInfo, project, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, userInfo, project, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -310,7 +310,7 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 		// allow to delete any project for the admin user
 		if adminUserInfo.IsAdmin {
-			err := privilegedProjectProvider.DeleteUnsecured(req.ProjectID)
+			err := privilegedProjectProvider.DeleteUnsecured(ctx, req.ProjectID)
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -323,7 +323,7 @@ func deleteProjectByRegularUser(ctx context.Context, userInfoGetter provider.Use
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
-	err = projectProvider.Delete(userInfo, projectID)
+	err = projectProvider.Delete(ctx, userInfo, projectID)
 	return common.KubernetesErrorToHTTPError(err)
 }
 
@@ -357,11 +357,11 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		projectOwners, err := common.GetOwnersForProject(adminUserInfo, kubermaticProject, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, adminUserInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		clustersNumber, err := getNumberOfClustersForProject(clusterProviderGetter, seedsGetter, project)
+		clustersNumber, err := getNumberOfClustersForProject(ctx, clusterProviderGetter, seedsGetter, project)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -376,13 +376,13 @@ func updateProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	}
 
 	if adminUserInfo.IsAdmin {
-		return privilegedProjectProvider.UpdateUnsecured(kubermaticProject)
+		return privilegedProjectProvider.UpdateUnsecured(ctx, kubermaticProject)
 	}
 	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
 	if err != nil {
 		return nil, err
 	}
-	return projectProvider.Update(userInfo, kubermaticProject)
+	return projectProvider.Update(ctx, userInfo, kubermaticProject)
 }
 
 // GeEndpoint defines an HTTP endpoint for getting a project.
@@ -406,11 +406,11 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		projectOwners, err := common.GetOwnersForProject(adminUserInfo, kubermaticProject, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(ctx, adminUserInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		clustersNumber, err := getNumberOfClustersForProject(clusterProviderGetter, seedsGetter, kubermaticProject)
+		clustersNumber, err := getNumberOfClustersForProject(ctx, clusterProviderGetter, seedsGetter, kubermaticProject)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -517,7 +517,7 @@ func DecodeList(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func getNumberOfClustersForProject(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter, project *kubermaticv1.Project) (int, error) {
+func getNumberOfClustersForProject(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter, project *kubermaticv1.Project) (int, error) {
 	var clustersNumber int
 	seeds, err := seedsGetter()
 	if err != nil {
@@ -529,7 +529,7 @@ func getNumberOfClustersForProject(clusterProviderGetter provider.ClusterProvide
 		if err != nil {
 			return clustersNumber, kubermaticerrors.NewNotFound("cluster-provider", datacenter)
 		}
-		clusters, err := clusterProvider.List(project, nil)
+		clusters, err := clusterProvider.List(ctx, project, nil)
 		if err != nil {
 			return clustersNumber, err
 		}
@@ -539,7 +539,7 @@ func getNumberOfClustersForProject(clusterProviderGetter provider.ClusterProvide
 	return clustersNumber, nil
 }
 
-func getNumberOfClusters(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) (map[string]int, error) {
+func getNumberOfClusters(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) (map[string]int, error) {
 	clustersNumber := map[string]int{}
 	seeds, err := seedsGetter()
 	if err != nil {
@@ -551,7 +551,7 @@ func getNumberOfClusters(clusterProviderGetter provider.ClusterProviderGetter, s
 		if err != nil {
 			return nil, kubermaticerrors.NewNotFound("cluster-provider", datacenter)
 		}
-		clusters, err := clusterProvider.ListAll()
+		clusters, err := clusterProvider.ListAll(ctx)
 		if err != nil {
 			return clustersNumber, err
 		}

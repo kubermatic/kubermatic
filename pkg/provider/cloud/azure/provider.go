@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
 	"github.com/Azure/go-autorest/autorest"
 	"go.uber.org/zap"
 
@@ -130,7 +130,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 				return cluster, fmt.Errorf("failed to delete security group %q: %w", cluster.Spec.Cloud.Azure.SecurityGroup, err)
 			}
 		}
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerSecurityGroup)
 		})
 		if err != nil {
@@ -146,7 +146,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 				return cluster, fmt.Errorf("failed to delete route table %q: %w", cluster.Spec.Cloud.Azure.RouteTableName, err)
 			}
 		}
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerRouteTable)
 		})
 		if err != nil {
@@ -162,7 +162,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 				return cluster, fmt.Errorf("failed to delete sub-network %q: %w", cluster.Spec.Cloud.Azure.SubnetName, err)
 			}
 		}
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerSubnet)
 		})
 		if err != nil {
@@ -179,7 +179,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerVNet)
 		})
 		if err != nil {
@@ -196,7 +196,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerAvailabilitySet)
 		})
 		if err != nil {
@@ -213,7 +213,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerResourceGroup)
 		})
 		if err != nil {

@@ -314,36 +314,26 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--profiling=false",
 	}
 
-	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		flags = append(flags,
-			// The advertise address is used as endpoint address for the kubernetes
-			// service in the default namespace of the user cluster.
-			"--advertise-address", cluster.Address.IP,
-			// The secure port is used as target port for the kubernetes service in
-			// the default namespace of the user cluster, we use the NodePort value
-			// for being able to access the apiserver from the usercluster side.
-			"--secure-port", fmt.Sprint(cluster.Address.Port))
-	} else {
-		// pre-pend to have advertise-address as first argument and avoid
-		// triggering unneeded redeployments.
-		flags = append([]string{
-			// The advertise address is used as endpoint address for the kubernetes
-			// service in the default namespace of the user cluster.
-			"--advertise-address", cluster.Address.IP,
-			// The secure port is used as target port for the kubernetes service in
-			// the default namespace of the user cluster, we use the NodePort value
-			// for being able to access the apiserver from the usercluster side.
-			"--secure-port", fmt.Sprint(cluster.Address.Port),
-			"--kubernetes-service-node-port", fmt.Sprint(cluster.Address.Port),
-		}, flags...)
-	}
+	// pre-pend to have advertise-address as first argument and avoid
+	// triggering unneeded redeployments.
+	flags = append([]string{
+		// advertise-address is the external IP under which the apiserver is available.
+		// The same address is used for all apiserver replicas.
+		"--advertise-address", cluster.Address.IP,
+		// The port on which apiserver is serving.
+		// For Nodeport / LoadBalancer expose strategies we use the apiserver-external service NodePort value.
+		// For Tunneling expose strategy we use a fixed port.
+		"--secure-port", fmt.Sprint(cluster.Address.Port),
+	}, flags...)
 
 	if auditLogEnabled {
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
 	}
 
-	if *overrideFlags.EndpointReconcilingDisabled {
-		flags = append(flags, "--endpoint-reconciler-type=none")
+	// kubernetes service endpoints are reconciled by KKP user-cluster-controller for kubernetes versions v1.21+
+	// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
+	if (cluster.Spec.Version.Semver().Major() >= 1 && cluster.Spec.Version.Semver().Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
+		flags = append(flags, "--endpoint-reconciler-type", "none")
 	}
 
 	// enable service account signing key and issuer in Kubernetes 1.20 or when

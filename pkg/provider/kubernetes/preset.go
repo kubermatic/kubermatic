@@ -29,19 +29,19 @@ import (
 )
 
 // presetsGetter is a function to retrieve preset list.
-type presetsGetter = func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error)
+type presetsGetter = func(ctx context.Context, userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error)
 
 // presetCreator is a function to create a preset.
-type presetCreator = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+type presetCreator = func(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
 // presetUpdater is a function to update a preset.
-type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+type presetUpdater = func(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
 // presetDeleter is a function to delete a preset.
-type presetDeleter = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+type presetDeleter = func(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
-func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetsGetter, error) {
-	return func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
+func presetsGetterFactory(client ctrlruntimeclient.Client) (presetsGetter, error) {
+	return func(ctx context.Context, userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
 		presetList := &kubermaticv1.PresetList{}
 		if err := client.List(ctx, presetList); err != nil {
 			return nil, fmt.Errorf("failed to get presets: %w", err)
@@ -50,8 +50,8 @@ func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) 
 	}, nil
 }
 
-func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetCreator, error) {
-	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+func presetCreatorFactory(client ctrlruntimeclient.Client) (presetCreator, error) {
+	return func(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 		if err := client.Create(ctx, preset); err != nil {
 			return nil, err
 		}
@@ -60,8 +60,8 @@ func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client) 
 	}, nil
 }
 
-func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetUpdater, error) {
-	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+func presetUpdaterFactory(client ctrlruntimeclient.Client) (presetUpdater, error) {
+	return func(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 		if err := client.Update(ctx, preset); err != nil {
 			return nil, err
 		}
@@ -70,8 +70,8 @@ func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client) 
 	}, nil
 }
 
-func presetDeleterFactory(ctx context.Context, client ctrlruntimeclient.Client) (presetDeleter, error) {
-	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+func presetDeleterFactory(client ctrlruntimeclient.Client) (presetDeleter, error) {
+	return func(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 		if err := client.Delete(ctx, preset); err != nil {
 			return &kubermaticv1.Preset{}, err
 		}
@@ -87,23 +87,25 @@ type PresetProvider struct {
 	deleter presetDeleter
 }
 
-func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client) (*PresetProvider, error) {
-	getter, err := presetsGetterFactory(ctx, client)
+var _ provider.PresetProvider = &PresetProvider{}
+
+func NewPresetProvider(client ctrlruntimeclient.Client) (*PresetProvider, error) {
+	getter, err := presetsGetterFactory(client)
 	if err != nil {
 		return nil, err
 	}
 
-	creator, err := presetCreatorFactory(ctx, client)
+	creator, err := presetCreatorFactory(client)
 	if err != nil {
 		return nil, err
 	}
 
-	patcher, err := presetUpdaterFactory(ctx, client)
+	patcher, err := presetUpdaterFactory(client)
 	if err != nil {
 		return nil, err
 	}
 
-	deleter, err := presetDeleterFactory(ctx, client)
+	deleter, err := presetDeleterFactory(client)
 	if err != nil {
 		return nil, err
 	}
@@ -111,22 +113,22 @@ func NewPresetProvider(ctx context.Context, client ctrlruntimeclient.Client) (*P
 	return &PresetProvider{getter, creator, patcher, deleter}, nil
 }
 
-func (m *PresetProvider) CreatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-	return m.creator(preset)
+func (m *PresetProvider) CreatePreset(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	return m.creator(ctx, preset)
 }
 
-func (m *PresetProvider) UpdatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-	return m.patcher(preset)
+func (m *PresetProvider) UpdatePreset(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	return m.patcher(ctx, preset)
 }
 
 // GetPresets returns presets which belong to the specific email group and for all users.
-func (m *PresetProvider) GetPresets(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-	return m.getter(userInfo)
+func (m *PresetProvider) GetPresets(ctx context.Context, userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
+	return m.getter(ctx, userInfo)
 }
 
 // GetPreset returns preset with the name which belong to the specific email group.
-func (m *PresetProvider) GetPreset(userInfo *provider.UserInfo, name string) (*kubermaticv1.Preset, error) {
-	presets, err := m.getter(userInfo)
+func (m *PresetProvider) GetPreset(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.Preset, error) {
+	presets, err := m.getter(ctx, userInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +142,8 @@ func (m *PresetProvider) GetPreset(userInfo *provider.UserInfo, name string) (*k
 }
 
 // DeletePreset delete Preset.
-func (m *PresetProvider) DeletePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
-	return m.deleter(preset)
+func (m *PresetProvider) DeletePreset(ctx context.Context, preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	return m.deleter(ctx, preset)
 }
 
 func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList) ([]kubermaticv1.Preset, error) {
@@ -165,45 +167,45 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 	return result, nil
 }
 
-func (m *PresetProvider) SetCloudCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
+func (m *PresetProvider) SetCloudCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
 	if cloud.VSphere != nil {
-		return m.setVsphereCredentials(userInfo, presetName, cloud, dc)
+		return m.setVsphereCredentials(ctx, userInfo, presetName, cloud, dc)
 	}
 	if cloud.Openstack != nil {
-		return m.setOpenStackCredentials(userInfo, presetName, cloud, dc)
+		return m.setOpenStackCredentials(ctx, userInfo, presetName, cloud, dc)
 	}
 	if cloud.Azure != nil {
-		return m.setAzureCredentials(userInfo, presetName, cloud)
+		return m.setAzureCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Digitalocean != nil {
-		return m.setDigitalOceanCredentials(userInfo, presetName, cloud)
+		return m.setDigitalOceanCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Packet != nil {
-		return m.setPacketCredentials(userInfo, presetName, cloud)
+		return m.setPacketCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Hetzner != nil {
-		return m.setHetznerCredentials(userInfo, presetName, cloud)
+		return m.setHetznerCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.AWS != nil {
-		return m.setAWSCredentials(userInfo, presetName, cloud)
+		return m.setAWSCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.GCP != nil {
-		return m.setGCPCredentials(userInfo, presetName, cloud)
+		return m.setGCPCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Fake != nil {
-		return m.setFakeCredentials(userInfo, presetName, cloud)
+		return m.setFakeCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Kubevirt != nil {
-		return m.setKubevirtCredentials(userInfo, presetName, cloud)
+		return m.setKubevirtCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Alibaba != nil {
-		return m.setAlibabaCredentials(userInfo, presetName, cloud)
+		return m.setAlibabaCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Anexia != nil {
-		return m.setAnexiaCredentials(userInfo, presetName, cloud)
+		return m.setAnexiaCredentials(ctx, userInfo, presetName, cloud)
 	}
 	if cloud.Nutanix != nil {
-		return m.setNutanixCredentials(userInfo, presetName, cloud)
+		return m.setNutanixCredentials(ctx, userInfo, presetName, cloud)
 	}
 
 	return nil, fmt.Errorf("can not find provider to set credentials")
@@ -213,8 +215,8 @@ func emptyCredentialError(preset, provider string) error {
 	return fmt.Errorf("the preset %s doesn't contain credential for %s provider", preset, provider)
 }
 
-func (m *PresetProvider) setFakeCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setFakeCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -226,8 +228,8 @@ func (m *PresetProvider) setFakeCredentials(userInfo *provider.UserInfo, presetN
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setKubevirtCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setKubevirtCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -240,8 +242,8 @@ func (m *PresetProvider) setKubevirtCredentials(userInfo *provider.UserInfo, pre
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setGCPCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setGCPCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -257,8 +259,8 @@ func (m *PresetProvider) setGCPCredentials(userInfo *provider.UserInfo, presetNa
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setAWSCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setAWSCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -282,8 +284,8 @@ func (m *PresetProvider) setAWSCredentials(userInfo *provider.UserInfo, presetNa
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setHetznerCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setHetznerCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -296,8 +298,8 @@ func (m *PresetProvider) setHetznerCredentials(userInfo *provider.UserInfo, pres
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setPacketCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setPacketCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -317,8 +319,8 @@ func (m *PresetProvider) setPacketCredentials(userInfo *provider.UserInfo, prese
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setDigitalOceanCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setDigitalOceanCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -330,8 +332,8 @@ func (m *PresetProvider) setDigitalOceanCredentials(userInfo *provider.UserInfo,
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setAzureCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setAzureCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -354,8 +356,8 @@ func (m *PresetProvider) setAzureCredentials(userInfo *provider.UserInfo, preset
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setOpenStackCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setOpenStackCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -389,8 +391,8 @@ func (m *PresetProvider) setOpenStackCredentials(userInfo *provider.UserInfo, pr
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setVsphereCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setVsphereCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -411,8 +413,8 @@ func (m *PresetProvider) setVsphereCredentials(userInfo *provider.UserInfo, pres
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setAlibabaCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setAlibabaCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -427,8 +429,8 @@ func (m *PresetProvider) setAlibabaCredentials(userInfo *provider.UserInfo, pres
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setAnexiaCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setAnexiaCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}
@@ -440,8 +442,8 @@ func (m *PresetProvider) setAnexiaCredentials(userInfo *provider.UserInfo, prese
 	return &cloud, nil
 }
 
-func (m *PresetProvider) setNutanixCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset, err := m.GetPreset(userInfo, presetName)
+func (m *PresetProvider) setNutanixCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(ctx, userInfo, presetName)
 	if err != nil {
 		return nil, err
 	}

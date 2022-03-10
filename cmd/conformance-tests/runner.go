@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -286,7 +285,7 @@ func (r *testRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 			log.Errorw("failed to marshal junit", zap.Error(err))
 			return
 		}
-		if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenario.Name())), b, 0644); err != nil {
+		if err := os.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenario.Name())), b, 0644); err != nil {
 			log.Errorw("Failed to write junit", zap.Error(err))
 		}
 	}()
@@ -903,7 +902,7 @@ func (r *testRunner) getKubeconfig(ctx context.Context, log *zap.SugaredLogger, 
 	}
 
 	filename := path.Join(r.homeDir, fmt.Sprintf("%s-kubeconfig", cluster.Name))
-	if err := ioutil.WriteFile(filename, kubeconfig, 0644); err != nil {
+	if err := os.WriteFile(filename, kubeconfig, 0644); err != nil {
 		return "", fmt.Errorf("failed to write kubeconfig to %s: %w", filename, err)
 	}
 
@@ -931,7 +930,7 @@ func (r *testRunner) getCloudConfig(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	filename := path.Join(r.homeDir, fmt.Sprintf("%s-cloud-config", cluster.Name))
-	if err := ioutil.WriteFile(filename, []byte(cmData), 0644); err != nil {
+	if err := os.WriteFile(filename, []byte(cmData), 0644); err != nil {
 		return "", fmt.Errorf("failed to write cloud config: %w", err)
 	}
 
@@ -1264,7 +1263,7 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 	}
 
 	// Make sure we write to a file instead of a byte buffer as the logs are pretty big
-	file, err := ioutil.TempFile("/tmp", run.name+"-log")
+	file, err := os.CreateTemp("/tmp", run.name+"-log")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open logfile: %w", err)
 	}
@@ -1342,9 +1341,10 @@ func (r *testRunner) executeGinkgoRun(ctx context.Context, parentLog *zap.Sugare
 }
 
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {
+	// list does not contain AWS because since 2022-Mar-02, we were
+	// expecting problems while detaching volumes from instances
 	return cluster.Spec.Cloud.Openstack != nil ||
 		cluster.Spec.Cloud.Azure != nil ||
-		cluster.Spec.Cloud.AWS != nil ||
 		cluster.Spec.Cloud.VSphere != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
 		cluster.Spec.Cloud.Hetzner != nil ||

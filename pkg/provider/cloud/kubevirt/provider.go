@@ -97,7 +97,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = ReconcileCSIRoleRoleBinding(ctx, client, restConfig)
+	err = reconcileCSIRoleRoleBinding(ctx, cluster.Status.NamespaceName, client, restConfig)
 	if err != nil {
 		return cluster, err
 	}
@@ -115,7 +115,7 @@ func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !kerrors.IsNotFound(err) {
 			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
 		}
-		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
 		})
 	}

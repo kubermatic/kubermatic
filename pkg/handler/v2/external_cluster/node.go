@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -64,7 +64,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 			return nodesV1, nil
 		}
 
-		nodes, err := clusterProvider.ListNodes(cluster)
+		nodes, err := clusterProvider.ListNodes(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -82,7 +82,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 
 func ListNodesMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -112,13 +112,13 @@ func getClusterNodesMetrics(ctx context.Context, userInfoGetter provider.UserInf
 		return nodeMetrics, nil
 	}
 
-	isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
+	isMetricServer, err := clusterProvider.IsMetricServerAvailable(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	if isMetricServer {
-		client, err := clusterProvider.GetClient(cluster)
+		client, err := clusterProvider.GetClient(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -202,7 +202,7 @@ func GetNodeEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		node, err := clusterProvider.GetNode(cluster, req.NodeID)
+		node, err := clusterProvider.GetNode(ctx, cluster, req.NodeID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -246,7 +246,7 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				machineDeployments = np
 			}
 			if cloud.EKS != nil {
-				np, err := getEKSNodeGroups(cluster, secretKeySelector, clusterProvider)
+				np, err := getEKSNodeGroups(ctx, cluster, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -304,14 +304,14 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 			nodes = n
 		}
 		if cloud.EKS != nil {
-			n, err := getEKSNodes(cluster, machineDeploymentID, clusterProvider)
+			n, err := getEKSNodes(ctx, cluster, machineDeploymentID, clusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			nodes = n
 		}
 		if cloud.AKS != nil {
-			n, err := getAKSNodes(cluster, machineDeploymentID, clusterProvider)
+			n, err := getAKSNodes(ctx, cluster, machineDeploymentID, clusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -632,7 +632,7 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 			if cloud.EKS != nil {
-				np, err := getEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
+				np, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
@@ -660,7 +660,7 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 
 func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if !AreExternalClustersEnabled(settingsProvider) {
+		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
@@ -686,7 +686,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 			patchedMD := apiv2.ExternalClusterMachineDeployment{}
 
 			if cloud.EKS != nil {
-				md, err := getEKSNodeGroup(cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
+				md, err := getEKSNodeGroup(ctx, cluster, req.MachineDeploymentID, secretKeySelector, clusterProvider)
 				if err != nil {
 					return nil, err
 				}
@@ -804,7 +804,7 @@ func DecodePatchMachineDeploymentReq(c context.Context, r *http.Request) (interf
 	req.ProjectID = md.ProjectID
 	req.MachineDeploymentID = md.MachineDeploymentID
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

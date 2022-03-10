@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
 	"github.com/Azure/go-autorest/autorest/to"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -57,7 +57,7 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	// VNET isn't owned by KKP, we should not try to reconcile subnets and
 	// return early
 	if !isNotFound(subnet.Response) && !hasOwnershipTag(vnet.Tags, cluster) {
-		return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
 		})
 	}
@@ -76,7 +76,7 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 		}
 	}
 
-	return update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
 		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerSubnet)
 	})

@@ -22,8 +22,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"text/template"
 
@@ -59,6 +59,17 @@ func main() {
 				ResourceName: "ServiceAccount",
 				ImportAlias:  "corev1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
+				ResourceName:       "Endpoints",
+				ResourceNamePlural: "Endpoints",
+				ImportAlias:        "corev1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
+				ResourceName:       "EndpointSlice",
+				ImportAlias:        "discovery",
+				ResourceImportPath: "k8s.io/api/discovery/v1",
 			},
 			{
 				ResourceName:       "StatefulSet",
@@ -158,8 +169,8 @@ func main() {
 			},
 			{
 				ResourceName:       "ConstraintTemplate",
-				ImportAlias:        "gatekeeperv1beta1",
-				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1",
+				ImportAlias:        "gatekeeperv1",
+				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1",
 			},
 			{
 				ResourceName:     "ConstraintTemplate",
@@ -221,7 +232,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile("zz_generated_reconcile.go", fmtB, 0644); err != nil {
+	if err := os.WriteFile("zz_generated_reconcile.go", fmtB, 0644); err != nil {
 		log.Fatal(err)
 	}
 }

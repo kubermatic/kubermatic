@@ -160,7 +160,7 @@ func createOrPatchFirewall(ctx context.Context,
 		}
 	}
 	if toPatch {
-		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		newCluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, finalizer)
 		})
 		if err != nil {
@@ -186,7 +186,7 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", selfRuleName, err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
@@ -201,7 +201,7 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", icmpRuleName, err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {
@@ -217,7 +217,7 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", nodePortRuleName, err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallNodePortCleanupFinalizer)
 		})
 		if err != nil {
@@ -230,7 +230,7 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 		if err != nil {
 			return nil, err
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, routesCleanupFinalizer)
 		})
 		if err != nil {

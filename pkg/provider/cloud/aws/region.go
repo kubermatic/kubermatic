@@ -17,16 +17,18 @@ limitations under the License.
 package aws
 
 import (
+	"context"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func reconcileRegionAnnotation(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, region string) (*kubermaticv1.Cluster, error) {
+func reconcileRegionAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, region string) (*kubermaticv1.Cluster, error) {
 	if cluster.Annotations[regionAnnotationKey] == region {
 		return cluster, nil
 	}
 
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		if cluster.Annotations == nil {
 			cluster.Annotations = map[string]string{}
 		}

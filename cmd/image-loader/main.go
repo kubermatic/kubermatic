@@ -21,7 +21,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -206,7 +205,7 @@ func main() {
 }
 
 func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, imageName string) (string, error) {
-	tempDir, err := ioutil.TempDir("", "imageloader*")
+	tempDir, err := os.MkdirTemp("", "imageloader*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}

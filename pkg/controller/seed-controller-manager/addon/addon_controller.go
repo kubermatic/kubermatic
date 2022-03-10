@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -29,7 +28,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/ghodss/yaml"
 	"go.uber.org/zap"
 
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
@@ -59,6 +57,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -296,7 +295,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		return nil, err
 	}
 
-	credentials, err := resources.GetCredentials(resources.NewCredentialsData(context.Background(), cluster, r.Client))
+	credentials, err := resources.GetCredentials(resources.NewCredentialsData(ctx, cluster, r.Client))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
@@ -308,7 +307,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		variables = sub.(map[string]interface{})
 	}
 
-	if len(addon.Spec.Variables.Raw) > 0 {
+	if addon.Spec.Variables != nil && len(addon.Spec.Variables.Raw) > 0 {
 		if err = json.Unmarshal(addon.Spec.Variables.Raw, &variables); err != nil {
 			return nil, err
 		}
@@ -408,7 +407,7 @@ func getFileDeleteFinalizer(log *zap.SugaredLogger, filename string) fileHandlin
 func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *bytes.Buffer, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write combined Manifest to disk
 	manifestFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-%s.yaml", cluster.Name, addon.Name))
-	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %w", manifestFilename, err)
 	}
 	log.Debugw("Wrote combined manifest", "file", manifestFilename)
@@ -423,7 +422,7 @@ func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredL
 		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %w", cluster.Name, err)
 	}
 	kubeconfigFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-addon-%s-kubeconfig", cluster.Name, addon.Name))
-	if err := ioutil.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
+	if err := os.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write admin kubeconfig for cluster %s: %w", cluster.Name, err)
 	}
 	log.Debugw("Wrote admin kubeconfig", "file", kubeconfigFilename)
@@ -485,7 +484,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	}
 	defer done()
 
-	d, err := ioutil.ReadFile(manifestFilename)
+	d, err := os.ReadFile(manifestFilename)
 	if err != nil {
 		return err
 	}

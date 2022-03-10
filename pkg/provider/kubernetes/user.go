@@ -58,19 +58,21 @@ type UserProvider struct {
 	isServiceAccountFunc func(email string) bool
 }
 
+var _ provider.UserProvider = &UserProvider{}
+
 // UserByID returns a user by the given ID.
-func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
+func (p *UserProvider) UserByID(ctx context.Context, id string) (*kubermaticv1.User, error) {
 	user := &kubermaticv1.User{}
-	if err := p.runtimeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
+	if err := p.runtimeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 // UserByEmail returns a user by the given email.
-func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
+func (p *UserProvider) UserByEmail(ctx context.Context, email string) (*kubermaticv1.User, error) {
 	users := &kubermaticv1.UserList{}
-	if err := p.runtimeClient.List(context.Background(), users); err != nil {
+	if err := p.runtimeClient.List(ctx, users); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +94,7 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 // In the beginning I was considering to hex-encode the email address as it will produce a unique output because the email address in unique.
 // The only issue I have found with this approach is that the length can get quite long quite fast.
 // Thus decided to use sha256 as it produces fixed output and the hash collisions are very, very, very, very rare.
-func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, error) {
+func (p *UserProvider) CreateUser(ctx context.Context, id, name, email string) (*kubermaticv1.User, error) {
 	if len(id) == 0 || len(name) == 0 || len(email) == 0 {
 		return nil, kerrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
 	}
@@ -113,7 +115,7 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 	}
 
 	var userList kubermaticv1.UserList
-	if err := p.runtimeClient.List(context.Background(), &userList); err != nil {
+	if err := p.runtimeClient.List(ctx, &userList); err != nil {
 		return nil, err
 	}
 
@@ -122,31 +124,31 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 		user.Spec.IsAdmin = true
 	}
 
-	if err := p.runtimeClient.Create(context.Background(), user); err != nil {
+	if err := p.runtimeClient.Create(ctx, user); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 // UpdateUser updates user.
-func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error) {
+func (p *UserProvider) UpdateUser(ctx context.Context, user *kubermaticv1.User) (*kubermaticv1.User, error) {
 	// make sure the first patch doesn't override the status
 	status := user.Status.DeepCopy()
 
-	if err := p.runtimeClient.Update(context.Background(), user); err != nil {
+	if err := p.runtimeClient.Update(ctx, user); err != nil {
 		return nil, err
 	}
 
 	oldUser := user.DeepCopy()
 	user.Status = *status
-	if err := p.runtimeClient.Status().Patch(context.Background(), user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+	if err := p.runtimeClient.Status().Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
 		return nil, err
 	}
 
 	return user, nil
 }
 
-func (p *UserProvider) InvalidateToken(user *kubermaticv1.User, token string, expiry apiv1.Time) error {
+func (p *UserProvider) InvalidateToken(ctx context.Context, user *kubermaticv1.User, token string, expiry apiv1.Time) error {
 	if user == nil {
 		return kerrors.NewBadRequest("user cannot be nil")
 	}
@@ -154,7 +156,6 @@ func (p *UserProvider) InvalidateToken(user *kubermaticv1.User, token string, ex
 		return kerrors.NewBadRequest("token cannot be empty")
 	}
 
-	ctx := context.Background()
 	secret, err := ensureTokenBlacklistSecret(ctx, p.runtimeClient, user)
 	if err != nil {
 		return err
@@ -194,7 +195,7 @@ func (p *UserProvider) InvalidateToken(user *kubermaticv1.User, token string, ex
 	return nil
 }
 
-func (p *UserProvider) GetInvalidatedTokens(user *kubermaticv1.User) ([]string, error) {
+func (p *UserProvider) GetInvalidatedTokens(ctx context.Context, user *kubermaticv1.User) ([]string, error) {
 	result := make([]string, 0)
 	if user == nil {
 		return nil, kerrors.NewBadRequest("user cannot be nil")
@@ -202,7 +203,7 @@ func (p *UserProvider) GetInvalidatedTokens(user *kubermaticv1.User) ([]string, 
 	if user.Spec.InvalidTokensReference == nil {
 		return result, nil
 	}
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.runtimeClient)
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, p.runtimeClient)
 	tokenList, err := secretKeyGetter(user.Spec.InvalidTokensReference, resources.TokenBlacklist)
 	if err != nil {
 		return nil, err
@@ -221,9 +222,9 @@ func (p *UserProvider) GetInvalidatedTokens(user *kubermaticv1.User) ([]string, 
 	return result, nil
 }
 
-func (p *UserProvider) List() ([]kubermaticv1.User, error) {
+func (p *UserProvider) List(ctx context.Context) ([]kubermaticv1.User, error) {
 	ul := kubermaticv1.UserList{}
-	if err := p.runtimeClient.List(context.Background(), &ul); err != nil {
+	if err := p.runtimeClient.List(ctx, &ul); err != nil {
 		return nil, err
 	}
 

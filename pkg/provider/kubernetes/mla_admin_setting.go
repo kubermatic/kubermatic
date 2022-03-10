@@ -35,9 +35,18 @@ type PrivilegedMLAAdminSettingProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-func (p *PrivilegedMLAAdminSettingProvider) GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error) {
+var _ provider.PrivilegedMLAAdminSettingProvider = &PrivilegedMLAAdminSettingProvider{}
+
+// NewPrivilegedMLAAdminSettingProvider returns a MLAAdminSetting provider.
+func NewPrivilegedMLAAdminSettingProvider(privilegedClient ctrlruntimeclient.Client) *PrivilegedMLAAdminSettingProvider {
+	return &PrivilegedMLAAdminSettingProvider{
+		privilegedClient: privilegedClient,
+	}
+}
+
+func (p *PrivilegedMLAAdminSettingProvider) GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.MLAAdminSetting, error) {
 	mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
-	if err := p.privilegedClient.Get(context.Background(), types.NamespacedName{
+	if err := p.privilegedClient.Get(ctx, types.NamespacedName{
 		Name:      resources.MLAAdminSettingsName,
 		Namespace: cluster.Status.NamespaceName,
 	}, mlaAdminSetting); err != nil {
@@ -46,30 +55,23 @@ func (p *PrivilegedMLAAdminSettingProvider) GetUnsecured(cluster *kubermaticv1.C
 	return mlaAdminSetting, nil
 }
 
-func (p *PrivilegedMLAAdminSettingProvider) CreateUnsecured(mlaAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error) {
-	err := p.privilegedClient.Create(context.Background(), mlaAdminSetting)
+func (p *PrivilegedMLAAdminSettingProvider) CreateUnsecured(ctx context.Context, mlaAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error) {
+	err := p.privilegedClient.Create(ctx, mlaAdminSetting)
 	return mlaAdminSetting, err
 }
 
-func (p *PrivilegedMLAAdminSettingProvider) UpdateUnsecured(newMLAAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error) {
-	err := p.privilegedClient.Update(context.Background(), newMLAAdminSetting)
+func (p *PrivilegedMLAAdminSettingProvider) UpdateUnsecured(ctx context.Context, newMLAAdminSetting *kubermaticv1.MLAAdminSetting) (*kubermaticv1.MLAAdminSetting, error) {
+	err := p.privilegedClient.Update(ctx, newMLAAdminSetting)
 	return newMLAAdminSetting, err
 }
 
-func (p *PrivilegedMLAAdminSettingProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster) error {
-	return p.privilegedClient.Delete(context.Background(), &kubermaticv1.MLAAdminSetting{
+func (p *PrivilegedMLAAdminSettingProvider) DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	return p.privilegedClient.Delete(ctx, &kubermaticv1.MLAAdminSetting{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.MLAAdminSettingsName,
 			Namespace: cluster.Status.NamespaceName,
 		},
 	})
-}
-
-// NewPrivilegedMLAAdminSettingProvider returns a MLAAdminSetting provider.
-func NewPrivilegedMLAAdminSettingProvider(privilegedClient ctrlruntimeclient.Client) *PrivilegedMLAAdminSettingProvider {
-	return &PrivilegedMLAAdminSettingProvider{
-		privilegedClient: privilegedClient,
-	}
 }
 
 func PrivilegedMLAAdminSettingProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.PrivilegedMLAAdminSettingProviderGetter {

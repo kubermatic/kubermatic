@@ -225,9 +225,9 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 				WithObjects(tc.plugins...).
 				Build()
 
-			provider := kubernetes.NewAdmissionPluginsProvider(context.Background(), fakeClient)
+			provider := kubernetes.NewAdmissionPluginsProvider(fakeClient)
 
-			result, err := provider.ListPluginNamesFromVersion(tc.fromVersion)
+			result, err := provider.ListPluginNamesFromVersion(context.Background(), tc.fromVersion)
 			resultSet := sets.NewString(result...)
 
 			if len(tc.expectedError) > 0 {

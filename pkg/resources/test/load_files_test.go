@@ -21,14 +21,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -58,6 +57,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/yaml"
 )
 
 var update = flag.Bool("update", false, "Update test fixtures")
@@ -76,12 +76,12 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	res = append([]byte("# This file has been generated, DO NOT EDIT.\n\n"), res...)
 
 	if *update {
-		if err := ioutil.WriteFile(path, res, 0644); err != nil {
+		if err := os.WriteFile(path, res, 0644); err != nil {
 			t.Fatalf("failed to update fixtures: %v", err)
 		}
 	}
 
-	exp, err := ioutil.ReadFile(path)
+	exp, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}

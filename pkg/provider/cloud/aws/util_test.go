@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -60,12 +61,17 @@ func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {
 			Cloud: kubermaticv1.CloudSpec{
 				AWS: cloudSpec,
 			},
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				Pods: kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{"172.25.0.0/16"},
+				},
+			},
 		},
 	}
 }
 
 func testClusterUpdater(cluster *kubermaticv1.Cluster) provider.ClusterUpdater {
-	return func(clusterName string, patcher func(*kubermaticv1.Cluster), opts ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+	return func(_ context.Context, clusterName string, patcher func(*kubermaticv1.Cluster), opts ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
 		patcher(cluster)
 		return cluster, nil
 	}

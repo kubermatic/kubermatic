@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/kubeletdnat"
+	kubeletdnatcontroller "k8c.io/kubermatic/v2/pkg/controller/kubeletdnat-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
@@ -90,15 +90,15 @@ func main() {
 	// 8080 is already in use by the insecure port of the apiserver
 	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: ":8090"})
 	if err != nil {
-		log.Fatalw("failed to create mgr", zap.Error(err))
+		log.Fatalw("Failed to create manager", zap.Error(err))
 	}
 
-	if err := kubeletdnat.Add(mgr, *chainNameFlag, nodeAccessNetwork, log, *vpnInterfaceFlag); err != nil {
-		log.Fatalw("failed to add the kubelet dnat controller", zap.Error(err))
+	if err := kubeletdnatcontroller.Add(mgr, *chainNameFlag, nodeAccessNetwork, log, *vpnInterfaceFlag); err != nil {
+		log.Fatalw("Failed to add the kubelet dnat controller", zap.Error(err))
 	}
 
 	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("failed to add pprof endpoint", zap.Error(err))
+		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
 	}
 
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {

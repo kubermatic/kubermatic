@@ -335,13 +335,13 @@ func createEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.CreateUnsecured(etcdRestore)
+		return privilegedEtcdRestoreProvider.CreateUnsecured(ctx, etcdRestore)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdRestoreProvider.Create(userInfo, etcdRestore)
+	return etcdRestoreProvider.Create(ctx, userInfo, etcdRestore)
 }
 
 func getEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdRestoreName string) (*kubermaticv1.EtcdRestore, error) {
@@ -350,13 +350,13 @@ func getEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.GetUnsecured(cluster, etcdRestoreName)
+		return privilegedEtcdRestoreProvider.GetUnsecured(ctx, cluster, etcdRestoreName)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdRestoreProvider.Get(userInfo, cluster, etcdRestoreName)
+	return etcdRestoreProvider.Get(ctx, userInfo, cluster, etcdRestoreName)
 }
 
 func listEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) (*kubermaticv1.EtcdRestoreList, error) {
@@ -365,13 +365,13 @@ func listEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.ListUnsecured(cluster)
+		return privilegedEtcdRestoreProvider.ListUnsecured(ctx, cluster)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdRestoreProvider.List(userInfo, cluster)
+	return etcdRestoreProvider.List(ctx, userInfo, cluster)
 }
 
 func listProjectEtcdRestore(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
@@ -379,7 +379,7 @@ func listProjectEtcdRestore(ctx context.Context, projectID string) ([]*kubermati
 	if privilegedEtcdRestoreProjectProvider == nil {
 		return nil, errors.New(http.StatusInternalServerError, "error getting privileged provider")
 	}
-	return privilegedEtcdRestoreProjectProvider.ListUnsecured(projectID)
+	return privilegedEtcdRestoreProjectProvider.ListUnsecured(ctx, projectID)
 }
 
 func deleteEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdRestoreName string) error {
@@ -388,13 +388,13 @@ func deleteEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.DeleteUnsecured(cluster, etcdRestoreName)
+		return privilegedEtcdRestoreProvider.DeleteUnsecured(ctx, cluster, etcdRestoreName)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return err
 	}
-	return etcdRestoreProvider.Delete(userInfo, cluster, etcdRestoreName)
+	return etcdRestoreProvider.Delete(ctx, userInfo, cluster, etcdRestoreName)
 }
 
 func getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdRestoreProvider, error) {

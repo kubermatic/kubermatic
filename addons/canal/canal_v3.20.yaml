@@ -22,7 +22,7 @@
 #   - added envoyagent interface to the exclusion list for Calico IP autodetection
 #   - added seccomp profile to calico-controllers
 #   - Add custom network policy
-#   - Canal image bumped to v0.15.1
+#   - Flannel image bumped to v0.15.1
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.20" }}

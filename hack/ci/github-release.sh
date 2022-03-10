@@ -177,7 +177,8 @@ if [[ "$RELEASE_NAME" =~ "-" ]]; then
 fi
 
 # create a nice-sounding release name
-name=$(echo "$RELEASE_NAME" | sed --regexp-extended 's/-beta\.([0-9]+)/ (Beta \1)/')
+name=$(echo "$RELEASE_NAME" | sed --regexp-extended 's/-alpha\.([0-9]+)/ (Alpha \1)/')
+name=$(echo "$name" | sed --regexp-extended 's/-beta\.([0-9]+)/ (Beta \1)/')
 name=$(echo "$name" | sed --regexp-extended 's/-rc\.([0-9]+)/ (Release Candidate \1)/')
 
 echodate "Release name : $name"

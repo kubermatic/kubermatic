@@ -20,7 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"text/template"
@@ -237,7 +237,7 @@ type CSIOptions struct {
 func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {
 	var allManifests []runtime.RawExtension
 
-	infos, err := ioutil.ReadDir(manifestPath)
+	infos, err := os.ReadDir(manifestPath)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 
 		infoLog.Debug("Processing file")
 
-		fbytes, err := ioutil.ReadFile(filename)
+		fbytes, err := os.ReadFile(filename)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 		}

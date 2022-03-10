@@ -117,8 +117,8 @@ func (d CredentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconf
 
 // GetReadyPod returns a pod matching provided label selector if it is posting ready status, error otherwise.
 // Namespace can be ensured by creating proper PodInterface client.
-func GetReadyPod(client corev1interface.PodInterface, labelSelector string) (*corev1.Pod, error) {
-	pods, err := client.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
+func GetReadyPod(ctx context.Context, client corev1interface.PodInterface, labelSelector string) (*corev1.Pod, error) {
+	pods, err := client.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pod: %w", err)
 	}
@@ -141,13 +141,14 @@ func GetReadyPod(client corev1interface.PodInterface, labelSelector string) (*co
 //   to be more expensive than doing the extra round via the TCP socket:
 //   https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transport.go#L454
 func GetPortForwarder(
+	ctx context.Context,
 	coreClient corev1interface.CoreV1Interface,
 	cfg *rest.Config,
 	namespace string,
 	labelSelector string,
 	containerPort int,
 ) (*portforward.PortForwarder, chan struct{}, error) {
-	pod, err := GetReadyPod(coreClient.Pods(namespace), labelSelector)
+	pod, err := GetReadyPod(ctx, coreClient.Pods(namespace), labelSelector)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -250,15 +251,15 @@ func ForwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) e
 	return nil
 }
 
-func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
-	allProjectMembers, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
+func GetOwnersForProject(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
+	allProjectMembers, err := memberProvider.List(ctx, userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
 	if err != nil {
 		return nil, err
 	}
 	projectOwners := []apiv1.User{}
 	for _, projectMember := range allProjectMembers {
 		if rbac.ExtractGroupPrefix(projectMember.Spec.Group) == rbac.OwnerGroupNamePrefix {
-			user, err := userProvider.UserByEmail(projectMember.Spec.UserEmail)
+			user, err := userProvider.UserByEmail(ctx, projectMember.Spec.UserEmail)
 			if err != nil {
 				continue
 			}
@@ -280,7 +281,7 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 	}
 
 	// check first if project exist
-	adminProject, err := privilegedProjectProvider.GetUnsecured(projectID, options)
+	adminProject, err := privilegedProjectProvider.GetUnsecured(ctx, projectID, options)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +295,7 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 	if err != nil {
 		return nil, err
 	}
-	return projectProvider.Get(userInfo, projectID, options)
+	return projectProvider.Get(ctx, userInfo, projectID, options)
 }
 
 func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticv1.Cluster, projectID string) (ctrlruntimeclient.Client, error) {

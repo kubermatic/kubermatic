@@ -188,11 +188,11 @@ func TestGetPreset(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetProvider(context.Background(), fakeClient)
+			provider, err := kubernetes.NewPresetProvider(fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
-			preset, err := provider.GetPreset(&tc.userInfo, tc.presetName)
+			preset, err := provider.GetPreset(context.Background(), &tc.userInfo, tc.presetName)
 			if len(tc.expectedError) > 0 {
 				if err == nil {
 					t.Fatalf("expected error")
@@ -523,11 +523,11 @@ func TestGetPresets(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetProvider(context.Background(), fakeClient)
+			provider, err := kubernetes.NewPresetProvider(fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
-			presets, err := provider.GetPresets(&tc.userInfo)
+			presets, err := provider.GetPresets(context.Background(), &tc.userInfo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -871,11 +871,11 @@ func TestCredentialEndpoint(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetProvider(context.Background(), fakeClient)
+			provider, err := kubernetes.NewPresetProvider(fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
-			cloudResult, err := provider.SetCloudCredentials(&tc.userInfo, tc.presetName, tc.cloudSpec, tc.dc)
+			cloudResult, err := provider.SetCloudCredentials(context.Background(), &tc.userInfo, tc.presetName, tc.cloudSpec, tc.dc)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {

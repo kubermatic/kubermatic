@@ -72,7 +72,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	}
 
 	if adminUserInfo.IsAdmin {
-		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -85,9 +85,9 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	}
 	if strings.HasPrefix(userInfo.Group, "viewers") {
 		filePrefix = "viewer"
-		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(ctx, cluster)
 	} else {
-		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 	}
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -95,7 +95,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: filePrefix}, nil
 }
 
-func GetKubeconfigEndpoint(cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
+func GetKubeconfigEndpoint(ctx context.Context, cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
 	filePrefix := "external-cluster"
 
 	kubeconfigReference := cluster.Spec.KubeconfigReference
@@ -103,7 +103,7 @@ func GetKubeconfigEndpoint(cluster *kubermaticv1.ExternalCluster, privilegedClus
 		return nil, fmt.Errorf("kubeconfig not available for the Cluster")
 	}
 
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), privilegedClusterProvider.GetMasterClient())
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
 
 	rawKubeconfig, err := secretKeyGetter(kubeconfigReference, resources.KubeconfigSecretKey)
 	if err != nil {
@@ -130,7 +130,7 @@ func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.User
 	if err != nil {
 		return nil, err
 	}
-	adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+	adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -204,7 +204,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 			return nil, kcerrors.NewBadRequest("the token doesn't contain the mandatory \"email\" claim")
 		}
 
-		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -466,25 +466,25 @@ func getClusterForOIDCEndpoint(ctx context.Context, projectProvider provider.Pro
 	}
 	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-	project, err := getProjectForOIDCEndpoint(userInfo, projectProvider, privilegedProjectProvider, projectID)
+	project, err := getProjectForOIDCEndpoint(ctx, userInfo, projectProvider, privilegedProjectProvider, projectID)
 	if err != nil {
 		return nil, err
 	}
 
 	if userInfo.IsAdmin {
-		return privilegedClusterProvider.GetUnsecured(project, clusterID, nil)
+		return privilegedClusterProvider.GetUnsecured(ctx, project, clusterID, nil)
 	}
 
-	return clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
+	return clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
 }
 
-func getProjectForOIDCEndpoint(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
+func getProjectForOIDCEndpoint(ctx context.Context, userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
 	if userInfo.IsAdmin {
 		// get any project for admin
-		return privilegedProjectProvider.GetUnsecured(projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+		return privilegedProjectProvider.GetUnsecured(ctx, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 	}
 
-	return projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+	return projectProvider.Get(ctx, userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 }
 
 type encodeKubeConifgResponse struct {

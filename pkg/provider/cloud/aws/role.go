@@ -73,7 +73,7 @@ func reconcileControlPlaneRole(ctx context.Context, client iamiface.IAMAPI, clus
 		return cluster, err
 	}
 
-	return update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = roleName
 	})
 }

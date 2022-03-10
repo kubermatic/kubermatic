@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -263,7 +263,7 @@ func DecodePatchNodeDeployment(c context.Context, r *http.Request) (interface{},
 	req.NodeDeploymentID = nodeDeploymentID
 	req.DCReq = dcr.(common.DCReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

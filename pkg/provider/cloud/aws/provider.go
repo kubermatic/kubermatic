@@ -142,7 +142,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		return nil, fmt.Errorf("failed to get API client: %w", err)
 	}
 
-	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
 	})
 	if err != nil {
@@ -191,7 +191,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 
 	// We put this as an annotation on the cluster to allow addons to read this
 	// information.
-	cluster, err = reconcileRegionAnnotation(cluster, update, a.dc.Region)
+	cluster, err = reconcileRegionAnnotation(ctx, cluster, update, a.dc.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 		return nil, fmt.Errorf("failed to clean up tags: %w", err)
 	}
 
-	return updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	return updater(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(cluster, securityGroupCleanupFinalizer, controlPlaneRoleCleanupFinalizer, instanceProfileCleanupFinalizer, tagCleanupFinalizer, cleanupFinalizer)
 	})
 }

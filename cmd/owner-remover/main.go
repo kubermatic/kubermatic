@@ -20,7 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -165,7 +165,7 @@ func main() {
 		if err != nil {
 			klog.Fatal(err, string(out))
 		}
-		if err := ioutil.WriteFile(fmt.Sprintf("cluster-%s.yaml", cluster.Name), out, 0644); err != nil {
+		if err := os.WriteFile(fmt.Sprintf("cluster-%s.yaml", cluster.Name), out, 0644); err != nil {
 			klog.Fatal(err)
 		}
 	}

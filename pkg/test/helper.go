@@ -19,7 +19,7 @@ package test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -41,11 +41,11 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 		t.Fatalf("failed to get absolute path to goldan file: %v", err)
 	}
 	if update {
-		if err := ioutil.WriteFile(golden, []byte(output), 0644); err != nil {
+		if err := os.WriteFile(golden, []byte(output), 0644); err != nil {
 			t.Fatalf("failed to write updated fixture: %v", err)
 		}
 	}
-	expected, err := ioutil.ReadFile(golden)
+	expected, err := os.ReadFile(golden)
 	if err != nil {
 		t.Fatalf("failed to read .golden file: %v", err)
 	}

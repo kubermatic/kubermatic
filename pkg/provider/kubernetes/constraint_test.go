@@ -79,7 +79,7 @@ func TestListConstraints(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			constraintList, err := constraintProvider.List(tc.cluster)
+			constraintList, err := constraintProvider.List(context.Background(), tc.cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -142,7 +142,7 @@ func TestGetConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			constraint, err := constraintProvider.Get(tc.cluster, tc.expectedConstraint.Name)
+			constraint, err := constraintProvider.Get(context.Background(), tc.cluster, tc.expectedConstraint.Name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -193,7 +193,7 @@ func TestDeleteConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = constraintProvider.Delete(tc.cluster, tc.userInfo, tc.constraintName)
+			err = constraintProvider.Delete(context.Background(), tc.cluster, tc.userInfo, tc.constraintName)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -229,12 +229,12 @@ func TestCreateConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = constraintProvider.Create(tc.userInfo, tc.constraint)
+			_, err = constraintProvider.Create(context.Background(), tc.userInfo, tc.constraint)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			constraint, err := constraintProvider.Get(tc.cluster, tc.constraint.Name)
+			constraint, err := constraintProvider.Get(context.Background(), tc.cluster, tc.constraint.Name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -296,7 +296,7 @@ func TestUpdateConstraint(t *testing.T) {
 			updatedConstraint := constraint.DeepCopy()
 			tc.updateConstraint(updatedConstraint)
 
-			constraint, err = constraintProvider.Update(tc.userInfo, updatedConstraint)
+			constraint, err = constraintProvider.Update(context.Background(), tc.userInfo, updatedConstraint)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -333,7 +333,7 @@ func TestCreateDefaultConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			constraint, err := defaultConstraintProvider.Create(tc.ctToCreate)
+			constraint, err := defaultConstraintProvider.Create(context.Background(), tc.ctToCreate)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -382,7 +382,7 @@ func TestListDefaultConstraints(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			constraintList, err := defaultConstraintProvider.List()
+			constraintList, err := defaultConstraintProvider.List(context.Background())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -443,7 +443,7 @@ func TestGetDefaultConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			constraint, err := defaultConstraintProvider.Get(tc.expectedConstraint.Name)
+			constraint, err := defaultConstraintProvider.Get(context.Background(), tc.expectedConstraint.Name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -489,7 +489,7 @@ func TestDeleteDefaultConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = provider.Delete(tc.CTtoDelete.Name)
+			err = provider.Delete(context.Background(), tc.CTtoDelete.Name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -545,7 +545,7 @@ func TestUpdateDefaultConstraint(t *testing.T) {
 			updatedCT := constraint.DeepCopy()
 			tc.updateConstraint(updatedCT)
 
-			constraint, err = provider.Update(updatedCT)
+			constraint, err = provider.Update(context.Background(), updatedCT)
 			if err != nil {
 				t.Fatal(err)
 			}

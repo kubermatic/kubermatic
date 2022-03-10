@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -74,7 +74,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 
 		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
 
-		constraintList, err := constraintProvider.List(clus)
+		constraintList, err := constraintProvider.List(ctx, clus)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -203,7 +203,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		}
 
 		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
-		constraint, err := constraintProvider.Get(clus, req.Name)
+		constraint, err := constraintProvider.Get(ctx, clus, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -258,7 +258,7 @@ func deleteConstraint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedConstraintProvider.DeleteUnsecured(cluster, constraintName)
+		return privilegedConstraintProvider.DeleteUnsecured(ctx, cluster, constraintName)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
@@ -266,7 +266,7 @@ func deleteConstraint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return err
 	}
 
-	return constraintProvider.Delete(cluster, userInfo, constraintName)
+	return constraintProvider.Delete(ctx, cluster, userInfo, constraintName)
 }
 
 // constraintReq defines HTTP request for a constraint endpoint
@@ -308,7 +308,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 
 		constraint := convertAPIToInternalConstraint(req.Body.Name, clus.Status.NamespaceName, req.Body.Spec)
-		err = validateConstraint(constraintTemplateProvider, constraint)
+		err = validateConstraint(ctx, constraintTemplateProvider, constraint)
 		if err != nil {
 			return nil, err
 		}
@@ -331,7 +331,7 @@ func createConstraint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedConstraintProvider.CreateUnsecured(constraint)
+		return privilegedConstraintProvider.CreateUnsecured(ctx, constraint)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
@@ -339,7 +339,7 @@ func createConstraint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, err
 	}
 
-	return constraintProvider.Create(userInfo, constraint)
+	return constraintProvider.Create(ctx, userInfo, constraint)
 }
 
 // swagger:parameters createConstraint
@@ -373,8 +373,8 @@ func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func validateConstraint(constraintTemplateProvider provider.ConstraintTemplateProvider, constraint *kubermaticv1.Constraint) error {
-	ct, err := constraintTemplateProvider.Get(strings.ToLower(constraint.Spec.ConstraintType))
+func validateConstraint(ctx context.Context, constraintTemplateProvider provider.ConstraintTemplateProvider, constraint *kubermaticv1.Constraint) error {
+	ct, err := constraintTemplateProvider.Get(ctx, strings.ToLower(constraint.Spec.ConstraintType))
 	if err != nil {
 		return utilerrors.NewBadRequest("Validation failed, constraint needs to have an existing constraint template: %v", err)
 	}
@@ -450,7 +450,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		privilegedConstraintProvider := ctx.Value(middleware.PrivilegedConstraintProviderContextKey).(provider.PrivilegedConstraintProvider)
 
 		// get Constraint
-		originalConstraint, err := constraintProvider.Get(clus, req.Name)
+		originalConstraint, err := constraintProvider.Get(ctx, clus, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -489,7 +489,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		// restore ResourceVersion to make patching safer and tests work more easily
 		patchedConstraint.ResourceVersion = originalConstraint.ResourceVersion
 
-		err = validateConstraint(constraintTemplateProvider, patchedConstraint)
+		err = validateConstraint(ctx, constraintTemplateProvider, patchedConstraint)
 		if err != nil {
 			return nil, err
 		}
@@ -510,7 +510,7 @@ func updateConstraint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedConstraintProvider.UpdateUnsecured(constraint)
+		return privilegedConstraintProvider.UpdateUnsecured(ctx, constraint)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
@@ -518,7 +518,7 @@ func updateConstraint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, err
 	}
 
-	return constraintProvider.Update(userInfo, constraint)
+	return constraintProvider.Update(ctx, userInfo, constraint)
 }
 
 // patchConstraintReq defines HTTP request for patching constraints
@@ -539,7 +539,7 @@ func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, 
 	}
 	req.constraintReq = ctReq.(constraintReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
@@ -574,12 +574,12 @@ func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 			},
 			Spec: req.Body.Spec,
 		}
-		err = validateConstraint(constraintTemplateProvider, constraint)
+		err = validateConstraint(ctx, constraintTemplateProvider, constraint)
 		if err != nil {
 			return nil, err
 		}
 
-		ct, err := defaultConstraintProvider.Create(constraint)
+		ct, err := defaultConstraintProvider.Create(ctx, constraint)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -605,7 +605,7 @@ func (req defaultConstraintReq) Validate() error {
 
 func ListDefaultEndpoint(defaultConstraintProvider provider.DefaultConstraintProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		defaultConstraintList, err := defaultConstraintProvider.List()
+		defaultConstraintList, err := defaultConstraintProvider.List(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -626,7 +626,7 @@ func GetDefaultEndpoint(defaultConstraintProvider provider.DefaultConstraintProv
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		constraint, err := defaultConstraintProvider.Get(req.Name)
+		constraint, err := defaultConstraintProvider.Get(ctx, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -666,7 +666,7 @@ func DeleteDefaultEndpoint(userInfoGetter provider.UserInfoGetter, defaultConstr
 			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
-		err = defaultConstraintProvider.Delete(req.Name)
+		err = defaultConstraintProvider.Delete(ctx, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -702,7 +702,7 @@ func PatchDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 		}
 
 		// get default Constraint
-		originalDC, err := defaultConstraintProvider.Get(req.Name)
+		originalDC, err := defaultConstraintProvider.Get(ctx, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -746,12 +746,12 @@ func PatchDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 		}
 
 		// validate
-		if err := validateConstraint(constraintTemplateProvider, patchedDC); err != nil {
+		if err := validateConstraint(ctx, constraintTemplateProvider, patchedDC); err != nil {
 			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("patched default constraint validation failed: %v", err))
 		}
 
 		// apply patch
-		patchedDC, err = defaultConstraintProvider.Update(patchedDC)
+		patchedDC, err = defaultConstraintProvider.Update(ctx, patchedDC)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -769,7 +769,7 @@ func DecodePatchDefaultConstraintReq(c context.Context, r *http.Request) (interf
 	}
 	req.defaultConstraintReq = ctReq.(defaultConstraintReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

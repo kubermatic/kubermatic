@@ -53,6 +53,9 @@ type ExternalClusterProvider struct {
 	restMapperCache                *restmapper.Cache
 }
 
+var _ provider.ExternalClusterProvider = &ExternalClusterProvider{}
+var _ provider.PrivilegedExternalClusterProvider = &ExternalClusterProvider{}
+
 // NewExternalClusterProvider returns an external cluster provider.
 func NewExternalClusterProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ExternalClusterProvider, error) {
 	return &ExternalClusterProvider{
@@ -63,13 +66,13 @@ func NewExternalClusterProvider(createMasterImpersonatedClient ImpersonationClie
 }
 
 // New creates a brand new external cluster in the system with the given name.
-func (p *ExternalClusterProvider) New(userInfo *provider.UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
+func (p *ExternalClusterProvider) New(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 	addProjectReference(project, cluster)
-	if err := masterImpersonatedClient.Create(context.Background(), cluster); err != nil {
+	if err := masterImpersonatedClient.Create(ctx, cluster); err != nil {
 		return nil, err
 	}
 	return cluster, nil
@@ -79,23 +82,23 @@ func (p *ExternalClusterProvider) New(userInfo *provider.UserInfo, project *kube
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to create the resource.
-func (p *ExternalClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
+func (p *ExternalClusterProvider) NewUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
 	addProjectReference(project, cluster)
-	if err := p.clientPrivileged.Create(context.Background(), cluster); err != nil {
+	if err := p.clientPrivileged.Create(ctx, cluster); err != nil {
 		return nil, err
 	}
 	return cluster, nil
 }
 
 // Get returns the given cluster.
-func (p *ExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error) {
+func (p *ExternalClusterProvider) Get(ctx context.Context, userInfo *provider.UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	cluster := &kubermaticv1.ExternalCluster{}
-	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
+	if err := masterImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +106,7 @@ func (p *ExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName s
 }
 
 // Delete deletes the given cluster.
-func (p *ExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) error {
+func (p *ExternalClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) error {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
@@ -115,28 +118,28 @@ func (p *ExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluster *k
 	delOpts := &ctrlruntimeclient.DeleteOptions{
 		PropagationPolicy: &policy,
 	}
-	return masterImpersonatedClient.Delete(context.Background(), cluster, delOpts)
+	return masterImpersonatedClient.Delete(ctx, cluster, delOpts)
 }
 
 // DeleteUnsecured deletes an external cluster.
 //
 // Note that the admin privileges are used to delete cluster.
-func (p *ExternalClusterProvider) DeleteUnsecured(cluster *kubermaticv1.ExternalCluster) error {
+func (p *ExternalClusterProvider) DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
 	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
 	policy := metav1.DeletePropagationBackground
 	delOpts := &ctrlruntimeclient.DeleteOptions{
 		PropagationPolicy: &policy,
 	}
-	return p.clientPrivileged.Delete(context.Background(), cluster, delOpts)
+	return p.clientPrivileged.Delete(ctx, cluster, delOpts)
 }
 
 // GetUnsecured returns an external cluster for the project and given name.
 //
 // Note that the admin privileges are used to get cluster.
-func (p *ExternalClusterProvider) GetUnsecured(clusterName string) (*kubermaticv1.ExternalCluster, error) {
+func (p *ExternalClusterProvider) GetUnsecured(ctx context.Context, clusterName string) (*kubermaticv1.ExternalCluster, error) {
 	cluster := &kubermaticv1.ExternalCluster{}
-	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
+	if err := p.clientPrivileged.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		return nil, err
 	}
 
@@ -144,7 +147,7 @@ func (p *ExternalClusterProvider) GetUnsecured(clusterName string) (*kubermaticv
 }
 
 // List gets all external clusters that belong to the given project.
-func (p *ExternalClusterProvider) List(project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error) {
+func (p *ExternalClusterProvider) List(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
@@ -152,7 +155,7 @@ func (p *ExternalClusterProvider) List(project *kubermaticv1.Project) (*kubermat
 	projectClusters := &kubermaticv1.ExternalClusterList{}
 	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-	if err := p.clientPrivileged.List(context.Background(), projectClusters, listOpts); err != nil {
+	if err := p.clientPrivileged.List(ctx, projectClusters, listOpts); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
@@ -160,20 +163,20 @@ func (p *ExternalClusterProvider) List(project *kubermaticv1.Project) (*kubermat
 }
 
 // Update updates the given cluster.
-func (p *ExternalClusterProvider) UpdateUnsecured(cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
-	if err := p.clientPrivileged.Update(context.Background(), cluster); err != nil {
+func (p *ExternalClusterProvider) UpdateUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
+	if err := p.clientPrivileged.Update(ctx, cluster); err != nil {
 		return nil, err
 	}
 	return cluster, nil
 }
 
 // Update updates the given cluster.
-func (p *ExternalClusterProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
+func (p *ExternalClusterProvider) Update(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	if err := masterImpersonatedClient.Update(context.Background(), cluster); err != nil {
+	if err := masterImpersonatedClient.Update(ctx, cluster); err != nil {
 		return nil, err
 	}
 	return cluster, nil
@@ -206,8 +209,8 @@ func (p *ExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (ctrl
 	return client, nil
 }
 
-func (p *ExternalClusterProvider) GetClient(cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.clientPrivileged)
+func (p *ExternalClusterProvider) GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, p.clientPrivileged)
 	rawKubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
 	if err != nil {
 		return nil, err
@@ -223,8 +226,8 @@ func (p *ExternalClusterProvider) GetClient(cluster *kubermaticv1.ExternalCluste
 	return p.GenerateClient(cfg)
 }
 
-func (p *ExternalClusterProvider) GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error) {
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.clientPrivileged)
+func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error) {
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, p.clientPrivileged)
 	rawKubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
 	if err != nil {
 		return nil, err
@@ -268,42 +271,42 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx c
 	return nil
 }
 
-func (p *ExternalClusterProvider) ListNodes(cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error) {
-	client, err := p.GetClient(cluster)
+func (p *ExternalClusterProvider) ListNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error) {
+	client, err := p.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
 
 	nodes := &corev1.NodeList{}
-	if err := client.List(context.Background(), nodes); err != nil {
+	if err := client.List(ctx, nodes); err != nil {
 		return nil, err
 	}
 
 	return nodes, nil
 }
 
-func (p *ExternalClusterProvider) GetNode(cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error) {
-	client, err := p.GetClient(cluster)
+func (p *ExternalClusterProvider) GetNode(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error) {
+	client, err := p.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
 
 	node := &corev1.Node{}
-	if err := client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: nodeName}, node); err != nil {
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: nodeName}, node); err != nil {
 		return nil, err
 	}
 
 	return node, nil
 }
 
-func (p *ExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticv1.ExternalCluster) (bool, error) {
-	client, err := p.GetClient(cluster)
+func (p *ExternalClusterProvider) IsMetricServerAvailable(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (bool, error) {
+	client, err := p.GetClient(ctx, cluster)
 	if err != nil {
 		return false, err
 	}
 
 	allNodeMetricsList := &v1beta1.NodeMetricsList{}
-	if err := client.List(context.Background(), allNodeMetricsList); err != nil {
+	if err := client.List(ctx, allNodeMetricsList); err != nil {
 		if meta.IsNoMatchError(err) {
 			return false, nil
 		}

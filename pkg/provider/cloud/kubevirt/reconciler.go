@@ -51,11 +51,11 @@ func (r *reconciler) ReconcileCSIServiceAccount(ctx context.Context) ([]byte, er
 	saCreators := []reconciling.NamedServiceAccountCreatorGetter{
 		csiServiceAccountCreator(csiResourceName),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, csiResourceNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, csiServiceAccountNamespace, r.Client); err != nil {
 		return nil, err
 	}
 
-	return r.GenerateKubeConfigForSA(ctx, csiResourceName, csiResourceNamespace)
+	return r.GenerateKubeConfigForSA(ctx, csiResourceName, csiServiceAccountNamespace)
 }
 
 func (r *reconciler) GenerateKubeConfigForSA(ctx context.Context, name string, namespace string) ([]byte, error) {

@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -152,7 +152,7 @@ func readKubeconfig(filename string) (*clientcmdapi.Config, error) {
 		defer input.Close()
 	}
 
-	content, err := ioutil.ReadAll(input)
+	content, err := io.ReadAll(input)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read: %w", err)
 	}

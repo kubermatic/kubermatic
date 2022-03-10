@@ -140,8 +140,6 @@ spec:
         - 35.198.93.90
         - --secure-port
         - "30000"
-        - --kubernetes-service-node-port
-        - "30000"
         - --etcd-servers
         - https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379
         - --etcd-cafile

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubeletdnat
+package kubeletdnatcontroller
 
 import (
 	"context"
@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_kubelet_dnat_controller"
+	ControllerName = "kkp-kubeletdnat-controller"
 )
 
 // Reconciler updates iptable rules to match node addresses.

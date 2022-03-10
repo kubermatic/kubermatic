@@ -138,11 +138,11 @@ func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, se
 
 	var reports []apiv1.MeteringReport
 
-	mcCtx, cancel := context.WithCancel(context.Background())
+	mcCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	for report := range mc.ListObjects(mcCtx, s3bucket, options) {
 		if report.Err != nil {
-			cancel()
 			return nil, errors.New(report.Err.Error())
 		}
 
@@ -155,7 +155,6 @@ func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, se
 			break
 		}
 	}
-	cancel()
 
 	return reports, nil
 }
