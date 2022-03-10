@@ -51,6 +51,7 @@ func init() {
 func TestHandle(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{
 		TypeMeta: metav1.TypeMeta{
+			Kind:       "Cluster",
 			APIVersion: "kubermatic.k8c.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -60,6 +61,13 @@ func TestHandle(t *testing.T) {
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-xyz",
 		},
+	}
+
+	clusterRef := &corev1.ObjectReference{
+		APIVersion: cluster.APIVersion,
+		Kind:       cluster.Kind,
+		Name:       cluster.Name,
+		UID:        cluster.UID,
 	}
 
 	tests := []struct {
@@ -84,7 +92,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawAddonGen{
 							Name:      "my-addon",
-							Namespace: "cluster-xyz",
+							Namespace: cluster.Status.NamespaceName,
 						}.Do(),
 					},
 				},
@@ -112,7 +120,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawAddonGen{
 							Name:      "my-addon",
-							Namespace: "cluster-xyz",
+							Namespace: cluster.Status.NamespaceName,
 							Cluster: &corev1.ObjectReference{
 								Kind:       "wrong",
 								Name:       "also wrong",
@@ -147,6 +155,70 @@ func TestHandle(t *testing.T) {
 						Raw: rawAddonGen{
 							Name:      "my-addon",
 							Namespace: "this-does-not-exist",
+						}.Do(),
+					},
+				},
+			},
+			wantError: true,
+		},
+		{
+			name:     "Allow updating addons whenn the Cluster is already gone (to allow cleanups to complete)",
+			clusters: []ctrlruntimeclient.Object{},
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Addon",
+					},
+					Name: "foo",
+					OldObject: runtime.RawExtension{
+						Raw: rawAddonGen{
+							Name:       "my-addon",
+							Namespace:  cluster.Status.NamespaceName,
+							Finalizers: []string{"a", "b"},
+						}.Do(),
+					},
+					Object: runtime.RawExtension{
+						Raw: rawAddonGen{
+							Name:       "my-addon",
+							Namespace:  cluster.Status.NamespaceName,
+							Finalizers: []string{"a"},
+						}.Do(),
+					},
+				},
+			},
+			wantError: false,
+		},
+		{
+			name:     "Forbid changing the Cluster reference",
+			clusters: []ctrlruntimeclient.Object{cluster},
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Addon",
+					},
+					Name: "foo",
+					OldObject: runtime.RawExtension{
+						Raw: rawAddonGen{
+							Name:      "my-addon",
+							Namespace: cluster.Status.NamespaceName,
+							Cluster:   clusterRef,
+						}.Do(),
+					},
+					Object: runtime.RawExtension{
+						Raw: rawAddonGen{
+							Name:      "my-addon",
+							Namespace: cluster.Status.NamespaceName,
+							Cluster: func() *corev1.ObjectReference {
+								newRef := clusterRef.DeepCopy()
+								newRef.Name = "wrong"
+								return newRef
+							}(),
 						}.Do(),
 					},
 				},
@@ -198,9 +270,10 @@ func TestHandle(t *testing.T) {
 }
 
 type rawAddonGen struct {
-	Name      string
-	Namespace string
-	Cluster   *corev1.ObjectReference
+	Name       string
+	Namespace  string
+	Finalizers []string
+	Cluster    *corev1.ObjectReference
 }
 
 func (r rawAddonGen) Do() []byte {
@@ -210,8 +283,9 @@ func (r rawAddonGen) Do() []byte {
 			Kind:       "Addon",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.Name,
-			Namespace: r.Namespace,
+			Name:       r.Name,
+			Namespace:  r.Namespace,
+			Finalizers: r.Finalizers,
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name: r.Name,
