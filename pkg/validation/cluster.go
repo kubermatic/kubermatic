@@ -30,6 +30,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -272,6 +273,22 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 		if i == 1 && addr.To4() != nil {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(i), servicesCIDR,
 				fmt.Sprintf("invalid address family for secondary service CIDR %q: has to be IPv6", servicesCIDR)))
+		}
+	}
+	if v4PodCIDR := network.GetIPv4CIDR(n.Pods); v4PodCIDR != "" && n.NodeCIDRMaskSizeIPv4 != nil {
+		_, podCIDR, _ := net.ParseCIDR(v4PodCIDR)
+		podCIDRMaskSize, _ := podCIDR.Mask.Size()
+		if int32(podCIDRMaskSize) >= *n.NodeCIDRMaskSizeIPv4 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("nodeCIDRMaskSizeIPv4"), n.NodeCIDRMaskSizeIPv4,
+				fmt.Sprintf("IPv4 node CIDR mask size (%d) must be longer than the mask size of the pod CIDR (%q)", *n.NodeCIDRMaskSizeIPv4, v4PodCIDR)))
+		}
+	}
+	if v6PodCIDR := network.GetIPv6CIDR(n.Pods); v6PodCIDR != "" && n.NodeCIDRMaskSizeIPv6 != nil {
+		_, podCIDR, _ := net.ParseCIDR(v6PodCIDR)
+		podCIDRMaskSize, _ := podCIDR.Mask.Size()
+		if int32(podCIDRMaskSize) >= *n.NodeCIDRMaskSizeIPv6 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("nodeCIDRMaskSizeIPv6"), n.NodeCIDRMaskSizeIPv6,
+				fmt.Sprintf("IPv6 node CIDR mask size (%d) must be longer than the mask size of the pod CIDR (%q)", *n.NodeCIDRMaskSizeIPv6, v6PodCIDR)))
 		}
 	}
 	// TODO Remove all hardcodes before allowing arbitrary domain names.

@@ -40,3 +40,29 @@ func IsDualStackCluster(cluster *kubermaticv1.Cluster) bool {
 	}
 	return res
 }
+
+func GetIPv4CIDR(nr kubermaticv1.NetworkRanges) string {
+	for _, cidr := range nr.CIDRBlocks {
+		if net.IsIPv4CIDRString(cidr) {
+			return cidr
+		}
+	}
+	return ""
+}
+
+func GetIPv6CIDR(nr kubermaticv1.NetworkRanges) string {
+	for _, cidr := range nr.CIDRBlocks {
+		if net.IsIPv6CIDRString(cidr) {
+			return cidr
+		}
+	}
+	return ""
+}
+
+func HasIPv4CIDR(nr kubermaticv1.NetworkRanges) bool {
+	return GetIPv4CIDR(nr) != ""
+}
+
+func HasIPv6CIDR(nr kubermaticv1.NetworkRanges) bool {
+	return GetIPv6CIDR(nr) != ""
+}
