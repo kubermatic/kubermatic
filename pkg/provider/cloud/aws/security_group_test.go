@@ -79,7 +79,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 		}
 	}
 
-	permissions := getCommonSecurityGroupPermissions(*group.GroupId, true, false)
+	permissions := getCommonSecurityGroupPermissions(*group.GroupId, true, true)
 
 	lowPort, highPort := getNodePortRange(cluster)
 	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, "0.0.0.0/0")...)
