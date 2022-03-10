@@ -62,7 +62,7 @@ func NewUpdatePresetParamsWithHTTPClient(client *http.Client) *UpdatePresetParam
 type UpdatePresetParams struct {
 
 	// Body.
-	Body *models.Preset
+	Body *models.PresetBody
 
 	// ProviderName.
 	ProviderName string
@@ -121,13 +121,13 @@ func (o *UpdatePresetParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBody adds the body to the update preset params
-func (o *UpdatePresetParams) WithBody(body *models.Preset) *UpdatePresetParams {
+func (o *UpdatePresetParams) WithBody(body *models.PresetBody) *UpdatePresetParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the update preset params
-func (o *UpdatePresetParams) SetBody(body *models.Preset) {
+func (o *UpdatePresetParams) SetBody(body *models.PresetBody) {
 	o.Body = body
 }
 
