@@ -25,6 +25,9 @@
 {{ if eq .Cluster.MajorMinorVersion "1.22" }}
 {{ $version = "v1.22.0"}}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.23" }}
+{{ $version = "v1.23.0"}}
+{{ end }}
 
 ---
 kind: Service
