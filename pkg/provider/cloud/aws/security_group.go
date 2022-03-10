@@ -30,6 +30,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/network"
+
+	"k8s.io/utils/net"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -211,8 +213,8 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 				IpProtocol: aws.String("tcp"),
 				FromPort:   aws.Int64(provider.DefaultSSHPort),
 				ToPort:     aws.Int64(provider.DefaultSSHPort),
-				IpRanges: []*ec2.IpRange{{
-					CidrIp: aws.String("::/0"),
+				Ipv6Ranges: []*ec2.Ipv6Range{{
+					CidrIpv6: aws.String("::/0"),
 				}},
 			},
 			// ICMPv6 from/to everywhere
@@ -230,6 +232,28 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 }
 
 func getNodePortSecurityGroupPermissions(lowPort, highPort int, nodePortsAllowedIPRange string) []*ec2.IpPermission {
+	if net.IsIPv6CIDRString(nodePortsAllowedIPRange) {
+		return []*ec2.IpPermission{
+			// tcp:nodeports in given range
+			{
+				IpProtocol: aws.String("tcp"),
+				FromPort:   aws.Int64(int64(lowPort)),
+				ToPort:     aws.Int64(int64(highPort)),
+				Ipv6Ranges: []*ec2.Ipv6Range{{
+					CidrIpv6: aws.String(nodePortsAllowedIPRange),
+				}},
+			},
+			// udp:nodeports in given range
+			{
+				IpProtocol: aws.String("udp"),
+				FromPort:   aws.Int64(int64(lowPort)),
+				ToPort:     aws.Int64(int64(highPort)),
+				Ipv6Ranges: []*ec2.Ipv6Range{{
+					CidrIpv6: aws.String(nodePortsAllowedIPRange),
+				}},
+			},
+		}
+	}
 	return []*ec2.IpPermission{
 		// tcp:nodeports in given range
 		{
@@ -240,7 +264,6 @@ func getNodePortSecurityGroupPermissions(lowPort, highPort int, nodePortsAllowed
 				CidrIp: aws.String(nodePortsAllowedIPRange),
 			}},
 		},
-
 		// udp:nodeports in given range
 		{
 			IpProtocol: aws.String("udp"),
