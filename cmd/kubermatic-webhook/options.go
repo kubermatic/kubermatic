@@ -19,7 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"go.uber.org/zap"
 
@@ -96,7 +96,7 @@ func initApplicationOptions() (appOptions, error) {
 }
 
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}

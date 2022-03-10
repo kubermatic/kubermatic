@@ -18,7 +18,7 @@ package yamled
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -32,7 +32,7 @@ func getTestcaseYAML(t *testing.T, filename string) string {
 		filename = "document.yaml"
 	}
 
-	content, err := ioutil.ReadFile("testcases/" + filename)
+	content, err := os.ReadFile("testcases/" + filename)
 	if err != nil {
 		t.Fatalf("could not load document %s: %v", filename, err)
 	}

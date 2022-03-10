@@ -19,7 +19,6 @@ package main
 import (
 	"bytes"
 	"flag"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -73,7 +72,7 @@ func createResources() templateResources {
 // readYAML reads a YAML file and executes the potential template.
 func readYAML(path string) ([]byte, error) {
 	log.Printf("Reading YAML file %q ...", path)
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

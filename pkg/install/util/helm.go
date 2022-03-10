@@ -19,7 +19,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -135,7 +134,7 @@ func statusRequiresPurge(status helm.ReleaseStatus) bool {
 }
 
 func dumpHelmValues(values *yamled.Document) (string, error) {
-	f, err := ioutil.TempFile("", "helmvalues.*")
+	f, err := os.CreateTemp("", "helmvalues.*")
 	if err != nil {
 		return "", err
 	}

@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -178,13 +177,13 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 			return fmt.Errorf("failed updating permissions %s: %w", path, err)
 		}
 
-		actualUserSSHKeys, err := ioutil.ReadFile(path)
+		actualUserSSHKeys, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("failed reading file in path %s: %w", path, err)
 		}
 
 		if !bytes.Equal(actualUserSSHKeys, expectedUserSSHKeys.Bytes()) {
-			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
+			if err := os.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
 				return fmt.Errorf("failed to overwrite file in path %s: %w", path, err)
 			}
 			r.log.Infow("File has been updated successfully", "file", path)

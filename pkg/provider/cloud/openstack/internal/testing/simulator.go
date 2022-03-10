@@ -19,7 +19,7 @@ package testing
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"sync"
@@ -504,7 +504,7 @@ func (s *Simulator) Handle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, string(out))
 	case http.MethodPost:
-		reqBody, err := ioutil.ReadAll(r.Body)
+		reqBody, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err.Error())
@@ -529,7 +529,7 @@ func (s *Simulator) Handle(w http.ResponseWriter, r *http.Request) {
 		s.resources[r.URL.Path] = append(s.resources[r.URL.Path], newRes)
 		s.Unlock()
 	case http.MethodPut:
-		reqBody, err := ioutil.ReadAll(r.Body)
+		reqBody, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err.Error())

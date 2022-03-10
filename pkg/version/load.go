@@ -18,7 +18,7 @@ package version
 
 import (
 	"bufio"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"sigs.k8s.io/yaml"
@@ -31,7 +31,7 @@ func LoadUpdates(path string) ([]*Update, error) {
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	bytes, err := io.ReadAll(bufio.NewReader(f))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func LoadVersions(path string) ([]*Version, error) {
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	bytes, err := io.ReadAll(bufio.NewReader(f))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func LoadProviderIncompatibilities(path string) ([]*ProviderIncompatibility, err
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	bytes, err := io.ReadAll(bufio.NewReader(f))
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -389,7 +389,7 @@ func DecodePatchMachineDeployment(c context.Context, r *http.Request) (interface
 		return nil, err
 	}
 	md := rawMachineDeployment.(machineDeploymentReq)
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 	req.MachineDeploymentID = md.MachineDeploymentID

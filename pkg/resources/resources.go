@@ -25,9 +25,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -1059,7 +1059,7 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 
 // GetCABundleFromFile returns the CA bundle from a file.
 func GetCABundleFromFile(file string) ([]*x509.Certificate, error) {
-	rawData, err := ioutil.ReadFile(file)
+	rawData, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %q: %w", file, err)
 	}

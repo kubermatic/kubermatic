@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -76,12 +76,12 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	res = append([]byte("# This file has been generated, DO NOT EDIT.\n\n"), res...)
 
 	if *update {
-		if err := ioutil.WriteFile(path, res, 0644); err != nil {
+		if err := os.WriteFile(path, res, 0644); err != nil {
 			t.Fatalf("failed to update fixtures: %v", err)
 		}
 	}
 
-	exp, err := ioutil.ReadFile(path)
+	exp, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}

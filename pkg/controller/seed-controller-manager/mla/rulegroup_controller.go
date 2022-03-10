@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 
@@ -303,7 +303,7 @@ func (r *ruleGroupController) handleDeletion(ctx context.Context, ruleGroup *kub
 	// https://cortexmetrics.io/docs/api/#delete-rule-group
 	if resp.StatusCode != http.StatusAccepted {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
@@ -341,7 +341,7 @@ func (r *ruleGroupController) ensureRuleGroup(ctx context.Context, ruleGroup *ku
 	// https://cortexmetrics.io/docs/api/#set-rule-group
 	if resp.StatusCode != http.StatusAccepted {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
@@ -366,7 +366,7 @@ func (r *ruleGroupController) getCurrentRuleGroup(ctx context.Context, ruleGroup
 		return nil, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}

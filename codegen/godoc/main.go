@@ -23,8 +23,8 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
-	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 
@@ -52,7 +52,7 @@ func generate(filename string, i interface{}) error {
 	snippets := generateDocumentation([]string{}, reflect.ValueOf(i))
 	code := strings.Join(snippets, "\n\n") + "\n"
 
-	return ioutil.WriteFile(filename, []byte(code), 0644)
+	return os.WriteFile(filename, []byte(code), 0644)
 }
 
 func generateDocumentation(docs []string, v reflect.Value) []string {

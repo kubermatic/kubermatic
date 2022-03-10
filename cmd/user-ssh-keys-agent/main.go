@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"syscall"
 
@@ -163,7 +162,7 @@ func createFileIfNotExist(path string, uid, gid int) error {
 }
 
 func availableHomeUsers() ([]string, error) {
-	files, err := ioutil.ReadDir("/home")
+	files, err := os.ReadDir("/home")
 	if err != nil {
 		return nil, err
 	}

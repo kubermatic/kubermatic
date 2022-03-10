@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -539,7 +539,7 @@ func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, 
 	}
 	req.constraintReq = ctReq.(constraintReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
@@ -769,7 +769,7 @@ func DecodePatchDefaultConstraintReq(c context.Context, r *http.Request) (interf
 	}
 	req.defaultConstraintReq = ctReq.(defaultConstraintReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

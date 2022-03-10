@@ -17,7 +17,6 @@ limitations under the License.
 package version
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -29,7 +28,7 @@ updates:
   to: 1.13.*
   automaticNodeUpdate: true
 `)
-	file, err := ioutil.TempFile("/tmp", "kubermatic-test")
+	file, err := os.CreateTemp("/tmp", "kubermatic-test")
 	if err != nil {
 		t.Fatalf("failed to create tempfile: %v", err)
 	}

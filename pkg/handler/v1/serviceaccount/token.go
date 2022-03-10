@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"unicode/utf8"
 
@@ -550,7 +550,7 @@ func DecodePatchTokenReq(c context.Context, r *http.Request) (interface{}, error
 	req.ServiceAccountID = tokenReq.ServiceAccountID
 	req.ProjectID = tokenReq.ProjectID
 
-	req.Body, err = ioutil.ReadAll(r.Body)
+	req.Body, err = io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}

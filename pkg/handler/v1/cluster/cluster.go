@@ -21,7 +21,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -335,7 +335,7 @@ func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.DCReq = dcr.(common.DCReq)
 	req.ClusterID = clusterID
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

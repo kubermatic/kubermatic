@@ -18,7 +18,7 @@ package mla
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -133,22 +133,22 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "lookup user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
 					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -181,22 +181,22 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "lookup user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update org user",
 					request:  httptest.NewRequest(http.MethodPatch, "/api/orgs/1/users/1", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User updated"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User updated"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -231,17 +231,17 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "lookup user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},

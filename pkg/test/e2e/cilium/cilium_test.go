@@ -23,7 +23,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -284,7 +284,7 @@ func testUserCluster(t *testing.T, config *rest.Config) {
 			return false, nil
 		}
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Logf("failed to read response body:%v", err)
 			return false, nil
@@ -511,7 +511,7 @@ func makeScheme() *runtime.Scheme {
 }
 
 func resourcesFromYaml(filename string, s *runtime.Scheme) ([]runtime.Object, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

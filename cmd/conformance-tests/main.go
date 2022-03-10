@@ -25,7 +25,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -292,7 +291,7 @@ func main() {
 	}
 
 	if kubevirtKubeconfigFile != "" {
-		content, err := ioutil.ReadFile(kubevirtKubeconfigFile)
+		content, err := os.ReadFile(kubevirtKubeconfigFile)
 		if err != nil {
 			log.Fatalw("Failed to read kubevirt kubeconfig file", zap.Error(err))
 		}
@@ -397,7 +396,7 @@ func main() {
 	log.Infow("Enabled cloud providers", "providers", opts.providers.List())
 
 	if pubKeyPath != "" {
-		keyData, err := ioutil.ReadFile(pubKeyPath)
+		keyData, err := os.ReadFile(pubKeyPath)
 		if err != nil {
 			log.Fatalw("Failed to load ssh key", zap.Error(err))
 		}
@@ -547,7 +546,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 	// Setup temporary home dir (Because the e2e tests have some filenames hardcoded - which might conflict with the user files)
 	// We'll set the env-var $HOME to this directory when executing the tests
-	homeDir, err := ioutil.TempDir("/tmp", "e2e-home-")
+	homeDir, err := os.MkdirTemp("/tmp", "e2e-home-")
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to setup temporary home dir: %w", err)
 	}
@@ -582,7 +581,7 @@ func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 
 	privatePEM := pem.EncodeToMemory(&privBlock)
 	// Needs to be google_compute_engine as its hardcoded in the kubernetes e2e tests
-	if err := ioutil.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine"), privatePEM, 0400); err != nil {
+	if err := os.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine"), privatePEM, 0400); err != nil {
 		return "", nil, err
 	}
 
@@ -592,7 +591,7 @@ func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 	}
 
 	pubKeyBytes := ssh.MarshalAuthorizedKey(publicRsaKey)
-	if err := ioutil.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine.pub"), pubKeyBytes, 0400); err != nil {
+	if err := os.WriteFile(path.Join(homeDir, ".ssh", "google_compute_engine.pub"), pubKeyBytes, 0400); err != nil {
 		return "", nil, err
 	}
 

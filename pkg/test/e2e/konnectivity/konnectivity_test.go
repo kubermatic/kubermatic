@@ -24,7 +24,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -526,7 +525,7 @@ func createUsercluster(t *testing.T) (string, string, func(), error) {
 		return "", "", nil, err
 	}
 
-	file, err := ioutil.TempFile("/tmp", "kubeconfig-")
+	file, err := os.CreateTemp("/tmp", "kubeconfig-")
 	if err != nil {
 		return "", "", nil, err
 	}

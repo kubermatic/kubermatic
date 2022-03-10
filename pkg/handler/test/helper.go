@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -792,7 +791,7 @@ func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 // CompareWithResult a convenience function for comparing http.Body content with response.
 func CompareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
 	t.Helper()
-	bBytes, err := ioutil.ReadAll(res.Body)
+	bBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
 	}

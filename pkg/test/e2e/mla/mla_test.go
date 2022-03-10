@@ -23,7 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -356,7 +356,7 @@ rules:
 			t.Fatal("alertmanager config not found")
 		}
 		if resp.StatusCode != http.StatusOK {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatalf("unable to read alertmanager config: %s", err.Error())
 			}

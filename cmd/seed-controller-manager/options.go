@@ -20,9 +20,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 
@@ -219,7 +219,7 @@ type controllerContext struct {
 }
 
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
