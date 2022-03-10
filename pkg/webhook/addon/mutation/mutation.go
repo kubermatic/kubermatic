@@ -30,6 +30,7 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -70,15 +71,29 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 	switch req.Operation {
 	case admissionv1.Create:
-		fallthrough
-
-	case admissionv1.Update:
 		if err := h.decoder.Decode(req, addon); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
 		// apply defaults to the existing addon
-		err := h.applyDefaults(ctx, addon)
+		err := h.ensureClusterReference(ctx, addon)
+		if err != nil {
+			h.log.Info("addon mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
+		}
+
+	case admissionv1.Update:
+		oldAddon := &kubermaticv1.Addon{}
+
+		if err := h.decoder.Decode(req, addon); err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+
+		if err := h.decoder.DecodeRaw(req.OldObject, oldAddon); err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+
+		err := h.validateUpdate(ctx, oldAddon, addon)
 		if err != nil {
 			h.log.Info("addon mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
@@ -99,7 +114,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedAddon)
 }
 
-func (h *AdmissionHandler) applyDefaults(ctx context.Context, addon *kubermaticv1.Addon) error {
+func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *kubermaticv1.Addon) error {
 	seed, err := h.seedGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get current Seed: %w", err)
@@ -136,6 +151,14 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, addon *kubermaticv
 		UID:        cluster.UID,
 		APIVersion: cluster.APIVersion,
 		Kind:       "Cluster",
+	}
+
+	return nil
+}
+
+func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldAddon *kubermaticv1.Addon, newAddon *kubermaticv1.Addon) error {
+	if !equality.Semantic.DeepEqual(oldAddon.Spec.Cluster, newAddon.Spec.Cluster) {
+		return errors.New("Cluster reference cannot be changed")
 	}
 
 	return nil
