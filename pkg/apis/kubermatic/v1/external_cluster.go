@@ -64,21 +64,21 @@ type ExternalClusterSpec struct {
 
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 	CloudSpec           *ExternalClusterCloudSpec               `json:"cloudSpec,omitempty"`
-	KubeOneSpec         *ExternalClusterKubeOneSpec             `json:"kubeoneSpec,omitempty"`
 }
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
 type ExternalClusterCloudSpec struct {
-	GKE *ExternalClusterGKECloudSpec `json:"gke,omitempty"`
-	EKS *ExternalClusterEKSCloudSpec `json:"eks,omitempty"`
-	AKS *ExternalClusterAKSCloudSpec `json:"aks,omitempty"`
+	GKE     *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
+	EKS     *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
+	AKS     *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
+	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
 }
 
-// ExternalClusterKubeOneSpec mutually stores access data to a KubeOne cluster.
-type ExternalClusterKubeOneSpec struct {
-	Name                 string                                  `json:"name"`
-	SSHPrivateKey        string                                  `json:"sshPrivateKey"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+type ExternalClusterKubeOneCloudSpec struct {
+	Name                 string                                 `json:"name"`
+	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
+	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
 }
 
 type ExternalClusterGKECloudSpec struct {

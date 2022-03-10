@@ -390,14 +390,12 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 	newCluster := genExternalCluster(name, project.Name)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
 		EKS: &kubermaticv1.ExternalClusterEKSCloudSpec{
-			Name:            cloud.EKS.Name,
-			Region:          cloud.EKS.Region,
-			AccessKeyID:     cloud.EKS.AccessKeyID,
-			SecretAccessKey: cloud.EKS.SecretAccessKey,
+			Name:   cloud.EKS.Name,
+			Region: cloud.EKS.Region,
 		},
 	}
 
-	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, newCluster, project.Name, newCluster.Name)
+	keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, cloud, project.Name, newCluster.Name)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

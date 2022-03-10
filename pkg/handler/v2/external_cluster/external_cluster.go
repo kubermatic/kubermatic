@@ -26,7 +26,9 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
+	"gopkg.in/yaml.v2"
 
+	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -52,7 +54,74 @@ const (
 	normalType  = "normal"
 )
 
-func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
+// createClusterReq defines HTTP request for createExternalCluster
+// swagger:parameters createExternalCluster
+type createClusterReq struct {
+	common.ProjectReq
+	// The credential name used in the preset for the provider
+	// in: header
+	// name: Credential
+	Credential string
+	// in: body
+	Body body
+}
+
+type body struct {
+	// Name is human readable name for the external cluster
+	Name string `json:"name"`
+	// Kubeconfig Base64 encoded kubeconfig
+	Kubeconfig string                          `json:"kubeconfig,omitempty"`
+	Cloud      *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
+}
+
+func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req createClusterReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+	req.Credential = r.Header.Get("Credential")
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// Validate validates CreateEndpoint request.
+func (req createClusterReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	return nil
+}
+
+func DecodeManifestFromKubeOneReq(req createClusterReq) (*kubeonev1beta2.KubeOneCluster, error) {
+	encodedManifest := req.Body.Cloud.KubeOne.Manifest
+	var kubeOneCluster kubeonev1beta2.KubeOneCluster
+
+	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
+	if err != nil {
+		return nil, errors.NewBadRequest(err.Error())
+	}
+	if err := yaml.Unmarshal(manifest, &kubeOneCluster); err != nil {
+		return nil, err
+	}
+
+	return &kubeOneCluster, nil
+}
+
+func CreateEndpoint(
+	userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	clusterProvider provider.ExternalClusterProvider,
+	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
+	settingsProvider provider.SettingsProvider,
+	presetProvider provider.PresetProvider,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
@@ -109,15 +178,6 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 			if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, newCluster, req.Body.Kubeconfig); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			if req.Body.SSHPrivateKey != "" {
-				newCluster.Spec.KubeOneSpec = &kubermaticv1.ExternalClusterKubeOneSpec{}
-				newCluster.Spec.KubeOneSpec.SSHPrivateKey = req.Body.SSHPrivateKey
-				keyRef, err := clusterProvider.CreateOrUpdateCredentialSecretForCluster(ctx, newCluster, project.Name, newCluster.Name)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				newCluster.Spec.KubeOneSpec.CredentialsReference = keyRef
 			}
 
 			createdCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
@@ -181,44 +241,53 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
 			return apiCluster, nil
 		}
+		if cloud.KubeOne != nil {
+			kubeOneCluster, err := DecodeManifestFromKubeOneReq(req)
+			if err != nil {
+				return nil, err
+			}
+
+			if kubeOneCluster.APIVersion == "" || kubeOneCluster.Kind == "" {
+				return nil, errors.NewBadRequest("apiVersion and kind must be present in the manifest")
+			}
+
+			newCluster := genExternalCluster(kubeOneCluster.Name, project.Name)
+			newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
+				KubeOne: &kubermaticv1.ExternalClusterKubeOneCloudSpec{
+					Name: kubeOneCluster.Name,
+				},
+			}
+			//	newCluster.Spec.KubeOneSpec = &kubermaticv1.ExternalClusterKubeOneSpec{}
+
+			if cloud.KubeOne.SSHKey != nil {
+				err := clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, *cloud.KubeOne.SSHKey, newCluster)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
+			if cloud.KubeOne.Manifest != "" {
+				err := clusterProvider.CreateOrUpdateKubeOneManifestSecret(ctx, cloud.KubeOne.Manifest, newCluster)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
+			if cloud.KubeOne.CloudSpec != nil {
+				err := clusterProvider.CreateOrUpdateCredentialSecretForKubeOneCluster(ctx, *cloud.KubeOne.CloudSpec, newCluster)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
+
+			createdCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			apiCluster := convertClusterToAPI(createdCluster)
+			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
+			return apiCluster, nil
+		}
 		return nil, errors.NewBadRequest("kubeconfig or cloud provider structure missing")
 	}
-}
-
-// createClusterReq defines HTTP request for createExternalCluster
-// swagger:parameters createExternalCluster
-type createClusterReq struct {
-	common.ProjectReq
-	// The credential name used in the preset for the provider
-	// in: header
-	// name: Credential
-	Credential string
-	// in: body
-	Body body
-}
-
-func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req createClusterReq
-
-	pr, err := common.DecodeProjectRequest(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectReq = pr.(common.ProjectReq)
-	req.Credential = r.Header.Get("Credential")
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// Validate validates CreateEndpoint request.
-func (req createClusterReq) Validate() error {
-	if len(req.ProjectID) == 0 {
-		return fmt.Errorf("the project ID cannot be empty")
-	}
-	return nil
 }
 
 func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -893,6 +962,11 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 				ResourceGroup: cloud.AKS.ResourceGroup,
 			}
 		}
+		// if cloud.KubeOne != nil {
+		// 	cluster.Cloud.KubeOne = &apiv2.KubeOneSpec{
+		// 		Name: cloud.KubeOne.Name,
+		// 	}
+		// }
 	}
 
 	return cluster
@@ -1011,15 +1085,6 @@ func AreExternalClustersEnabled(provider provider.SettingsProvider) bool {
 	}
 
 	return settings.Spec.EnableExternalClusterImport
-}
-
-type body struct {
-	// Name is human readable name for the external cluster
-	Name string `json:"name"`
-	// Kubeconfig Base64 encoded kubeconfig
-	Kubeconfig    string                          `json:"kubeconfig,omitempty"`
-	SSHPrivateKey string                          `json:"ssh-privatekey,omitempty"`
-	Cloud         *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
 }
 
 func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {

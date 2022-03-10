@@ -26,6 +26,9 @@ type ExternalClusterCloudSpec struct {
 
 	// gke
 	Gke *GKECloudSpec `json:"gke,omitempty"`
+
+	// kube one
+	KubeOne *KubeOneSpec `json:"kubeOne,omitempty"`
 }
 
 // Validate validates this external cluster cloud spec
@@ -41,6 +44,10 @@ func (m *ExternalClusterCloudSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateGke(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubeOne(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -101,6 +108,23 @@ func (m *ExternalClusterCloudSpec) validateGke(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ExternalClusterCloudSpec) validateKubeOne(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubeOne) { // not required
+		return nil
+	}
+
+	if m.KubeOne != nil {
+		if err := m.KubeOne.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubeOne")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this external cluster cloud spec based on the context it is used
 func (m *ExternalClusterCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -114,6 +138,10 @@ func (m *ExternalClusterCloudSpec) ContextValidate(ctx context.Context, formats 
 	}
 
 	if err := m.contextValidateGke(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateKubeOne(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -157,6 +185,20 @@ func (m *ExternalClusterCloudSpec) contextValidateGke(ctx context.Context, forma
 		if err := m.Gke.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gke")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterCloudSpec) contextValidateKubeOne(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.KubeOne != nil {
+		if err := m.KubeOne.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubeOne")
 			}
 			return err
 		}

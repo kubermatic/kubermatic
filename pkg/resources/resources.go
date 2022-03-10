@@ -552,7 +552,9 @@ const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
 
-	KubeOneSSHPrivateKey = "ssh-privatekey"
+	KubeOneSSHPrivateKey = "privatekey"
+	KubeOneSSHPassphrase = "passphrase"
+	KubeOneManifest      = "manifest"
 
 	AzureTenantID       = "tenantID"
 	AzureSubscriptionID = "subscriptionID"

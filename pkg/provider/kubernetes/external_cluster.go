@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -410,7 +411,7 @@ func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
 	return clientConfig, nil
 }
 
-func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error) {
+func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error) {
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   clusterID,
@@ -420,150 +421,96 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 			Cloud: kubermaticv1.CloudSpec{},
 		},
 	}
-	if externalCluster.Spec.CloudSpec != nil {
-		if externalCluster.Spec.CloudSpec.GKE != nil {
-			cluster.Spec.Cloud.GCP = &kubermaticv1.GCPCloudSpec{
-				ServiceAccount: externalCluster.Spec.CloudSpec.GKE.ServiceAccount,
-			}
-			err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster, false)
-			if err != nil {
-				return nil, err
-			}
-			// clean old inline credentials
-			externalCluster.Spec.CloudSpec.GKE.ServiceAccount = ""
-			return cluster.Spec.Cloud.GCP.CredentialsReference, nil
+	if cloud.GKE != nil {
+		cluster.Spec.Cloud.GCP = &kubermaticv1.GCPCloudSpec{
+			ServiceAccount: cloud.GKE.ServiceAccount,
 		}
-		if externalCluster.Spec.CloudSpec.EKS != nil {
-			cluster.Spec.Cloud.AWS = &kubermaticv1.AWSCloudSpec{
-				AccessKeyID:     externalCluster.Spec.CloudSpec.EKS.AccessKeyID,
-				SecretAccessKey: externalCluster.Spec.CloudSpec.EKS.SecretAccessKey,
-			}
-			err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster, false)
-			if err != nil {
-				return nil, err
-			}
-			// clean old inline credentials
-			externalCluster.Spec.CloudSpec.EKS.AccessKeyID = ""
-			externalCluster.Spec.CloudSpec.EKS.SecretAccessKey = ""
-			return cluster.Spec.Cloud.AWS.CredentialsReference, nil
-		}
-		if externalCluster.Spec.CloudSpec.AKS != nil {
-			cluster.Spec.Cloud.Azure = &kubermaticv1.AzureCloudSpec{
-				TenantID:       externalCluster.Spec.CloudSpec.AKS.TenantID,
-				SubscriptionID: externalCluster.Spec.CloudSpec.AKS.SubscriptionID,
-				ClientID:       externalCluster.Spec.CloudSpec.AKS.ClientID,
-				ClientSecret:   externalCluster.Spec.CloudSpec.AKS.ClientSecret,
-			}
-			err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster, false)
-			if err != nil {
-				return nil, err
-			}
-			// clean old inline credentials
-			externalCluster.Spec.CloudSpec.AKS.TenantID = ""
-			externalCluster.Spec.CloudSpec.AKS.SubscriptionID = ""
-			externalCluster.Spec.CloudSpec.AKS.ClientID = ""
-			externalCluster.Spec.CloudSpec.AKS.ClientSecret = ""
-			return cluster.Spec.Cloud.Azure.CredentialsReference, nil
-		}
-	}
-	if externalCluster.Spec.KubeOneSpec != nil {
-		err := createOrUpdateKubeOneSecret(ctx, p.clientPrivileged, externalCluster, false)
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
 		if err != nil {
 			return nil, err
 		}
-		// clean old inline credentials
-		externalCluster.Spec.KubeOneSpec.SSHPrivateKey = ""
-		return externalCluster.Spec.KubeOneSpec.CredentialsReference, nil
+		return cluster.Spec.Cloud.GCP.CredentialsReference, nil
+	}
+	if cloud.EKS != nil {
+		cluster.Spec.Cloud.AWS = &kubermaticv1.AWSCloudSpec{
+			AccessKeyID:     cloud.EKS.AccessKeyID,
+			SecretAccessKey: cloud.EKS.SecretAccessKey,
+		}
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
+		if err != nil {
+			return nil, err
+		}
+		return cluster.Spec.Cloud.AWS.CredentialsReference, nil
+	}
+	if cloud.AKS != nil {
+		cluster.Spec.Cloud.Azure = &kubermaticv1.AzureCloudSpec{
+			TenantID:       cloud.AKS.TenantID,
+			SubscriptionID: cloud.AKS.SubscriptionID,
+			ClientID:       cloud.AKS.ClientID,
+			ClientSecret:   cloud.AKS.ClientSecret,
+		}
+		err := CreateOrUpdateCredentialSecretForCluster(ctx, p.clientPrivileged, cluster)
+		if err != nil {
+			return nil, err
+		}
+		return cluster.Spec.Cloud.Azure.CredentialsReference, nil
 	}
 
 	return nil, fmt.Errorf("can't create credential secret for unsupported provider")
 }
 
-func createOrUpdateKubeOneSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, externalCluster *kubermaticv1.ExternalCluster, validate bool) error {
-	sshPrivateKey := externalCluster.Spec.KubeOneSpec.SSHPrivateKey
+func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
+	return p.clientPrivileged
+}
 
-	// already migrated
-	if sshPrivateKey == "" {
+func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, encodedManifest string, externalCluster *kubermaticv1.ExternalCluster) error {
+	if encodedManifest == "" {
 		return nil
 	}
 
+	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
+	if err != nil {
+		return err
+	}
+
 	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialKubeOneSecret(ctx, seedClient, externalCluster, map[string][]byte{
-		resources.KubeOneSSHPrivateKey: []byte(sshPrivateKey),
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, map[string][]byte{
+		resources.KubeOneManifest: manifest,
 	})
 	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	externalCluster.Spec.KubeOneSpec.CredentialsReference = credentialRef
-
-	// clean old inline credentials
-	externalCluster.Spec.KubeOneSpec.SSHPrivateKey = ""
+	externalCluster.Spec.CloudSpec.KubeOne.ManifestReference = *credentialRef
 
 	return nil
 }
 
-func ensureCredentialKubeOneSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	name := cluster.GetKubeOneSecretName()
-
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
-	existingSecret := &corev1.Secret{}
-	if err := seedClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
+func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error {
+	if sshKey.PrivateKey == "" {
+		return nil
 	}
 
-	if existingSecret.Name == "" {
-		projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-		if len(projectID) == 0 {
-			return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
-		}
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: resources.KubermaticNamespace,
-				Labels: map[string]string{
-					"name":                         name,
-					kubermaticv1.ProjectIDLabelKey: projectID,
-				},
-			},
-			Type: corev1.SecretTypeOpaque,
-			Data: secretData,
-		}
-
-		if err := seedClient.Create(ctx, secret); err != nil {
-			return nil, fmt.Errorf("failed to create credential secret: %w", err)
-		}
-	} else {
-		if existingSecret.Data == nil {
-			existingSecret.Data = map[string][]byte{}
-		}
-
-		requiresUpdate := false
-
-		for k, v := range secretData {
-			if !bytes.Equal(v, existingSecret.Data[k]) {
-				requiresUpdate = true
-				break
-			}
-		}
-
-		if requiresUpdate {
-			existingSecret.Data = secretData
-			if err := seedClient.Update(ctx, existingSecret); err != nil {
-				return nil, fmt.Errorf("failed to update credential secret: %w", err)
-			}
-		}
+	privateKey, err := base64.StdEncoding.DecodeString(sshKey.PrivateKey)
+	if err != nil {
+		return err
+	}
+	data := map[string][]byte{
+		resources.KubeOneSSHPrivateKey: privateKey,
+	}
+	if sshKey.Passphrase != "" {
+		data[resources.KubeOneSSHPassphrase] = []byte(sshKey.Passphrase)
 	}
 
-	return &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-		},
-	}, nil
-}
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, data)
+	if err != nil {
+		return err
+	}
 
-func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
-	return p.clientPrivileged
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.SSHReference = *credentialRef
+
+	return nil
 }
