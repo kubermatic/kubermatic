@@ -174,6 +174,8 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 				Enabled:          false,
 				StorageClassName: "kubermatic-fast",
 				StorageSize:      "100Gi",
+				Schedule:         "0 1 * * 6",
+				Interval:         7,
 			},
 			MLA: &kubermaticv1.SeedMLASettings{},
 		},

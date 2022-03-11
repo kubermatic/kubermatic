@@ -127,7 +127,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"-c",
 						`/usr/local/bin/kubermatic-metering-report -workdir=/metering-data \
                                                           -reportdir=/report \
-                                                          ` + intervalToFlag(mc.IntervalInDays, mc.Interval) + ` \
+                                                          -last-number-of-days=` + strconv.Itoa(mc.Interval) + ` \
                                                           -seed=` + seedName + ` \
                                                           -scrape-interval=300
                         touch /report/finished`,
@@ -240,28 +240,5 @@ mc mirror /report s3/$S3_BUCKET`,
 
 			return job, nil
 		}
-	}
-}
-
-const (
-	Yesterday        = "-yesterday"
-	LastWeek         = "-last-week"
-	LastMonth        = "-last-month"
-	LastNumberOfDays = "-last-number-of-days="
-)
-
-func intervalToFlag(intervalInDays int, interval kubermaticv1.Interval) string {
-	if intervalInDays > 0 {
-		return LastNumberOfDays + strconv.Itoa(intervalInDays)
-	}
-	switch interval {
-	case kubermaticv1.Day:
-		return Yesterday
-	case kubermaticv1.Month:
-		return LastMonth
-	case kubermaticv1.Week:
-		fallthrough
-	default:
-		return LastWeek
 	}
 }

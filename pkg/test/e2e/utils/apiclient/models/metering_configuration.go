@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // MeteringConfiguration MeteringConfiguration contains all the configuration for the metering tool.
@@ -21,10 +22,13 @@ type MeteringConfiguration struct {
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
 
-	// IntervalInDays defines period for metering timestamps. Overwrites Interval.
-	IntervalInDays int64 `json:"intervalInDays,omitempty"`
+	// Interval defines the number of days consulted in the metering report.
+	// +kubebuilder:default=7
+	// Minimum: 1
+	Interval int64 `json:"interval,omitempty"`
 
-	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
+	// only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
 	Schedule *string `json:"schedule,omitempty"`
 
 	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
@@ -33,9 +37,6 @@ type MeteringConfiguration struct {
 
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// interval
-	Interval Interval `json:"interval,omitempty"`
 }
 
 // Validate validates this metering configuration
@@ -57,39 +58,15 @@ func (m *MeteringConfiguration) validateInterval(formats strfmt.Registry) error 
 		return nil
 	}
 
-	if err := m.Interval.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("interval")
-		}
+	if err := validate.MinimumInt("interval", "body", m.Interval, 1, false); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// ContextValidate validate this metering configuration based on the context it is used
+// ContextValidate validates this metering configuration based on context it is used
 func (m *MeteringConfiguration) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateInterval(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *MeteringConfiguration) contextValidateInterval(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.Interval.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("interval")
-		}
-		return err
-	}
-
 	return nil
 }
 
