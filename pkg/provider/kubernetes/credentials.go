@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
+	"strconv"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -604,13 +606,11 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	return nil
 }
 
-func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	name := externalcluster.GetKubeOneSecretName()
-
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
+func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: secretName}
 	existingSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
+		return nil, fmt.Errorf("failed to probe for secret %q: %w", secretName, err)
 	}
 
 	if existingSecret.Name == "" {
@@ -620,10 +620,10 @@ func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntime
 		}
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
+				Name:      secretName,
 				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
-					"name":                         name,
+					"name":                         secretName,
 					kubermaticv1.ProjectIDLabelKey: projectID,
 				},
 			},
@@ -658,31 +658,46 @@ func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntime
 
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
-			Name:      name,
+			Name:      secretName,
 			Namespace: resources.KubermaticNamespace,
 		},
 	}, nil
 }
 
-// CreateOrUpdateCredentialSecretForKubeOneCluster creates a new secret for a credential.
-func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForKubeOneCluster(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error {
+// CreateOrUpdateKubeOneCredentialSecret creates a new secret for a credential.
+func (p *ExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error {
+	secretName := GetKubeOneCredentialsSecretName(cloud, externalCluster)
 	if cloud.AWS != nil {
-		return createOrUpdateKubeOneAWSSecret(ctx, cloud, p.GetMasterClient(), externalCluster)
+		return createOrUpdateKubeOneAWSSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
 	}
 	if cloud.GCP != nil {
-		return createOrUpdateKubeOneGCPSecret(ctx, cloud, p.GetMasterClient(), externalCluster)
+		return createOrUpdateKubeOneGCPSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
 	}
 	if cloud.Azure != nil {
-		return createOrUpdateKubeOneAzureSecret(ctx, cloud, p.GetMasterClient(), externalCluster)
+		return createOrUpdateKubeOneAzureSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
 	}
 	if cloud.Digitalocean != nil {
-		return createOrUpdateKubeOneDigitaloceanSecret(ctx, cloud, p.GetMasterClient(), externalCluster)
+		return createOrUpdateKubeOneDigitaloceanSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
 	}
-
+	if cloud.VSphere != nil {
+		return createOrUpdateKubeOneVSphereSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+	}
+	if cloud.Hetzner != nil {
+		return createOrUpdateKubeOneHetznerSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+	}
+	if cloud.Packet != nil {
+		return createOrUpdateKubeOnePacketSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+	}
+	if cloud.Openstack != nil {
+		return createOrUpdateKubeOneOpenstackSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+	}
+	if cloud.Nutanix != nil {
+		return createOrUpdateKubeOneNutanixSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+	}
 	return nil
 }
 
-func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster) error {
+func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalcluster *kubermaticv1.ExternalCluster) error {
 
 	if cloud.AWS.AccessKeyID == "" || cloud.AWS.SecretAccessKey == "" {
 		return errors.NewBadRequest("kubeone aws credentials missing")
@@ -693,7 +708,7 @@ func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneClou
 	}
 
 	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalcluster, map[string][]byte{
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalcluster, secretName, map[string][]byte{
 		resources.AWSAccessKeyID:     []byte(cloud.AWS.AccessKeyID),
 		resources.AWSSecretAccessKey: []byte(cloud.AWS.SecretAccessKey),
 	})
@@ -707,18 +722,22 @@ func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneClou
 	return nil
 }
 
-func createOrUpdateKubeOneGCPSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, externalCluster *kubermaticv1.ExternalCluster) error {
-	serviceAccount := cloud.GCP.ServiceAccount
-	if serviceAccount == "" {
-		return nil
+func createOrUpdateKubeOneGCPSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	encodedServiceAccount := cloud.GCP.ServiceAccount
+	if encodedServiceAccount == "" {
+		return errors.NewBadRequest("kubeone gcp credentials missing")
 	}
 
-	if err := gcp.ValidateCredentials(ctx, serviceAccount); err != nil {
+	if err := gcp.ValidateCredentials(ctx, encodedServiceAccount); err != nil {
 		return fmt.Errorf("invalid GCP credentials: %w", err)
 	}
 
+	serviceAccount, err := base64.StdEncoding.DecodeString(encodedServiceAccount)
+	if err != nil {
+		return err
+	}
 	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, map[string][]byte{
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
 		resources.GCPServiceAccount: []byte(serviceAccount),
 	})
 	if err != nil {
@@ -731,7 +750,7 @@ func createOrUpdateKubeOneGCPSecret(ctx context.Context, cloud apiv2.KubeOneClou
 	return nil
 }
 
-func createOrUpdateKubeOneAzureSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, externalCluster *kubermaticv1.ExternalCluster) error {
+func createOrUpdateKubeOneAzureSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
 	tenantID := cloud.Azure.TenantID
 	subscriptionID := cloud.Azure.SubscriptionID
 	clientID := cloud.Azure.ClientID
@@ -751,7 +770,7 @@ func createOrUpdateKubeOneAzureSecret(ctx context.Context, cloud apiv2.KubeOneCl
 	}
 
 	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, map[string][]byte{
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
 		resources.AzureTenantID:       []byte(tenantID),
 		resources.AzureSubscriptionID: []byte(subscriptionID),
 		resources.AzureClientID:       []byte(clientID),
@@ -767,7 +786,7 @@ func createOrUpdateKubeOneAzureSecret(ctx context.Context, cloud apiv2.KubeOneCl
 	return nil
 }
 
-func createOrUpdateKubeOneDigitaloceanSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, externalCluster *kubermaticv1.ExternalCluster) error {
+func createOrUpdateKubeOneDigitaloceanSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
 	token := cloud.Digitalocean.Token
 
 	if token == "" {
@@ -779,7 +798,7 @@ func createOrUpdateKubeOneDigitaloceanSecret(ctx context.Context, cloud apiv2.Ku
 	}
 
 	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, map[string][]byte{
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
 		resources.DigitaloceanToken: []byte(token),
 	})
 	if err != nil {
@@ -790,4 +809,191 @@ func createOrUpdateKubeOneDigitaloceanSecret(ctx context.Context, cloud apiv2.Ku
 	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
 
 	return nil
+}
+
+func createOrUpdateKubeOneOpenstackSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	authUrl := cloud.Openstack.AuthURL
+	username := cloud.Openstack.Username
+	password := cloud.Openstack.Password
+	project := cloud.Openstack.Project
+	projectID := cloud.Openstack.ProjectID
+	domain := cloud.Openstack.Domain
+
+	if username == "" || password == "" || domain == "" || authUrl == "" || project == "" || projectID == "" {
+		return errors.NewBadRequest("kubeone Openstack credentials missing")
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
+		resources.OpenstackAuthURL:   []byte(authUrl),
+		resources.OpenstackUsername:  []byte(username),
+		resources.OpenstackPassword:  []byte(password),
+		resources.OpenstackProject:   []byte(project),
+		resources.OpenstackProjectID: []byte(projectID),
+		resources.OpenstackDomain:    []byte(domain),
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to externalCluster object
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+
+	return nil
+}
+
+func createOrUpdateKubeOneVSphereSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	username := cloud.VSphere.Username
+	password := cloud.VSphere.Password
+	server := cloud.VSphere.Server
+
+	if username == "" || password == "" || server == "" {
+		return errors.NewBadRequest("kubeone VSphere credentials missing")
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
+		resources.VsphereUsername: []byte(username),
+		resources.VspherePassword: []byte(password),
+		resources.VsphereServer:   []byte(server),
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to externalCluster object
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+
+	return nil
+}
+
+func createOrUpdateKubeOnePacketSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	apiKey := cloud.Packet.APIKey
+	projectID := cloud.Packet.ProjectID
+
+	if apiKey == "" || projectID == "" {
+		return errors.NewBadRequest("kubeone Packet credentials missing")
+	}
+
+	if err := packet.ValidateCredentials(apiKey, projectID); err != nil {
+		return fmt.Errorf("invalid Packet credentials: %w", err)
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
+		resources.PacketAPIKey:    []byte(apiKey),
+		resources.PacketProjectID: []byte(projectID),
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+
+	return nil
+}
+
+func createOrUpdateKubeOneHetznerSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	token := cloud.Hetzner.Token
+
+	if token == "" {
+		return errors.NewBadRequest("kubeone Hetzner credentials missing")
+	}
+
+	if err := hetzner.ValidateCredentials(ctx, token); err != nil {
+		return fmt.Errorf("invalid Hetzner credentials: %w", err)
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
+		resources.HetznerToken: []byte(token),
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+
+	return nil
+}
+
+func createOrUpdateKubeOneNutanixSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	username := cloud.Nutanix.Username
+	password := cloud.Nutanix.Password
+	endpoint := cloud.Nutanix.Endpoint
+	port := cloud.Nutanix.Port
+	peEndpoint := cloud.Nutanix.PrismElementEndpoint
+	peUsername := cloud.Nutanix.PrismElementUsername
+	pePassword := cloud.Nutanix.PrismElementPassword
+	proxyURL := cloud.Nutanix.ProxyURL
+	clusterName := cloud.Nutanix.ClusterName
+	allowInsecure := cloud.Nutanix.AllowInsecure
+
+	if endpoint == "" || port == "" || username == "" || password == "" || peEndpoint == "" || peUsername == "" || pePassword == "" {
+		return errors.NewBadRequest("kubeone Nutanix credentials missing")
+	}
+
+	secretData := map[string][]byte{
+		resources.NutanixUsername:    []byte(username),
+		resources.NutanixPassword:    []byte(password),
+		resources.NutanixEndpoint:    []byte(endpoint),
+		resources.NutanixPort:        []byte(port),
+		resources.NutanixCSIUsername: []byte(peUsername),
+		resources.NutanixCSIPassword: []byte(pePassword),
+		resources.NutanixCSIEndpoint: []byte(peEndpoint),
+	}
+
+	if proxyURL != "" {
+		secretData[resources.NutanixProxyURL] = []byte(proxyURL)
+	}
+	if allowInsecure {
+		secretData[resources.NutanixAllowInsecure] = []byte(strconv.FormatBool(allowInsecure))
+	}
+	if clusterName != "" {
+		secretData[resources.NutanixClusterName] = []byte(clusterName)
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, secretData)
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+
+	return nil
+}
+
+func GetKubeOneCredentialsSecretName(cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) string {
+	if cloud.AWS != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-aws-%s", externalCluster.Name)
+	}
+	if cloud.Azure != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-azure-%s", externalCluster.Name)
+	}
+	if cloud.Digitalocean != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-digitalocean-%s", externalCluster.Name)
+	}
+	if cloud.GCP != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-gcp-%s", externalCluster.Name)
+	}
+	if cloud.Hetzner != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-hetzner-%s", externalCluster.Name)
+	}
+	if cloud.Openstack != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-openstack-%s", externalCluster.Name)
+	}
+	if cloud.Packet != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-packet-%s", externalCluster.Name)
+	}
+	if cloud.VSphere != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-vsphere-%s", externalCluster.Name)
+	}
+	if cloud.Nutanix != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-nutanix-%s", externalCluster.Name)
+	}
+	return ""
 }

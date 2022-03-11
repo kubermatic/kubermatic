@@ -21,6 +21,7 @@ type KubeOneNutanixCloudSpec struct {
 	AllowInsecure bool `json:"allowInsecure,omitempty"`
 
 	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
+	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
 
 	// Endpoint is the Nutanix API (Prism Central) endpoint

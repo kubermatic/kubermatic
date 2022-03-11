@@ -563,6 +563,7 @@ const (
 
 	HetznerToken = "token"
 
+	OpenstackAuthURL                     = "authURL"
 	OpenstackUsername                    = "username"
 	OpenstackPassword                    = "password"
 	OpenstackTenant                      = "tenant"
@@ -582,6 +583,7 @@ const (
 
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"
+	VsphereServer                      = "server"
 	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
 	VsphereInfraManagementUserPassword = "infraManagementUserPassword"
 
@@ -590,11 +592,16 @@ const (
 
 	AnexiaToken = "token"
 
-	NutanixUsername    = "username"
-	NutanixPassword    = "password"
-	NutanixCSIUsername = "csiUsername"
-	NutanixCSIPassword = "csiPassword"
-	NutanixProxyURL    = "proxyURL"
+	NutanixUsername      = "username"
+	NutanixPassword      = "password"
+	NutanixCSIUsername   = "csiUsername"
+	NutanixCSIPassword   = "csiPassword"
+	NutanixCSIEndpoint   = "csiEndpoint"
+	NutanixProxyURL      = "proxyURL"
+	NutanixClusterName   = "clusterName"
+	NutanixAllowInsecure = "allowInsecure"
+	NutanixEndpoint      = "endpoint"
+	NutanixPort          = "port"
 
 	UserSSHKeys = "usersshkeys"
 )

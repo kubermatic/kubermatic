@@ -24588,7 +24588,7 @@
           "x-go-name": "AllowInsecure"
         },
         "clusterName": {
-          "description": "ClusterName is the Nutanix cluster that this user cluster will be deployed to.",
+          "description": "ClusterName is the Nutanix cluster that this user cluster will be deployed to.\n+optional",
           "type": "string",
           "x-go-name": "ClusterName"
         },
@@ -24706,10 +24706,6 @@
           "description": "Manifest Base64 encoded manifest",
           "type": "string",
           "x-go-name": "Manifest"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
         },
         "sshKey": {
           "$ref": "#/definitions/KubeOneSSHKey"

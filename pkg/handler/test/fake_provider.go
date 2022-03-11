@@ -197,6 +197,18 @@ func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(c
 	return p.Provider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, kubeconfig)
 }
 
+func (p *FakeExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error {
+	return p.Provider.CreateOrUpdateKubeOneSSHSecret(ctx, sshKey, externalCluster)
+}
+
+func (p *FakeExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, manifest string, externalCluster *kubermaticv1.ExternalCluster) error {
+	return p.Provider.CreateOrUpdateKubeOneManifestSecret(ctx, manifest, externalCluster)
+}
+
+func (p *FakeExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error {
+	return p.Provider.CreateOrUpdateKubeOneCredentialSecret(ctx, cloud, externalCluster)
+}
+
 func (p *FakeExternalClusterProvider) New(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
 	return p.Provider.New(ctx, userInfo, project, cluster)
 }

@@ -21,9 +21,6 @@ type KubeOneSpec struct {
 	// Manifest Base64 encoded manifest
 	Manifest string `json:"manifest,omitempty"`
 
-	// name
-	Name string `json:"name,omitempty"`
-
 	// cloud spec
 	CloudSpec *KubeOneCloudSpec `json:"cloudSpec,omitempty"`
 

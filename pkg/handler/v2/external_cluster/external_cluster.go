@@ -26,7 +26,6 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
-	"gopkg.in/yaml.v2"
 
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -47,6 +46,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -98,19 +98,40 @@ func (req createClusterReq) Validate() error {
 	return nil
 }
 
-func DecodeManifestFromKubeOneReq(req createClusterReq) (*kubeonev1beta2.KubeOneCluster, error) {
-	encodedManifest := req.Body.Cloud.KubeOne.Manifest
-	var kubeOneCluster kubeonev1beta2.KubeOneCluster
+func DecodeManifestFromKubeOneReq(encodedManifest string) (*kubeonev1beta2.KubeOneCluster, error) {
+	kubeOneCluster := &kubeonev1beta2.KubeOneCluster{}
 
 	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
 	if err != nil {
 		return nil, errors.NewBadRequest(err.Error())
 	}
-	if err := yaml.Unmarshal(manifest, &kubeOneCluster); err != nil {
+	if err := yaml.UnmarshalStrict(manifest, kubeOneCluster); err != nil {
 		return nil, err
 	}
 
-	return &kubeOneCluster, nil
+	return kubeOneCluster, nil
+}
+
+func validatKubeOneReq(kubeOne *apiv2.KubeOneSpec) error {
+	// validate manifest
+	if len(kubeOne.Manifest) == 0 {
+		return fmt.Errorf("the KubeOne manifest cannot be empty")
+	} else {
+		manifest, err := DecodeManifestFromKubeOneReq(kubeOne.Manifest)
+		if err != nil {
+			return fmt.Errorf("invalid KubeOne manifest yaml")
+		}
+
+		if manifest.APIVersion == "" || manifest.Kind == "" {
+			return errors.NewBadRequest("apiVersion and kind must be present in the manifest")
+		}
+	}
+	// validate sshKey
+	if len(kubeOne.SSHKey.PrivateKey) == 0 {
+		return fmt.Errorf("the KubeOne SSH Key cannot be empty")
+	}
+
+	return nil
 }
 
 func CreateEndpoint(
@@ -241,14 +262,15 @@ func CreateEndpoint(
 			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
 			return apiCluster, nil
 		}
+		// import KubeOne cluster
 		if cloud.KubeOne != nil {
-			kubeOneCluster, err := DecodeManifestFromKubeOneReq(req)
-			if err != nil {
-				return nil, err
+			if err := validatKubeOneReq(cloud.KubeOne); err != nil {
+				return nil, errors.NewBadRequest(err.Error())
 			}
 
-			if kubeOneCluster.APIVersion == "" || kubeOneCluster.Kind == "" {
-				return nil, errors.NewBadRequest("apiVersion and kind must be present in the manifest")
+			kubeOneCluster, err := DecodeManifestFromKubeOneReq(cloud.KubeOne.Manifest)
+			if err != nil {
+				return nil, err
 			}
 
 			newCluster := genExternalCluster(kubeOneCluster.Name, project.Name)
@@ -257,25 +279,25 @@ func CreateEndpoint(
 					Name: kubeOneCluster.Name,
 				},
 			}
-			//	newCluster.Spec.KubeOneSpec = &kubermaticv1.ExternalClusterKubeOneSpec{}
 
-			if cloud.KubeOne.SSHKey != nil {
-				err := clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, *cloud.KubeOne.SSHKey, newCluster)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+			err = clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, cloud.KubeOne.SSHKey, newCluster)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if cloud.KubeOne.Manifest != "" {
-				err := clusterProvider.CreateOrUpdateKubeOneManifestSecret(ctx, cloud.KubeOne.Manifest, newCluster)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneSSHSecretCleanupFinalizer)
+
+			err = clusterProvider.CreateOrUpdateKubeOneManifestSecret(ctx, cloud.KubeOne.Manifest, newCluster)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
+			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneManifestSecretCleanupFinalizer)
+
 			if cloud.KubeOne.CloudSpec != nil {
-				err := clusterProvider.CreateOrUpdateCredentialSecretForKubeOneCluster(ctx, *cloud.KubeOne.CloudSpec, newCluster)
+				err := clusterProvider.CreateOrUpdateKubeOneCredentialSecret(ctx, *cloud.KubeOne.CloudSpec, newCluster)
 				if err != nil {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
+				kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 			}
 
 			createdCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
@@ -962,11 +984,6 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 				ResourceGroup: cloud.AKS.ResourceGroup,
 			}
 		}
-		// if cloud.KubeOne != nil {
-		// 	cluster.Cloud.KubeOne = &apiv2.KubeOneSpec{
-		// 		Name: cloud.KubeOne.Name,
-		// 	}
-		// }
 	}
 
 	return cluster

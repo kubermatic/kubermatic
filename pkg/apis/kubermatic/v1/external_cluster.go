@@ -110,10 +110,6 @@ func (i *ExternalCluster) GetKubeconfigSecretName() string {
 	return fmt.Sprintf("kubeconfig-external-cluster-%s", i.Name)
 }
 
-func (i *ExternalCluster) GetKubeOneSecretName() string {
-	return fmt.Sprintf("credential-kubeone-%s", i.Name)
-}
-
 func (i *ExternalCluster) GetCredentialsSecretName() string {
 	// The kubermatic cluster `GetSecretName` method is used to get credential secret name for external cluster
 	// The same is used for the external cluster creation when secret is created
