@@ -13159,6 +13159,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13170,13 +13177,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -24523,6 +24523,9 @@
         "digitalocean": {
           "$ref": "#/definitions/KubeOneDigitaloceanCloudSpec"
         },
+        "equinix": {
+          "$ref": "#/definitions/KubeOneEquinixCloudSpec"
+        },
         "gcp": {
           "$ref": "#/definitions/KubeOneGCPCloudSpec"
         },
@@ -24534,9 +24537,6 @@
         },
         "openstack": {
           "$ref": "#/definitions/KubeOneOpenstackCloudSpec"
-        },
-        "packet": {
-          "$ref": "#/definitions/KubeOnePacketCloudSpec"
         },
         "vsphere": {
           "$ref": "#/definitions/KubeOneVSphereCloudSpec"
@@ -24552,6 +24552,21 @@
           "description": "Token is used to authenticate with the DigitalOcean API.",
           "type": "string",
           "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneEquinixCloudSpec": {
+      "type": "object",
+      "title": "KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "x-go-name": "APIKey"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -24661,21 +24676,6 @@
         "username": {
           "type": "string",
           "x-go-name": "Username"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "KubeOnePacketCloudSpec": {
-      "type": "object",
-      "title": "KubeOnePacketCloudSpec specifies access data to a Packet cloud.",
-      "properties": {
-        "apiKey": {
-          "type": "string",
-          "x-go-name": "APIKey"
-        },
-        "projectID": {
-          "type": "string",
-          "x-go-name": "ProjectID"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

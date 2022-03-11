@@ -52,13 +52,11 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 	}
 	kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneManifestSecretCleanupFinalizer)
 
-	if cloud.KubeOne.CloudSpec != nil {
-		err := clusterProvider.CreateOrUpdateKubeOneCredentialSecret(ctx, *cloud.KubeOne.CloudSpec, newCluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
+	err = clusterProvider.CreateOrUpdateKubeOneCredentialSecret(ctx, *cloud.KubeOne.CloudSpec, newCluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }

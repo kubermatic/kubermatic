@@ -685,8 +685,8 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx cont
 	if cloud.Hetzner != nil {
 		return createOrUpdateKubeOneHetznerSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
 	}
-	if cloud.Packet != nil {
-		return createOrUpdateKubeOnePacketSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+	if cloud.Equinix != nil {
+		return createOrUpdateKubeOneEquinixSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
 	}
 	if cloud.Openstack != nil {
 		return createOrUpdateKubeOneOpenstackSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
@@ -866,9 +866,9 @@ func createOrUpdateKubeOneVSphereSecret(ctx context.Context, cloud apiv2.KubeOne
 	return nil
 }
 
-func createOrUpdateKubeOnePacketSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
-	apiKey := cloud.Packet.APIKey
-	projectID := cloud.Packet.ProjectID
+func createOrUpdateKubeOneEquinixSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
+	apiKey := cloud.Equinix.APIKey
+	projectID := cloud.Equinix.ProjectID
 
 	if apiKey == "" || projectID == "" {
 		return errors.NewBadRequest("kubeone Packet credentials missing")
@@ -985,8 +985,8 @@ func GetKubeOneCredentialsSecretName(cloud apiv2.KubeOneCloudSpec, externalClust
 	if cloud.Openstack != nil {
 		return fmt.Sprintf("credential-kubeone-external-cluster-openstack-%s", externalCluster.Name)
 	}
-	if cloud.Packet != nil {
-		return fmt.Sprintf("credential-kubeone-external-cluster-packet-%s", externalCluster.Name)
+	if cloud.Equinix != nil {
+		return fmt.Sprintf("credential-kubeone-external-cluster-equinix-%s", externalCluster.Name)
 	}
 	if cloud.VSphere != nil {
 		return fmt.Sprintf("credential-kubeone-external-cluster-vsphere-%s", externalCluster.Name)

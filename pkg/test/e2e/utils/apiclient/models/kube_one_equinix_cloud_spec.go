@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// KubeOnePacketCloudSpec KubeOnePacketCloudSpec specifies access data to a Packet cloud.
+// KubeOneEquinixCloudSpec KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.
 //
-// swagger:model KubeOnePacketCloudSpec
-type KubeOnePacketCloudSpec struct {
+// swagger:model KubeOneEquinixCloudSpec
+type KubeOneEquinixCloudSpec struct {
 
 	// API key
 	APIKey string `json:"apiKey,omitempty"`
@@ -24,18 +24,18 @@ type KubeOnePacketCloudSpec struct {
 	ProjectID string `json:"projectID,omitempty"`
 }
 
-// Validate validates this kube one packet cloud spec
-func (m *KubeOnePacketCloudSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this kube one equinix cloud spec
+func (m *KubeOneEquinixCloudSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this kube one packet cloud spec based on context it is used
-func (m *KubeOnePacketCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this kube one equinix cloud spec based on context it is used
+func (m *KubeOneEquinixCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *KubeOnePacketCloudSpec) MarshalBinary() ([]byte, error) {
+func (m *KubeOneEquinixCloudSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -43,8 +43,8 @@ func (m *KubeOnePacketCloudSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *KubeOnePacketCloudSpec) UnmarshalBinary(b []byte) error {
-	var res KubeOnePacketCloudSpec
+func (m *KubeOneEquinixCloudSpec) UnmarshalBinary(b []byte) error {
+	var res KubeOneEquinixCloudSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

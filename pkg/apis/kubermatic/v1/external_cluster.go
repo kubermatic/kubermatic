@@ -132,7 +132,7 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 		cluster.Spec.Cloud.AWS = &AWSCloudSpec{}
 	}
 	if cloud.AKS != nil {
-		cluster.Spec.Cloud.AWS = &AWSCloudSpec{}
+		cluster.Spec.Cloud.Azure = &AzureCloudSpec{}
 	}
 	return cluster.GetSecretName()
 }

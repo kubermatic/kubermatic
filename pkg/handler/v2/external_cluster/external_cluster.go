@@ -115,7 +115,7 @@ func DecodeManifestFromKubeOneReq(encodedManifest string) (*kubeonev1beta2.KubeO
 func validatKubeOneReq(kubeOne *apiv2.KubeOneSpec) error {
 	// validate manifest
 	if len(kubeOne.Manifest) == 0 {
-		return fmt.Errorf("the KubeOne manifest cannot be empty")
+		return fmt.Errorf("the KubeOne Cluster manifest cannot be empty")
 	} else {
 		manifest, err := DecodeManifestFromKubeOneReq(kubeOne.Manifest)
 		if err != nil {
@@ -129,6 +129,9 @@ func validatKubeOneReq(kubeOne *apiv2.KubeOneSpec) error {
 	// validate sshKey
 	if len(kubeOne.SSHKey.PrivateKey) == 0 {
 		return fmt.Errorf("the KubeOne SSH Key cannot be empty")
+	}
+	if kubeOne.CloudSpec == nil {
+		return fmt.Errorf("the KubeOne Cluster Provider Credentials cannot be empty")
 	}
 
 	return nil

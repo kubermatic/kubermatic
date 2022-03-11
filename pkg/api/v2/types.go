@@ -465,7 +465,7 @@ type KubeOneCloudSpec struct {
 	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
 	Digitalocean *KubeOneDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	Openstack    *KubeOneOpenstackCloudSpec    `json:"openstack,omitempty"`
-	Packet       *KubeOnePacketCloudSpec       `json:"packet,omitempty"`
+	Equinix      *KubeOneEquinixCloudSpec      `json:"equinix,omitempty"`
 	Hetzner      *KubeOneHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *KubeOneVSphereCloudSpec      `json:"vsphere,omitempty"`
 	Nutanix      *KubeOneNutanixCloudSpec      `json:"nutanix,omitempty"`
@@ -517,8 +517,8 @@ type KubeOneVSphereCloudSpec struct {
 	Password string `json:"password"`
 }
 
-// KubeOnePacketCloudSpec specifies access data to a Packet cloud.
-type KubeOnePacketCloudSpec struct {
+// KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.
+type KubeOneEquinixCloudSpec struct {
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectID"`
 }
