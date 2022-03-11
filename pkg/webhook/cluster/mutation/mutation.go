@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
@@ -34,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -97,6 +99,11 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
 
+		if err := h.ensureProjectRelation(ctx, cluster, nil); err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+		}
+
 		if err := h.mutateCreate(cluster); err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
@@ -113,6 +120,11 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		// apply defaults to the existing clusters
 		err := h.applyDefaults(ctx, cluster)
 		if err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+		}
+
+		if err := h.ensureProjectRelation(ctx, cluster, oldCluster); err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
@@ -154,6 +166,59 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cl
 	}
 
 	return defaulting.DefaultClusterSpec(ctx, &c.Spec, defaultTemplate, seed, config, provider)
+}
+
+func (h *AdmissionHandler) ensureProjectRelation(ctx context.Context, cluster *kubermaticv1.Cluster, oldCluster *kubermaticv1.Cluster) *field.Error {
+	label := kubermaticv1.ProjectIDLabelKey
+	fieldPath := field.NewPath("metadata", "labels")
+
+	if oldCluster != nil && cluster.Labels[label] != oldCluster.Labels[label] {
+		return field.Invalid(fieldPath, cluster.Labels[label], "the project label is immutable")
+	}
+
+	projectID := cluster.Labels[label]
+	if projectID == "" {
+		return field.Required(fieldPath, fmt.Sprintf("Cluster resources must have a %q label", label))
+	}
+
+	projects := kubermaticv1.ProjectList{}
+	if err := h.client.List(ctx, &projects); err != nil {
+		return field.InternalError(fieldPath, fmt.Errorf("failed to list projects: %w", err))
+	}
+
+	var project *kubermaticv1.Project
+	for i, p := range projects.Items {
+		if projectID == p.Name {
+			project = &projects.Items[i]
+			break
+		}
+	}
+
+	if project == nil {
+		return field.Invalid(fieldPath, projectID, "no such project exists")
+	}
+
+	ownerRefs := []metav1.OwnerReference{}
+	for _, ref := range cluster.OwnerReferences {
+		// strip all possible project owner refs
+		if ref.APIVersion != kubermaticv1.SchemeGroupVersion.String() || ref.Kind != "Project" {
+			ownerRefs = append(ownerRefs, ref)
+		}
+	}
+
+	// add a owner ref to the project
+	ownerRefs = append(ownerRefs, *metav1.NewControllerRef(project, project.GroupVersionKind()))
+
+	sort.Slice(ownerRefs, func(i, j int) bool {
+		a := fmt.Sprintf("%s:%s:%s", ownerRefs[i].APIVersion, ownerRefs[i].Kind, ownerRefs[i].Name)
+		b := fmt.Sprintf("%s:%s:%s", ownerRefs[j].APIVersion, ownerRefs[j].Kind, ownerRefs[j].Name)
+
+		return a < b
+	})
+
+	cluster.OwnerReferences = ownerRefs
+
+	return nil
 }
 
 // mutateCreate is an addition to regular defaulting for new clusters.

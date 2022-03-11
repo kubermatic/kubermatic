@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
-	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -59,33 +58,6 @@ func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGette
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) validateProjectRelation(ctx context.Context, cluster *kubermaticv1.Cluster, oldCluster *kubermaticv1.Cluster) *field.Error {
-	label := kubermaticv1.ProjectIDLabelKey
-	fieldPath := field.NewPath("metadata", "labels")
-
-	if oldCluster != nil && cluster.Labels[label] != oldCluster.Labels[label] {
-		return field.Invalid(fieldPath, cluster.Labels[label], "the project label is immutable")
-	}
-
-	projectID := cluster.Labels[label]
-	if projectID == "" {
-		return field.Required(fieldPath, fmt.Sprintf("Cluster resources must have a %q label", label))
-	}
-
-	projects := kubermaticv1.ProjectList{}
-	if err := v.client.List(ctx, &projects); err != nil {
-		return field.InternalError(fieldPath, fmt.Errorf("failed to list projects: %w", err))
-	}
-
-	for _, project := range projects.Items {
-		if projectID == project.Name {
-			return nil
-		}
-	}
-
-	return field.Invalid(fieldPath, projectID, "no such project exists")
-}
-
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	cluster, ok := obj.(*kubermaticv1.Cluster)
 	if !ok {
@@ -97,13 +69,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return err
 	}
 
-	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, v.features, nil)
-
-	if err := v.validateProjectRelation(ctx, cluster, nil); err != nil {
-		errs = append(errs, err)
-	}
-
-	return errs.ToAggregate()
+	return validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, v.features, nil).ToAggregate()
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
@@ -122,13 +88,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		return err
 	}
 
-	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, v.features)
-
-	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
-		errs = append(errs, err)
-	}
-
-	return errs.ToAggregate()
+	return validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, v.features).ToAggregate()
 }
 
 func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
