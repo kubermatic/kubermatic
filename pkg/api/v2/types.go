@@ -138,6 +138,19 @@ type Preset struct {
 	Providers []PresetProvider `json:"providers"`
 }
 
+// PresetBody represents the body of a created preset
+// swagger:model PresetBody
+type PresetBody struct {
+	PresetBodyMetadata `json:"metadata,omitempty"`
+	Spec               crdapiv1.PresetSpec `json:"spec"`
+}
+
+// PresetBodyMetadata represents metadata within the body of a created preset
+// swagger:model PresetBodyMetadata
+type PresetBodyMetadata struct {
+	Name string `json:"name,omitempty"`
+}
+
 // PresetProvider represents a preset provider
 // swagger:model PresetProvider
 type PresetProvider struct {
