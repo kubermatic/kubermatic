@@ -33,7 +33,7 @@ type Openstack struct {
 	Enabled bool `json:"enabled,omitempty"`
 
 	// floating IP pool
-	FloatingIPPool string `json:"floatingIPPool,omitempty"`
+	FloatingIPPool string `json:"floatingIpPool,omitempty"`
 
 	// network
 	Network string `json:"network,omitempty"`
@@ -55,6 +55,12 @@ type Openstack struct {
 
 	// subnet ID
 	SubnetID string `json:"subnetID,omitempty"`
+
+	// tenant
+	Tenant string `json:"tenant,omitempty"`
+
+	// tenant ID
+	TenantID string `json:"tenantID,omitempty"`
 
 	// use token
 	UseToken bool `json:"useToken,omitempty"`

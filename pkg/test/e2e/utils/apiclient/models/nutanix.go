@@ -17,19 +17,7 @@ import (
 // swagger:model Nutanix
 type Nutanix struct {
 
-	// CSIEndpoint to access Nutanix Prism Element for csi driver
-	CSIEndpoint string `json:"csiEndpoint,omitempty"`
-
-	// Prism Element Password for csi driver
-	CSIPassword string `json:"csiPassword,omitempty"`
-
-	// CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
-	CSIPort int32 `json:"csiPort,omitempty"`
-
-	// Prism Element Username for csi driver
-	CSIUsername string `json:"csiUsername,omitempty"`
-
-	// ClusterName is the Nutanix cluster to deploy resources and nodes to.
+	// cluster name
 	ClusterName string `json:"clusterName,omitempty"`
 
 	// datacenter
@@ -38,17 +26,16 @@ type Nutanix struct {
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
 
-	// Password is the password corresponding to the provided user.
+	// password
 	Password string `json:"password,omitempty"`
 
-	// ProjectName is the optional Nutanix project to use. If none is given,
-	// no project will be used.
+	// project name
 	ProjectName string `json:"projectName,omitempty"`
 
-	// ProxyURL is used to optionally configure a HTTP proxy to access Nutanix Prism Central.
+	// proxy URL
 	ProxyURL string `json:"proxyURL,omitempty"`
 
-	// Username is the username to access the Nutanix Prism Central API.
+	// username
 	Username string `json:"username,omitempty"`
 }
 

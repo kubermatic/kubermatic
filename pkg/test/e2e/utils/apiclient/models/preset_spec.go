@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// PresetSpec Presets specifies default presets for supported providers.
+// PresetSpec Presets specifies default presets for supported providers
 //
 // swagger:model PresetSpec
 type PresetSpec struct {
@@ -21,7 +21,16 @@ type PresetSpec struct {
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
 
-	// required emails
+	// see RequiredEmails
+	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
+
+	// RequiredEmails: specify emails and domains
+	// RequiredEmailDomain is appended to RequiredEmails for backward compatibility.
+	// e.g.:
+	// RequiredEmailDomain: "example.com"
+	// RequiredEmails: ["foo.com", "foo.bar@test.com"]
+	// Result:
+	// @example.com, *@foo.com and foo.bar@test.com can use the Preset
 	RequiredEmails []string `json:"requiredEmails"`
 
 	// aks

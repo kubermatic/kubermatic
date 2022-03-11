@@ -30,7 +30,7 @@ type Packet struct {
 	Enabled bool `json:"enabled,omitempty"`
 
 	// project ID
-	ProjectID string `json:"projectID,omitempty"`
+	ProjectID string `json:"projectId,omitempty"`
 }
 
 // Validate validates this packet

@@ -19,7 +19,7 @@ import (
 type Azure struct {
 
 	// client ID
-	ClientID string `json:"clientID,omitempty"`
+	ClientID string `json:"clientId,omitempty"`
 
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
@@ -43,10 +43,10 @@ type Azure struct {
 	SubnetName string `json:"subnet,omitempty"`
 
 	// subscription ID
-	SubscriptionID string `json:"subscriptionID,omitempty"`
+	SubscriptionID string `json:"subscriptionId,omitempty"`
 
 	// tenant ID
-	TenantID string `json:"tenantID,omitempty"`
+	TenantID string `json:"tenantId,omitempty"`
 
 	// v net name
 	VNetName string `json:"vnet,omitempty"`

@@ -18,7 +18,7 @@ import (
 type AKS struct {
 
 	// client ID
-	ClientID string `json:"clientID,omitempty"`
+	ClientID string `json:"clientId,omitempty"`
 
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
@@ -30,10 +30,10 @@ type AKS struct {
 	Enabled bool `json:"enabled,omitempty"`
 
 	// subscription ID
-	SubscriptionID string `json:"subscriptionID,omitempty"`
+	SubscriptionID string `json:"subscriptionId,omitempty"`
 
 	// tenant ID
-	TenantID string `json:"tenantID,omitempty"`
+	TenantID string `json:"tenantId,omitempty"`
 }
 
 // Validate validates this a k s

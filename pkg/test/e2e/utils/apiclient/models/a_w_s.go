@@ -18,7 +18,7 @@ import (
 type AWS struct {
 
 	// access key ID
-	AccessKeyID string `json:"accessKeyID,omitempty"`
+	AccessKeyID string `json:"accessKeyId,omitempty"`
 
 	// assume role a r n
 	AssumeRoleARN string `json:"assumeRoleARN,omitempty"`
@@ -39,7 +39,7 @@ type AWS struct {
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
 	// route table ID
-	RouteTableID string `json:"routeTableID,omitempty"`
+	RouteTableID string `json:"routeTableId,omitempty"`
 
 	// secret access key
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
@@ -48,7 +48,7 @@ type AWS struct {
 	SecurityGroupID string `json:"securityGroupID,omitempty"`
 
 	// v p c ID
-	VPCID string `json:"vpcID,omitempty"`
+	VPCID string `json:"vpcId,omitempty"`
 }
 
 // Validate validates this a w s

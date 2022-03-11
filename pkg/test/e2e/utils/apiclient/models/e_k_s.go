@@ -18,7 +18,7 @@ import (
 type EKS struct {
 
 	// access key ID
-	AccessKeyID string `json:"accessKeyID,omitempty"`
+	AccessKeyID string `json:"accessKeyId,omitempty"`
 
 	// datacenter
 	Datacenter string `json:"datacenter,omitempty"`
