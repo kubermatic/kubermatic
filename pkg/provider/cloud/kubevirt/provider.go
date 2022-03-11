@@ -22,6 +22,8 @@ import (
 	"errors"
 	"fmt"
 
+	kubevirtv1 "kubevirt.io/api/core/v1"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -102,6 +104,11 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
+	err = reconcilePresets(ctx, cluster.Status.NamespaceName, client)
+	if err != nil {
+		return cluster, err
+	}
+
 	return cluster, nil
 }
 
@@ -139,6 +146,10 @@ func (k *kubevirt) GetClientWithRestConfigForCluster(cluster *kubermaticv1.Clust
 
 	client, restConfig, err := NewClientWithRestConfig(kubeconfig)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := kubevirtv1.AddToScheme(client.Scheme()); err != nil {
 		return nil, nil, err
 	}
 

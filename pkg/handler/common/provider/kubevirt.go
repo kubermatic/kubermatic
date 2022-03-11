@@ -99,6 +99,9 @@ func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetLi
 		return nil, err
 	}
 
+	// Add a standard preset to the list
+	vmiPresets.Items = append(vmiPresets.Items, *kubevirt.GetKubermaticStandardPreset())
+
 	res := apiv2.VirtualMachineInstancePresetList{}
 	for _, vmiPreset := range vmiPresets.Items {
 		preset, err := newAPIVirtualMachineInstancePreset(&vmiPreset)

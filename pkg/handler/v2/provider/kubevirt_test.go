@@ -146,7 +146,9 @@ func GenKubeVirtKubermaticPreset() *kubermaticv1.Preset {
 }
 
 var (
-	presetListResponse = `[{"name":"preset-default-small-1","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},{"name":"preset-default-small-2","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"}]`
+	presetListResponse = `[{"name":"preset-default-small-1","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},` +
+		`{"name":"preset-default-small-2","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},` +
+		`{"name":"kubermatic-standard","spec":"{\"selector\":{\"matchLabels\":{\"kubevirt.io/flavor\":\"kubermatic-standard\"}},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"2\",\"memory\":\"8Gi\"},\"limits\":{\"cpu\":\"2\",\"memory\":\"8Gi\"}},\"devices\":{}}}"}]`
 )
 
 func setFakeNewKubeVirtClient(objects []ctrlruntimeclient.Object) {

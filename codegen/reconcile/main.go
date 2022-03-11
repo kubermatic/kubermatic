@@ -219,6 +219,12 @@ func main() {
 				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1",
 				APIVersionPrefix:   "AppKubermaticV1",
 			},
+			{
+				ResourceName:       "VirtualMachineInstancePreset",
+				ImportAlias:        "kubevirtv1",
+				ResourceImportPath: "kubevirt.io/api/core/v1",
+				APIVersionPrefix:   "KubeVirtV1",
+			},
 		},
 	}
 
