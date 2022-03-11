@@ -45,7 +45,7 @@ require (
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.11
-	github.com/kubermatic/machine-controller v1.42.1
+	github.com/kubermatic/machine-controller v1.43.0
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
@@ -67,9 +67,9 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.etcd.io/etcd/etcdutl/v3 v3.5.1
 	go.uber.org/zap v1.19.1
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
+	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
 	golang.org/x/oauth2 v0.0.0-20211028175245-ba495a64dcb5
-	golang.org/x/tools v0.1.7
+	golang.org/x/tools v0.1.8
 	gomodules.xyz/jsonpatch/v2 v2.2.0
 	google.golang.org/api v0.56.0
 	google.golang.org/genproto v0.0.0-20211102202547-e9cf271f7f2c
@@ -80,7 +80,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8c.io/operating-system-manager v0.3.9
+	k8c.io/operating-system-manager v0.4.0
 	k8s.io/api v0.23.0
 	k8s.io/apiextensions-apiserver v0.23.0
 	k8s.io/apimachinery v0.23.0
@@ -90,8 +90,8 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.23.0
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.21.3
-	k8s.io/kubectl v0.21.3
+	k8s.io/kube-aggregator v0.22.2
+	k8s.io/kubectl v0.22.2
 	k8s.io/metrics v0.23.0
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
@@ -103,6 +103,7 @@ require (
 )
 
 replace (
+	github.com/apoydence/onpar => github.com/poy/onpar v1.1.2
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20210428205234-a8389931bee7
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
 	github.com/openshift/library-go => github.com/mhenriks/library-go v0.0.0-20210511195009-51ba86622560
@@ -119,6 +120,11 @@ replace (
 	k8s.io/kubectl => k8s.io/kubectl v0.23.0
 	k8s.io/kubelet => k8s.io/kubelet v0.23.0
 	k8s.io/metrics => k8s.io/metrics v0.23.0
+)
+
+require (
+	k8c.io/kubeone v1.4.0
+	kubevirt.io/containerized-data-importer-api v1.41.1-0.20211201033752-05520fb9f18d // indirect
 )
 
 require (
@@ -140,6 +146,7 @@ require (
 	github.com/ajeddeloh/go-json v0.0.0-20200220154158-5ae607161559 // indirect
 	github.com/ajeddeloh/yaml v0.0.0-20170912190910-6b94386aeefd // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
+	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/smithy-go v1.10.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -232,12 +239,13 @@ require (
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
+	github.com/poy/onpar v1.0.1 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20201205024021-ac21108117ac // indirect
 	github.com/prometheus/client_model v0.2.1-0.20200623203004-60555c9708c7 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
+	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/rs/xid v1.2.1 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -269,7 +277,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
-	golang.org/x/mod v0.5.0 // indirect
+	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
@@ -287,7 +295,6 @@ require (
 	k8s.io/klog/v2 v2.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/kubelet v0.22.2 // indirect
-	kubevirt.io/containerized-data-importer-api v1.41.1-0.20211201033752-05520fb9f18d // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk v0.2.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
 	sigs.k8s.io/kustomize/api v0.10.1 // indirect

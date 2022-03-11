@@ -13159,6 +13159,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13170,13 +13177,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -22970,6 +22970,9 @@
         },
         "gke": {
           "$ref": "#/definitions/GKECloudSpec"
+        },
+        "kubeOne": {
+          "$ref": "#/definitions/KubeOneSpec"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -24469,6 +24472,265 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "KubeOneAWSCloudSpec": {
+      "type": "object",
+      "title": "KubeOneAWSCloudSpec specifies access data to Amazon Web Services.",
+      "properties": {
+        "accessKeyID": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "x-go-name": "SecretAccessKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneAzureCloudSpec": {
+      "type": "object",
+      "title": "KubeOneAzureCloudSpec specifies access credentials to Azure cloud.",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneCloudSpec": {
+      "type": "object",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/KubeOneAWSCloudSpec"
+        },
+        "azure": {
+          "$ref": "#/definitions/KubeOneAzureCloudSpec"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/KubeOneDigitaloceanCloudSpec"
+        },
+        "equinix": {
+          "$ref": "#/definitions/KubeOneEquinixCloudSpec"
+        },
+        "gcp": {
+          "$ref": "#/definitions/KubeOneGCPCloudSpec"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/KubeOneHetznerCloudSpec"
+        },
+        "nutanix": {
+          "$ref": "#/definitions/KubeOneNutanixCloudSpec"
+        },
+        "openstack": {
+          "$ref": "#/definitions/KubeOneOpenstackCloudSpec"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/KubeOneVSphereCloudSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneDigitaloceanCloudSpec": {
+      "type": "object",
+      "title": "KubeOneDigitaloceanCloudSpec specifies access data to DigitalOcean.",
+      "properties": {
+        "token": {
+          "description": "Token is used to authenticate with the DigitalOcean API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneEquinixCloudSpec": {
+      "type": "object",
+      "title": "KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "x-go-name": "APIKey"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneGCPCloudSpec": {
+      "type": "object",
+      "title": "KubeOneGCPCloudSpec specifies access data to GCP.",
+      "properties": {
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneHetznerCloudSpec": {
+      "type": "object",
+      "title": "KubeOneHetznerCloudSpec specifies access data to hetzner cloud.",
+      "properties": {
+        "token": {
+          "description": "Token is used to authenticate with the Hetzner cloud API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneNutanixCloudSpec": {
+      "type": "object",
+      "title": "KubeOneNutanixCloudSpec specifies the access data to Nutanix.",
+      "properties": {
+        "allowInsecure": {
+          "type": "boolean",
+          "x-go-name": "AllowInsecure"
+        },
+        "clusterName": {
+          "description": "ClusterName is the Nutanix cluster that this user cluster will be deployed to.\n+optional",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "elementEndpoint": {
+          "description": "PrismElementEndpoint to access Nutanix Prism Element for the CSI driver",
+          "type": "string",
+          "x-go-name": "PrismElementEndpoint"
+        },
+        "elementPassword": {
+          "description": "PrismElementPassword to be used for the CSI driver",
+          "type": "string",
+          "x-go-name": "PrismElementPassword"
+        },
+        "elementUsername": {
+          "description": "PrismElementUsername to be used for the CSI driver",
+          "type": "string",
+          "x-go-name": "PrismElementUsername"
+        },
+        "endpoint": {
+          "description": "Endpoint is the Nutanix API (Prism Central) endpoint",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "port": {
+          "description": "Port is the Nutanix API (Prism Central) port",
+          "type": "string",
+          "x-go-name": "Port"
+        },
+        "proxyURL": {
+          "type": "string",
+          "x-go-name": "ProxyURL"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneOpenstackCloudSpec": {
+      "type": "object",
+      "title": "KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.",
+      "properties": {
+        "authURL": {
+          "type": "string",
+          "x-go-name": "AuthURL"
+        },
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "project": {
+          "description": "Project, formally known as tenant.",
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "description": "ProjectID, formally known as tenantID.",
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneSSHKey": {
+      "type": "object",
+      "title": "SSHKeySpec represents the details of a ssh key.",
+      "properties": {
+        "passphrase": {
+          "type": "string",
+          "x-go-name": "Passphrase"
+        },
+        "privateKey": {
+          "description": "PrivateKey Base64 encoded privateKey",
+          "type": "string",
+          "x-go-name": "PrivateKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneSpec": {
+      "type": "object",
+      "properties": {
+        "cloudSpec": {
+          "$ref": "#/definitions/KubeOneCloudSpec"
+        },
+        "manifest": {
+          "description": "Manifest Base64 encoded manifest",
+          "type": "string",
+          "x-go-name": "Manifest"
+        },
+        "sshKey": {
+          "$ref": "#/definitions/KubeOneSSHKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneVSphereCloudSpec": {
+      "type": "object",
+      "title": "KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.",
+      "properties": {
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "server": {
+          "type": "string",
+          "x-go-name": "Server"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "KubermaticVersions": {
       "type": "object",

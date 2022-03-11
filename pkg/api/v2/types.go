@@ -389,7 +389,7 @@ type MLAAdminSetting struct {
 type ExternalCluster struct {
 	apiv1.ObjectMeta `json:",inline"`
 	Labels           map[string]string         `json:"labels,omitempty"`
-	Spec             ExternalClusterSpec       `json:"spec"`
+	Spec             ExternalClusterSpec       `json:"spec,omitempty"`
 	Cloud            *ExternalClusterCloudSpec `json:"cloud,omitempty"`
 	Status           ExternalClusterStatus     `json:"status"`
 }
@@ -439,9 +439,117 @@ type ExternalClusterSpec struct {
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
 // swagger:model ExternalClusterCloudSpec
 type ExternalClusterCloudSpec struct {
-	GKE *GKECloudSpec `json:"gke,omitempty"`
-	EKS *EKSCloudSpec `json:"eks,omitempty"`
-	AKS *AKSCloudSpec `json:"aks,omitempty"`
+	GKE     *GKECloudSpec `json:"gke,omitempty"`
+	EKS     *EKSCloudSpec `json:"eks,omitempty"`
+	AKS     *AKSCloudSpec `json:"aks,omitempty"`
+	KubeOne *KubeOneSpec  `json:"kubeOne,omitempty"`
+}
+
+type KubeOneSpec struct {
+	// Manifest Base64 encoded manifest
+	Manifest  string            `json:"manifest"`
+	SSHKey    KubeOneSSHKey     `json:"sshKey"`
+	CloudSpec *KubeOneCloudSpec `json:"cloudSpec"`
+}
+
+// SSHKeySpec represents the details of a ssh key.
+type KubeOneSSHKey struct {
+	// PrivateKey Base64 encoded privateKey
+	PrivateKey string `json:"privateKey,omitempty"`
+	Passphrase string `json:"passphrase"`
+}
+
+type KubeOneCloudSpec struct {
+	AWS          *KubeOneAWSCloudSpec          `json:"aws,omitempty"`
+	GCP          *KubeOneGCPCloudSpec          `json:"gcp,omitempty"`
+	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
+	Digitalocean *KubeOneDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
+	Openstack    *KubeOneOpenstackCloudSpec    `json:"openstack,omitempty"`
+	Equinix      *KubeOneEquinixCloudSpec      `json:"equinix,omitempty"`
+	Hetzner      *KubeOneHetznerCloudSpec      `json:"hetzner,omitempty"`
+	VSphere      *KubeOneVSphereCloudSpec      `json:"vsphere,omitempty"`
+	Nutanix      *KubeOneNutanixCloudSpec      `json:"nutanix,omitempty"`
+}
+
+// KubeOneAWSCloudSpec specifies access data to Amazon Web Services.
+type KubeOneAWSCloudSpec struct {
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+// KubeOneGCPCloudSpec specifies access data to GCP.
+type KubeOneGCPCloudSpec struct {
+	ServiceAccount string `json:"serviceAccount"`
+}
+
+// KubeOneAzureCloudSpec specifies access credentials to Azure cloud.
+type KubeOneAzureCloudSpec struct {
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
+// KubeOneDigitaloceanCloudSpec specifies access data to DigitalOcean.
+type KubeOneDigitaloceanCloudSpec struct {
+	// Token is used to authenticate with the DigitalOcean API.
+	Token string `json:"token"`
+}
+
+// KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.
+type KubeOneOpenstackCloudSpec struct {
+	AuthURL  string `json:"authURL"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+
+	// Project, formally known as tenant.
+	Project string `json:"project"`
+	// ProjectID, formally known as tenantID.
+	ProjectID string `json:"projectID"`
+
+	Domain string `json:"domain"`
+}
+
+// KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.
+type KubeOneVSphereCloudSpec struct {
+	Server   string `json:"server"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.
+type KubeOneEquinixCloudSpec struct {
+	APIKey    string `json:"apiKey"`
+	ProjectID string `json:"projectID"`
+}
+
+// KubeOneHetznerCloudSpec specifies access data to hetzner cloud.
+type KubeOneHetznerCloudSpec struct {
+	// Token is used to authenticate with the Hetzner cloud API.
+	Token string `json:"token"`
+}
+
+// KubeOneNutanixCloudSpec specifies the access data to Nutanix.
+type KubeOneNutanixCloudSpec struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	// Endpoint is the Nutanix API (Prism Central) endpoint
+	Endpoint string `json:"endpoint"`
+	// Port is the Nutanix API (Prism Central) port
+	Port string `json:"port"`
+
+	// PrismElementUsername to be used for the CSI driver
+	PrismElementUsername string `json:"elementUsername"`
+	// PrismElementPassword to be used for the CSI driver
+	PrismElementPassword string `json:"elementPassword"`
+	// PrismElementEndpoint to access Nutanix Prism Element for the CSI driver
+	PrismElementEndpoint string `json:"elementEndpoint"`
+
+	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
+	// +optional
+	ClusterName   string `json:"clusterName,omitempty"`
+	AllowInsecure bool   `json:"allowInsecure,omitempty"`
+	ProxyURL      string `json:"proxyURL,omitempty"`
 }
 
 type GKECloudSpec struct {

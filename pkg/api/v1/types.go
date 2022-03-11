@@ -2348,6 +2348,10 @@ const (
 	InClusterLBCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-lb"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
 	CredentialsSecretsCleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials-secrets"
+	// ExternalClusterKubeOneManifestSecretCleanupFinalizer indicates that secrets for manifest secret still need cleanup.
+	ExternalClusterKubeOneManifestSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-manifest-secret"
+	// ExternalClusterKubeOneSSHSecretCleanupFinalizer indicates that secrets for ssh secret still need cleanup.
+	ExternalClusterKubeOneSSHSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-ssh-secret"
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
 	UserClusterRoleCleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
 	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.

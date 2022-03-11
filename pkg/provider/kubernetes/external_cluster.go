@@ -465,3 +465,57 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
 	return p.clientPrivileged
 }
+
+func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, encodedManifest string, externalCluster *kubermaticv1.ExternalCluster) error {
+	secretName := GetKubeOneManifestSecretName(externalCluster)
+	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
+	if err != nil {
+		return err
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, secretName, map[string][]byte{
+		resources.KubeOneManifest: manifest,
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.ManifestReference = *credentialRef
+
+	return nil
+}
+
+func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error {
+	secretName := GetKubeOneSSHSecretName(externalCluster)
+	privateKey, err := base64.StdEncoding.DecodeString(sshKey.PrivateKey)
+	if err != nil {
+		return err
+	}
+	data := map[string][]byte{
+		resources.KubeOneSSHPrivateKey: privateKey,
+	}
+	if sshKey.Passphrase != "" {
+		data[resources.KubeOneSSHPassphrase] = []byte(sshKey.Passphrase)
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, secretName, data)
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.SSHReference = *credentialRef
+
+	return nil
+}
+
+func GetKubeOneSSHSecretName(externalCluster *kubermaticv1.ExternalCluster) string {
+	return fmt.Sprintf("ssh-kubeone-external-cluster-%s", externalCluster.Name)
+}
+
+func GetKubeOneManifestSecretName(externalCluster *kubermaticv1.ExternalCluster) string {
+	return fmt.Sprintf("manifest-kubeone-external-cluster-%s", externalCluster.Name)
+}
