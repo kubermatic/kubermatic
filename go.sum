@@ -1254,8 +1254,8 @@ github.com/kubermatic/grafanasdk v0.9.10 h1:wgjdMgsJh/fWiYL9wZKRi7gw29zQfnOIxwv9
 github.com/kubermatic/grafanasdk v0.9.10/go.mod h1:rjbIRhEXuIdXR4BCYTxtgJ3Ekmemq1WV9rnh5n5YORM=
 github.com/kubermatic/machine-controller v1.23.1/go.mod h1:mXWbT7SjqpgFhzCFT3yMEHKdIlT+KkGy4KQCkNRM9Fc=
 github.com/kubermatic/machine-controller v1.26.0/go.mod h1:dcJ+GdDSCxCwM0poxwOK8hVO7epiOORDmNMmb2veyw4=
-github.com/kubermatic/machine-controller v1.36.1 h1:6O8HhUiUPHXSKyXp8OMQ7AhxILGnIMJU05hPtZuVazM=
-github.com/kubermatic/machine-controller v1.36.1/go.mod h1:6BFZEvEMZi8OT8aHOsS7DXYsF6ZSpmsNxsci7OLTTn8=
+github.com/kubermatic/machine-controller v1.36.4 h1:XvB0aDBB8U80WS94+JZt7mM9W1+3QlayXLAi4o0MXbo=
+github.com/kubermatic/machine-controller v1.36.4/go.mod h1:6BFZEvEMZi8OT8aHOsS7DXYsF6ZSpmsNxsci7OLTTn8=
 github.com/kulti/thelper v0.4.0/go.mod h1:vMu2Cizjy/grP+jmsvOFDx1kYP6+PD1lqg4Yu5exl2U=
 github.com/kunwardeep/paralleltest v1.0.2/go.mod h1:ZPqNm1fVHPllh5LPVujzbVz1JN2GhLxSfY+oqUsvG30=
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
