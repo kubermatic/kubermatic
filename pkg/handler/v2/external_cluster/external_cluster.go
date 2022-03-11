@@ -267,43 +267,11 @@ func CreateEndpoint(
 			if err := validatKubeOneReq(cloud.KubeOne); err != nil {
 				return nil, errors.NewBadRequest(err.Error())
 			}
-
-			kubeOneCluster, err := DecodeManifestFromKubeOneReq(cloud.KubeOne.Manifest)
-			if err != nil {
-				return nil, err
-			}
-
-			newCluster := genExternalCluster(kubeOneCluster.Name, project.Name)
-			newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
-				KubeOne: &kubermaticv1.ExternalClusterKubeOneCloudSpec{
-					Name: kubeOneCluster.Name,
-				},
-			}
-
-			err = clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, cloud.KubeOne.SSHKey, newCluster)
+			createdCluster, err := importKubeOneCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneSSHSecretCleanupFinalizer)
 
-			err = clusterProvider.CreateOrUpdateKubeOneManifestSecret(ctx, cloud.KubeOne.Manifest, newCluster)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneManifestSecretCleanupFinalizer)
-
-			if cloud.KubeOne.CloudSpec != nil {
-				err := clusterProvider.CreateOrUpdateKubeOneCredentialSecret(ctx, *cloud.KubeOne.CloudSpec, newCluster)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
-				kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
-			}
-
-			createdCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
 			apiCluster := convertClusterToAPI(createdCluster)
 			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
 			return apiCluster, nil

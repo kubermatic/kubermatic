@@ -698,7 +698,6 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx cont
 }
 
 func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalcluster *kubermaticv1.ExternalCluster) error {
-
 	if cloud.AWS.AccessKeyID == "" || cloud.AWS.SecretAccessKey == "" {
 		return errors.NewBadRequest("kubeone aws credentials missing")
 	}
@@ -738,7 +737,7 @@ func createOrUpdateKubeOneGCPSecret(ctx context.Context, cloud apiv2.KubeOneClou
 	}
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialKubeOneSecret(ctx, masterClient, externalCluster, secretName, map[string][]byte{
-		resources.GCPServiceAccount: []byte(serviceAccount),
+		resources.GCPServiceAccount: serviceAccount,
 	})
 	if err != nil {
 		return err
