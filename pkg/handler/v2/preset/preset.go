@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // listPresetsReq represents a request for a list of presets
@@ -265,7 +266,7 @@ type createPresetReq struct {
 	ProviderName string `json:"provider_name"`
 	// in: body
 	// required: true
-	Body crdapiv1.Preset
+	Body v2.PresetBody
 }
 
 // Validate validates createPresetReq request
@@ -282,11 +283,11 @@ func (r createPresetReq) Validate() error {
 		return fmt.Errorf("preset name cannot be empty")
 	}
 
-	if hasProvider, _ := helper.HasProvider(&r.Body, crdapiv1.ProviderType(r.ProviderName)); !hasProvider {
+	if hasProvider, _ := helper.HasProvider(convertAPIToInternalPreset(r.Body), crdapiv1.ProviderType(r.ProviderName)); !hasProvider {
 		return fmt.Errorf("missing provider configuration for: %s", r.ProviderName)
 	}
 
-	err := helper.Validate(&r.Body, crdapiv1.ProviderType(r.ProviderName))
+	err := helper.Validate(convertAPIToInternalPreset(r.Body), crdapiv1.ProviderType(r.ProviderName))
 	if err != nil {
 		return err
 	}
@@ -296,7 +297,7 @@ func (r createPresetReq) Validate() error {
 			continue
 		}
 
-		if hasProvider, _ := helper.HasProvider(&r.Body, providerType); hasProvider {
+		if hasProvider, _ := helper.HasProvider(convertAPIToInternalPreset(r.Body), providerType); hasProvider {
 			return fmt.Errorf("found unexpected provider configuration for: %s", providerType)
 		}
 	}
@@ -339,7 +340,7 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 
 		preset, err := presetProvider.GetPreset(userInfo, req.Body.Name)
 		if k8serrors.IsNotFound(err) {
-			return presetProvider.CreatePreset(&req.Body)
+			return presetProvider.CreatePreset(convertAPIToInternalPreset(req.Body))
 		}
 
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -350,7 +351,7 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return nil, errors.New(http.StatusConflict, fmt.Sprintf("%s provider configuration already exists for preset %s", req.ProviderName, preset.Name))
 		}
 
-		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
+		preset = mergePresets(preset, convertAPIToInternalPreset(req.Body), crdapiv1.ProviderType(req.ProviderName))
 		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
@@ -411,7 +412,7 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 			return nil, err
 		}
 
-		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
+		preset = mergePresets(preset, convertAPIToInternalPreset(req.Body), crdapiv1.ProviderType(req.ProviderName))
 		preset, err = presetProvider.UpdatePreset(preset)
 		if err != nil {
 			return nil, err
@@ -523,4 +524,13 @@ func newAPIPreset(preset *crdapiv1.Preset, enabled bool) v2.Preset {
 	}
 
 	return v2.Preset{Name: preset.Name, Enabled: enabled, Providers: providers}
+}
+
+func convertAPIToInternalPreset(preset v2.PresetBody) *crdapiv1.Preset {
+	return &crdapiv1.Preset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: preset.Name,
+		},
+		Spec: preset.Spec,
+	}
 }
