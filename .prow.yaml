@@ -305,7 +305,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1019,7 +1019,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
         env:
         - name: KUBERMATIC_EDITION
           value: ee
