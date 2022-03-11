@@ -58,7 +58,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				{
 					APIGroups: []string{""},
 					Resources: []string{"pods"},
-					Verbs:     []string{"list", "get"},
+					Verbs:     []string{"list", "get", "delete"},
 				},
 				{
 					APIGroups: []string{""},
@@ -98,6 +98,11 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					Resources:     []string{"signers"},
 					ResourceNames: []string{"kubernetes.io/kubelet-serving"},
 					Verbs:         []string{"approve"},
+				},
+				{
+					APIGroups: []string{"storage.k8s.io"},
+					Resources: []string{"volumeattachments"},
+					Verbs:     []string{"list", "get", "watch"},
 				},
 			}
 			return cr, nil
