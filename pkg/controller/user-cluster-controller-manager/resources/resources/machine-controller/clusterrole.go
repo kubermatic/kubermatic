@@ -58,7 +58,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				{
 					APIGroups: []string{""},
 					Resources: []string{"pods"},
-					Verbs:     []string{"list", "get"},
+					Verbs:     []string{"list", "get", "delete"},
 				},
 				{
 					APIGroups: []string{""},
