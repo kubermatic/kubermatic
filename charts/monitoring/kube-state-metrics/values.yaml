@@ -18,7 +18,8 @@ kubeStateMetrics:
     tag: v2.2.3
   resources:
     requests:
-      cpu: 250m
+      # Rationalized based on real world usage
+      cpu: 3m
       memory: 128Mi
     limits:
       cpu: 2

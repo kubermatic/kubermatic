@@ -31,7 +31,8 @@ grafana:
     tag: 1.3.1
   resources:
     requests:
-      cpu: 250m
+      # Rationalized based on real world usage
+      cpu: 10m
       memory: 48Mi
     limits:
       cpu: 1

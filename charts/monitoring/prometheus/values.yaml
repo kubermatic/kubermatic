@@ -261,8 +261,9 @@ prometheus:
     thanosStore:
       resources:
         requests:
-          cpu: 250m
-          memory: 1536Mi
+          # Rationalized based on real world usage
+          cpu: 5m
+          memory: 150Mi
         limits:
           cpu: 1
           memory: 3Gi
