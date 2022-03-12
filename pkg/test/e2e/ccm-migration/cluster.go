@@ -180,6 +180,16 @@ func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, 
 		return nil, errors.Wrap(err, "failed to create project")
 	}
 
+	if err := wait.Poll(1*time.Second, 10*time.Second, func() (done bool, err error) {
+		if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(project), project); err != nil {
+			return false, err
+		}
+
+		return project.Status.Phase == kubermaticv1.ProjectActive, nil
+	}); err != nil {
+		return nil, errors.Wrap(err, "project did not become active")
+	}
+
 	return project, nil
 }
 

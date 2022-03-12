@@ -82,6 +82,9 @@ func TestHandle(t *testing.T) {
 		Spec: kubermaticv1.ProjectSpec{
 			Name: "my project",
 		},
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectActive,
+		},
 	}
 
 	project2 := kubermaticv1.Project{
@@ -90,6 +93,9 @@ func TestHandle(t *testing.T) {
 		},
 		Spec: kubermaticv1.ProjectSpec{
 			Name: "my other project",
+		},
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectActive,
 		},
 	}
 
