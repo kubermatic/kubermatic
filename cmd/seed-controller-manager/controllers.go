@@ -35,7 +35,6 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
@@ -62,7 +61,6 @@ var AllControllers = map[string]controllerCreator{
 	initialmachinedeployment.ControllerName:       createInitialMachineDeploymentController,
 	mla.ControllerName:                            createMLAController,
 	clustertemplatecontroller.ControllerName:      createClusterTemplateController,
-	projectcontroller.ControllerName:              createProjectController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -143,14 +141,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			Konnectivity:                 ctrlCtx.runOptions.featureGates.Enabled(features.KonnectivityService),
 		},
 		ctrlCtx.versions,
-	)
-}
-
-func createProjectController(ctrlCtx *controllerContext) error {
-	return projectcontroller.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
 	)
 }
 
