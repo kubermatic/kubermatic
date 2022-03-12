@@ -108,15 +108,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, proj
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if project.Status.Phase == "" {
-		project.Status.Phase = kubermaticv1.ProjectInactive
-		log.Infof("Setting initial project status %s", project.Status.Phase)
-
-		if err := r.Status().Update(ctx, project); err != nil {
-			return fmt.Errorf("failed to set initial status: %w", err)
-		}
-	}
-
 	return nil
 }
 
@@ -132,7 +123,7 @@ func (r *Reconciler) handleCleanup(ctx context.Context, log *zap.SugaredLogger, 
 	}
 
 	for _, cluster := range clusters.Items {
-		if cluster.DeletionTimestamp != nil {
+		if cluster.DeletionTimestamp == nil {
 			if err := r.Delete(ctx, &cluster); err != nil {
 				return fmt.Errorf("failed to delete cluster %s: %w", cluster.Name, err)
 			}

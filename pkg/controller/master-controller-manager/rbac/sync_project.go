@@ -50,16 +50,18 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 		return err
 	}
 
-	if project.Status.Phase == "" {
-		klog.V(4).Info("Not reconciling project because status.phase has not been set yet.")
-		return nil
-	}
-
 	if project.DeletionTimestamp != nil {
 		if err := c.ensureProjectCleanup(ctx, project); err != nil {
 			return fmt.Errorf("failed to cleanup project: %w", err)
 		}
 		return nil
+	}
+
+	// set the initial phase for new projects
+	if project.Status.Phase == "" {
+		if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectInactive); err != nil {
+			return fmt.Errorf("failed to set initial project phase: %w", err)
+		}
 	}
 
 	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
@@ -86,8 +88,8 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %w", err)
 	}
-	if err := c.ensureProjectIsInActivePhase(ctx, project); err != nil {
-		return fmt.Errorf("failed to ensure that the project is set to active: %w", err)
+	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectActive); err != nil {
+		return fmt.Errorf("failed to set project phase to active: %w", err)
 	}
 
 	return nil
@@ -97,12 +99,13 @@ func (c *projectController) ensureCleanupFinalizerExists(ctx context.Context, pr
 	return kuberneteshelper.TryAddFinalizer(ctx, c.client, project, CleanupFinalizerName)
 }
 
-func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, project *kubermaticv1.Project) error {
-	if project.Status.Phase == kubermaticv1.ProjectInactive {
+func (c *projectController) ensureProjectPhase(ctx context.Context, project *kubermaticv1.Project, phase kubermaticv1.ProjectPhase) error {
+	if project.Status.Phase != phase {
 		oldProject := project.DeepCopy()
-		project.Status.Phase = kubermaticv1.ProjectActive
+		project.Status.Phase = phase
 		return c.client.Status().Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 	}
+
 	return nil
 }
 
@@ -481,6 +484,10 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.C
 // - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cleanupFinalizer.
 func (c *projectController) ensureProjectCleanup(ctx context.Context, project *kubermaticv1.Project) error {
+	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectTerminating); err != nil {
+		return fmt.Errorf("failed to set project phase: %w", err)
+	}
+
 	// remove subjects from Cluster RBAC Bindings for project's resources
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {

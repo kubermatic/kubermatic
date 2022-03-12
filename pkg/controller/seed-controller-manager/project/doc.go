@@ -15,13 +15,9 @@ limitations under the License.
 */
 
 /*
-Package project contains a controller responsible for two things:
-
-* Setting the initial project phase to Inactive (this cannot feasably
-  be done via our webhooks).
-* Removing all clusters in a project whenever a project is deleted,
-  and (importantly) waiting until all clusters are gone before releasing
-  the project.
+Package project contains a controller responsible for removing all
+clusters in a project whenever a project is deleted, and (importantly)
+waiting until all clusters are gone before releasing the project.
 
 Note that the project-synchronizer controller in the master-ctrl-mgr
 takes care of synchronizing the project deletion to all seeds (i.e.

@@ -67,53 +67,6 @@ func getFakeClientset(objs ...ctrlruntimeclient.Object) *fake.Clientset {
 	return fake.NewSimpleClientset(runtimeObjects...)
 }
 
-func TestEnsureProjectIsInActivePhase(t *testing.T) {
-	tests := []struct {
-		name            string
-		projectToSync   *kubermaticv1.Project
-		expectedProject *kubermaticv1.Project
-	}{
-		{
-			name:          "scenario 1: a project's phase is set to Active",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			expectedProject: func() *kubermaticv1.Project {
-				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				project.Status.Phase = "Active"
-				return project
-			}(),
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// setup the test scenario
-			ctx := context.Background()
-			objs := []ctrlruntimeclient.Object{}
-			objs = append(objs, test.expectedProject)
-			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
-
-			// act
-			target := projectController{
-				client:     masterClient,
-				restMapper: getFakeRestMapper(t),
-			}
-			err := target.ensureProjectIsInActivePhase(ctx, test.projectToSync)
-			assert.Nil(t, err)
-
-			// validate
-			var projectList kubermaticv1.ProjectList
-			err = masterClient.List(ctx, &projectList)
-			assert.NoError(t, err)
-
-			projectList.Items[0].ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
-
-			assert.Len(t, projectList.Items, 1)
-			assert.Equal(t, projectList.Items[0], *test.expectedProject)
-		})
-	}
-}
-
 func TestEnsureProjectInitialized(t *testing.T) {
 	tests := []struct {
 		name            string
