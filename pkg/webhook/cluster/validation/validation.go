@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -69,7 +70,13 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return err
 	}
 
-	return validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, v.features, nil).ToAggregate()
+	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, v.features, nil)
+
+	if err := v.validateProjectRelation(ctx, cluster, nil); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errs.ToAggregate()
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
@@ -88,7 +95,13 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		return err
 	}
 
-	return validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, v.features).ToAggregate()
+	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, v.features)
+
+	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errs.ToAggregate()
 }
 
 func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
@@ -120,4 +133,48 @@ func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermat
 	}
 
 	return datacenter, cloudProvider, nil
+}
+
+func (v *validator) validateProjectRelation(ctx context.Context, cluster *kubermaticv1.Cluster, oldCluster *kubermaticv1.Cluster) *field.Error {
+	label := kubermaticv1.ProjectIDLabelKey
+	fieldPath := field.NewPath("metadata", "labels")
+
+	if oldCluster != nil && cluster.Labels[label] != oldCluster.Labels[label] {
+		return field.Invalid(fieldPath, cluster.Labels[label], fmt.Sprintf("the %s label is immutable", label))
+	}
+
+	// during cluster creation, we enforce the project label;
+	// during updates we are more relaxed and only require that the label isn't changed,
+	// so that if a project gets removed before the cluster (for whatever reason), then
+	// the cluster cleanup can still progress and is not blocked by the webhook rejecting
+	// the stale label
+	if oldCluster == nil {
+		projectID := cluster.Labels[label]
+		if projectID == "" {
+			return field.Required(fieldPath, fmt.Sprintf("Cluster resources must have a %q label", label))
+		}
+
+		projects := kubermaticv1.ProjectList{}
+		if err := v.client.List(ctx, &projects); err != nil {
+			return field.InternalError(fieldPath, fmt.Errorf("failed to list projects: %w", err))
+		}
+
+		var project *kubermaticv1.Project
+		for i, p := range projects.Items {
+			if projectID == p.Name {
+				project = &projects.Items[i]
+				break
+			}
+		}
+
+		if project == nil {
+			return field.Invalid(fieldPath, projectID, "no such project exists")
+		}
+
+		if project.DeletionTimestamp != nil {
+			return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
+		}
+	}
+
+	return nil
 }

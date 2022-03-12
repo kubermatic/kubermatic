@@ -479,25 +479,8 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.C
 //
 // In particular:
 // - removes no longer needed Subject from RBAC Binding for project's resources
-// - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
 // - removes cleanupFinalizer.
 func (c *projectController) ensureProjectCleanup(ctx context.Context, project *kubermaticv1.Project) error {
-	// cluster resources don't have OwnerReferences set thus we need to manually remove them
-	for _, seedClient := range c.seedClientMap {
-		var listObj kubermaticv1.ClusterList
-		if err := seedClient.List(ctx, &listObj); err != nil {
-			return err
-		}
-
-		for _, cluster := range listObj.Items {
-			if clusterProject := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
-				if err := seedClient.Delete(ctx, &cluster); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	// remove subjects from Cluster RBAC Bindings for project's resources
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
