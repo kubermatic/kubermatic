@@ -167,17 +167,16 @@ func (v *validator) validateProjectRelation(ctx context.Context, cluster *kuberm
 			}
 		}
 
+		// Do not check the project phase, as projects only get Active after being successfully
+		// reconciled. This requires the owner user to be setup properly as well, which in turn
+		// requires owner references to be setup. All of this is super annoying when doing
+		// GitOps. Instead we rely on _eventual_ consistency and only check that the project
+		// exists and is not being deleted.
+
 		if project == nil {
 			return field.Invalid(fieldPath, projectID, "no such project exists")
 		}
 
-		if project.Status.Phase != kubermaticv1.ProjectActive {
-			return field.Invalid(fieldPath, projectID, "project is not active")
-		}
-
-		// there is a short timespan between deleting a project and the RBAC
-		// controller setting its phase to Terminating; prevent this from allowing
-		// to create new clusters by explicitly checking the deletion timestamp
 		if project.DeletionTimestamp != nil {
 			return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
 		}
