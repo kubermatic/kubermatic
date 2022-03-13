@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -107,6 +108,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if kuberneteshelper.HasFinalizer(icl, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
 			if err := r.cleanUpCredentialsSecret(ctx, icl); err != nil {
 				log.Errorf("Could not delete credentials secret, %v", err)
+				return reconcile.Result{}, err
+			}
+		}
+		if kuberneteshelper.HasFinalizer(icl, kubermaticapiv1.ExternalClusterKubeOneManifestSecretCleanupFinalizer) {
+			if err := r.cleanUpManifestSecret(ctx, icl); err != nil {
+				log.Errorf("Could not delete kubeone manifest secret, %v", err)
+				return reconcile.Result{}, err
+			}
+		}
+		if kuberneteshelper.HasFinalizer(icl, kubermaticapiv1.ExternalClusterKubeOneSSHSecretCleanupFinalizer) {
+			if err := r.cleanUpSSHSecret(ctx, icl); err != nil {
+				log.Errorf("Could not delete kubeone ssh secret, %v", err)
 				return reconcile.Result{}, err
 			}
 		}
@@ -202,11 +215,33 @@ func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kuber
 }
 
 func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
-	if err := r.deleteSecret(ctx, cluster.GetCredentialsSecretName()); err != nil {
-		return err
+	if cluster.Spec.CloudSpec.KubeOne != nil {
+		if err := r.deleteSecret(ctx, cluster.Spec.CloudSpec.KubeOne.CredentialsReference.Name); err != nil {
+			return err
+		}
+	} else {
+		if err := r.deleteSecret(ctx, cluster.GetCredentialsSecretName()); err != nil {
+			return err
+		}
 	}
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+}
+
+func (r *Reconciler) cleanUpManifestSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	if err := r.deleteSecret(ctx, kubernetes.GetKubeOneManifestSecretName(cluster)); err != nil {
+		return err
+	}
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticapiv1.ExternalClusterKubeOneManifestSecretCleanupFinalizer)
+}
+
+func (r *Reconciler) cleanUpSSHSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	if err := r.deleteSecret(ctx, kubernetes.GetKubeOneSSHSecretName(cluster)); err != nil {
+		return err
+	}
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticapiv1.ExternalClusterKubeOneSSHSecretCleanupFinalizer)
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error {
