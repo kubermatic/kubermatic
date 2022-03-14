@@ -104,7 +104,7 @@ func main() {
 		log.Panicw("failed to set initialState", zap.Error(err))
 	}
 
-	e.initialMembers = initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly, e.clusterClient)
+	e.initialMembers = initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly, e.clusterClient, log)
 
 	log.Info("initializing etcd..")
 	log.Infof("initial-state: %s", e.initialState)
@@ -356,7 +356,7 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 	return nil
 }
 
-func initialMemberList(n int, namespace string, useTLSPeer bool, client ctrlruntimeclient.Client) []string {
+func initialMemberList(n int, namespace string, useTLSPeer bool, client ctrlruntimeclient.Client, log *zap.SugaredLogger) []string {
 	members := []string{}
 	for i := 0; i < n; i++ {
 		if useTLSPeer {
@@ -365,8 +365,10 @@ func initialMemberList(n int, namespace string, useTLSPeer bool, client ctrlrunt
 			members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
 			// check if the pod is already annotated as TLS aware
 			var pod *corev1.Pod
-			if err := client.Get(context.Background(), types.NamespacedName{Name: "etcd", Namespace: namespace}, pod); err == nil {
-				if _, ok := pod.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
+			if err := client.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, pod); err != nil {
+				log.Warnw("failed to get Pod information for etcd", zap.Error(err))
+			} else {
+				if _, ok := pod.ObjectMeta.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
 					members = append(
 						members,
 						fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace),
