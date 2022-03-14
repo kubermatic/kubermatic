@@ -39,8 +39,11 @@ Implementation consists of multiple parts:
 3. Rewriting resource management logic in seed-controller-manager to manage the operator's custom resources, e.g. `Prometheus` instead of `StatefulSet`, `PrometheusRule` instead of some `ConfigMap`s).
    1. Manage `Prometheus` CRs instead of StatefulSets
    2. Manage `PrometheusRule`s instead of `ConfigMaps`
-   3. Use a single `PodMonitor` object targetting each other Prometheus instance in all `cluster-xxxxxx` namespaces. Instead of federation services, configuration would be handled once.
+   3. Use a single `PodMonitor` object targetting each other Prometheus instance in all `cluster-xxxxxx` namespaces. Configuration of federation would be handled once.
+   4. Each of the per-usercluster Prometheus instance has to be configured with specific etcd secrets used to scrape etcd-server metrics.
+
 4. Define plan for migrating the data between old and new Prometheus instances.
+   1. Technically, the data can be copied over from one instance to another and PVCs should be saved between the old and new instances. A manual for the required steps should be enough.
 
 
 ## Task & effort:
