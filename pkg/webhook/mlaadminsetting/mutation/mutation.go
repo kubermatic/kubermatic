@@ -29,14 +29,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// AdmissionHandler for mutating Kubermatic Addon CRD.
+// AdmissionHandler for mutating Kubermatic MLAAdminSetting CRD.
 type AdmissionHandler struct {
 	log              logr.Logger
 	decoder          *admission.Decoder
@@ -44,7 +43,7 @@ type AdmissionHandler struct {
 	seedClientGetter provider.SeedClientGetter
 }
 
-// NewAdmissionHandler returns a new Addon AdmissionHandler.
+// NewAdmissionHandler returns a new MLAAdminSetting AdmissionHandler.
 func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *AdmissionHandler {
 	return &AdmissionHandler{
 		seedGetter:       seedGetter,
@@ -53,11 +52,11 @@ func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provid
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-addon", &webhook.Admission{Handler: h})
+	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-mlaadminsetting", &webhook.Admission{Handler: h})
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("addon-mutation-handler")
+	h.log = l.WithName("mlaadminsetting-mutation-handler")
 	return nil
 }
 
@@ -67,60 +66,60 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	addon := &kubermaticv1.Addon{}
+	adminSetting := &kubermaticv1.MLAAdminSetting{}
 
 	switch req.Operation {
 	case admissionv1.Create:
-		if err := h.decoder.Decode(req, addon); err != nil {
+		if err := h.decoder.Decode(req, adminSetting); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		// apply defaults to the existing addon
-		err := h.ensureClusterReference(ctx, addon)
+		// apply defaults to the existing MLAAdminSetting
+		err := h.ensureClusterReference(ctx, adminSetting)
 		if err != nil {
-			h.log.Info("addon mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
+			h.log.Info("MLAAdminSetting mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("MLAAdminSetting mutation request %s failed: %w", req.UID, err))
 		}
 
 	case admissionv1.Update:
-		oldAddon := &kubermaticv1.Addon{}
+		oldSetting := &kubermaticv1.MLAAdminSetting{}
 
-		if err := h.decoder.Decode(req, addon); err != nil {
+		if err := h.decoder.Decode(req, adminSetting); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		if err := h.decoder.DecodeRaw(req.OldObject, oldAddon); err != nil {
+		if err := h.decoder.DecodeRaw(req.OldObject, oldSetting); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		err := h.validateUpdate(ctx, oldAddon, addon)
+		err := h.validateUpdate(ctx, oldSetting, adminSetting)
 		if err != nil {
-			h.log.Info("addon mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
+			h.log.Info("MLAAdminSetting mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("MLAAdminSetting mutation request %s failed: %w", req.UID, err))
 		}
 
 	case admissionv1.Delete:
 		return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
 
 	default:
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on addon resources", req.Operation))
+		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on MLAAdminSetting resources", req.Operation))
 	}
 
-	mutatedAddon, err := json.Marshal(addon)
+	mutatedSetting, err := json.Marshal(adminSetting)
 	if err != nil {
-		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling addon object failed: %w", err))
+		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling MLAAdminSetting object failed: %w", err))
 	}
 
-	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedAddon)
+	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedSetting)
 }
 
-func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *kubermaticv1.Addon) error {
+func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, adminSetting *kubermaticv1.MLAAdminSetting) error {
 	seed, err := h.seedGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get current Seed: %w", err)
 	}
 	if seed == nil {
-		return errors.New("webhook not configured for a Seed cluster, cannot validate Addon resources")
+		return errors.New("webhook not configured for a Seed cluster, cannot validate MLAAdminSetting resources")
 	}
 
 	client, err := h.seedClientGetter(seed)
@@ -135,33 +134,27 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 
 	var cluster *kubermaticv1.Cluster
 	for i, c := range clusters.Items {
-		if c.Status.NamespaceName == addon.Namespace {
+		if c.Status.NamespaceName == adminSetting.Namespace {
 			cluster = &clusters.Items[i]
 			break
 		}
 	}
 
 	if cluster == nil {
-		return errors.New("Addons can only be created in cluster namespaces, but no matching Cluster was found")
+		return errors.New("MLAAdminSetting resources can only be created in cluster namespaces, but no matching Cluster was found")
 	}
 
 	if cluster.DeletionTimestamp != nil {
-		return fmt.Errorf("Cluster %s is in deletion already, cannot create a new addon", cluster.Name)
+		return fmt.Errorf("Cluster %s is in deletion already, cannot create a new MLAAdminSetting", cluster.Name)
 	}
 
-	addon.Spec.Cluster = v1.ObjectReference{
-		Name:       cluster.Name,
-		Namespace:  "",
-		UID:        cluster.UID,
-		APIVersion: cluster.APIVersion,
-		Kind:       "Cluster",
-	}
+	adminSetting.Spec.ClusterName = cluster.Name
 
 	return nil
 }
 
-func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldAddon *kubermaticv1.Addon, newAddon *kubermaticv1.Addon) error {
-	if !equality.Semantic.DeepEqual(oldAddon.Spec.Cluster, newAddon.Spec.Cluster) {
+func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldSetting *kubermaticv1.MLAAdminSetting, newSetting *kubermaticv1.MLAAdminSetting) error {
+	if !equality.Semantic.DeepEqual(oldSetting.Spec.ClusterName, newSetting.Spec.ClusterName) {
 		return errors.New("Cluster reference cannot be changed")
 	}
 
