@@ -66,7 +66,7 @@ func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInf
 				kubeconfig = credentials.Kubeconfig
 			}
 		}
-		return providercommon.KubeVirtVMIPresets(kubeconfig)
+		return providercommon.KubeVirtVMIPresets(ctx, kubeconfig)
 	}
 }
 
@@ -82,7 +82,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.P
 func KubeVirtStorageClassesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(KubeVirtGenericReq)
-		Kubeconfig := req.Kubeconfig
+		kubeconfig := req.Kubeconfig
 
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -94,10 +94,10 @@ func KubeVirtStorageClassesEndpoint(presetsProvider provider.PresetProvider, use
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credentials := preset.Spec.Kubevirt; credentials != nil {
-				Kubeconfig = credentials.Kubeconfig
+				kubeconfig = credentials.Kubeconfig
 			}
 		}
-		return providercommon.KubeVirtStorageClasses(Kubeconfig)
+		return providercommon.KubeVirtStorageClasses(ctx, kubeconfig)
 	}
 }
 

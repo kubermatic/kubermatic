@@ -42,7 +42,7 @@ func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.
 // reconcilePresets reconciles the VirtualMachineInstancePresets from the `default` namespace to the dedicated one.
 func reconcilePresets(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
 	presets := &kubevirtv1.VirtualMachineInstancePresetList{}
-	if err := client.List(context.TODO(), presets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
+	if err := client.List(ctx, presets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
 		return err
 	}
 
