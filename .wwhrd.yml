@@ -33,7 +33,6 @@ exceptions:
   - github.com/embik/nutanix-client-go/pkg/client/v3 # MPL-2.0
   - github.com/gosimple/slug # MPL-2.0. Required for https://github.com/grafana-tools/sdk
   - github.com/hashicorp/errwrap # MPL-2.0
-  - github.com/hashicorp/go-multierror # MPL-2.0
   - github.com/hashicorp/hcl # MPL-2.0
   - github.com/hashicorp/hcl/hcl/ast # MPL-2.0
   - github.com/hashicorp/hcl/hcl/parser # MPL-2.0

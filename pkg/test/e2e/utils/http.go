@@ -25,9 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -79,7 +76,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 	var (
 		bodyBytes []byte
 		response  *http.Response
-		multiErr  error
+		multiErr  []error
 	)
 
 	// clone request body
@@ -122,7 +119,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 		//nolint:bodyclose
 		response, reqErr = http.DefaultTransport.RoundTrip(requestClone)
 		if reqErr != nil {
-			multiErr = multierror.Append(multiErr, errors.Wrap(reqErr, "error occurred while executing http call"))
+			multiErr = append(multiErr, fmt.Errorf("error occurred while executing http call: %w", reqErr))
 			return false, nil
 		}
 
@@ -130,9 +127,9 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 		if r.isTransientError(response) {
 			body, err := io.ReadAll(response.Body)
 			if err != nil {
-				multiErr = multierror.Append(multiErr, errors.Wrapf(err, "HTTP %s", response.Status))
+				multiErr = append(multiErr, fmt.Errorf("HTTP %s: %w", response.Status, err))
 			} else {
-				multiErr = multierror.Append(multiErr, fmt.Errorf("HTTP %s: %s", response.Status, string(body)))
+				multiErr = append(multiErr, fmt.Errorf("HTTP %s: %s", response.Status, string(body)))
 			}
 
 			response.Body.Close()
@@ -144,7 +141,7 @@ func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 	})
 
 	if err != nil {
-		return nil, errors.Wrapf(multiErr, "request did not succeed after %d attempts (ignoring HTTP codes %v)", r.Steps, r.ignoredStatusCodes.List())
+		return nil, fmt.Errorf("request did not succeed after %d attempts (ignoring HTTP codes %v): %v", r.Steps, r.ignoredStatusCodes.List(), multiErr)
 	}
 
 	return response, nil
