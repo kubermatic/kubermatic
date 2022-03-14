@@ -337,6 +337,11 @@ spec:
   # Metering configures the metering tool on user clusters across the seed.
   metering:
     enabled: false
+    # Interval defines the number of days consulted in the metering report.
+    interval: 7
+    # Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
+    # only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
+    schedule: 0 1 * * 6
     # StorageClassName is the name of the storage class that the metering tool uses to save processed files before
     # exporting it to s3 bucket. Default value is kubermatic-fast.
     storageClassName: kubermatic-fast

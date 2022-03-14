@@ -1030,6 +1030,19 @@ spec:
                 properties:
                   enabled:
                     type: boolean
+                  interval:
+                    default: 7
+                    description: Interval defines the number of days consulted in
+                      the metering report.
+                    minimum: 1
+                    type: integer
+                  schedule:
+                    default: 0 1 * * 6
+                    description: Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+                      Please take a note that Schedule is responsible only for setting
+                      the time when a report generation mechanism kicks off. The Interval
+                      MUST be set independently.
+                    type: string
                   storageClassName:
                     description: StorageClassName is the name of the storage class
                       that the metering tool uses to save processed files before exporting

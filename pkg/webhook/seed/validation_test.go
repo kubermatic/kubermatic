@@ -454,6 +454,21 @@ func TestValidate(t *testing.T) {
 			features:    features.FeatureGate{},
 			errExpected: true,
 		},
+		{
+			name: "Adding a seed with invalid cron expression",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Metering: &kubermaticv1.MeteringConfiguration{
+						Schedule: "*/invalid * * * *",
+					},
+				},
+			},
+			features:    features.FeatureGate{},
+			errExpected: true,
+		},
 	}
 
 	for _, tc := range testCases {

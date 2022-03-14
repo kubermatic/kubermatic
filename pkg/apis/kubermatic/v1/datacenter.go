@@ -541,6 +541,14 @@ type MeteringConfiguration struct {
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
+	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
+	// only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
+	// +kubebuilder:default:=`0 1 * * 6`
+	Schedule string `json:"schedule,omitempty"`
+	// Interval defines the number of days consulted in the metering report.
+	// +kubebuilder:default=7
+	// +kubebuilder:validation:Minimum:=1
+	Interval int `json:"interval,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

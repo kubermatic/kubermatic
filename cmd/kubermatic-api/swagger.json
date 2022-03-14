@@ -13159,13 +13159,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13177,6 +13170,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -25156,6 +25156,19 @@
         "enabled": {
           "type": "boolean",
           "x-go-name": "Enabled"
+        },
+        "interval": {
+          "description": "Interval defines the number of days consulted in the metering report.\n+kubebuilder:default=7",
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1,
+          "x-go-name": "Interval"
+        },
+        "schedule": {
+          "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
+          "type": "string",
+          "default": "=`0 1 * * 6`",
+          "x-go-name": "Schedule"
         },
         "storageClassName": {
           "description": "StorageClassName is the name of the storage class that the metering tool uses to save processed files before\nexporting it to s3 bucket. Default value is kubermatic-fast.",

@@ -8,8 +8,10 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // MeteringConfiguration MeteringConfiguration contains all the configuration for the metering tool.
@@ -19,6 +21,15 @@ type MeteringConfiguration struct {
 
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
+
+	// Interval defines the number of days consulted in the metering report.
+	// +kubebuilder:default=7
+	// Minimum: 1
+	Interval int64 `json:"interval,omitempty"`
+
+	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
+	// only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
+	Schedule *string `json:"schedule,omitempty"`
 
 	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
 	// exporting it to s3 bucket. Default value is kubermatic-fast.
@@ -30,6 +41,27 @@ type MeteringConfiguration struct {
 
 // Validate validates this metering configuration
 func (m *MeteringConfiguration) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateInterval(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *MeteringConfiguration) validateInterval(formats strfmt.Registry) error {
+	if swag.IsZero(m.Interval) { // not required
+		return nil
+	}
+
+	if err := validate.MinimumInt("interval", "body", m.Interval, 1, false); err != nil {
+		return err
+	}
+
 	return nil
 }
 
