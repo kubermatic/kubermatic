@@ -59,7 +59,17 @@ type CommonClusterJig struct {
 func (ccj *CommonClusterJig) generateAndCreateCluster(cloudSpec kubermaticv1.CloudSpec) error {
 	cluster := utils.DefaultCluster(ccj.name, ccj.Version, cloudSpec)
 
-	return ccj.SeedClient.Create(context.TODO(), cluster)
+	if err := ccj.SeedClient.Create(context.TODO(), cluster); err != nil {
+		return err
+	}
+
+	if err := kubermaticv1helper.UpdateClusterStatus(context.TODO(), ccj.SeedClient, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.UserEmail = "e2e@test.com"
+	}); err != nil {
+		return errors.Wrap(err, "failed to update cluster status")
+	}
+
+	return nil
 }
 
 func (ccj *CommonClusterJig) generateAndCreateSecret(secretPrefixName string, secretData map[string][]byte) error {

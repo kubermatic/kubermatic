@@ -127,7 +127,6 @@ func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kuberma
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: fmt.Sprintf("cluster-%s", clusterName),
-			UserEmail:     "e2e@test.com",
 		},
 	}
 }
