@@ -18,9 +18,9 @@ package exposestrategy
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -123,13 +123,13 @@ func (c *ClusterJig) SetUp(ctx context.Context) error {
 		},
 	}
 	if err := c.Client.Create(ctx, c.Cluster); err != nil {
-		return errors.Wrap(err, "failed to create cluster")
+		return fmt.Errorf("failed to create cluster: %w", err)
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.Client, c.Cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
-		return errors.Wrap(err, "failed to update cluster status")
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 
 	return c.waitForClusterControlPlaneReady(c.Cluster)

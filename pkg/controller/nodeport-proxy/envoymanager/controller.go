@@ -22,7 +22,6 @@ import (
 	"reflect"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -92,7 +91,7 @@ func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlrunti
 	}
 
 	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to set initial Envoy cache snapshot")
+		return nil, nil, fmt.Errorf("failed to set initial Envoy cache snapshot: %w", err)
 	}
 	return &r, cache, nil
 }
@@ -121,7 +120,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 		ctrlruntimeclient.InNamespace(r.Namespace),
 		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
-		return errors.Wrap(err, "failed to list service's")
+		return fmt.Errorf("failed to list service's: %w", err)
 	}
 
 	// Sort services in descending order by creation timestamp, in order to
@@ -145,7 +144,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			return errors.Wrap(err, fmt.Sprintf("failed to get endpoints for service '%s'", svcKey))
+			return fmt.Errorf("failed to get endpoints for service '%s': %w", svcKey, err)
 		}
 		// Add service to the service builder
 		sb.addService(&service, &eps, ets)
@@ -160,14 +159,14 @@ func (r *Reconciler) sync(ctx context.Context) error {
 			return fmt.Errorf("failed to build the first snapshot: %w", err)
 		}
 		if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
-			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
+			return fmt.Errorf("failed to set a new Envoy cache snapshot: %w", err)
 		}
 		return nil
 	}
 
 	lastUsedVersion, err := semver.NewVersion(currSnapshot.GetVersion(envoyresourcev3.ClusterType))
 	if err != nil {
-		return errors.Wrap(err, "failed to parse version from last snapshot")
+		return fmt.Errorf("failed to parse version from last snapshot: %w", err)
 	}
 
 	s, err := sb.build(lastUsedVersion.String())
@@ -189,11 +188,11 @@ func (r *Reconciler) sync(ctx context.Context) error {
 	}
 
 	if err := newSnapshot.Consistent(); err != nil {
-		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
+		return fmt.Errorf("new Envoy config snapshot is not consistent: %w", err)
 	}
 
 	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, newSnapshot); err != nil {
-		return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
+		return fmt.Errorf("failed to set a new Envoy cache snapshot: %w", err)
 	}
 
 	return nil

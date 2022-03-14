@@ -19,13 +19,13 @@ package utils
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -68,7 +68,7 @@ type TestPodConfig struct {
 func (t *TestPodConfig) DeployTestPod(ctx context.Context) error {
 	testPod := t.CreatePodFunc(t.Namespace)
 	if err := t.Client.Create(ctx, testPod); err != nil {
-		return errors.Wrap(err, "failed to create host test pod")
+		return fmt.Errorf("failed to create host test pod: %w", err)
 	}
 
 	// Use default timeout of 5 minutes if not otherwise specified.
@@ -83,7 +83,7 @@ func (t *TestPodConfig) DeployTestPod(ctx context.Context) error {
 		Namespace: testPod.Namespace,
 		Name:      testPod.Name,
 	}, testPod); err != nil {
-		return errors.Wrap(err, "failed to get host test pod")
+		return fmt.Errorf("failed to get host test pod: %w", err)
 	}
 	t.testPod = testPod
 	return nil
@@ -165,22 +165,22 @@ func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error
 	config := ctrlruntime.GetConfigOrDie()
 	mapper, err := apiutil.NewDynamicRESTMapper(config)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to create dynamic REST mapper")
+		return nil, nil, nil, fmt.Errorf("failed to create dynamic REST mapper: %w", err)
 	}
 	gvk, err := apiutil.GVKForObject(&corev1.Pod{}, scheme)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to get pod GVK")
+		return nil, nil, nil, fmt.Errorf("failed to get pod GVK: %w", err)
 	}
 	podRestClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(scheme))
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to create pod rest client")
+		return nil, nil, nil, fmt.Errorf("failed to create pod rest client: %w", err)
 	}
 	c, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{
 		Mapper: mapper,
 		Scheme: scheme,
 	})
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to create client")
+		return nil, nil, nil, fmt.Errorf("failed to create client: %w", err)
 	}
 	return c, podRestClient, config, nil
 }
