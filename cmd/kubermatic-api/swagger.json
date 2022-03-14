@@ -28871,6 +28871,11 @@
           "type": "string",
           "x-go-name": "StoragePolicy"
         },
+        "tagCategoryID": {
+          "description": "This is category for the machine deployment tags",
+          "type": "string",
+          "x-go-name": "TagCategoryID"
+        },
         "username": {
           "description": "Username is the vSphere user name.\n+optional",
           "type": "string",

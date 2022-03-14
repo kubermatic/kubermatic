@@ -42,6 +42,10 @@ import (
 
 const (
 	folderCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-folder"
+	// categoryCleanupFinilizer will instruct the deletion of the default category tag.
+	tagCategoryCleanupFinilizer = "kubermatic.k8c.io/cleanup-vsphere-tag-category"
+
+	defaultCategory = "cluster"
 )
 
 // Provider represents the vsphere provider.
@@ -145,14 +149,13 @@ func (v *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberma
 	if err != nil {
 		return nil, err
 	}
-	session, err := newSession(ctx, v.dc, username, password, v.caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
-	}
-	defer session.Logout(ctx)
-
 	rootPath := getVMRootPath(v.dc)
 	if cluster.Spec.Cloud.VSphere.Folder == "" {
+		session, err := newSession(ctx, v.dc, username, password, v.caBundle)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create vCenter session: %w", err)
+		}
+		defer session.Logout(ctx)
 		// If the user did not specify a folder, we create a own folder for this cluster to improve
 		// the VM management in vCenter
 		clusterFolder := path.Join(rootPath, cluster.Name)
@@ -163,6 +166,26 @@ func (v *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberma
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
 			cluster.Spec.Cloud.VSphere.Folder = clusterFolder
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	if cluster.Spec.Cloud.VSphere.TagCategoryID == "" {
+		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create REST client session: %w", err)
+		}
+		defer restSession.Logout(ctx)
+
+		// If the user did not specify a tag category, we create an own default for this cluster
+		categoryID, err := createTagCategory(ctx, restSession, cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create tag category: %w", err)
+		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, tagCategoryCleanupFinilizer)
+			cluster.Spec.Cloud.VSphere.TagCategoryID = categoryID
 		})
 		if err != nil {
 			return nil, err
@@ -291,12 +314,29 @@ func (v *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 	}
 	defer session.Logout(ctx)
 
+	restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create REST client session: %w", err)
+	}
+	defer restSession.Logout(ctx)
+
 	if kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
 		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
 			return nil, err
 		}
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	if kuberneteshelper.HasFinalizer(cluster, tagCategoryCleanupFinilizer) {
+		if err := deleteTagCategory(ctx, restSession, cluster); err != nil {
+			return nil, err
+		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, tagCategoryCleanupFinilizer)
 		})
 		if err != nil {
 			return nil, err
