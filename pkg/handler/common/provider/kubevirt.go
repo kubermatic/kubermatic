@@ -88,14 +88,14 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 	return base64.StdEncoding.EncodeToString([]byte(kvKubeconfig)), nil
 }
 
-func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
+func KubeVirtVMIPresets(ctx context.Context, kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 
 	vmiPresets := kubevirtv1.VirtualMachineInstancePresetList{}
-	if err := client.List(context.TODO(), &vmiPresets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
+	if err := client.List(ctx, &vmiPresets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
 		return nil, err
 	}
 
@@ -121,7 +121,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 		return nil, err
 	}
 
-	return KubeVirtVMIPresets(kvKubeconfig)
+	return KubeVirtVMIPresets(ctx, kvKubeconfig)
 }
 
 func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) (*apiv2.VirtualMachineInstancePreset, error) {
@@ -143,14 +143,14 @@ func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
 	}
 }
 
-func KubeVirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
+func KubeVirtStorageClasses(ctx context.Context, kubeconfig string) (apiv2.StorageClassList, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 
 	storageClassList := storagev1.StorageClassList{}
-	if err := client.List(context.TODO(), &storageClassList); err != nil {
+	if err := client.List(ctx, &storageClassList); err != nil {
 		return nil, err
 	}
 
@@ -169,5 +169,5 @@ func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, u
 		return nil, err
 	}
 
-	return KubeVirtStorageClasses(kvKubeconfig)
+	return KubeVirtStorageClasses(ctx, kvKubeconfig)
 }
