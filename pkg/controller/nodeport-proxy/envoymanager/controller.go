@@ -120,7 +120,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 		ctrlruntimeclient.InNamespace(r.Namespace),
 		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
-		return fmt.Errorf("failed to list service's: %w", err)
+		return fmt.Errorf("failed to list services: %w", err)
 	}
 
 	// Sort services in descending order by creation timestamp, in order to
