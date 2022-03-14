@@ -2872,8 +2872,9 @@ k8c.io/kubermatic/v2 v2.16.2/go.mod h1:NdW+2mq4ynRtfZs9yPnvcnFWQpzmM7ngntW6GeuQi
 k8c.io/operating-system-manager v0.1.0/go.mod h1:ULyZQO1irKjsQTNjIdrHld7SZ+joHjmPnOEs5Db8G8M=
 k8c.io/operating-system-manager v0.3.0/go.mod h1:ME5GOCNUrHG+57igEKP1JCJKVHynaLfodT8bRiYH3MY=
 k8c.io/operating-system-manager v0.3.9/go.mod h1:aFyB/RH9DBAk0Kj5JVtCixhm9ugTeC8akgRGMW28lPg=
-k8c.io/operating-system-manager v0.4.0 h1:6F9kxELwHmhqLDLAAlodihBOnSfWM+8FPtbWcOshPGU=
 k8c.io/operating-system-manager v0.4.0/go.mod h1:pJImhsLb5GJdZunZ47r5Db0ydBwhWxhgL6mUKbU4Vps=
+k8c.io/operating-system-manager v0.4.1 h1:5rKxTIzYvq0Pe+sUWmFUWu5RMNcZEApUYbWD0jMsOX0=
+k8c.io/operating-system-manager v0.4.1/go.mod h1:pJImhsLb5GJdZunZ47r5Db0ydBwhWxhgL6mUKbU4Vps=
 k8s.io/api v0.23.0 h1:WrL1gb73VSC8obi8cuYETJGXEoFNEh3LU0Pt+Sokgro=
 k8s.io/api v0.23.0/go.mod h1:8wmDdLBHBNxtOIytwLstXt5E9PddnZb0GaMcqsvDBpg=
 k8s.io/apiextensions-apiserver v0.23.0 h1:uii8BYmHYiT2ZTAJxmvc3X8UhNYMxl2A0z0Xq3Pm+WY=
