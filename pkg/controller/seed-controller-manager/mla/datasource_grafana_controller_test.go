@@ -29,6 +29,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -53,7 +54,14 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 		Build()
 	ts := httptest.NewServer(handler)
 
-	datasourceGrafanaController := newDatasourceGrafanaController(dynamicClient, ts.Client(), ts.URL, "admin:admin", "mla", kubermaticlog.Logger, "")
+	grafanaClient, err := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
+	if err != nil {
+		t.Fatalf("unable to initialize grafana client: %v", err)
+	}
+
+	datasourceGrafanaController := newDatasourceGrafanaController(dynamicClient, func(ctx context.Context) (*grafanasdk.Client, error) {
+		return grafanaClient, nil
+	}, "mla", kubermaticlog.Logger, "")
 	reconciler := datasourceGrafanaReconciler{
 		Client:                      dynamicClient,
 		log:                         kubermaticlog.Logger,
