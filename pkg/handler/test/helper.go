@@ -698,7 +698,6 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 						InsecureRegistries: []string{"incsecure-registry"},
 						RegistryMirrors:    []string{"http://127.0.0.1:5001"},
 						PauseImage:         "pause-image",
-						HyperkubeImage:     "hyperkube-image",
 					},
 				},
 			},

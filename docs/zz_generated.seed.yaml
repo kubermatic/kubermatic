@@ -24,9 +24,6 @@ spec:
       node:
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
-        # Optional: The hyperkube image to use. Currently only Flatcar
-        # makes use of this option.
-        hyperkubeImage: ""
         # Optional: These image registries will be configured as insecure
         # on the container runtime.
         insecureRegistries: []
