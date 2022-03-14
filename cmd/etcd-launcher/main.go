@@ -364,8 +364,8 @@ func initialMemberList(n int, namespace string, useTLSPeer bool, client ctrlrunt
 		} else {
 			members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
 			// check if the pod is already annotated as TLS aware
-			var pod *corev1.Pod
-			if err := client.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, pod); err != nil {
+			var pod corev1.Pod
+			if err := client.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, &pod); err != nil {
 				log.Warnw("failed to get Pod information for etcd", zap.Error(err))
 			} else {
 				if _, ok := pod.ObjectMeta.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
