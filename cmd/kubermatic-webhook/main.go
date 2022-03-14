@@ -33,6 +33,7 @@ import (
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
 	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
@@ -129,6 +130,14 @@ func main() {
 
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.Seed{}).WithValidator(seedValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup seed validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
+	// setup KubermaticConfiguration webhooks
+
+	configValidator := kubermaticconfigurationvalidation.NewValidator()
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.KubermaticConfiguration{}).WithValidator(configValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup KubermaticConfiguration validation webhook", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////

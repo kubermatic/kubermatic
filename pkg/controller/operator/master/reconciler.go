@@ -180,6 +180,10 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.KubermaticConfigurationAdmissionWebhookName(config)); err != nil {
+		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
+	}
+
 	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
 }
 
@@ -385,6 +389,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(config, r.Client),
+		common.KubermaticConfigurationAdmissionWebhookCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {

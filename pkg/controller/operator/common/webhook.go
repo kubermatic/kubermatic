@@ -417,6 +417,67 @@ func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, clie
 	}
 }
 
+func KubermaticConfigurationAdmissionWebhookName(cfg *kubermaticv1.KubermaticConfiguration) string {
+	return fmt.Sprintf("kubermatic-configuration-%s", cfg.Namespace)
+}
+
+func KubermaticConfigurationAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+		return KubermaticConfigurationAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.AllScopes
+
+			ca, err := WebhookCABundle(cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find webhhook CA bundle: %w", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    "kubermaticconfigurations.kubermatic.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32Ptr(30),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: ca,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      WebhookServiceName,
+							Namespace: cfg.Namespace,
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-kubermaticconfiguration"),
+							Port:      pointer.Int32Ptr(443),
+						},
+					},
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							NameLabel: cfg.Namespace,
+						},
+					},
+					ObjectSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{kubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"kubermaticconfigurations"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.OperationAll,
+							},
+						},
+					},
+				},
+			}
+
+			return hook, nil
+		}
+	}
+}
+
 // WebhookServiceCreator creates the Service for all KKP webhooks.
 func WebhookServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
