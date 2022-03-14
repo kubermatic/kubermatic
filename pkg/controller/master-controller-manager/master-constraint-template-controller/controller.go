@@ -53,6 +53,7 @@ type reconciler struct {
 	recorder         record.EventRecorder
 	masterClient     ctrlruntimeclient.Client
 	namespace        string
+	seedsGetter      provider.SeedsGetter
 	seedClientGetter provider.SeedClientGetter
 }
 
@@ -61,6 +62,7 @@ func Add(ctx context.Context,
 	log *zap.SugaredLogger,
 	numWorkers int,
 	namespace string,
+	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 ) error {
 	reconciler := &reconciler{
@@ -68,6 +70,7 @@ func Add(ctx context.Context,
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		masterClient:     mgr.GetClient(),
 		namespace:        namespace,
+		seedsGetter:      seedsGetter,
 		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
@@ -162,14 +165,13 @@ func (r *reconciler) syncAllSeeds(
 	constraintTemplate *kubermaticv1.ConstraintTemplate,
 	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error,
 ) error {
-	// TODO: Use a regular SeedsGetter here
-	seedList := &kubermaticv1.SeedList{}
-	if err := r.masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}); err != nil {
+	seeds, err := r.seedsGetter()
+	if err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)
 	}
 
-	for _, seed := range seedList.Items {
-		seedClient, err := r.seedClientGetter(&seed)
+	for _, seed := range seeds {
+		seedClient, err := r.seedClientGetter(seed)
 		if err != nil {
 			return fmt.Errorf("failed getting seed client for seed %s: %w", seed.Name, err)
 		}
