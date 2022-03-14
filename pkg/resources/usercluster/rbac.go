@@ -117,6 +117,15 @@ func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
 						"update",
 					},
 				},
+				{
+					APIGroups: []string{"apps.kubermatic.k8c.io"},
+					Resources: []string{"applicationdefinitions"},
+					Verbs: []string{
+						"get",
+						"list",
+						"watch",
+					},
+				},
 			}
 			return r, nil
 		}

@@ -29,6 +29,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	applicationinstallercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/application-installer-controller"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
@@ -43,6 +44,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/applications/fake"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
@@ -372,6 +374,11 @@ func main() {
 		}
 		log.Info("Registered constraintsyncer controller")
 	}
+
+	if err := applicationinstallercontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, fake.ApplicationInstallerLogger{}); err != nil {
+		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
+	}
+	log.Info("Registered Application Installation controller")
 
 	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("Failed running manager", zap.Error(err))
