@@ -143,7 +143,7 @@ func (vc *VsphereCredentialsType) GenerateSecretData() map[string][]byte {
 }
 
 func (vc *VsphereCredentialsType) GenerateProviderSpec(clustername string) []byte {
-	cloudProviderSpec := fmt.Sprintf(`{"allowInsecure":false,"cluster":"%s","cpus":2,"datacenter":"%s","datastore":"exsi-nas","datastoreCluster":"","diskSizeGB":10,"memoryMB":4096,"folder":"/%s/vm/e2e-tests/%s","templateVMName":"machine-controller-e2e-ubuntu"}`, vc.Cluster, vc.Datacenter, vc.Datacenter, clustername)
+	cloudProviderSpec := fmt.Sprintf(`{"allowInsecure":false,"cluster":"%s","cpus":2,"datacenter":"%s","datastore":"HS-FreeNAS","datastoreCluster":"","diskSizeGB":10,"memoryMB":4096,"folder":"/%s/vm/e2e-tests/%s","templateVMName":"machine-controller-e2e-ubuntu"}`, vc.Cluster, vc.Datacenter, vc.Datacenter, clustername)
 	return []byte(fmt.Sprintf(`{"cloudProvider":"vsphere","cloudProviderSpec":%s,"operatingSystem":"ubuntu","operatingSystemSpec":{"distUpgradeOnBoot":false},"sshPublicKeys":["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfWMWB244VDl+EL8f5OG5zYbu+eW1PeOAKrfd6c8GP+xQfO/cgvyF1u495eS2Ef+aLIsD09h/dwfCefW9WtQ12kgNpOneqEBhkhwW/1DIcB6Or63SxEapt9mqullSc6WtcwEoRaT+Ro0o3TuZ6xW7RBLFMcU3Zp2PM2WvN/B67X8agMxqYVFw/T94tpYGKSIOV03a/PTWN9Er2zCEcsVu4XEShtUHO1wOrGVOOsfk1hd27o1odRPpBNL+6DbXQBhQRrS45NTeIIsIECccSpNBX3WdAh+sasFgfWhap1ZNU/Je1lygM81ChwUvldydgE8ccL4oeLX+S8om2VAQeUkllaKuO22SJMaGzIFm5ZQY8yjzOGkAABuDHmB31knDGTCAQ0l+XTjN+ucbhKdQi645Ar/leLV93TXyKxKCDBxLp22gDWP2YIsS0mw6eqiiuEQu4a0QjFegfRTMPM3K1g7i7evYUAlpVR5Bq4gK52t6z+Ev1Z2frYSA0flTBCHX7v4k= mlavacca@Thinkpad-mattia"]}`,
 		cloudProviderSpec))
 }
