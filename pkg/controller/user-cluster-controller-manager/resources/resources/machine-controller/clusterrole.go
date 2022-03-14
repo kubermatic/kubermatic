@@ -62,7 +62,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				},
 				{
 					APIGroups: []string{""},
-					Resources: []string{"persistentvolumes", "secrets", "configmaps"},
+					Resources: []string{"persistentvolumes", "persistentvolumeclaims", "secrets", "configmaps"},
 					Verbs:     []string{"list", "get", "watch"},
 				},
 				{
