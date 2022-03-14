@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/robfig/cron"
+	cron "github.com/robfig/cron/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -74,7 +74,9 @@ func parseDuration(interval time.Duration) (string, error) {
 	// We verify the validity of the scheduleString here, because the etcd_backup_controller
 	// only does that inside its sync loop, which means it is entirely possible to create
 	// an EtcdBackupConfig with an invalid Spec.Schedule
-	_, err := cron.ParseStandard(scheduleString)
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+
+	_, err := parser.Parse(scheduleString)
 	if err != nil {
 		return "", err
 	}
