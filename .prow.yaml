@@ -1323,7 +1323,6 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-openstack: "true"
-      preset-vsphere: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -1337,7 +1336,7 @@ presubmits:
         - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
           env:
             - name: KUBERMATIC_EDITION
-              value: ce
+              value: ee
             - name: PROVIDER
               value: openstack
             - name: VERSION_TO_TEST
@@ -1364,7 +1363,6 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-openstack: "true"
       preset-vsphere: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -1379,7 +1377,7 @@ presubmits:
         - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-5
           env:
             - name: KUBERMATIC_EDITION
-              value: ce
+              value: ee
             - name: PROVIDER
               value: vsphere
             - name: VERSION_TO_TEST

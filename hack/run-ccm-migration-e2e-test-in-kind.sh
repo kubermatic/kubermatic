@@ -43,7 +43,9 @@ beforeKubermaticSetup=$(nowms)
 source hack/ci/setup-kubermatic-in-kind.sh
 pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
-EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
+export PROVIDER_TO_TEST="${PROVIDER}"
+if [[ "$PROVIDER_TO_TEST" == "openstack" ]]; then
+  export EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
@@ -52,19 +54,24 @@ EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
     -openstack-network=${OS_NETWORK_NAME}
     -openstack-seed-datacenter=syseleven-dbl1
-    -vsphere-seed-datacenter=vsphere-ger
+    "
+fi
+
+if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
+  export EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
     -vsphere-datacenter=dc-1
     -vsphere-cluster=cl-1
     -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}
     -vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
     "
+fi
 
 # run tests
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
 if [ -x "$(command -v ginkgo)" ]; then
-  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
+  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
     -r \
     --randomizeAllSpecs \
     --randomizeSuites \
@@ -76,7 +83,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     --debug-log \
-    --provider "${PROVIDER}"
+    --provider "${PROVIDER_TO_TEST}"
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
@@ -86,5 +93,5 @@ else
     --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --debug-log \
-    --provider "${PROVIDER}"
+    --provider "${PROVIDER_TO_TEST}"
 fi
