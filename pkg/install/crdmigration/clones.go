@@ -2129,7 +2129,6 @@ func convertDatacenter(oldDC kubermaticv1.Datacenter) newv1.Datacenter {
 			InsecureRegistries: oldDC.Node.InsecureRegistries,
 			RegistryMirrors:    oldDC.Node.RegistryMirrors,
 			PauseImage:         oldDC.Node.PauseImage,
-			HyperkubeImage:     oldDC.Node.HyperkubeImage,
 		}
 	}
 
