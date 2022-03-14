@@ -43,7 +43,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hetznercloud/hcloud-go v1.33.1
 	github.com/imdario/mergo v0.3.12
-	github.com/jetstack/cert-manager v1.1.0
+	github.com/jetstack/cert-manager v1.7.1
 	github.com/kubermatic/grafanasdk v0.9.11
 	github.com/kubermatic/machine-controller v1.43.0
 	github.com/minio/minio-go/v7 v7.0.13
@@ -72,8 +72,8 @@ require (
 	golang.org/x/tools v0.1.8
 	gomodules.xyz/jsonpatch/v2 v2.2.0
 	google.golang.org/api v0.56.0
-	google.golang.org/genproto v0.0.0-20211102202547-e9cf271f7f2c
-	google.golang.org/grpc v1.42.0
+	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5
+	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/gcfg.v1 v1.2.3
@@ -81,17 +81,17 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8c.io/operating-system-manager v0.4.0
-	k8s.io/api v0.23.0
-	k8s.io/apiextensions-apiserver v0.23.0
-	k8s.io/apimachinery v0.23.0
-	k8s.io/apiserver v0.23.0
+	k8s.io/api v0.23.1
+	k8s.io/apiextensions-apiserver v0.23.1
+	k8s.io/apimachinery v0.23.1
+	k8s.io/apiserver v0.23.1
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
-	k8s.io/cli-runtime v0.23.0
+	k8s.io/cli-runtime v0.23.1
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.23.0
+	k8s.io/code-generator v0.23.1
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.22.2
-	k8s.io/kubectl v0.22.2
+	k8s.io/kube-aggregator v0.23.1
+	k8s.io/kubectl v0.23.1
 	k8s.io/metrics v0.23.0
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
@@ -220,7 +220,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/minio/md5-simd v1.1.0 // indirect
 	github.com/minio/sha256-simd v0.1.1 // indirect
-	github.com/mitchellh/copystructure v1.0.0 // indirect
+	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
@@ -290,7 +290,7 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	k8s.io/component-base v0.23.0 // indirect
+	k8s.io/component-base v0.23.1 // indirect
 	k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
