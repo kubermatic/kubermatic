@@ -67,10 +67,6 @@ spec:
                           description: 'Optional: If set, this proxy will be configured
                             for both HTTP and HTTPS.'
                           type: string
-                        hyperkubeImage:
-                          description: 'Optional: The hyperkube image to use. Currently
-                            only Flatcar makes use of this option.'
-                          type: string
                         insecureRegistries:
                           description: 'Optional: These image registries will be configured
                             as insecure on the container runtime.'

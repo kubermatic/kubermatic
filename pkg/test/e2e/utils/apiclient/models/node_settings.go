@@ -18,10 +18,6 @@ import (
 // swagger:model NodeSettings
 type NodeSettings struct {
 
-	// Optional: The hyperkube image to use. Currently only Flatcar
-	// makes use of this option.
-	HyperkubeImage string `json:"hyperkubeImage,omitempty"`
-
 	// Optional: These image registries will be configured as insecure
 	// on the container runtime.
 	InsecureRegistries []string `json:"insecureRegistries"`

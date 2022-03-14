@@ -304,10 +304,6 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 		if nodeSettings.PauseImage != "" {
 			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
 		}
-		// TODO(kron4eg): deprecate and remove this
-		if nodeSettings.HyperkubeImage != "" {
-			flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
-		}
 	}
 
 	if cri != "" {
