@@ -63,7 +63,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 
 		ginkgo.BeforeEach(func() {
 			if options.provider != string(kubermaticv1.VSphereCloudProvider) {
-				ginkgo.Skip("skipping vsphere test")
+				ginkgo.Skip("skipping openstack test")
 			}
 			vsphereCluster = &kubermaticv1.Cluster{}
 			clusterJig = providers.NewClusterJigVsphere(seedClient, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
@@ -114,7 +114,7 @@ func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *ku
 		gomega.Expect(clusterJig.Seed().Get(context.TODO(), types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
 		userClient, err = clusterClientProvider.GetClient(context.TODO(), cluster)
 		if err != nil {
-			clusterJig.Log().Debug("user cluster client get failed, retrying...")
+			clusterJig.Log().Debug("user cluster client get failed: %v", err)
 			return false, nil
 		}
 		return true, nil
@@ -125,7 +125,7 @@ func setupAndGetUserClient(clusterJig providers.ClusterJigInterface, cluster *ku
 
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
 		if err = clusterJig.CreateMachineDeployment(userClient); err != nil {
-			clusterJig.Log().Debug("machine deployment creation failed, retrying...")
+			clusterJig.Log().Debug("machine deployment creation failed: %v", err)
 			return false, nil
 		}
 		return true, nil
