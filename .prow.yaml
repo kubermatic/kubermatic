@@ -1298,7 +1298,6 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
-      preset-kubeconfig-ci: "true"
       preset-goproxy: "true"
     spec:
       containers:
@@ -1331,6 +1330,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-e2e-ssh: "true"
       preset-kind-volume-mounts: "true"
+      preset-kubeconfig-ci: "true"
       preset-goproxy: "true"
     spec:
       containers:
