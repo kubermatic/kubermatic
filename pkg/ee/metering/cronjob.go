@@ -38,10 +38,10 @@ import (
 )
 
 // cronJobCreator returns the func to create/update the metering report cronjob.
-func cronJobCreator(seedName string, mc *kubermaticv1.MeteringConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
+func cronJobCreator(seedName, reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
-			job.Spec.Schedule = mc.Schedule
+		return reportName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+			job.Spec.Schedule = mrc.Schedule
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = meteringToolName
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
@@ -127,7 +127,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						"-c",
 						`/usr/local/bin/kubermatic-metering-report -workdir=/metering-data \
                                                           -reportdir=/report \
-                                                          -last-number-of-days=` + strconv.Itoa(mc.Interval) + ` \
+                                                          -last-number-of-days=` + strconv.Itoa(mrc.Interval) + ` \
                                                           -seed=` + seedName + ` \
                                                           -scrape-interval=300
                         touch /report/finished`,

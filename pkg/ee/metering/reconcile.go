@@ -54,7 +54,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
-		return cleanupMeteringResources(ctx, client)
+		return cleanupMeteringResources(ctx, client, seed.Spec.Metering)
 	}
 
 	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
@@ -76,10 +76,12 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	modifiers := []reconciling.ObjectModifier{
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
 	}
-	if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
-		cronJobCreator(seed.Name, seed.Spec.Metering, overwriter),
-	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile metering CronJob: %w", err)
+	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
+		if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
+			cronJobCreator(seed.Name, reportName, reportConf, overwriter),
+		}, resources.KubermaticNamespace, client, modifiers...); err != nil {
+			return fmt.Errorf("failed to reconcile metering CronJob: %w", err)
+		}
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
@@ -93,15 +95,17 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 
 // cleanupMeteringResources removes active parts of the metering
 // components, in case the admin disables the feature.
-func cleanupMeteringResources(ctx context.Context, client ctrlruntimeclient.Client) error {
+func cleanupMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, meteringConfig *kubermaticv1.MeteringConfiguration) error {
 	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringToolName}
 	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
 		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
 	}
 
-	key.Name = meteringCronJobWeeklyName
-	if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
+	for reportName := range meteringConfig.ReportConfigurations {
+		key.Name = reportName
+		if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
+			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
+		}
 	}
 
 	return nil

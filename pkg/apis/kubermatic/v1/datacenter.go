@@ -538,6 +538,11 @@ type MeteringConfiguration struct {
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
+	// +kubebuilder:default:={{name: kubermatic-metering-report-weekly}}
+	ReportConfigurations map[string]*MeteringReportConfiguration `json:"reports,omitempty"`
+}
+
+type MeteringReportConfiguration struct {
 	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
 	// only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
 	// +kubebuilder:default:=`0 1 * * 6`
