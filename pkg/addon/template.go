@@ -97,6 +97,13 @@ func NewTemplateData(
 
 	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 
+	var ipvs kubermaticv1.IPVSConfiguration
+	if cluster.Spec.ClusterNetwork.IPVS != nil {
+		ipvs = *cluster.Spec.ClusterNetwork.IPVS
+	} else {
+		ipvs = kubermaticv1.IPVSConfiguration{}
+	}
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
@@ -123,7 +130,7 @@ func NewTemplateData(
 				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
 				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
 				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
-				StrictArp:         cluster.Spec.ClusterNetwork.IPVS.StrictArp,
+				StrictArp:         ipvs.StrictArp,
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),

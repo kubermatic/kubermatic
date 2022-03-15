@@ -57,7 +57,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -459,7 +458,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-	fakeCluster.Spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(resources.IPVSStrictArp)}
 	fakeCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 		Type:    kubermaticv1.CNIPluginTypeCanal,
 		Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
