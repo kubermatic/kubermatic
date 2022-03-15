@@ -29,7 +29,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -138,48 +140,42 @@ func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermat
 func (v *validator) validateProjectRelation(ctx context.Context, cluster *kubermaticv1.Cluster, oldCluster *kubermaticv1.Cluster) *field.Error {
 	label := kubermaticv1.ProjectIDLabelKey
 	fieldPath := field.NewPath("metadata", "labels")
+	isUpdate := oldCluster != nil
 
-	if oldCluster != nil && cluster.Labels[label] != oldCluster.Labels[label] {
+	if isUpdate && cluster.Labels[label] != oldCluster.Labels[label] {
 		return field.Invalid(fieldPath, cluster.Labels[label], fmt.Sprintf("the %s label is immutable", label))
 	}
 
-	// during cluster creation, we enforce the project label;
-	// during updates we are more relaxed and only require that the label isn't changed,
-	// so that if a project gets removed before the cluster (for whatever reason), then
-	// the cluster cleanup can still progress and is not blocked by the webhook rejecting
-	// the stale label
-	if oldCluster == nil {
-		projectID := cluster.Labels[label]
-		if projectID == "" {
-			return field.Required(fieldPath, fmt.Sprintf("Cluster resources must have a %q label", label))
-		}
+	projectID := cluster.Labels[label]
+	if projectID == "" {
+		return field.Required(fieldPath, fmt.Sprintf("Cluster resources must have a %q label", label))
+	}
 
-		projects := kubermaticv1.ProjectList{}
-		if err := v.client.List(ctx, &projects); err != nil {
-			return field.InternalError(fieldPath, fmt.Errorf("failed to list projects: %w", err))
-		}
-
-		var project *kubermaticv1.Project
-		for i, p := range projects.Items {
-			if projectID == p.Name {
-				project = &projects.Items[i]
-				break
+	project := &kubermaticv1.Project{}
+	if err := v.client.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
+		if kerrors.IsNotFound(err) {
+			// during cluster creation, we enforce the project label;
+			// during updates we are more relaxed and only require that the label isn't changed,
+			// so that if a project gets removed before the cluster (for whatever reason), then
+			// the cluster cleanup can still progress and is not blocked by the webhook rejecting
+			// the stale label
+			if isUpdate {
+				return nil
 			}
-		}
 
-		// Do not check the project phase, as projects only get Active after being successfully
-		// reconciled. This requires the owner user to be setup properly as well, which in turn
-		// requires owner references to be setup. All of this is super annoying when doing
-		// GitOps. Instead we rely on _eventual_ consistency and only check that the project
-		// exists and is not being deleted.
-
-		if project == nil {
 			return field.Invalid(fieldPath, projectID, "no such project exists")
 		}
 
-		if project.DeletionTimestamp != nil {
-			return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
-		}
+		return field.InternalError(fieldPath, fmt.Errorf("failed to get project: %w", err))
+	}
+
+	// Do not check the project phase, as projects only get Active after being successfully
+	// reconciled. This requires the owner user to be setup properly as well, which in turn
+	// requires owner references to be setup. All of this is super annoying when doing
+	// GitOps. Instead we rely on _eventual_ consistency and only check that the project
+	// exists and is not being deleted.
+	if !isUpdate && project.DeletionTimestamp != nil {
+		return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
 	}
 
 	return nil
