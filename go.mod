@@ -44,7 +44,7 @@ require (
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.10
-	github.com/kubermatic/machine-controller v1.36.1
+	github.com/kubermatic/machine-controller v1.36.4
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.4
