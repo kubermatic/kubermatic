@@ -30,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -63,13 +62,6 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	clusterRef := &corev1.ObjectReference{
-		APIVersion: cluster.APIVersion,
-		Kind:       cluster.Kind,
-		Name:       cluster.Name,
-		UID:        cluster.UID,
-	}
-
 	tests := []struct {
 		name        string
 		req         webhook.AdmissionRequest
@@ -78,7 +70,7 @@ func TestHandle(t *testing.T) {
 		wantPatches []jsonpatch.JsonPatchOperation
 	}{
 		{
-			name:     "Add missing cluster ref to new addon",
+			name:     "Add missing cluster name to new setting",
 			clusters: []ctrlruntimeclient.Object{cluster},
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -86,12 +78,12 @@ func TestHandle(t *testing.T) {
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
-						Kind:    "Addon",
+						Kind:    "MLAAdminSetting",
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAddonGen{
-							Name:      "my-addon",
+						Raw: rawSettingGen{
+							Name:      "my-setting",
 							Namespace: cluster.Status.NamespaceName,
 						}.Do(),
 					},
@@ -99,14 +91,11 @@ func TestHandle(t *testing.T) {
 			},
 			wantError: false,
 			wantPatches: []jsonpatch.Operation{
-				jsonpatch.NewOperation("add", "/spec/cluster/apiVersion", "kubermatic.k8c.io/v1"),
-				jsonpatch.NewOperation("add", "/spec/cluster/kind", "Cluster"),
-				jsonpatch.NewOperation("add", "/spec/cluster/name", "xyz"),
-				jsonpatch.NewOperation("add", "/spec/cluster/uid", "12345"),
+				jsonpatch.NewOperation("replace", "/spec/clusterName", cluster.Name),
 			},
 		},
 		{
-			name:     "Fix broken cluster ref in Addon",
+			name:     "Fix broken cluster name in MLAAdminSetting",
 			clusters: []ctrlruntimeclient.Object{cluster},
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -114,33 +103,25 @@ func TestHandle(t *testing.T) {
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
-						Kind:    "Addon",
+						Kind:    "MLAAdminSetting",
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAddonGen{
-							Name:      "my-addon",
-							Namespace: cluster.Status.NamespaceName,
-							Cluster: &corev1.ObjectReference{
-								Kind:       "wrong",
-								Name:       "also wrong",
-								UID:        "totally wrong",
-								APIVersion: "not even close",
-							},
+						Raw: rawSettingGen{
+							Name:        "my-setting",
+							Namespace:   cluster.Status.NamespaceName,
+							ClusterName: "not-the-correct-name",
 						}.Do(),
 					},
 				},
 			},
 			wantError: false,
 			wantPatches: []jsonpatch.Operation{
-				jsonpatch.NewOperation("replace", "/spec/cluster/apiVersion", "kubermatic.k8c.io/v1"),
-				jsonpatch.NewOperation("replace", "/spec/cluster/kind", "Cluster"),
-				jsonpatch.NewOperation("replace", "/spec/cluster/name", "xyz"),
-				jsonpatch.NewOperation("replace", "/spec/cluster/uid", "12345"),
+				jsonpatch.NewOperation("replace", "/spec/clusterName", cluster.Name),
 			},
 		},
 		{
-			name:     "Reject addons outside of cluster namespaces",
+			name:     "Reject settings outside of cluster namespaces",
 			clusters: []ctrlruntimeclient.Object{cluster},
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -148,12 +129,12 @@ func TestHandle(t *testing.T) {
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
-						Kind:    "Addon",
+						Kind:    "MLAAdminSetting",
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAddonGen{
-							Name:      "my-addon",
+						Raw: rawSettingGen{
+							Name:      "my-setting",
 							Namespace: "this-does-not-exist",
 						}.Do(),
 					},
@@ -162,7 +143,7 @@ func TestHandle(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name: "Reject new addons in deleted clusters",
+			name: "Reject new settings in deleted clusters",
 			clusters: []ctrlruntimeclient.Object{
 				(func(c *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 					cluster := c.DeepCopy()
@@ -181,7 +162,7 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAddonGen{
+						Raw: rawSettingGen{
 							Name:      "my-setting",
 							Namespace: cluster.Status.NamespaceName,
 						}.Do(),
@@ -191,7 +172,7 @@ func TestHandle(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name:     "Allow updating addons when the Cluster is already gone (to allow cleanups to complete)",
+			name:     "Allow updating settings when the Cluster is already gone (to allow cleanups to complete)",
 			clusters: []ctrlruntimeclient.Object{},
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -199,19 +180,19 @@ func TestHandle(t *testing.T) {
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
-						Kind:    "Addon",
+						Kind:    "MLAAdminSetting",
 					},
 					Name: "foo",
 					OldObject: runtime.RawExtension{
-						Raw: rawAddonGen{
-							Name:       "my-addon",
+						Raw: rawSettingGen{
+							Name:       "my-setting",
 							Namespace:  cluster.Status.NamespaceName,
 							Finalizers: []string{"a", "b"},
 						}.Do(),
 					},
 					Object: runtime.RawExtension{
-						Raw: rawAddonGen{
-							Name:       "my-addon",
+						Raw: rawSettingGen{
+							Name:       "my-setting",
 							Namespace:  cluster.Status.NamespaceName,
 							Finalizers: []string{"a"},
 						}.Do(),
@@ -221,7 +202,7 @@ func TestHandle(t *testing.T) {
 			wantError: false,
 		},
 		{
-			name:     "Forbid changing the Cluster reference",
+			name:     "Forbid changing the Cluster name",
 			clusters: []ctrlruntimeclient.Object{cluster},
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -229,25 +210,21 @@ func TestHandle(t *testing.T) {
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
-						Kind:    "Addon",
+						Kind:    "MLAAdminSetting",
 					},
 					Name: "foo",
 					OldObject: runtime.RawExtension{
-						Raw: rawAddonGen{
-							Name:      "my-addon",
-							Namespace: cluster.Status.NamespaceName,
-							Cluster:   clusterRef,
+						Raw: rawSettingGen{
+							Name:        "my-setting",
+							Namespace:   cluster.Status.NamespaceName,
+							ClusterName: cluster.Name,
 						}.Do(),
 					},
 					Object: runtime.RawExtension{
-						Raw: rawAddonGen{
-							Name:      "my-addon",
-							Namespace: cluster.Status.NamespaceName,
-							Cluster: func() *corev1.ObjectReference {
-								newRef := clusterRef.DeepCopy()
-								newRef.Name = "wrong"
-								return newRef
-							}(),
+						Raw: rawSettingGen{
+							Name:        "my-setting",
+							Namespace:   cluster.Status.NamespaceName,
+							ClusterName: "wrong",
 						}.Do(),
 					},
 				},
@@ -298,36 +275,32 @@ func TestHandle(t *testing.T) {
 	}
 }
 
-type rawAddonGen struct {
-	Name       string
-	Namespace  string
-	Finalizers []string
-	Cluster    *corev1.ObjectReference
+type rawSettingGen struct {
+	Name        string
+	Namespace   string
+	Finalizers  []string
+	ClusterName string
 }
 
-func (r rawAddonGen) Do() []byte {
-	addon := kubermaticv1.Addon{
+func (r rawSettingGen) Do() []byte {
+	setting := kubermaticv1.MLAAdminSetting{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kubermatic.k8c.io/v1",
-			Kind:       "Addon",
+			Kind:       "MLAAdminSetting",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       r.Name,
 			Namespace:  r.Namespace,
 			Finalizers: r.Finalizers,
 		},
-		Spec: kubermaticv1.AddonSpec{
-			Name: r.Name,
+		Spec: kubermaticv1.MLAAdminSettingSpec{
+			ClusterName: r.ClusterName,
 		},
-	}
-
-	if r.Cluster != nil {
-		addon.Spec.Cluster = *r.Cluster
 	}
 
 	s := json.NewSerializerWithOptions(json.DefaultMetaFactory, testScheme, testScheme, json.SerializerOptions{Pretty: true})
 	buff := bytes.NewBuffer([]byte{})
-	_ = s.Encode(&addon, buff)
+	_ = s.Encode(&setting, buff)
 
 	return buff.Bytes()
 }

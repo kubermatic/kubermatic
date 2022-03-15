@@ -33,6 +33,7 @@ import (
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
 	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
@@ -146,6 +147,11 @@ func main() {
 	// setup Addon webhook
 
 	addonmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup MLAAdminSetting webhooks
+
+	mlaadminsettingmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks

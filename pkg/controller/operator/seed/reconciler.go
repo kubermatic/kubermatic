@@ -197,6 +197,14 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.AddonAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.MLAAdminSettingAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
+	}
+
 	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSCAdmissionWebhookName); err != nil {
 		return fmt.Errorf("failed to clean up OSC ValidatingWebhookConfiguration: %w", err)
 	}
@@ -605,6 +613,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		kubermaticseed.ClusterMutatingWebhookConfigurationCreator(cfg, client),
 		kubermaticseed.AddonMutatingWebhookConfigurationCreator(cfg, client),
+		kubermaticseed.MLAAdminSettingMutatingWebhookConfigurationCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {
