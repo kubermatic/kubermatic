@@ -487,7 +487,7 @@ func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		DiskSize: nodeSpec.Cloud.Nutanix.DiskSize,
 	}
 
-	if c.Spec.Cloud.Nutanix.ProjectName != "" {
+	if c.Spec.Cloud.Nutanix.ProjectName != "" && c.Spec.Cloud.Nutanix.ProjectName != nutanixprovider.DefaultProject {
 		config.ProjectName = &providerconfig.ConfigVarString{Value: c.Spec.Cloud.Nutanix.ProjectName}
 	}
 
