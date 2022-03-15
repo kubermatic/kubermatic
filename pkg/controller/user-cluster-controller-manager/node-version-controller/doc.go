@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,11 +15,7 @@ limitations under the License.
 */
 
 /*
-Package update contains a controller that auto applies updates to both the cluster version
-and the machine version based on a configuration file.
-
-TODO: Make this controller wait for successfully convergation after an update was applied. Currently,
-it may apply an update and then instantly apply another one, which is not supported, only n+1 minor
-version updates are supported.
+Package nodeversioncontroller a controller that watches Nodes and
+updates the Cluster's status with the oldestNodeVersion.
 */
-package update
+package nodeversioncontroller
