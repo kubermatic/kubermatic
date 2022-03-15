@@ -206,10 +206,12 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		}
 	}
 
-	if subject.Spec.Metering != nil && subject.Spec.Metering.Schedule != "" {
+	if subject.Spec.Metering != nil && len(subject.Spec.Metering.ReportConfigurations) > 0 {
 		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-		if _, err := parser.Parse(subject.Spec.Metering.Schedule); err != nil {
-			return fmt.Errorf("invalid cron expression format: %s", subject.Spec.Metering.Schedule)
+		for _, reportConfig := range subject.Spec.Metering.ReportConfigurations {
+			if _, err := parser.Parse(reportConfig.Schedule); err != nil {
+				return fmt.Errorf("invalid cron expression format: %s", reportConfig.Schedule)
+			}
 		}
 	}
 

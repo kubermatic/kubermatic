@@ -27,6 +27,7 @@ package metering
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -50,7 +51,7 @@ func getMinioImage(overwriter registry.WithOverwriteFunc) string {
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
-func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
+func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
@@ -75,6 +76,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 
 	modifiers := []reconciling.ObjectModifier{
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
+		common.OwnershipModifierFactory(seed, scheme),
 	}
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
 		if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
