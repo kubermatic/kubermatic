@@ -103,7 +103,7 @@ func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName
 			if entity != nil {
 				if entity.Status != nil &&
 					(entity.Status.ClusterReference == nil || (entity.Status.ClusterReference.UUID != nil && *entity.Status.ClusterReference.UUID == *cluster.Metadata.UUID)) &&
-					(projectName == "" || contains(projectAllowedUUIDs, *entity.Metadata.UUID)) {
+					(projectName == "" || projectName == DefaultProject || contains(projectAllowedUUIDs, *entity.Metadata.UUID)) {
 					subnets = append(subnets, *entity)
 				}
 			}
