@@ -522,9 +522,6 @@ type NodeSettings struct {
 	// Optional: Translates to --pod-infra-container-image on the kubelet.
 	// If not set, the kubelet will default it.
 	PauseImage string `json:"pauseImage,omitempty"`
-	// Optional: The hyperkube image to use. Currently only Flatcar
-	// makes use of this option.
-	HyperkubeImage string `json:"hyperkubeImage,omitempty"`
 }
 
 // SeedMLASettings allow configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
