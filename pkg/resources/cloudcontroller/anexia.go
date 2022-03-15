@@ -73,7 +73,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:1.1.3-kubermatic",
+					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:1.4.1",
 					Command: []string{
 						"/app/ccm",
 						"--cloud-provider=anexia",
@@ -85,6 +85,10 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						{
 							Name:  "ANEXIA_TOKEN",
 							Value: credentials.Anexia.Token,
+						},
+						{
+							Name:  "ANEXIA_AUTO_DISCOVER_LOAD_BALANCER",
+							Value: "true",
 						},
 					},
 					Ports: []corev1.ContainerPort{
