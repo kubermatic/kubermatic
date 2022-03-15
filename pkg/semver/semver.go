@@ -90,6 +90,32 @@ func (s *Semver) Equal(b *Semver) bool {
 	return sver.Equal(bver)
 }
 
+func (s *Semver) LessThan(b *Semver) bool {
+	if s == nil || b == nil {
+		return false
+	}
+
+	sver, bver := s.Semver(), b.Semver()
+	if sver == nil || bver == nil {
+		return false
+	}
+
+	return sver.LessThan(bver)
+}
+
+func (s *Semver) GreaterThan(b *Semver) bool {
+	if s == nil || b == nil {
+		return false
+	}
+
+	sver, bver := s.Semver(), b.Semver()
+	if sver == nil || bver == nil {
+		return false
+	}
+
+	return sver.GreaterThan(bver)
+}
+
 // String returns string representation of Semver version.
 func (s *Semver) String() string {
 	sver := s.Semver()

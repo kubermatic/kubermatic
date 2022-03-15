@@ -135,7 +135,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
 				"-overwrite-registry", data.ImageRegistry(""),
-				"-version", data.Cluster().Spec.Version.String(),
+				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
 				"-owner-email", data.Cluster().Status.UserEmail,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),

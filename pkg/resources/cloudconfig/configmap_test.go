@@ -252,6 +252,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 						},
 					},
 				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+					},
+				},
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
@@ -276,6 +281,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -308,6 +318,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 						},
 					},
 				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+					},
+				},
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
@@ -334,6 +349,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},

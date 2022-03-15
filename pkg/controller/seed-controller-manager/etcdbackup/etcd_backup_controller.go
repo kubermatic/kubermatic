@@ -215,6 +215,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Skipping because the cluster has no version status yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	log = r.log.With("cluster", cluster.Name, "backupConfig", backupConfig.Name)
 
 	var suppressedError error

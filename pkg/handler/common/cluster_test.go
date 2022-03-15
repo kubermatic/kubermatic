@@ -55,6 +55,11 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
+				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationNotNeeded,
 		},
@@ -80,6 +85,9 @@ func TestExternalCCMMigration(t *testing.T) {
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
 					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
 						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
@@ -101,6 +109,11 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
+				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationSupported,
 		},
@@ -115,6 +128,11 @@ func TestExternalCCMMigration(t *testing.T) {
 						Fake: &kubermaticv1.FakeCloudSpec{},
 					},
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
 				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationUnsupported,
@@ -141,6 +159,9 @@ func TestExternalCCMMigration(t *testing.T) {
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
 					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
 						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionFalse,
@@ -170,6 +191,11 @@ func TestExternalCCMMigration(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
 				},
 			},
 			ExpectedStatus: apiv1.ExternalCCMMigrationInProgress,

@@ -344,6 +344,12 @@ func TestLoadFiles(t *testing.T) {
 						},
 						Status: kubermaticv1.ClusterStatus{
 							NamespaceName: "cluster-de-test-01",
+							Versions: kubermaticv1.ClusterVersionsStatus{
+								ControlPlane:      *ksemver.NewSemverOrDie(ver.Version.String()),
+								Apiserver:         *ksemver.NewSemverOrDie(ver.Version.String()),
+								ControllerManager: *ksemver.NewSemverOrDie(ver.Version.String()),
+								Scheduler:         *ksemver.NewSemverOrDie(ver.Version.String()),
+							},
 						},
 					}
 

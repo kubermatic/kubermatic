@@ -465,6 +465,10 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
 	}
 	fakeCluster.Status.NamespaceName = mockNamespaceName
+	fakeCluster.Status.Versions.ControlPlane = *clusterSemver
+	fakeCluster.Status.Versions.Apiserver = *clusterSemver
+	fakeCluster.Status.Versions.ControllerManager = *clusterSemver
+	fakeCluster.Status.Versions.Scheduler = *clusterSemver
 
 	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
 

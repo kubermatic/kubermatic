@@ -43,13 +43,13 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
+		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Status.Versions.ControlPlane)
 
 	case cluster.Spec.Cloud.Hetzner != nil:
 		return cluster.Spec.Cloud.Hetzner.Network != "" || dc.Spec.Hetzner.Network != ""
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		supported, err := version.IsSupported(cluster.Status.Versions.ControlPlane.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}
@@ -83,10 +83,10 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
+		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Status.Versions.ControlPlane)
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		supported, err := version.IsSupported(cluster.Status.Versions.ControlPlane.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}

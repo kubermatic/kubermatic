@@ -1004,7 +1004,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			CNIPlugin:                            internalCluster.Spec.CNIPlugin,
 		},
 		Status: apiv1.ClusterStatus{
-			Version:              internalCluster.Spec.Version,
+			Version:              internalCluster.Spec.Version, // TODO: Should this use .Status.Versions instead of the spec?
 			URL:                  internalCluster.Address.URL,
 			ExternalCCMMigration: convertInternalCCMStatusToExternal(internalCluster, datacenter, incompatibilities...),
 		},

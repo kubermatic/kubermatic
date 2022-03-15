@@ -1152,6 +1152,11 @@ func (r rawClusterGen) Do() []byte {
 			ClusterNetwork: r.NetworkConfig,
 			CNIPlugin:      r.CNIPluginSpec,
 		},
+		Status: kubermaticv1.ClusterStatus{
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: r.Version,
+			},
+		},
 	}
 
 	for k, v := range r.Features {

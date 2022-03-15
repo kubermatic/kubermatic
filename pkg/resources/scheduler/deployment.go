@@ -56,7 +56,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Name = resources.SchedulerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
-			version := data.Cluster().Spec.Version.Semver()
+			version := data.Cluster().Status.Versions.Scheduler.Semver()
 			flags := []string{
 				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				// These are used to validate tokens
