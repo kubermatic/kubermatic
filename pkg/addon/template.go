@@ -100,8 +100,6 @@ func NewTemplateData(
 	var ipvs kubermaticv1.IPVSConfiguration
 	if cluster.Spec.ClusterNetwork.IPVS != nil {
 		ipvs = *cluster.Spec.ClusterNetwork.IPVS
-	} else {
-		ipvs = kubermaticv1.IPVSConfiguration{}
 	}
 
 	return &TemplateData{
