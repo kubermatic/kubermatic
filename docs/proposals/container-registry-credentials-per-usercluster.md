@@ -22,7 +22,7 @@
   * [Reconciliation of all Pods running on user clusters](#reconciliation-of-all-pods-running-on-user-clusters)
   * [Setting imagePullSecrets on ServiceAccounts](#setting-imagepullsecrets-on-serviceaccounts)
   * [Extension of addon templates with imagePullSecrets](#extension-of-addon-templates-with-imagepullsecrets)
-* [Task & effort](#task-&-effort)
+* [Task and effort](#task-and-effort)
 
 ## Goals
 
@@ -248,7 +248,7 @@ Pods or ServiceAccounts in addon templates could be templated to use an imagePul
 does not cover reconciled KKP components nor user apps. So this approach would need to be combined
 with at least one of the 2 above.
 
-## Task & effort
+## Task and effort
 * Create CRD `RegistryCredentialSet`
 * [UI] Extend Admin UI by Registry Credential Management
 * [UI] Extend Project Management UI by Registry Credential Management
