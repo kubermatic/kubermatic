@@ -653,7 +653,7 @@ spec:
                             description: 'Optional: defaults to "false"'
                             type: boolean
                           storageContainer:
-                            description: 'Optional: defaults to "Default"'
+                            description: 'Optional: defaults to "SelfServiceContainer"'
                             type: string
                           username:
                             description: Prism Element Username for csi driver

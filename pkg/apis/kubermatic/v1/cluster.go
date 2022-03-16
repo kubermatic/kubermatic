@@ -851,7 +851,7 @@ type NutanixCSIConfig struct {
 
 	// Storage Class options
 
-	// Optional: defaults to "Default"
+	// Optional: defaults to "SelfServiceContainer"
 	// +optional
 	StorageContainer string `json:"storageContainer,omitempty"`
 

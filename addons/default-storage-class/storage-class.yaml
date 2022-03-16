@@ -141,7 +141,7 @@ parameters:
   csi.storage.k8s.io/node-publish-secret-namespace: kube-system
   csi.storage.k8s.io/controller-expand-secret-name: ntnx-secret
   csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
-  storageContainer: {{ default "Default" .Cluster.CSI.StorageContainer | quote }}
+  storageContainer: {{ default "SelfServiceContainer" .Cluster.CSI.StorageContainer | quote }}
   csi.storage.k8s.io/fstype: {{ default "xfs" .Cluster.CSI.Fstype | quote }}
   isSegmentedIscsiNetwork: {{ default "false" .Cluster.CSI.SsSegmentedIscsiNetwork | quote }}
 allowVolumeExpansion: true
