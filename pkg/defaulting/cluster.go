@@ -128,25 +128,25 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		if spec.Cloud.Kubevirt != nil {
 			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
 			// thus we have to avoid network collision
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.241.0.0/20"}
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.DefaultClusterServicesCIDRKubeVirt}
 		} else {
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.DefaultClusterServicesCIDR}
 		}
 	}
 
 	if len(spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
 		if spec.Cloud.Kubevirt != nil {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.26.0.0/16"}
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.DefaultClusterPodsCIDRKubeVirt}
 		} else {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.DefaultClusterPodsCIDR}
 		}
 	}
 
 	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && network.HasIPv4CIDR(spec.ClusterNetwork.Pods) {
-		spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 = pointer.Int32(24)
+		spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv4)
 	}
 	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 == nil && network.HasIPv6CIDR(spec.ClusterNetwork.Pods) {
-		spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 = pointer.Int32(64)
+		spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv6)
 	}
 
 	if spec.ClusterNetwork.DNSDomain == "" {

@@ -41,6 +41,7 @@ func IsDualStackCluster(cluster *kubermaticv1.Cluster) bool {
 	return res
 }
 
+// GetIPv4CIDR returns the first found IPv4 CIDR in the provided network ranges, or an empty string if no IPv4 CIDR is found.
 func GetIPv4CIDR(nr kubermaticv1.NetworkRanges) string {
 	for _, cidr := range nr.CIDRBlocks {
 		if net.IsIPv4CIDRString(cidr) {
@@ -50,6 +51,7 @@ func GetIPv4CIDR(nr kubermaticv1.NetworkRanges) string {
 	return ""
 }
 
+// GetIPv6CIDR returns the first found IPv6 CIDR in the provided network ranges, or an empty string if no IPv6 CIDR is found.
 func GetIPv6CIDR(nr kubermaticv1.NetworkRanges) string {
 	for _, cidr := range nr.CIDRBlocks {
 		if net.IsIPv6CIDRString(cidr) {
@@ -59,10 +61,12 @@ func GetIPv6CIDR(nr kubermaticv1.NetworkRanges) string {
 	return ""
 }
 
+// HasIPv4CIDR returns true if the provided network ranges contain any IPv4 CIDR, false otherwise.
 func HasIPv4CIDR(nr kubermaticv1.NetworkRanges) bool {
 	return GetIPv4CIDR(nr) != ""
 }
 
+// HasIPv6CIDR returns true if the provided network ranges contain any IPv6 CIDR, false otherwise.
 func HasIPv6CIDR(nr kubermaticv1.NetworkRanges) bool {
 	return GetIPv6CIDR(nr) != ""
 }

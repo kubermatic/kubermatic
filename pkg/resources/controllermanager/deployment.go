@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -237,6 +238,21 @@ func getFlags(data *resources.TemplateData, version *semver.Version) ([]string, 
 		flags = append(flags, "--allocate-node-cidrs")
 		flags = append(flags, "--cluster-cidr", strings.Join(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks, ","))
 		flags = append(flags, "--service-cluster-ip-range", strings.Join(cluster.Spec.ClusterNetwork.Services.CIDRBlocks, ","))
+		if network.IsDualStackCluster(cluster) {
+			if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv4=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
+			}
+			if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv6=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
+			}
+		} else {
+			if network.IsIPv4OnlyCluster(cluster) && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
+			}
+			if network.IsIPv6OnlyCluster(cluster) && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
+			}
+		}
 		if val := CloudRoutesFlagVal(cluster.Spec.Cloud); val != nil {
 			flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 		}

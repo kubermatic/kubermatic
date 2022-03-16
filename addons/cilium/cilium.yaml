@@ -83,7 +83,7 @@ data:
 
   # Enable IPv6 addressing. If enabled, all endpoints are allocated an IPv6
   # address.
-{{ if eq (len .Cluster.Network.PodCIDRBlocks) 2 }}
+{{ if .Cluster.Network.DualStack }}
   enable-ipv6: "true"
 {{ else }}
   enable-ipv6: "false"
@@ -195,11 +195,11 @@ data:
   hubble-tls-key-file: /var/lib/cilium/tls/hubble/server.key
   hubble-tls-client-ca-files: /var/lib/cilium/tls/hubble/client-ca.crt
   ipam: "cluster-pool"
-  cluster-pool-ipv4-cidr: "{{ first .Cluster.Network.PodCIDRBlocks }}"
-  cluster-pool-ipv4-mask-size: "24"
-{{ if eq (len .Cluster.Network.PodCIDRBlocks) 2 }}
-  cluster-pool-ipv6-cidr: "{{ last .Cluster.Network.PodCIDRBlocks }}"
-  cluster-pool-ipv6-mask-size: "112"
+  cluster-pool-ipv4-cidr: "{{ .Cluster.Network.PodCIDRIPv4 }}"
+  cluster-pool-ipv4-mask-size: "{{ .Cluster.Network.NodeCIDRMaskSizeIPv4 }}"
+{{ if .Cluster.Network.DualStack }}
+  cluster-pool-ipv6-cidr: "{{ .Cluster.Network.PodCIDRIPv6 }}"
+  cluster-pool-ipv6-mask-size: "{{ .Cluster.Network.NodeCIDRMaskSizeIPv6 }}"
 {{ end }}
   disable-cnp-status-updates: "true"
   cgroup-root: "/run/cilium/cgroupv2"

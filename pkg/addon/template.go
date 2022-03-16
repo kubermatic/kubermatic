@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -122,13 +123,18 @@ func NewTemplateData(
 			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),
 			Features:          sets.StringKeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
-				DNSDomain:         cluster.Spec.ClusterNetwork.DNSDomain,
-				DNSClusterIP:      dnsClusterIP,
-				DNSResolverIP:     dnsResolverIP,
-				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
-				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
-				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
-				StrictArp:         ipvs.StrictArp,
+				DNSDomain:            cluster.Spec.ClusterNetwork.DNSDomain,
+				DNSClusterIP:         dnsClusterIP,
+				DNSResolverIP:        dnsResolverIP,
+				PodCIDRBlocks:        cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
+				ServiceCIDRBlocks:    cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
+				ProxyMode:            cluster.Spec.ClusterNetwork.ProxyMode,
+				StrictArp:            ipvs.StrictArp,
+				DualStack:            network.IsDualStackCluster(cluster),
+				PodCIDRIPv4:          network.GetIPv4CIDR(cluster.Spec.ClusterNetwork.Pods),
+				PodCIDRIPv6:          network.GetIPv6CIDR(cluster.Spec.ClusterNetwork.Pods),
+				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),
+				NodeCIDRMaskSizeIPv6: resources.GetClusterNodeCIDRMaskSizeIPv6(cluster),
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
@@ -198,13 +204,18 @@ type ClusterData struct {
 }
 
 type ClusterNetwork struct {
-	DNSDomain         string
-	DNSClusterIP      string
-	DNSResolverIP     string
-	PodCIDRBlocks     []string
-	ServiceCIDRBlocks []string
-	ProxyMode         string
-	StrictArp         *bool
+	DNSDomain            string
+	DNSClusterIP         string
+	DNSResolverIP        string
+	PodCIDRBlocks        []string
+	ServiceCIDRBlocks    []string
+	ProxyMode            string
+	StrictArp            *bool
+	DualStack            bool
+	PodCIDRIPv4          string
+	PodCIDRIPv6          string
+	NodeCIDRMaskSizeIPv4 int32
+	NodeCIDRMaskSizeIPv6 int32
 }
 
 type CNIPlugin struct {
