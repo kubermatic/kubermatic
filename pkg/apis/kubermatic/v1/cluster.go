@@ -575,12 +575,12 @@ type ClusterNetworkingConfig struct {
 	// NodeCIDRMaskSizeIPv4 is the mask size used to address the nodes within provided IPv4 Pods CIDR.
 	// It has to be larger than the provided IPv4 Pods CIDR. Defaults to 24.
 	// +optional
-	NodeCIDRMaskSizeIPv4 *int32 `json:"nodeCIDRMaskSizeIPv4,omitempty"`
+	NodeCIDRMaskSizeIPv4 *int32 `json:"nodeCidrMaskSizeIPv4,omitempty"`
 
 	// NodeCIDRMaskSizeIPv6 is the mask size used to address the nodes within provided IPv6 Pods CIDR.
 	// It has to be larger than the provided IPv6 Pods CIDR. Defaults to 64.
 	// +optional
-	NodeCIDRMaskSizeIPv6 *int32 `json:"nodeCIDRMaskSizeIPv6,omitempty"`
+	NodeCIDRMaskSizeIPv6 *int32 `json:"nodeCidrMaskSizeIPv6,omitempty"`
 
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`

@@ -279,7 +279,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 		_, podCIDR, _ := net.ParseCIDR(v4PodCIDR)
 		podCIDRMaskSize, _ := podCIDR.Mask.Size()
 		if int32(podCIDRMaskSize) >= *n.NodeCIDRMaskSizeIPv4 {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("nodeCIDRMaskSizeIPv4"), n.NodeCIDRMaskSizeIPv4,
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("nodeCidrMaskSizeIPv4"), n.NodeCIDRMaskSizeIPv4,
 				fmt.Sprintf("IPv4 node CIDR mask size (%d) must be longer than the mask size of the pod CIDR (%q)", *n.NodeCIDRMaskSizeIPv4, v4PodCIDR)))
 		}
 	}
