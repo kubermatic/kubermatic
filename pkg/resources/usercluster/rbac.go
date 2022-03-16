@@ -62,6 +62,15 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 				},
 			},
 			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+			},
+			{
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
 				ResourceNames: []string{
