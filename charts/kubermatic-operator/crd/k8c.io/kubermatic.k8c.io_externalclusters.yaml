@@ -222,6 +222,17 @@ spec:
                     type: object
                   kubeone:
                     properties:
+                      clusterStatus:
+                        description: KubeOneExternalClusterStatus defines the kubeone
+                          external cluster status.
+                        properties:
+                          status:
+                            type: string
+                          statusMessage:
+                            type: string
+                        required:
+                        - status
+                        type: object
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
                           use v1.SecretKeySelector because it is not cross namespace
@@ -347,17 +358,6 @@ spec:
                           uid:
                             description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                             type: string
-                        type: object
-                      status:
-                        description: ExternalClusterStatus defines the kubeone external
-                          cluster status.
-                        properties:
-                          state:
-                            type: string
-                          statusMessage:
-                            type: string
-                        required:
-                        - state
                         type: object
                     required:
                     - credentialsReference

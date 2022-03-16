@@ -74,38 +74,38 @@ type ExternalClusterCloudSpec struct {
 	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
 }
 
-type KubeOneExternalClusterState string
+type Status string
 
 const (
-	// PROVISIONING state indicates the cluster is being imported.
-	PROVISIONING KubeOneExternalClusterState = "PROVISIONING"
+	// StatusProvisioning status indicates the cluster is being imported.
+	StatusProvisioning Status = "Provisioning"
 
-	// RUNNING state indicates the cluster is fully usable.
-	RUNNING KubeOneExternalClusterState = "RUNNING"
+	// StatusRunning status indicates the cluster is fully usable.
+	StatusRunning Status = "Running"
 
-	// RECONCILING state indicates that some work is actively being done on the cluster, such as upgrading the master or
+	// StatusReconciling status indicates that some work is actively being done on the cluster, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
-	RECONCILING KubeOneExternalClusterState = "RECONCILING"
+	StatusReconciling Status = "Reconciling"
 
-	// DELETING state indicates the cluster is being deleted.
-	DELETING KubeOneExternalClusterState = "DELETING"
+	// StatusDeleting status indicates the cluster is being deleted.
+	StatusDeleting Status = "Deleting"
 
-	// UNKNOWN Not set.
-	UNKNOWN KubeOneExternalClusterState = "UNKNOWN"
+	// StatusUnknown Not set.
+	StatusUnknown Status = "Unknown"
 
-	// ERROR state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
+	// StatusError status indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
-	ERROR KubeOneExternalClusterState = "ERROR"
+	StatusError Status = "Error"
 )
 
-// ExternalClusterStatus defines the kubeone external cluster status.
+// KubeOneExternalClusterStatus defines the kubeone external cluster status.
 type KubeOneExternalClusterStatus struct {
-	State         KubeOneExternalClusterState `json:"state"`
-	StatusMessage string                      `json:"statusMessage,omitempty"`
+	Status        Status `json:"status"`
+	StatusMessage string `json:"statusMessage,omitempty"`
 }
 
 type ExternalClusterKubeOneCloudSpec struct {
-	Status KubeOneExternalClusterStatus `json:"status,omitempty"`
+	ClusterStatus KubeOneExternalClusterStatus `json:"clusterStatus,omitempty"`
 	// ProviderName is the name of the cloud provider used, one of
 	// "aws", "azure", "digitalocean", "gcp",
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
