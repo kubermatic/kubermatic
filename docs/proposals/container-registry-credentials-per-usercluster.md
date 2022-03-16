@@ -62,9 +62,11 @@ dashboard.
 * **User cluster admins** can create or select credentials to be used in all kinds of Pods on the
 user cluster
 
+For details see the [UI section of Implementation](#ui).
+
 There is a possibility to define a default fallback set of credentials in the
 `KubermaticConfiguration` at `spec.userCluster.imagePullSecret`. If there are no credentials
-selected on any elvel, this will be used as a fallback.
+selected on any level, this will be used as a fallback.
 
 #### Limitations
 
@@ -110,8 +112,8 @@ spec:
 Similar to user ssh keys the `RegistryCredentialSet` is tied to a project, so credentials created in
 one project can be used in all user clusters created in that same project.
 
-The credentials themselves are being stored in `kubernetes.io/dockerconfigjson` typed secrets which
-are referenced by `RegistryCredentialSet` resources.
+`RegistryCredentialSets` wrap `kubernetes.io/dockerconfigjson` typed secrets and have owner
+references to manage visibility and the ability to select credentials.
 
 #### Example
 
@@ -127,6 +129,7 @@ metadata:
     name: <<PROJECT_ID>>
     uid: ..
 spec:
+  requiredEmailDomain: example.com
   secretRef:
     name: my-quay-credentials
     key: .dockerconfigjson
@@ -158,9 +161,9 @@ cluster
 
 * A controller within the user-cluster-controller-manager to set up the DaemonSet running the Agent
 on every user cluster node. (similar to usersshkeys)
-* The user-cluster-controller synchronizes selected credentials from the cluster namespace to the
-user cluster. If none is selected, it uses the default fallback credentials from the config (if
-set).
+* The user-cluster-controller synchronizes selected RegistryCredentialSets and referenced secrets
+from the cluster namespace to the user cluster. If none is selected, it uses the default fallback
+credentials that was either set in the admin panel or in the KubermaticConfiguration.
 
 ### User Cluster
 
@@ -185,7 +188,39 @@ resources.
 
 ### UI
 
-* Similar to SSH key management. Details to be discussed with `#sig-ui`
+This is just to outline the general idea. Details are to be discussed with `#sig-ui`.
+
+#### Admin Panel
+
+* Similar to provider presets it should be possible to create CredentialSets to be used in projects
+and clusters.
+* Similar to provider presets it should be possible to restrict visibility and usability of
+CredentialSets to specific users with specific email domains.
+* One CredentialSet can contain credentials for multiple registries (e.g. dockerhub, quay.io,
+private registry, ...) but not 2 credentials for the same registry.
+* Editing registry credentials in CredentialSets is a write-only operation. It's not possible to see
+or edit credentials for a registry, only overriding is possible.
+* It should be possible to select default fallback credentials for the case projects or
+clusters don't pick any.
+* It should be possible to link credentials to projects to limit visibility and usability to these
+projects
+
+#### Project Management
+
+* Similar to the interface on the admin panel.
+* The list should also display default credentials and credentials linked to this project
+
+#### Cluster Creation Wizard
+
+* Similar to SSH key selection it should be possible to select credentials available to the project
+the cluster is created in.
+* It should be possible to add credentials to the project and use then in the cluster, similar to
+the "+ Add SSH Key" button.
+
+#### Cluster Management
+
+* Similar to SSH key management it should be possible to manage credentials from the cluster
+overview
 
 ## Alternatives considered
 
@@ -212,7 +247,15 @@ does not cover reconciled KKP components nor user apps. So this approach would n
 with at least one of the 2 above.
 
 ## Task & effort
-* tbd.
+* Create CRD `RegistryCredentialSet`
+* [UI] Extend Admin UI by Registry Credential Management
+* [UI] Extend Project Management UI by Registry Credential Management
+* [UI] Extend Cluster Management UI by Registry Credential Management
+* Create CredentialSet-Controller that synchronizes selected CredentialSets into cluster namespaces
+* Create CredentialSet-Agent that generates containerd-configs to match CredentialSets
+* Extend user-cluster-controller-manager to synchronize selected CredentialSets into the user
+cluster and to create a DaemonSet for the CredentialSet-Agent
+
 
 [#6231]: https://github.com/kubermatic/kubermatic/issues/6231
 [dockershim deprecation]: https://kubernetes.io/blog/2020/12/02/dockershim-faq/
