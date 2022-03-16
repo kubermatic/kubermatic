@@ -35,9 +35,7 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 
 	newCluster := genExternalCluster(kubeOneCluster.Name, project.Name)
 	newCluster.Spec.CloudSpec = &kubermaticv1.ExternalClusterCloudSpec{
-		KubeOne: &kubermaticv1.ExternalClusterKubeOneCloudSpec{
-			Name: kubeOneCluster.Name,
-		},
+		KubeOne: &kubermaticv1.ExternalClusterKubeOneCloudSpec{},
 	}
 
 	err = clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, cloud.KubeOne.SSHKey, newCluster)

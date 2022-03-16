@@ -24521,7 +24521,7 @@
           "$ref": "#/definitions/KubeOneAzureCloudSpec"
         },
         "digitalocean": {
-          "$ref": "#/definitions/KubeOneDigitaloceanCloudSpec"
+          "$ref": "#/definitions/KubeOneDigitalOceanCloudSpec"
         },
         "equinix": {
           "$ref": "#/definitions/KubeOneEquinixCloudSpec"
@@ -24536,7 +24536,7 @@
           "$ref": "#/definitions/KubeOneNutanixCloudSpec"
         },
         "openstack": {
-          "$ref": "#/definitions/KubeOneOpenstackCloudSpec"
+          "$ref": "#/definitions/KubeOneOpenStackCloudSpec"
         },
         "vsphere": {
           "$ref": "#/definitions/KubeOneVSphereCloudSpec"
@@ -24544,9 +24544,9 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "KubeOneDigitaloceanCloudSpec": {
+    "KubeOneDigitalOceanCloudSpec": {
       "type": "object",
-      "title": "KubeOneDigitaloceanCloudSpec specifies access data to DigitalOcean.",
+      "title": "KubeOneDigitalOceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
         "token": {
           "description": "Token is used to authenticate with the DigitalOcean API.",
@@ -24647,9 +24647,9 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "KubeOneOpenstackCloudSpec": {
+    "KubeOneOpenStackCloudSpec": {
       "type": "object",
-      "title": "KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.",
+      "title": "KubeOneOpenStackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
         "authURL": {
           "type": "string",

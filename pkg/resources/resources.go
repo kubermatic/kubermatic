@@ -545,12 +545,25 @@ const (
 )
 
 const (
+	KubeOneSSHSecretName      = "ssh"
+	KubeOneManifestSecretName = "manifest"
+	KubeOneSSHPrivateKey      = "privatekey"
+	KubeOneSSHPassphrase      = "passphrase"
+	KubeOneManifest           = "manifest"
+	KubeOneAWS                = "aws"
+	KubeOneGCP                = "gcp"
+	KubeOneAzure              = "azure"
+	KubeOneDigitalOcean       = "digitalocean"
+	KubeOneHetzner            = "hetzner"
+	KubeOneNutanix            = "nutanix"
+	KubeOneOpenStack          = "openstack"
+	KubeOneEquinix            = "equinix"
+	KubeOneVSphere            = "vsphere"
+)
+
+const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
-
-	KubeOneSSHPrivateKey = "privatekey"
-	KubeOneSSHPassphrase = "passphrase"
-	KubeOneManifest      = "manifest"
 
 	AzureTenantID       = "tenantID"
 	AzureSubscriptionID = "subscriptionID"
@@ -563,7 +576,6 @@ const (
 
 	HetznerToken = "token"
 
-	OpenstackAuthURL                     = "authURL"
 	OpenstackUsername                    = "username"
 	OpenstackPassword                    = "password"
 	OpenstackTenant                      = "tenant"
@@ -574,6 +586,8 @@ const (
 	OpenstackApplicationCredentialID     = "applicationCredentialID"
 	OpenstackApplicationCredentialSecret = "applicationCredentialSecret"
 	OpenstackToken                       = "token"
+	// Below OpenStack constant is added for KubeOne Clusters.
+	OpenstackAuthURL = "authURL"
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
@@ -583,21 +597,23 @@ const (
 
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"
-	VsphereServer                      = "server"
 	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
 	VsphereInfraManagementUserPassword = "infraManagementUserPassword"
+	// Below VSphere constant is added for KubeOne Clusters.
+	VsphereServer = "server"
 
 	AlibabaAccessKeyID     = "accessKeyId"
 	AlibabaAccessKeySecret = "accessKeySecret"
 
 	AnexiaToken = "token"
 
-	NutanixUsername      = "username"
-	NutanixPassword      = "password"
-	NutanixCSIUsername   = "csiUsername"
-	NutanixCSIPassword   = "csiPassword"
+	NutanixUsername    = "username"
+	NutanixPassword    = "password"
+	NutanixCSIUsername = "csiUsername"
+	NutanixCSIPassword = "csiPassword"
+	NutanixProxyURL    = "proxyURL"
+	// Below Nutanix constant are added for KubeOne Clusters.
 	NutanixCSIEndpoint   = "csiEndpoint"
-	NutanixProxyURL      = "proxyURL"
 	NutanixClusterName   = "clusterName"
 	NutanixAllowInsecure = "allowInsecure"
 	NutanixEndpoint      = "endpoint"

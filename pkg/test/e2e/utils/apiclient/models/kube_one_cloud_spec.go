@@ -25,7 +25,7 @@ type KubeOneCloudSpec struct {
 	Azure *KubeOneAzureCloudSpec `json:"azure,omitempty"`
 
 	// digitalocean
-	Digitalocean *KubeOneDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
+	Digitalocean *KubeOneDigitalOceanCloudSpec `json:"digitalocean,omitempty"`
 
 	// equinix
 	Equinix *KubeOneEquinixCloudSpec `json:"equinix,omitempty"`
@@ -40,7 +40,7 @@ type KubeOneCloudSpec struct {
 	Nutanix *KubeOneNutanixCloudSpec `json:"nutanix,omitempty"`
 
 	// openstack
-	Openstack *KubeOneOpenstackCloudSpec `json:"openstack,omitempty"`
+	Openstack *KubeOneOpenStackCloudSpec `json:"openstack,omitempty"`
 
 	// vsphere
 	Vsphere *KubeOneVSphereCloudSpec `json:"vsphere,omitempty"`
