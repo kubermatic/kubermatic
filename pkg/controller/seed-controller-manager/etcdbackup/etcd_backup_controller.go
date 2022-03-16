@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/robfig/cron"
+	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -1158,7 +1158,8 @@ func parseCronSchedule(scheduleString string) (cron.Schedule, error) {
 			}
 		}()
 
-		if res, err := cron.ParseStandard(scheduleString); err != nil {
+		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+		if res, err := parser.Parse(scheduleString); err != nil {
 			validationErrors = append(validationErrors, fmt.Errorf("invalid schedule: %w", err))
 		} else {
 			schedule = res
