@@ -121,7 +121,7 @@ references to manage visibility and the ability to select credentials.
 apiVersion: kubermatic.k8c.io/v1
 kind: RegistryCredentialSet
 metadata:
-  name: my-quay-credentials
+  name: my-registry-credentials
   uid: ..
   ownerReferences:
   - apiVersion: kubermatic.k8c.io/v1
@@ -130,8 +130,10 @@ metadata:
     uid: ..
 spec:
   requiredEmailDomain: example.com
-  secretRef:
-    name: my-quay-credentials
+  secretRefs:
+  - name: my-registry-credentials-quay
+    key: .dockerconfigjson
+  - name: my-registry-credentials-dockerhub
     key: .dockerconfigjson
 ```
 
@@ -139,7 +141,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: my-quay-credentials
+  name: my-registry-credentials-quay
 type: kubernetes.io/dockerconfigjson
 stringData:
   .dockerconfigjson: |
