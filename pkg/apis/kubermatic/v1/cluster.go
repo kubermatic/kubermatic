@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -851,7 +852,7 @@ type NutanixCSIConfig struct {
 
 	// Storage Class options
 
-	// Optional: defaults to "Default"
+	// Optional: defaults to "SelfServiceContainer"
 	// +optional
 	StorageContainer string `json:"storageContainer,omitempty"`
 

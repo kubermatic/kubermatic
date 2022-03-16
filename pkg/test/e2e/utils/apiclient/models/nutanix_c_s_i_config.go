@@ -35,7 +35,7 @@ type NutanixCSIConfig struct {
 	// +optional
 	SsSegmentedIscsiNetwork bool `json:"ssSegmentedIscsiNetwork,omitempty"`
 
-	// Optional: defaults to "Default"
+	// Optional: defaults to "SelfServiceContainer"
 	// +optional
 	StorageContainer string `json:"storageContainer,omitempty"`
 

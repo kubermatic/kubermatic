@@ -25314,7 +25314,7 @@
           "x-go-name": "SsSegmentedIscsiNetwork"
         },
         "storageContainer": {
-          "description": "Optional: defaults to \"Default\"\n+optional",
+          "description": "Optional: defaults to \"SelfServiceContainer\"\n+optional",
           "type": "string",
           "x-go-name": "StorageContainer"
         },
