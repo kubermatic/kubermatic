@@ -302,7 +302,11 @@ spec:
                             description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                             type: string
                         type: object
-                      name:
+                      providerName:
+                        description: ProviderName is the name of the cloud provider
+                          used, one of "aws", "azure", "digitalocean", "gcp", "hetzner",
+                          "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported
+                          providers
                         type: string
                       sshReference:
                         description: GlobalObjectKeySelector is needed as we can not
@@ -344,10 +348,21 @@ spec:
                             description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                             type: string
                         type: object
+                      status:
+                        description: ExternalClusterStatus defines the kubeone external
+                          cluster status.
+                        properties:
+                          state:
+                            type: string
+                          statusMessage:
+                            type: string
+                        required:
+                        - state
+                        type: object
                     required:
                     - credentialsReference
                     - manifestReference
-                    - name
+                    - providerName
                     - sshReference
                     type: object
                 type: object

@@ -74,8 +74,42 @@ type ExternalClusterCloudSpec struct {
 	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
 }
 
+type KubeOneExternalClusterState string
+
+const (
+	// PROVISIONING state indicates the cluster is being imported.
+	PROVISIONING KubeOneExternalClusterState = "PROVISIONING"
+
+	// RUNNING state indicates the cluster is fully usable.
+	RUNNING KubeOneExternalClusterState = "RUNNING"
+
+	// RECONCILING state indicates that some work is actively being done on the cluster, such as upgrading the master or
+	// node software. Details can be found in the `StatusMessage` field.
+	RECONCILING KubeOneExternalClusterState = "RECONCILING"
+
+	// DELETING state indicates the cluster is being deleted.
+	DELETING KubeOneExternalClusterState = "DELETING"
+
+	// UNKNOWN Not set.
+	UNKNOWN KubeOneExternalClusterState = "UNKNOWN"
+
+	// ERROR state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
+	// `statusMessage` field.
+	ERROR KubeOneExternalClusterState = "ERROR"
+)
+
+// ExternalClusterStatus defines the kubeone external cluster status.
+type KubeOneExternalClusterStatus struct {
+	State         KubeOneExternalClusterState `json:"state"`
+	StatusMessage string                      `json:"statusMessage,omitempty"`
+}
+
 type ExternalClusterKubeOneCloudSpec struct {
-	Name                 string                                 `json:"name"`
+	Status KubeOneExternalClusterStatus `json:"status,omitempty"`
+	// ProviderName is the name of the cloud provider used, one of
+	// "aws", "azure", "digitalocean", "gcp",
+	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
+	ProviderName         string                                 `json:"providerName"`
 	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
 	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`

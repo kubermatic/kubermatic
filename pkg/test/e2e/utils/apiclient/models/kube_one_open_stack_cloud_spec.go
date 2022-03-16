@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// KubeOneOpenstackCloudSpec KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.
+// KubeOneOpenStackCloudSpec KubeOneOpenStackCloudSpec specifies access data to an OpenStack cloud.
 //
-// swagger:model KubeOneOpenstackCloudSpec
-type KubeOneOpenstackCloudSpec struct {
+// swagger:model KubeOneOpenStackCloudSpec
+type KubeOneOpenStackCloudSpec struct {
 
 	// auth URL
 	AuthURL string `json:"authURL,omitempty"`
@@ -36,18 +36,18 @@ type KubeOneOpenstackCloudSpec struct {
 	Username string `json:"username,omitempty"`
 }
 
-// Validate validates this kube one openstack cloud spec
-func (m *KubeOneOpenstackCloudSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this kube one open stack cloud spec
+func (m *KubeOneOpenStackCloudSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this kube one openstack cloud spec based on context it is used
-func (m *KubeOneOpenstackCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this kube one open stack cloud spec based on context it is used
+func (m *KubeOneOpenStackCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *KubeOneOpenstackCloudSpec) MarshalBinary() ([]byte, error) {
+func (m *KubeOneOpenStackCloudSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -55,8 +55,8 @@ func (m *KubeOneOpenstackCloudSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *KubeOneOpenstackCloudSpec) UnmarshalBinary(b []byte) error {
-	var res KubeOneOpenstackCloudSpec
+func (m *KubeOneOpenStackCloudSpec) UnmarshalBinary(b []byte) error {
+	var res KubeOneOpenStackCloudSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

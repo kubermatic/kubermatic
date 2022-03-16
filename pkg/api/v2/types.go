@@ -463,8 +463,8 @@ type KubeOneCloudSpec struct {
 	AWS          *KubeOneAWSCloudSpec          `json:"aws,omitempty"`
 	GCP          *KubeOneGCPCloudSpec          `json:"gcp,omitempty"`
 	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
-	Digitalocean *KubeOneDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
-	Openstack    *KubeOneOpenstackCloudSpec    `json:"openstack,omitempty"`
+	DigitalOcean *KubeOneDigitalOceanCloudSpec `json:"digitalocean,omitempty"`
+	OpenStack    *KubeOneOpenStackCloudSpec    `json:"openstack,omitempty"`
 	Equinix      *KubeOneEquinixCloudSpec      `json:"equinix,omitempty"`
 	Hetzner      *KubeOneHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *KubeOneVSphereCloudSpec      `json:"vsphere,omitempty"`
@@ -490,14 +490,14 @@ type KubeOneAzureCloudSpec struct {
 	ClientSecret   string `json:"clientSecret"`
 }
 
-// KubeOneDigitaloceanCloudSpec specifies access data to DigitalOcean.
-type KubeOneDigitaloceanCloudSpec struct {
+// KubeOneDigitalOceanCloudSpec specifies access data to DigitalOcean.
+type KubeOneDigitalOceanCloudSpec struct {
 	// Token is used to authenticate with the DigitalOcean API.
 	Token string `json:"token"`
 }
 
-// KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.
-type KubeOneOpenstackCloudSpec struct {
+// KubeOneOpenStackCloudSpec specifies access data to an OpenStack cloud.
+type KubeOneOpenStackCloudSpec struct {
 	AuthURL  string `json:"authURL"`
 	Username string `json:"username"`
 	Password string `json:"password"`
