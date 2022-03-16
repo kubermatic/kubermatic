@@ -1145,7 +1145,7 @@ func (r *reconciler) getMachineControllerHealth(ctx context.Context) (kubermatic
 		return kubermaticv1.HealthStatusDown, err
 	}
 
-	if machineControllerDeploymentHealth == kubermaticv1.HealthStatusUp || machineControllerWebhookDeploymentHealth == kubermaticv1.HealthStatusUp {
+	if machineControllerDeploymentHealth == kubermaticv1.HealthStatusUp && machineControllerWebhookDeploymentHealth == kubermaticv1.HealthStatusUp {
 		return kubermaticv1.HealthStatusUp, nil
 	}
 
