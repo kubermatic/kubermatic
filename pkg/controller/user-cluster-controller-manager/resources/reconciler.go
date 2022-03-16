@@ -227,10 +227,8 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if r.opaIntegration || r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
-		if err := r.healthCheck(ctx); err != nil {
-			return err
-		}
+	if err := r.healthCheck(ctx); err != nil {
+		return err
 	}
 
 	if !r.userClusterMLA.Logging && !r.userClusterMLA.Monitoring {
@@ -1074,11 +1072,17 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	}
 
 	var (
-		ctrlGatekeeperHealth  kubermaticv1.HealthStatus
-		auditGatekeeperHealth kubermaticv1.HealthStatus
-		monitoringHealth      kubermaticv1.HealthStatus
-		loggingHealth         kubermaticv1.HealthStatus
+		machineControllerHealth kubermaticv1.HealthStatus
+		ctrlGatekeeperHealth    kubermaticv1.HealthStatus
+		auditGatekeeperHealth   kubermaticv1.HealthStatus
+		monitoringHealth        kubermaticv1.HealthStatus
+		loggingHealth           kubermaticv1.HealthStatus
 	)
+
+	machineControllerHealth, err = r.getMachineControllerHealth(ctx)
+	if err != nil {
+		return err
+	}
 
 	if r.opaIntegration {
 		ctrlGatekeeperHealth, auditGatekeeperHealth, err = r.getGatekeeperHealth(ctx)
@@ -1102,6 +1106,8 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	}
 
 	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth.MachineController = machineControllerHealth
+
 		if r.opaIntegration {
 			c.Status.ExtendedHealth.GatekeeperController = &ctrlGatekeeperHealth
 			c.Status.ExtendedHealth.GatekeeperAudit = &auditGatekeeperHealth
@@ -1115,6 +1121,35 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 			c.Status.ExtendedHealth.Logging = &loggingHealth
 		}
 	})
+}
+
+func (r *reconciler) getMachineControllerHealth(ctx context.Context) (kubermaticv1.HealthStatus, error) {
+	cluster, err := r.getCluster(ctx)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed getting cluster for cluster health check: %w", err)
+	}
+
+	machineControllerDeploymentHealth, err := resources.HealthyDeployment(ctx,
+		r.seedClient,
+		types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.MachineControllerDeploymentName},
+		1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, err
+	}
+
+	machineControllerWebhookDeploymentHealth, err := resources.HealthyDeployment(ctx,
+		r.seedClient,
+		types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.MachineControllerWebhookDeploymentName},
+		1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, err
+	}
+
+	if machineControllerDeploymentHealth == kubermaticv1.HealthStatusUp || machineControllerWebhookDeploymentHealth == kubermaticv1.HealthStatusUp {
+		return kubermaticv1.HealthStatusUp, nil
+	}
+
+	return kubermaticv1.HealthStatusDown, nil
 }
 
 func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
