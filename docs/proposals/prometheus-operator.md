@@ -26,7 +26,7 @@ available charts contain required configuration for Prometheus stack within, whi
     KKP-internal configuration of Prometheus instances can be done using the CRDs instead of configmaps/secrets.
 
 
-Additional note: almost 4 years ago [a decision was made](https://github.com/kubermatic/kubermatic/issues/947) to move away from prometheus-operator in KKP, however the operator has matured a lot since that time and has now become a de-facto standard for managing Prometheus installations. Switching to the operator brings additional benefit of just being easier to comprehend for new admins/developers already used to the manner of configration introduced by prometheus-operator.
+Additional note: almost 4 years ago [a decision was made](https://github.com/kubermatic/kubermatic/issues/947) to move away from prometheus-operator in KKP, however the operator has matured a lot since that time and has now become a de-facto standard for managing Prometheus installations. Switching to the operator brings additional benefit of just being easier to comprehend for new admins/developers already used to the manner of configuration introduced by prometheus-operator.
 
 ## Implementation
 
@@ -39,7 +39,7 @@ Implementation consists of multiple parts:
 3. Rewriting resource management logic in seed-controller-manager to manage the operator's custom resources, e.g. `Prometheus` instead of `StatefulSet`, `PrometheusRule` instead of some `ConfigMap`s).
    1. Manage `Prometheus` CRs instead of StatefulSets
    2. Manage `PrometheusRule`s instead of `ConfigMaps`
-   3. Use a single `PodMonitor` object targetting each other Prometheus instance in all `cluster-xxxxxx` namespaces. Configuration of federation would be handled once.
+   3. Use a single `PodMonitor` object targeting each other Prometheus instance in all `cluster-xxxxxx` namespaces. Configuration of federation would be handled once.
    4. Each of the per-usercluster Prometheus instance has to be configured with specific etcd secrets used to scrape etcd-server metrics.
 
 4. Define plan for migrating the data between old and new Prometheus instances.
