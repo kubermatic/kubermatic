@@ -28,7 +28,6 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -173,13 +172,8 @@ func main() {
 	for _, clusterVersion := range clusterVersions {
 		versionLog := log.With(
 			zap.String("version", clusterVersion.Version.String()),
-			zap.String("cluster-type", clusterVersion.Type),
 		)
-		if clusterVersion.Type != "" && clusterVersion.Type != apiv1.KubernetesClusterType {
-			// TODO: Implement. https://github.com/kubermatic/kubermatic/issues/3623
-			versionLog.Warn("Skipping version because its not for Kubernetes. We only support Kubernetes at the moment")
-			continue
-		}
+
 		versionLog.Info("Collecting images...")
 		images, err := getImagesForVersion(log, clusterVersion, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
 		if err != nil {

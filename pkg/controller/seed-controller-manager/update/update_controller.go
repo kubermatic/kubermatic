@@ -24,7 +24,6 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -139,7 +138,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	updateManager := version.NewFromConfiguration(config)
 
 	// NodeUpdate may need the controlplane to be updated first
-	updated, err := r.controlPlaneUpgrade(ctx, cluster, updateManager, v1.KubernetesClusterType)
+	updated, err := r.controlPlaneUpgrade(ctx, cluster, updateManager)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update the controlplane: %w", err)
 	}
@@ -151,7 +150,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: time.Minute}, nil
 	}
 
-	if err := r.nodeUpdate(ctx, cluster, updateManager, v1.KubernetesClusterType); err != nil {
+	if err := r.nodeUpdate(ctx, cluster, updateManager); err != nil {
 		return nil, fmt.Errorf("failed to update machineDeployments: %w", err)
 	}
 
@@ -169,7 +168,7 @@ func (r *Reconciler) setClusterVersionsStatus(ctx context.Context, cluster *kube
 	})
 }
 
-func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager, clusterType string) error {
+func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager) error {
 	c, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get usercluster client: %w", err)
@@ -182,7 +181,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	for _, md := range machineDeployments.Items {
-		targetVersion, err := updateManager.AutomaticNodeUpdate(md.Spec.Template.Spec.Versions.Kubelet, clusterType, cluster.Spec.Version.String())
+		targetVersion, err := updateManager.AutomaticNodeUpdate(md.Spec.Template.Spec.Versions.Kubelet, cluster.Spec.Version.String())
 		if err != nil {
 			return fmt.Errorf("failed to get automatic update for machinedeployment %s/%s that has version %q: %w", md.Namespace, md.Name, md.Spec.Template.Spec.Versions.Kubelet, err)
 		}
@@ -200,8 +199,8 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 	return nil
 }
 
-func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager, clusterType string) (upgraded bool, err error) {
-	update, err := updateManager.AutomaticControlplaneUpdate(cluster.Spec.Version.String(), clusterType)
+func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager) (upgraded bool, err error) {
+	update, err := updateManager.AutomaticControlplaneUpdate(cluster.Spec.Version.String())
 	if err != nil {
 		return false, fmt.Errorf("failed to get automatic update for cluster for version %s: %w", cluster.Spec.Version.String(), err)
 	}

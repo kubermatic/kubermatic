@@ -62,7 +62,10 @@ type GetNodeUpgradesParams struct {
 	// ControlPlaneVersion.
 	ControlPlaneVersion *string
 
-	// Type.
+	/* Type.
+
+	   Type is deprecated and not used anymore.
+	*/
 	Type *string
 
 	timeout    time.Duration

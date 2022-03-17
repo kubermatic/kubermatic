@@ -49,7 +49,7 @@ type Cluster struct {
 	// Name represents human readable name for the resource
 	Name string `json:"name,omitempty"`
 
-	// type
+	// Type is deprecated and not used anymore.
 	Type string `json:"type,omitempty"`
 
 	// spec
