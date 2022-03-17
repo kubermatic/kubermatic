@@ -35,6 +35,7 @@ import (
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	ciliumclientset "github.com/cilium/cilium/pkg/k8s/client/clientset/versioned"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -229,7 +230,7 @@ func testUserCluster(t *testing.T, config *rest.Config) {
 			return false, nil
 		}
 
-		conn, err := grpc.Dial(fmt.Sprintf("%s:%d", nodeIP, 30077), grpc.WithInsecure())
+		conn, err := grpc.Dial(fmt.Sprintf("%s:%d", nodeIP, 30077), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Logf("failed to dial to hubble relay: %v", err)
 			return false, nil
