@@ -692,6 +692,28 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	token := cloud.Openstack.Token
 	var err error
 
+	if applicationCredentialID != "" && applicationCredentialSecret != "" {
+		return &resources.OpenstackCredentials{
+			ApplicationCredentialSecret: applicationCredentialSecret,
+			ApplicationCredentialID:     applicationCredentialID,
+		}, nil
+	}
+
+	if applicationCredentialID == "" && cloud.Openstack.CredentialsReference != nil {
+		applicationCredentialID, _ = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackApplicationCredentialID)
+		if applicationCredentialID != "" {
+			applicationCredentialSecret, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackApplicationCredentialSecret)
+			if err != nil {
+				return &resources.OpenstackCredentials{}, err
+			}
+
+			return &resources.OpenstackCredentials{
+				ApplicationCredentialSecret: applicationCredentialSecret,
+				ApplicationCredentialID:     applicationCredentialID,
+			}, nil
+		}
+	}
+
 	if domain == "" {
 		if cloud.Openstack.CredentialsReference == nil {
 			return &resources.OpenstackCredentials{}, errors.New("no credentials provided")
@@ -715,30 +737,6 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 			return &resources.OpenstackCredentials{
 				Token:  token,
 				Domain: domain,
-			}, nil
-		}
-	}
-
-	if applicationCredentialID != "" && applicationCredentialSecret != "" {
-		return &resources.OpenstackCredentials{
-			ApplicationCredentialSecret: applicationCredentialSecret,
-			ApplicationCredentialID:     applicationCredentialID,
-			Domain:                      domain,
-		}, nil
-	}
-
-	if applicationCredentialID == "" && cloud.Openstack.CredentialsReference != nil {
-		applicationCredentialID, _ = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackApplicationCredentialID)
-		if applicationCredentialID != "" {
-			applicationCredentialSecret, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackApplicationCredentialSecret)
-			if err != nil {
-				return &resources.OpenstackCredentials{}, err
-			}
-
-			return &resources.OpenstackCredentials{
-				ApplicationCredentialSecret: applicationCredentialSecret,
-				ApplicationCredentialID:     applicationCredentialID,
-				Domain:                      domain,
 			}, nil
 		}
 	}
