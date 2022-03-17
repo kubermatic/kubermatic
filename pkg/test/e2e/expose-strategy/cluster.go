@@ -61,7 +61,7 @@ func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, 
 	}
 
 	if err := c.Client.Create(ctx, project); err != nil {
-		return nil, errors.Wrap(err, "failed to create project")
+		return nil, fmt.Errorf("failed to create project: %w", err)
 	}
 
 	return project, nil
@@ -70,7 +70,7 @@ func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, 
 func (c *ClusterJig) SetUp(ctx context.Context) error {
 	project, err := c.createProject(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to create project")
+		return fmt.Errorf("failed to create project: %w", err)
 	}
 
 	c.Log.Debugw("Creating cluster", "name", c.Name)
