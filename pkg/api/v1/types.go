@@ -579,6 +579,8 @@ type PublicServiceAccountToken struct {
 	// Expiry is a timestamp representing the time when this token will expire.
 	// swagger:strfmt date-time
 	Expiry Time `json:"expiry,omitempty"`
+	// Invalidated indicates if the token must be regenerated
+	Invalidated bool `json:"invalidated,omitempty"`
 }
 
 // ServiceAccountToken represent an API service account token
