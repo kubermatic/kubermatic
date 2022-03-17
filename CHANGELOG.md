@@ -7,6 +7,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 ### Highlights
 
 - Migrate API group `kubermatic.k8s.io` to `kubermatic.k8c.io` ([#8783](https://github.com/kubermatic/kubermatic/issues/8783)). This change requires a migration of all KKP master/seed clusters. Please consult the [upgrade documentation](https://docs.kubermatic.com/kubermatic/v2.20/tutorials_howtos/upgrading/upgrade_from_2.19_to_2.20/) for more information.
+- Full Nutanix support([#8428](https://github.com/kubermatic/kubermatic/issues/8428))
 
 ### Supported Kubernetes Versions
 
@@ -26,6 +27,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 ### Bugfixes
 
 - Automatic upgrades from Kubernetes 1.19.* to 1.20.13 work as intended now ([#8821](https://github.com/kubermatic/kubermatic/issues/8821))
+- Correctly handle the 'default' Nutanix project in API calls ([#9336](https://github.com/kubermatic/kubermatic/issues/9336))
 - Fix AWS cloud provider cleanup sometimes getting stuck when cleaning up tags ([#8879](https://github.com/kubermatic/kubermatic/issues/8879))
 - Fix Konnectivity authentication issue in some scenarios by fixing cluster-external-addr-allow apiserver network policy ([#9224](https://github.com/kubermatic/kubermatic/issues/9224))
 - Fix Preset API Body for preset creation and update API calls ([#9298](https://github.com/kubermatic/kubermatic/issues/9298))
@@ -40,11 +42,13 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### Dashboard
 
+- Add allowed IP range override support to the GCP, Azure, AWS, and OpenStack providers ([#4318](https://github.com/kubermatic/dashboard/issues/4318))
 - Add option to get kubeconfig for external clusters ([#4164](https://github.com/kubermatic/dashboard/issues/4164))
 - Add support for Nutanix provider ([#4145](https://github.com/kubermatic/dashboard/issues/4145))
 - Admins can define default Rule Groups in Admin Settings ([#3971](https://github.com/kubermatic/dashboard/issues/3971))
 - Redesign cluster summary step. Update error notifications and event colors styling ([#4141](https://github.com/kubermatic/dashboard/issues/4141))
 - Support for application credentials in OpenStack preset ([#4192](https://github.com/kubermatic/dashboard/issues/4192))
+- Update OS default disk size to 64GB for the Azure provider when RHEL OS is selected ([#4318](https://github.com/kubermatic/dashboard/issues/4318))
 
 ### Misc
 
@@ -61,6 +65,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Unused flatcar update resources are removed when no Flatcar `Nodes` are in a user cluster ([#8745](https://github.com/kubermatic/kubermatic/issues/8745))
 - Update example values and KubermaticConfiguration to respect OIDC settings ([#8851](https://github.com/kubermatic/kubermatic/issues/8851))
 - Update machine-controller to v1.45.0 ([#9293](https://github.com/kubermatic/kubermatic/issues/9293))
+- Update OSM to 0.4.1 ([#9329](https://github.com/kubermatic/kubermatic/issues/9329))
 
 
 
