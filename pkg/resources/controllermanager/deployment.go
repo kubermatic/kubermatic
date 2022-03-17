@@ -60,6 +60,8 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Name = resources.ControllerManagerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
+			version := data.Cluster().Spec.Version.Semver()
+
 			flags, err := getFlags(data)
 			if err != nil {
 				return nil, err
@@ -90,7 +92,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				volumes = append(volumes, serviceAccountVolume)
 			}
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -145,7 +149,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + version.String(),
 					Command: []string{"/usr/local/bin/kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,

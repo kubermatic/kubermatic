@@ -74,7 +74,11 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			volumes := getVolumes(data.IsKonnectivityEnabled())
 			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled())
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			version := data.Cluster().Spec.Version.Semver()
+
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -138,7 +142,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			apiserverContainer := &corev1.Container{
 				Name:    resources.ApiserverDeploymentName,
-				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + data.Cluster().Spec.Version.String(),
+				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + version.String(),
 				Command: []string{"/usr/local/bin/kube-apiserver"},
 				Env:     envVars,
 				Args:    flags,

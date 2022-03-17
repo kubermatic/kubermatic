@@ -24,6 +24,7 @@ spec:
         apiserver-proxy-client-certificate-secret-revision: "123456"
         apiserver-tls-secret-revision: "123456"
         app: apiserver
+        app.kubernetes.io/version: 1.22.1
         audit-config-configmap-revision: "123456"
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"

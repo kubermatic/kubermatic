@@ -56,6 +56,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Name = resources.SchedulerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
+			version := data.Cluster().Spec.Version.Semver()
 			flags := []string{
 				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				// These are used to validate tokens
@@ -92,7 +93,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			volumes := getVolumes(data.IsKonnectivityEnabled())
 			volumeMounts := getVolumeMounts()
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
@@ -125,7 +128,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.SchedulerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + version.String(),
 					Command: []string{"/usr/local/bin/kube-scheduler"},
 					Args:    flags,
 					Env: []corev1.EnvVar{
