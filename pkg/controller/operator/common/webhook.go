@@ -72,7 +72,7 @@ func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"clustertemplates"},
+					Resources: []string{"clustertemplates", "projects"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 			}

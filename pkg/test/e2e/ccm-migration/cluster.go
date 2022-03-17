@@ -78,7 +78,13 @@ func (c *ClusterJig) SetUp(ctx context.Context, cloudSpec kubermaticv1.CloudSpec
 	}
 	c.Log.Debugw("secret created", "name", cloudSpec.Openstack.CredentialsReference.Name)
 
-	if err := c.createCluster(ctx, cloudSpec); err != nil {
+	project, err := c.createProject(ctx)
+	if err != nil {
+		return err
+	}
+	c.Log.Debugw("Project created", "name", project.Name)
+
+	if err := c.createCluster(ctx, project, cloudSpec); err != nil {
 		return err
 	}
 	c.Log.Debugw("Cluster created", "name", c.Name)
@@ -160,10 +166,30 @@ func (c *ClusterJig) createSecret(ctx context.Context, secretName string, osCred
 	return nil
 }
 
-func (c *ClusterJig) createCluster(ctx context.Context, cloudSpec kubermaticv1.CloudSpec) error {
+func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, error) {
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "proj1234",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "test project",
+		},
+	}
+
+	if err := c.SeedClient.Create(ctx, project); err != nil {
+		return nil, errors.Wrap(err, "failed to create project")
+	}
+
+	return project, nil
+}
+
+func (c *ClusterJig) createCluster(ctx context.Context, project *kubermaticv1.Project, cloudSpec kubermaticv1.CloudSpec) error {
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: c.Name,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: cloudSpec,

@@ -118,10 +118,7 @@ func (p *ProjectProvider) Update(ctx context.Context, userInfo *provider.UserInf
 	return newProject, nil
 }
 
-// Delete deletes the given project as the given user
-//
-// Note:
-// Before deletion project's status.phase is set to ProjectTerminating.
+// Delete deletes the given project as the given user.
 func (p *ProjectProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, projectInternalName string) error {
 	if userInfo == nil {
 		return errors.New("a user is missing but required")
@@ -133,12 +130,6 @@ func (p *ProjectProvider) Delete(ctx context.Context, userInfo *provider.UserInf
 
 	existingProject := &kubermaticv1.Project{}
 	if err := masterImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
-		return err
-	}
-
-	oldProject := existingProject.DeepCopy()
-	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
-	if err := p.clientPrivileged.Status().Patch(ctx, existingProject, ctrlruntimeclient.MergeFromWithOptions(oldProject, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
 		return err
 	}
 
@@ -185,19 +176,10 @@ func (p *PrivilegedProjectProvider) GetUnsecured(ctx context.Context, projectInt
 }
 
 // DeleteUnsecured deletes any given project
-// This function is unsafe in a sense that it uses privileged account to delete project with the given name
-//
-// Note:
-// Before deletion project's status.phase is set to ProjectTerminating.
+// This function is unsafe in a sense that it uses privileged account to delete project with the given name.
 func (p *PrivilegedProjectProvider) DeleteUnsecured(ctx context.Context, projectInternalName string) error {
 	existingProject := &kubermaticv1.Project{}
 	if err := p.clientPrivileged.Get(ctx, ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
-		return err
-	}
-
-	oldProject := existingProject.DeepCopy()
-	existingProject.Status.Phase = kubermaticv1.ProjectTerminating
-	if err := p.clientPrivileged.Status().Patch(ctx, existingProject, ctrlruntimeclient.MergeFromWithOptions(oldProject, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
 		return err
 	}
 

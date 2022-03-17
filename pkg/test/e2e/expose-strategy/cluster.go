@@ -50,11 +50,36 @@ type ClusterJig struct {
 	Cluster *kubermaticv1.Cluster
 }
 
+func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, error) {
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "proj1234",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "test project",
+		},
+	}
+
+	if err := c.Client.Create(ctx, project); err != nil {
+		return nil, errors.Wrap(err, "failed to create project")
+	}
+
+	return project, nil
+}
+
 func (c *ClusterJig) SetUp(ctx context.Context) error {
+	project, err := c.createProject(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to create project")
+	}
+
 	c.Log.Debugw("Creating cluster", "name", c.Name)
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: c.Name,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
