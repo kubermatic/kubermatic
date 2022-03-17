@@ -89,7 +89,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-lint
-    run_if_changed: "^(cmd|codegen|hack|pkg)/"
+    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
