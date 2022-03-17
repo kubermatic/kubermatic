@@ -103,6 +103,25 @@ func TestBasicReconciling(t *testing.T) {
 				},
 			},
 		},
+		"seed-with-metering-config": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "seed-with-metering-config",
+				Namespace: "kubermatic",
+			},
+			Spec: kubermaticv1.SeedSpec{
+				Metering: &kubermaticv1.MeteringConfiguration{
+					Enabled:          true,
+					StorageSize:      "10Gi",
+					StorageClassName: "test",
+					ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
+						"weekly-test": {
+							Schedule: "0 1 * * 6",
+							Interval: 7,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	type testcase struct {

@@ -25170,8 +25170,8 @@
           "x-go-name": "Enabled"
         },
         "reports": {
+          "description": "ReportConfigurations is a map of report configuration definitions.",
           "type": "object",
-          "default": "={{name: kubermatic-metering-report-weekly}}",
           "additionalProperties": {
             "$ref": "#/definitions/MeteringReportConfiguration"
           },
@@ -25215,16 +25215,14 @@
       "type": "object",
       "properties": {
         "interval": {
-          "description": "Interval defines the number of days consulted in the metering report.\n+kubebuilder:default=7",
+          "description": "Interval defines the number of days consulted in the metering report.",
           "type": "integer",
           "format": "int64",
-          "minimum": 1,
           "x-go-name": "Interval"
         },
         "schedule": {
           "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
           "type": "string",
-          "default": "=`0 1 * * 6`",
           "x-go-name": "Schedule"
         }
       },

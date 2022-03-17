@@ -1043,7 +1043,11 @@ spec:
                           type: string
                       type: object
                     default:
-                    - name: kubermatic-metering-report-weekly
+                      kubermatic-metering-report-weekly:
+                        interval: 7
+                        schedule: 0 1 * * 6
+                    description: ReportConfigurations is a map of report configuration
+                      definitions.
                     type: object
                   storageClassName:
                     description: StorageClassName is the name of the storage class

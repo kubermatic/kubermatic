@@ -32,7 +32,8 @@ boilerplate \
   -exclude pkg/resources/etcd/testdata \
   -exclude pkg/ee \
   -exclude charts/kubermatic-operator/crd \
-  -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static
+  -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
+  -exclude pkg/controller/operator/seed/reconciler_ee_test.go
 
 echodate "Checking Kubermatic EE licenses..."
 boilerplate \

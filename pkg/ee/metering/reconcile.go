@@ -27,7 +27,6 @@ package metering
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -38,8 +37,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	RelatedToLabel = "app.kubernetes.io/related-to"
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
@@ -55,7 +60,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
-		return cleanupMeteringResources(ctx, client, seed.Spec.Metering)
+		return cleanupAllMeteringResources(ctx, client, seed.Spec.Metering)
 	}
 
 	if err := persistentVolumeClaimCreator(ctx, client, seed); err != nil {
@@ -77,13 +82,11 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	modifiers := []reconciling.ObjectModifier{
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
 		common.OwnershipModifierFactory(seed, scheme),
+		common.LabelModifierFactory(map[string]string{RelatedToLabel: seed.Name}, false),
 	}
-	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
-		if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
-			cronJobCreator(seed.Name, reportName, reportConf, overwriter),
-		}, resources.KubermaticNamespace, client, modifiers...); err != nil {
-			return fmt.Errorf("failed to reconcile metering CronJob: %w", err)
-		}
+
+	if err := reconcileMeteringReports(ctx, client, seed, overwriter, modifiers...); err != nil {
+		return fmt.Errorf("failed to reconcile metering reports: %w", err)
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
@@ -95,18 +98,66 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	return nil
 }
 
-// cleanupMeteringResources removes active parts of the metering
+func reconcileMeteringReports(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
+	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations, seed.Name); err != nil {
+		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
+	}
+	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
+		if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
+			cronJobCreator(seed.Name, reportName, reportConf, overwriter),
+		}, resources.KubermaticNamespace, client, modifiers...); err != nil {
+			return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
+		}
+	}
+	return nil
+}
+
+// cleanupOrphanedReportingCronJobs compares defined metering reports with existing reporting cronjobs and removes cronjobs with missing report configuration.
+func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, activeReports map[string]*kubermaticv1.MeteringReportConfiguration, seedName string) error {
+	var existingReportingCronJobs batchv1beta1.CronJobList
+	listOpts := []ctrlruntimeclient.ListOption{
+		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
+		ctrlruntimeclient.ListOption(ctrlruntimeclient.MatchingLabels{RelatedToLabel: seedName}),
+	}
+	if err := client.List(ctx, &existingReportingCronJobs, listOpts...); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to list reporting cronjobs: %w", err)
+		}
+	}
+
+	existingReportingCronJobNamedMap := make(map[string]batchv1beta1.CronJob, len(existingReportingCronJobs.Items))
+	for _, existingCronJob := range existingReportingCronJobs.Items {
+		existingReportingCronJobNamedMap[existingCronJob.Name] = existingCronJob
+	}
+
+	activeReportsSet := sets.StringKeySet(activeReports)
+	existingReportingCronJobsSet := sets.StringKeySet(existingReportingCronJobNamedMap)
+	orphanedCronJobNames := existingReportingCronJobsSet.Difference(activeReportsSet)
+
+	for cronJobName, existingCronJob := range existingReportingCronJobNamedMap {
+		if orphanedCronJobNames.Has(cronJobName) {
+			if err := client.Delete(ctx, &existingCronJob); err != nil {
+				return fmt.Errorf("failed to remove an orphaned reporting cronjob (%s): %w", cronJobName, err)
+			}
+		}
+	}
+	return nil
+}
+
+// cleanupAllMeteringResources removes all active parts of the metering
 // components, in case the admin disables the feature.
-func cleanupMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, meteringConfig *kubermaticv1.MeteringConfiguration) error {
+func cleanupAllMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, meteringConfig *kubermaticv1.MeteringConfiguration) error {
 	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: meteringToolName}
 	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
 		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
 	}
 
-	for reportName := range meteringConfig.ReportConfigurations {
-		key.Name = reportName
-		if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
-			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
+	if meteringConfig != nil {
+		for reportName := range meteringConfig.ReportConfigurations {
+			key.Name = reportName
+			if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
+				return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
+			}
 		}
 	}
 

@@ -462,7 +462,11 @@ func TestValidate(t *testing.T) {
 				},
 				Spec: kubermaticv1.SeedSpec{
 					Metering: &kubermaticv1.MeteringConfiguration{
-						Schedule: "*/invalid * * * *",
+						ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
+							"daily": {
+								Schedule: "*/invalid * * * *",
+							},
+						},
 					},
 				},
 			},
