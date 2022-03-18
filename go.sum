@@ -1999,9 +1999,8 @@ github.com/opencontainers/selinux v1.6.0/go.mod h1:VVGKuOLlE7v4PJyT6h7mNWvq1rzqi
 github.com/opencontainers/selinux v1.8.0/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
 github.com/opencontainers/selinux v1.8.2/go.mod h1:MUIHuUEvKB1wtJjQdOyYRgOnLD2xAPP8dBsCoU0KuF8=
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
-github.com/openshift/api v0.0.0-20210428205234-a8389931bee7/go.mod h1:aqU5Cq+kqKKPbDMqxo9FojgDeSpNJI7iuskjXjtojDg=
-github.com/openshift/build-machinery-go v0.0.0-20200917070002-f171684f77ab/go.mod h1:b1BuldmJlbA/xYtdZvKi+7j5YGB44qJUJDZ9zwiNCfE=
-github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47/go.mod h1:u7NRAjtYVAKokiI9LouzTv4mhds8P4S1TwdVAfbjKSk=
+github.com/openshift/api v0.0.0-20191219222812-2987a591a72c/go.mod h1:dh9o4Fs58gpFXGSYfnVxGR9PnV53I8TW84pQaJDdGiY=
+github.com/openshift/client-go v0.0.0-20191125132246-f6563a70e19a/go.mod h1:6rzn+JTr7+WYS2E1TExP4gByoABxMznR6y2SnUIkmxk=
 github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3/go.mod h1:GDjWl0tX6FNIj82vIxeudWeSx2Ff6nDZ8uJn0ohUFvo=
 github.com/openshift/custom-resource-status v0.0.0-20200602122900-c002fd1547ca h1:F1MEnOMwSrTA0YAkO0he9ip9w0JhYzI/iCB2mXmaSPg=
 github.com/openshift/custom-resource-status v0.0.0-20200602122900-c002fd1547ca/go.mod h1:GDjWl0tX6FNIj82vIxeudWeSx2Ff6nDZ8uJn0ohUFvo=
