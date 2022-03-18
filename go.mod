@@ -104,8 +104,6 @@ require (
 )
 
 replace (
-	github.com/apoydence/onpar => github.com/poy/onpar v1.1.2
-	github.com/operator-framework/operator-lifecycle-manager => github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190128024246-5eb7ae5bdb7a
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	go.universe.tf/metallb => github.com/cilium/metallb v0.1.1-0.20210831235406-48667b93284d
 	k8s.io/api => k8s.io/api v0.23.0
