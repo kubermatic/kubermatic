@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -29,7 +30,6 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/pkg/errors"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"go.etcd.io/etcd/client/pkg/v3/transport"
@@ -184,11 +184,11 @@ func createLogger() *zap.SugaredLogger {
 func inClusterClient(log *zap.SugaredLogger) (ctrlruntimeclient.Client, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get in cluster config")
+		return nil, fmt.Errorf("failed to get in cluster config: %w", err)
 	}
 	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create cluster client")
+		return nil, fmt.Errorf("failed to create cluster client: %w", err)
 	}
 	return client, nil
 }
@@ -203,7 +203,7 @@ func getK8cCluster(client ctrlruntimeclient.Client, name string, log *zap.Sugare
 
 func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
 	if _, err := os.Stat(etcdCommandPath); os.IsNotExist(err) {
-		return nil, errors.Wrap(err, "find etcd executable")
+		return nil, fmt.Errorf("find etcd executable: %w", err)
 	}
 
 	cmd := exec.Command(etcdCommandPath, etcdCmd(e)...)
@@ -212,7 +212,7 @@ func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
 	cmd.Stdout = os.Stdout
 	log.Infof("starting etcd command: %s %s", etcdCommandPath, strings.Join(etcdCmd(e), " "))
 	if err := cmd.Start(); err != nil {
-		return nil, errors.Wrap(err, "failed to start etcd")
+		return nil, fmt.Errorf("failed to start etcd: %w", err)
 	}
 	return cmd, nil
 }
@@ -253,12 +253,12 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 	// remove possibly stale member data dir..
 	log.Info("removing possibly stale data dir")
 	if err := os.RemoveAll(e.dataDir); err != nil {
-		return errors.Wrap(err, "removing possible stale data dir")
+		return fmt.Errorf("removing possible stale data dir: %w", err)
 	}
 	// join the cluster
 	client, err := e.getClusterClient()
 	if err != nil {
-		return errors.Wrap(err, "can't find cluster client")
+		return fmt.Errorf("can't find cluster client: %w", err)
 	}
 
 	// construct peer URLs for this new node
@@ -276,7 +276,7 @@ func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
 
 	if _, err := client.MemberAdd(ctx, peerURLs); err != nil {
 		closeClient(client, log)
-		return errors.Wrap(err, "add itself as a member")
+		return fmt.Errorf("add itself as a member: %w", err)
 	}
 
 	defer closeClient(client, log)

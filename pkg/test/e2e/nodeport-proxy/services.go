@@ -18,10 +18,10 @@ package nodeportproxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/onsi/gomega"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -71,7 +71,7 @@ func (n *ServiceJig) CreateServiceWithPods(ctx context.Context, svc *corev1.Serv
 	svc.Namespace = n.Namespace
 	n.Log.Debugw("Creating nodeport service", "service", svc)
 	if err := n.Client.Create(ctx, svc); err != nil {
-		return nil, errors.Wrap(err, "failed to create service of type nodeport")
+		return nil, fmt.Errorf("failed to create service of type nodeport: %w", err)
 	}
 	gomega.Expect(svc).NotTo(gomega.BeNil())
 
@@ -85,7 +85,7 @@ func (n *ServiceJig) CreateServiceWithPods(ctx context.Context, svc *corev1.Serv
 	// Wait for the pod to be ready
 	pods, err := e2eutils.WaitForPodsCreated(ctx, n.Client, int(*rc.Spec.Replicas), rc.Namespace, svc.Spec.Selector)
 	if err != nil {
-		return svc, errors.Wrap(err, "error occurred while waiting for pods to be ready")
+		return svc, fmt.Errorf("error occurred while waiting for pods to be ready: %w", err)
 	}
 	if !e2eutils.CheckPodsRunningReady(ctx, n.Client, n.Namespace, pods, podReadinessTimeout) {
 		return svc, fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))

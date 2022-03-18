@@ -18,9 +18,9 @@ package exposestrategy
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -61,7 +61,7 @@ func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, 
 	}
 
 	if err := c.Client.Create(ctx, project); err != nil {
-		return nil, errors.Wrap(err, "failed to create project")
+		return nil, fmt.Errorf("failed to create project: %w", err)
 	}
 
 	return project, nil
@@ -70,7 +70,7 @@ func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, 
 func (c *ClusterJig) SetUp(ctx context.Context) error {
 	project, err := c.createProject(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to create project")
+		return fmt.Errorf("failed to create project: %w", err)
 	}
 
 	c.Log.Debugw("Creating cluster", "name", c.Name)
@@ -123,13 +123,13 @@ func (c *ClusterJig) SetUp(ctx context.Context) error {
 		},
 	}
 	if err := c.Client.Create(ctx, c.Cluster); err != nil {
-		return errors.Wrap(err, "failed to create cluster")
+		return fmt.Errorf("failed to create cluster: %w", err)
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.Client, c.Cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
-		return errors.Wrap(err, "failed to update cluster status")
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 
 	return c.waitForClusterControlPlaneReady(c.Cluster)
