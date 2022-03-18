@@ -20,6 +20,7 @@ spec:
       creationTimestamp: null
       labels:
         app: scheduler
+        app.kubernetes.io/version: 1.20.0
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cluster: de-test-01

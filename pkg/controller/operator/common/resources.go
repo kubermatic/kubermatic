@@ -18,6 +18,7 @@ package common
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +29,7 @@ const (
 	NameLabel = "app.kubernetes.io/name"
 
 	// VersionLabel is the label containing the application's version.
-	VersionLabel = "app.kubernetes.io/version"
+	VersionLabel = resources.VersionLabel
 
 	// InstanceLabel is A unique name identifying the instance of an application.
 	InstanceLabel = "app.kubernetes.io/instance"

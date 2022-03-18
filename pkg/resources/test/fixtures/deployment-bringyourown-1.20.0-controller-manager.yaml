@@ -20,6 +20,7 @@ spec:
       creationTimestamp: null
       labels:
         app: controller-manager
+        app.kubernetes.io/version: 1.20.0
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"

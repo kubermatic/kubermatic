@@ -377,6 +377,8 @@ const (
 	AppLabelKey = "app"
 	// ClusterLabelKey defines the label key for the cluster name.
 	ClusterLabelKey = "cluster"
+	// VersionLabel is the label containing the application's version.
+	VersionLabel = "app.kubernetes.io/version"
 
 	// EtcdClusterSize defines the size of the etcd to use.
 	EtcdClusterSize = 3
