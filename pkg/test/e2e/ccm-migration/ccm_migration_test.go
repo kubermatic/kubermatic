@@ -62,7 +62,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		var cluster *kubermaticv1.Cluster
 
 		ginkgo.BeforeEach(func() {
-			clusterJig, cluster, userClient = SetupClusterByProvider(ctx, options.provider, seedClient, clusterClientProvider, options)
+			clusterJig, cluster, userClient = SetupClusterByProvider(ctx, seedClient, clusterClientProvider, options)
 		})
 
 		ginkgo.AfterEach(func() {
@@ -75,7 +75,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 	})
 })
 
-func SetupClusterByProvider(ctx context.Context, providerName kubermaticv1.ProviderType, seedClient ctrlruntimeclient.Client, clientProvider *clusterclient.Provider, options testOptions) (providers.ClusterJigInterface, *kubermaticv1.Cluster, ctrlruntimeclient.Client) {
+func SetupClusterByProvider(ctx context.Context, seedClient ctrlruntimeclient.Client, clientProvider *clusterclient.Provider, options testOptions) (providers.ClusterJigInterface, *kubermaticv1.Cluster, ctrlruntimeclient.Client) {
 	var (
 		clusterJig providers.ClusterJigInterface
 		userClient ctrlruntimeclient.Client
@@ -83,11 +83,13 @@ func SetupClusterByProvider(ctx context.Context, providerName kubermaticv1.Provi
 	)
 	cluster = &kubermaticv1.Cluster{}
 
-	switch providerName {
+	switch options.provider {
 	case kubermaticv1.OpenstackCloudProvider:
 		clusterJig = providers.NewClusterJigOpenstack(seedClient, options.kubernetesVersion, options.osSeedDatacenter, options.osCredentials)
+		break
 	case kubermaticv1.VSphereCloudProvider:
 		clusterJig = providers.NewClusterJigVsphere(seedClient, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
+		break
 	default:
 		ginkgo.Fail("provider not supported")
 	}
