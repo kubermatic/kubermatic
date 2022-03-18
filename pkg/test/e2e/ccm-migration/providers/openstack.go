@@ -90,7 +90,7 @@ func (c *OpenstackClusterJig) Setup() error {
 }
 
 func (c *OpenstackClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client) error {
-	if err := c.generateAndCCreateMachineDeployment(userClient, c.Credentials.GenerateProviderSpec()); err != nil {
+	if err := c.generateAndCreateMachineDeployment(userClient, c.Credentials.GenerateProviderSpec()); err != nil {
 		return errors.Wrap(err, "failed to create machine deployment")
 	}
 	return nil

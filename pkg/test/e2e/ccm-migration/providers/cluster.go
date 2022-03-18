@@ -79,7 +79,7 @@ func (ccj *CommonClusterJig) generateAndCreateSecret(secretPrefixName string, se
 	return ccj.SeedClient.Create(context.TODO(), credentialSecret)
 }
 
-func (ccj *CommonClusterJig) generateAndCCreateMachineDeployment(userClient ctrlruntimeclient.Client, providerSpec []byte) error {
+func (ccj *CommonClusterJig) generateAndCreateMachineDeployment(userClient ctrlruntimeclient.Client, providerSpec []byte) error {
 	machineDeployment := utils.DefaultMachineDeployment(func(md *clusterv1alpha1.MachineDeployment) {
 		md.Spec.Template.Spec.ProviderSpec = clusterv1alpha1.ProviderSpec{
 			Value: &runtime.RawExtension{
