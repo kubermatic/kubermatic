@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: clustertemplates.kubermatic.k8c.io
 spec:
@@ -1716,8 +1715,8 @@ spec:
                   for the PodNodeSelector. It''s used by the backend to create a configuration
                   file for this plugin. The key:value from the map is converted to
                   the namespace:<node-selectors-labels> in the file. The format in
-                  a file: podNodeSelectorPluginConfig:  clusterDefaultNodeSelector:
-                  <node-selectors-labels>  namespace1: <node-selectors-labels>  namespace2:
+                  a file: podNodeSelectorPluginConfig: clusterDefaultNodeSelector:
+                  <node-selectors-labels> namespace1: <node-selectors-labels> namespace2:
                   <node-selectors-labels>'
                 type: object
               serviceAccount:
