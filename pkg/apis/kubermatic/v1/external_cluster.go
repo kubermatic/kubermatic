@@ -93,7 +93,7 @@ const (
 	// StatusUnknown Not set.
 	StatusUnknown Status = "Unknown"
 
-	// StatusError status indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
+	// StatusError status indicates the cluster is unusable. Details can be found in the
 	// `statusMessage` field.
 	StatusError Status = "Error"
 )
@@ -105,7 +105,7 @@ type KubeOneExternalClusterStatus struct {
 }
 
 type ExternalClusterKubeOneCloudSpec struct {
-	ClusterStatus KubeOneExternalClusterStatus `json:"clusterStatus,omitempty"`
+	ClusterStatus KubeOneExternalClusterStatus `json:"clusterStatus"`
 	// ProviderName is the name of the cloud provider used, one of
 	// "aws", "azure", "digitalocean", "gcp",
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers

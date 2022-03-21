@@ -26,6 +26,7 @@ import (
 	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
+	kubeone "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
@@ -97,14 +98,17 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.configGetter); err != nil {
 		return fmt.Errorf("failed to create seedproxy controller: %w", err)
 	}
-	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
-		return fmt.Errorf("failed to create external cluster controller: %w", err)
-	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create master constraint template controller: %w", err)
 	}
 	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
 		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
+	}
+	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create external cluster controller: %w", err)
+	}
+	if err := kubeone.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create kubeone controller: %w", err)
 	}
 
 	return nil
