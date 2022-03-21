@@ -359,26 +359,42 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 func initialMemberList(n int, namespace string, useTLSPeer bool, client ctrlruntimeclient.Client, log *zap.SugaredLogger) []string {
 	members := []string{}
 	for i := 0; i < n; i++ {
-		if useTLSPeer {
-			members = append(members, fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace))
-		} else {
-			members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
-			// check if the pod is already annotated as TLS aware
-			var pod corev1.Pod
-			if err := client.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, &pod); err != nil {
-				log.Warnw("failed to get Pod information for etcd", zap.Error(err))
+		var pod corev1.Pod
+		if err := client.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, &pod); err != nil {
+			log.Warnw("failed to get Pod information for etcd, guessing peer URLs", zap.Error(err))
+			if useTLSPeer {
+				members = append(members, fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace))
 			} else {
-				if _, ok := pod.ObjectMeta.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
-					members = append(
-						members,
-						fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace),
-					)
-				}
+				members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+			}
+		} else {
+			// use information on the pod to determine if the plaintext and TLS peer ports are going to be open
+
+			if !hasStrictTLS(&pod) {
+				members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+			}
+
+			if _, ok := pod.ObjectMeta.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
+				members = append(
+					members,
+					fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace),
+				)
 			}
 		}
+
 	}
 
 	return members
+}
+
+func hasStrictTLS(pod *corev1.Pod) bool {
+	for _, env := range pod.Spec.Containers[0].Env {
+		if env.Name == "PEER_TLS_MODE" && env.Value == "strict" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func peerHostsList(n int, namespace string) []string {
