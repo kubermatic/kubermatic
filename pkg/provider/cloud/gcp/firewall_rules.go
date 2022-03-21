@@ -30,6 +30,11 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/network"
+)
+
+const (
+	ipv6ICMPProtoNumber = "58" // IANA-assigned Internet Protocol Number for IPv6-ICMP
 )
 
 func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, svc *compute.Service, projectID string) error {
@@ -40,27 +45,22 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 		Build().
 		NodePorts()
 
-	nodePortsAllowedIPRange := cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange
-	if nodePortsAllowedIPRange == "" {
-		nodePortsAllowedIPRange = "0.0.0.0/0"
-	}
-
 	firewallService := compute.NewFirewallsService(svc)
 	tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
 	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
 	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
 
-	//
+	ipv4Permissions := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv6Permissions := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+
+	// allow all common IP protocols from within the cluster
 	var allowedProtocols = []*compute.FirewallAllowed{
 		{
 			IPProtocol: "tcp",
 		},
 		{
 			IPProtocol: "udp",
-		},
-		{
-			IPProtocol: "icmp",
 		},
 		{
 			IPProtocol: "esp",
@@ -75,21 +75,45 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 			IPProtocol: "ipip",
 		},
 	}
-	err := createOrPatchFirewall(ctx, firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, "", update, cluster, firewallSelfCleanupFinalizer)
+	if ipv4Permissions {
+		allowedProtocols = append(allowedProtocols, &compute.FirewallAllowed{IPProtocol: "icmp"})
+	}
+	if ipv6Permissions {
+		allowedProtocols = append(allowedProtocols, &compute.FirewallAllowed{IPProtocol: ipv6ICMPProtoNumber})
+	}
+	err := createOrPatchFirewall(ctx, firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, nil, update, cluster, firewallSelfCleanupFinalizer)
 	if err != nil {
 		return err
 	}
 
-	allowedProtocols = []*compute.FirewallAllowed{
-		{
-			IPProtocol: "icmp",
-		},
+	// allow ICMP from anywhere
+	allowedProtocols = []*compute.FirewallAllowed{}
+	var allowedIPRanges []string
+	if ipv4Permissions {
+		allowedProtocols = append(allowedProtocols, &compute.FirewallAllowed{IPProtocol: "icmp"})
+		allowedIPRanges = append(allowedIPRanges, "0.0.0.0/0")
 	}
-	err = createOrPatchFirewall(ctx, firewallService, projectID, icmpRuleName, tag, "", allowedProtocols, "0.0.0.0/0", update, cluster, firewallICMPCleanupFinalizer)
+	if ipv6Permissions {
+		allowedProtocols = append(allowedProtocols, &compute.FirewallAllowed{IPProtocol: ipv6ICMPProtoNumber})
+		allowedIPRanges = append(allowedIPRanges, "::/0")
+	}
+	err = createOrPatchFirewall(ctx, firewallService, projectID, icmpRuleName, tag, "", allowedProtocols, allowedIPRanges, update, cluster, firewallICMPCleanupFinalizer)
 	if err != nil {
 		return err
 	}
 
+	// allow NodePort ranges
+	allowedIPRanges = []string{}
+	if cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange != "" {
+		allowedIPRanges = append(allowedIPRanges, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange)
+	} else {
+		if ipv4Permissions {
+			allowedIPRanges = append(allowedIPRanges, "0.0.0.0/0")
+		}
+		if ipv6Permissions {
+			allowedIPRanges = append(allowedIPRanges, "::/0")
+		}
+	}
 	allowedProtocols = []*compute.FirewallAllowed{
 		{
 			IPProtocol: "tcp",
@@ -100,7 +124,7 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 			Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
 		},
 	}
-	err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "", allowedProtocols, nodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
+	err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "", allowedProtocols, allowedIPRanges, update, cluster, firewallNodePortCleanupFinalizer)
 	if err != nil {
 		return err
 	}
@@ -115,7 +139,7 @@ func createOrPatchFirewall(ctx context.Context,
 	targetTag string,
 	sourceTag string,
 	protocols []*compute.FirewallAllowed,
-	allowedIPRange string,
+	allowedIPRanges []string,
 	update provider.ClusterUpdater,
 	cluster *kubermaticv1.Cluster,
 	finalizer string) error {
@@ -128,9 +152,7 @@ func createOrPatchFirewall(ctx context.Context,
 	if sourceTag != "" {
 		firewall.SourceTags = []string{sourceTag}
 	}
-	if allowedIPRange != "" {
-		firewall.SourceRanges = []string{allowedIPRange}
-	}
+	firewall.SourceRanges = allowedIPRanges
 
 	existingFirewall, err := firewallService.Get(projectID, firewallName).Context(ctx).Do()
 	switch {
