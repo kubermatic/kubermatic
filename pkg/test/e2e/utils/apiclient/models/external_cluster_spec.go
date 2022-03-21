@@ -18,6 +18,15 @@ import (
 // swagger:model ExternalClusterSpec
 type ExternalClusterSpec struct {
 
+	// akscluster spec
+	AksclusterSpec *AKSClusterSpec `json:"aksclusterSpec,omitempty"`
+
+	// ekscluster spec
+	EksclusterSpec *EKSClusterSpec `json:"eksclusterSpec,omitempty"`
+
+	// gkecluster spec
+	GkeclusterSpec *GKEClusterSpec `json:"gkeclusterSpec,omitempty"`
+
 	// version
 	Version Semver `json:"version,omitempty"`
 }
@@ -26,6 +35,18 @@ type ExternalClusterSpec struct {
 func (m *ExternalClusterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAksclusterSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEksclusterSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGkeclusterSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateVersion(formats); err != nil {
 		res = append(res, err)
 	}
@@ -33,6 +54,57 @@ func (m *ExternalClusterSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterSpec) validateAksclusterSpec(formats strfmt.Registry) error {
+	if swag.IsZero(m.AksclusterSpec) { // not required
+		return nil
+	}
+
+	if m.AksclusterSpec != nil {
+		if err := m.AksclusterSpec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("aksclusterSpec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterSpec) validateEksclusterSpec(formats strfmt.Registry) error {
+	if swag.IsZero(m.EksclusterSpec) { // not required
+		return nil
+	}
+
+	if m.EksclusterSpec != nil {
+		if err := m.EksclusterSpec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eksclusterSpec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterSpec) validateGkeclusterSpec(formats strfmt.Registry) error {
+	if swag.IsZero(m.GkeclusterSpec) { // not required
+		return nil
+	}
+
+	if m.GkeclusterSpec != nil {
+		if err := m.GkeclusterSpec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("gkeclusterSpec")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -55,6 +127,18 @@ func (m *ExternalClusterSpec) validateVersion(formats strfmt.Registry) error {
 func (m *ExternalClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAksclusterSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateEksclusterSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGkeclusterSpec(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateVersion(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -62,6 +146,48 @@ func (m *ExternalClusterSpec) ContextValidate(ctx context.Context, formats strfm
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterSpec) contextValidateAksclusterSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AksclusterSpec != nil {
+		if err := m.AksclusterSpec.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("aksclusterSpec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterSpec) contextValidateEksclusterSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.EksclusterSpec != nil {
+		if err := m.EksclusterSpec.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("eksclusterSpec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterSpec) contextValidateGkeclusterSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GkeclusterSpec != nil {
+		if err := m.GkeclusterSpec.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("gkeclusterSpec")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
