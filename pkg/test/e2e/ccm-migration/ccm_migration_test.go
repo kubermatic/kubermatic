@@ -83,13 +83,11 @@ func SetupClusterByProvider(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	)
 	cluster = &kubermaticv1.Cluster{}
 
-	switch options.provider {
+	switch kubermaticv1.ProviderType(options.provider) {
 	case kubermaticv1.OpenstackCloudProvider:
 		clusterJig = providers.NewClusterJigOpenstack(seedClient, options.kubernetesVersion, options.osSeedDatacenter, options.osCredentials)
-		break
 	case kubermaticv1.VSphereCloudProvider:
 		clusterJig = providers.NewClusterJigVsphere(seedClient, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
-		break
 	default:
 		ginkgo.Fail("provider not supported")
 	}

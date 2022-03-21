@@ -26,7 +26,6 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -38,7 +37,7 @@ type testOptions struct {
 	debugLog          bool
 	kubernetesVersion semver.Semver
 
-	provider kubermaticv1.ProviderType
+	provider string
 
 	vsphereSeedDatacenter string
 	osSeedDatacenter      string
@@ -51,14 +50,13 @@ var (
 	options = testOptions{
 		kubernetesVersion: *semver.NewSemverOrDie(os.Getenv("VERSION_TO_TEST")),
 	}
-	provider string
 )
 
 func init() {
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
 
-	flag.StringVar(&provider, "provider", "", "Cloud provider to test")
+	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
 
 	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
 	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
@@ -77,8 +75,6 @@ func init() {
 	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
 	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
 	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
-
-	options.provider = kubermaticv1.ProviderType(provider)
 }
 
 func TestCCMMigration(t *testing.T) {
