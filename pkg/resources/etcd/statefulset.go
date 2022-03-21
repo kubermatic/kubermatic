@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -368,7 +369,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// also external components like the kubernetes dashboard or external ccms wait for
 	// the new apiserver to be ready; etcd however is different and gets updated together
 	// with the apiserver
-	if c.Status.Versions.Apiserver.Semver().Minor() < 22 {
+	if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
 		return "v3.4.3"
 	}
 
