@@ -17,8 +17,6 @@ limitations under the License.
 package utils
 
 import (
-	"fmt"
-
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -26,7 +24,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func DefaultMachineDeployment(modifiers ...func(deployment *clusterv1alpha1.MachineDeployment)) *clusterv1alpha1.MachineDeployment {
@@ -47,11 +44,7 @@ func DefaultMachineDeployment(modifiers ...func(deployment *clusterv1alpha1.Mach
 						"name": MachineDeploymentName,
 					},
 				},
-				Spec: clusterv1alpha1.MachineSpec{
-					Versions: clusterv1alpha1.MachineVersionInfo{
-						Kubelet: KubeletVersion,
-					},
-				},
+				Spec: clusterv1alpha1.MachineSpec{},
 			},
 		},
 	}
@@ -82,10 +75,24 @@ func DefaultCredentialSecret(secretName string, modifiers ...func(secret *corev1
 	return credentialSecret
 }
 
-func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kubermaticv1.CloudSpec) *kubermaticv1.Cluster {
+func DefaultProject(projectName string) *kubermaticv1.Project {
+	return &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: projectName,
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "test-e2e",
+		},
+	}
+}
+
+func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kubermaticv1.CloudSpec, projectID string) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterName,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectID,
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: cloudSpec,
@@ -98,35 +105,9 @@ func DefaultCluster(clusterName string, version semver.Semver, cloudSpec kuberma
 				},
 				ProxyMode: "ipvs",
 			},
-			ContainerRuntime: "docker",
-			ComponentsOverride: kubermaticv1.ComponentSettings{
-				Apiserver: kubermaticv1.APIServerSettings{
-					EndpointReconcilingDisabled: pointer.BoolPtr(true),
-					DeploymentSettings: kubermaticv1.DeploymentSettings{
-						Replicas: pointer.Int32Ptr(1),
-					},
-				},
-				ControllerManager: kubermaticv1.ControllerSettings{
-					DeploymentSettings: kubermaticv1.DeploymentSettings{
-						Replicas: pointer.Int32Ptr(1),
-					},
-				},
-				Etcd: kubermaticv1.EtcdStatefulSetSettings{
-					ClusterSize: pointer.Int32Ptr(1),
-				},
-				Scheduler: kubermaticv1.ControllerSettings{
-					DeploymentSettings: kubermaticv1.DeploymentSettings{
-						Replicas: pointer.Int32Ptr(1),
-					},
-				},
-			},
-			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
-			ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
-			HumanReadableName:     "test",
-			Version:               version,
-		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: fmt.Sprintf("cluster-%s", clusterName),
+			ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
+			HumanReadableName: "test",
+			Version:           version,
 		},
 	}
 }

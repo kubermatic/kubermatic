@@ -52,7 +52,7 @@ type VsphereClusterJig struct {
 func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials VsphereCredentialsType) *VsphereClusterJig {
 	return &VsphereClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           fmt.Sprintf("v%s", rand.String(9)),
+			name:           rand.String(10),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
@@ -62,15 +62,21 @@ func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, version semver.Se
 	}
 }
 
-func (c *VsphereClusterJig) Setup() error {
+func (c *VsphereClusterJig) Setup(ctx context.Context) error {
 	c.log.Debugw("Setting up new cluster", "name", c.Name)
 
-	if err := c.generateAndCreateSecret(vsphereSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
+	projectID := rand.String(10)
+	if err := c.generateAndCreateProject(ctx, projectID); err != nil {
+		return errors.Wrap(err, "failed to create project")
+	}
+	c.log.Debugw("project created", "name", projectID)
+
+	if err := c.generateAndCreateSecret(ctx, vsphereSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
 		return errors.Wrap(err, "failed to create credential secret")
 	}
 	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", vsphereSecretPrefixName, c.name))
 
-	if err := c.generateAndCreateCluster(kubermaticv1.CloudSpec{
+	if err := c.generateAndCreateCluster(ctx, kubermaticv1.CloudSpec{
 		DatacenterName: c.DatacenterName,
 		VSphere: &kubermaticv1.VSphereCloudSpec{
 			CredentialsReference: &types.GlobalSecretKeySelector{
@@ -80,28 +86,26 @@ func (c *VsphereClusterJig) Setup() error {
 				},
 			},
 		},
-	}); err != nil {
+	}, projectID); err != nil {
 		return errors.Wrap(err, "failed to create user cluster")
 	}
 	c.log.Debugw("Cluster created", "name", c.Name)
 
-	return c.waitForClusterControlPlaneReady()
+	return c.waitForClusterControlPlaneReady(ctx)
 }
 
-func (c *VsphereClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client) error {
-	if err := c.generateAndCreateMachineDeployment(userClient, c.Credentials.GenerateProviderSpec(c.name)); err != nil {
+func (c *VsphereClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error {
+	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.name)); err != nil {
 		return errors.Wrap(err, "failed to create machine deployment")
 	}
 	return nil
 }
 
-func (c *VsphereClusterJig) Cleanup(userClient ctrlruntimeclient.Client) error {
-	return c.cleanUp(userClient)
+func (c *VsphereClusterJig) Cleanup(ctx context.Context, userClient ctrlruntimeclient.Client) error {
+	return c.cleanUp(ctx, userClient)
 }
 
-func (c *VsphereClusterJig) CheckComponents(userClient ctrlruntimeclient.Client) (bool, error) {
-	ctx := context.TODO()
-
+func (c *VsphereClusterJig) CheckComponents(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error) {
 	ccmDeploy := &appsv1.Deployment{}
 	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", c.name), Name: ccmDeploymentName}, ccmDeploy); err != nil {
 		return false, errors.Wrapf(err, "failed to get %s deployment", ccmDeploymentName)

@@ -52,7 +52,7 @@ type OpenstackClusterJig struct {
 func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, version semver.Semver, seedDatacenter string, credentials OpenstackCredentialsType) *OpenstackClusterJig {
 	return &OpenstackClusterJig{
 		CommonClusterJig: CommonClusterJig{
-			name:           fmt.Sprintf("o%s", rand.String(9)),
+			name:           rand.String(10),
 			DatacenterName: seedDatacenter,
 			Version:        version,
 			SeedClient:     seedClient,
@@ -62,15 +62,21 @@ func NewClusterJigOpenstack(seedClient ctrlruntimeclient.Client, version semver.
 	}
 }
 
-func (c *OpenstackClusterJig) Setup() error {
+func (c *OpenstackClusterJig) Setup(ctx context.Context) error {
 	c.log.Debugw("Setting up new cluster", "name", c.Name)
 
-	if err := c.generateAndCreateSecret(osSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
+	projectID := rand.String(10)
+	if err := c.generateAndCreateProject(ctx, projectID); err != nil {
+		return errors.Wrap(err, "failed to create project")
+	}
+	c.log.Debugw("project created", "name", projectID)
+
+	if err := c.generateAndCreateSecret(ctx, osSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
 		return errors.Wrap(err, "failed to create credential secret")
 	}
 	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", osSecretPrefixName, c.name))
 
-	if err := c.generateAndCreateCluster(kubermaticv1.CloudSpec{
+	if err := c.generateAndCreateCluster(ctx, kubermaticv1.CloudSpec{
 		DatacenterName: c.DatacenterName,
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
 			FloatingIPPool: c.Credentials.FloatingIPPool,
@@ -81,28 +87,26 @@ func (c *OpenstackClusterJig) Setup() error {
 				},
 			},
 		},
-	}); err != nil {
+	}, projectID); err != nil {
 		return errors.Wrap(err, "failed to create user cluster")
 	}
 	c.log.Debugw("Cluster created", "name", c.Name)
 
-	return c.waitForClusterControlPlaneReady()
+	return c.waitForClusterControlPlaneReady(ctx)
 }
 
-func (c *OpenstackClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client) error {
-	if err := c.generateAndCreateMachineDeployment(userClient, c.Credentials.GenerateProviderSpec()); err != nil {
+func (c *OpenstackClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error {
+	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec()); err != nil {
 		return errors.Wrap(err, "failed to create machine deployment")
 	}
 	return nil
 }
 
-func (c *OpenstackClusterJig) Cleanup(userClient ctrlruntimeclient.Client) error {
-	return c.cleanUp(userClient)
+func (c *OpenstackClusterJig) Cleanup(ctx context.Context, userClient ctrlruntimeclient.Client) error {
+	return c.cleanUp(ctx, userClient)
 }
 
-func (c *OpenstackClusterJig) CheckComponents(userClient ctrlruntimeclient.Client) (bool, error) {
-	ctx := context.TODO()
-
+func (c *OpenstackClusterJig) CheckComponents(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error) {
 	ccmDeploy := &appsv1.Deployment{}
 	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", c.name), Name: osCCMDeploymentName}, ccmDeploy); err != nil {
 		return false, errors.Wrapf(err, "failed to get %s deployment", osCCMDeploymentName)

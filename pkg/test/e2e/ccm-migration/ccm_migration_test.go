@@ -66,7 +66,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 		})
 
 		ginkgo.AfterEach(func() {
-			gomega.Expect(clusterJig.Cleanup(userClient)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.Cleanup(ctx, userClient)).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {
@@ -98,7 +98,7 @@ func SetupClusterByProvider(ctx context.Context, seedClient ctrlruntimeclient.Cl
 
 func setupAndGetUserClient(ctx context.Context, clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, clusterClientProvider *clusterclient.Provider) ctrlruntimeclient.Client {
 	ginkgo.By("setting up cluster")
-	gomega.Expect(clusterJig.Setup()).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
+	gomega.Expect(clusterJig.Setup(ctx)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
 	clusterJig.Log().Debugw("Cluster set up", "name", clusterJig.Name())
 	gomega.Expect(clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
 
@@ -117,7 +117,7 @@ func setupAndGetUserClient(ctx context.Context, clusterJig providers.ClusterJigI
 	gomega.Expect(clusterv1alpha1.AddToScheme(userClient.Scheme())).NotTo(gomega.HaveOccurred())
 
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
-		if err = clusterJig.CreateMachineDeployment(userClient); err != nil {
+		if err = clusterJig.CreateMachineDeployment(ctx, userClient); err != nil {
 			clusterJig.Log().Debug("machine deployment creation failed: %v", err)
 			return false, nil
 		}
@@ -188,6 +188,6 @@ func testBody(ctx context.Context, clusterJig providers.ClusterJigInterface, clu
 
 	ginkgo.By("checking that all the needed components are up and running")
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
-		return clusterJig.CheckComponents(userClient)
+		return clusterJig.CheckComponents(ctx, userClient)
 	})).NotTo(gomega.HaveOccurred())
 }

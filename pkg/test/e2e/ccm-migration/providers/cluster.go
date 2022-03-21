@@ -39,10 +39,10 @@ import (
 )
 
 type ClusterJigInterface interface {
-	Setup() error
-	CreateMachineDeployment(userClient ctrlruntimeclient.Client) error
-	CheckComponents(userClient ctrlruntimeclient.Client) (bool, error)
-	Cleanup(userClient ctrlruntimeclient.Client) error
+	Setup(ctx context.Context) error
+	CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error
+	CheckComponents(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error)
+	Cleanup(ctx context.Context, userClient ctrlruntimeclient.Client) error
 	Name() string
 	Seed() ctrlruntimeclient.Client
 	Log() *zap.SugaredLogger
@@ -56,14 +56,14 @@ type CommonClusterJig struct {
 	SeedClient ctrlruntimeclient.Client
 }
 
-func (ccj *CommonClusterJig) generateAndCreateCluster(cloudSpec kubermaticv1.CloudSpec) error {
-	cluster := utils.DefaultCluster(ccj.name, ccj.Version, cloudSpec)
+func (ccj *CommonClusterJig) generateAndCreateCluster(ctx context.Context, cloudSpec kubermaticv1.CloudSpec, projectID string) error {
+	cluster := utils.DefaultCluster(ccj.name, ccj.Version, cloudSpec, projectID)
 
-	if err := ccj.SeedClient.Create(context.TODO(), cluster); err != nil {
+	if err := ccj.SeedClient.Create(ctx, cluster); err != nil {
 		return err
 	}
 
-	if err := kubermaticv1helper.UpdateClusterStatus(context.TODO(), ccj.SeedClient, cluster, func(c *kubermaticv1.Cluster) {
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, ccj.SeedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
 		return errors.Wrap(err, "failed to update cluster status")
@@ -72,30 +72,36 @@ func (ccj *CommonClusterJig) generateAndCreateCluster(cloudSpec kubermaticv1.Clo
 	return nil
 }
 
-func (ccj *CommonClusterJig) generateAndCreateSecret(secretPrefixName string, secretData map[string][]byte) error {
+func (ccj *CommonClusterJig) generateAndCreateSecret(ctx context.Context, secretPrefixName string, secretData map[string][]byte) error {
 	credentialSecret := utils.DefaultCredentialSecret(fmt.Sprintf("%s-%s", secretPrefixName, ccj.name), func(secret *corev1.Secret) {
 		secret.Data = secretData
 	})
-	return ccj.SeedClient.Create(context.TODO(), credentialSecret)
+	return ccj.SeedClient.Create(ctx, credentialSecret)
 }
 
-func (ccj *CommonClusterJig) generateAndCreateMachineDeployment(userClient ctrlruntimeclient.Client, providerSpec []byte) error {
+func (ccj *CommonClusterJig) generateAndCreateProject(ctx context.Context, projectName string) error {
+	project := utils.DefaultProject(projectName)
+	return ccj.SeedClient.Create(ctx, project)
+}
+
+func (ccj *CommonClusterJig) generateAndCreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client, providerSpec []byte) error {
 	machineDeployment := utils.DefaultMachineDeployment(func(md *clusterv1alpha1.MachineDeployment) {
 		md.Spec.Template.Spec.ProviderSpec = clusterv1alpha1.ProviderSpec{
 			Value: &runtime.RawExtension{
 				Raw: providerSpec,
 			},
 		}
+		md.Spec.Template.Spec.Versions = clusterv1alpha1.MachineVersionInfo{
+			Kubelet: ccj.Version.String(),
+		}
 	})
-	return userClient.Create(context.TODO(), machineDeployment)
+	return userClient.Create(ctx, machineDeployment)
 }
 
 // CleanUp deletes the cluster.
-func (ccj *CommonClusterJig) cleanUp(userClient ctrlruntimeclient.Client) error {
-	ctx := context.TODO()
-
+func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntimeclient.Client) error {
 	cluster := &kubermaticv1.Cluster{}
-	if err := ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
+	if err := ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
 		return errors.Wrap(err, "failed to get user cluster")
 	}
 
@@ -129,7 +135,7 @@ func (ccj *CommonClusterJig) cleanUp(userClient ctrlruntimeclient.Client) error 
 	return wait.PollImmediate(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		cluster := &kubermaticv1.Cluster{}
 		var err error
-		if err = ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); kerrors.IsNotFound(err) {
+		if err = ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); kerrors.IsNotFound(err) {
 			return true, nil
 		}
 		if err != nil {
@@ -146,10 +152,10 @@ func (ccj *CommonClusterJig) cleanUp(userClient ctrlruntimeclient.Client) error 
 	})
 }
 
-func (ccj *CommonClusterJig) waitForClusterControlPlaneReady() error {
+func (ccj *CommonClusterJig) waitForClusterControlPlaneReady(ctx context.Context) error {
 	cluster := &kubermaticv1.Cluster{}
 	return wait.PollImmediate(utils.ClusterReadinessCheckPeriod, utils.ClusterReadinessTimeout, func() (bool, error) {
-		if err := ccj.SeedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: ccj.name}, cluster); err != nil {
+		if err := ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name}, cluster); err != nil {
 			return false, errors.Wrap(err, "failed to get user cluster")
 		}
 		_, reconciledSuccessfully := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, kubermatic.Versions{}, true)
