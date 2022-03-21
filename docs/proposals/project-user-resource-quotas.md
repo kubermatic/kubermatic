@@ -184,7 +184,7 @@ The idea here is to allow admins to set a default project resource quota, that w
 
 The default project resource quota can be set in the Global Settings, where we already have similar settings like `maxProjects`, and min/max node size.
 The trick now is how to apply it. We could either create ResourceQuotas for every project that doesn't have it, or
-not, but then we would have to calculate everytime in the quota webhook how many resources a project is currently consuming.
+not, but then we would have to calculate every time in the quota webhook how many resources a project is currently consuming.
 
 That's why creating ResourceQuotas for all projects that don't have them set seems like a simpler idea. To support editing/removing
 the default resource quota, we could label all default resource quotas with `default=true`, so we know to distinguish them from
