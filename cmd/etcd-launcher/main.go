@@ -381,7 +381,6 @@ func initialMemberList(n int, namespace string, useTLSPeer bool, client ctrlrunt
 				)
 			}
 		}
-
 	}
 
 	return members
