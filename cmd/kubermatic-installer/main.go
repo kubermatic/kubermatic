@@ -21,25 +21,24 @@ import (
 	"os"
 	"time"
 
-	"github.com/urfave/cli"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
-var (
-	verboseFlag = cli.BoolFlag{
-		Name:  "verbose, v",
-		Usage: "enable more verbose output",
-	}
+type Options struct {
+	Verbose         bool
+	ChartsDirectory string
+}
 
-	chartsDirectoryFlag = cli.StringFlag{
-		Name:   "charts-directory",
-		Value:  "charts",
-		Usage:  "filesystem path to the Kubermatic Helm charts",
-		EnvVar: "KUBERMATIC_CHARTS_DIRECTORY",
-	}
-)
+func (o *Options) CopyInto(other *Options) {
+	other.ChartsDirectory = o.ChartsDirectory
+	other.Verbose = o.Verbose
+}
+
+var options = &Options{}
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -47,13 +46,45 @@ func main() {
 	logger := log.NewLogrus()
 	versions := kubermaticversion.NewDefaultVersions()
 
-	app := cli.NewApp()
-	app.Name = "kubermatic-installer"
-	app.Usage = "Installs and updates Kubermatic Kubernetes Platform"
-	app.Version = versions.Kubermatic
-	app.HideVersion = true
-	app.Flags = flags()
-	app.Commands = commands(logger, versions)
+	rootCmd := &cobra.Command{
+		Use:           "kubermatic-installer",
+		Short:         "Installs and updates Kubermatic Kubernetes Platform",
+		Version:       versions.Kubermatic,
+		SilenceErrors: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if env := os.Getenv("KUBERMATIC_CHARTS_DIRECTORY"); env != "" {
+				options.ChartsDirectory = env
+			}
 
-	_ = app.Run(os.Args)
+			if options.ChartsDirectory == "" {
+				options.ChartsDirectory = "charts"
+			}
+
+			if options.Verbose {
+				logger.SetLevel(logrus.DebugLevel)
+			}
+		},
+	}
+
+	// cobra does not make any distinction between "error that happened because of bad flags"
+	// and "error that happens because of something going bad inside the RunE function", and
+	// so would always show the Usage, no matter what error occurred. Tow ork around this, we
+	// set SilenceUsages on all commands and manually print the error using the FlagErrorFunc.
+	rootCmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		if err := c.Usage(); err != nil {
+			return err
+		}
+
+		// ensure we exit with code 1 later on
+		return err
+	})
+
+	rootCmd.PersistentFlags().BoolVarP(&options.Verbose, "verbose", "v", options.Verbose, "enable more verbose output")
+	rootCmd.PersistentFlags().StringVar(&options.ChartsDirectory, "charts-directory", "", "filesystem path to the Kubermatic Helm charts (defaults to charts/)")
+
+	addCommands(rootCmd, logger, versions)
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

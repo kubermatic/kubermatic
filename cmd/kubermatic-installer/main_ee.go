@@ -22,7 +22,7 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
@@ -32,20 +32,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.Command {
-	return []cli.Command{
-		VersionCommand(logger, versions),
-		DeployCommand(logger, versions),
+func addCommands(cmd *cobra.Command, logger *logrus.Logger, versions kubermaticversion.Versions) {
+	cmd.AddCommand(
 		ConvertKubeconfigCommand(logger),
+		DeployCommand(logger, versions),
 		PrintCommand(),
-	}
-}
-
-func flags() []cli.Flag {
-	return []cli.Flag{
-		verboseFlag,
-		chartsDirectoryFlag,
-	}
+		VersionCommand(logger, versions),
+	)
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedsGetter, error) {
