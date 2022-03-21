@@ -105,7 +105,7 @@ var _ = Describe("application Installer controller", func() {
 	})
 
 	Context("when an applicationDefinition is removed", func() {
-		It("should remove the application using this ApplicationDefinton", func() {
+		It("should remove the application using this ApplicationDefintion", func() {
 			appDefName := "app-def-5"
 			appInstallName := "app-5"
 

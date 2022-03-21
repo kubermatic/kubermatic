@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ApplicationInstallationCRDCreator returns the gatekeeper ApplicationInstallation CRD definition.
+// ApplicationInstallationCRDCreator returns the ApplicationInstallation CRD definition.
 func ApplicationInstallationCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.ApplicationInstallationCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
