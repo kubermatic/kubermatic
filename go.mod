@@ -95,9 +95,9 @@ require (
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 	kubevirt.io/api v0.48.1
-	sigs.k8s.io/aws-iam-authenticator v0.5.3
-	sigs.k8s.io/controller-runtime v0.11.0
-	sigs.k8s.io/controller-tools v0.7.0
+	sigs.k8s.io/aws-iam-authenticator v0.5.5
+	sigs.k8s.io/controller-runtime v0.11.1
+	sigs.k8s.io/controller-tools v0.8.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
