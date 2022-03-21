@@ -965,7 +965,7 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	CreateUnsecured(ctx context.Context, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	CreateUnsecured(ctx context.Context, userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 
 	// GetUnsecured gets cluster template instance
 	//

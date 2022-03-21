@@ -79,24 +79,25 @@ func (r ClusterTemplateInstanceProvider) Create(ctx context.Context, userInfo *p
 	if err != nil {
 		return nil, err
 	}
-	instance := createClusterTemplateInstance(template, project, replicas)
+	instance := createClusterTemplateInstance(userInfo, template, project, replicas)
 
 	err = impersonationClient.Create(ctx, instance)
 	return instance, err
 }
 
-func (r ClusterTemplateInstanceProvider) CreateUnsecured(ctx context.Context, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
-	instance := createClusterTemplateInstance(template, project, replicas)
+func (r ClusterTemplateInstanceProvider) CreateUnsecured(ctx context.Context, userInfo *provider.UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error) {
+	instance := createClusterTemplateInstance(userInfo, template, project, replicas)
 
 	err := r.privilegedClient.Create(ctx, instance)
 	return instance, err
 }
 
-func createClusterTemplateInstance(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) *kubermaticv1.ClusterTemplateInstance {
+func createClusterTemplateInstance(userInfo *provider.UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) *kubermaticv1.ClusterTemplateInstance {
 	instance := &kubermaticv1.ClusterTemplateInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   GetClusterTemplateInstanceName(project.Name, template.Name),
-			Labels: map[string]string{ClusterTemplateLabelKey: template.Name},
+			Name:        GetClusterTemplateInstanceName(project.Name, template.Name),
+			Labels:      map[string]string{ClusterTemplateLabelKey: template.Name},
+			Annotations: map[string]string{kubermaticv1.ClusterTemplateInstanceOwnerAnnotationKey: userInfo.Email},
 		},
 		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
 			ProjectID:           project.Name,
