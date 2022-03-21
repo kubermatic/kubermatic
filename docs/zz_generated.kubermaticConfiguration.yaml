@@ -440,7 +440,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.21.10
+    default: v1.22.7
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -476,18 +476,11 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.19.*
+        from: 1.20.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.20.13
-      - from: 1.20.*
-        to: 1.20.*
-      - automatic: true
-        from: '>= 1.20.0, < 1.20.13'
-        to: 1.20.13
-      - from: 1.20.*
-        to: 1.21.*
+        to: 1.21.10
       - from: 1.21.*
         to: 1.21.*
       - automatic: true
@@ -502,9 +495,6 @@ spec:
         to: 1.22.5
     # Versions lists the available versions.
     versions:
-      - v1.20.13
-      - v1.20.14
-      - v1.20.15
       - v1.21.8
       - v1.21.10
       - v1.22.5

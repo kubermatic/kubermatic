@@ -316,6 +316,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+		"--endpoint-reconciler-type", "none",
 		// this can't be passed as two strings as the other parameters
 		"--profiling=false",
 	}
@@ -336,43 +337,34 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
 	}
 
-	// kubernetes service endpoints are reconciled by KKP user-cluster-controller for kubernetes versions v1.21+
-	// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
-	if (version.Major() >= 1 && version.Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
-		flags = append(flags, "--endpoint-reconciler-type", "none")
-	}
-
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
 	// explicitly enabled in the cluster object
-	saConfig := cluster.Spec.ServiceAccount
-	if version.Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
-		var audiences []string
+	var audiences []string
 
-		issuer := cluster.Address.URL
-		if saConfig != nil {
-			if saConfig.Issuer != "" {
-				issuer = saConfig.Issuer
-			}
-
-			if len(saConfig.APIAudiences) > 0 {
-				audiences = saConfig.APIAudiences
-			}
+	issuer := cluster.Address.URL
+	if saConfig := cluster.Spec.ServiceAccount; saConfig != nil {
+		if saConfig.Issuer != "" {
+			issuer = saConfig.Issuer
 		}
 
-		if len(audiences) == 0 {
-			audiences = []string{issuer}
+		if len(saConfig.APIAudiences) > 0 {
+			audiences = saConfig.APIAudiences
 		}
-
-		if data.IsKonnectivityEnabled() {
-			audiences = append(audiences, "system:konnectivity-server")
-		}
-
-		flags = append(flags,
-			"--service-account-issuer", issuer,
-			"--service-account-signing-key-file", serviceAccountKeyFile,
-			"--api-audiences", strings.Join(audiences, ","),
-		)
 	}
+
+	if len(audiences) == 0 {
+		audiences = []string{issuer}
+	}
+
+	if data.IsKonnectivityEnabled() {
+		audiences = append(audiences, "system:konnectivity-server")
+	}
+
+	flags = append(flags,
+		"--service-account-issuer", issuer,
+		"--service-account-signing-key-file", serviceAccountKeyFile,
+		"--api-audiences", strings.Join(audiences, ","),
+	)
 
 	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")

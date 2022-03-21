@@ -211,12 +211,8 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.21.10"),
+		Default: semver.NewSemverOrDie("v1.22.7"),
 		Versions: []semver.Semver{
-			// Kubernetes 1.20
-			newSemver("v1.20.13"),
-			newSemver("v1.20.14"),
-			newSemver("v1.20.15"),
 			// Kubernetes 1.21
 			newSemver("v1.21.8"),
 			newSemver("v1.21.10"),
@@ -225,35 +221,12 @@ var (
 			newSemver("v1.22.7"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.19 =======
-			{
-				// Auto-upgrade unsupported clusters.
-				// 'To' must not be a constraint, it has to be a specific version.
-				From:      "1.19.*",
-				To:        "1.20.13",
-				Automatic: pointer.BoolPtr(true),
-			},
-
 			// ======= 1.20 =======
 			{
-				// Allow to change to any patch version
-				From: "1.20.*",
-				To:   "1.20.*",
-			},
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2021-25741 (fixed >= 1.20.11)
-				// - CVE-2021-3711 (fixed >= 1.20.13)
-				// - CVE-2021-3712 (fixed >= 1.20.13)
-				// - CVE-2021-33910 (fixed >= 1.20.13)
-				From:      ">= 1.20.0, < 1.20.13",
-				To:        "1.20.13",
+				// Auto-upgrade unsupported clusters.
+				From:      "1.20.*",
+				To:        "1.21.10",
 				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.20.*",
-				To:   "1.21.*",
 			},
 
 			// ======= 1.21 =======
