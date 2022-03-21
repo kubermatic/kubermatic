@@ -996,6 +996,7 @@ func GenDefaultKubermaticObjects(objs ...ctrlruntimeclient.Object) []ctrlruntime
 }
 
 func GenCluster(id string, name string, projectID string, creationTime time.Time, modifiers ...func(*kubermaticv1.Cluster)) *kubermaticv1.Cluster {
+	version := *semver.NewSemverOrDie("9.9.9") // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   id,
@@ -1009,7 +1010,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				DatacenterName: "private-do1",
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
-			Version:               *semver.NewSemverOrDie("9.9.9"), // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
+			Version:               version,
 			HumanReadableName:     name,
 			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 			ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
@@ -1045,6 +1046,12 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			},
 			NamespaceName: kubernetes.NamespaceName(id),
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane:      version,
+				Apiserver:         version,
+				ControllerManager: version,
+				Scheduler:         version,
+			},
 		},
 	}
 

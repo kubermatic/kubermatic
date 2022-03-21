@@ -351,6 +351,11 @@ type ClusterStatus struct {
 	// +optional
 	NamespaceName string `json:"namespaceName"`
 
+	// Versions contains information regarding the current and desired versions
+	// of the cluster control plane and worker nodes.
+	// +optional
+	Versions ClusterVersionsStatus `json:"versions,omitempty"`
+
 	// UserName contains the name of the owner of this cluster
 	// +optional
 	UserName string `json:"userName,omitempty"`
@@ -378,6 +383,25 @@ type ClusterStatus struct {
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+}
+
+// ClusterVersionsStatus contains information regarding the current and desired versions
+// of the cluster control plane and worker nodes.
+type ClusterVersionsStatus struct {
+	// ControlPlane is the currently active cluster version. This can lag behind the apiserver
+	// version if an update is currently rolling out.
+	ControlPlane semver.Semver `json:"controlPlane"`
+	// Apiserver is the currently desired version of the kube-apiserver. During
+	// upgrades across multiple minor versions (e.g. from 1.20 to 1.23), this will gradually
+	// be increased by the update-controller until the desired cluster version (spec.version)
+	// is reached.
+	Apiserver semver.Semver `json:"apiserver"`
+	// ControllerManager is the currently desired version of the kube-controller-manager. This
+	// field behaves the same as the apiserver field.
+	ControllerManager semver.Semver `json:"controllerManager"`
+	// Scheduler is the currently desired version of the kube-scheduler. This field behaves the
+	// same as the apiserver field.
+	Scheduler semver.Semver `json:"scheduler"`
 }
 
 // HasConditionValue returns true if the cluster status has the given condition with the given status.

@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	semver "github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
@@ -74,7 +76,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			volumes := getVolumes(data.IsKonnectivityEnabled())
 			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled())
 
-			version := data.Cluster().Spec.Version.Semver()
+			version := data.Cluster().Status.Versions.Apiserver.Semver()
 
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
 				resources.VersionLabel: version.String(),
@@ -130,7 +132,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, version)
 			if err != nil {
 				return nil, err
 			}
@@ -246,7 +248,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool, version *semver.Version) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not get components override flags: %w", err)
@@ -336,14 +338,14 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	// kubernetes service endpoints are reconciled by KKP user-cluster-controller for kubernetes versions v1.21+
 	// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
-	if (cluster.Spec.Version.Semver().Major() >= 1 && cluster.Spec.Version.Semver().Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
+	if (version.Major() >= 1 && version.Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
 		flags = append(flags, "--endpoint-reconciler-type", "none")
 	}
 
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
 	// explicitly enabled in the cluster object
 	saConfig := cluster.Spec.ServiceAccount
-	if cluster.Spec.Version.Semver().Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
+	if version.Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
 		var audiences []string
 
 		issuer := cluster.Address.URL

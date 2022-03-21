@@ -78,7 +78,7 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			version := getVsphereCPIVersion(data.Cluster().Spec.Version)
+			version := getVsphereCPIVersion(data.Cluster().Status.Versions.ControlPlane)
 
 			container := getCPIContainer(version, data)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{

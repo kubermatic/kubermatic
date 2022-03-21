@@ -78,7 +78,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			version, err := getOSVersion(data.Cluster().Spec.Version)
+			version, err := getOSVersion(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}

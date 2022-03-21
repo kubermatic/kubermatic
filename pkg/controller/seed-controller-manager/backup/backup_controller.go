@@ -264,6 +264,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		return nil
 	}
 
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Skipping because the cluster has no version status yet")
+		return nil
+	}
+
 	// Always add the finalizer first
 	if controllerEnabled {
 		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, cleanupFinalizer); err != nil {

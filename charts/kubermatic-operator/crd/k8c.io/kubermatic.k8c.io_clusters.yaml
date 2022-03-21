@@ -1968,6 +1968,38 @@ spec:
               userName:
                 description: UserName contains the name of the owner of this cluster
                 type: string
+              versions:
+                description: Versions contains information regarding the current and
+                  desired versions of the cluster control plane and worker nodes.
+                properties:
+                  apiserver:
+                    description: Apiserver is the currently desired version of the
+                      kube-apiserver. During upgrades across multiple minor versions
+                      (e.g. from 1.20 to 1.23), this will gradually be increased by
+                      the update-controller until the desired cluster version (spec.version)
+                      is reached.
+                    type: string
+                  controlPlane:
+                    description: ControlPlane is the currently active cluster version.
+                      This can lag behind the apiserver version if an update is currently
+                      rolling out.
+                    type: string
+                  controllerManager:
+                    description: ControllerManager is the currently desired version
+                      of the kube-controller-manager. This field behaves the same
+                      as the apiserver field.
+                    type: string
+                  scheduler:
+                    description: Scheduler is the currently desired version of the
+                      kube-scheduler. This field behaves the same as the apiserver
+                      field.
+                    type: string
+                required:
+                - apiserver
+                - controlPlane
+                - controllerManager
+                - scheduler
+                type: object
             type: object
         type: object
     served: true

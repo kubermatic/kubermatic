@@ -245,11 +245,6 @@ func (d *TemplateData) Cluster() *kubermaticv1.Cluster {
 	return d.cluster
 }
 
-// ClusterVersion returns version of the cluster.
-func (d *TemplateData) ClusterVersion() string {
-	return d.cluster.Spec.Version.String()
-}
-
 // DC returns the dc.
 func (d *TemplateData) DC() *kubermaticv1.Datacenter {
 	return d.dc
@@ -631,14 +626,14 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
 			lessThan21, _ := semver.NewConstraint("< 1.21.0")
 			if cluster.Spec.Cloud.Openstack != nil {
-				if lessThan21.Check(cluster.Spec.Version.Semver()) {
+				if lessThan21.Check(cluster.Status.Versions.ControlPlane.Semver()) {
 					featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
 				} else {
 					featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
 				}
 			}
 			if cluster.Spec.Cloud.VSphere != nil {
-				if lessThan21.Check(cluster.Spec.Version.Semver()) {
+				if lessThan21.Check(cluster.Status.Versions.ControlPlane.Semver()) {
 					featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
 				} else {
 					featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")

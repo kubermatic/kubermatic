@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	semverlib "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -50,6 +51,9 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+					},
 				},
 			},
 			wantFeatureGates: sets.String{},
@@ -73,6 +77,9 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+					},
 				},
 			},
 			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true"),
@@ -97,6 +104,9 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("1.20.0"),
+					},
 					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
 						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
@@ -126,6 +136,9 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("1.22.0"),
+					},
 					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
 						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,

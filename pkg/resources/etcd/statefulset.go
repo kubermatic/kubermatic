@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -363,7 +364,12 @@ func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 // ImageTag returns the correct etcd image tag for a given Cluster
 // TODO: Other functions use this function, switch them to getLauncherImage.
 func ImageTag(c *kubermaticv1.Cluster) string {
-	if c.Spec.Version.Semver().Minor() < 22 {
+	// most other control plane parts refer to the controller-manager's version, which
+	// during updates lacks behind the apiserver by one minor version; this is so that
+	// also external components like the kubernetes dashboard or external ccms wait for
+	// the new apiserver to be ready; etcd however is different and gets updated together
+	// with the apiserver
+	if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
 		return "v3.4.3"
 	}
 

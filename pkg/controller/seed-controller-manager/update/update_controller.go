@@ -121,6 +121,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	if err := r.setClusterVersionsStatus(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to set cluster version status: %w", err)
+	}
+
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
 		// If it gets healthy we'll get notified by the event. No need to requeue
@@ -152,6 +156,17 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	return nil, nil
+}
+
+// setClusterVersionsStatus is a placeholder until the new update controller takes more control
+// over the ClusterVersionsStatus and implements a proper upgrade logic.
+func (r *Reconciler) setClusterVersionsStatus(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(cluster *kubermaticv1.Cluster) {
+		cluster.Status.Versions.Apiserver = cluster.Spec.Version
+		cluster.Status.Versions.ControlPlane = cluster.Spec.Version
+		cluster.Status.Versions.ControllerManager = cluster.Spec.Version
+		cluster.Status.Versions.Scheduler = cluster.Spec.Version
+	})
 }
 
 func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager, clusterType string) error {

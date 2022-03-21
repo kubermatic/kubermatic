@@ -200,6 +200,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Skipping because the cluster has no version status yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	log = r.log.With("cluster", cluster.Name, "addon", addon.Name)
 
 	// Add a wrapping here so we can emit an event on error
@@ -496,7 +501,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
-	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Spec.Version.Semver())
+	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Status.Versions.ControlPlane.Semver())
 	if err != nil {
 		return fmt.Errorf("failed to create command: %w", err)
 	}
@@ -538,7 +543,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	}
 	defer done()
 
-	binary, err := kubectl.BinaryForClusterVersion(cluster.Spec.Version.Semver())
+	binary, err := kubectl.BinaryForClusterVersion(cluster.Status.Versions.ControlPlane.Semver())
 	if err != nil {
 		return fmt.Errorf("failed to determine kubectl binary to use: %w", err)
 	}
