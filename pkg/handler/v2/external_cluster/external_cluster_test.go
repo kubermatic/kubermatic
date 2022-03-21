@@ -109,7 +109,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 5
 		{
 			Name:                   "scenario 5: create GKE cluster",
-			Body:                   `{"name":"test", "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc","zone":"abc"}}}`,
+			Body:                   `{"name":"test","spec":{}, "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc","zone":"abc"}}}`,
 			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{"gke":{"name":"gke-cluster","zone":"abc"}},"status":{"state":"PROVISIONING"}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
@@ -119,7 +119,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:                   "scenario 6: create GKE cluster with empty zone",
-			Body:                   `{"name":"test", "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc"}}}`,
+			Body:                   `{"name":"test","spec":{}, "cloud":{"gke":{"name":"gke-cluster","serviceAccount":"abc"}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"the GKE cluster name, zone or service account can not be empty"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
@@ -128,7 +128,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:                   "scenario 7: create GKE cluster with empty SA",
-			Body:                   `{"name":"test", "cloud":{"gke":{"name":"gke-cluster","zone":"abc"}}}`,
+			Body:                   `{"name":"test","spec":{}, "cloud":{"gke":{"name":"gke-cluster","zone":"abc"}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"the GKE cluster name, zone or service account can not be empty"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
@@ -137,7 +137,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:                   "scenario 8: create EKS cluster",
-			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc", "region":"abc"}}}`,
+			Body:                   `{"name":"test","spec":{}, "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc", "region":"abc"}}}`,
 			ExpectedResponse:       `{"id":"%s","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{},"cloud":{"eks":{"name":"eks-cluster","region":"abc"}},"status":{"state":"PROVISIONING"}}`,
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
@@ -147,7 +147,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:                   "scenario 9: create EKS cluster with empty region",
-			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc"}}}`,
+			Body:                   `{"name":"test","spec":{}, "cloud":{"eks":{"name":"eks-cluster","accessKeyID":"abc","secretAccessKey": "abc"}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"required field is missing: Region"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
@@ -156,7 +156,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:                   "scenario 10: create EKS cluster with empty AccessKeyID or SecretAccessKey",
-			Body:                   `{"name":"test", "cloud":{"eks":{"name":"eks-cluster","region":"abc"}}}`,
+			Body:                   `{"name":"test","spec":{}, "cloud":{"eks":{"name":"eks-cluster","region":"abc"}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"required field is missing: AccessKeyID"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,

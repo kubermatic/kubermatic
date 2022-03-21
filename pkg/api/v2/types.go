@@ -434,6 +434,10 @@ type ExternalClusterStatus struct {
 type ExternalClusterSpec struct {
 	// Version desired version of the kubernetes master components
 	Version ksemver.Semver `json:"version,omitempty"`
+
+	GKEClusterSpec *GKEClusterSpec `json:"gkeclusterSpec,omitempty"`
+	EKSClusterSpec *EKSClusterSpec `json:"eksclusterSpec,omitempty"`
+	AKSClusterSpec *AKSClusterSpec `json:"aksclusterSpec,omitempty"`
 }
 
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
@@ -553,18 +557,16 @@ type KubeOneNutanixCloudSpec struct {
 }
 
 type GKECloudSpec struct {
-	Name           string          `json:"name"`
-	ServiceAccount string          `json:"serviceAccount,omitempty"`
-	Zone           string          `json:"zone"`
-	ClusterSpec    *GKEClusterSpec `json:"clusterSpec,omitempty"`
+	Name           string `json:"name"`
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	Zone           string `json:"zone"`
 }
 
 type EKSCloudSpec struct {
-	Name            string          `json:"name"`
-	AccessKeyID     string          `json:"accessKeyID,omitempty" required:"true"`
-	SecretAccessKey string          `json:"secretAccessKey,omitempty" required:"true"`
-	Region          string          `json:"region" required:"true"`
-	ClusterSpec     *EKSClusterSpec `json:"clusterSpec,omitempty"`
+	Name            string `json:"name"`
+	AccessKeyID     string `json:"accessKeyID,omitempty" required:"true"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty" required:"true"`
+	Region          string `json:"region" required:"true"`
 }
 
 type EKSClusterSpec struct {
@@ -594,13 +596,12 @@ type EKSClusterSpec struct {
 }
 
 type AKSCloudSpec struct {
-	Name           string          `json:"name"`
-	TenantID       string          `json:"tenantID,omitempty" required:"true"`
-	SubscriptionID string          `json:"subscriptionID,omitempty" required:"true"`
-	ClientID       string          `json:"clientID,omitempty" required:"true"`
-	ClientSecret   string          `json:"clientSecret,omitempty" required:"true"`
-	ResourceGroup  string          `json:"resourceGroup" required:"true"`
-	ClusterSpec    *AKSClusterSpec `json:"clusterSpec,omitempty"`
+	Name           string `json:"name"`
+	TenantID       string `json:"tenantID,omitempty" required:"true"`
+	SubscriptionID string `json:"subscriptionID,omitempty" required:"true"`
+	ClientID       string `json:"clientID,omitempty" required:"true"`
+	ClientSecret   string `json:"clientSecret,omitempty" required:"true"`
+	ResourceGroup  string `json:"resourceGroup" required:"true"`
 }
 
 // AKSClusterSpec Azure Kubernetes Service cluster.

@@ -191,7 +191,7 @@ func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGet
 	}, nil
 }
 
-func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) error {
+func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSpec, aksCloudSpec *apiv2.AKSCloudSpec) error {
 	aksClient, err := aks.GetAKSClusterClient(resources.AKSCredentials{
 		TenantID:       aksCloudSpec.TenantID,
 		ClientID:       aksCloudSpec.ClientID,
@@ -202,7 +202,7 @@ func createNewAKSCluster(ctx context.Context, aksCloudSpec *apiv2.AKSCloudSpec) 
 		return err
 	}
 
-	clusterSpec := aksCloudSpec.ClusterSpec
+	clusterSpec := aksclusterSpec
 	agentPoolProfiles := clusterSpec.MachineDeploymentSpec
 	basicSettings := agentPoolProfiles.BasicSettings
 	optionalSettings := agentPoolProfiles.OptionalSettings
@@ -272,18 +272,18 @@ func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) erro
 	return nil
 }
 
-func checkCreateClusterReqValidity(aksCloudSpec *apiv2.AKSCloudSpec) error {
-	if len(aksCloudSpec.ClusterSpec.Location) == 0 {
+func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
+	if len(aksclusterSpec.Location) == 0 {
 		return errors.NewBadRequest("required field is missing: Location")
 	}
-	agentPoolProfiles := aksCloudSpec.ClusterSpec.MachineDeploymentSpec
+	agentPoolProfiles := aksclusterSpec.MachineDeploymentSpec
 	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
 		return errors.NewBadRequest("Must define at least one system pool!")
 	}
 	return checkCreatePoolReqValidity(agentPoolProfiles)
 }
 
-func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, aksClusterSpec *apiv2.AKSClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
 	// check whether required fields for cluster import are provided
 	fields := reflect.ValueOf(cloud.AKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
@@ -293,11 +293,11 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
-	if cloud.AKS.ClusterSpec != nil {
-		if err := checkCreateClusterReqValidity(cloud.AKS); err != nil {
+	if aksClusterSpec != nil {
+		if err := checkCreateClusterReqValidity(aksClusterSpec); err != nil {
 			return nil, err
 		}
-		if err := createNewAKSCluster(ctx, cloud.AKS); err != nil {
+		if err := createNewAKSCluster(ctx, aksClusterSpec, cloud.AKS); err != nil {
 			return nil, err
 		}
 	}
@@ -825,7 +825,7 @@ func getAKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		clusterSpec.ManagedAAD = to.Bool(aksCluster.AadProfile.Managed)
 	}
 
-	apiCluster.Cloud.AKS.ClusterSpec = clusterSpec
+	apiCluster.Spec.AKSClusterSpec = clusterSpec
 
 	return apiCluster, nil
 }
