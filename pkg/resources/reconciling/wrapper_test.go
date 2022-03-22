@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 	utilpointer "k8s.io/utils/pointer"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -47,13 +48,18 @@ func TestDefaultPodSpec(t *testing.T) {
 		expectedObject corev1.PodSpec
 	}{
 		{
-			name: "Default values for termination message and pull policies are added",
+			name: "Default values for security context, termination message and pull policies are added",
 			newObject: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{},
 				},
 			},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Containers: []corev1.Container{
 					{
 						ImagePullPolicy:          corev1.PullIfNotPresent,
@@ -84,6 +90,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 			},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Containers: []corev1.Container{
 					{
 						ImagePullPolicy:          corev1.PullNever,
@@ -114,6 +125,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 			},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Containers: []corev1.Container{
 					{
 						SecurityContext: &corev1.SecurityContext{
@@ -153,6 +169,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 			},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Containers: []corev1.Container{
 					{
 						Name:                     "b",
@@ -193,6 +214,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 			},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				InitContainers: []corev1.Container{
 					{
 						Name:                     "b",
@@ -239,6 +265,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 			},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				InitContainers: []corev1.Container{
 					{
 						Name:                     "a",
@@ -271,6 +302,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 				}},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
@@ -292,6 +328,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 				}},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
@@ -311,6 +352,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 				}},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -332,6 +378,11 @@ func TestDefaultPodSpec(t *testing.T) {
 				},
 				}},
 			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -339,6 +390,36 @@ func TestDefaultPodSpec(t *testing.T) {
 						},
 					},
 				}},
+			},
+		},
+		{
+			name: "Partial security context gets seccomp profile added",
+			newObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					RunAsUser:    pointer.Int64(1000),
+					RunAsGroup:   pointer.Int64(1000),
+					RunAsNonRoot: pointer.Bool(true),
+				},
+				Containers: []corev1.Container{
+					{},
+				},
+			},
+			expectedObject: corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					RunAsUser:    pointer.Int64(1000),
+					RunAsGroup:   pointer.Int64(1000),
+					RunAsNonRoot: pointer.Bool(true),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						ImagePullPolicy:          corev1.PullIfNotPresent,
+						TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					},
+				},
 			},
 		},
 	}
