@@ -1,4 +1,4 @@
-//go:build ee
+//go:build !ee
 
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
@@ -22,6 +22,6 @@ import (
 	"testing"
 )
 
-func TestBasicReconcilingEE(t *testing.T) {
-	testBasicReconciling(t, enterpriseEdition)
+func TestBasicReconcilingCC(t *testing.T) {
+	testBasicReconciling(t, communityEdition)
 }
