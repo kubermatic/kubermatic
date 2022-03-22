@@ -111,6 +111,8 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 
 // DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API.
 // In addition, it sets default PodSpec values that KKP requires in all workloads, for example appropriate security settings.
+// The following KKP-specific defaults are applied:
+// - SecurityContext.SeccompProfile is set to be of type `RuntimeDefault` to enable seccomp isolation if not set.
 func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, error) {
 	// make sure to keep the old procmount types in case a creator overrides the entire PodSpec
 	initContainerProcMountType := map[string]*corev1.ProcMountType{}
@@ -159,6 +161,7 @@ func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, erro
 }
 
 // DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API.
+// In addition, the Deployment's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 	return func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 		old := d.DeepCopy()
@@ -195,6 +198,7 @@ func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 }
 
 // DefaultStatefulSet defaults all StatefulSet attributes to the same values as they would get from the Kubernetes API.
+// In addition, the StatefulSet's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
 	return func(ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 		old := ss.DeepCopy()
@@ -214,6 +218,7 @@ func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
 }
 
 // DefaultDaemonSet defaults all DaemonSet attributes to the same values as they would get from the Kubernetes API.
+// In addition, the DaemonSet's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
 	return func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 		old := ds.DeepCopy()
@@ -233,6 +238,7 @@ func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
 }
 
 // DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API.
+// In addition, the CronJob's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultCronJob(creator CronJobCreator) CronJobCreator {
 	return func(cj *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 		old := cj.DeepCopy()
