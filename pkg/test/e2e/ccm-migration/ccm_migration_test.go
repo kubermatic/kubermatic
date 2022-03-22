@@ -125,6 +125,16 @@ func setupAndGetUserClient(ctx context.Context, clusterJig providers.ClusterJigI
 	})).NotTo(gomega.HaveOccurred())
 	clusterJig.Log().Debug("MachineDeployment created")
 
+	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
+		var ready bool
+		if ready, err = clusterJig.WaitForNodeToBeReady(ctx, userClient); err != nil {
+			clusterJig.Log().Debug("node not ready yet, %v", err)
+			return false, nil
+		}
+		return ready, nil
+	})).NotTo(gomega.HaveOccurred())
+	clusterJig.Log().Debug("Node ready")
+
 	return userClient
 }
 
@@ -137,11 +147,11 @@ func testBody(ctx context.Context, clusterJig providers.ClusterJigInterface, clu
 	}
 	gomega.Expect(clusterJig.Seed().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(cluster))).NotTo(gomega.HaveOccurred())
 
-	ginkgo.By("getting the patched cluster")
+	clusterJig.Log().Debug("getting the patched cluster")
 	annotatedCluster := &kubermaticv1.Cluster{}
 	gomega.Expect(clusterJig.Seed().Get(ctx, types.NamespacedName{Name: cluster.Name}, annotatedCluster)).NotTo(gomega.HaveOccurred())
 
-	ginkgo.By("asserting the annotations existence in the cluster")
+	clusterJig.Log().Debug("asserting the annotations existence in the cluster")
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
 		_, ccmOk := annotatedCluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 		_, csiOk := annotatedCluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
@@ -151,7 +161,7 @@ func testBody(ctx context.Context, clusterJig providers.ClusterJigInterface, clu
 		return false, nil
 	})).NotTo(gomega.HaveOccurred())
 
-	ginkgo.By("checking the -node-external-cloud-provider flag in the machineController webhook pod")
+	clusterJig.Log().Debug("checking the -node-external-cloud-provider flag in the machineController webhook pod")
 	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
 		machineControllerWebhookPods := &corev1.PodList{}
 		if err := clusterJig.Seed().List(ctx, machineControllerWebhookPods, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
@@ -184,6 +194,16 @@ func testBody(ctx context.Context, clusterJig providers.ClusterJigInterface, clu
 			return false, err
 		}
 		return kubermaticv1helper.CCMMigrationCompleted(migratingCluster), nil
+	})).NotTo(gomega.HaveOccurred())
+
+	clusterJig.Log().Debug("waiting for node to come up again")
+	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
+		var ready bool
+		if ready, err = clusterJig.WaitForNodeToBeReady(ctx, userClient); err != nil {
+			clusterJig.Log().Debug("node not ready yet, %v", err)
+			return false, nil
+		}
+		return ready, nil
 	})).NotTo(gomega.HaveOccurred())
 
 	ginkgo.By("checking that all the needed components are up and running")

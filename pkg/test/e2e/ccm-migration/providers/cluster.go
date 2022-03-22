@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,6 +42,7 @@ import (
 type ClusterJigInterface interface {
 	Setup(ctx context.Context) error
 	CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error
+	WaitForNodeToBeReady(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error)
 	CheckComponents(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error)
 	Cleanup(ctx context.Context, userClient ctrlruntimeclient.Client) error
 	Name() string
@@ -161,4 +163,26 @@ func (ccj *CommonClusterJig) waitForClusterControlPlaneReady(ctx context.Context
 		_, reconciledSuccessfully := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, kubermatic.Versions{}, true)
 		return reconciledSuccessfully, nil
 	})
+}
+
+func (ccj *CommonClusterJig) WaitForNodeToBeReady(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error) {
+	machines := &clusterv1alpha1.MachineList{}
+	if err := userClient.List(ctx, machines); err != nil {
+		return false, err
+	}
+	for _, m := range machines.Items {
+		if nodeRef := m.Status.NodeRef; nodeRef != nil && m.DeletionTimestamp == nil {
+			node := &corev1.Node{}
+			if err := userClient.Get(ctx, types.NamespacedName{Name: nodeRef.Name}, node); err != nil {
+				return false, err
+			}
+			for _, c := range node.Status.Conditions {
+				if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
+					return true, nil
+				}
+			}
+		}
+	}
+
+	return false, nil
 }

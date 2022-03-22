@@ -63,7 +63,7 @@ func NewClusterJigVsphere(seedClient ctrlruntimeclient.Client, version semver.Se
 }
 
 func (c *VsphereClusterJig) Setup(ctx context.Context) error {
-	c.log.Debugw("Setting up new cluster", "name", c.Name)
+	c.log.Debugw("Setting up new cluster", "name", c.name)
 
 	projectID := rand.String(10)
 	if err := c.generateAndCreateProject(ctx, projectID); err != nil {
