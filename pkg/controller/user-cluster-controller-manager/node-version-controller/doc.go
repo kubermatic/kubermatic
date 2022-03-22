@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package nodeversioncontroller a controller that watches Nodes and
+Package nodeversioncontroller contains a controller that watches Nodes and
 updates the Cluster's status with the oldestNodeVersion.
 */
 package nodeversioncontroller
