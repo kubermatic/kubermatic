@@ -37,7 +37,7 @@ Rules:
 - The quotas are enforced(we should block creation of new nodes that would exceed the quota)
 - The resource quotas management will be admin-only.
 - By default, projects will not have a quota, meaning they can use as many resources they want
-- There will be a way to set a default resource quota for every project 
+- There will be a way to set a default resource quota for all projects
 - When a node is deleted, the quota usage needs to decrease for the project
 - If the quota is exceeded(by lowering the quota under current capacity for example), it is not the responsibility of KKP to remove nodes. Admins should fix that in communication with the project/user.
 - The storage quota targets just the disk size of the node. It will only affect node-local PV storage.
@@ -102,6 +102,11 @@ when we check if user can create a MachineDeployment.
 
 So we need to focus on the MachineDeployments and control the quota through them. The nodes get created anyway based 
 on the MachineDeployment spec, and we can get the desired node size based on the MD, although for each cloud provider its a bit different.
+So the best would be to create a controller which watches MachineDeployments, and fills out the project quotas accordingly.
+
+The seed-machine-deployment-controller(SMDC) would watch the seed cluster MachineDeployments(assuming we go with the plan to move MDs to the seed cluster, otherwise we
+need to have it watch MDs on user clusters, and do it a bit differently), calculate the resource usage, and update quotas for that clusters
+project (if such a quota exists). Also it needs to watch for new ResourceQuotas, so that for new ones it calculates the usage.
 
 ### How to get node size
 
@@ -141,7 +146,6 @@ The pro is that it wouldn't be a big change, the con is that it won't be so visi
 We can show the info that there is not enough resource quota left to create the nodes, but users would only see that in MachineDeployment
 Events. So it would be something like Pods not getting scheduled because there is no space.
 
-
 #### 1. Webhook for MachineDeployments
 
 This variant is dependent on migrating the MachineDeployments from being user-cluster resources to being seed-cluster resources.
@@ -151,8 +155,7 @@ project's resource quota if the MD fits. If not, we would just deny the request.
 
 The problem here is if its possible and at what cost to migrate the MD's, while thinking about KubeOne as well.
 We could eventually dynamically set the kubeconfig of the cluster where the machine-controller watches for MachineDeployments, 
-and set it to the seed-cluster in case of KKP. But then, as MachineDeployments are cluster-scoped we will need additional 
-cluster info label or something on them.
+and set it to the seed-cluster in case of KKP. 
 
 Another issue could be that cluster users won't have direct kubectl access to MD's anymore, at least until we start 
 supporting it somewhere in the future. But they can use the KKP API. 
@@ -162,21 +165,6 @@ supporting it somewhere in the future. But they can use the KKP API.
 In this variant, the machine-controller is checking the quota before it creates nodes for a MachineDeployment. 
 If there is no quota left, it should not schedule the node, and emit some event and set status that there is not enough resources
 left in the quota.
-
-### How to ensure that we get proper resource usage and that it stays in sync?
-
-The obvious way seems to get the amount of resources requested when a KKP MachineDeployment is being created, and then check against
-the project quota and fill it up accordingly. But this would only work through the API, and if there are some issues
-we could have resource quotas which are out of sync.
-
-The safest way would be to check the Node capacity on user clusters, but there are some issues with that as well, as the Nodes get created
-based on the MachineDeployments. So there could be races in between when the Node is created(which can take some time) and when we check if user can create a MachineDeployment.
-
-So the best would be to create a controller which watches MachineDeployments, and fills out the project quotas accordingly.
-
-The seed-machine-deployment-controller(SMDC) would watch the seed cluster MachineDeployments(assuming we go with the plan to move MDs to the seed cluster, otherwise we
-need to have it watch MDs on user clusters, and do it a bit differently), calculate the resource usage, and update quotas for that clusters
-project (if such a quota exists). Also it needs to watch for new ResourceQuotas, so that for new ones it calculates the usage.
 
 ### Default Project Quotas
 
