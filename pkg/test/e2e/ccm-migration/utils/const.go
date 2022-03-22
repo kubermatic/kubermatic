@@ -26,5 +26,5 @@ const (
 	MachineDeploymentNamespace = "kube-system"
 
 	UserClusterPollInterval = 5 * time.Second
-	CustomTestTimeout       = 15 * time.Minute
+	CustomTestTimeout       = 10 * time.Minute
 )

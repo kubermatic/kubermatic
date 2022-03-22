@@ -76,6 +76,7 @@ if [ -x "$(command -v ginkgo)" ]; then
     --randomizeAllSpecs \
     --randomizeSuites \
     --failOnPending \
+    --timeout=30m \
     --cover \
     --trace \
     --race \
@@ -91,6 +92,7 @@ else
     --ginkgo.trace \
     --ginkgo.progress \
     --ginkgo.v \
+    --timeout=30m \
     --kubeconfig "${HOME}/.kube/config" \
     --debug-log \
     --provider "${PROVIDER_TO_TEST}"
