@@ -19,7 +19,7 @@ limitations under the License.
 // This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.
 //
 //     Schemes: https
-//     Version: 2.20
+//     Version: 2.21
 //
 //     Consumes:
 //     - application/json
