@@ -258,7 +258,13 @@ func getFlags(data *resources.TemplateData, version *semver.Version) ([]string, 
 		}
 	}
 
-	featureGates := append([]string{"RotateKubeletServerCertificate=true"}, data.GetCSIMigrationFeatureGates()...)
+	featureGates := []string{"RotateKubeletServerCertificate=true"}
+	// starting with k8s 1.21, this is always true and cannot be toggled anymore
+	if version.LessThan(semver.MustParse("1.21.0")) {
+		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
+	}
+
+	featureGates = append(featureGates, data.GetCSIMigrationFeatureGates()...)
 
 	flags = append(flags, "--feature-gates")
 	flags = append(flags, strings.Join(featureGates, ","))

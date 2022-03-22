@@ -4,8 +4,21 @@ This document describes the process of adding support for a new Kubernetes minor
 to KKP.
 
 The single source of truth for the set of Kubernetes versions we ship is defined in
-`pkg/controller/operator/defaults/defaults.go`. From there, the `kubermatic` Helm chart and the
-example documentation are generated.
+`pkg/controller/operator/defaults/defaults.go`. From there the example documentation is generated.
+
+## Version Skews
+
+When removing support for a Kubernetes release, care must be taken because of existing userclusters.
+If for example Kubernetes 1.20 is removed, that KKP version must still be able to reconcile 1.20
+clusters while the upgrades are running (KKP potentially doesn't reconcile all userclusters at
+the same time).
+
+So removing support for a Kubernetes release is a 2-step process:
+
+1. Remove it from the list of supported versions (in `pkg/controller/operator/defaults/defaults.go`)
+   and release this as a new KKP minor version.
+2. In the next KKP minor version, all the reconciling code for the removed Kubernetes version
+   can be deleted.
 
 ## Adding/Removig Patch Releases
 
