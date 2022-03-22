@@ -45,6 +45,8 @@ func (m *BcBody) validateBackupCredentials(formats strfmt.Registry) error {
 		if err := m.BackupCredentials.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("backup_credentials")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("backup_credentials")
 			}
 			return err
 		}
@@ -73,6 +75,8 @@ func (m *BcBody) contextValidateBackupCredentials(ctx context.Context, formats s
 		if err := m.BackupCredentials.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("backup_credentials")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("backup_credentials")
 			}
 			return err
 		}

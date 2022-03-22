@@ -106,6 +106,8 @@ func (m *SettingSpec) validateCleanupOptions(formats strfmt.Registry) error {
 		if err := m.CleanupOptions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cleanupOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cleanupOptions")
 			}
 			return err
 		}
@@ -122,6 +124,8 @@ func (m *SettingSpec) validateCustomLinks(formats strfmt.Registry) error {
 	if err := m.CustomLinks.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("customLinks")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("customLinks")
 		}
 		return err
 	}
@@ -138,6 +142,8 @@ func (m *SettingSpec) validateMachineDeploymentVMResourceQuota(formats strfmt.Re
 		if err := m.MachineDeploymentVMResourceQuota.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("machineDeploymentVMResourceQuota")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("machineDeploymentVMResourceQuota")
 			}
 			return err
 		}
@@ -155,6 +161,8 @@ func (m *SettingSpec) validateMlaOptions(formats strfmt.Registry) error {
 		if err := m.MlaOptions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mlaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mlaOptions")
 			}
 			return err
 		}
@@ -172,6 +180,8 @@ func (m *SettingSpec) validateOpaOptions(formats strfmt.Registry) error {
 		if err := m.OpaOptions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("opaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("opaOptions")
 			}
 			return err
 		}
@@ -216,6 +226,8 @@ func (m *SettingSpec) contextValidateCleanupOptions(ctx context.Context, formats
 		if err := m.CleanupOptions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cleanupOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cleanupOptions")
 			}
 			return err
 		}
@@ -229,6 +241,8 @@ func (m *SettingSpec) contextValidateCustomLinks(ctx context.Context, formats st
 	if err := m.CustomLinks.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("customLinks")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("customLinks")
 		}
 		return err
 	}
@@ -242,6 +256,8 @@ func (m *SettingSpec) contextValidateMachineDeploymentVMResourceQuota(ctx contex
 		if err := m.MachineDeploymentVMResourceQuota.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("machineDeploymentVMResourceQuota")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("machineDeploymentVMResourceQuota")
 			}
 			return err
 		}
@@ -256,6 +272,8 @@ func (m *SettingSpec) contextValidateMlaOptions(ctx context.Context, formats str
 		if err := m.MlaOptions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mlaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mlaOptions")
 			}
 			return err
 		}
@@ -270,6 +288,8 @@ func (m *SettingSpec) contextValidateOpaOptions(ctx context.Context, formats str
 		if err := m.OpaOptions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("opaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("opaOptions")
 			}
 			return err
 		}

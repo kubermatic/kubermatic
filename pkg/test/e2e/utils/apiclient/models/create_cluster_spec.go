@@ -52,6 +52,8 @@ func (m *CreateClusterSpec) validateCluster(formats strfmt.Registry) error {
 		if err := m.Cluster.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cluster")
 			}
 			return err
 		}
@@ -69,6 +71,8 @@ func (m *CreateClusterSpec) validateNodeDeployment(formats strfmt.Registry) erro
 		if err := m.NodeDeployment.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeDeployment")
 			}
 			return err
 		}
@@ -101,6 +105,8 @@ func (m *CreateClusterSpec) contextValidateCluster(ctx context.Context, formats 
 		if err := m.Cluster.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cluster")
 			}
 			return err
 		}
@@ -115,6 +121,8 @@ func (m *CreateClusterSpec) contextValidateNodeDeployment(ctx context.Context, f
 		if err := m.NodeDeployment.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeDeployment")
 			}
 			return err
 		}

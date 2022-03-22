@@ -75,6 +75,8 @@ func (m *EtcdBackupConfigCondition) validateLastHeartbeatTime(formats strfmt.Reg
 	if err := m.LastHeartbeatTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("lastHeartbeatTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastHeartbeatTime")
 		}
 		return err
 	}
@@ -90,6 +92,8 @@ func (m *EtcdBackupConfigCondition) validateLastTransitionTime(formats strfmt.Re
 	if err := m.LastTransitionTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("lastTransitionTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastTransitionTime")
 		}
 		return err
 	}
@@ -105,6 +109,8 @@ func (m *EtcdBackupConfigCondition) validateStatus(formats strfmt.Registry) erro
 	if err := m.Status.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("status")
 		}
 		return err
 	}
@@ -120,6 +126,8 @@ func (m *EtcdBackupConfigCondition) validateType(formats strfmt.Registry) error 
 	if err := m.Type.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("type")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("type")
 		}
 		return err
 	}
@@ -158,6 +166,8 @@ func (m *EtcdBackupConfigCondition) contextValidateLastHeartbeatTime(ctx context
 	if err := m.LastHeartbeatTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("lastHeartbeatTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastHeartbeatTime")
 		}
 		return err
 	}
@@ -170,6 +180,8 @@ func (m *EtcdBackupConfigCondition) contextValidateLastTransitionTime(ctx contex
 	if err := m.LastTransitionTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("lastTransitionTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastTransitionTime")
 		}
 		return err
 	}
@@ -182,6 +194,8 @@ func (m *EtcdBackupConfigCondition) contextValidateStatus(ctx context.Context, f
 	if err := m.Status.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("status")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("status")
 		}
 		return err
 	}
@@ -194,6 +208,8 @@ func (m *EtcdBackupConfigCondition) contextValidateType(ctx context.Context, for
 	if err := m.Type.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("type")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("type")
 		}
 		return err
 	}

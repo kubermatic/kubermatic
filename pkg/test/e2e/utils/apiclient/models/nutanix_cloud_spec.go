@@ -68,6 +68,8 @@ func (m *NutanixCloudSpec) validateCredentialsReference(formats strfmt.Registry)
 		if err := m.CredentialsReference.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -85,6 +87,8 @@ func (m *NutanixCloudSpec) validateCsi(formats strfmt.Registry) error {
 		if err := m.Csi.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("csi")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("csi")
 			}
 			return err
 		}
@@ -117,6 +121,8 @@ func (m *NutanixCloudSpec) contextValidateCredentialsReference(ctx context.Conte
 		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -131,6 +137,8 @@ func (m *NutanixCloudSpec) contextValidateCsi(ctx context.Context, formats strfm
 		if err := m.Csi.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("csi")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("csi")
 			}
 			return err
 		}

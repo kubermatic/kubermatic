@@ -45,6 +45,8 @@ func (m *ErrorResponse) validateError(formats strfmt.Registry) error {
 		if err := m.Error.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("error")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("error")
 			}
 			return err
 		}
@@ -73,6 +75,8 @@ func (m *ErrorResponse) contextValidateError(ctx context.Context, formats strfmt
 		if err := m.Error.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("error")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("error")
 			}
 			return err
 		}

@@ -64,6 +64,8 @@ func (m *PacketSize) validateCPUs(formats strfmt.Registry) error {
 			if err := m.CPUs[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("cpus" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("cpus" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -88,6 +90,8 @@ func (m *PacketSize) validateDrives(formats strfmt.Registry) error {
 			if err := m.Drives[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("drives" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("drives" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -124,6 +128,8 @@ func (m *PacketSize) contextValidateCPUs(ctx context.Context, formats strfmt.Reg
 			if err := m.CPUs[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("cpus" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("cpus" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -142,6 +148,8 @@ func (m *PacketSize) contextValidateDrives(ctx context.Context, formats strfmt.R
 			if err := m.Drives[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("drives" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("drives" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

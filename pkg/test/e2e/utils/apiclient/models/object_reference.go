@@ -95,6 +95,8 @@ func (m *ObjectReference) validateUID(formats strfmt.Registry) error {
 	if err := m.UID.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("uid")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("uid")
 		}
 		return err
 	}
@@ -121,6 +123,8 @@ func (m *ObjectReference) contextValidateUID(ctx context.Context, formats strfmt
 	if err := m.UID.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("uid")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("uid")
 		}
 		return err
 	}

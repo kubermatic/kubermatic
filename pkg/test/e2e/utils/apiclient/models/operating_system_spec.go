@@ -73,6 +73,8 @@ func (m *OperatingSystemSpec) validateCentos(formats strfmt.Registry) error {
 		if err := m.Centos.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("centos")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("centos")
 			}
 			return err
 		}
@@ -90,6 +92,8 @@ func (m *OperatingSystemSpec) validateFlatcar(formats strfmt.Registry) error {
 		if err := m.Flatcar.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("flatcar")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("flatcar")
 			}
 			return err
 		}
@@ -107,6 +111,8 @@ func (m *OperatingSystemSpec) validateRhel(formats strfmt.Registry) error {
 		if err := m.Rhel.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("rhel")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("rhel")
 			}
 			return err
 		}
@@ -124,6 +130,8 @@ func (m *OperatingSystemSpec) validateSles(formats strfmt.Registry) error {
 		if err := m.Sles.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sles")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sles")
 			}
 			return err
 		}
@@ -141,6 +149,8 @@ func (m *OperatingSystemSpec) validateUbuntu(formats strfmt.Registry) error {
 		if err := m.Ubuntu.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("ubuntu")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("ubuntu")
 			}
 			return err
 		}
@@ -185,6 +195,8 @@ func (m *OperatingSystemSpec) contextValidateCentos(ctx context.Context, formats
 		if err := m.Centos.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("centos")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("centos")
 			}
 			return err
 		}
@@ -199,6 +211,8 @@ func (m *OperatingSystemSpec) contextValidateFlatcar(ctx context.Context, format
 		if err := m.Flatcar.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("flatcar")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("flatcar")
 			}
 			return err
 		}
@@ -213,6 +227,8 @@ func (m *OperatingSystemSpec) contextValidateRhel(ctx context.Context, formats s
 		if err := m.Rhel.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("rhel")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("rhel")
 			}
 			return err
 		}
@@ -227,6 +243,8 @@ func (m *OperatingSystemSpec) contextValidateSles(ctx context.Context, formats s
 		if err := m.Sles.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sles")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sles")
 			}
 			return err
 		}
@@ -241,6 +259,8 @@ func (m *OperatingSystemSpec) contextValidateUbuntu(ctx context.Context, formats
 		if err := m.Ubuntu.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("ubuntu")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("ubuntu")
 			}
 			return err
 		}

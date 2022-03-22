@@ -102,6 +102,8 @@ func (m *Node) validateSpec(formats strfmt.Registry) error {
 		if err := m.Spec.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("spec")
 			}
 			return err
 		}
@@ -119,6 +121,8 @@ func (m *Node) validateStatus(formats strfmt.Registry) error {
 		if err := m.Status.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
 			}
 			return err
 		}
@@ -151,6 +155,8 @@ func (m *Node) contextValidateSpec(ctx context.Context, formats strfmt.Registry)
 		if err := m.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("spec")
 			}
 			return err
 		}
@@ -165,6 +171,8 @@ func (m *Node) contextValidateStatus(ctx context.Context, formats strfmt.Registr
 		if err := m.Status.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
 			}
 			return err
 		}

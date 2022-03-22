@@ -62,6 +62,8 @@ func (m *AKSMachineDeploymentCloudSpec) validateBasicSettings(formats strfmt.Reg
 		if err := m.BasicSettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("basicSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("basicSettings")
 			}
 			return err
 		}
@@ -79,6 +81,8 @@ func (m *AKSMachineDeploymentCloudSpec) validateConfiguration(formats strfmt.Reg
 		if err := m.Configuration.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("configuration")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("configuration")
 			}
 			return err
 		}
@@ -96,6 +100,8 @@ func (m *AKSMachineDeploymentCloudSpec) validateOptionalSettings(formats strfmt.
 		if err := m.OptionalSettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("optionalSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("optionalSettings")
 			}
 			return err
 		}
@@ -132,6 +138,8 @@ func (m *AKSMachineDeploymentCloudSpec) contextValidateBasicSettings(ctx context
 		if err := m.BasicSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("basicSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("basicSettings")
 			}
 			return err
 		}
@@ -146,6 +154,8 @@ func (m *AKSMachineDeploymentCloudSpec) contextValidateConfiguration(ctx context
 		if err := m.Configuration.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("configuration")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("configuration")
 			}
 			return err
 		}
@@ -160,6 +170,8 @@ func (m *AKSMachineDeploymentCloudSpec) contextValidateOptionalSettings(ctx cont
 		if err := m.OptionalSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("optionalSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("optionalSettings")
 			}
 			return err
 		}

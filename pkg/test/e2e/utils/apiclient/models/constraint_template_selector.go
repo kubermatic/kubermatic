@@ -48,6 +48,8 @@ func (m *ConstraintTemplateSelector) validateLabelSelector(formats strfmt.Regist
 		if err := m.LabelSelector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labelSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("labelSelector")
 			}
 			return err
 		}
@@ -76,6 +78,8 @@ func (m *ConstraintTemplateSelector) contextValidateLabelSelector(ctx context.Co
 		if err := m.LabelSelector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labelSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("labelSelector")
 			}
 			return err
 		}

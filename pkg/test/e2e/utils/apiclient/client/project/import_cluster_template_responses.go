@@ -282,6 +282,8 @@ func (o *ImportClusterTemplateBody) validateUserSSHKeys(formats strfmt.Registry)
 			if err := o.UserSSHKeys[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -301,6 +303,8 @@ func (o *ImportClusterTemplateBody) validateCluster(formats strfmt.Registry) err
 		if err := o.Cluster.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "cluster")
 			}
 			return err
 		}
@@ -318,6 +322,8 @@ func (o *ImportClusterTemplateBody) validateNodeDeployment(formats strfmt.Regist
 		if err := o.NodeDeployment.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "nodeDeployment")
 			}
 			return err
 		}
@@ -356,6 +362,8 @@ func (o *ImportClusterTemplateBody) contextValidateUserSSHKeys(ctx context.Conte
 			if err := o.UserSSHKeys[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -372,6 +380,8 @@ func (o *ImportClusterTemplateBody) contextValidateCluster(ctx context.Context, 
 		if err := o.Cluster.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "cluster")
 			}
 			return err
 		}
@@ -386,6 +396,8 @@ func (o *ImportClusterTemplateBody) contextValidateNodeDeployment(ctx context.Co
 		if err := o.NodeDeployment.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "nodeDeployment")
 			}
 			return err
 		}

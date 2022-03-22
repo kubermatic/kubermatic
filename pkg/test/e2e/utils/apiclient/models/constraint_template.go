@@ -55,6 +55,8 @@ func (m *ConstraintTemplate) validateSpec(formats strfmt.Registry) error {
 		if err := m.Spec.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("spec")
 			}
 			return err
 		}
@@ -72,6 +74,8 @@ func (m *ConstraintTemplate) validateStatus(formats strfmt.Registry) error {
 		if err := m.Status.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
 			}
 			return err
 		}
@@ -104,6 +108,8 @@ func (m *ConstraintTemplate) contextValidateSpec(ctx context.Context, formats st
 		if err := m.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("spec")
 			}
 			return err
 		}
@@ -118,6 +124,8 @@ func (m *ConstraintTemplate) contextValidateStatus(ctx context.Context, formats 
 		if err := m.Status.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
 			}
 			return err
 		}

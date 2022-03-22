@@ -84,6 +84,8 @@ func (m *ClusterNetworkingConfig) validateIpvs(formats strfmt.Registry) error {
 		if err := m.Ipvs.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("ipvs")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("ipvs")
 			}
 			return err
 		}
@@ -101,6 +103,8 @@ func (m *ClusterNetworkingConfig) validatePods(formats strfmt.Registry) error {
 		if err := m.Pods.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("pods")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("pods")
 			}
 			return err
 		}
@@ -118,6 +122,8 @@ func (m *ClusterNetworkingConfig) validateServices(formats strfmt.Registry) erro
 		if err := m.Services.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("services")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("services")
 			}
 			return err
 		}
@@ -154,6 +160,8 @@ func (m *ClusterNetworkingConfig) contextValidateIpvs(ctx context.Context, forma
 		if err := m.Ipvs.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("ipvs")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("ipvs")
 			}
 			return err
 		}
@@ -168,6 +176,8 @@ func (m *ClusterNetworkingConfig) contextValidatePods(ctx context.Context, forma
 		if err := m.Pods.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("pods")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("pods")
 			}
 			return err
 		}
@@ -182,6 +192,8 @@ func (m *ClusterNetworkingConfig) contextValidateServices(ctx context.Context, f
 		if err := m.Services.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("services")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("services")
 			}
 			return err
 		}

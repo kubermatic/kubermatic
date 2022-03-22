@@ -52,6 +52,8 @@ func (m *CRDSpec) validateNames(formats strfmt.Registry) error {
 		if err := m.Names.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("names")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("names")
 			}
 			return err
 		}
@@ -69,6 +71,8 @@ func (m *CRDSpec) validateValidation(formats strfmt.Registry) error {
 		if err := m.Validation.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("validation")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("validation")
 			}
 			return err
 		}
@@ -101,6 +105,8 @@ func (m *CRDSpec) contextValidateNames(ctx context.Context, formats strfmt.Regis
 		if err := m.Names.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("names")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("names")
 			}
 			return err
 		}
@@ -115,6 +121,8 @@ func (m *CRDSpec) contextValidateValidation(ctx context.Context, formats strfmt.
 		if err := m.Validation.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("validation")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("validation")
 			}
 			return err
 		}

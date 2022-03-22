@@ -55,6 +55,8 @@ func (m *KubeOneSpec) validateCloudSpec(formats strfmt.Registry) error {
 		if err := m.CloudSpec.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloudSpec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cloudSpec")
 			}
 			return err
 		}
@@ -72,6 +74,8 @@ func (m *KubeOneSpec) validateSSHKey(formats strfmt.Registry) error {
 		if err := m.SSHKey.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sshKey")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sshKey")
 			}
 			return err
 		}
@@ -104,6 +108,8 @@ func (m *KubeOneSpec) contextValidateCloudSpec(ctx context.Context, formats strf
 		if err := m.CloudSpec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloudSpec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cloudSpec")
 			}
 			return err
 		}
@@ -118,6 +124,8 @@ func (m *KubeOneSpec) contextValidateSSHKey(ctx context.Context, formats strfmt.
 		if err := m.SSHKey.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sshKey")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sshKey")
 			}
 			return err
 		}

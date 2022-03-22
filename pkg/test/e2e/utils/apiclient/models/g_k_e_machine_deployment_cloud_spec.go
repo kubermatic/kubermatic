@@ -68,6 +68,8 @@ func (m *GKEMachineDeploymentCloudSpec) validateAutoscaling(formats strfmt.Regis
 		if err := m.Autoscaling.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("autoscaling")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("autoscaling")
 			}
 			return err
 		}
@@ -85,6 +87,8 @@ func (m *GKEMachineDeploymentCloudSpec) validateConfig(formats strfmt.Registry) 
 		if err := m.Config.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("config")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("config")
 			}
 			return err
 		}
@@ -102,6 +106,8 @@ func (m *GKEMachineDeploymentCloudSpec) validateManagement(formats strfmt.Regist
 		if err := m.Management.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("management")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("management")
 			}
 			return err
 		}
@@ -138,6 +144,8 @@ func (m *GKEMachineDeploymentCloudSpec) contextValidateAutoscaling(ctx context.C
 		if err := m.Autoscaling.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("autoscaling")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("autoscaling")
 			}
 			return err
 		}
@@ -152,6 +160,8 @@ func (m *GKEMachineDeploymentCloudSpec) contextValidateConfig(ctx context.Contex
 		if err := m.Config.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("config")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("config")
 			}
 			return err
 		}
@@ -166,6 +176,8 @@ func (m *GKEMachineDeploymentCloudSpec) contextValidateManagement(ctx context.Co
 		if err := m.Management.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("management")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("management")
 			}
 			return err
 		}

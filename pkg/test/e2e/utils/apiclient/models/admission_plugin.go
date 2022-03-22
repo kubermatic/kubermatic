@@ -50,6 +50,8 @@ func (m *AdmissionPlugin) validateFromVersion(formats strfmt.Registry) error {
 	if err := m.FromVersion.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("fromVersion")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("fromVersion")
 		}
 		return err
 	}
@@ -76,6 +78,8 @@ func (m *AdmissionPlugin) contextValidateFromVersion(ctx context.Context, format
 	if err := m.FromVersion.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("fromVersion")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("fromVersion")
 		}
 		return err
 	}

@@ -59,6 +59,8 @@ func (m *JSONSchemaPropsOrArray) validateJSONSchemas(formats strfmt.Registry) er
 			if err := m.JSONSchemas[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("JSONSchemas" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("JSONSchemas" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -78,6 +80,8 @@ func (m *JSONSchemaPropsOrArray) validateSchema(formats strfmt.Registry) error {
 		if err := m.Schema.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Schema")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Schema")
 			}
 			return err
 		}
@@ -112,6 +116,8 @@ func (m *JSONSchemaPropsOrArray) contextValidateJSONSchemas(ctx context.Context,
 			if err := m.JSONSchemas[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("JSONSchemas" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("JSONSchemas" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -128,6 +134,8 @@ func (m *JSONSchemaPropsOrArray) contextValidateSchema(ctx context.Context, form
 		if err := m.Schema.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Schema")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Schema")
 			}
 			return err
 		}
