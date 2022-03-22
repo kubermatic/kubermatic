@@ -372,7 +372,7 @@ func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSp
 	return nil
 }
 
-func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, eksClusterSpec *apiv2.EKSClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
 	fields := reflect.ValueOf(cloud.EKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
 		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
@@ -381,8 +381,8 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
-	if eksClusterSpec != nil {
-		if err := createNewEKSCluster(ctx, eksClusterSpec, cloud.EKS); err != nil {
+	if spec != nil && spec.EKSClusterSpec != nil {
+		if err := createNewEKSCluster(ctx, spec.EKSClusterSpec, cloud.EKS); err != nil {
 			return nil, err
 		}
 	}

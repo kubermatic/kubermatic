@@ -242,13 +242,13 @@ func listGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	return diskTypes, err
 }
 
-func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, gkeClusterSpec *apiv2.GKEClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+func createOrImportGKECluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
 	if cloud.GKE.Name == "" || cloud.GKE.Zone == "" || cloud.GKE.ServiceAccount == "" {
 		return nil, errors.NewBadRequest("the GKE cluster name, zone or service account can not be empty")
 	}
 
-	if gkeClusterSpec != nil {
-		if err := createNewGKECluster(ctx, gkeClusterSpec, cloud.GKE); err != nil {
+	if spec != nil && spec.GKEClusterSpec != nil {
+		if err := createNewGKECluster(ctx, spec.GKEClusterSpec, cloud.GKE); err != nil {
 			return nil, err
 		}
 	}

@@ -283,7 +283,7 @@ func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
 	return checkCreatePoolReqValidity(agentPoolProfiles)
 }
 
-func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, aksClusterSpec *apiv2.AKSClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
 	// check whether required fields for cluster import are provided
 	fields := reflect.ValueOf(cloud.AKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
@@ -293,11 +293,11 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
-	if aksClusterSpec != nil {
-		if err := checkCreateClusterReqValidity(aksClusterSpec); err != nil {
+	if spec != nil && spec.AKSClusterSpec != nil {
+		if err := checkCreateClusterReqValidity(spec.AKSClusterSpec); err != nil {
 			return nil, err
 		}
-		if err := createNewAKSCluster(ctx, aksClusterSpec, cloud.AKS); err != nil {
+		if err := createNewAKSCluster(ctx, spec.AKSClusterSpec, cloud.AKS); err != nil {
 			return nil, err
 		}
 	}
