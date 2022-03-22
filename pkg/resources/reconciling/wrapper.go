@@ -146,14 +146,10 @@ func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, erro
 	// set KKP specific defaults for every Pod created by it
 
 	if newPodSpec.SecurityContext == nil {
-		newPodSpec.SecurityContext = &corev1.PodSecurityContext{
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-		}
+		newPodSpec.SecurityContext = &corev1.PodSecurityContext{}
 	}
 
-	if newPodSpec.SecurityContext != nil && newPodSpec.SecurityContext.SeccompProfile == nil {
+	if newPodSpec.SecurityContext.SeccompProfile == nil {
 		newPodSpec.SecurityContext.SeccompProfile = &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		}
