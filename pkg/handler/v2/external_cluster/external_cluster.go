@@ -1005,6 +1005,13 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 			}
 			apiCluster.Status = *gkeStatus
 		}
+		if cloud.KubeOne != nil {
+			kubeoneStatus := &apiv2.ExternalClusterStatus{
+				State:         apiv2.ExternalClusterState(cloud.KubeOne.ClusterStatus.Status),
+				StatusMessage: cloud.KubeOne.ClusterStatus.StatusMessage,
+			}
+			apiCluster.Status = *kubeoneStatus
+		}
 	}
 
 	// check kubeconfig access

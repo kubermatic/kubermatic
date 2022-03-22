@@ -201,6 +201,10 @@ func (p *FakeExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context
 	return p.Provider.CreateOrUpdateKubeOneSSHSecret(ctx, sshKey, externalCluster)
 }
 
+func (p *FakeExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error {
+	return p.Provider.CreateKubeOneClusterNamespace(ctx, externalCluster)
+}
+
 func (p *FakeExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, manifest string, externalCluster *kubermaticv1.ExternalCluster) error {
 	return p.Provider.CreateOrUpdateKubeOneManifestSecret(ctx, manifest, externalCluster)
 }

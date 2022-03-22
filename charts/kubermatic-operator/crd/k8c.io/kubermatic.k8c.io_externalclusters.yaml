@@ -359,6 +359,7 @@ spec:
                             type: string
                         type: object
                     required:
+                    - clusterStatus
                     - credentialsReference
                     - manifestReference
                     - providerName

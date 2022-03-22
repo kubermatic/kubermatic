@@ -635,8 +635,26 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	return nil
 }
 
+func GetKubeOneNameSpaceName(externalClusterName string) string {
+	return fmt.Sprintf("kubeone-%s", externalClusterName)
+}
+
+func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error {
+	kubeOneNamespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: GetKubeOneNameSpaceName(externalCluster.Name),
+		},
+	}
+	if err := p.GetMasterClient().Create(ctx, kubeOneNamespace); err != nil {
+		return fmt.Errorf("failed to create kubeone cluster namespace: %w", err)
+	}
+
+	return nil
+}
+
 func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: secretName}
+	kubeOneNamespaceName := GetKubeOneNameSpaceName(externalcluster.Name)
+	namespacedName := types.NamespacedName{Namespace: kubeOneNamespaceName, Name: secretName}
 	existingSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for secret %q: %w", secretName, err)
@@ -650,7 +668,7 @@ func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntime
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
-				Namespace: resources.KubermaticNamespace,
+				Namespace: kubeOneNamespaceName,
 				Labels: map[string]string{
 					"name":                         secretName,
 					kubermaticv1.ProjectIDLabelKey: projectID,
@@ -688,7 +706,7 @@ func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntime
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
 			Name:      secretName,
-			Namespace: resources.KubermaticNamespace,
+			Namespace: kubeOneNamespaceName,
 		},
 	}, nil
 }

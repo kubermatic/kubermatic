@@ -38,6 +38,11 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 		KubeOne: &kubermaticv1.ExternalClusterKubeOneCloudSpec{},
 	}
 
+	err = clusterProvider.CreateKubeOneClusterNamespace(ctx, newCluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
 	err = clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, cloud.KubeOne.SSHKey, newCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -56,5 +61,6 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 	}
 	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
+	newCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusProvisioning
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
