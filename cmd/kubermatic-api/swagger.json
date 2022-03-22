@@ -21054,6 +21054,18 @@
           "type": "boolean",
           "x-go-name": "KonnectivityEnabled"
         },
+        "nodeCidrMaskSizeIPv4": {
+          "description": "NodeCIDRMaskSizeIPv4 is the mask size used to address the nodes within provided IPv4 Pods CIDR.\nIt has to be larger than the provided IPv4 Pods CIDR. Defaults to 24.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSizeIPv4"
+        },
+        "nodeCidrMaskSizeIPv6": {
+          "description": "NodeCIDRMaskSizeIPv6 is the mask size used to address the nodes within provided IPv6 Pods CIDR.\nIt has to be larger than the provided IPv6 Pods CIDR. Defaults to 64.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSizeIPv6"
+        },
         "nodeLocalDNSCacheEnabled": {
           "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.\nDefaults to true.",
           "type": "boolean",

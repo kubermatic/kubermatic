@@ -1023,6 +1023,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"5.6.7.8/8"},
 				},
+				NodeCIDRMaskSizeIPv4: pointer.Int32(24),
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,

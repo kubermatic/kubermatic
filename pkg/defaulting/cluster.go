@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -123,47 +124,8 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		spec.CNIPlugin.Version = cni.GetDefaultCNIPluginVersion(spec.CNIPlugin.Type)
 	}
 
-	if len(spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		if spec.Cloud.Kubevirt != nil {
-			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
-			// thus we have to avoid network collision
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.241.0.0/20"}
-		} else {
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
-		}
-	}
-
-	if len(spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		if spec.Cloud.Kubevirt != nil {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.26.0.0/16"}
-		} else {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
-		}
-	}
-
-	if spec.ClusterNetwork.DNSDomain == "" {
-		spec.ClusterNetwork.DNSDomain = "cluster.local"
-	}
-
-	if spec.ClusterNetwork.ProxyMode == "" {
-		// IPVS causes issues with Hetzner's LoadBalancers, which should
-		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
-		if spec.Cloud.Hetzner != nil {
-			spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
-		} else {
-			spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
-		}
-	}
-
-	if spec.ClusterNetwork.IPVS != nil {
-		if spec.ClusterNetwork.IPVS.StrictArp == nil {
-			spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
-		}
-	}
-
-	if spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
-	}
+	// default cluster networking parameters
+	defaultClusterNetwork(spec)
 
 	// Always enable external CCM
 	if spec.Cloud.Anexia != nil || spec.Cloud.Kubevirt != nil {
@@ -210,4 +172,54 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 	}
 
 	return nil, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name")
+}
+
+func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
+	if len(spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		if spec.Cloud.Kubevirt != nil {
+			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+			// thus we have to avoid network collision
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.DefaultClusterServicesCIDRKubeVirt}
+		} else {
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.DefaultClusterServicesCIDR}
+		}
+	}
+	if len(spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
+		if spec.Cloud.Kubevirt != nil {
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.DefaultClusterPodsCIDRKubeVirt}
+		} else {
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.DefaultClusterPodsCIDR}
+		}
+	}
+
+	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && network.HasIPv4CIDR(spec.ClusterNetwork.Pods) {
+		spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv4)
+	}
+	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 == nil && network.HasIPv6CIDR(spec.ClusterNetwork.Pods) {
+		spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv6)
+	}
+
+	if spec.ClusterNetwork.ProxyMode == "" {
+		// IPVS causes issues with Hetzner's LoadBalancers, which should
+		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
+		if spec.Cloud.Hetzner != nil {
+			spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
+		} else {
+			spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
+		}
+	}
+
+	if spec.ClusterNetwork.IPVS != nil {
+		if spec.ClusterNetwork.IPVS.StrictArp == nil {
+			spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
+		}
+	}
+
+	if spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
+		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
+	}
+
+	if spec.ClusterNetwork.DNSDomain == "" {
+		spec.ClusterNetwork.DNSDomain = "cluster.local"
+	}
 }

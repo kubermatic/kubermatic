@@ -993,6 +993,16 @@ func (in *ClusterNetworkingConfig) DeepCopyInto(out *ClusterNetworkingConfig) {
 	*out = *in
 	in.Services.DeepCopyInto(&out.Services)
 	in.Pods.DeepCopyInto(&out.Pods)
+	if in.NodeCIDRMaskSizeIPv4 != nil {
+		in, out := &in.NodeCIDRMaskSizeIPv4, &out.NodeCIDRMaskSizeIPv4
+		*out = new(int32)
+		**out = **in
+	}
+	if in.NodeCIDRMaskSizeIPv6 != nil {
+		in, out := &in.NodeCIDRMaskSizeIPv6, &out.NodeCIDRMaskSizeIPv6
+		*out = new(int32)
+		**out = **in
+	}
 	if in.IPVS != nil {
 		in, out := &in.IPVS, &out.IPVS
 		*out = new(IPVSConfiguration)

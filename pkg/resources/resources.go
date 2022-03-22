@@ -802,6 +802,23 @@ const (
 	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
 )
 
+const (
+	// DefaultClusterPodsCIDR is the default network range from which POD networks are allocated.
+	DefaultClusterPodsCIDR = "172.25.0.0/16"
+	// DefaultClusterPodsCIDRKubeVirt is the default network range from which POD networks are allocated for KubeVirt clusters.
+	DefaultClusterPodsCIDRKubeVirt = "172.26.0.0/16"
+
+	// DefaultClusterServicesCIDR is the default network range from which service VIPs are allocated.
+	DefaultClusterServicesCIDR = "10.240.16.0/20"
+	// DefaultClusterServicesCIDRKubeVirt is the default network range from which service VIPs are allocated for KubeVirt clusters.
+	DefaultClusterServicesCIDRKubeVirt = "10.241.0.0/20"
+
+	// DefaultNodeCIDRMaskSizeIPv4 is the default mask size used to address the nodes within provided IPv4 Pods CIDR.
+	DefaultNodeCIDRMaskSizeIPv4 = 24
+	// DefaultNodeCIDRMaskSizeIPv6 is the default mask size used to address the nodes within provided IPv6 Pods CIDR.
+	DefaultNodeCIDRMaskSizeIPv6 = 64
+)
+
 // List of allowed TLS cipher suites.
 var allowedTLSCipherSuites = []string{
 	// TLS 1.3 cipher suites
@@ -1471,4 +1488,20 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 	s3Client.SetAppInfo("kubermatic", "v0.2")
 
 	return s3Client, bucketName, nil
+}
+
+// GetClusterNodeCIDRMaskSizeIPv4 returns effective mask size used to address the nodes within provided IPv4 Pods CIDR.
+func GetClusterNodeCIDRMaskSizeIPv4(cluster *kubermaticv1.Cluster) int32 {
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+		return *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4
+	}
+	return DefaultNodeCIDRMaskSizeIPv4
+}
+
+// GetClusterNodeCIDRMaskSizeIPv6 returns effective mask size used to address the nodes within provided IPv6 Pods CIDR.
+func GetClusterNodeCIDRMaskSizeIPv6(cluster *kubermaticv1.Cluster) int32 {
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+		return *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+	}
+	return DefaultNodeCIDRMaskSizeIPv6
 }
