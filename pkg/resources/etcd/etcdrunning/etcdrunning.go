@@ -39,8 +39,8 @@ func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 		Command: []string{
 			"/bin/sh",
 			"-ec",
-			// Write a key to etcd. If we have quorum it will succeed.
-			fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='%s' put kubermatic/quorum-check something; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
+			// Write a key to etcd. If we have quorum it will succeed. after 100 retries the script return an error
+			fmt.Sprintf("for i in $(seq 1 100); do if ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='%s' put kubermatic/quorum-check something; then echo \"etcd ready\"; exit 0; fi; echo \"waiting for etcd. retry=$i/100\"; sleep 2; done; echo \"error: etcd not ready\"; exit 1;", strings.Join(etcdEndpoints, ",")),
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
