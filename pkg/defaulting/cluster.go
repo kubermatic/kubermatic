@@ -157,7 +157,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	if spec.ClusterNetwork.IPVS != nil {
 		if spec.ClusterNetwork.IPVS.StrictArp == nil {
-			spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
+			spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
 		}
 	}
 

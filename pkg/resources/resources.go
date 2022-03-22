@@ -447,9 +447,6 @@ const (
 	// EBPFProxyMode defines the eBPF proxy mode (disables kube-proxy and requires CNI support).
 	EBPFProxyMode = "ebpf"
 
-	// IPVSStrictArp defines IPVS configuration strictArp setting.
-	IPVSStrictArp = true
-
 	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin.
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 

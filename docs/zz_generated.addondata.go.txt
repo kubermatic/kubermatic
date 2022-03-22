@@ -83,7 +83,7 @@ type ClusterNetwork struct {
 	PodCIDRBlocks     []string
 	ServiceCIDRBlocks []string
 	ProxyMode         string
-	StrictArp         bool
+	StrictArp         *bool
 }
 
 type CNIPlugin struct {
