@@ -110,6 +110,7 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 }
 
 // DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API.
+// In addition, it sets default PodSpec values that KKP requires in all workloads, for example appropriate security settings.
 func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, error) {
 	// make sure to keep the old procmount types in case a creator overrides the entire PodSpec
 	initContainerProcMountType := map[string]*corev1.ProcMountType{}
@@ -139,6 +140,22 @@ func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, erro
 		}
 		if vol.VolumeSource.ConfigMap != nil && vol.VolumeSource.ConfigMap.DefaultMode == nil {
 			newPodSpec.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
+		}
+	}
+
+	// set KKP specific defaults for every Pod created by it
+
+	if newPodSpec.SecurityContext == nil {
+		newPodSpec.SecurityContext = &corev1.PodSecurityContext{
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+		}
+	}
+
+	if newPodSpec.SecurityContext != nil && newPodSpec.SecurityContext.SeccompProfile == nil {
+		newPodSpec.SecurityContext.SeccompProfile = &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		}
 	}
 
