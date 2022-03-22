@@ -486,6 +486,11 @@ func TestDefaultDeployment(t *testing.T) {
 			},
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							ImagePullPolicy:          corev1.PullIfNotPresent,
@@ -554,6 +559,11 @@ func TestDefaultStatefulSet(t *testing.T) {
 		Spec: appsv1.StatefulSetSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							ImagePullPolicy:          corev1.PullIfNotPresent,
@@ -622,6 +632,11 @@ func TestDefaultDaemonSet(t *testing.T) {
 		Spec: appsv1.DaemonSetSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							ImagePullPolicy:          corev1.PullIfNotPresent,
@@ -696,6 +711,11 @@ func TestDefaultCronJob(t *testing.T) {
 				Spec: batchv1.JobSpec{
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
+							SecurityContext: &corev1.PodSecurityContext{
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeRuntimeDefault,
+								},
+							},
 							Containers: []corev1.Container{
 								{
 									ImagePullPolicy:          corev1.PullIfNotPresent,
