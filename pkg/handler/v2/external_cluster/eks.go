@@ -339,13 +339,13 @@ func DecodeEKSReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func createNewEKSCluster(ctx context.Context, eksCloudSpec *apiv2.EKSCloudSpec) error {
+func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSpec, eksCloudSpec *apiv2.EKSCloudSpec) error {
 	client, err := awsprovider.GetClientSet(eksCloudSpec.AccessKeyID, eksCloudSpec.SecretAccessKey, "", "", eksCloudSpec.Region)
 	if err != nil {
 		return err
 	}
 
-	clusterSpec := eksCloudSpec.ClusterSpec
+	clusterSpec := eksClusterSpec
 
 	fields := reflect.ValueOf(clusterSpec).Elem()
 	for i := 0; i < fields.NumField(); i++ {
@@ -372,7 +372,7 @@ func createNewEKSCluster(ctx context.Context, eksCloudSpec *apiv2.EKSCloudSpec) 
 	return nil
 }
 
-func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
 	fields := reflect.ValueOf(cloud.EKS).Elem()
 	for i := 0; i < fields.NumField(); i++ {
 		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
@@ -381,8 +381,8 @@ func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter p
 		}
 	}
 
-	if cloud.EKS.ClusterSpec != nil {
-		if err := createNewEKSCluster(ctx, cloud.EKS); err != nil {
+	if spec != nil && spec.EKSClusterSpec != nil {
+		if err := createNewEKSCluster(ctx, spec.EKSClusterSpec, cloud.EKS); err != nil {
 			return nil, err
 		}
 	}
@@ -873,7 +873,7 @@ func getEKSClusterDetails(ctx context.Context, apiCluster *apiv2.ExternalCluster
 		}
 	}
 
-	apiCluster.Cloud.EKS.ClusterSpec = clusterSpec
+	apiCluster.Spec.EKSClusterSpec = clusterSpec
 	return apiCluster, nil
 }
 

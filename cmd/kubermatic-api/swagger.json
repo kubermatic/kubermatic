@@ -18974,9 +18974,6 @@
           "type": "string",
           "x-go-name": "ClientSecret"
         },
-        "clusterSpec": {
-          "$ref": "#/definitions/AKSClusterSpec"
-        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -22315,9 +22312,6 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
-        "clusterSpec": {
-          "$ref": "#/definitions/EKSClusterSpec"
-        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -23086,6 +23080,15 @@
       "type": "object",
       "title": "ExternalClusterSpec defines the external cluster specification.",
       "properties": {
+        "aksclusterSpec": {
+          "$ref": "#/definitions/AKSClusterSpec"
+        },
+        "eksclusterSpec": {
+          "$ref": "#/definitions/EKSClusterSpec"
+        },
+        "gkeclusterSpec": {
+          "$ref": "#/definitions/GKEClusterSpec"
+        },
         "version": {
           "$ref": "#/definitions/Semver"
         }
@@ -23524,9 +23527,6 @@
     "GKECloudSpec": {
       "type": "object",
       "properties": {
-        "clusterSpec": {
-          "$ref": "#/definitions/GKEClusterSpec"
-        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -28521,6 +28521,9 @@
           "description": "Name is human readable name for the external cluster",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ExternalClusterSpec"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"

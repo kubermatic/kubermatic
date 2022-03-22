@@ -26,6 +26,9 @@ type Body struct {
 
 	// cloud
 	Cloud *ExternalClusterCloudSpec `json:"cloud,omitempty"`
+
+	// spec
+	Spec *ExternalClusterSpec `json:"spec,omitempty"`
 }
 
 // Validate validates this body
@@ -33,6 +36,10 @@ func (m *Body) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCloud(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSpec(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -59,11 +66,32 @@ func (m *Body) validateCloud(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *Body) validateSpec(formats strfmt.Registry) error {
+	if swag.IsZero(m.Spec) { // not required
+		return nil
+	}
+
+	if m.Spec != nil {
+		if err := m.Spec.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this body based on the context it is used
 func (m *Body) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCloud(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSpec(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -79,6 +107,20 @@ func (m *Body) contextValidateCloud(ctx context.Context, formats strfmt.Registry
 		if err := m.Cloud.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Body) contextValidateSpec(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Spec != nil {
+		if err := m.Spec.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("spec")
 			}
 			return err
 		}

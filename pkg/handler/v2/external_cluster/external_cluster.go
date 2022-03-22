@@ -72,6 +72,7 @@ type body struct {
 	// Kubeconfig Base64 encoded kubeconfig
 	Kubeconfig string                          `json:"kubeconfig,omitempty"`
 	Cloud      *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
+	Spec       *apiv2.ExternalClusterSpec      `json:"spec,omitempty"`
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -174,6 +175,7 @@ func CreateEndpoint(
 		}
 
 		cloud := req.Body.Cloud
+		spec := req.Body.Spec
 
 		// connect cluster by kubeconfig
 		if cloud == nil {
@@ -219,7 +221,7 @@ func CreateEndpoint(
 					req.Body.Cloud.GKE.ServiceAccount = credentials.ServiceAccount
 				}
 			}
-			createdCluster, err := createOrImportGKECluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportGKECluster(ctx, req.Body.Name, userInfoGetter, project, spec, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -236,7 +238,7 @@ func CreateEndpoint(
 				}
 			}
 
-			createdCluster, err := createOrImportEKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportEKSCluster(ctx, req.Body.Name, userInfoGetter, project, spec, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -256,7 +258,7 @@ func CreateEndpoint(
 				}
 			}
 
-			createdCluster, err := createOrImportAKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportAKSCluster(ctx, req.Body.Name, userInfoGetter, project, spec, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
