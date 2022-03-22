@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package applicationinstallercontroller contains a controller that is responsible for reconcile ApplicationInstallation
+Package applicationinstallationcontroller contains a controller that is responsible for reconcile ApplicationInstallation
 (ie install, update or uninstall applications)
 */
-package applicationinstallercontroller
+package applicationinstallationcontroller

@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package applicationinstallercontroller
+package applicationinstallationcontroller
 
 import (
 	"context"
@@ -41,7 +41,7 @@ var ctx context.Context
 var cancel context.CancelFunc
 var applicationInstallerRecorder fake.ApplicationInstallerRecorder
 
-func TestApplicationInstallerController(t *testing.T) {
+func TestApplicationInstallationController(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "Application Intaller controller test suite")
