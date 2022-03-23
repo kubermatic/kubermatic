@@ -619,7 +619,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	}
 
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider {
-		creators = append(creators, csisnaphotter.ValidatingSnapshotWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -781,7 +781,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	if data.csiCloudConfig != nil {
 		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
 			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName),
-				csisnaphotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
+				csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
 			if data.ccmMigration {
 				creators = append(creators, csimigration.TLSServingCertificateCreator(data.caCert))
 			}
@@ -789,7 +789,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
 			creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
-				csisnaphotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
+				csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
 		}
 	}
 
