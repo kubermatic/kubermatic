@@ -1,7 +1,7 @@
-//go:build !ee
+//go:build ee
 
 /*
-Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,18 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package metering
+package seed
 
 import (
-	"context"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"testing"
 )
 
-// ReconcileMeteringResources reconciles the metering related resources.
-func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _ *runtime.Scheme, _ *kubermaticv1.KubermaticConfiguration, _ *kubermaticv1.Seed) error {
-	return nil
+func TestBasicReconcilingEE(t *testing.T) {
+	testBasicReconciling(t, enterpriseEdition)
 }

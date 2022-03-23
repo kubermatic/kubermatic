@@ -25172,18 +25172,13 @@
           "type": "boolean",
           "x-go-name": "Enabled"
         },
-        "interval": {
-          "description": "Interval defines the number of days consulted in the metering report.\n+kubebuilder:default=7",
-          "type": "integer",
-          "format": "int64",
-          "minimum": 1,
-          "x-go-name": "Interval"
-        },
-        "schedule": {
-          "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
-          "type": "string",
-          "default": "=`0 1 * * 6`",
-          "x-go-name": "Schedule"
+        "reports": {
+          "description": "ReportConfigurations is a map of report configuration definitions.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MeteringReportConfiguration"
+          },
+          "x-go-name": "ReportConfigurations"
         },
         "storageClassName": {
           "description": "StorageClassName is the name of the storage class that the metering tool uses to save processed files before\nexporting it to s3 bucket. Default value is kubermatic-fast.",
@@ -25218,6 +25213,23 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "MeteringReportConfiguration": {
+      "type": "object",
+      "properties": {
+        "interval": {
+          "description": "Interval defines the number of days consulted in the metering report.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Interval"
+        },
+        "schedule": {
+          "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
+          "type": "string",
+          "x-go-name": "Schedule"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "MeteringReportURL": {
       "description": "ReportURL represent an S3 pre signed URL to download a report",

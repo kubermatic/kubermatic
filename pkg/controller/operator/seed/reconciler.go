@@ -311,7 +311,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
 
-	if err := metering.ReconcileMeteringResources(ctx, client, cfg, seed); err != nil {
+	if err := metering.ReconcileMeteringResources(ctx, client, r.scheme, cfg, seed); err != nil {
 		return err
 	}
 
