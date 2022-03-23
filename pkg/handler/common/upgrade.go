@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -151,4 +152,32 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []c
 		}
 	}
 	return false, nil
+}
+
+func GetKubeOneUpgradesEndpoint(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster, v string, configGetter provider.KubermaticConfigurationGetter) (interface{}, error) {
+	providerName := externalCluster.Spec.CloudSpec.KubeOne.ProviderName
+	providerType := kubermaticv1.ProviderType(providerName)
+	if providerName == resources.KubeOneEquinix {
+		providerType = kubermaticv1.PacketCloudProvider
+	}
+
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	versionManager := version.NewFromConfiguration(config)
+
+	versions, err := versionManager.GetKubeOnePossibleUpdates(v, apiv1.KubernetesClusterType, providerType)
+	if err != nil {
+		return nil, err
+	}
+	upgrades := make([]*apiv1.MasterVersion, 0)
+	for _, v := range versions {
+		upgrades = append(upgrades, &apiv1.MasterVersion{
+			Version: v.Version,
+		})
+	}
+
+	return upgrades, nil
 }
