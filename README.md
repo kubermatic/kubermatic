@@ -73,7 +73,7 @@ Thanks for taking the time to join our community and start contributing!
 ### Development environment
 
 ```bash
-git clone git@github.com:kubermatic/kubermatic
+git clone git@github.com:kubermatic/kubermatic.git
 cd kubermatic
 ```
 
