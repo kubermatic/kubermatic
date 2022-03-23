@@ -147,6 +147,10 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+
+nginx:
+  controller:
+    replicaCount: 1
 EOF
 
 # append custom Dex configuration

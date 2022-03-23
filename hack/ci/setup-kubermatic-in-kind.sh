@@ -153,6 +153,10 @@ minio:
   credentials:
     accessKey: test
     secretKey: testtest
+
+nginx:
+  controller:
+    replicaCount: 1
 EOF
 
 # append custom Dex configuration
