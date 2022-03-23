@@ -817,8 +817,6 @@ func ValidateCredentials(authURL, region string, credentials *resources.Openstac
 		return err
 	}
 	_, err = getAvailabilityZones(computeClient)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }

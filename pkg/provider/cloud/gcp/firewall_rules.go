@@ -126,25 +126,16 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 		},
 	}
 	if cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange != "" {
-		err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
+		return createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
 			allowedProtocols, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
-		if err != nil {
-			return err
-		}
 	} else {
 		if ipv4Rules {
-			err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
+			return createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
 				allowedProtocols, "0.0.0.0/0", update, cluster, firewallNodePortCleanupFinalizer)
-			if err != nil {
-				return err
-			}
 		}
 		if ipv6Rules {
-			err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortIPv6RuleName, tag, "",
+			return createOrPatchFirewall(ctx, firewallService, projectID, nodePortIPv6RuleName, tag, "",
 				allowedProtocols, "::/0", update, cluster, firewallNodePortCleanupFinalizer)
-			if err != nil {
-				return err
-			}
 		}
 	}
 

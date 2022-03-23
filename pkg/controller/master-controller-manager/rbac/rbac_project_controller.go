@@ -74,19 +74,9 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 	}
 
 	// Watch for changes to Projects
-	err = cc.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, workerPredicate)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cc.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, workerPredicate)
 }
 
 func (c *projectController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	err := c.sync(ctx, req.NamespacedName)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, c.sync(ctx, req.NamespacedName)
 }

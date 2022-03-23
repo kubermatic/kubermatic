@@ -15,5 +15,5 @@
 FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-RUN apk add -u iptables
+RUN apk add -u --no-cache iptables
 COPY ./_build/kubeletdnat-controller /usr/local/bin/kubeletdnat-controller

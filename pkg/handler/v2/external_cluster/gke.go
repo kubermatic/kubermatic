@@ -585,11 +585,8 @@ func createNewGKECluster(ctx context.Context, gkeClusterSpec *apiv2.GKEClusterSp
 
 	req := svc.Projects.Zones.Clusters.Create(project, gkeCloudSpec.Zone, createRequest)
 	_, err = req.Context(ctx).Do()
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func genGKECluster(gkeClusterSpec *apiv2.GKEClusterSpec, gkeCloudSpec *apiv2.GKECloudSpec) *container.Cluster {

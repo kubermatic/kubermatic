@@ -46,11 +46,7 @@ func Add(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to UserProjectBinding
-	err = c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{})
 }
 
 // reconcileSyncProjectBinding reconciles UserProjectBinding objects.
