@@ -31,6 +31,9 @@ spec:
     - jsonPath: .spec.cloud.dc
       name: Datacenter
       type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
     - jsonPath: .spec.pause
       name: Paused
       type: boolean
@@ -1978,6 +1981,17 @@ spec:
               namespaceName:
                 description: NamespaceName defines the namespace the control plane
                   of this cluster is deployed in
+                type: string
+              phase:
+                description: Phase is a description of the current cluster status,
+                  summarizing the various conditions, possible active updates etc.
+                  This field is for informational purpose only and no logic should
+                  be tied to the phase.
+                enum:
+                - Creating
+                - Updating
+                - Running
+                - Terminating
                 type: string
               userEmail:
                 description: UserEmail contains the email of the owner of this cluster

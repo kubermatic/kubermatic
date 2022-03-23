@@ -85,6 +85,7 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
@@ -336,6 +337,18 @@ type ClusterCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Creating;Updating;Running;Terminating
+
+type ClusterPhase string
+
+// These are the valid phases of a project.
+const (
+	ClusterCreating    ClusterPhase = "Creating"
+	ClusterUpdating    ClusterPhase = "Updating"
+	ClusterRunning     ClusterPhase = "Running"
+	ClusterTerminating ClusterPhase = "Terminating"
+)
+
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	// +optional
@@ -376,6 +389,11 @@ type ClusterStatus struct {
 	// controllers and the API
 	// +optional
 	Conditions map[ClusterConditionType]ClusterCondition `json:"conditions,omitempty"`
+	// Phase is a description of the current cluster status, summarizing the various conditions,
+	// possible active updates etc. This field is for informational purpose only and no logic
+	// should be tied to the phase.
+	// +optional
+	Phase ClusterPhase `json:"phase,omitempty"`
 
 	// CloudMigrationRevision describes the latest version of the migration that has been done
 	// It is used to avoid redundant and potentially costly migrations
