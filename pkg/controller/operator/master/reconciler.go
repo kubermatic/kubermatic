@@ -390,6 +390,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(config, r.Client),
 		common.KubermaticConfigurationAdmissionWebhookCreator(config, r.Client),
+		kubermatic.ProjectAdmissionWebhookCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {

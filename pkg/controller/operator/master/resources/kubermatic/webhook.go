@@ -85,3 +85,57 @@ func UserSSHKeyMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticC
 		}
 	}
 }
+
+func ProjectAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+		return common.ProjectAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.AllScopes
+
+			ca, err := common.WebhookCABundle(cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find webhhook CA bundle: %w", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    "projects.kubermatic.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32Ptr(10),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: ca,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      common.WebhookServiceName,
+							Namespace: cfg.Namespace,
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-project"),
+							Port:      pointer.Int32Ptr(443),
+						},
+					},
+					NamespaceSelector: &metav1.LabelSelector{},
+					ObjectSelector:    &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{kubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"projects"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+					},
+				},
+			}
+
+			return hook, nil
+		}
+	}
+}
