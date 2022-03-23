@@ -41,6 +41,13 @@ import (
 func cronJobCreator(seedName, reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return reportName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+			labels := job.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			labels[MeteringLabelKey] = reportName
+			job.SetLabels(labels)
+
 			job.Spec.Schedule = mrc.Schedule
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = meteringToolName

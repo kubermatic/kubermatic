@@ -480,6 +480,73 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				return fmt.Errorf("failed to remove an orpahned reporting cron job")
 			},
 		},
+
+		{
+			name:            "when disabling metering configuration",
+			seedToReconcile: "seed-with-metering-config",
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"seed-with-metering-config"},
+			syncedSeeds:     sets.NewString("seed-with-metering-config"),
+			assertion: func(test *testcase, reconciler *Reconciler) error {
+				// this test is supported only for enterprise edition of Kubermatic
+				if edition == communityEdition {
+					return nil
+				}
+
+				ctx := context.Background()
+
+				// reconciling to the initial state
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+					return fmt.Errorf("reconciliation failed: %w", err)
+				}
+
+				seedClient := reconciler.seedClients[test.seedToReconcile]
+
+				// asserting that reporting cron job exists
+				cronJob := batchv1beta.CronJob{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
+
+				// asserting that metering deployment exists
+				deployment := appsv1.Deployment{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{
+					Namespace: "kubermatic",
+					Name:      "kubermatic-metering",
+				}, &deployment))
+
+				seed := &kubermaticv1.Seed{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: test.seedToReconcile}, seed))
+
+				// removing reports from metering configuration
+				seed.Spec.Metering.Enabled = false
+				must(t, seedClient.Update(ctx, seed))
+
+				// letting the controller clean up
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+					return fmt.Errorf("reconciliation failed: %w", err)
+				}
+
+				// asserting that reporting cron job is gone
+				if err := seedClient.Get(ctx, types.NamespacedName{
+					Namespace: "kubermatic",
+					Name:      "weekly-test",
+				}, &cronJob); err != nil {
+					if !kerrors.IsNotFound(err) {
+						return fmt.Errorf("failed to remove reporting cron jobs")
+					}
+				}
+
+				if err := seedClient.Get(ctx, types.NamespacedName{
+					Namespace: "kubermatic",
+					Name:      "kubermatic-metering",
+				}, &deployment); err != nil {
+					if !kerrors.IsNotFound(err) {
+						return fmt.Errorf("failed to remove metering deployment")
+					}
+				}
+
+				return nil
+			},
+		},
 	}
 
 	for _, test := range tests {

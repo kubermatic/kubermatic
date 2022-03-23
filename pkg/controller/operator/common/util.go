@@ -145,37 +145,6 @@ func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) recon
 	}
 }
 
-// LabelModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator and takes care of applying labels.
-func LabelModifierFactory(incomingLabels map[string]string, overwriteExisting bool) reconciling.ObjectModifier {
-	return func(creator reconciling.ObjectCreator) reconciling.ObjectCreator {
-		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-			obj, err := creator(existing)
-			if err != nil {
-				return nil, err
-			}
-			o, ok := obj.(metav1.Object)
-			if !ok {
-				return obj, nil
-			}
-			labels := o.GetLabels()
-			if labels == nil {
-				labels = make(map[string]string)
-			}
-			for key, val := range incomingLabels {
-				if overwriteExisting {
-					labels[key] = val
-					continue
-				}
-				if _, exists := labels[key]; !exists {
-					labels[key] = val
-				}
-			}
-			o.SetLabels(labels)
-			return obj, nil
-		}
-	}
-}
-
 // VolumeRevisionLabelsModifierFactory scans volume mounts for pod templates for ConfigMaps
 // and Secrets and will then put new labels for these mounts onto the pod template, causing
 // restarts when the volumes changed.

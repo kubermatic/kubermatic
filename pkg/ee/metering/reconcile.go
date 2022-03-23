@@ -44,7 +44,7 @@ import (
 )
 
 var (
-	RelatedToLabel = "app.kubernetes.io/related-to"
+	MeteringLabelKey = "kubermatic-metering"
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
@@ -82,7 +82,6 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	modifiers := []reconciling.ObjectModifier{
 		common.VolumeRevisionLabelsModifierFactory(ctx, client),
 		common.OwnershipModifierFactory(seed, scheme),
-		common.LabelModifierFactory(map[string]string{RelatedToLabel: seed.Name}, false),
 	}
 
 	if err := reconcileMeteringReports(ctx, client, seed, overwriter, modifiers...); err != nil {
@@ -99,13 +98,17 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 }
 
 func reconcileMeteringReports(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
-	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations, seed.Name); err != nil {
+	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
-		if err := reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{
-			cronJobCreator(seed.Name, reportName, reportConf, overwriter),
-		}, resources.KubermaticNamespace, client, modifiers...); err != nil {
+		if err := reconciling.ReconcileCronJobs(
+			ctx,
+			[]reconciling.NamedCronJobCreatorGetter{cronJobCreator(seed.Name, reportName, reportConf, overwriter)},
+			resources.KubermaticNamespace,
+			client,
+			modifiers...,
+		); err != nil {
 			return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
 		}
 	}
@@ -113,16 +116,10 @@ func reconcileMeteringReports(ctx context.Context, client ctrlruntimeclient.Clie
 }
 
 // cleanupOrphanedReportingCronJobs compares defined metering reports with existing reporting cronjobs and removes cronjobs with missing report configuration.
-func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, activeReports map[string]*kubermaticv1.MeteringReportConfiguration, seedName string) error {
-	var existingReportingCronJobs batchv1beta1.CronJobList
-	listOpts := []ctrlruntimeclient.ListOption{
-		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
-		ctrlruntimeclient.ListOption(ctrlruntimeclient.MatchingLabels{RelatedToLabel: seedName}),
-	}
-	if err := client.List(ctx, &existingReportingCronJobs, listOpts...); err != nil {
-		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to list reporting cronjobs: %w", err)
-		}
+func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, activeReports map[string]*kubermaticv1.MeteringReportConfiguration) error {
+	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client)
+	if err != nil {
+		return err
 	}
 
 	existingReportingCronJobNamedMap := make(map[string]batchv1beta1.CronJob, len(existingReportingCronJobs.Items))
@@ -152,16 +149,34 @@ func cleanupAllMeteringResources(ctx context.Context, client ctrlruntimeclient.C
 		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
 	}
 
-	if meteringConfig != nil {
-		for reportName := range meteringConfig.ReportConfigurations {
-			key.Name = reportName
-			if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
-				return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
-			}
+	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client)
+	if err != nil {
+		return err
+	}
+
+	for _, cronJob := range existingReportingCronJobs.Items {
+		key = types.NamespacedName{Namespace: cronJob.Namespace, Name: cronJob.Name}
+		if err := cleanupResource(ctx, client, key, &batchv1beta1.CronJob{}); err != nil {
+			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
 		}
 	}
 
 	return nil
+}
+
+// fetchExistingReportingCronJobs returns a list of all existing reporting cronjobs.
+func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client) (*batchv1beta1.CronJobList, error) {
+	existingReportingCronJobs := &batchv1beta1.CronJobList{}
+	listOpts := []ctrlruntimeclient.ListOption{
+		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
+		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{MeteringLabelKey}),
+	}
+	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to list reporting cronjobs: %w", err)
+		}
+	}
+	return existingReportingCronJobs, nil
 }
 
 func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key types.NamespacedName, obj ctrlruntimeclient.Object) error {
