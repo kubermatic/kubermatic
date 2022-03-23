@@ -8541,6 +8541,7 @@
           {
             "type": "string",
             "x-go-name": "Type",
+            "description": "Type is deprecated and not used anymore.",
             "name": "type",
             "in": "query"
           },
@@ -18533,6 +18534,7 @@
           {
             "type": "string",
             "x-go-name": "Type",
+            "description": "Type is deprecated and not used anymore.",
             "name": "type",
             "in": "query"
           }
@@ -20960,6 +20962,7 @@
           "$ref": "#/definitions/ClusterStatus"
         },
         "type": {
+          "description": "Type is deprecated and not used anymore.",
           "type": "string",
           "x-go-name": "Type"
         }

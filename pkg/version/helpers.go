@@ -21,19 +21,18 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 func IsSupported(version *semver.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
-	return checkProviderCompatibility(version, provider, v1.KubernetesClusterType, kubermaticv1.SupportOperation, incompatibilities, conditions...)
+	return checkProviderCompatibility(version, provider, kubermaticv1.SupportOperation, incompatibilities, conditions...)
 }
 
-func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, clusterType string, operation kubermaticv1.OperationType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
+func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, operation kubermaticv1.OperationType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
 	var compatible = true
 	var err error
 	for _, pi := range incompatibilities {
-		if pi.Provider == provider && pi.Type == clusterType && operation == pi.Operation {
+		if pi.Provider == provider && operation == pi.Operation {
 			if pi.Condition == kubermaticv1.AlwaysCondition {
 				compatible, err = CheckUnconstrained(version, pi.Version)
 				if err != nil {

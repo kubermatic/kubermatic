@@ -77,7 +77,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 
 	versionManager := version.NewFromConfiguration(config)
 
-	versions, err := versionManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType, kubermaticv1.ProviderType(providerName), updateConditions...)
+	versions, err := versionManager.GetPossibleUpdates(cluster.Spec.Version.String(), kubermaticv1.ProviderType(providerName), updateConditions...)
 	if err != nil {
 		return nil, err
 	}

@@ -62,7 +62,10 @@ type ListVersionsByProviderParams struct {
 	// ProviderName.
 	ProviderName string
 
-	// Type.
+	/* Type.
+
+	   Type is deprecated and not used anymore.
+	*/
 	Type *string
 
 	timeout    time.Duration

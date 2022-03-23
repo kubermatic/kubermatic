@@ -790,10 +790,11 @@ type Cluster struct {
 	ObjectMeta      `json:",inline"`
 	Labels          map[string]string `json:"labels,omitempty"`
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
-	Type            string            `json:"type"`
-	Credential      string            `json:"credential,omitempty"`
-	Spec            ClusterSpec       `json:"spec"`
-	Status          ClusterStatus     `json:"status"`
+	// Type is deprecated and not used anymore.
+	Type       string        `json:"type"`
+	Credential string        `json:"credential,omitempty"`
+	Spec       ClusterSpec   `json:"spec"`
+	Status     ClusterStatus `json:"status"`
 }
 
 // ClusterSpec defines the cluster specification.
