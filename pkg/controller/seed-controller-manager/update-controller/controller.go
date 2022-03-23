@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
@@ -492,7 +491,7 @@ func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.Kubermati
 	// enough versions and updates are configured to go from 1.20 to 1.23, only
 	// 1 level of updates is applied, so effectively only 1.20 and 1.21 versions
 	// will be returned.
-	versions, err := updateManager.GetPossibleUpdates(currentVersion.String(), apiv1.KubernetesClusterType, kubermaticv1.ProviderType(cluster.Spec.Cloud.ProviderName), updateConditions...)
+	versions, err := updateManager.GetPossibleUpdates(currentVersion.String(), kubermaticv1.ProviderType(cluster.Spec.Cloud.ProviderName), updateConditions...)
 	if err != nil {
 		return nil, err
 	}
