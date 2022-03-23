@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -268,4 +269,21 @@ func ContainerFromString(containerSpec string) (*corev1.Container, error) {
 	}
 
 	return container, nil
+}
+
+func SortOwnerReferences(refs []metav1.OwnerReference) {
+	sort.Slice(refs, func(i, j int) bool {
+		refA := refs[i]
+		refB := refs[j]
+
+		if refA.APIVersion != refB.APIVersion {
+			return refA.APIVersion < refB.APIVersion
+		}
+
+		if refA.Kind != refB.Kind {
+			return refA.Kind < refB.Kind
+		}
+
+		return refA.Name < refB.Name
+	})
 }

@@ -22,6 +22,9 @@ spec:
     - jsonPath: .spec.owner
       name: Owner
       type: string
+    - jsonPath: .spec.project
+      name: Project
+      type: string
     - jsonPath: .spec.fingerprint
       name: Fingerprint
       type: string
@@ -48,22 +51,35 @@ spec:
           spec:
             properties:
               clusters:
+                description: Clusters is the list of cluster names that this SSH key
+                  is assigned to.
                 items:
                   type: string
                 type: array
               fingerprint:
+                description: Fingerprint is calculated on the server-side and doesn't
+                  need to be set by clients.
                 type: string
               name:
+                description: Name is the human readable name for this SSH key.
                 type: string
               owner:
+                description: Owner is the name of the User object that owns this SSH
+                  key. This field is immutable.
+                type: string
+              project:
+                description: Project is the name of the Project object that this SSH
+                  key belongs to. This field is immutable.
                 type: string
               publicKey:
+                description: PublicKey is the SSH public key.
                 type: string
             required:
             - clusters
             - fingerprint
             - name
             - owner
+            - project
             - publicKey
             type: object
         type: object
