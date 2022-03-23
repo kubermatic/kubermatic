@@ -749,32 +749,18 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-abc-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
@@ -798,32 +784,18 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-abc-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
@@ -1779,33 +1751,19 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-abc-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
 						Name:     "key-display-name",
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
@@ -1832,33 +1790,19 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-abc-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
 						Name:     "key-display-name",
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
@@ -1885,33 +1829,19 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-abc-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
 						Name:     "key-display-name",
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{"clusterAbcID"},
 					},
 				},
@@ -1974,16 +1904,9 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{test.GenDefaultCluster().Name},
 					},
 				},
@@ -2007,14 +1930,9 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       "differentProject",
-							},
-						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Project: "differentProject",
 					},
 				},
 			),
@@ -2037,16 +1955,9 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{test.GenDefaultCluster().Name},
 					},
 				},
@@ -2070,16 +1981,9 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.SSHKeySpec{
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{test.GenDefaultCluster().Name},
 					},
 				},
@@ -2161,37 +2065,23 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 				// add ssh keys
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
+						Name:              "key-c08aa5c7abf34504f18552846485267d-yafn",
 						CreationTimestamp: metav1.NewTime(creationTime),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
 						Name:     "yafn",
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{test.GenDefaultCluster().Name},
 					},
 				},
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "key-abc-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
+						Name:              "key-abc-yafn",
 						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
 					},
 					Spec: kubermaticv1.SSHKeySpec{
 						Name:     "abcd",
+						Project:  test.GenDefaultProject().Name,
 						Clusters: []string{test.GenDefaultCluster().Name},
 					},
 				},
