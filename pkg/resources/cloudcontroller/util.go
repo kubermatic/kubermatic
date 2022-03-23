@@ -49,7 +49,11 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		return cluster.Spec.Cloud.Hetzner.Network != "" || dc.Spec.Hetzner.Network != ""
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Status.Versions.ControlPlane.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		v := cluster.Status.Versions.ControlPlane
+		if v == "" {
+			v = cluster.Spec.Version
+		}
+		supported, err := version.IsSupported(v.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}
