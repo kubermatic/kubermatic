@@ -168,7 +168,7 @@ func GetKubeOneUpgradesEndpoint(ctx context.Context, externalCluster *kubermatic
 
 	versionManager := version.NewFromConfiguration(config)
 
-	versions, err := versionManager.GetKubeOnePossibleUpdates(v, apiv1.KubernetesClusterType, providerType)
+	versions, err := versionManager.GetKubeOnePossibleUpdates(v, providerType)
 	if err != nil {
 		return nil, err
 	}
