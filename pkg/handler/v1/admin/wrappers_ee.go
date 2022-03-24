@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -39,6 +40,42 @@ func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, e
 
 func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
+}
+
+func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*kubermaticv1.MeteringReportConfiguration, error) {
+	return metering.GetMeteringReportConfiguration(seedsGetter, request)
+}
+
+func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) (*v1.MeteringReportConfigurations, error) {
+	return metering.ListMeteringReportConfigurations(seedsGetter)
+}
+
+func createMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return metering.CreateMeteringReportConfiguration(ctx, request, masterClient)
+}
+
+func updateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return metering.UpdateMeteringReportConfiguration(ctx, request, masterClient)
+}
+
+func deleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return metering.DeleteMeteringReportConfiguration(ctx, request, masterClient)
+}
+
+func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeGetMeteringReportConfigurationReq(r)
+}
+
+func DecodeCreateMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeCreateMeteringReportConfigurationReq(r)
+}
+
+func DecodeUpdateMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeUpdateMeteringReportConfigurationReq(r)
+}
+
+func DecodeDeleteMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeDeleteMeteringReportConfigurationReq(r)
 }
 
 func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {

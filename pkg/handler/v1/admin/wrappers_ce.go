@@ -40,11 +40,31 @@ func createOrUpdateMeteringConfigurations(ctx context.Context, request interface
 	return nil
 }
 
+func listMeteringReportConfigurations(ctx context.Context, request interface{}, masterClient client.Client) (*v1.MeteringReportConfigurations, error) {
+	return nil, nil
+}
+
 func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }
 
-func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func getMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) (*kubermaticv1.MeteringReportConfiguration, error) {
+	return nil, nil
+}
+
+func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func listMeteringReports(ctx context.Context, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+	return nil, nil
+}
+
+func createMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return nil
+}
+
+func DecodeCreateMeteringConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }
 

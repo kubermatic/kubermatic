@@ -50,6 +50,8 @@ type ClientService interface {
 
 	ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAdmissionPluginsOK, error)
 
+	ListMeteringReportConfigurations(params *ListMeteringReportConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMeteringReportConfigurationsOK, error)
+
 	ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSeedsOK, error)
 
 	PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchKubermaticSettingsOK, error)
@@ -478,6 +480,44 @@ func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAdmissionPluginsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListMeteringReportConfigurations List report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition
+*/
+func (a *Client) ListMeteringReportConfigurations(params *ListMeteringReportConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMeteringReportConfigurationsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListMeteringReportConfigurationsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listMeteringReportConfigurations",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListMeteringReportConfigurationsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListMeteringReportConfigurationsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListMeteringReportConfigurationsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

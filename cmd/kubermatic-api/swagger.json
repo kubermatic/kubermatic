@@ -436,6 +436,38 @@
         }
       }
     },
+    "/api/v1/admin/metering/configurations/reports": {
+      "get": {
+        "description": "List report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listMeteringReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "MeteringReportConfigurations",
+            "schema": {
+              "$ref": "#/definitions/MeteringReportConfigurations"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/metering/credentials": {
       "put": {
         "description": "Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition",
@@ -25235,6 +25267,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "MeteringReportConfigurations": {
+      "description": "MeteringReportConfigurations holds available report configurations",
+      "type": "object",
+      "properties": {
+        "configurations": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MeteringReportConfiguration"
+          },
+          "x-go-name": "Configurations"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "MeteringReportURL": {
       "description": "ReportURL represent an S3 pre signed URL to download a report",

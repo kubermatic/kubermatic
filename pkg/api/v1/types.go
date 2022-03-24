@@ -2338,6 +2338,10 @@ type MeteringReport struct {
 	Size         int64     `json:"size"`
 }
 
+// MeteringReportConfigurations holds available report configurations
+// swagger:model MeteringReportConfigurations
+type MeteringReportConfigurations = map[string]*kubermaticv1.MeteringReportConfiguration
+
 // ReportURL represent an S3 pre signed URL to download a report
 // swagger:model MeteringReportURL
 type ReportURL string
