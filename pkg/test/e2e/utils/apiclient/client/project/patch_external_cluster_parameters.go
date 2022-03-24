@@ -62,6 +62,9 @@ type PatchExternalClusterParams struct {
 	// Patch.
 	Patch interface{}
 
+	// UpgradeMD.
+	UpgradeMD *string
+
 	// ClusterID.
 	ClusterID string
 
@@ -132,6 +135,17 @@ func (o *PatchExternalClusterParams) SetPatch(patch interface{}) {
 	o.Patch = patch
 }
 
+// WithUpgradeMD adds the upgradeMD to the patch external cluster params
+func (o *PatchExternalClusterParams) WithUpgradeMD(upgradeMD *string) *PatchExternalClusterParams {
+	o.SetUpgradeMD(upgradeMD)
+	return o
+}
+
+// SetUpgradeMD adds the upgradeMD to the patch external cluster params
+func (o *PatchExternalClusterParams) SetUpgradeMD(upgradeMD *string) {
+	o.UpgradeMD = upgradeMD
+}
+
 // WithClusterID adds the clusterID to the patch external cluster params
 func (o *PatchExternalClusterParams) WithClusterID(clusterID string) *PatchExternalClusterParams {
 	o.SetClusterID(clusterID)
@@ -163,6 +177,14 @@ func (o *PatchExternalClusterParams) WriteToRequest(r runtime.ClientRequest, reg
 	var res []error
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
+			return err
+		}
+	}
+
+	if o.UpgradeMD != nil {
+
+		// header param UpgradeMD
+		if err := r.SetHeaderParam("UpgradeMD", *o.UpgradeMD); err != nil {
 			return err
 		}
 	}
