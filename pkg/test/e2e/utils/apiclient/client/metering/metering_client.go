@@ -28,11 +28,51 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	DeleteMeteringReport(params *DeleteMeteringReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMeteringReportOK, error)
+
 	GetMeteringReport(params *GetMeteringReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMeteringReportOK, error)
 
 	ListMeteringReports(params *ListMeteringReportsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMeteringReportsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  DeleteMeteringReport Removes a specific metering report. Only available in Kubermatic Enterprise Edition
+*/
+func (a *Client) DeleteMeteringReport(params *DeleteMeteringReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMeteringReportOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteMeteringReportParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteMeteringReport",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/admin/metering/reports/{report_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteMeteringReportReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteMeteringReportOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteMeteringReportDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

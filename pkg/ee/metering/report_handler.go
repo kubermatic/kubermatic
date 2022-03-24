@@ -130,6 +130,43 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 	return "", k8cerrors.New(404, "report not found")
 }
 
+func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	if seedsGetter == nil || seedClientGetter == nil {
+		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
+	}
+
+	request, ok := req.(deleteReportReq)
+	if !ok {
+		return k8cerrors.NewBadRequest("invalid request")
+	}
+
+	seedsMap, err := seedsGetter()
+	if err != nil {
+		return err
+	}
+
+	for _, seed := range seedsMap {
+		seedClient, err := seedClientGetter(seed)
+		if err != nil {
+			return err
+		}
+
+		mc, bucket, err := getS3DataFromSeed(ctx, seedClient)
+		if err != nil {
+			return err
+		}
+
+		err = mc.RemoveObject(ctx, bucket, request.ReportName, minio.RemoveObjectOptions{})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return k8cerrors.New(404, "report not found")
+}
+
 func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, seedClient ctrlruntimeclient.Client) ([]apiv1.MeteringReport, error) {
 	mc, s3bucket, err := getS3DataFromSeed(ctx, seedClient)
 	if err != nil {
@@ -208,6 +245,13 @@ type getReportReq struct {
 	ReportName string `json:"report_name"`
 }
 
+// swagger:parameters deleteMeteringReport
+type deleteReportReq struct {
+	// in: path
+	// required: true
+	ReportName string `json:"report_name"`
+}
+
 func DecodeListMeteringReportReq(r *http.Request) (interface{}, error) {
 	var req listReportReq
 
@@ -230,6 +274,17 @@ func DecodeListMeteringReportReq(r *http.Request) (interface{}, error) {
 
 func DecodeGetMeteringReportReq(r *http.Request) (interface{}, error) {
 	var req getReportReq
+	req.ReportName = mux.Vars(r)["report_name"]
+
+	if req.ReportName == "" {
+		return nil, k8cerrors.NewBadRequest("`report_name` cannot be empty")
+	}
+
+	return req, nil
+}
+
+func DecodeDeleteMeteringReportReq(r *http.Request) (interface{}, error) {
+	var req deleteReportReq
 	req.ReportName = mux.Vars(r)["report_name"]
 
 	if req.ReportName == "" {

@@ -57,6 +57,14 @@ func getMeteringReport(ctx context.Context, request interface{}, seedsGetter pro
 	return metering.GetReport(ctx, request, seedsGetter, seedClientGetter)
 }
 
+func deleteMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	return metering.DeleteReport(ctx, request, seedsGetter, seedClientGetter)
+}
+
 func DecodeGetMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeGetMeteringReportReq(r)
+}
+
+func DecodeDeleteMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeDeleteMeteringReportReq(r)
 }

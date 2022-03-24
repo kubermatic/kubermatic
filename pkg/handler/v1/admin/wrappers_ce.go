@@ -56,6 +56,14 @@ func getMeteringReport(ctx context.Context, request interface{}, seedsGetter pro
 	return "", nil
 }
 
+func deleteMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	return nil
+}
+
 func DecodeGetMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeDeleteMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }
