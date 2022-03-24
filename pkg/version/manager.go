@@ -292,3 +292,38 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw string, provider kubermaticv
 func (m *Manager) GetIncompatibilities() []*ProviderIncompatibility {
 	return m.providerIncompatibilities
 }
+
+func (m *Manager) GetKubeOnePossibleUpdates(fromVersionRaw string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
+	from, err := semver.NewVersion(fromVersionRaw)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
+	}
+	var possibleVersions []*Version
+
+	var toConstraints []*semver.Constraints
+	for _, u := range m.updates {
+		uFrom, err := semver.NewConstraint(u.From)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
+		}
+		if !uFrom.Check(from) {
+			continue
+		}
+
+		uTo, err := semver.NewConstraint(u.To)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse to constraint %s: %w", u.To, err)
+		}
+		toConstraints = append(toConstraints, uTo)
+	}
+
+	for _, c := range toConstraints {
+		for _, v := range m.versions {
+			if c.Check(v.Version) && !from.Equal(v.Version) {
+				possibleVersions = append(possibleVersions, v)
+			}
+		}
+	}
+
+	return possibleVersions, nil
+}

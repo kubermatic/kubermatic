@@ -25,6 +25,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -34,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
@@ -79,6 +80,13 @@ func GetUpgradesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 				return nil, err
 			}
 			return providercommon.ListAKSUpgrades(ctx, cred, cloud.AKS.ResourceGroup, cloud.AKS.Name)
+		}
+		if cloud.KubeOne != nil {
+			version, err := clusterProvider.GetVersion(ctx, cluster)
+			if err != nil {
+				return nil, err
+			}
+			return handlercommon.GetKubeOneUpgradesEndpoint(ctx, cluster, version.String(), configGetter)
 		}
 
 		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")

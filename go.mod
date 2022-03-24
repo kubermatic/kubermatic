@@ -82,7 +82,7 @@ require (
 	k8c.io/operating-system-manager v0.4.0
 	k8s.io/api v0.23.4
 	k8s.io/apiextensions-apiserver v0.23.4
-	k8s.io/apimachinery v0.23.4
+	k8s.io/apimachinery v0.23.5
 	k8s.io/apiserver v0.23.4
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/cli-runtime v0.23.4

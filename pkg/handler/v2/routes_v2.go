@@ -1540,7 +1540,7 @@ func (r Routing) getExternalClusterUpgrades() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GetUpgradesEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		)(externalcluster.GetUpgradesEndpoint(r.kubermaticConfigGetter, r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		externalcluster.DecodeGetReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
