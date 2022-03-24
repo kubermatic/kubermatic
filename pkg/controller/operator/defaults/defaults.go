@@ -208,6 +208,8 @@ var (
 			newSemver("v1.21.8"),
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
+			// Kubernetes 1.23
+			newSemver("v1.23.5"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.19 =======
@@ -282,8 +284,27 @@ var (
 				To:        "1.22.5",
 				Automatic: pointer.BoolPtr(true),
 			},
+			{
+				// Allow to next minor release
+				From: "1.22.*",
+				To:   "1.23.*",
+			},
+
+			// ======= 1.23 =======
+			{
+				// Allow to change to any patch version
+				From: "1.23.*",
+				To:   "1.23.*",
+			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
+			{
+				// Applies to all providers.
+				Provider:  "",
+				Version:   "1.23.*",
+				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
 				Version:   "1.23.*",

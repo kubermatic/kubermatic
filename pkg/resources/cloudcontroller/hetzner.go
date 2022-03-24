@@ -27,10 +27,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/Masterminds/semver/v3"
 )
 
 const (
 	HetznerCCMDeploymentName = "hcloud-cloud-controller-manager"
+	hetznerCCMLegacyVersion  = "v1.8.1"
+	hetznerCCMVersion        = "v1.12.1"
 )
 
 var (
@@ -83,10 +87,47 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
+			tag := hetznerCCMLegacyVersion
+			env := []corev1.EnvVar{
+				{
+					Name: "NODE_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "spec.nodeName",
+						},
+					},
+				},
+				{
+					Name:  "HCLOUD_TOKEN",
+					Value: credentials.Hetzner.Token,
+				},
+				{
+					Name:  "HCLOUD_NETWORK",
+					Value: network,
+				},
+			}
+
+			gte23, _ := semver.NewConstraint(">= 1.23.0")
+
+			if gte23.Check(data.Cluster().Spec.Version.Semver()) {
+				tag = hetznerCCMVersion
+				env = append(env, corev1.EnvVar{
+					// Required since Hetzner CCM v1.11.0.
+					// By default, the Hetzner CCM tries to validate is the control plane node
+					// attached to the configured Hetzner network. This is causing the Hetzner
+					// CCM to crashloopbackoff since the control plane is running on the seed
+					// cluster, which might not be a Hetzner cluster.
+					// https://github.com/hetznercloud/hcloud-cloud-controller-manager/commit/354f8f85714a934ecc9781747a20d13034165c90
+					Name:  "HCLOUD_NETWORK_DISABLE_ATTACHED_CHECK",
+					Value: "true",
+				},
+				)
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:v1.8.1",
+					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:" + tag,
 					Command: []string{
 						"/bin/hcloud-cloud-controller-manager",
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
@@ -95,24 +136,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						"--allocate-node-cidrs=true",
 						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0]),
 					},
-					Env: []corev1.EnvVar{
-						{
-							Name: "NODE_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "spec.nodeName",
-								},
-							},
-						},
-						{
-							Name:  "HCLOUD_TOKEN",
-							Value: credentials.Hetzner.Token,
-						},
-						{
-							Name:  "HCLOUD_NETWORK",
-							Value: network,
-						},
-					},
+					Env:          env,
 					VolumeMounts: getVolumeMounts(),
 				},
 			}
