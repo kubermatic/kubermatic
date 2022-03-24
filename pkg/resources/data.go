@@ -621,19 +621,23 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Spec.Cloud.VSphere != nil {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
+		v := cluster.Status.Versions.ControlPlane
+		if v == "" {
+			v = cluster.Spec.Version
+		}
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
 			lessThan21, _ := semver.NewConstraint("< 1.21.0")
 			if cluster.Spec.Cloud.Openstack != nil {
-				if lessThan21.Check(cluster.Status.Versions.ControlPlane.Semver()) {
+				if lessThan21.Check(v.Semver()) {
 					featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
 				} else {
 					featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
 				}
 			}
 			if cluster.Spec.Cloud.VSphere != nil {
-				if lessThan21.Check(cluster.Status.Versions.ControlPlane.Semver()) {
+				if lessThan21.Check(v.Semver()) {
 					featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
 				} else {
 					featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")

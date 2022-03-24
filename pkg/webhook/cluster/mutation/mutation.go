@@ -191,6 +191,9 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 	// just because spec.Version might say 1.23 doesn't say that the cluster is already on 1.23,
 	// so for all feature toggles and migrations we should base this on the actual, current apiserver
 	curVersion := newCluster.Status.Versions.ControlPlane
+	if curVersion == "" {
+		curVersion = newCluster.Spec.Version
+	}
 
 	// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
 	// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
