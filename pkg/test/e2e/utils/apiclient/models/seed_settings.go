@@ -55,6 +55,8 @@ func (m *SeedSettings) validateMetering(formats strfmt.Registry) error {
 		if err := m.Metering.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("metering")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("metering")
 			}
 			return err
 		}
@@ -72,6 +74,8 @@ func (m *SeedSettings) validateMla(formats strfmt.Registry) error {
 		if err := m.Mla.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}
@@ -104,6 +108,8 @@ func (m *SeedSettings) contextValidateMetering(ctx context.Context, formats strf
 		if err := m.Metering.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("metering")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("metering")
 			}
 			return err
 		}
@@ -118,6 +124,8 @@ func (m *SeedSettings) contextValidateMla(ctx context.Context, formats strfmt.Re
 		if err := m.Mla.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}

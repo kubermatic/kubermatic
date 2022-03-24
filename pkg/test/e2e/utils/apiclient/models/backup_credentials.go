@@ -49,6 +49,8 @@ func (m *BackupCredentials) validateS3(formats strfmt.Registry) error {
 		if err := m.S3.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("s3")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("s3")
 			}
 			return err
 		}
@@ -77,6 +79,8 @@ func (m *BackupCredentials) contextValidateS3(ctx context.Context, formats strfm
 		if err := m.S3.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("s3")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("s3")
 			}
 			return err
 		}

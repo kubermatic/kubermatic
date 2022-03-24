@@ -75,6 +75,8 @@ func (m *Match) validateKinds(formats strfmt.Registry) error {
 			if err := m.Kinds[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("kinds" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("kinds" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -94,6 +96,8 @@ func (m *Match) validateLabelSelector(formats strfmt.Registry) error {
 		if err := m.LabelSelector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labelSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("labelSelector")
 			}
 			return err
 		}
@@ -111,6 +115,8 @@ func (m *Match) validateNamespaceSelector(formats strfmt.Registry) error {
 		if err := m.NamespaceSelector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("namespaceSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("namespaceSelector")
 			}
 			return err
 		}
@@ -149,6 +155,8 @@ func (m *Match) contextValidateKinds(ctx context.Context, formats strfmt.Registr
 			if err := m.Kinds[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("kinds" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("kinds" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -165,6 +173,8 @@ func (m *Match) contextValidateLabelSelector(ctx context.Context, formats strfmt
 		if err := m.LabelSelector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labelSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("labelSelector")
 			}
 			return err
 		}
@@ -179,6 +189,8 @@ func (m *Match) contextValidateNamespaceSelector(ctx context.Context, formats st
 		if err := m.NamespaceSelector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("namespaceSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("namespaceSelector")
 			}
 			return err
 		}

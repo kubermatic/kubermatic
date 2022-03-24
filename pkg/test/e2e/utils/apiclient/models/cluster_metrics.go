@@ -55,6 +55,8 @@ func (m *ClusterMetrics) validateControlPlane(formats strfmt.Registry) error {
 		if err := m.ControlPlane.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("controlPlane")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("controlPlane")
 			}
 			return err
 		}
@@ -72,6 +74,8 @@ func (m *ClusterMetrics) validateNodes(formats strfmt.Registry) error {
 		if err := m.Nodes.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodes")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodes")
 			}
 			return err
 		}
@@ -104,6 +108,8 @@ func (m *ClusterMetrics) contextValidateControlPlane(ctx context.Context, format
 		if err := m.ControlPlane.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("controlPlane")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("controlPlane")
 			}
 			return err
 		}
@@ -118,6 +124,8 @@ func (m *ClusterMetrics) contextValidateNodes(ctx context.Context, formats strfm
 		if err := m.Nodes.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodes")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodes")
 			}
 			return err
 		}

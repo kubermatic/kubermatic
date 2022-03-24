@@ -137,6 +137,8 @@ func (m *GKEClusterSpec) validateAutoscaling(formats strfmt.Registry) error {
 		if err := m.Autoscaling.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("autoscaling")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("autoscaling")
 			}
 			return err
 		}
@@ -154,6 +156,8 @@ func (m *GKEClusterSpec) validateNodeConfig(formats strfmt.Registry) error {
 		if err := m.NodeConfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeConfig")
 			}
 			return err
 		}
@@ -186,6 +190,8 @@ func (m *GKEClusterSpec) contextValidateAutoscaling(ctx context.Context, formats
 		if err := m.Autoscaling.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("autoscaling")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("autoscaling")
 			}
 			return err
 		}
@@ -200,6 +206,8 @@ func (m *GKEClusterSpec) contextValidateNodeConfig(ctx context.Context, formats 
 		if err := m.NodeConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeConfig")
 			}
 			return err
 		}

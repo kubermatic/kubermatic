@@ -106,6 +106,8 @@ func (m *BackupStatus) validateBackupFinishedTime(formats strfmt.Registry) error
 	if err := m.BackupFinishedTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("backupFinishedTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("backupFinishedTime")
 		}
 		return err
 	}
@@ -121,6 +123,8 @@ func (m *BackupStatus) validateBackupPhase(formats strfmt.Registry) error {
 	if err := m.BackupPhase.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("backupPhase")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("backupPhase")
 		}
 		return err
 	}
@@ -136,6 +140,8 @@ func (m *BackupStatus) validateBackupStartTime(formats strfmt.Registry) error {
 	if err := m.BackupStartTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("backupStartTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("backupStartTime")
 		}
 		return err
 	}
@@ -151,6 +157,8 @@ func (m *BackupStatus) validateDeleteFinishedTime(formats strfmt.Registry) error
 	if err := m.DeleteFinishedTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("deleteFinishedTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("deleteFinishedTime")
 		}
 		return err
 	}
@@ -166,6 +174,8 @@ func (m *BackupStatus) validateDeletePhase(formats strfmt.Registry) error {
 	if err := m.DeletePhase.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("deletePhase")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("deletePhase")
 		}
 		return err
 	}
@@ -181,6 +191,8 @@ func (m *BackupStatus) validateDeleteStartTime(formats strfmt.Registry) error {
 	if err := m.DeleteStartTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("deleteStartTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("deleteStartTime")
 		}
 		return err
 	}
@@ -196,6 +208,8 @@ func (m *BackupStatus) validateScheduledTime(formats strfmt.Registry) error {
 	if err := m.ScheduledTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("scheduledTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("scheduledTime")
 		}
 		return err
 	}
@@ -246,6 +260,8 @@ func (m *BackupStatus) contextValidateBackupFinishedTime(ctx context.Context, fo
 	if err := m.BackupFinishedTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("backupFinishedTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("backupFinishedTime")
 		}
 		return err
 	}
@@ -258,6 +274,8 @@ func (m *BackupStatus) contextValidateBackupPhase(ctx context.Context, formats s
 	if err := m.BackupPhase.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("backupPhase")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("backupPhase")
 		}
 		return err
 	}
@@ -270,6 +288,8 @@ func (m *BackupStatus) contextValidateBackupStartTime(ctx context.Context, forma
 	if err := m.BackupStartTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("backupStartTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("backupStartTime")
 		}
 		return err
 	}
@@ -282,6 +302,8 @@ func (m *BackupStatus) contextValidateDeleteFinishedTime(ctx context.Context, fo
 	if err := m.DeleteFinishedTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("deleteFinishedTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("deleteFinishedTime")
 		}
 		return err
 	}
@@ -294,6 +316,8 @@ func (m *BackupStatus) contextValidateDeletePhase(ctx context.Context, formats s
 	if err := m.DeletePhase.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("deletePhase")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("deletePhase")
 		}
 		return err
 	}
@@ -306,6 +330,8 @@ func (m *BackupStatus) contextValidateDeleteStartTime(ctx context.Context, forma
 	if err := m.DeleteStartTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("deleteStartTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("deleteStartTime")
 		}
 		return err
 	}
@@ -318,6 +344,8 @@ func (m *BackupStatus) contextValidateScheduledTime(ctx context.Context, formats
 	if err := m.ScheduledTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("scheduledTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("scheduledTime")
 		}
 		return err
 	}

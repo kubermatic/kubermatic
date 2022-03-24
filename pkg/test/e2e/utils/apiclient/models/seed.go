@@ -101,6 +101,11 @@ func (m *Seed) validateSeedDatacenters(formats strfmt.Registry) error {
 		}
 		if val, ok := m.SeedDatacenters[k]; ok {
 			if err := val.Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("datacenters" + "." + k)
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("datacenters" + "." + k)
+				}
 				return err
 			}
 		}
@@ -119,6 +124,8 @@ func (m *Seed) validateEtcdBackupRestore(formats strfmt.Registry) error {
 		if err := m.EtcdBackupRestore.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("etcdBackupRestore")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("etcdBackupRestore")
 			}
 			return err
 		}
@@ -135,6 +142,8 @@ func (m *Seed) validateExposeStrategy(formats strfmt.Registry) error {
 	if err := m.ExposeStrategy.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("expose_strategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("expose_strategy")
 		}
 		return err
 	}
@@ -151,6 +160,8 @@ func (m *Seed) validateKubeconfig(formats strfmt.Registry) error {
 		if err := m.Kubeconfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubeconfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubeconfig")
 			}
 			return err
 		}
@@ -168,6 +179,8 @@ func (m *Seed) validateMla(formats strfmt.Registry) error {
 		if err := m.Mla.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}
@@ -185,6 +198,8 @@ func (m *Seed) validateProxySettings(formats strfmt.Registry) error {
 		if err := m.ProxySettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("proxy_settings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("proxy_settings")
 			}
 			return err
 		}
@@ -248,6 +263,8 @@ func (m *Seed) contextValidateEtcdBackupRestore(ctx context.Context, formats str
 		if err := m.EtcdBackupRestore.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("etcdBackupRestore")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("etcdBackupRestore")
 			}
 			return err
 		}
@@ -261,6 +278,8 @@ func (m *Seed) contextValidateExposeStrategy(ctx context.Context, formats strfmt
 	if err := m.ExposeStrategy.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("expose_strategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("expose_strategy")
 		}
 		return err
 	}
@@ -274,6 +293,8 @@ func (m *Seed) contextValidateKubeconfig(ctx context.Context, formats strfmt.Reg
 		if err := m.Kubeconfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubeconfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubeconfig")
 			}
 			return err
 		}
@@ -288,6 +309,8 @@ func (m *Seed) contextValidateMla(ctx context.Context, formats strfmt.Registry) 
 		if err := m.Mla.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}
@@ -302,6 +325,8 @@ func (m *Seed) contextValidateProxySettings(ctx context.Context, formats strfmt.
 		if err := m.ProxySettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("proxy_settings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("proxy_settings")
 			}
 			return err
 		}
