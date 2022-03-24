@@ -31,9 +31,8 @@ import (
 )
 
 const (
-	ServiceAccountLabelGroup      = "initialGroup"
-	ServiceAccountAnnotationOwner = "owner"
-	saPrefix                      = "serviceaccount-"
+	ServiceAccountLabelGroup = "initialGroup"
+	saPrefix                 = "serviceaccount-"
 )
 
 // NewServiceAccountProvider returns a service account provider.
