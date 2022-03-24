@@ -180,6 +180,14 @@ func GenerateCluster(
 		return nil, err
 	}
 
+	// Start filling cluster object.
+	partialCluster := &kubermaticv1.Cluster{}
+	partialCluster.Labels = body.Cluster.Labels
+	if partialCluster.Labels == nil {
+		partialCluster.Labels = make(map[string]string)
+	}
+	partialCluster.Annotations = make(map[string]string)
+
 	credentialName := body.Cluster.Credential
 	if len(credentialName) > 0 {
 		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
@@ -187,6 +195,8 @@ func GenerateCluster(
 			return nil, kubermaticerrors.NewBadRequest("invalid credentials: %v", err)
 		}
 		body.Cluster.Spec.Cloud = *cloudSpec
+		partialCluster.Labels[kubermaticv1.IsCredentialPresetLabelKey] = "yes"
+		partialCluster.Annotations[kubermaticv1.PresetNameAnnotation] = credentialName
 	}
 
 	// Fetch the defaulting ClusterTemplate.
@@ -215,19 +225,11 @@ func GenerateCluster(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	// Start filling cluster object.
-	partialCluster := &kubermaticv1.Cluster{}
-	partialCluster.Labels = body.Cluster.Labels
-	if partialCluster.Labels == nil {
-		partialCluster.Labels = make(map[string]string)
-	}
-
 	// Serialize initial machine deployment request into annotation if it is in the body and provider different than
 	// BringYourOwn was selected. The request will be transformed into machine deployment by the controller once cluster
 	// will be ready. To make it easier to determine if a machine deployment annotation has already been applied to
 	// the user cluster (in case errors happen and the controller needs to re-reconcile), we ensure that the MD
 	// has a proper name instead of relying on the GenerateName.
-	partialCluster.Annotations = make(map[string]string)
 	if body.NodeDeployment != nil {
 		isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
 		if err != nil {
@@ -448,6 +450,7 @@ func PatchEndpoint(
 	newInternalCluster := oldInternalCluster.DeepCopy()
 	newInternalCluster.Spec.HumanReadableName = patchedCluster.Name
 	newInternalCluster.Labels = patchedCluster.Labels
+	newInternalCluster.Annotations = patchedCluster.Annotations
 	newInternalCluster.Spec.Cloud = patchedCluster.Spec.Cloud
 	newInternalCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
 	newInternalCluster.Spec.Version = patchedCluster.Spec.Version
@@ -500,8 +503,19 @@ func PatchEndpoint(
 		CABundle:   caBundle,
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForClusterWithValidation(ctx, seedClient, newInternalCluster, validate); err != nil {
+	changed, err := kubernetesprovider.CreateOrUpdateCredentialSecretForClusterWithValidation(ctx, seedClient, newInternalCluster, validate)
+	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	// the credentials were changed during the update. Remove link to credential preset if exists.
+	if changed {
+		if newInternalCluster.Labels != nil {
+			delete(newInternalCluster.Labels, kubermaticv1.IsCredentialPresetLabelKey)
+		}
+		if newInternalCluster.Annotations != nil {
+			delete(newInternalCluster.Annotations, kubermaticv1.PresetNameAnnotation)
+			delete(newInternalCluster.Annotations, kubermaticv1.PresetInvalidatedAnnotation)
+		}
 	}
 
 	// validate the new cluster
@@ -1013,6 +1027,16 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 
 	if filterSystemLabels {
 		cluster.Labels = label.FilterLabels(label.ClusterResourceType, internalCluster.Labels)
+	}
+	// Add preset annotations
+	cluster.Annotations = make(map[string]string)
+	if internalCluster.Annotations != nil {
+		if value, ok := internalCluster.Annotations[kubermaticv1.PresetNameAnnotation]; ok {
+			cluster.Annotations[kubermaticv1.PresetNameAnnotation] = value
+		}
+		if value, ok := internalCluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation]; ok {
+			cluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = value
+		}
 	}
 
 	return cluster
