@@ -292,6 +292,8 @@ const (
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
+	ClusterConditionUpdateProgress ClusterConditionType = "UpdateProgress"
+
 	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
 	// This condition is met when a CSI migration is ongoing and the CSI
@@ -402,6 +404,11 @@ type ClusterVersionsStatus struct {
 	// Scheduler is the currently desired version of the kube-scheduler. This field behaves the
 	// same as the apiserver field.
 	Scheduler semver.Semver `json:"scheduler"`
+	// OldestNodeVersion is the oldest node version currently in use inside the cluster. This can be
+	// nil if there are no nodes. This field is primarily for speeding up reconciling, so that
+	// the controller doesn't have to re-fetch to the usercluster and query its node on every
+	// reconciliation.
+	OldestNodeVersion *semver.Semver `json:"oldestNodeVersion,omitempty"`
 }
 
 // HasConditionValue returns true if the cluster status has the given condition with the given status.

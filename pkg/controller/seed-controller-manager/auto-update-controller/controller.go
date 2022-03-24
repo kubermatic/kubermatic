@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package update
+package autoupdatecontroller
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -45,7 +44,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_update_controller"
+	ControllerName = "kkp-auto-update-controller"
 )
 
 type Reconciler struct {
@@ -59,16 +58,23 @@ type Reconciler struct {
 	versions                      kubermatic.Versions
 }
 
-// Add creates a new update controller.
-func Add(mgr manager.Manager, numWorkers int, workerName string, configGetter provider.KubermaticConfigurationGetter,
-	userClusterConnectionProvider *client.Provider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+// Add creates a new auto-update controller.
+func Add(
+	mgr manager.Manager,
+	numWorkers int,
+	workerName string,
+	configGetter provider.KubermaticConfigurationGetter,
+	userClusterConnectionProvider *client.Provider,
+	log *zap.SugaredLogger,
+	versions kubermatic.Versions,
+) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
 
 		workerName:                    workerName,
 		configGetter:                  configGetter,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
+		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		log:                           log,
 		versions:                      versions,
 	}
@@ -120,10 +126,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if err := r.setClusterVersionsStatus(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to set cluster version status: %w", err)
-	}
-
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
 		// If it gets healthy we'll get notified by the event. No need to requeue
@@ -137,35 +139,17 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	updateManager := version.NewFromConfiguration(config)
 
-	// NodeUpdate may need the controlplane to be updated first
-	updated, err := r.controlPlaneUpgrade(ctx, cluster, updateManager)
-	if err != nil {
+	if err := r.controlPlaneUpgrade(ctx, cluster, updateManager); err != nil {
 		return nil, fmt.Errorf("failed to update the controlplane: %w", err)
 	}
-	// Give the controller time to do the update
-	// TODO: This is not really safe. We should add a `Version` to the status
-	// that gets incremented when the controller does this. Combined with a
-	// `SeedResourcesUpToDate` condition, that should do the trick
-	if updated {
-		return &reconcile.Result{RequeueAfter: time.Minute}, nil
-	}
 
+	// nodeUpdate works based on the Cluster.Status.Versions.ControlPlane field, so it properly waits
+	// for the control plane to be upgraded before updating the nodes.
 	if err := r.nodeUpdate(ctx, cluster, updateManager); err != nil {
-		return nil, fmt.Errorf("failed to update machineDeployments: %w", err)
+		return nil, fmt.Errorf("failed to update the controlplane: %w", err)
 	}
 
 	return nil, nil
-}
-
-// setClusterVersionsStatus is a placeholder until the new update controller takes more control
-// over the ClusterVersionsStatus and implements a proper upgrade logic.
-func (r *Reconciler) setClusterVersionsStatus(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(cluster *kubermaticv1.Cluster) {
-		cluster.Status.Versions.Apiserver = cluster.Spec.Version
-		cluster.Status.Versions.ControlPlane = cluster.Spec.Version
-		cluster.Status.Versions.ControllerManager = cluster.Spec.Version
-		cluster.Status.Versions.Scheduler = cluster.Spec.Version
-	})
 }
 
 func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager) error {
@@ -181,7 +165,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	for _, md := range machineDeployments.Items {
-		targetVersion, err := updateManager.AutomaticNodeUpdate(md.Spec.Template.Spec.Versions.Kubelet, cluster.Spec.Version.String())
+		targetVersion, err := updateManager.AutomaticNodeUpdate(md.Spec.Template.Spec.Versions.Kubelet, cluster.Status.Versions.ControlPlane.String())
 		if err != nil {
 			return fmt.Errorf("failed to get automatic update for machinedeployment %s/%s that has version %q: %w", md.Namespace, md.Name, md.Spec.Template.Spec.Versions.Kubelet, err)
 		}
@@ -199,25 +183,30 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 	return nil
 }
 
-func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager) (upgraded bool, err error) {
+func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermaticv1.Cluster, updateManager *version.Manager) error {
 	update, err := updateManager.AutomaticControlplaneUpdate(cluster.Spec.Version.String())
 	if err != nil {
-		return false, fmt.Errorf("failed to get automatic update for cluster for version %s: %w", cluster.Spec.Version.String(), err)
+		return fmt.Errorf("failed to get automatic update for cluster for version %s: %w", cluster.Spec.Version.String(), err)
 	}
 	if update == nil {
-		return false, nil
+		return nil
 	}
 	oldCluster := cluster.DeepCopy()
 
 	sver, err := semver.NewSemver(update.Version.String())
 	if err != nil {
-		return false, fmt.Errorf("failed to parse version %q: %w", update.Version.String(), err)
+		return fmt.Errorf("failed to parse version %q: %w", update.Version.String(), err)
 	}
 
+	// Set the new target version; this in turn will trigger the incremental update controller
+	// to begin rolling out the necessary changes and over time we will converge to the version
+	// set here.
 	cluster.Spec.Version = *sver
 	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return false, fmt.Errorf("failed to update cluster: %w", err)
+		return fmt.Errorf("failed to update cluster: %w", err)
 	}
+
+	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AutoUpdateApplied", "Cluster was automatically updated from v%s to v%s.", oldCluster.Spec.Version, cluster.Spec.Version)
 
 	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Invalidating the health to prevent automatic updates directly on the next processing.
@@ -226,8 +215,8 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermati
 		c.Status.ExtendedHealth.Scheduler = kubermaticv1.HealthStatusDown
 	})
 	if err != nil {
-		return false, fmt.Errorf("failed to update cluster status: %w", err)
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 
-	return true, nil
+	return nil
 }

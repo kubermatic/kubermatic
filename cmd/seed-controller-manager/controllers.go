@@ -24,6 +24,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
+	autoupdatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/auto-update-controller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
@@ -38,7 +39,7 @@ import (
 	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
-	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
+	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
 	"k8c.io/kubermatic/v2/pkg/features"
 )
 
@@ -47,6 +48,7 @@ import (
 // start function that will essentially run the controller.
 var AllControllers = map[string]controllerCreator{
 	kubernetescontroller.ControllerName:           createKubernetesController,
+	autoupdatecontroller.ControllerName:           createAutoUpdateController,
 	updatecontroller.ControllerName:               createUpdateController,
 	addon.ControllerName:                          createAddonController,
 	addoninstaller.ControllerName:                 createAddonInstallerController,
@@ -219,13 +221,24 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 	)
 }
 
+func createAutoUpdateController(ctrlCtx *controllerContext) error {
+	return autoupdatecontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.configGetter,
+		ctrlCtx.clientProvider,
+		ctrlCtx.log,
+		ctrlCtx.versions,
+	)
+}
+
 func createUpdateController(ctrlCtx *controllerContext) error {
 	return updatecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.configGetter,
-		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
 	)

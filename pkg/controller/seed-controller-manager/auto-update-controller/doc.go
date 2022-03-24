@@ -15,11 +15,10 @@ limitations under the License.
 */
 
 /*
-Package update contains a controller that auto applies updates to both the cluster version
-and the machine version based on a configuration file.
-
-TODO: Make this controller wait for successfully convergation after an update was applied. Currently,
-it may apply an update and then instantly apply another one, which is not supported, only n+1 minor
-version updates are supported.
+Package autoupdatecontroller contains a controller that auto applies updates to
+the cluster version and potentially to the MachineDeployments inside the usercluster.
+It will not itself reconcile any control plane components, this task is handled by
+other controllers that properly handle the version skew policy and are smart enough
+to update step-by-step.
 */
-package update
+package autoupdatecontroller
