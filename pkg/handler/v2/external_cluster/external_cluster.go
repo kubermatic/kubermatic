@@ -594,7 +594,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
-
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
@@ -607,6 +606,9 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			}
 			if cloud.AKS != nil {
 				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
+			}
+			if cloud.KubeOne != nil {
+				return patchKubeOneCluster(ctx, cluster, patchedCluster, req.UpgradeMD, secretKeySelector, privilegedClusterProvider.GetMasterClient())
 			}
 		}
 		return convertClusterToAPI(cluster), nil
@@ -622,6 +624,11 @@ type patchClusterReq struct {
 	ClusterID string `json:"cluster_id"`
 	// in: body
 	Patch json.RawMessage
+	// in: header
+	// This field is specific to kubeone
+	// UpgradeMD: true, Upgrade control plane + all node pools
+	// UpgradeMD: false, control plane only
+	UpgradeMD string
 }
 
 // Validate validates CreateEndpoint request.
@@ -649,6 +656,7 @@ func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.ClusterID = clusterID
+	req.UpgradeMD = r.Header.Get("UpgradeMD")
 
 	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err

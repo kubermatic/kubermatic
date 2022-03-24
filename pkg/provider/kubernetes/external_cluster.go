@@ -215,11 +215,7 @@ func (p *ExternalClusterProvider) GetClient(ctx context.Context, cluster *kuberm
 	if err != nil {
 		return nil, err
 	}
-	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	cfg, err := clientcmd.Load(kubeconfig)
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
 	if err != nil {
 		return nil, err
 	}
@@ -232,11 +228,7 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	if err != nil {
 		return nil, err
 	}
-	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	cfg, err := clientcmd.Load(kubeconfig)
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
 	if err != nil {
 		return nil, err
 	}
