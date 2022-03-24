@@ -47,6 +47,12 @@ const (
 
 	// ForceRestartAnnotation is key of the annotation used to restart machine deployments.
 	ForceRestartAnnotation = "forceRestart"
+
+	// PresetNameAnnotation is key of the annotation used to hold preset name if was used for the cluster creation.
+	PresetNameAnnotation = "presetName"
+
+	// PresetInvalidatedAnnotation is key of the annotation used to indicate why the preset was invalidated.
+	PresetInvalidatedAnnotation = "presetInvalidated"
 )
 
 const (
@@ -55,9 +61,10 @@ const (
 )
 
 const (
-	WorkerNameLabelKey   = "worker-name"
-	ProjectIDLabelKey    = "project-id"
-	UpdatedByVPALabelKey = "updated-by-vpa"
+	WorkerNameLabelKey         = "worker-name"
+	ProjectIDLabelKey          = "project-id"
+	UpdatedByVPALabelKey       = "updated-by-vpa"
+	IsCredentialPresetLabelKey = "is-credential-preset"
 
 	DefaultEtcdClusterSize = 3
 	MinEtcdClusterSize     = 3
@@ -72,9 +79,17 @@ const (
 	AzureBasicLBSKU    = LBSKU("basic")
 )
 
+// +kubebuilder:validation:Enum=deleted;changed
+type PresetInvalidationReason string
+
+const (
+	PresetDeleted = PresetInvalidationReason("deleted")
+	PresetChanged = PresetInvalidationReason("changed")
+)
+
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
 // as they are security relevant.
-var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)
+var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey, IsCredentialPresetLabelKey)
 
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
