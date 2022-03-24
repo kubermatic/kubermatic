@@ -21,12 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -45,115 +46,98 @@ import (
 )
 
 var (
-	minHelmVersion = semver.MustParse("v3.0.0")
-
-	deployForceFlag = cli.BoolFlag{
-		Name:  "force",
-		Usage: "Perform Helm upgrades even when the release is up-to-date",
-	}
-	deployConfigFlag = cli.StringFlag{
-		Name:   "config",
-		Usage:  "Full path to the KubermaticConfiguration YAML file",
-		EnvVar: "CONFIG_YAML",
-	}
-	deployHelmValuesFlag = cli.StringFlag{
-		Name:   "helm-values",
-		Usage:  "Full path to the Helm values.yaml used for customizing all charts",
-		EnvVar: "VALUES_YAML",
-	}
-	deployKubeconfigFlag = cli.StringFlag{
-		Name:   "kubeconfig",
-		Usage:  "Full path to where a kubeconfig with cluster-admin permissions for the target cluster",
-		EnvVar: "KUBECONFIG",
-	}
-	deployKubeContextFlag = cli.StringFlag{
-		Name:   "kube-context",
-		Usage:  "Context to use from the given kubeconfig",
-		EnvVar: "KUBE_CONTEXT",
-	}
-	deployHelmTimeoutFlag = cli.DurationFlag{
-		Name:  "helm-timeout",
-		Usage: "Time to wait for Helm operations to finish",
-		Value: 5 * time.Minute,
-	}
-	deployHelmBinaryFlag = cli.StringFlag{
-		Name:   "helm-binary",
-		Usage:  "Full path to the Helm 3 binary to use",
-		Value:  "helm",
-		EnvVar: "HELM_BINARY",
-	}
-	deployStorageClassFlag = cli.StringFlag{
-		Name:  "storageclass",
-		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()),
-	}
-	enableCertManagerV2MigrationFlag = cli.BoolFlag{
-		Name:  "migrate-cert-manager",
-		Usage: "enable the migration for cert-manager CRDs from v1alpha2 to v1",
-	}
-	enableCertManagerUpstreamMigrationFlag = cli.BoolFlag{
-		Name:  "migrate-upstream-cert-manager",
-		Usage: "enable the migration for cert-manager to chart version 2.1.0+",
-	}
-	enableNginxIngressMigrationFlag = cli.BoolFlag{
-		Name:  "migrate-upstream-nginx-ingress",
-		Usage: "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)",
-	}
-	migrateOpenstackCSIdriversFlag = cli.BoolFlag{
-		Name:  "migrate-openstack-csidrivers",
-		Usage: "(kubermatic-seed STACK only) enable the data migration of CSIDriver of openstack user-clusters",
-	}
-	migrateLogrotateFlag = cli.BoolFlag{
-		Name:  "migrate-logrotate",
-		Usage: "enable the data migration to delete the logrotate addon",
-	}
-	disableTelemetryFlag = cli.BoolFlag{
-		Name:  "disable-telemetry",
-		Usage: "disable telemetry agents",
-	}
+	MinHelmVersion = semver.MustParse("v3.0.0")
 )
 
-func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
-	return cli.Command{
-		Name:      "deploy",
-		Usage:     "Installs or upgrades the current installation to the installer's built-in version",
-		Action:    DeployAction(logger, versions),
-		ArgsUsage: "[STACK=kubermatic-master]",
-		Flags: []cli.Flag{
-			deployForceFlag,
-			deployConfigFlag,
-			deployHelmValuesFlag,
-			deployKubeconfigFlag,
-			deployKubeContextFlag,
-			deployHelmTimeoutFlag,
-			deployHelmBinaryFlag,
-			deployStorageClassFlag,
-			enableCertManagerV2MigrationFlag,
-			enableCertManagerUpstreamMigrationFlag,
-			enableNginxIngressMigrationFlag,
-			migrateOpenstackCSIdriversFlag,
-			migrateLogrotateFlag,
-			disableTelemetryFlag,
-		},
-	}
+type DeployOptions struct {
+	Options
+
+	Config string
+
+	Kubeconfig  string
+	KubeContext string
+
+	HelmBinary  string
+	HelmValues  string
+	HelmTimeout time.Duration
+	Force       bool
+
+	StorageClass     string
+	DisableTelemetry bool
+
+	MigrateCertManager         bool
+	MigrateUpstreamCertManager bool
+	MigrateNginx               bool
+	MigrateOpenstackCSI        bool
+	MigrateLogrotate           bool
 }
 
-func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cli.ActionFunc {
-	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
+func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
+	opt := DeployOptions{
+		HelmTimeout: 5 * time.Minute,
+		HelmBinary:  "helm",
+	}
+
+	cmd := &cobra.Command{
+		Use:          "deploy [kubermatic-master | kubermatic-seed]",
+		Short:        "installs or upgrades the current installation to the installer's built-in version",
+		Long:         "Installs or upgrades the current installation to the installer's built-in version",
+		RunE:         DeployFunc(logger, versions, &opt),
+		SilenceUsage: true,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			options.CopyInto(&opt.Options)
+
+			if opt.Config == "" {
+				opt.Config = os.Getenv("CONFIG_YAML")
+			}
+			if opt.Kubeconfig == "" {
+				opt.Kubeconfig = os.Getenv("KUBECONFIG")
+			}
+			if opt.KubeContext == "" {
+				opt.KubeContext = os.Getenv("KUBE_CONTEXT")
+			}
+			if opt.HelmValues == "" {
+				opt.HelmValues = os.Getenv("HELM_VALUES")
+			}
+			if opt.HelmBinary == "" {
+				opt.HelmBinary = os.Getenv("HELM_BINARY")
+			}
+		},
+	}
+
+	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "full path to the KubermaticConfiguration YAML file")
+	cmd.PersistentFlags().StringVar(&opt.Kubeconfig, "kubeconfig", "", "full path to where a kubeconfig with cluster-admin permissions for the target cluster")
+	cmd.PersistentFlags().StringVar(&opt.KubeContext, "kube-context", "", "context to use from the given kubeconfig")
+
+	cmd.PersistentFlags().StringVar(&opt.HelmValues, "helm-values", "", "full path to the Helm values.yaml used for customizing all charts")
+	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
+	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
+	cmd.PersistentFlags().BoolVar(&opt.Force, "force", false, "perform Helm upgrades even when the release is up-to-date")
+
+	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()))
+	cmd.PersistentFlags().BoolVar(&opt.DisableTelemetry, "disable-telemetry", false, "disable telemetry agents")
+
+	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
+	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
+	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
+	cmd.PersistentFlags().BoolVar(&opt.MigrateOpenstackCSI, "migrate-openstack-csidrivers", false, "(kubermatic-seed only) enable the data migration of CSIDriver of openstack user-clusters")
+	cmd.PersistentFlags().BoolVar(&opt.MigrateLogrotate, "migrate-logrotate", false, "enable the data migration to delete the logrotate addon")
+
+	return cmd
+}
+
+func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt *DeployOptions) cobraFuncE {
+	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		fields := logrus.Fields{
 			"version": versions.Kubermatic,
 			"edition": edition.KubermaticEdition,
 		}
-		if ctx.GlobalBool("verbose") {
+		if opt.Verbose {
 			fields["git"] = versions.KubermaticCommit
 		}
 
 		// error out early if there is no useful Helm binary
-		kubeconfig := ctx.String(deployKubeconfigFlag.Name)
-		kubeContext := ctx.String(deployKubeContextFlag.Name)
-		helmTimeout := ctx.Duration(deployHelmTimeoutFlag.Name)
-		helmBinary := ctx.String(deployHelmBinaryFlag.Name)
-
-		helmClient, err := helm.NewCLI(helmBinary, kubeconfig, kubeContext, helmTimeout, logger)
+		helmClient, err := helm.NewCLI(opt.HelmBinary, opt.Kubeconfig, opt.KubeContext, opt.HelmTimeout, logger)
 		if err != nil {
 			return fmt.Errorf("failed to create Helm client: %w", err)
 		}
@@ -163,19 +147,21 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to check Helm version: %w", err)
 		}
 
-		if helmVersion.LessThan(minHelmVersion) {
+		if helmVersion.LessThan(MinHelmVersion) {
 			return fmt.Errorf(
-				"the installer requires Helm >= %s, but detected %q as %s (use --%s or $%s to override)",
-				minHelmVersion,
-				helmBinary,
+				"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+				MinHelmVersion,
+				opt.HelmBinary,
 				helmVersion,
-				deployHelmBinaryFlag.Name,
-				deployHelmBinaryFlag.EnvVar)
+			)
+		}
+
+		stackName := ""
+		if len(args) > 0 {
+			stackName = args[0]
 		}
 
 		var kubermaticStack stack.Stack
-		stackName := ctx.Args().First()
-
 		switch stackName {
 		case "kubermatic-seed":
 			kubermaticStack = kubermaticseed.NewStack()
@@ -188,34 +174,34 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		logger.WithFields(fields).Info("🚀 Initializing installer…")
 
 		// load config files
-		if len(kubeconfig) == 0 {
-			return fmt.Errorf("no kubeconfig (--%s or $%s) given", deployKubeconfigFlag.Name, deployKubeconfigFlag.EnvVar)
+		if len(opt.Kubeconfig) == 0 {
+			return errors.New("no kubeconfig (--kubeconfig or $KUBECONFIG) given")
 		}
 
-		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(ctx.String(deployConfigFlag.Name))
+		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(opt.Config)
 		if err != nil {
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
-		helmValues, err := loadHelmValues(ctx.String(deployHelmValuesFlag.Name))
+		helmValues, err := loadHelmValues(opt.HelmValues)
 		if err != nil {
 			return fmt.Errorf("failed to load Helm values: %w", err)
 		}
 
-		opt := stack.DeployOptions{
+		deployOptions := stack.DeployOptions{
 			HelmClient:                         helmClient,
 			HelmValues:                         helmValues,
 			KubermaticConfiguration:            kubermaticConfig,
 			RawKubermaticConfiguration:         rawKubermaticConfig,
-			StorageClassProvider:               ctx.String(deployStorageClassFlag.Name),
-			ForceHelmReleaseUpgrade:            ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:                    ctx.GlobalString(chartsDirectoryFlag.Name),
-			EnableCertManagerV2Migration:       ctx.Bool(enableCertManagerV2MigrationFlag.Name),
-			EnableCertManagerUpstreamMigration: ctx.Bool(enableCertManagerUpstreamMigrationFlag.Name),
-			EnableNginxIngressMigration:        ctx.Bool(enableNginxIngressMigrationFlag.Name),
-			EnableOpenstackCSIDriverMigration:  ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
-			EnableLogrotateMigration:           ctx.Bool(migrateLogrotateFlag.Name),
-			DisableTelemetry:                   ctx.Bool(disableTelemetryFlag.Name),
+			StorageClassProvider:               opt.StorageClass,
+			ForceHelmReleaseUpgrade:            opt.Force,
+			ChartsDirectory:                    opt.ChartsDirectory,
+			EnableCertManagerV2Migration:       opt.MigrateCertManager,
+			EnableCertManagerUpstreamMigration: opt.MigrateUpstreamCertManager,
+			EnableNginxIngressMigration:        opt.MigrateNginx,
+			EnableOpenstackCSIDriverMigration:  opt.MigrateOpenstackCSI,
+			EnableLogrotateMigration:           opt.MigrateLogrotate,
+			DisableTelemetry:                   opt.DisableTelemetry,
 		}
 
 		// validate the configuration
@@ -223,7 +209,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
-		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, opt, subLogger)
+		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, deployOptions, subLogger)
 		if len(validationErrors) > 0 {
 			logger.Error("⛔ The provided configuration files are invalid:")
 
@@ -237,7 +223,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		logger.Info("✅ Provided configuration is valid.")
 
 		// prepapre Kubernetes and Helm clients
-		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(kubeContext)
+		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(opt.KubeContext)
 		if err != nil {
 			return fmt.Errorf("failed to get config: %w", err)
 		}
@@ -291,16 +277,16 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to create Seed kubeconfig getter: %w", err)
 		}
 
-		opt.KubermaticConfiguration = kubermaticConfig
-		opt.HelmValues = helmValues
-		opt.KubeClient = kubeClient
-		opt.Logger = subLogger
-		opt.SeedsGetter = seedsGetter
-		opt.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
+		deployOptions.KubermaticConfiguration = kubermaticConfig
+		deployOptions.HelmValues = helmValues
+		deployOptions.KubeClient = kubeClient
+		deployOptions.Logger = subLogger
+		deployOptions.SeedsGetter = seedsGetter
+		deployOptions.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("🚦 Validating existing installation…")
 
-		if errs := kubermaticStack.ValidateState(appContext, opt); errs != nil {
+		if errs := kubermaticStack.ValidateState(appContext, deployOptions); errs != nil {
 			logger.Error("⛔ Cannot proceed with the installation:")
 
 			for _, e := range errs {
@@ -314,14 +300,14 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		logger.Infof("🛫 Deploying %s…", kubermaticStack.Name())
 
-		if err := kubermaticStack.Deploy(appContext, opt); err != nil {
+		if err := kubermaticStack.Deploy(appContext, deployOptions); err != nil {
 			return err
 		}
 
 		logger.Infof("🛬 Installation completed successfully. %s", greeting())
 
 		return nil
-	}))
+	})
 }
 
 func greeting() string {
