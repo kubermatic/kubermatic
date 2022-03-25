@@ -1183,7 +1183,6 @@ func TestEnsureProjectOwner(t *testing.T) {
 			existingUser:           test.CreateUser("James Bond"),
 			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding.ObjectMeta.Name = ""
 				binding.ResourceVersion = ""
 				return []kubermaticv1.UserProjectBinding{*binding}
@@ -1244,11 +1243,9 @@ func TestEnsureProjectOwner(t *testing.T) {
 			existingUser: test.CreateUser("James Bond"),
 			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding.ObjectMeta.Name = ""
 				binding.ResourceVersion = ""
 				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
-				binding2.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding2.ObjectMeta.Name = ""
 				binding2.ResourceVersion = ""
 				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
@@ -1303,11 +1300,9 @@ func TestEnsureProjectOwner(t *testing.T) {
 			existingUser: test.CreateUser("James Bond"),
 			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding.ObjectMeta.Name = ""
 				binding.ResourceVersion = ""
 				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
-				binding2.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				binding2.ObjectMeta.Name = ""
 				binding2.ResourceVersion = ""
 				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
