@@ -49,7 +49,7 @@ func TestCreateBinding(t *testing.T) {
 		return fakeClient, nil
 	}
 	// act
-	target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
+	target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 	result, err := target.Create(context.Background(), &provider.UserInfo{Email: authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", existingProject.Name)}, existingProject, memberEmail, groupName)
 
 	// validate
@@ -136,7 +136,7 @@ func TestListBinding(t *testing.T) {
 				return fakeClient, nil
 			}
 			// act
-			target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
+			target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 			result, err := target.List(context.Background(), &provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", tc.projectToSync.Name)}, tc.projectToSync, nil)
 
 			// validate

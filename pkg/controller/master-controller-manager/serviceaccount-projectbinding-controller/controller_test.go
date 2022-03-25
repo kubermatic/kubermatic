@@ -14,19 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package serviceaccount
+package serviceaccountprojectbindingcontroller
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -78,7 +80,7 @@ func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 
 			// act
 			ctx := context.Background()
-			target := reconcileServiceAccountProjectBinding{Client: kubermaticFakeClient}
+			target := reconcileServiceAccountProjectBinding{Client: kubermaticFakeClient, log: zap.NewNop().Sugar()}
 
 			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.saName}})
 
@@ -132,16 +134,9 @@ func genProject(name string) *kubermaticv1.Project {
 func genServiceAccount(id, group, projectName string) *kubermaticv1.User {
 	user := &kubermaticv1.User{}
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
-	user.OwnerReferences = []metav1.OwnerReference{
-		{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.ProjectKindName,
-			Name:       projectName,
-			UID:        types.UID(id),
-		},
-	}
-	user.Name = fmt.Sprintf("serviceaccount-%s", id)
-	user.Spec.Email = "serviceaccount-abcd@sa.kubermatic.io"
+	user.Name = kubermaticv1helper.EnsureProjectServiceAccountPrefix(id)
+	user.Spec.Email = fmt.Sprintf("%s@sa.kubermatic.io", user.Name)
+	user.Spec.Project = projectName
 
 	return user
 }

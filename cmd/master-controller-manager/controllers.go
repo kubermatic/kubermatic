@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
 	seedsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-sync"
-	serviceaccount "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/service-account"
+	serviceaccount "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/serviceaccount-projectbinding-controller"
 	userprojectbinding "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding"
 	userprojectbindingsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding-synchronizer"
 	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
@@ -89,7 +89,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := userprojectbinding.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create user-project-binding controller: %w", err)
 	}
-	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
+	if err := serviceaccount.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
 	}
 	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {

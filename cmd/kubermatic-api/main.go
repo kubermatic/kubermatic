@@ -265,7 +265,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged SSH key provider: %w", err)
 	}
-	userProvider := kubernetesprovider.NewUserProvider(client, kubernetesprovider.IsProjectServiceAccount)
+	userProvider := kubernetesprovider.NewUserProvider(client)
 	settingsProvider := kubernetesprovider.NewSettingsProvider(client)
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(client)
 	adminProvider := kubernetesprovider.NewAdminProvider(client)
@@ -276,7 +276,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	}
 
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClient, client, options.domain)
-	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, client, kubernetesprovider.IsProjectServiceAccount)
+	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create project provider: %w", err)

@@ -27,6 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -198,7 +199,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 					t.Fatalf("expected Inactive state got %s", sa.Status)
 				}
 
-				saName := fmt.Sprintf("serviceaccount-%s", sa.ID)
+				saName := kubermaticv1helper.EnsureProjectServiceAccountPrefix(sa.ID)
 				expectedSA := &kubermaticv1.User{}
 				err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
 				if err != nil {
@@ -486,7 +487,7 @@ func TestEdit(t *testing.T) {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, sa.Name)
 				}
 
-				saName := fmt.Sprintf("serviceaccount-%s", sa.ID)
+				saName := kubermaticv1helper.EnsureProjectServiceAccountPrefix(sa.ID)
 				expectedSA := &kubermaticv1.User{}
 				err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
 				if err != nil {

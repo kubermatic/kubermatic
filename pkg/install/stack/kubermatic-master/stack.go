@@ -243,6 +243,11 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 		return fmt.Errorf("failed to migrate keys: %w", err)
 	}
 
+	sublogger.Info("Migrating Users…")
+	if err := s.migrateUserProjects(ctx, kubeClient, sublogger, opt); err != nil {
+		return fmt.Errorf("failed to migrate users: %w", err)
+	}
+
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}

@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -103,6 +104,57 @@ func (*MasterStack) migrateUserSSHKeyProjects(ctx context.Context, client ctrlru
 			if err := client.Patch(ctx, &key, ctrlruntimeclient.MergeFrom(oldKey)); err != nil {
 				return fmt.Errorf("failed to update key %s: %w", key.Name, err)
 			}
+		}
+	}
+
+	return nil
+}
+
+// migrateUserProjects takes care of setting spec.project (see #9441) on all existing service account users
+// based on their owner references. This must happen before the new webhooks are installed.
+// The users are updated on the master cluster and are then synced downstream by the project
+// controller. This syncing will fail as long as the seed clusters are not also updated (at least
+// the CRDs), so in this sense it's safe to do it on the master.
+// This function can be removed in KKP 2.22.
+func (*MasterStack) migrateUserProjects(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	users := &kubermaticv1.UserList{}
+	if err := client.List(ctx, users); err != nil {
+		return fmt.Errorf("failed to list Users: %w", err)
+	}
+
+	apiVersion := kubermaticv1.SchemeGroupVersion.String()
+	kind := kubermaticv1.ProjectKindName
+
+	for _, user := range users.Items {
+		// already migrated
+		if user.Spec.Project != "" {
+			continue
+		}
+
+		if !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email) {
+			continue
+		}
+
+		projectID := ""
+		for _, ref := range user.OwnerReferences {
+			if ref.APIVersion == apiVersion && ref.Kind == kind {
+				if projectID != "" {
+					return fmt.Errorf("user %s has multiple owner references to Projects, this should not be possible; reduce the owner refs to a single Project reference", user.Name)
+				}
+
+				projectID = ref.Name
+			}
+		}
+
+		if projectID == "" {
+			return fmt.Errorf("user %s has no project owner reference, cannot determine project association", user.Name)
+		}
+
+		oldUser := user.DeepCopy()
+		user.Spec.Project = projectID
+
+		if err := client.Patch(ctx, &user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+			return fmt.Errorf("failed to update user %s: %w", user.Name, err)
 		}
 	}
 

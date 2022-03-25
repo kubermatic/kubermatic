@@ -38,6 +38,8 @@ import (
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
 	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
+	usermutation "k8c.io/kubermatic/v2/pkg/webhook/user/mutation"
+	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
 	usersshkeymutation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/mutation"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
@@ -161,6 +163,16 @@ func main() {
 	// setup MLAAdminSetting webhooks
 
 	mlaadminsettingmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup User webhooks
+
+	userValidator := uservalidation.NewValidator()
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.User{}).WithValidator(userValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup user validation webhook", zap.Error(err))
+	}
+
+	usermutation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks

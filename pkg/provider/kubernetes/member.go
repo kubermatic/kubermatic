@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -33,11 +34,10 @@ import (
 )
 
 // NewProjectMemberProvider returns a project members provider.
-func NewProjectMemberProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
+func NewProjectMemberProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client) *ProjectMemberProvider {
 	return &ProjectMemberProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               clientPrivileged,
-		isServiceAccountFunc:           isServiceAccountFunc,
 	}
 }
 
@@ -51,17 +51,13 @@ type ProjectMemberProvider struct {
 
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client
-
-	// since service account are special type of user this functions
-	// helps to determine if the given email address belongs to a service account
-	isServiceAccountFunc func(email string) bool
 }
 
 var _ provider.ProjectMemberProvider = &ProjectMemberProvider{}
 
 // Create creates a binding for the given member and the given project.
 func (p *ProjectMemberProvider) Create(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
-	if p.isServiceAccountFunc(memberEmail) {
+	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
@@ -89,7 +85,7 @@ func (p *ProjectMemberProvider) List(ctx context.Context, userInfo *provider.Use
 		if member.Spec.ProjectID == project.Name {
 			// The provider should serve only regular users as a members.
 			// The ServiceAccount is another type of the user and should not be append to project members.
-			if p.isServiceAccountFunc(member.Spec.UserEmail) {
+			if kubermaticv1helper.IsProjectServiceAccount(member.Spec.UserEmail) {
 				continue
 			}
 			projectMembers = append(projectMembers, member.DeepCopy())
@@ -195,7 +191,7 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 // CreateUnsecured creates a binding for the given member and the given project
 // This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
-	if p.isServiceAccountFunc(memberEmail) {
+	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
@@ -210,7 +206,7 @@ func (p *ProjectMemberProvider) CreateUnsecured(ctx context.Context, project *ku
 // CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
 // This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecuredForServiceAccount(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
-	if p.isServiceAccountFunc(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
+	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 

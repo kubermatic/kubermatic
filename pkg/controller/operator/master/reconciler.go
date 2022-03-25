@@ -390,6 +390,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(config, r.Client),
 		common.KubermaticConfigurationAdmissionWebhookCreator(config, r.Client),
+		kubermatic.UserValidatingWebhookConfigurationCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -404,6 +405,7 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		kubermatic.UserSSHKeyMutatingWebhookConfigurationCreator(config, r.Client),
+		kubermatic.UserMutatingWebhookConfigurationCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
