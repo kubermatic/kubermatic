@@ -105,11 +105,8 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	}
 
 	err = reconcilePresets(ctx, cluster.Status.NamespaceName, client)
-	if err != nil {
-		return cluster, err
-	}
 
-	return cluster, nil
+	return cluster, err
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {

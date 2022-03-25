@@ -51,11 +51,7 @@ func Add(mgr manager.Manager) error {
 	}
 
 	// Watch for changes to User
-	err = c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{})
 }
 
 // reconcileServiceAccountProjectBinding reconciles User objects.
