@@ -396,6 +396,18 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 # Kubermatic 2.18
 
+## [v2.18.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.8)
+
+### Bugfixes
+- Fix LoadBalancer expose strategy for LBs with external DNS names instead of IPs ([#9105](https://github.com/kubermatic/kubermatic/pull/9105))
+- `image-loader` parses custom versions in KubermaticConfiguration configuration files correctly ([#9154](https://github.com/kubermatic/kubermatic/pull/9154))
+- Fix wrong CPU configs for the KubeVirt Virtual Machine Instances ([#1203](https://github.com/kubermatic/machine-controller/pull/1203))
+- Fix vSphere VolumeAttachment cleanups during cluster deletion or node draining ([#1190](https://github.com/kubermatic/machine-controller/pull/1190))
+
+### Misc
+- Upgrade machine controller to v1.36.4
+- Support for `network:ha_router_replicated_interface` ports when discovering existing subnet router in Openstack ([#9176](https://github.com/kubermatic/kubermatic/pull/9176))
+
 ## [v2.18.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.7)
 
 ### Breaking Changes
