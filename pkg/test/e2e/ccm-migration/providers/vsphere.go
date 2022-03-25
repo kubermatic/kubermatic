@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -67,12 +66,12 @@ func (c *VsphereClusterJig) Setup(ctx context.Context) error {
 
 	projectID := rand.String(10)
 	if err := c.generateAndCreateProject(ctx, projectID); err != nil {
-		return errors.Wrap(err, "failed to create project")
+		return fmt.Errorf("failed to create project: %w", err)
 	}
 	c.log.Debugw("project created", "name", projectID)
 
 	if err := c.generateAndCreateSecret(ctx, vsphereSecretPrefixName, c.Credentials.GenerateSecretData()); err != nil {
-		return errors.Wrap(err, "failed to create credential secret")
+		return fmt.Errorf("failed to create credential secret: %w", err)
 	}
 	c.log.Debugw("secret created", "name", fmt.Sprintf("%s-%s", vsphereSecretPrefixName, c.name))
 
@@ -87,7 +86,7 @@ func (c *VsphereClusterJig) Setup(ctx context.Context) error {
 			},
 		},
 	}, projectID); err != nil {
-		return errors.Wrap(err, "failed to create user cluster")
+		return fmt.Errorf("failed to create user cluster: %w", err)
 	}
 	c.log.Debugw("Cluster created", "name", c.Name)
 
@@ -96,7 +95,7 @@ func (c *VsphereClusterJig) Setup(ctx context.Context) error {
 
 func (c *VsphereClusterJig) CreateMachineDeployment(ctx context.Context, userClient ctrlruntimeclient.Client) error {
 	if err := c.generateAndCreateMachineDeployment(ctx, userClient, c.Credentials.GenerateProviderSpec(c.name)); err != nil {
-		return errors.Wrap(err, "failed to create machine deployment")
+		return fmt.Errorf("failed to create machine deployment: %w", err)
 	}
 	return nil
 }
@@ -108,7 +107,7 @@ func (c *VsphereClusterJig) Cleanup(ctx context.Context, userClient ctrlruntimec
 func (c *VsphereClusterJig) CheckComponents(ctx context.Context, userClient ctrlruntimeclient.Client) (bool, error) {
 	ccmDeploy := &appsv1.Deployment{}
 	if err := c.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", c.name), Name: ccmDeploymentName}, ccmDeploy); err != nil {
-		return false, errors.Wrapf(err, "failed to get %s deployment", ccmDeploymentName)
+		return false, fmt.Errorf("failed to get %s deployment: %w", ccmDeploymentName, err)
 	}
 	if ccmDeploy.Status.AvailableReplicas == 1 {
 		return true, nil

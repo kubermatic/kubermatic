@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -68,7 +67,7 @@ func (ccj *CommonClusterJig) generateAndCreateCluster(ctx context.Context, cloud
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, ccj.SeedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
-		return errors.Wrap(err, "failed to update cluster status")
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 
 	return nil
@@ -104,13 +103,13 @@ func (ccj *CommonClusterJig) generateAndCreateMachineDeployment(ctx context.Cont
 func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntimeclient.Client) error {
 	cluster := &kubermaticv1.Cluster{}
 	if err := ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); err != nil {
-		return errors.Wrap(err, "failed to get user cluster")
+		return fmt.Errorf("failed to get user cluster: %w", err)
 	}
 
 	// Skip eviction to speed up the clean up process
 	nodes := &corev1.NodeList{}
 	if err := userClient.List(ctx, nodes); err != nil {
-		return errors.Wrap(err, "failed to list user cluster nodes")
+		return fmt.Errorf("failed to list user cluster nodes: %w", err)
 	}
 
 	for _, node := range nodes.Items {
@@ -129,7 +128,7 @@ func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntime
 			return userClient.Update(ctx, &n)
 		})
 		if retErr != nil {
-			return errors.Wrapf(retErr, "failed to annotate node %s", node.Name)
+			return fmt.Errorf("failed to annotate node %s: %w", node.Name, retErr)
 		}
 	}
 
@@ -141,14 +140,14 @@ func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntime
 			return true, nil
 		}
 		if err != nil {
-			return false, errors.Wrap(err, "failed to retrieve user cluster")
+			return false, fmt.Errorf("failed to retrieve user cluster:%w", err)
 		}
 		if cluster.DeletionTimestamp != nil {
 			return false, nil
 		}
 		err = ccj.SeedClient.Delete(ctx, cluster)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to delete user cluster")
+			return false, fmt.Errorf("failed to delete user cluster: %w", err)
 		}
 		return false, nil
 	})
@@ -158,7 +157,7 @@ func (ccj *CommonClusterJig) waitForClusterControlPlaneReady(ctx context.Context
 	cluster := &kubermaticv1.Cluster{}
 	return wait.PollImmediate(utils.ClusterReadinessCheckPeriod, utils.ClusterReadinessTimeout, func() (bool, error) {
 		if err := ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name}, cluster); err != nil {
-			return false, errors.Wrap(err, "failed to get user cluster")
+			return false, fmt.Errorf("failed to get user cluster: %w", err)
 		}
 		_, reconciledSuccessfully := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, kubermatic.Versions{}, true)
 		return reconciledSuccessfully, nil
