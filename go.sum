@@ -1026,8 +1026,6 @@ github.com/gookit/color v1.2.4/go.mod h1:AhIE+pS6D4Ql0SQWbBeXPHw7gY0/sjHoA4s/n1K
 github.com/gookit/color v1.3.8/go.mod h1:R3ogXq2B9rTbXoSHJ1HyUVAZ3poOJHpd9nQmyGZsfvQ=
 github.com/gophercloud/gophercloud v0.1.0/go.mod h1:vxM41WHh5uqHVBMZHzuwNOHh8XEoIEcSTewFxm1c5g8=
 github.com/gophercloud/gophercloud v0.14.0/go.mod h1:VX0Ibx85B60B5XOrZr6kaNwrmPUzcmMpwxvQ1WQIIWM=
-github.com/gophercloud/gophercloud v0.20.0 h1:1+4jrsjVhdX5omlAo4jkmFc6ftLbuXLzgFo4i6lH+Gk=
-github.com/gophercloud/gophercloud v0.20.0/go.mod h1:wRtmUelyIIv3CSSDI47aUwbs075O6i+LY+pXsKCBsb4=
 github.com/gophercloud/gophercloud v0.24.0 h1:jDsIMGJ1KZpAjYfQgGI2coNQj5Q83oPzuiGJRFWgMzw=
 github.com/gophercloud/gophercloud v0.24.0/go.mod h1:Q8fZtyi5zZxPS/j9aj3sSxtvj41AdQMDwyo1myduD5c=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
@@ -1291,8 +1289,6 @@ github.com/kubermatic/machine-controller v1.23.1/go.mod h1:mXWbT7SjqpgFhzCFT3yME
 github.com/kubermatic/machine-controller v1.26.0/go.mod h1:dcJ+GdDSCxCwM0poxwOK8hVO7epiOORDmNMmb2veyw4=
 github.com/kubermatic/machine-controller v1.36.1/go.mod h1:6BFZEvEMZi8OT8aHOsS7DXYsF6ZSpmsNxsci7OLTTn8=
 github.com/kubermatic/machine-controller v1.40.1/go.mod h1:5LVcN4tCybGg+55hIHcVzCjNsBJy2PlnXG0xIzKmXGY=
-github.com/kubermatic/machine-controller v1.42.1 h1:eA6F3HXP3O9ZHndTZrBdZCexGVw1+aeh3/mTT7acUaA=
-github.com/kubermatic/machine-controller v1.42.1/go.mod h1:Fx1+mK1UwQWmlUBTZQ90cxRxX3M4nY46JfR5tmX1YQI=
 github.com/kubermatic/machine-controller v1.42.2/go.mod h1:vr6i5XWfd5FIq2yodXcgdlKvOhMnM5uzn2XEZ2wcoFM=
 github.com/kubermatic/machine-controller v1.42.5 h1:VifxEm9oKnpyojfKSu5eQK96GzYMDfcmncmdxVt9h0s=
 github.com/kubermatic/machine-controller v1.42.5/go.mod h1:HTGzTo+pUxB112R2MUcdAEHfZHI9pFx5jV29EQif3JI=
@@ -2142,7 +2138,6 @@ golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad/go.mod h1:jdWPYTVW3xRLrWP
 golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
 golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2/go.mod h1:T9bdIzuCu7OtxOm1hfPfRQxPLYneinmdGuTeoZ9dtd4=
 golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a/go.mod h1:P+XmwS30IXTQdn5tA2iutPOUgjI07+tq3H3K9MVA1s8=
-golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 h1:HWj/xjIHfjYU5nVXpTM0s39J9CbLn7Cc5a7IC5rwsMQ=
 golang.org/x/crypto v0.0.0-20210817164053-32db794688a5/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20211202192323-5770296d904e h1:MUP6MR3rJ7Gk9LEia0LP2ytiH6MuCfs7qYz+47jGdD8=
 golang.org/x/crypto v0.0.0-20211202192323-5770296d904e/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
@@ -2877,7 +2872,6 @@ honnef.co/go/tools v0.1.4/go.mod h1:NgwopIslSNH47DimFoV78dnkksY2EFtX0ajyb3K/las=
 k8c.io/kubermatic/v2 v2.16.2/go.mod h1:NdW+2mq4ynRtfZs9yPnvcnFWQpzmM7ngntW6GeuQicU=
 k8c.io/operating-system-manager v0.1.0/go.mod h1:ULyZQO1irKjsQTNjIdrHld7SZ+joHjmPnOEs5Db8G8M=
 k8c.io/operating-system-manager v0.3.0/go.mod h1:ME5GOCNUrHG+57igEKP1JCJKVHynaLfodT8bRiYH3MY=
-k8c.io/operating-system-manager v0.3.9 h1:GcZgXqh90XYKdDXRMaMenA9AE30T8PZ47fM3yrwnygc=
 k8c.io/operating-system-manager v0.3.9/go.mod h1:aFyB/RH9DBAk0Kj5JVtCixhm9ugTeC8akgRGMW28lPg=
 k8c.io/operating-system-manager v0.4.0 h1:6F9kxELwHmhqLDLAAlodihBOnSfWM+8FPtbWcOshPGU=
 k8c.io/operating-system-manager v0.4.0/go.mod h1:pJImhsLb5GJdZunZ47r5Db0ydBwhWxhgL6mUKbU4Vps=
