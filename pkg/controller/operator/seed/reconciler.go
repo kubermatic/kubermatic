@@ -181,7 +181,15 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRoleBinding{}, common.WebhookClusterRoleBindingName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
+	}
+
 	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRole{}, nodeportproxy.ClusterRoleName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ClusterRole: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRole{}, common.WebhookClusterRoleName(cfg)); err != nil {
 		return fmt.Errorf("failed to clean up ClusterRole: %w", err)
 	}
 
