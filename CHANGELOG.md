@@ -72,6 +72,23 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 # Kubermatic 2.19
 
+## [v2.19.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.3)
+
+### Breaking Changes
+- ACTION REQUIRED: Secret name for S3 credentials updated to `kubermatic-s3-credentials`. If the secret `s3-credentials` was manually created instead of using the `minio` helm chart, new secret `kubermatic-s3-credentials` must be created. ([#9230](https://github.com/kubermatic/kubermatic/pull/9230))
+
+### Bugfixes
+- Fix LoadBalancer expose strategy for LBs with external DNS names instead of IPs ([#9105](https://github.com/kubermatic/kubermatic/pull/9105))
+- `image-loader` parses custom versions in KubermaticConfiguration configuration files correctly ([#9154](https://github.com/kubermatic/kubermatic/pull/9154))
+- Fix OpenVPNServerDown alerting rule to work as expected and not fire if Konnectivity is enabled. ([#9216](https://github.com/kubermatic/kubermatic/pull/9216))
+- Fixes Preset API Body for preset creation and update API calls. ([#9300](https://github.com/kubermatic/kubermatic/pull/9300))
+- Fix wrong CPU configs for the KubeVirt Virtual Machine Instances ([#1203](https://github.com/kubermatic/machine-controller/pull/1203))
+- Fix vSphere VolumeAttachment cleanups during cluster deletion or node draining ([#1190](https://github.com/kubermatic/machine-controller/pull/1190))
+
+### Misc
+- Upgrade machine controller to v1.42.5 ([#9440](https://github.com/kubermatic/kubermatic/pull/9440)) 
+- Support for `network:ha_router_replicated_interface` ports when discovering existing subnet router in Openstack ([#9176](https://github.com/kubermatic/kubermatic/pull/9176))
+
 ## [v2.19.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.2)
 
 ### Breaking Changes
