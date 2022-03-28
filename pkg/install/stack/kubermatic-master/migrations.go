@@ -74,35 +74,35 @@ func (*MasterStack) migrateUserSSHKeyProjects(ctx context.Context, client ctrlru
 		if err := util.RemoveMutatingWebhook(ctx, logger, client, common.UserSSHKeyAdmissionWebhookName); err != nil {
 			return fmt.Errorf("failed to remove the mutating webhook for UserSSHKeys: %w", err)
 		}
-	}
 
-	// Now that nobody should be blocking update operations on SSH keys, we can continue
-	// with the migration.
-	for _, key := range keys.Items {
-		if key.Spec.Project != "" {
-			continue
-		}
-
-		projectID := ""
-		for _, ref := range key.OwnerReferences {
-			if ref.APIVersion == apiVersion && ref.Kind == kind {
-				if projectID != "" {
-					return fmt.Errorf("key %s has multiple owner references to Projects, this should not be possible; reduce the owner refs to a single Project reference", key.Name)
-				}
-
-				projectID = ref.Name
+		// Now that nobody should be blocking update operations on SSH keys, we can continue
+		// with the migration.
+		for _, key := range keys.Items {
+			if key.Spec.Project != "" {
+				continue
 			}
-		}
 
-		if projectID == "" {
-			return fmt.Errorf("key %s no project owner reference, cannot determine project association", key.Name)
-		}
+			projectID := ""
+			for _, ref := range key.OwnerReferences {
+				if ref.APIVersion == apiVersion && ref.Kind == kind {
+					if projectID != "" {
+						return fmt.Errorf("key %s has multiple owner references to Projects, this should not be possible; reduce the owner refs to a single Project reference", key.Name)
+					}
 
-		oldKey := key.DeepCopy()
-		key.Spec.Project = projectID
+					projectID = ref.Name
+				}
+			}
 
-		if err := client.Patch(ctx, &key, ctrlruntimeclient.MergeFrom(oldKey)); err != nil {
-			return fmt.Errorf("failed to update key %s: %w", key.Name, err)
+			if projectID == "" {
+				return fmt.Errorf("key %s no project owner reference, cannot determine project association", key.Name)
+			}
+
+			oldKey := key.DeepCopy()
+			key.Spec.Project = projectID
+
+			if err := client.Patch(ctx, &key, ctrlruntimeclient.MergeFrom(oldKey)); err != nil {
+				return fmt.Errorf("failed to update key %s: %w", key.Name, err)
+			}
 		}
 	}
 
