@@ -54,9 +54,10 @@ const (
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
 
-	KubermaticOperatorChartName   = "kubermatic-operator"
-	KubermaticOperatorReleaseName = KubermaticOperatorChartName
-	KubermaticOperatorNamespace   = "kubermatic"
+	KubermaticOperatorChartName      = "kubermatic-operator"
+	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
+	KubermaticOperatorReleaseName    = KubermaticOperatorChartName
+	KubermaticOperatorNamespace      = "kubermatic"
 
 	TelemetryChartName   = "telemetry"
 	TelemetryReleaseName = TelemetryChartName
@@ -272,52 +273,6 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 	// install VPA CRDs
 	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io")); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// migrateUserSSHKeyProjects takes care of setting spec.project (see #9421) on all existing SSH keys
-// based on their owner references. This must happen before the new webhooks are installed.
-// The keys are updated on the master cluster and are then synced downstream by the project
-// controller. This syncing will fail as long as the seed clusters are not also updated (at least
-// the CRDs), so in this sense it's safe to do it on the master.
-// This function can be removed in KKP 2.22.
-func (*MasterStack) migrateUserSSHKeyProjects(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
-	keys := &kubermaticv1.UserSSHKeyList{}
-	if err := client.List(ctx, keys); err != nil {
-		return fmt.Errorf("failed to list UserSSHKeys: %w", err)
-	}
-
-	apiVersion := kubermaticv1.SchemeGroupVersion.String()
-	kind := kubermaticv1.ProjectKindName
-
-	for _, key := range keys.Items {
-		if key.Spec.Project != "" {
-			continue
-		}
-
-		projectID := ""
-		for _, ref := range key.OwnerReferences {
-			if ref.APIVersion == apiVersion && ref.Kind == kind {
-				if projectID != "" {
-					return fmt.Errorf("key %s has multiple owner references to Projects, this should not be possible; reduce the owner refs to a single Project reference", key.Name)
-				}
-
-				projectID = ref.Name
-			}
-		}
-
-		if projectID == "" {
-			return fmt.Errorf("key %s no project owner reference, cannot determine project association", key.Name)
-		}
-
-		oldKey := key.DeepCopy()
-		key.Spec.Project = projectID
-
-		if err := client.Patch(ctx, &key, ctrlruntimeclient.MergeFrom(oldKey)); err != nil {
-			return fmt.Errorf("failed to update key %s: %w", key.Name, err)
-		}
 	}
 
 	return nil
