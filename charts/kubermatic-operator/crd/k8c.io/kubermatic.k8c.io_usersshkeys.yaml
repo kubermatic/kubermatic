@@ -69,7 +69,9 @@ spec:
                 type: string
               project:
                 description: Project is the name of the Project object that this SSH
-                  key belongs to. This field is immutable.
+                  key belongs to. This field is immutable and required (it is marked
+                  as optional to keep the OpenAPI schema backwards compatible with
+                  KKP 2.20).
                 type: string
               publicKey:
                 description: PublicKey is the SSH public key.
@@ -79,7 +81,6 @@ spec:
             - fingerprint
             - name
             - owner
-            - project
             - publicKey
             type: object
         type: object

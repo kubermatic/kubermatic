@@ -53,7 +53,9 @@ type SSHKeySpec struct {
 	// This field is immutable.
 	Owner string `json:"owner"`
 	// Project is the name of the Project object that this SSH key belongs to.
-	// This field is immutable.
+	// This field is immutable and required (it is marked as optional to keep
+	// the OpenAPI schema backwards compatible with KKP 2.20).
+	// +optional
 	Project string `json:"project"`
 	// Clusters is the list of cluster names that this SSH key is assigned to.
 	Clusters []string `json:"clusters"`
