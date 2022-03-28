@@ -403,7 +403,9 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv
 func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoles")
 
-	var creators []reconciling.NamedClusterRoleCreatorGetter
+	creators := []reconciling.NamedClusterRoleCreatorGetter{
+		common.WebhookClusterRoleCreator(cfg),
+	}
 
 	if !seed.Spec.NodeportProxy.Disable {
 		creators = append(creators, nodeportproxy.ClusterRoleCreator(cfg))
@@ -425,6 +427,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *kube
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermaticseed.ClusterRoleBindingCreator(cfg, seed),
+		common.WebhookClusterRoleBindingCreator(cfg),
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {
