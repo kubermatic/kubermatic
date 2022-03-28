@@ -302,6 +302,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/kubernetes/clusters").
 		Handler(r.createExternalCluster())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/containerruntimemigration").
+		Handler(r.migrateKubeOneClusterToContainerd())
+
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
 		Handler(r.deleteExternalCluster())
@@ -1394,6 +1398,30 @@ func (r Routing) createExternalCluster() http.Handler {
 		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider, r.presetProvider)),
 		externalcluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/containerruntimemigration migrateKubeOneClusterToContainerd
+//
+//    Enable the migration to the containerd for the given kubeone cluster
+//
+//	   Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ExternalCluster
+//       401: empty
+//       403: empty
+func (r Routing) migrateKubeOneClusterToContainerd() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.MigrateEndpointToContainerd(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

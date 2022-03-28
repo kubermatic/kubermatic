@@ -10954,6 +10954,51 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/containerruntimemigration": {
+      "post": {
+        "description": "Enable the migration to the containerd for the given kubeone cluster",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "migrateKubeOneClusterToContainerd",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ExternalCluster",
+            "schema": {
+              "$ref": "#/definitions/ExternalCluster"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs": {
       "get": {
         "description": "List etcd backup configs for a given cluster",

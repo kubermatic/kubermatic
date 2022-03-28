@@ -19,6 +19,7 @@ package externalcluster
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -74,7 +75,12 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
-func patchKubeOneCluster(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster, newCluster *apiv2.ExternalCluster, upgradeMD string, secretKeySelector provider.SecretKeySelectorValueFunc, masterClient ctrlruntimeclient.Client) (*apiv2.ExternalCluster, error) {
+func patchKubeOneCluster(ctx context.Context,
+	externalCluster *kubermaticv1.ExternalCluster,
+	newCluster *apiv2.ExternalCluster, upgradeMD string,
+	secretKeySelector provider.SecretKeySelectorValueFunc,
+	clusterProvider provider.ExternalClusterProvider,
+	masterClient ctrlruntimeclient.Client) (*apiv2.ExternalCluster, error) {
 	kubeOneSpec := externalCluster.Spec.CloudSpec.KubeOne
 	if kubeOneSpec.ClusterStatus.Status == kubermaticv1.StatusReconciling {
 		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
@@ -91,9 +97,23 @@ func patchKubeOneCluster(ctx context.Context, externalCluster *kubermaticv1.Exte
 	if err := yaml.UnmarshalStrict([]byte(manifestValue), kubeOneClusterManifest); err != nil {
 		return nil, err
 	}
+	upgradeVersion := newCluster.Spec.Version.Semver().String()
 	kubeOneClusterManifest.Versions = kubeonev1beta2.VersionConfig{
-		Kubernetes: newCluster.Spec.Version.Semver().String(),
+		Kubernetes: upgradeVersion,
 	}
+
+	containerRuntimeDocker, err := isContainerRuntimeDocker(ctx, externalCluster, clusterProvider)
+	if err != nil {
+		return nil, err
+	}
+	if containerRuntimeDocker {
+		if upgradeVersion >= "1.24" {
+			return nil, errors.NewBadRequest("container runtime is \"docker\". Support for docker will be removed with Kubernetes 1.24 release.")
+		} else if kubeOneClusterManifest.ContainerRuntime.Docker == nil {
+			kubeOneClusterManifest.ContainerRuntime.Docker = &kubeonev1beta2.ContainerRuntimeDocker{}
+		}
+	}
+
 	yamlManifest, err := yaml.Marshal(kubeOneClusterManifest)
 	if err != nil {
 		return nil, err
@@ -118,11 +138,92 @@ func patchKubeOneCluster(ctx context.Context, externalCluster *kubermaticv1.Exte
 	if upgradeMD == "true" {
 		externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.StatusMessage = "upgrading machine MD"
 	}
-	// update api externalcluster status
+	// update api externalcluster status.
 	newCluster.Status.State = apiv2.RECONCILING
 	if err := masterClient.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		return nil, fmt.Errorf("failed to update kubeone cluster status %s: %w", externalCluster.Name, err)
 	}
 
 	return newCluster, nil
+}
+
+func MigrateKubeOneToContainerd(ctx context.Context,
+	externalCluster *kubermaticv1.ExternalCluster,
+	externalClusterProvider provider.ExternalClusterProvider,
+	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
+) (interface{}, error) {
+	kubeOneSpec := externalCluster.Spec.CloudSpec.KubeOne
+	manifest := kubeOneSpec.ManifestReference
+	masterClient := privilegedClusterProvider.GetMasterClient()
+
+	if kubeOneSpec.ClusterStatus.Status == kubermaticv1.StatusReconciling {
+		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
+	}
+
+	containerRuntimeDocker, err := isContainerRuntimeDocker(ctx, externalCluster, externalClusterProvider)
+	if err != nil {
+		return nil, err
+	}
+
+	if !containerRuntimeDocker {
+		return nil, nil
+	}
+
+	manifestSecret := &corev1.Secret{}
+	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
+		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
+	}
+	manifestValue := manifestSecret.Data[resources.KubeOneManifest]
+	kubeOneClusterManifest := &kubeonev1beta2.KubeOneCluster{}
+	if err := yaml.UnmarshalStrict(manifestValue, kubeOneClusterManifest); err != nil {
+		return nil, err
+	}
+	kubeOneClusterManifest.ContainerRuntime.Docker = nil
+	kubeOneClusterManifest.ContainerRuntime.Containerd = &kubeonev1beta2.ContainerRuntimeContainerd{}
+	yamlManifest, err := yaml.Marshal(kubeOneClusterManifest)
+	if err != nil {
+		return nil, err
+	}
+
+	oldManifestSecret := manifestSecret.DeepCopy()
+	manifestSecret.Data = map[string][]byte{
+		resources.KubeOneManifest: yamlManifest,
+	}
+	if err := masterClient.Patch(ctx, manifestSecret, ctrlruntimeclient.MergeFrom(oldManifestSecret)); err != nil {
+		return nil, fmt.Errorf("failed to update kubeone manifest secret for container-runtime containerd %s/%s: %w", manifest.Name, manifest.Namespace, err)
+	}
+
+	oldexternalCluster := externalCluster.DeepCopy()
+	// update kubeone externalcluster status.
+	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusMigrating
+	// update api externalcluster status.
+	apiCluster := convertClusterToAPI(externalCluster)
+	apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.RECONCILING}
+
+	if err := masterClient.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
+		return nil, fmt.Errorf("failed to update kubeone cluster status %s: %w", externalCluster.Name, err)
+	}
+
+	return apiCluster, nil
+}
+
+func isContainerRuntimeDocker(ctx context.Context,
+	externalCluster *kubermaticv1.ExternalCluster,
+	externalClusterProvider provider.ExternalClusterProvider,
+) (bool, error) {
+	var containerRuntimeDocker bool
+	nodes, err := externalClusterProvider.ListNodes(ctx, externalCluster)
+	if err != nil {
+		return containerRuntimeDocker, err
+	}
+	for _, node := range nodes.Items {
+		if _, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok {
+			if strings.Contains(node.Status.NodeInfo.ContainerRuntimeVersion, "docker") {
+				// container-runtime is docker
+				containerRuntimeDocker = true
+				break
+			}
+		}
+	}
+	return containerRuntimeDocker, nil
 }

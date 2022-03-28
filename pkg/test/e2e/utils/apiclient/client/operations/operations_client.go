@@ -40,6 +40,8 @@ type ClientService interface {
 
 	MigrateClusterToExternalCCM(params *MigrateClusterToExternalCCMParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MigrateClusterToExternalCCMOK, error)
 
+	MigrateKubeOneClusterToContainerd(params *MigrateKubeOneClusterToContainerdParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MigrateKubeOneClusterToContainerdOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -269,6 +271,44 @@ func (a *Client) MigrateClusterToExternalCCM(params *MigrateClusterToExternalCCM
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*MigrateClusterToExternalCCMDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  MigrateKubeOneClusterToContainerd Enable the migration to the containerd for the given kubeone cluster
+*/
+func (a *Client) MigrateKubeOneClusterToContainerd(params *MigrateKubeOneClusterToContainerdParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MigrateKubeOneClusterToContainerdOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewMigrateKubeOneClusterToContainerdParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "migrateKubeOneClusterToContainerd",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/containerruntimemigration",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &MigrateKubeOneClusterToContainerdReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*MigrateKubeOneClusterToContainerdOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*MigrateKubeOneClusterToContainerdDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
