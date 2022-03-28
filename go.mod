@@ -89,10 +89,10 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.23.4
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.22.2
+	k8s.io/kube-aggregator v0.23.4
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
-	k8s.io/kubectl v0.22.2
-	k8s.io/metrics v0.23.0
+	k8s.io/kubectl v0.23.4
+	k8s.io/metrics v0.23.4
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 	kubevirt.io/api v0.48.1
