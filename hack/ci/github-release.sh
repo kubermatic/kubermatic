@@ -245,6 +245,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
     --transform='flags=r;s|charts/kubermatic.example.ce.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
+    --exclude=charts/kubermatic-operator/crd/crd-*.yaml \
     _build/kubermatic-installer* \
     charts/backup \
     charts/cert-manager \
@@ -281,6 +282,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     --transform='flags=r;s|charts/kubermatic.example.ee.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
     --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
+    --exclude=charts/kubermatic-operator/crd/crd-*.yaml \
     _build/kubermatic-installer* \
     charts/backup \
     charts/cert-manager \
