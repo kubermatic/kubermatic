@@ -131,7 +131,6 @@ func (h *AdmissionHandler) ensureProjectRelation(ctx context.Context, key *kuber
 		return errors.New("cannot change the project for an UserSSHKey object")
 	}
 
-	// this should never occur due to OpenAPI validation
 	if key.Spec.Project == "" {
 		return errors.New("project name must be configured")
 	}
