@@ -113,14 +113,9 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Project: test.GenDefaultProject().Name,
 					},
 				},
 			),
@@ -139,14 +134,9 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Project: test.GenDefaultProject().Name,
 					},
 				},
 			),
@@ -762,14 +752,9 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Project: test.GenDefaultProject().Name,
 					},
 				},
 			),
@@ -788,14 +773,9 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 				&kubermaticv1.UserSSHKey{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8c.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       test.GenDefaultProject().Name,
-							},
-						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Project: test.GenDefaultProject().Name,
 					},
 				},
 			),
