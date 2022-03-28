@@ -555,17 +555,18 @@ const (
 	KubeOneSSHPrivateKey = "id_rsa"
 	KubeOneSSHPassphrase = "passphrase"
 	// KubeOne natively-supported providers.
-	KubeOneAWS              = "aws"
-	KubeOneGCP              = "gcp"
-	KubeOneAzure            = "azure"
-	KubeOneDigitalOcean     = "digitalocean"
-	KubeOneHetzner          = "hetzner"
-	KubeOneNutanix          = "nutanix"
-	KubeOneOpenStack        = "openstack"
-	KubeOneEquinix          = "equinix"
-	KubeOneVSphere          = "vsphere"
-	KubeOneImage            = "quay.io/kubermatic/kubeone"
-	KubeOneKubeConfigScript = `
+	KubeOneAWS          = "aws"
+	KubeOneGCP          = "gcp"
+	KubeOneAzure        = "azure"
+	KubeOneDigitalOcean = "digitalocean"
+	KubeOneHetzner      = "hetzner"
+	KubeOneNutanix      = "nutanix"
+	KubeOneOpenStack    = "openstack"
+	KubeOneEquinix      = "equinix"
+	KubeOneVSphere      = "vsphere"
+	KubeOneImage        = "quay.io/kubermatic/kubeone"
+	KubeOneUpgradeMDMsg = "upgrading machine MD"
+	KubeOneScript       = `
 #!/usr/bin/env bash
 
 eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
@@ -573,7 +574,6 @@ printf "#!/bin/sh\necho $PASSPHRASE" > script_returning_pass
 chmod +x script_returning_pass
 DISPLAY=1 SSH_ASKPASS="./script_returning_pass" ssh-add ~/.ssh/id_rsa > /dev/null 2> /dev/null
 rm ${SSH_ASKPASS} -f
-kubeone kubeconfig -m kubeonemanifest/manifest
 			`
 )
 
@@ -604,6 +604,7 @@ const (
 	OpenstackToken                       = "token"
 	// Below OpenStack constant is added for KubeOne Clusters.
 	OpenstackAuthURL = "authURL"
+	OpenstackRegion  = "region"
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"

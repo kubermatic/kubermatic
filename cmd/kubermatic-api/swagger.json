@@ -24730,6 +24730,10 @@
           "type": "string",
           "x-go-name": "ProjectID"
         },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
         "username": {
           "type": "string",
           "x-go-name": "Username"

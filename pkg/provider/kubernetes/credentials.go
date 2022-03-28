@@ -874,8 +874,9 @@ func createOrUpdateKubeOneOpenstackSecret(ctx context.Context, cloud apiv2.KubeO
 	project := cloud.OpenStack.Project
 	projectID := cloud.OpenStack.ProjectID
 	domain := cloud.OpenStack.Domain
+	region := cloud.OpenStack.Region
 
-	if username == "" || password == "" || domain == "" || authUrl == "" || project == "" || projectID == "" {
+	if username == "" || password == "" || domain == "" || authUrl == "" || project == "" || projectID == "" || region == "" {
 		return errors.NewBadRequest("kubeone Openstack credentials missing")
 	}
 
@@ -887,6 +888,7 @@ func createOrUpdateKubeOneOpenstackSecret(ctx context.Context, cloud apiv2.KubeO
 		resources.OpenstackProject:   []byte(project),
 		resources.OpenstackProjectID: []byte(projectID),
 		resources.OpenstackDomain:    []byte(domain),
+		resources.OpenstackRegion:    []byte(region),
 	})
 	if err != nil {
 		return err

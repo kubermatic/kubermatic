@@ -116,7 +116,7 @@ func patchKubeOneCluster(ctx context.Context, externalCluster *kubermaticv1.Exte
 	// update kubeone externalcluster status.
 	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusReconciling
 	if upgradeMD == "true" {
-		externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.StatusMessage = "upgrading machine MD"
+		externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.StatusMessage = resources.KubeOneUpgradeMDMsg
 	}
 	// update api externalcluster status
 	newCluster.Status.State = apiv2.RECONCILING
