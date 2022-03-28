@@ -88,7 +88,7 @@ type ApplicationSource struct {
 	// Get application to install from a Helm repository
 	Helm *HelmSource `json:"helm,omitempty"`
 
-	// Get application to install form a Git repository
+	// Get application to install from a Git repository
 	Git *GitSource `json:"git,omitempty"`
 }
 
@@ -112,7 +112,7 @@ type FormField struct {
 	// InternalName is used internally to save in the ApplicationInstallation object
 	InternalName string `json:"internalName"`
 
-	// HelpText is visible in the UI next to the filed
+	// HelpText is visible in the UI next to the field
 	HelpText string `json:"helpText,omitempty"`
 
 	// Required indicates if the control has to be set
@@ -127,7 +127,7 @@ const (
 type TemplateMethod string
 
 type ApplicationTemplate struct {
-	// Defined how the source of the application (e.g Helm chart) are retrieved
+	// Defined how the source of the application (e.g Helm chart) is retrieved
 	Source ApplicationSource `json:"source"`
 
 	// Method used to install the application
