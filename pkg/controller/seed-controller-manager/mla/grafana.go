@@ -128,7 +128,7 @@ func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *g
 			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
 		}
 		if status, err := grafanaClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
-			log.Debugf("unable to set dashboard: %w (status: %s, message: %s)",
+			log.Errorf("unable to set dashboard: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			return err
 		}
@@ -147,7 +147,7 @@ func deleteDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient
 			continue
 		}
 		if status, err := grafanaClient.DeleteDashboardByUID(ctx, board.UID); err != nil {
-			log.Debugf("unable to delete dashboard: %w (status: %s, message: %s)",
+			log.Errorf("unable to delete dashboard: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			return err
 		}
