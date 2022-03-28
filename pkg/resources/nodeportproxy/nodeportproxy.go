@@ -197,6 +197,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 	volumeMountNameEnvoyConfig := "envoy-config"
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Name = resources.NodePortProxyEnvoyDeploymentName
 			d.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -320,14 +321,15 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 }
 
 func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
-	name := name + "-lb-updater"
+	deploymentName := fmt.Sprintf("%s-lb-updater", name)
 	return func() (string, reconciling.DeploymentCreator) {
-		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Labels = resources.BaseAppLabels(name, nil)
+		return deploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Name = deploymentName
+			d.Labels = resources.BaseAppLabels(deploymentName, nil)
 			d.Spec.Replicas = resources.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabels(name, nil)
+				MatchLabels: resources.BaseAppLabels(deploymentName, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabels(deploymentName, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
