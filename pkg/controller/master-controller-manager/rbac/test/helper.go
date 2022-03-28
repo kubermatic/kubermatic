@@ -27,15 +27,10 @@ import (
 )
 
 func CreateProject(name string, owners ...*kubermaticv1.User) *kubermaticv1.Project {
-	refs := []metav1.OwnerReference{}
+	ownerNames := []string{}
 
 	for _, owner := range owners {
-		refs = append(refs, metav1.OwnerReference{
-			APIVersion: owner.APIVersion,
-			Kind:       owner.Kind,
-			UID:        owner.GetUID(),
-			Name:       owner.Name,
-		})
+		ownerNames = append(ownerNames, owner.Name)
 	}
 
 	return &kubermaticv1.Project{
@@ -46,11 +41,11 @@ func CreateProject(name string, owners ...*kubermaticv1.User) *kubermaticv1.Proj
 		ObjectMeta: metav1.ObjectMeta{
 			UID:             types.UID(name) + "ID",
 			Name:            name,
-			OwnerReferences: refs,
 			ResourceVersion: "1",
 		},
 		Spec: kubermaticv1.ProjectSpec{
-			Name: name,
+			Name:   name,
+			Owners: ownerNames,
 		},
 		Status: kubermaticv1.ProjectStatus{
 			Phase: kubermaticv1.ProjectInactive,

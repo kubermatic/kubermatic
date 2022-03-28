@@ -36,6 +36,9 @@ import (
 )
 
 func TestListProjects(t *testing.T) {
+	bob := genUser("", "bob", "bob@example.com")
+	john := genUser("", "john", "john@example.com")
+
 	// test data
 	testcases := []struct {
 		name             string
@@ -45,16 +48,16 @@ func TestListProjects(t *testing.T) {
 	}{
 		{
 			name:        "scenario 1: list bob's projects",
-			listOptions: &provider.ProjectListOptions{OwnerUID: types.UID("bob")},
+			listOptions: &provider.ProjectListOptions{OwnerName: bob.Name},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 				// john's project
-				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("john")),
+				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john),
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 			},
 		},
 
@@ -63,15 +66,15 @@ func TestListProjects(t *testing.T) {
 			listOptions: nil,
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 				// john's project
-				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("john")),
+				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john),
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 				// john's project
-				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("john")),
+				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john),
 			},
 		},
 
@@ -80,13 +83,13 @@ func TestListProjects(t *testing.T) {
 			listOptions: &provider.ProjectListOptions{ProjectName: "n1"},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 				// john's project
-				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("john")),
+				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john),
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 			},
 		},
 
@@ -95,20 +98,20 @@ func TestListProjects(t *testing.T) {
 			listOptions: &provider.ProjectListOptions{ProjectName: "n1"},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 				// john's project
 				func() *kubermaticv1.Project {
-					project := genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("john"))
+					project := genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john)
 					project.Spec.Name = "n1"
 					return project
 				}(),
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 				// john's project
 				func() *kubermaticv1.Project {
-					project := genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("john"))
+					project := genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john)
 					project.Spec.Name = "n1"
 					return project
 				}(),
@@ -117,20 +120,20 @@ func TestListProjects(t *testing.T) {
 
 		{
 			name:        "scenario 4: list a bob's project with a given name",
-			listOptions: &provider.ProjectListOptions{ProjectName: "n1", OwnerUID: types.UID("bob")},
+			listOptions: &provider.ProjectListOptions{ProjectName: "n1", OwnerName: bob.Name},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 				// john's project
 				func() *kubermaticv1.Project {
-					project := genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("john"))
+					project := genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john)
 					project.Spec.Name = "n1"
 					return project
 				}(),
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), genOwnerReference("bob")),
+				genProject("n1", kubermaticv1.ProjectActive, defaultCreationTimestamp(), bob),
 			},
 		},
 	}
@@ -183,6 +186,9 @@ func TestListProjects(t *testing.T) {
 }
 
 func TestGetUnsecuredProjects(t *testing.T) {
+	bob := genUser("", "bob", "bob@example.com")
+	john := genUser("", "john", "john@example.com")
+
 	// test data
 	testcases := []struct {
 		name             string
@@ -199,11 +205,11 @@ func TestGetUnsecuredProjects(t *testing.T) {
 			expectedError: "",
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectInactive, defaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("bob")}),
+				genProject("n1", kubermaticv1.ProjectInactive, defaultCreationTimestamp(), bob),
 				// john's project
-				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("john")}),
+				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john),
 			},
-			expectedProject: genProject("n1", kubermaticv1.ProjectInactive, defaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("bob")}),
+			expectedProject: genProject("n1", kubermaticv1.ProjectInactive, defaultCreationTimestamp(), bob),
 		},
 		{
 			name:          "scenario 2: get only active project",
@@ -212,9 +218,9 @@ func TestGetUnsecuredProjects(t *testing.T) {
 			expectedError: "Project is not initialized yet",
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				genProject("n1", kubermaticv1.ProjectInactive, defaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("bob")}),
+				genProject("n1", kubermaticv1.ProjectInactive, defaultCreationTimestamp(), bob),
 				// john's project
-				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("john")}),
+				genProject("n2", kubermaticv1.ProjectActive, defaultCreationTimestamp(), john),
 			},
 		},
 	}

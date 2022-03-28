@@ -63,7 +63,10 @@ type Project struct {
 
 // ProjectSpec is a specification of a project.
 type ProjectSpec struct {
+	// Name is the human-readable name given to the project.
 	Name string `json:"name"`
+	// Owners is the list of user names that own this project.
+	Owners []string `json:"owners"`
 }
 
 // ProjectStatus represents the current status of a project.

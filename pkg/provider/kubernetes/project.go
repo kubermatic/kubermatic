@@ -27,6 +27,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -75,24 +76,20 @@ func (p *ProjectProvider) New(ctx context.Context, users []*kubermaticv1.User, p
 		return nil, errors.New("users are missing but required")
 	}
 
-	project := &kubermaticv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{},
-			Name:            rand.String(10),
-			Labels:          labels,
-		},
-		Spec: kubermaticv1.ProjectSpec{
-			Name: projectName,
-		},
+	owners := sets.NewString()
+	for _, user := range users {
+		owners.Insert(user.Name)
 	}
 
-	for _, user := range users {
-		project.OwnerReferences = append(project.OwnerReferences, metav1.OwnerReference{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.UserKindName,
-			UID:        user.GetUID(),
-			Name:       user.Name,
-		})
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   rand.String(10),
+			Labels: labels,
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name:   projectName,
+			Owners: owners.List(),
+		},
 	}
 
 	if err := p.clientPrivileged.Create(ctx, project); err != nil {
@@ -210,27 +207,18 @@ func (p *ProjectProvider) List(ctx context.Context, options *provider.ProjectLis
 
 	var ret []*kubermaticv1.Project
 	for _, project := range projects.Items {
+		// apply list filters
 		if len(options.ProjectName) > 0 && project.Spec.Name != options.ProjectName {
 			continue
 		}
-		if len(options.OwnerUID) > 0 {
-			owners := project.GetOwnerReferences()
-			for _, owner := range owners {
-				if owner.UID == options.OwnerUID {
-					ret = append(ret, project.DeepCopy())
-					continue
-				}
-			}
+		if len(options.OwnerName) > 0 && !sets.NewString(project.Spec.Owners...).Has(options.OwnerName) {
 			continue
 		}
 
-		ret = append(ret, project.DeepCopy())
-	}
-
-	// Filter out restricted labels
-	for i, project := range ret {
+		// filter out restricted labels
 		project.Labels = label.FilterLabels(label.ClusterResourceType, project.Labels)
-		ret[i] = project
+
+		ret = append(ret, project.DeepCopy())
 	}
 
 	return ret, nil

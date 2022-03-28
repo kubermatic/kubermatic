@@ -109,23 +109,23 @@ func (c *projectController) ensureProjectPhase(ctx context.Context, project *kub
 	return nil
 }
 
-// ensureProjectOwner makes sure that the owner of the project is assign to "owners" group.
+// ensureProjectOwner makes sure that the owners of the project are assigned to "owners" group.
 func (c *projectController) ensureProjectOwner(ctx context.Context, project *kubermaticv1.Project) error {
-	var sharedOwnerPtrList []*kubermaticv1.User
-	for _, ref := range project.OwnerReferences {
-		if ref.Kind == kubermaticv1.UserKindName {
-			var sharedOwner kubermaticv1.User
-			key := types.NamespacedName{Name: ref.Name}
-			if err := c.client.Get(ctx, key, &sharedOwner); err != nil {
-				if !kerrors.IsNotFound(err) {
-					return err
-				}
+	var owners []*kubermaticv1.User
+	for _, userName := range project.Spec.Owners {
+		var owner kubermaticv1.User
+		if err := c.client.Get(ctx, types.NamespacedName{Name: userName}, &owner); err != nil {
+			if kerrors.IsNotFound(err) {
 				continue
 			}
-			sharedOwnerPtrList = append(sharedOwnerPtrList, sharedOwner.DeepCopy())
+
+			return fmt.Errorf("failed to get user %q: %w", userName, err)
 		}
+
+		owners = append(owners, owner.DeepCopy())
 	}
-	if len(sharedOwnerPtrList) == 0 {
+
+	if len(owners) == 0 {
 		return fmt.Errorf("the given project %s doesn't have associated owner/user", project.Name)
 	}
 
@@ -136,7 +136,7 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 
 	projectOwnerMap := sets.NewString()
 
-	for _, owner := range sharedOwnerPtrList {
+	for _, owner := range owners {
 		for _, binding := range bindings.Items {
 			if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
 				binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
@@ -145,7 +145,7 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 		}
 	}
 
-	for _, owner := range sharedOwnerPtrList {
+	for _, owner := range owners {
 		// create a new binding for the owner when doesn't exist
 		if !projectOwnerMap.Has(owner.Spec.Email) {
 			ownerBinding := genOwnerBinding(owner.Spec.Email, project)

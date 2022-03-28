@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -155,6 +156,45 @@ func (*MasterStack) migrateUserProjects(ctx context.Context, client ctrlruntimec
 
 		if err := client.Patch(ctx, &user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
 			return fmt.Errorf("failed to update user %s: %w", user.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// migrateProjectOwners takes care of setting spec.owners on all existing projects
+// based on their owner references. This must happen before the new webhooks are installed.
+// The keys are updated on the master cluster and are then synced downstream by the project
+// controller. This syncing will fail as long as the seed clusters are not also updated (at least
+// the CRDs), so in this sense it's safe to do it on the master.
+// This function can be removed in KKP 2.22.
+func (*MasterStack) migrateProjectOwners(ctx context.Context, client ctrlruntimeclient.Client, logger logrus.FieldLogger, opt stack.DeployOptions) error {
+	projects := &kubermaticv1.ProjectList{}
+	if err := client.List(ctx, projects); err != nil {
+		return fmt.Errorf("failed to list Projects: %w", err)
+	}
+
+	apiVersion := kubermaticv1.SchemeGroupVersion.String()
+	kind := kubermaticv1.UserKindName
+
+	for _, project := range projects.Items {
+		owners := sets.NewString()
+		for _, ref := range project.OwnerReferences {
+			if ref.APIVersion == apiVersion && ref.Kind == kind {
+				owners.Insert(ref.Name)
+			}
+		}
+
+		oldOwners := sets.NewString(project.Spec.Owners...)
+		if oldOwners.Equal(owners) {
+			continue
+		}
+
+		oldProject := project.DeepCopy()
+		project.Spec.Owners = owners.List()
+
+		if err := client.Patch(ctx, &project, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+			return fmt.Errorf("failed to update project %s: %w", project.Name, err)
 		}
 	}
 

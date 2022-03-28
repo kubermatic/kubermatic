@@ -131,7 +131,12 @@ func genDefaultUser() *kubermaticv1.User {
 }
 
 // genProject generates new empty project.
-func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
+func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, owners ...*kubermaticv1.User) *kubermaticv1.Project {
+	ownerNames := []string{}
+	for _, owner := range owners {
+		ownerNames = append(ownerNames, owner.Name)
+	}
+
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Project",
@@ -140,9 +145,11 @@ func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),
 			CreationTimestamp: metav1.NewTime(creationTime),
-			OwnerReferences:   oRef,
 		},
-		Spec: kubermaticv1.ProjectSpec{Name: name},
+		Spec: kubermaticv1.ProjectSpec{
+			Name:   name,
+			Owners: ownerNames,
+		},
 		Status: kubermaticv1.ProjectStatus{
 			Phase: phase,
 		},
@@ -152,13 +159,7 @@ func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.
 // genDefaultProject generates a default project.
 func genDefaultProject() *kubermaticv1.Project {
 	user := genDefaultUser()
-	oRef := metav1.OwnerReference{
-		APIVersion: "kubermatic.k8c.io/v1",
-		Kind:       "User",
-		UID:        user.UID,
-		Name:       user.Name,
-	}
-	return genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp(), oRef)
+	return genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp(), user)
 }
 
 // defaultCreationTimestamp returns default test timestamp.

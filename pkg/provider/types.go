@@ -155,8 +155,8 @@ type ProjectListOptions struct {
 	// ProjectName list only projects with the given name
 	ProjectName string
 
-	// OwnerUID list only project that belong to this user
-	OwnerUID types.UID
+	// OwnerName list only projects that belong to this user
+	OwnerName string
 }
 
 // ClusterProvider declares the set of methods for interacting with clusters

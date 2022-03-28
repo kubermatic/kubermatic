@@ -1217,23 +1217,10 @@ func TestEnsureProjectOwner(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						UID:  types.UID("thunderball") + "ID",
 						Name: "thunderball",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: firstOwner.APIVersion,
-								Kind:       firstOwner.Kind,
-								UID:        firstOwner.GetUID(),
-								Name:       firstOwner.Name,
-							},
-							{
-								APIVersion: secondOwner.APIVersion,
-								Kind:       secondOwner.Kind,
-								UID:        secondOwner.GetUID(),
-								Name:       secondOwner.Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
-						Name: "thunderball",
+						Name:   "thunderball",
+						Owners: []string{firstOwner.Name, secondOwner.Name},
 					},
 					Status: kubermaticv1.ProjectStatus{
 						Phase: kubermaticv1.ProjectInactive,
@@ -1268,29 +1255,10 @@ func TestEnsureProjectOwner(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						UID:  types.UID("thunderball") + "ID",
 						Name: "thunderball",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: firstOwner.APIVersion,
-								Kind:       firstOwner.Kind,
-								UID:        firstOwner.GetUID(),
-								Name:       firstOwner.Name,
-							},
-							{
-								APIVersion: secondOwner.APIVersion,
-								Kind:       secondOwner.Kind,
-								UID:        secondOwner.GetUID(),
-								Name:       secondOwner.Name,
-							},
-							{
-								APIVersion: thirdOwner.APIVersion,
-								Kind:       thirdOwner.Kind,
-								UID:        thirdOwner.GetUID(),
-								Name:       thirdOwner.Name,
-							},
-						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
-						Name: "thunderball",
+						Name:   "thunderball",
+						Owners: []string{firstOwner.Name, secondOwner.Name, thirdOwner.Name},
 					},
 					Status: kubermaticv1.ProjectStatus{
 						Phase: kubermaticv1.ProjectInactive,
