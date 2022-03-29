@@ -42,6 +42,7 @@ type NutanixClientSet interface {
 	ListNutanixClusters(ctx context.Context) (apiv1.NutanixClusterList, error)
 	ListNutanixProjects(ctx context.Context) (apiv1.NutanixProjectList, error)
 	ListNutanixSubnets(ctx context.Context, clusterName, projectName string) (apiv1.NutanixSubnetList, error)
+	ListNutanixCategories(ctx context.Context) (apiv1.NutanixCategoryList, error)
 }
 
 type nutanixClientImpl struct {
@@ -164,4 +165,31 @@ func NutanixSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoG
 	}
 
 	return listNutanixSubnets(ctx, client, clusterName, projectName)
+}
+
+func (n *nutanixClientImpl) ListNutanixCategories(ctx context.Context) (apiv1.NutanixCategoryList, error) {
+	clientSet, err := nutanixprovider.GetClientSetWithCreds(n.dc.Endpoint, n.dc.Port, &n.dc.AllowInsecure, n.creds.ProxyURL, n.creds.Username, n.creds.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return listNutanixCategories(ctx, clientSet)
+}
+
+func listNutanixCategories(ctx context.Context, client *nutanixprovider.ClientSet) (apiv1.NutanixCategoryList, error) {
+	categoryResp, err := nutanixprovider.GetCategories(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+
+	var categories apiv1.NutanixCategoryList
+	for _, category := range categoryResp {
+		categories = append(categories, apiv1.NutanixCategory{
+			Name:          *category.Name,
+			Description:   *category.Description,
+			SystemDefined: *category.SystemDefined,
+		})
+	}
+
+	return nil, nil
 }

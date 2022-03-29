@@ -656,6 +656,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/nutanix/{dc}/subnets").
 		Handler(r.listNutanixSubnets())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/categories").
+		Handler(r.listNutanixCategories())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/categories/{category}/values").
+		Handler(r.listNutanixCategoryValues())
+
 	// Define a set of endpoints for preset management
 	mux.Methods(http.MethodGet).
 		Path("/presets").
@@ -3939,6 +3947,50 @@ func (r Routing) listNutanixProjects() http.Handler {
 //      default: errorResponse
 //      200: NutanixSubnetList
 func (r Routing) listNutanixSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixSubnetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/categories nutanix listNutanixCategories
+//
+// List category keys from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixCategoryList
+func (r Routing) listNutanixCategories() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixCategoryEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/categories/{category}/values nutanix listNutanixCategoryValues
+//
+// List category values for a specific category key from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixCategoryKeyList
+func (r Routing) listNutanixCategoryValues() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),

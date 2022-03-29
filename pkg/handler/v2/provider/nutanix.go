@@ -204,6 +204,24 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 	}
 }
 
+func NutanixCategoryEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NutanixCommonReq)
+
+		client, _, err := getNutanixClient(ctx, req, presetProvider, seedsGetter, userInfoGetter)
+		if err != nil {
+			return nil, err
+		}
+
+		categories, err := client.ListNutanixCategories(ctx)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list categories: %s", err.Error()))
+		}
+
+		return categories, nil
+	}
+}
+
 func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) (providercommon.NutanixClientSet, *v1.Nutanix, error) {
 	creds := providercommon.NutanixCredentials{
 		ProxyURL: req.NutanixProxyURL,

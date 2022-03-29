@@ -113,6 +113,26 @@ func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName
 	return subnets, nil
 }
 
+func GetCategories(ctx context.Context, client *ClientSet) ([]nutanixv3.CategoryKeyStatus, error) {
+	resp, err := client.Prism.V3.ListCategories(ctx, nil)
+	if err != nil {
+		return nil, wrapNutanixError(err)
+	}
+
+	var categoryKeys []nutanixv3.CategoryKeyStatus
+
+	if resp != nil {
+		for _, entity := range resp.Entities {
+			if entity != nil {
+				categoryKeys = append(categoryKeys, *entity)
+			}
+		}
+	}
+
+	return categoryKeys, nil
+
+}
+
 func wrapNutanixError(initialErr error) error {
 	if initialErr == nil {
 		return nil
