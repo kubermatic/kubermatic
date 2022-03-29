@@ -43,6 +43,7 @@ type NutanixClientSet interface {
 	ListNutanixProjects(ctx context.Context) (apiv1.NutanixProjectList, error)
 	ListNutanixSubnets(ctx context.Context, clusterName, projectName string) (apiv1.NutanixSubnetList, error)
 	ListNutanixCategories(ctx context.Context) (apiv1.NutanixCategoryList, error)
+	ListNutanixCategoryValues(ctx context.Context, categoryName string) (apiv1.NutanixCategoryValueList, error)
 }
 
 type nutanixClientImpl struct {
@@ -184,12 +185,40 @@ func listNutanixCategories(ctx context.Context, client *nutanixprovider.ClientSe
 
 	var categories apiv1.NutanixCategoryList
 	for _, category := range categoryResp {
-		categories = append(categories, apiv1.NutanixCategory{
-			Name:          *category.Name,
-			Description:   *category.Description,
-			SystemDefined: *category.SystemDefined,
+		// do not list categories used by KKP; they should not be visible in the UI
+		if category.Name != nil && *category.Name != nutanixprovider.ClusterCategoryName && *category.Name != nutanixprovider.ProjectCategoryName {
+			categories = append(categories, apiv1.NutanixCategory{
+				Name:          *category.Name,
+				Description:   *category.Description,
+				SystemDefined: *category.SystemDefined,
+			})
+		}
+	}
+
+	return categories, nil
+}
+
+func (n *nutanixClientImpl) ListNutanixCategoryValues(ctx context.Context, categoryName string) (apiv1.NutanixCategoryValueList, error) {
+	clientSet, err := nutanixprovider.GetClientSetWithCreds(n.dc.Endpoint, n.dc.Port, &n.dc.AllowInsecure, n.creds.ProxyURL, n.creds.Username, n.creds.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return listNutanixCategoryValues(ctx, clientSet, categoryName)
+}
+
+func listNutanixCategoryValues(ctx context.Context, client *nutanixprovider.ClientSet, categoryName string) (apiv1.NutanixCategoryValueList, error) {
+	categoryValueResp, err := nutanixprovider.GetCategoryValues(ctx, client, categoryName)
+	if err != nil {
+		return nil, err
+	}
+
+	var categoryValues apiv1.NutanixCategoryValueList
+	for _, value := range categoryValueResp {
+		categoryValues = append(categoryValues, apiv1.NutanixCategoryValue{
+			Value: *value.Value,
 		})
 	}
 
-	return nil, nil
+	return categoryValues, nil
 }

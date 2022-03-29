@@ -130,7 +130,25 @@ func GetCategories(ctx context.Context, client *ClientSet) ([]nutanixv3.Category
 	}
 
 	return categoryKeys, nil
+}
 
+func GetCategoryValues(ctx context.Context, client *ClientSet, category string) ([]nutanixv3.CategoryValueStatus, error) {
+	resp, err := client.Prism.V3.ListAllCategoryValues(ctx, category, "")
+	if err != nil {
+		return nil, wrapNutanixError(err)
+	}
+
+	var categoryValues []nutanixv3.CategoryValueStatus
+
+	if resp != nil {
+		for _, entity := range resp.Entities {
+			if entity != nil {
+				categoryValues = append(categoryValues, *entity)
+			}
+		}
+	}
+
+	return categoryValues, nil
 }
 
 func wrapNutanixError(initialErr error) error {

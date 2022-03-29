@@ -83,6 +83,17 @@ type NutanixSubnetReq struct {
 	NutanixProject string
 }
 
+// NutanixCategoryValueReq represents a request for Nutanix category values for a specific category
+// swagger:parameters listNutanixCategoryValues
+type NutanixCategoryValueReq struct {
+	NutanixCommonReq
+
+	// Category to query the available values for
+	// in: path
+	// required: true
+	Category string `json:"category"`
+}
+
 // NutanixNoCredentialReq represent a request for Nutanix information with cluster-provided credentials
 // swagger:parameters listNutanixSubnetsNoCredentials
 type NutanixNoCredentialReq struct {
@@ -116,6 +127,25 @@ func DecodeNutanixSubnetReq(c context.Context, r *http.Request) (interface{}, er
 	req.NutanixCommonReq = commonReq.(NutanixCommonReq)
 	req.NutanixCluster = r.Header.Get("NutanixCluster")
 	req.NutanixProject = r.Header.Get("NutanixProject")
+
+	return req, nil
+}
+
+func DecodeNutanixCategoryValueReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req NutanixCategoryValueReq
+
+	commonReq, err := DecodeNutanixCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	category, ok := mux.Vars(r)["category"]
+	if !ok {
+		return nil, fmt.Errorf("'category' parameter is required")
+	}
+
+	req.NutanixCommonReq = commonReq.(NutanixCommonReq)
+	req.Category = category
 
 	return req, nil
 }
@@ -180,9 +210,8 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixSubnetReq)
-		commonReq := request.(NutanixCommonReq)
 
-		client, creds, err := getNutanixClient(ctx, commonReq, presetProvider, seedsGetter, userInfoGetter)
+		client, creds, err := getNutanixClient(ctx, req.NutanixCommonReq, presetProvider, seedsGetter, userInfoGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -216,6 +245,24 @@ func NutanixCategoryEndpoint(presetProvider provider.PresetProvider, seedsGetter
 		categories, err := client.ListNutanixCategories(ctx)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list categories: %s", err.Error()))
+		}
+
+		return categories, nil
+	}
+}
+
+func NutanixCategoryValuesEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NutanixCategoryValueReq)
+
+		client, _, err := getNutanixClient(ctx, req.NutanixCommonReq, presetProvider, seedsGetter, userInfoGetter)
+		if err != nil {
+			return nil, err
+		}
+
+		categories, err := client.ListNutanixCategoryValues(ctx, req.Category)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list category values for '%s': %s", req.Category, err.Error()))
 		}
 
 		return categories, nil

@@ -3982,21 +3982,21 @@ func (r Routing) listNutanixCategories() http.Handler {
 
 // swagger:route GET /api/v2/providers/nutanix/{dc}/categories/{category}/values nutanix listNutanixCategoryValues
 //
-// List category values for a specific category key from Nutanix
+// List available category values for a specific category from Nutanix
 //
 //      Produces:
 //      - application/json
 //
 //      Responses:
 //      default: errorResponse
-//      200: NutanixCategoryKeyList
+//      200: NutanixCategoryValueList
 func (r Routing) listNutanixCategoryValues() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeNutanixSubnetReq,
+		)(provider.NutanixCategoryValuesEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCategoryValueReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

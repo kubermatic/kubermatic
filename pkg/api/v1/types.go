@@ -467,6 +467,16 @@ type NutanixCategory struct {
 	SystemDefined bool   `json:"systemDefined"`
 }
 
+// NutanixCategoryValueList represents an array of Nutanix category values.
+// swagger:model NutanixCategoryValueList
+type NutanixCategoryValueList []NutanixCategoryValue
+
+// NutanixCategoryValue represents a Nutanix category value.
+// swagger:model NutanixCategoryValue
+type NutanixCategoryValue struct {
+	Value string `json:"value"`
+}
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
