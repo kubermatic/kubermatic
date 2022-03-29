@@ -185,8 +185,8 @@ func listNutanixCategories(ctx context.Context, client *nutanixprovider.ClientSe
 
 	var categories apiv1.NutanixCategoryList
 	for _, category := range categoryResp {
-		// do not list categories used by KKP; they should not be visible in the UI
-		if category.Name != nil && *category.Name != nutanixprovider.ClusterCategoryName && *category.Name != nutanixprovider.ProjectCategoryName {
+		// do not list categories used by KKP or KubeOne; they should not be visible in the UI
+		if category.Name != nil && *category.Name != nutanixprovider.ClusterCategoryName && *category.Name != nutanixprovider.ProjectCategoryName && *category.Name != "KubeOneCluster" {
 			categories = append(categories, apiv1.NutanixCategory{
 				Name:          *category.Name,
 				Description:   *category.Description,

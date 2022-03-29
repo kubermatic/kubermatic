@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
+
+	"k8s.io/utils/pointer"
 )
 
 func GetClusters(ctx context.Context, client *ClientSet) ([]nutanixv3.ClusterIntentResponse, error) {
@@ -114,7 +116,7 @@ func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName
 }
 
 func GetCategories(ctx context.Context, client *ClientSet) ([]nutanixv3.CategoryKeyStatus, error) {
-	resp, err := client.Prism.V3.ListCategories(ctx, nil)
+	resp, err := client.Prism.V3.ListCategories(ctx, &nutanixv3.CategoryListMetadata{Kind: pointer.String("category")})
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}
