@@ -1877,10 +1877,7 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 			RuleGroupType: ruleGroupType,
 			IsDefault:     isDefault,
 			Cluster: corev1.ObjectReference{
-				Kind:       kubermaticv1.ClusterKindName,
-				Namespace:  "",
-				Name:       clusterName,
-				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Name: clusterName,
 			},
 			Data: GenerateTestRuleGroupData(name),
 		},
@@ -1899,10 +1896,8 @@ func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGr
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroupType,
-			Cluster: corev1.ObjectReference{
-				Kind: kubermaticv1.ClusterKindName,
-			},
-			Data: GenerateTestRuleGroupData(name),
+			Cluster:       corev1.ObjectReference{},
+			Data:          GenerateTestRuleGroupData(name),
 		},
 	}
 }
