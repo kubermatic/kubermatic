@@ -27,12 +27,9 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/webhook/util"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -135,56 +132,9 @@ func (h *AdmissionHandler) ensureProjectRelation(ctx context.Context, key *kuber
 		return errors.New("project name must be configured")
 	}
 
-	project := &kubermaticv1.Project{}
-	if err := h.client.Get(ctx, types.NamespacedName{Name: key.Spec.Project}, project); err != nil {
-		if kerrors.IsNotFound(err) {
-			// during key creation, we enforce the project association;
-			// during updates we are more relaxed and only require that the association isn't changed,
-			// so that if a project gets removed before the key (for whatever reason), then
-			// the cluster cleanup can still progress and is not blocked by the webhook
-			if isUpdate {
-				return nil
-			}
-
-			return errors.New("no such project exists")
-		}
-
-		return fmt.Errorf("failed to get project: %w", err)
+	if err := util.OptimisticallyCheckIfProjectIsValid(ctx, h.client, key.Spec.Project, isUpdate); err != nil {
+		return err
 	}
-
-	// Do not check the project phase, as projects only get Active after being successfully
-	// reconciled. This requires the owner user to be setup properly as well, which in turn
-	// requires owner references to be setup. All of this is super annoying when doing
-	// GitOps. Instead we rely on _eventual_ consistency and only check that the project
-	// exists and is not being deleted.
-	if !isUpdate && project.DeletionTimestamp != nil {
-		return errors.New("project is in deletion, cannot create new clusters in it")
-	}
-
-	// ensure the key has exactly 1 OwnerRef to a Project and that this ownerRef points to the
-	// correct Project
-	ownerRefs := []metav1.OwnerReference{}
-	apiVersion := kubermaticv1.SchemeGroupVersion.String()
-	kind := kubermaticv1.ProjectKindName
-
-	for _, ref := range key.OwnerReferences {
-		// skip all project owner refs
-		if ref.Kind == kind && ref.APIVersion == apiVersion {
-			continue
-		}
-
-		ownerRefs = append(ownerRefs, ref)
-	}
-
-	ownerRefs = append(ownerRefs, metav1.OwnerReference{
-		APIVersion: apiVersion,
-		Kind:       kind,
-		UID:        project.UID,
-		Name:       project.Name,
-	})
-
-	kubernetes.SortOwnerReferences(ownerRefs)
-	key.SetOwnerReferences(ownerRefs)
 
 	return nil
 }
