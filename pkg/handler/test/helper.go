@@ -859,17 +859,6 @@ func GenProjectServiceAccount(id, name, group, projectName string) *kubermaticv1
 	return sa
 }
 
-func GenMainServiceAccount(id, name, group, ownerEmail string) *kubermaticv1.User {
-	user := GenUser(id, name, fmt.Sprintf("main-serviceaccount-%s@sa.kubermatic.io", id))
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: group}
-	user.Annotations = map[string]string{kubernetes.ServiceAccountAnnotationOwner: ownerEmail}
-
-	user.Spec.ID = id
-	user.Name = fmt.Sprintf("main-serviceaccount-%s", id)
-	user.UID = ""
-	return user
-}
-
 // GenAPIUser generates a API user.
 func GenAPIUser(name, email string) *apiv1.User {
 	usr := GenUser("", name, email)
