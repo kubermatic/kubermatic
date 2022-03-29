@@ -116,7 +116,6 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 }
 
 func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, namespace string, userClient ctrlruntimeclient.Client) (kubermaticv1.HealthStatus, error) {
-
 	// check the existence of the mutatingWebhookConfiguration in the user cluster
 	key := types.NamespacedName{Name: resources.MachineControllerMutatingWebhookConfigurationName}
 	webhookMutatingConf := &admissionregistrationv1.MutatingWebhookConfiguration{}
