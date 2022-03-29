@@ -31,9 +31,8 @@ import (
 )
 
 const (
-	ServiceAccountLabelGroup      = "initialGroup"
-	ServiceAccountAnnotationOwner = "owner"
-	saPrefix                      = "serviceaccount-"
+	ServiceAccountLabelGroup = "initialGroup"
+	saPrefix                 = "serviceaccount-"
 )
 
 // NewServiceAccountProvider returns a service account provider.
@@ -250,7 +249,7 @@ func (p *ServiceAccountProvider) GetProjectServiceAccount(ctx context.Context, u
 		return nil, err
 	}
 
-	name = addProjectSAPrefix(name)
+	name = ensureProjectSAPrefix(name)
 	serviceAccount := &kubermaticv1.User{}
 	if err := masterImpersonatedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: name}, serviceAccount); err != nil {
 		return nil, err
@@ -274,7 +273,7 @@ func (p *ServiceAccountProvider) GetUnsecuredProjectServiceAccount(ctx context.C
 		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
 	}
 
-	name = addProjectSAPrefix(name)
+	name = ensureProjectSAPrefix(name)
 	serviceAccount := &kubermaticv1.User{}
 	if err := p.clientPrivileged.Get(ctx, ctrlruntimeclient.ObjectKey{Name: name}, serviceAccount); err != nil {
 		return nil, err
@@ -300,7 +299,7 @@ func (p *ServiceAccountProvider) UpdateProjectServiceAccount(ctx context.Context
 		return nil, err
 	}
 
-	serviceAccount.Name = addProjectSAPrefix(serviceAccount.Name)
+	serviceAccount.Name = ensureProjectSAPrefix(serviceAccount.Name)
 
 	if err := masterImpersonatedClient.Update(ctx, serviceAccount); err != nil {
 		return nil, err
@@ -318,7 +317,7 @@ func (p *ServiceAccountProvider) UpdateUnsecuredProjectServiceAccount(ctx contex
 		return nil, kerrors.NewBadRequest("service account name cannot be nil")
 	}
 
-	serviceAccount.Name = addProjectSAPrefix(serviceAccount.Name)
+	serviceAccount.Name = ensureProjectSAPrefix(serviceAccount.Name)
 
 	if err := p.clientPrivileged.Update(ctx, serviceAccount); err != nil {
 		return nil, err
@@ -341,7 +340,7 @@ func (p *ServiceAccountProvider) DeleteProjectServiceAccount(ctx context.Context
 		return err
 	}
 
-	name = addProjectSAPrefix(name)
+	name = ensureProjectSAPrefix(name)
 	return masterImpersonatedClient.Delete(ctx, &kubermaticv1.User{ObjectMeta: metav1.ObjectMeta{Name: name}})
 }
 
@@ -354,7 +353,7 @@ func (p *ServiceAccountProvider) DeleteUnsecuredProjectServiceAccount(ctx contex
 		return kerrors.NewBadRequest("service account name cannot be empty")
 	}
 
-	name = addProjectSAPrefix(name)
+	name = ensureProjectSAPrefix(name)
 	return p.clientPrivileged.Delete(ctx, &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
@@ -372,9 +371,10 @@ func removeProjectSAPrefix(id string) string {
 	return strings.TrimPrefix(id, saPrefix)
 }
 
-// addProjectSAPrefix adds "serviceaccount-" prefix to a SA's ID,
+// ensureProjectSAPrefix adds "serviceaccount-" prefix to a SA's ID,
 // for example given "7d4b5695vb" it returns "serviceaccount-7d4b5695vb".
-func addProjectSAPrefix(id string) string {
+// If the given id already has the prefix, it will be returned unchanged.
+func ensureProjectSAPrefix(id string) string {
 	if !hasProjectSAPrefix(id) {
 		return fmt.Sprintf("%s%s", saPrefix, id)
 	}

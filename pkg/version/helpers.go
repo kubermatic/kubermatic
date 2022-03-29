@@ -32,7 +32,8 @@ func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.P
 	var compatible = true
 	var err error
 	for _, pi := range incompatibilities {
-		if pi.Provider == provider && operation == pi.Operation {
+		// NB: pi.Provider == "" allows applying incompatibilities to all providers.
+		if (pi.Provider == provider || pi.Provider == "") && operation == pi.Operation {
 			if pi.Condition == kubermaticv1.AlwaysCondition {
 				compatible, err = CheckUnconstrained(version, pi.Version)
 				if err != nil {

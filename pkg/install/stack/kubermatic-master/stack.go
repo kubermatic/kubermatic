@@ -54,9 +54,10 @@ const (
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
 
-	KubermaticOperatorChartName   = "kubermatic-operator"
-	KubermaticOperatorReleaseName = KubermaticOperatorChartName
-	KubermaticOperatorNamespace   = "kubermatic"
+	KubermaticOperatorChartName      = "kubermatic-operator"
+	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
+	KubermaticOperatorReleaseName    = KubermaticOperatorChartName
+	KubermaticOperatorNamespace      = "kubermatic"
 
 	TelemetryChartName   = "telemetry"
 	TelemetryReleaseName = TelemetryChartName
@@ -235,6 +236,11 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 	sublogger.Info("Deploying Custom Resource Definitions…")
 	if err := s.InstallKubermaticCRDs(ctx, kubeClient, sublogger, opt); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %w", err)
+	}
+
+	sublogger.Info("Migrating UserSSHKeys…")
+	if err := s.migrateUserSSHKeyProjects(ctx, kubeClient, sublogger, opt); err != nil {
+		return fmt.Errorf("failed to migrate keys: %w", err)
 	}
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {

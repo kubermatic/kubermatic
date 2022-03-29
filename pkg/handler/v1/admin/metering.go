@@ -203,3 +203,23 @@ func GetMeteringReportEndpoint(userInfoGetter provider.UserInfoGetter, seedsGett
 		return report, nil
 	}
 }
+
+// DeleteMeteringReportEndpoint removes a specific report.
+func DeleteMeteringReportEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
+
+		err = deleteMeteringReport(ctx, req, seedsGetter, seedClientGetter)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+}

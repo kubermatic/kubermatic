@@ -126,6 +126,10 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/admin/metering/reports/{report_name}").
 		Handler(r.getMeteringReport())
+
+	mux.Methods(http.MethodDelete).
+		Path("/admin/metering/reports/{report_name}").
+		Handler(r.deleteMeteringReport())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -552,7 +556,7 @@ func (r Routing) GetMeteringReportConfiguration() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: MeteringReportConfigurations
+//       200: []MeteringReportConfiguration
 //       401: empty
 //       403: empty
 func (r Routing) ListMeteringReportConfigurations() http.Handler {
@@ -571,12 +575,15 @@ func (r Routing) ListMeteringReportConfigurations() http.Handler {
 //
 //     Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
+//     Consumes:
+//     - application/json
+//
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: empty
+//       201: empty
 //       401: empty
 //       403: empty
 func (r Routing) CreateMeteringReportConfiguration() http.Handler {
@@ -586,21 +593,24 @@ func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.CreateMeteringReportConfigurationEndpoint(r.userInfoGetter, r.masterClient)),
 		admin.DecodeCreateMeteringReportConfigurationReq,
-		EncodeJSON,
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route PUT /api/v1/admin/metering/configurations/reports admin updateMeteringReportConfiguration
+// swagger:route PUT /api/v1/admin/metering/configurations/reports/{report_configuration_name} admin updateMeteringReportConfiguration
 //
 //     Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+//
+//     Consumes:
+//     - application/json
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: empty
+//       201: empty
 //       401: empty
 //       403: empty
 func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
@@ -610,7 +620,7 @@ func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateMeteringReportConfigurationEndpoint(r.userInfoGetter, r.masterClient)),
 		admin.DecodeUpdateMeteringReportConfigurationReq,
-		EncodeJSON,
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -682,6 +692,30 @@ func (r Routing) getMeteringReport() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetMeteringReportEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeGetMeteringReportReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+//swagger:route DELETE /api/v1/admin/metering/reports/{report_name} metering report deleteMeteringReport
+//
+//    Removes a specific metering report. Only available in Kubermatic Enterprise Edition
+//
+//    Produces:
+//    - application/json
+//
+//    Responses:
+//      default: errorResponse
+//      200: empty
+//      401: empty
+//      403: empty
+func (r Routing) deleteMeteringReport() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(admin.DeleteMeteringReportEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeDeleteMeteringReportReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

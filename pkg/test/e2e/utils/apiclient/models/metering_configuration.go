@@ -59,6 +59,11 @@ func (m *MeteringConfiguration) validateReportConfigurations(formats strfmt.Regi
 		}
 		if val, ok := m.ReportConfigurations[k]; ok {
 			if err := val.Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("reports" + "." + k)
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("reports" + "." + k)
+				}
 				return err
 			}
 		}

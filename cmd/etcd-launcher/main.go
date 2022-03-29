@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/url"
 	"os"
 	"os/exec"
@@ -138,7 +139,7 @@ func main() {
 	if thisMember != nil {
 		log.Infof("%v is a member", thisMember.GetPeerURLs())
 
-		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); errors.Is(err, fs.ErrNotExist) {
 			client, err := e.getClusterClient()
 			if err != nil {
 				log.Panicw("can't find cluster client: %v", zap.Error(err))
@@ -202,7 +203,7 @@ func getK8cCluster(client ctrlruntimeclient.Client, name string, log *zap.Sugare
 }
 
 func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
-	if _, err := os.Stat(etcdCommandPath); os.IsNotExist(err) {
+	if _, err := os.Stat(etcdCommandPath); errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("find etcd executable: %w", err)
 	}
 

@@ -859,17 +859,6 @@ func GenProjectServiceAccount(id, name, group, projectName string) *kubermaticv1
 	return sa
 }
 
-func GenMainServiceAccount(id, name, group, ownerEmail string) *kubermaticv1.User {
-	user := GenUser(id, name, fmt.Sprintf("main-serviceaccount-%s@sa.kubermatic.io", id))
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: group}
-	user.Annotations = map[string]string{kubernetes.ServiceAccountAnnotationOwner: ownerEmail}
-
-	user.Spec.ID = id
-	user.Name = fmt.Sprintf("main-serviceaccount-%s", id)
-	user.UID = ""
-	return user
-}
-
 // GenAPIUser generates a API user.
 func GenAPIUser(name, email string) *apiv1.User {
 	usr := GenUser("", name, email)
@@ -1282,7 +1271,6 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 
 func GenDefaultVersions() []semver.Semver {
 	return []semver.Semver{
-		*semver.NewSemverOrDie("1.20.14"),
 		*semver.NewSemverOrDie("1.21.8"),
 		*semver.NewSemverOrDie("1.22.5"),
 	}
@@ -1889,10 +1877,7 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 			RuleGroupType: ruleGroupType,
 			IsDefault:     isDefault,
 			Cluster: corev1.ObjectReference{
-				Kind:       kubermaticv1.ClusterKindName,
-				Namespace:  "",
-				Name:       clusterName,
-				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Name: clusterName,
 			},
 			Data: GenerateTestRuleGroupData(name),
 		},
@@ -1911,10 +1896,8 @@ func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGr
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroupType,
-			Cluster: corev1.ObjectReference{
-				Kind: kubermaticv1.ClusterKindName,
-			},
-			Data: GenerateTestRuleGroupData(name),
+			Cluster:       corev1.ObjectReference{},
+			Data:          GenerateTestRuleGroupData(name),
 		},
 	}
 }

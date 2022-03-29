@@ -239,11 +239,8 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 		aksCloudSpec.Name,
 		clusterToCreate,
 	)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) error {
@@ -642,10 +639,8 @@ func deleteAKSNodeGroup(ctx context.Context, cloud *kubermaticv1.ExternalCluster
 	}
 
 	_, err = agentPoolClient.Delete(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name, nodePoolName)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterCloudSpec, machineDeployment apiv2.ExternalClusterMachineDeployment, secretKeySelector provider.SecretKeySelectorValueFunc, credentialsReference *providerconfig.GlobalSecretKeySelector) (*apiv2.ExternalClusterMachineDeployment, error) {

@@ -181,7 +181,15 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRoleBinding{}, common.WebhookClusterRoleBindingName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
+	}
+
 	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRole{}, nodeportproxy.ClusterRoleName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ClusterRole: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(ctx, client, &rbacv1.ClusterRole{}, common.WebhookClusterRoleName(cfg)); err != nil {
 		return fmt.Errorf("failed to clean up ClusterRole: %w", err)
 	}
 
@@ -403,7 +411,9 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv
 func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoles")
 
-	var creators []reconciling.NamedClusterRoleCreatorGetter
+	creators := []reconciling.NamedClusterRoleCreatorGetter{
+		common.WebhookClusterRoleCreator(cfg),
+	}
 
 	if !seed.Spec.NodeportProxy.Disable {
 		creators = append(creators, nodeportproxy.ClusterRoleCreator(cfg))
@@ -425,6 +435,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *kube
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermaticseed.ClusterRoleBindingCreator(cfg, seed),
+		common.WebhookClusterRoleBindingCreator(cfg),
 	}
 
 	if !seed.Spec.NodeportProxy.Disable {

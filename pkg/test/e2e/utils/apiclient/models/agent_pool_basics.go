@@ -66,6 +66,8 @@ func (m *AgentPoolBasics) validateScalingConfig(formats strfmt.Registry) error {
 		if err := m.ScalingConfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("scalingConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("scalingConfig")
 			}
 			return err
 		}
@@ -94,6 +96,8 @@ func (m *AgentPoolBasics) contextValidateScalingConfig(ctx context.Context, form
 		if err := m.ScalingConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("scalingConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("scalingConfig")
 			}
 			return err
 		}

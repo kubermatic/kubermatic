@@ -156,6 +156,8 @@ func (m *PresetSpec) validateAks(formats strfmt.Registry) error {
 		if err := m.Aks.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
 			}
 			return err
 		}
@@ -173,6 +175,8 @@ func (m *PresetSpec) validateAlibaba(formats strfmt.Registry) error {
 		if err := m.Alibaba.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("alibaba")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("alibaba")
 			}
 			return err
 		}
@@ -190,6 +194,8 @@ func (m *PresetSpec) validateAnexia(formats strfmt.Registry) error {
 		if err := m.Anexia.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("anexia")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("anexia")
 			}
 			return err
 		}
@@ -207,6 +213,8 @@ func (m *PresetSpec) validateAws(formats strfmt.Registry) error {
 		if err := m.Aws.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aws")
 			}
 			return err
 		}
@@ -224,6 +232,8 @@ func (m *PresetSpec) validateAzure(formats strfmt.Registry) error {
 		if err := m.Azure.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("azure")
 			}
 			return err
 		}
@@ -241,6 +251,8 @@ func (m *PresetSpec) validateDigitalocean(formats strfmt.Registry) error {
 		if err := m.Digitalocean.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("digitalocean")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("digitalocean")
 			}
 			return err
 		}
@@ -258,6 +270,8 @@ func (m *PresetSpec) validateEks(formats strfmt.Registry) error {
 		if err := m.Eks.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eks")
 			}
 			return err
 		}
@@ -275,6 +289,8 @@ func (m *PresetSpec) validateFake(formats strfmt.Registry) error {
 		if err := m.Fake.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("fake")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("fake")
 			}
 			return err
 		}
@@ -292,6 +308,8 @@ func (m *PresetSpec) validateGcp(formats strfmt.Registry) error {
 		if err := m.Gcp.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gcp")
 			}
 			return err
 		}
@@ -309,6 +327,8 @@ func (m *PresetSpec) validateGke(formats strfmt.Registry) error {
 		if err := m.Gke.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gke")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gke")
 			}
 			return err
 		}
@@ -326,6 +346,8 @@ func (m *PresetSpec) validateHetzner(formats strfmt.Registry) error {
 		if err := m.Hetzner.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("hetzner")
 			}
 			return err
 		}
@@ -343,6 +365,8 @@ func (m *PresetSpec) validateKubevirt(formats strfmt.Registry) error {
 		if err := m.Kubevirt.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubevirt")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubevirt")
 			}
 			return err
 		}
@@ -360,6 +384,8 @@ func (m *PresetSpec) validateNutanix(formats strfmt.Registry) error {
 		if err := m.Nutanix.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nutanix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nutanix")
 			}
 			return err
 		}
@@ -377,6 +403,8 @@ func (m *PresetSpec) validateOpenstack(formats strfmt.Registry) error {
 		if err := m.Openstack.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openstack")
 			}
 			return err
 		}
@@ -394,6 +422,8 @@ func (m *PresetSpec) validatePacket(formats strfmt.Registry) error {
 		if err := m.Packet.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("packet")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("packet")
 			}
 			return err
 		}
@@ -411,6 +441,8 @@ func (m *PresetSpec) validateVsphere(formats strfmt.Registry) error {
 		if err := m.Vsphere.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vsphere")
 			}
 			return err
 		}
@@ -499,6 +531,8 @@ func (m *PresetSpec) contextValidateAks(ctx context.Context, formats strfmt.Regi
 		if err := m.Aks.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
 			}
 			return err
 		}
@@ -513,6 +547,8 @@ func (m *PresetSpec) contextValidateAlibaba(ctx context.Context, formats strfmt.
 		if err := m.Alibaba.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("alibaba")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("alibaba")
 			}
 			return err
 		}
@@ -527,6 +563,8 @@ func (m *PresetSpec) contextValidateAnexia(ctx context.Context, formats strfmt.R
 		if err := m.Anexia.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("anexia")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("anexia")
 			}
 			return err
 		}
@@ -541,6 +579,8 @@ func (m *PresetSpec) contextValidateAws(ctx context.Context, formats strfmt.Regi
 		if err := m.Aws.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aws")
 			}
 			return err
 		}
@@ -555,6 +595,8 @@ func (m *PresetSpec) contextValidateAzure(ctx context.Context, formats strfmt.Re
 		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("azure")
 			}
 			return err
 		}
@@ -569,6 +611,8 @@ func (m *PresetSpec) contextValidateDigitalocean(ctx context.Context, formats st
 		if err := m.Digitalocean.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("digitalocean")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("digitalocean")
 			}
 			return err
 		}
@@ -583,6 +627,8 @@ func (m *PresetSpec) contextValidateEks(ctx context.Context, formats strfmt.Regi
 		if err := m.Eks.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eks")
 			}
 			return err
 		}
@@ -597,6 +643,8 @@ func (m *PresetSpec) contextValidateFake(ctx context.Context, formats strfmt.Reg
 		if err := m.Fake.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("fake")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("fake")
 			}
 			return err
 		}
@@ -611,6 +659,8 @@ func (m *PresetSpec) contextValidateGcp(ctx context.Context, formats strfmt.Regi
 		if err := m.Gcp.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gcp")
 			}
 			return err
 		}
@@ -625,6 +675,8 @@ func (m *PresetSpec) contextValidateGke(ctx context.Context, formats strfmt.Regi
 		if err := m.Gke.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gke")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gke")
 			}
 			return err
 		}
@@ -639,6 +691,8 @@ func (m *PresetSpec) contextValidateHetzner(ctx context.Context, formats strfmt.
 		if err := m.Hetzner.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("hetzner")
 			}
 			return err
 		}
@@ -653,6 +707,8 @@ func (m *PresetSpec) contextValidateKubevirt(ctx context.Context, formats strfmt
 		if err := m.Kubevirt.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubevirt")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubevirt")
 			}
 			return err
 		}
@@ -667,6 +723,8 @@ func (m *PresetSpec) contextValidateNutanix(ctx context.Context, formats strfmt.
 		if err := m.Nutanix.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nutanix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nutanix")
 			}
 			return err
 		}
@@ -681,6 +739,8 @@ func (m *PresetSpec) contextValidateOpenstack(ctx context.Context, formats strfm
 		if err := m.Openstack.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openstack")
 			}
 			return err
 		}
@@ -695,6 +755,8 @@ func (m *PresetSpec) contextValidatePacket(ctx context.Context, formats strfmt.R
 		if err := m.Packet.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("packet")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("packet")
 			}
 			return err
 		}
@@ -709,6 +771,8 @@ func (m *PresetSpec) contextValidateVsphere(ctx context.Context, formats strfmt.
 		if err := m.Vsphere.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vsphere")
 			}
 			return err
 		}

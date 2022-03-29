@@ -151,12 +151,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
-			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %w", err)
-		}
-	}
-
 	// Remove possible leftovers of older version of Gatekeeper, remove this in 1.19
 	if err := r.ensureOldOPAIntegrationIsRemoved(ctx, data); err != nil {
 		return nil, err
@@ -325,6 +319,13 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		deployments = append(deployments, operatingsystemmanager.DeploymentCreator(data))
 	}
 
+	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		deployments = append(deployments,
+			nodeportproxy.DeploymentEnvoyCreator(data),
+			nodeportproxy.DeploymentLBUpdaterCreator(data),
+		)
+	}
+
 	return deployments
 }
 
@@ -415,6 +416,10 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, operatingsystemmanager.ServiceAccountCreator)
 	}
 
+	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, nodeportproxy.ServiceAccountCreator)
+	}
+
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %w", err)
 	}
@@ -432,6 +437,10 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 		namedRoleCreatorGetters = append(namedRoleCreatorGetters, operatingsystemmanager.RoleCreator)
 	}
 
+	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		namedRoleCreatorGetters = append(namedRoleCreatorGetters, nodeportproxy.RoleCreator)
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Roles: %w", err)
 	}
@@ -447,6 +456,10 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 
 	if c.Spec.EnableOperatingSystemManager {
 		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, operatingsystemmanager.RoleBindingCreator)
+	}
+
+	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, nodeportproxy.RoleBindingCreator)
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
@@ -599,6 +612,11 @@ func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.
 			dns.PodDisruptionBudgetCreator(),
 		)
 	}
+
+	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		creators = append(creators, nodeportproxy.PodDisruptionBudgetCreator())
+	}
+
 	return creators
 }
 

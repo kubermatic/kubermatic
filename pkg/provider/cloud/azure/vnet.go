@@ -19,6 +19,7 @@ package azure
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -26,6 +27,12 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	networkutil "k8c.io/kubermatic/v2/pkg/util/network"
+)
+
+const (
+	defaultVNetCIDRIPv4 = "10.0.0.0/16"
+	defaultVNetCIDRIPv6 = "fd00::/48"
 )
 
 func vnetName(cluster *kubermaticv1.Cluster) string {
@@ -55,7 +62,14 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 		})
 	}
 
-	target := targetVnet(cluster.Spec.Cloud, location, cluster.Name)
+	var cidrs []string
+	if networkutil.IsIPv4OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+		cidrs = append(cidrs, defaultVNetCIDRIPv4)
+	}
+	if networkutil.IsIPv6OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+		cidrs = append(cidrs, defaultVNetCIDRIPv6)
+	}
+	target := targetVnet(cluster.Spec.Cloud, location, cluster.Name, cidrs)
 
 	// check for attributes of the existing VNET and return early if all values are already
 	// as expected. Since there are a lot of pointers in the network.VirtualNetwork struct, we need to
@@ -63,8 +77,8 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	//
 	// Attributes we check:
 	// - Address space CIDR
-	if !(vnet.VirtualNetworkPropertiesFormat != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes != nil &&
-		len(*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes) == 1 && (*vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0] == (*target.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)[0]) {
+	if !(vnet.VirtualNetworkPropertiesFormat != nil && vnet.VirtualNetworkPropertiesFormat.AddressSpace != nil &&
+		reflect.DeepEqual(vnet.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes, target.VirtualNetworkPropertiesFormat.AddressSpace.AddressPrefixes)) {
 		if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}
@@ -76,7 +90,7 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	})
 }
 
-func targetVnet(cloud kubermaticv1.CloudSpec, location string, clusterName string) *network.VirtualNetwork {
+func targetVnet(cloud kubermaticv1.CloudSpec, location string, clusterName string, cidrs []string) *network.VirtualNetwork {
 	return &network.VirtualNetwork{
 		Name:     to.StringPtr(cloud.Azure.VNetName),
 		Location: to.StringPtr(location),
@@ -84,7 +98,7 @@ func targetVnet(cloud kubermaticv1.CloudSpec, location string, clusterName strin
 			clusterTagKey: to.StringPtr(clusterName),
 		},
 		VirtualNetworkPropertiesFormat: &network.VirtualNetworkPropertiesFormat{
-			AddressSpace: &network.AddressSpace{AddressPrefixes: &[]string{"10.0.0.0/16"}},
+			AddressSpace: &network.AddressSpace{AddressPrefixes: &cidrs},
 		},
 	}
 }

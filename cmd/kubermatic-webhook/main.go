@@ -165,7 +165,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks
 
-	usersshkeymutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+	usersshkeymutation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup OSM webhooks

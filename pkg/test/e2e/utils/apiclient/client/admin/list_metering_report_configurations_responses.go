@@ -60,25 +60,23 @@ func NewListMeteringReportConfigurationsOK() *ListMeteringReportConfigurationsOK
 
 /* ListMeteringReportConfigurationsOK describes a response with status code 200, with default header values.
 
-MeteringReportConfigurations
+MeteringReportConfiguration
 */
 type ListMeteringReportConfigurationsOK struct {
-	Payload *models.MeteringReportConfigurations
+	Payload []*models.MeteringReportConfiguration
 }
 
 func (o *ListMeteringReportConfigurationsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurationsOK  %+v", 200, o.Payload)
 }
-func (o *ListMeteringReportConfigurationsOK) GetPayload() *models.MeteringReportConfigurations {
+func (o *ListMeteringReportConfigurationsOK) GetPayload() []*models.MeteringReportConfiguration {
 	return o.Payload
 }
 
 func (o *ListMeteringReportConfigurationsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.MeteringReportConfigurations)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

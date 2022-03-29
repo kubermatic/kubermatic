@@ -57,6 +57,8 @@ func (m *EKSClusterSpec) validateVpcConfigRequest(formats strfmt.Registry) error
 		if err := m.VpcConfigRequest.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vpcConfigRequest")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vpcConfigRequest")
 			}
 			return err
 		}
@@ -85,6 +87,8 @@ func (m *EKSClusterSpec) contextValidateVpcConfigRequest(ctx context.Context, fo
 		if err := m.VpcConfigRequest.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vpcConfigRequest")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vpcConfigRequest")
 			}
 			return err
 		}

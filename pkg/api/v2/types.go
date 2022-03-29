@@ -398,30 +398,30 @@ type ExternalClusterState string
 
 const (
 	// PROVISIONING state indicates the cluster is being created.
-	PROVISIONING ExternalClusterState = "PROVISIONING"
+	PROVISIONING ExternalClusterState = "Provisioning"
 
 	// STOPPED state indicates the cluster is stopped, this state is specific to aks clusters.
-	STOPPED ExternalClusterState = "STOPPED"
+	STOPPED ExternalClusterState = "Stopped"
 
 	// STOPPING state indicates the cluster is stopping, this state is specific to aks clusters.
-	STOPPING ExternalClusterState = "STOPPING"
+	STOPPING ExternalClusterState = "Stopping"
 
 	// RUNNING state indicates the cluster has been created and is fully usable.
-	RUNNING ExternalClusterState = "RUNNING"
+	RUNNING ExternalClusterState = "Running"
 
 	// RECONCILING state indicates that some work is actively being done on the cluster, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
-	RECONCILING ExternalClusterState = "RECONCILING"
+	RECONCILING ExternalClusterState = "Reconciling"
 
 	// DELETING state indicates the cluster is being deleted.
-	DELETING ExternalClusterState = "DELETING"
+	DELETING ExternalClusterState = "Deleting"
 
 	// UNKNOWN Not set.
-	UNKNOWN ExternalClusterState = "UNKNOWN"
+	UNKNOWN ExternalClusterState = "Unknown"
 
 	// ERROR state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
-	ERROR ExternalClusterState = "ERROR"
+	ERROR ExternalClusterState = "Error"
 )
 
 // ExternalClusterStatus defines the external cluster status.

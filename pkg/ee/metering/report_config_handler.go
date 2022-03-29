@@ -88,7 +88,7 @@ func (m createReportConfigurationReq) Validate() error {
 type updateReportConfigurationReq struct {
 	// in: path
 	// required: true
-	Name string `json:"name"`
+	Name string `json:"report_configuration_name"`
 	// in: body
 	Body struct {
 		Schedule string `json:"schedule,omitempty"`
@@ -159,7 +159,7 @@ func DecodeDeleteMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 
 // GetMeteringReportConfiguration returns metering report configuration.
 // Assumes all Seeds uses the same configuration.
-func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*kubermaticv1.MeteringReportConfiguration, error) {
+func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*apiv1.MeteringReportConfiguration, error) {
 	if seedsGetter == nil {
 		return nil, errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
 	}
@@ -181,7 +181,11 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 		if report, ok := seed.Spec.Metering.ReportConfigurations[req.ReportConfigurationName]; ok {
 			// Metering configuration is replicated across all seeds.
 			// We can return after finding configuration in the first seed.
-			return report, nil
+			return &apiv1.MeteringReportConfiguration{
+				Name:     req.ReportConfigurationName,
+				Schedule: report.Schedule,
+				Interval: report.Interval,
+			}, nil
 		}
 	}
 
@@ -190,7 +194,7 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 
 // ListMeteringReportConfigurations lists metering report configurations.
 // Assumes all Seeds uses the same configuration.
-func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) (*apiv1.MeteringReportConfigurations, error) {
+func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1.MeteringReportConfiguration, error) {
 	if seedsGetter == nil {
 		return nil, errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
 	}
@@ -200,18 +204,24 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) (*apiv1.
 		return nil, err
 	}
 
-	var resp apiv1.MeteringReportConfigurations
+	var resp []apiv1.MeteringReportConfiguration
 	for _, seed := range seeds {
 		if seed.Spec.Metering == nil {
 			continue
 		}
-		resp = seed.Spec.Metering.ReportConfigurations
+		for reportConfigName, reportConfig := range seed.Spec.Metering.ReportConfigurations {
+			resp = append(resp, apiv1.MeteringReportConfiguration{
+				Name:     reportConfigName,
+				Schedule: reportConfig.Schedule,
+				Interval: reportConfig.Interval,
+			})
+		}
 		// Metering configuration is replicated across all seeds.
 		// We can break after finding configuration in the first seed.
 		break
 	}
 
-	return &resp, nil
+	return resp, nil
 }
 
 // CreateMeteringReportConfiguration adds new metering report configuration to the existing map.

@@ -440,16 +440,21 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.21.10
+    default: v1.22.7
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
-        condition: always
+        condition: nonAMD64WithCanalAndIPVS
         # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-        operation: CREATE
-        # Provider to which to apply the compatibility check
-        provider: vsphere
+        operation: UPGRADE
+        # Provider to which to apply the compatibility check.
+        # Empty string matches all providers
+        provider: ""
         # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+        version: 1.23.*
+      - condition: always
+        operation: CREATE
+        provider: vsphere
         version: 1.23.*
       - condition: externalCloudProvider
         operation: UPGRADE
@@ -476,18 +481,11 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.19.*
+        from: 1.20.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.20.13
-      - from: 1.20.*
-        to: 1.20.*
-      - automatic: true
-        from: '>= 1.20.0, < 1.20.13'
-        to: 1.20.13
-      - from: 1.20.*
-        to: 1.21.*
+        to: 1.21.10
       - from: 1.21.*
         to: 1.21.*
       - automatic: true
@@ -500,15 +498,17 @@ spec:
       - automatic: true
         from: '>= 1.22.0, < 1.22.5'
         to: 1.22.5
+      - from: 1.22.*
+        to: 1.23.*
+      - from: 1.23.*
+        to: 1.23.*
     # Versions lists the available versions.
     versions:
-      - v1.20.13
-      - v1.20.14
-      - v1.20.15
       - v1.21.8
       - v1.21.10
       - v1.22.5
       - v1.22.7
+      - v1.23.5
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

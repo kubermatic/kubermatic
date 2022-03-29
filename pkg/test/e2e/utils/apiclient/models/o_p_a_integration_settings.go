@@ -62,6 +62,8 @@ func (m *OPAIntegrationSettings) validateAuditResources(formats strfmt.Registry)
 		if err := m.AuditResources.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("auditResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("auditResources")
 			}
 			return err
 		}
@@ -79,6 +81,8 @@ func (m *OPAIntegrationSettings) validateControllerResources(formats strfmt.Regi
 		if err := m.ControllerResources.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("controllerResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("controllerResources")
 			}
 			return err
 		}
@@ -111,6 +115,8 @@ func (m *OPAIntegrationSettings) contextValidateAuditResources(ctx context.Conte
 		if err := m.AuditResources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("auditResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("auditResources")
 			}
 			return err
 		}
@@ -125,6 +131,8 @@ func (m *OPAIntegrationSettings) contextValidateControllerResources(ctx context.
 		if err := m.ControllerResources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("controllerResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("controllerResources")
 			}
 			return err
 		}

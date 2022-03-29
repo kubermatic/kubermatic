@@ -73,12 +73,8 @@ func Add(
 	if err != nil {
 		return err
 	}
-	err = c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, withEventFilter())
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, withEventFilter())
 }
 
 func withEventFilter() predicate.Predicate {

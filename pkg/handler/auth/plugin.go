@@ -77,7 +77,7 @@ func (p *TokenVerifierPlugins) Verify(ctx context.Context, token string) (TokenC
 	for _, plugin := range p.plugins {
 		claims, err := plugin.Verify(ctx, token)
 		if err == nil {
-			return claims, err
+			return claims, nil
 		}
 		// don't check another verifier when the token expired error is discovered
 		var expired *TokenExpiredError
@@ -114,7 +114,7 @@ func (p *TokenExtractorPlugins) Extract(r *http.Request) (string, error) {
 	for _, plugin := range p.plugins {
 		token, err := plugin.Extract(r)
 		if err == nil {
-			return token, err
+			return token, nil
 		}
 		errList = append(errList, err)
 	}

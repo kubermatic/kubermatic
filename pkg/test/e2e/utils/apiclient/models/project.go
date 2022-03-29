@@ -110,6 +110,8 @@ func (m *Project) validateOwners(formats strfmt.Registry) error {
 			if err := m.Owners[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("owners" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("owners" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -142,6 +144,8 @@ func (m *Project) contextValidateOwners(ctx context.Context, formats strfmt.Regi
 			if err := m.Owners[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("owners" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("owners" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

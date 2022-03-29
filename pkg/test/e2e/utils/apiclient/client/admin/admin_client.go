@@ -28,6 +28,8 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	CreateMeteringReportConfiguration(params *CreateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMeteringReportConfigurationCreated, error)
+
 	CreateOrUpdateMeteringConfigurations(params *CreateOrUpdateMeteringConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringConfigurationsOK, error)
 
 	CreateOrUpdateMeteringCredentials(params *CreateOrUpdateMeteringCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrUpdateMeteringCredentialsOK, error)
@@ -35,6 +37,8 @@ type ClientService interface {
 	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAdmissionPluginOK, error)
 
 	DeleteBackupDestination(params *DeleteBackupDestinationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBackupDestinationOK, error)
+
+	DeleteMeteringReportConfiguration(params *DeleteMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMeteringReportConfigurationOK, error)
 
 	DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSeedOK, error)
 
@@ -45,6 +49,8 @@ type ClientService interface {
 	GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticCustomLinksOK, error)
 
 	GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetKubermaticSettingsOK, error)
+
+	GetMeteringReportConfiguration(params *GetMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMeteringReportConfigurationOK, error)
 
 	GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedOK, error)
 
@@ -60,9 +66,49 @@ type ClientService interface {
 
 	UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAdmissionPluginOK, error)
 
+	UpdateMeteringReportConfiguration(params *UpdateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMeteringReportConfigurationCreated, error)
+
 	UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSeedOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  CreateMeteringReportConfiguration Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+*/
+func (a *Client) CreateMeteringReportConfiguration(params *CreateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMeteringReportConfigurationCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateMeteringReportConfigurationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createMeteringReportConfiguration",
+		Method:             "POST",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateMeteringReportConfigurationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateMeteringReportConfigurationCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateMeteringReportConfigurationDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
@@ -214,6 +260,44 @@ func (a *Client) DeleteBackupDestination(params *DeleteBackupDestinationParams, 
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteBackupDestinationDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteMeteringReportConfiguration Removes report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+*/
+func (a *Client) DeleteMeteringReportConfiguration(params *DeleteMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMeteringReportConfigurationOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteMeteringReportConfigurationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteMeteringReportConfiguration",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports/{report_configuration_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteMeteringReportConfigurationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteMeteringReportConfigurationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteMeteringReportConfigurationDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -408,6 +492,44 @@ func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, auth
 }
 
 /*
+  GetMeteringReportConfiguration Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+*/
+func (a *Client) GetMeteringReportConfiguration(params *GetMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMeteringReportConfigurationOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetMeteringReportConfigurationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getMeteringReportConfiguration",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports/{report_configuration_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetMeteringReportConfigurationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetMeteringReportConfigurationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetMeteringReportConfigurationDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetSeed returns the seed object
 */
 func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSeedOK, error) {
@@ -484,7 +606,7 @@ func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authIn
 }
 
 /*
-  ListMeteringReportConfigurations List report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition
+  ListMeteringReportConfigurations Lists report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition
 */
 func (a *Client) ListMeteringReportConfigurations(params *ListMeteringReportConfigurationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMeteringReportConfigurationsOK, error) {
 	// TODO: Validate the params before sending
@@ -670,6 +792,44 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UpdateAdmissionPluginDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateMeteringReportConfiguration Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
+*/
+func (a *Client) UpdateMeteringReportConfiguration(params *UpdateMeteringReportConfigurationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateMeteringReportConfigurationCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateMeteringReportConfigurationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "updateMeteringReportConfiguration",
+		Method:             "PUT",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports/{report_configuration_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateMeteringReportConfigurationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateMeteringReportConfigurationCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateMeteringReportConfigurationDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -23,7 +23,6 @@ import (
 	"net/http"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -34,19 +33,15 @@ func createOrUpdateMeteringCredentials(ctx context.Context, request interface{},
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return metering.DecodeMeteringSecretReq(r)
-}
-
 func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
 }
 
-func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*kubermaticv1.MeteringReportConfiguration, error) {
+func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*v1.MeteringReportConfiguration, error) {
 	return metering.GetMeteringReportConfiguration(seedsGetter, request)
 }
 
-func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) (*v1.MeteringReportConfigurations, error) {
+func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]v1.MeteringReportConfiguration, error) {
 	return metering.ListMeteringReportConfigurations(seedsGetter)
 }
 
@@ -60,6 +55,18 @@ func updateMeteringReportConfiguration(ctx context.Context, request interface{},
 
 func deleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
 	return metering.DeleteMeteringReportConfiguration(ctx, request, masterClient)
+}
+
+func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
+}
+
+func getMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
+	return metering.GetReport(ctx, request, seedsGetter, seedClientGetter)
+}
+
+func deleteMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	return metering.DeleteReport(ctx, request, seedsGetter, seedClientGetter)
 }
 
 func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
@@ -78,22 +85,22 @@ func DecodeDeleteMeteringReportConfigurationReq(_ context.Context, r *http.Reque
 	return metering.DecodeDeleteMeteringReportConfigurationReq(r)
 }
 
-func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return metering.DecodeMeteringConfigurationsReq(r)
-}
-
-func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
-	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
+func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeMeteringSecretReq(r)
 }
 
 func DecodeListMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeListMeteringReportReq(r)
 }
 
-func getMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
-	return metering.GetReport(ctx, request, seedsGetter, seedClientGetter)
-}
-
 func DecodeGetMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeGetMeteringReportReq(r)
+}
+
+func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeMeteringConfigurationsReq(r)
+}
+
+func DecodeDeleteMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeDeleteMeteringReportReq(r)
 }

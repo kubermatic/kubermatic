@@ -47,6 +47,12 @@ const (
 
 	// ForceRestartAnnotation is key of the annotation used to restart machine deployments.
 	ForceRestartAnnotation = "forceRestart"
+
+	// PresetNameAnnotation is key of the annotation used to hold preset name if was used for the cluster creation.
+	PresetNameAnnotation = "presetName"
+
+	// PresetInvalidatedAnnotation is key of the annotation used to indicate why the preset was invalidated.
+	PresetInvalidatedAnnotation = "presetInvalidated"
 )
 
 const (
@@ -55,9 +61,10 @@ const (
 )
 
 const (
-	WorkerNameLabelKey   = "worker-name"
-	ProjectIDLabelKey    = "project-id"
-	UpdatedByVPALabelKey = "updated-by-vpa"
+	WorkerNameLabelKey         = "worker-name"
+	ProjectIDLabelKey          = "project-id"
+	UpdatedByVPALabelKey       = "updated-by-vpa"
+	IsCredentialPresetLabelKey = "is-credential-preset"
 
 	DefaultEtcdClusterSize = 3
 	MinEtcdClusterSize     = 3
@@ -72,9 +79,17 @@ const (
 	AzureBasicLBSKU    = LBSKU("basic")
 )
 
+// +kubebuilder:validation:Enum=deleted;changed
+type PresetInvalidationReason string
+
+const (
+	PresetDeleted = PresetInvalidationReason("deleted")
+	PresetChanged = PresetInvalidationReason("changed")
+)
+
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
 // as they are security relevant.
-var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)
+var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey, IsCredentialPresetLabelKey)
 
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
@@ -85,6 +100,7 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
@@ -292,6 +308,8 @@ const (
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
+	ClusterConditionUpdateProgress ClusterConditionType = "UpdateProgress"
+
 	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
 	// This condition is met when a CSI migration is ongoing and the CSI
@@ -334,6 +352,18 @@ type ClusterCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Creating;Updating;Running;Terminating
+
+type ClusterPhase string
+
+// These are the valid phases of a project.
+const (
+	ClusterCreating    ClusterPhase = "Creating"
+	ClusterUpdating    ClusterPhase = "Updating"
+	ClusterRunning     ClusterPhase = "Running"
+	ClusterTerminating ClusterPhase = "Terminating"
+)
+
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	// +optional
@@ -374,6 +404,11 @@ type ClusterStatus struct {
 	// controllers and the API
 	// +optional
 	Conditions map[ClusterConditionType]ClusterCondition `json:"conditions,omitempty"`
+	// Phase is a description of the current cluster status, summarizing the various conditions,
+	// possible active updates etc. This field is for informational purpose only and no logic
+	// should be tied to the phase.
+	// +optional
+	Phase ClusterPhase `json:"phase,omitempty"`
 
 	// CloudMigrationRevision describes the latest version of the migration that has been done
 	// It is used to avoid redundant and potentially costly migrations
@@ -402,6 +437,11 @@ type ClusterVersionsStatus struct {
 	// Scheduler is the currently desired version of the kube-scheduler. This field behaves the
 	// same as the apiserver field.
 	Scheduler semver.Semver `json:"scheduler"`
+	// OldestNodeVersion is the oldest node version currently in use inside the cluster. This can be
+	// nil if there are no nodes. This field is primarily for speeding up reconciling, so that
+	// the controller doesn't have to re-fetch to the usercluster and query its node on every
+	// reconciliation.
+	OldestNodeVersion *semver.Semver `json:"oldestNodeVersion,omitempty"`
 }
 
 // HasConditionValue returns true if the cluster status has the given condition with the given status.

@@ -91,6 +91,8 @@ func (m *AzureCloudSpec) validateCredentialsReference(formats strfmt.Registry) e
 		if err := m.CredentialsReference.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -107,6 +109,8 @@ func (m *AzureCloudSpec) validateLoadBalancerSKU(formats strfmt.Registry) error 
 	if err := m.LoadBalancerSKU.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("loadBalancerSKU")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("loadBalancerSKU")
 		}
 		return err
 	}
@@ -138,6 +142,8 @@ func (m *AzureCloudSpec) contextValidateCredentialsReference(ctx context.Context
 		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -151,6 +157,8 @@ func (m *AzureCloudSpec) contextValidateLoadBalancerSKU(ctx context.Context, for
 	if err := m.LoadBalancerSKU.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("loadBalancerSKU")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("loadBalancerSKU")
 		}
 		return err
 	}

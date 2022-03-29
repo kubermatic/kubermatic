@@ -26,6 +26,8 @@ func (m ResourceLabelMap) Validate(formats strfmt.Registry) error {
 		if err := m[k].Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName(k)
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName(k)
 			}
 			return err
 		}
@@ -47,6 +49,8 @@ func (m ResourceLabelMap) ContextValidate(ctx context.Context, formats strfmt.Re
 		if err := m[k].ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName(k)
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName(k)
 			}
 			return err
 		}

@@ -123,6 +123,8 @@ func (m *User) validateProjects(formats strfmt.Registry) error {
 			if err := m.Projects[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("projects" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("projects" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -141,6 +143,8 @@ func (m *User) validateLastSeen(formats strfmt.Registry) error {
 	if err := m.LastSeen.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("lastSeen")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastSeen")
 		}
 		return err
 	}
@@ -157,6 +161,8 @@ func (m *User) validateUserSettings(formats strfmt.Registry) error {
 		if err := m.UserSettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("userSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("userSettings")
 			}
 			return err
 		}
@@ -195,6 +201,8 @@ func (m *User) contextValidateProjects(ctx context.Context, formats strfmt.Regis
 			if err := m.Projects[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("projects" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("projects" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -210,6 +218,8 @@ func (m *User) contextValidateLastSeen(ctx context.Context, formats strfmt.Regis
 	if err := m.LastSeen.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("lastSeen")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastSeen")
 		}
 		return err
 	}
@@ -223,6 +233,8 @@ func (m *User) contextValidateUserSettings(ctx context.Context, formats strfmt.R
 		if err := m.UserSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("userSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("userSettings")
 			}
 			return err
 		}

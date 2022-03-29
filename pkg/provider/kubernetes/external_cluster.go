@@ -252,9 +252,13 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	return v, nil
 }
 
-func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error {
+func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, encodedKubeconfig string) error {
+	kubeconfig, err := base64.StdEncoding.DecodeString(encodedKubeconfig)
+	if err != nil {
+		return err
+	}
 	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, cluster, map[string][]byte{
-		resources.ExternalClusterKubeconfig: []byte(kubeconfig),
+		resources.ExternalClusterKubeconfig: kubeconfig,
 	})
 	if err != nil {
 		return err

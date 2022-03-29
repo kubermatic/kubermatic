@@ -365,11 +365,7 @@ func createNewEKSCluster(ctx context.Context, eksClusterSpec *apiv2.EKSClusterSp
 	}
 	_, err = client.EKS.CreateCluster(input)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func createOrImportEKSCluster(ctx context.Context, name string, userInfoGetter provider.UserInfoGetter, project *kubermaticv1.Project, spec *apiv2.ExternalClusterSpec, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
@@ -725,10 +721,8 @@ func deleteEKSNodeGroup(cluster *kubermaticv1.ExternalCluster, nodeGroupName str
 		NodegroupName: &nodeGroupName,
 	}
 	_, err = client.EKS.DeleteNodegroup(&deleteNGInput)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 func EKSInstanceTypesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {

@@ -39,7 +39,7 @@ spec:
             properties:
               cluster:
                 description: Cluster is the reference to the cluster the ruleGroup
-                  should be created in.
+                  should be created in. All fields except for the name are ignored.
                 properties:
                   apiVersion:
                     description: API version of the referent.

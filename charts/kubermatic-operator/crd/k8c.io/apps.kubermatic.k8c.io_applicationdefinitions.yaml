@@ -74,7 +74,7 @@ spec:
                                 type: string
                               helpText:
                                 description: HelpText is visible in the UI next to
-                                  the filed
+                                  the field
                                 type: string
                               internalName:
                                 description: InternalName is used internally to save
@@ -105,10 +105,10 @@ spec:
                           type: string
                         source:
                           description: Defined how the source of the application (e.g
-                            Helm chart) are retrieved
+                            Helm chart) is retrieved
                           properties:
                             git:
-                              description: Get application to install form a Git repository
+                              description: Get application to install from a Git repository
                               properties:
                                 credentials:
                                   description: Credentials holds the git credentials

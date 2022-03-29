@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -32,25 +32,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func handleErrors(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
-	return func(ctx *cli.Context) error {
-		err := action(ctx)
+type cobraFuncE func(cmd *cobra.Command, args []string) error
+
+func handleErrors(logger *logrus.Logger, action cobraFuncE) cobraFuncE {
+	return func(cmd *cobra.Command, args []string) error {
+		err := action(cmd, args)
 		if err != nil {
 			logger.Errorf("❌ Operation failed: %v.", err)
-			err = cli.NewExitError("", 1)
 		}
 
 		return err
-	}
-}
-
-func setupLogger(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
-	return func(ctx *cli.Context) error {
-		if ctx.GlobalBool("verbose") {
-			logger.SetLevel(logrus.DebugLevel)
-		}
-
-		return action(ctx)
 	}
 }
 

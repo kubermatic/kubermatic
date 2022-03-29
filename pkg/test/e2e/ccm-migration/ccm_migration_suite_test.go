@@ -20,12 +20,14 @@ package ccmmigration
 
 import (
 	"flag"
+	"os"
 	"testing"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 )
 
@@ -33,32 +35,46 @@ import (
 type testOptions struct {
 	skipCleanup       bool
 	debugLog          bool
-	datacenter        string
-	userClusterName   string
 	kubernetesVersion semver.Semver
 
-	osCredentials credentials
+	provider string
+
+	vsphereSeedDatacenter string
+	osSeedDatacenter      string
+
+	osCredentials      providers.OpenstackCredentialsType
+	vSphereCredentials providers.VsphereCredentialsType
 }
 
-var options = testOptions{
-	kubernetesVersion: *semver.NewSemverOrDie("v1.20.14"),
-}
+var (
+	options = testOptions{
+		kubernetesVersion: *semver.NewSemverOrDie(os.Getenv("VERSION_TO_TEST")),
+	}
+)
 
 func init() {
-	flag.StringVar(&options.datacenter, "datacenter", "byo-kubernetes", "Name of the datacenter used by the user clusters created for the test.")
-	flag.StringVar(&options.userClusterName, "user-cluster-name", "", "name of the user cluster to be created")
-	flag.Var(&options.kubernetesVersion, "kubernetes-version", "Kubernetes version for the user cluster")
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
 
-	flag.StringVar(&options.osCredentials.authURL, "openstack-auth-url", "", "openstack auth url")
-	flag.StringVar(&options.osCredentials.username, "openstack-username", "", "openstack username")
-	flag.StringVar(&options.osCredentials.password, "openstack-password", "", "openstack password")
-	flag.StringVar(&options.osCredentials.project, "openstack-project", "", "openstack project")
-	flag.StringVar(&options.osCredentials.domain, "openstack-domain", "", "openstack domain")
-	flag.StringVar(&options.osCredentials.region, "openstack-region", "", "openstack region")
-	flag.StringVar(&options.osCredentials.floatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
-	flag.StringVar(&options.osCredentials.network, "openstack-network", "", "openstack network")
+	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
+
+	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
+	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
+
+	flag.StringVar(&options.osCredentials.AuthURL, "openstack-auth-url", "", "openstack auth url")
+	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
+	flag.StringVar(&options.osCredentials.Password, "openstack-password", "", "openstack password")
+	flag.StringVar(&options.osCredentials.Tenant, "openstack-tenant", "", "openstack tenant")
+	flag.StringVar(&options.osCredentials.Domain, "openstack-domain", "", "openstack domain")
+	flag.StringVar(&options.osCredentials.Region, "openstack-region", "", "openstack region")
+	flag.StringVar(&options.osCredentials.FloatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
+	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
+
+	flag.StringVar(&options.vSphereCredentials.AuthURL, "vsphere-auth-url", "", "vsphere auth-url")
+	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
+	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
+	flag.StringVar(&options.vSphereCredentials.Datacenter, "vsphere-datacenter", "", "vsphere datacenter")
+	flag.StringVar(&options.vSphereCredentials.Cluster, "vsphere-cluster", "", "vsphere cluster")
 }
 
 func TestCCMMigration(t *testing.T) {

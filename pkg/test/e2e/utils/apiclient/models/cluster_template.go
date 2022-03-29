@@ -124,6 +124,8 @@ func (m *ClusterTemplate) validateUserSSHKeys(formats strfmt.Registry) error {
 			if err := m.UserSSHKeys[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("userSshKeys" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("userSshKeys" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -143,6 +145,8 @@ func (m *ClusterTemplate) validateCluster(formats strfmt.Registry) error {
 		if err := m.Cluster.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cluster")
 			}
 			return err
 		}
@@ -160,6 +164,8 @@ func (m *ClusterTemplate) validateNodeDeployment(formats strfmt.Registry) error 
 		if err := m.NodeDeployment.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeDeployment")
 			}
 			return err
 		}
@@ -198,6 +204,8 @@ func (m *ClusterTemplate) contextValidateUserSSHKeys(ctx context.Context, format
 			if err := m.UserSSHKeys[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("userSshKeys" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("userSshKeys" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -214,6 +222,8 @@ func (m *ClusterTemplate) contextValidateCluster(ctx context.Context, formats st
 		if err := m.Cluster.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cluster")
 			}
 			return err
 		}
@@ -228,6 +238,8 @@ func (m *ClusterTemplate) contextValidateNodeDeployment(ctx context.Context, for
 		if err := m.NodeDeployment.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeDeployment")
 			}
 			return err
 		}

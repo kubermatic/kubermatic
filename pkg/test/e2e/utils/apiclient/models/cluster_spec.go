@@ -163,6 +163,8 @@ func (m *ClusterSpec) validateMachineNetworks(formats strfmt.Registry) error {
 			if err := m.MachineNetworks[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("machineNetworks" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("machineNetworks" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -182,6 +184,8 @@ func (m *ClusterSpec) validateAuditLogging(formats strfmt.Registry) error {
 		if err := m.AuditLogging.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("auditLogging")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("auditLogging")
 			}
 			return err
 		}
@@ -199,6 +203,8 @@ func (m *ClusterSpec) validateCloud(formats strfmt.Registry) error {
 		if err := m.Cloud.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloud")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cloud")
 			}
 			return err
 		}
@@ -216,6 +222,8 @@ func (m *ClusterSpec) validateClusterNetwork(formats strfmt.Registry) error {
 		if err := m.ClusterNetwork.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("clusterNetwork")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("clusterNetwork")
 			}
 			return err
 		}
@@ -233,6 +241,8 @@ func (m *ClusterSpec) validateCniPlugin(formats strfmt.Registry) error {
 		if err := m.CniPlugin.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cniPlugin")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cniPlugin")
 			}
 			return err
 		}
@@ -250,6 +260,8 @@ func (m *ClusterSpec) validateEventRateLimitConfig(formats strfmt.Registry) erro
 		if err := m.EventRateLimitConfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eventRateLimitConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eventRateLimitConfig")
 			}
 			return err
 		}
@@ -267,6 +279,8 @@ func (m *ClusterSpec) validateMla(formats strfmt.Registry) error {
 		if err := m.Mla.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}
@@ -284,6 +298,8 @@ func (m *ClusterSpec) validateOidc(formats strfmt.Registry) error {
 		if err := m.Oidc.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("oidc")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("oidc")
 			}
 			return err
 		}
@@ -301,6 +317,8 @@ func (m *ClusterSpec) validateOpaIntegration(formats strfmt.Registry) error {
 		if err := m.OpaIntegration.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("opaIntegration")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("opaIntegration")
 			}
 			return err
 		}
@@ -318,6 +336,8 @@ func (m *ClusterSpec) validateServiceAccount(formats strfmt.Registry) error {
 		if err := m.ServiceAccount.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("serviceAccount")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("serviceAccount")
 			}
 			return err
 		}
@@ -335,6 +355,8 @@ func (m *ClusterSpec) validateUpdateWindow(formats strfmt.Registry) error {
 		if err := m.UpdateWindow.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("updateWindow")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("updateWindow")
 			}
 			return err
 		}
@@ -351,6 +373,8 @@ func (m *ClusterSpec) validateVersion(formats strfmt.Registry) error {
 	if err := m.Version.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("version")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("version")
 		}
 		return err
 	}
@@ -424,6 +448,8 @@ func (m *ClusterSpec) contextValidateMachineNetworks(ctx context.Context, format
 			if err := m.MachineNetworks[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("machineNetworks" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("machineNetworks" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -440,6 +466,8 @@ func (m *ClusterSpec) contextValidateAuditLogging(ctx context.Context, formats s
 		if err := m.AuditLogging.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("auditLogging")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("auditLogging")
 			}
 			return err
 		}
@@ -454,6 +482,8 @@ func (m *ClusterSpec) contextValidateCloud(ctx context.Context, formats strfmt.R
 		if err := m.Cloud.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloud")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cloud")
 			}
 			return err
 		}
@@ -468,6 +498,8 @@ func (m *ClusterSpec) contextValidateClusterNetwork(ctx context.Context, formats
 		if err := m.ClusterNetwork.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("clusterNetwork")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("clusterNetwork")
 			}
 			return err
 		}
@@ -482,6 +514,8 @@ func (m *ClusterSpec) contextValidateCniPlugin(ctx context.Context, formats strf
 		if err := m.CniPlugin.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cniPlugin")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cniPlugin")
 			}
 			return err
 		}
@@ -496,6 +530,8 @@ func (m *ClusterSpec) contextValidateEventRateLimitConfig(ctx context.Context, f
 		if err := m.EventRateLimitConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eventRateLimitConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eventRateLimitConfig")
 			}
 			return err
 		}
@@ -510,6 +546,8 @@ func (m *ClusterSpec) contextValidateMla(ctx context.Context, formats strfmt.Reg
 		if err := m.Mla.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}
@@ -524,6 +562,8 @@ func (m *ClusterSpec) contextValidateOidc(ctx context.Context, formats strfmt.Re
 		if err := m.Oidc.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("oidc")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("oidc")
 			}
 			return err
 		}
@@ -538,6 +578,8 @@ func (m *ClusterSpec) contextValidateOpaIntegration(ctx context.Context, formats
 		if err := m.OpaIntegration.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("opaIntegration")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("opaIntegration")
 			}
 			return err
 		}
@@ -552,6 +594,8 @@ func (m *ClusterSpec) contextValidateServiceAccount(ctx context.Context, formats
 		if err := m.ServiceAccount.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("serviceAccount")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("serviceAccount")
 			}
 			return err
 		}
@@ -566,6 +610,8 @@ func (m *ClusterSpec) contextValidateUpdateWindow(ctx context.Context, formats s
 		if err := m.UpdateWindow.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("updateWindow")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("updateWindow")
 			}
 			return err
 		}
@@ -579,6 +625,8 @@ func (m *ClusterSpec) contextValidateVersion(ctx context.Context, formats strfmt
 	if err := m.Version.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("version")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("version")
 		}
 		return err
 	}

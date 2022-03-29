@@ -57,6 +57,8 @@ func (m *Preset) validateProviders(formats strfmt.Registry) error {
 			if err := m.Providers[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("providers" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("providers" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -89,6 +91,8 @@ func (m *Preset) contextValidateProviders(ctx context.Context, formats strfmt.Re
 			if err := m.Providers[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("providers" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("providers" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

@@ -148,12 +148,17 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+
 minio:
   storageClass: 'kubermatic-fast'
   certificateSecret: 'minio-tls-cert'
   credentials:
     accessKey: "FXcD7s0tFOPuTv6jaZARJDouc2Hal8E0"
     secretKey: "wdEZGTnhkgBDTDetaHFuizs3pwXHvWTs"
+
+nginx:
+  controller:
+    replicaCount: 1
 EOF
 
 # append custom Dex configuration
