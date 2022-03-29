@@ -258,6 +258,33 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ProjectToSync:   test.GenDefaultProject().Name,
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+		// scenario 15
+		{
+			Name:             "scenario 15: cluster is created with preset annotation",
+			Body:             `{"cluster":{"name":"keen-snyder","credential":"fake","spec":{"version":"1.22.5","cloud":{"fake":{},"dc":"fake-dc"}}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","annotations":{"presetName":"fake"},"creationTimestamp":"0001-01-01T00:00:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.22.5","oidc":{},"enableUserSSHKeyAgent":true,"containerRuntime":"containerd","clusterNetwork":{"services":{"cidrBlocks":["10.240.16.0/20"]},"pods":{"cidrBlocks":["172.25.0.0/16"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"","url":"","externalCCMMigration":"Unsupported"}}`,
+			RewriteClusterID: true,
+			HTTPStatus:       http.StatusCreated,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				// add an ssh key
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8c.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+				},
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	dummyKubermaticConfiguration := &kubermaticv1.KubermaticConfiguration{
