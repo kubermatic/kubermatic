@@ -100,6 +100,17 @@ type NutanixNoCredentialReq struct {
 	cluster.GetClusterReq
 }
 
+// NutanixCategoryValuesNoCredentialReq represents a request for Nutanix category values with cluster-provided credentials
+// swagger:parameters listNutanixCategoryValuesNoCredentials
+type NutanixCategoryValuesNoCredentialReq struct {
+	NutanixNoCredentialReq
+
+	// Category to query the available values for
+	// in: path
+	// required: true
+	Category string `json:"category"`
+}
+
 func DecodeNutanixCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NutanixCommonReq
 
@@ -165,6 +176,25 @@ func DecodeNutanixNoCredentialReq(c context.Context, r *http.Request) (interface
 		return nil, err
 	}
 	req.ProjectReq = pr.(common.ProjectReq)
+	return req, nil
+}
+
+func DecodeNutanixCategoryValuesNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req NutanixCategoryValuesNoCredentialReq
+
+	noCredsReq, err := DecodeNutanixNoCredentialReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	category, ok := mux.Vars(r)["category"]
+	if !ok {
+		return nil, fmt.Errorf("'category' parameter is required")
+	}
+
+	req.NutanixNoCredentialReq = noCredsReq.(NutanixNoCredentialReq)
+	req.Category = category
+
 	return req, nil
 }
 
@@ -322,5 +352,12 @@ func NutanixCategoriesWithClusterCredentialsEndpoint(projectProvider provider.Pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixNoCredentialReq)
 		return providercommon.NutanixCategoriesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
+	}
+}
+
+func NutanixCategoryValuesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NutanixCategoryValuesNoCredentialReq)
+		return providercommon.NutanixCategoryValuesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, req.Category)
 	}
 }
