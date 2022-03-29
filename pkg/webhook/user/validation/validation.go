@@ -43,7 +43,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return errors.New("object is not a User")
 	}
 
-	return validation.ValidateUser(user).ToAggregate()
+	return validation.ValidateUserCreate(user).ToAggregate()
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
