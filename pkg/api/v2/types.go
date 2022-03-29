@@ -451,9 +451,10 @@ type ExternalClusterCloudSpec struct {
 
 type KubeOneSpec struct {
 	// Manifest Base64 encoded manifest
-	Manifest  string            `json:"manifest"`
-	SSHKey    KubeOneSSHKey     `json:"sshKey"`
-	CloudSpec *KubeOneCloudSpec `json:"cloudSpec"`
+	Manifest               string            `json:"manifest"`
+	SSHKey                 KubeOneSSHKey     `json:"sshKey"`
+	ContainerRuntimeDocker bool              `json:"containerRuntimeDocker"`
+	CloudSpec              *KubeOneCloudSpec `json:"cloudSpec"`
 }
 
 // SSHKeySpec represents the details of a ssh key.

@@ -37,6 +37,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	NodeControlPlaneLabel  = "node-role.kubernetes.io/control-plane"
+	ContainerRuntimeDocker = "docker"
+)
+
 func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(ctx context.Context, projectID string) (*provider.UserInfo, error), project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
 	kubeOneCluster, err := DecodeManifestFromKubeOneReq(cloud.KubeOne.Manifest)
 	if err != nil {
@@ -76,25 +81,45 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 }
 
 func patchKubeOneCluster(ctx context.Context,
-	externalCluster *kubermaticv1.ExternalCluster,
-	newCluster *apiv2.ExternalCluster, upgradeMD string,
+	cluster *kubermaticv1.ExternalCluster,
+	oldCluster *apiv2.ExternalCluster,
+	newCluster *apiv2.ExternalCluster,
 	secretKeySelector provider.SecretKeySelectorValueFunc,
 	clusterProvider provider.ExternalClusterProvider,
 	masterClient ctrlruntimeclient.Client) (*apiv2.ExternalCluster, error) {
-	kubeOneSpec := externalCluster.Spec.CloudSpec.KubeOne
-	if kubeOneSpec.ClusterStatus.Status == kubermaticv1.StatusReconciling {
-		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
+	kubeOneSpec := cluster.Spec.CloudSpec.KubeOne
+	operation := kubeOneSpec.ClusterStatus.Status
+	if operation == kubermaticv1.StatusReconciling {
+		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (%s) is in progress, please wait for it to finish before starting a new operation.", operation)
 	}
 
-	manifest := kubeOneSpec.ManifestReference
+	if oldCluster.Spec.Version != newCluster.Spec.Version {
+		return UpgradeKubeOneCluster(ctx, cluster, oldCluster, newCluster, clusterProvider, masterClient)
+	}
+	if oldCluster.Cloud.KubeOne.ContainerRuntimeDocker != newCluster.Cloud.KubeOne.ContainerRuntimeDocker {
+		return MigrateKubeOneToContainerd(ctx, cluster, oldCluster, newCluster, clusterProvider, masterClient)
+	}
 
-	manifestValue, err := secretKeySelector(&manifest, resources.KubeOneManifest)
+	return newCluster, nil
+}
+
+func UpgradeKubeOneCluster(ctx context.Context,
+	externalCluster *kubermaticv1.ExternalCluster,
+	oldCluster *apiv2.ExternalCluster,
+	newCluster *apiv2.ExternalCluster,
+	externalClusterProvider provider.ExternalClusterProvider,
+	masterClient ctrlruntimeclient.Client,
+) (*apiv2.ExternalCluster, error) {
+	manifest := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
+
+	manifestSecret := &corev1.Secret{}
+	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
+		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
+	}
+	manifestValue := manifestSecret.Data[resources.KubeOneManifest]
 
 	kubeOneClusterManifest := &kubeonev1beta2.KubeOneCluster{}
-	if err != nil {
-		return nil, err
-	}
-	if err := yaml.UnmarshalStrict([]byte(manifestValue), kubeOneClusterManifest); err != nil {
+	if err := yaml.UnmarshalStrict(manifestValue, kubeOneClusterManifest); err != nil {
 		return nil, err
 	}
 	upgradeVersion := newCluster.Spec.Version.Semver().String()
@@ -102,11 +127,7 @@ func patchKubeOneCluster(ctx context.Context,
 		Kubernetes: upgradeVersion,
 	}
 
-	containerRuntimeDocker, err := isContainerRuntimeDocker(ctx, externalCluster, clusterProvider)
-	if err != nil {
-		return nil, err
-	}
-	if containerRuntimeDocker {
+	if oldCluster.Cloud.KubeOne.ContainerRuntimeDocker {
 		if upgradeVersion >= "1.24" {
 			return nil, errors.NewBadRequest("container runtime is \"docker\". Support for docker will be removed with Kubernetes 1.24 release.")
 		} else if kubeOneClusterManifest.ContainerRuntime.Docker == nil {
@@ -119,10 +140,6 @@ func patchKubeOneCluster(ctx context.Context,
 		return nil, err
 	}
 
-	manifestSecret := &corev1.Secret{}
-	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
-		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
-	}
 	oldManifestSecret := manifestSecret.DeepCopy()
 
 	manifestSecret.Data = map[string][]byte{
@@ -135,9 +152,6 @@ func patchKubeOneCluster(ctx context.Context,
 	oldexternalCluster := externalCluster.DeepCopy()
 	// update kubeone externalcluster status.
 	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusReconciling
-	if upgradeMD == "true" {
-		externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.StatusMessage = "upgrading machine MD"
-	}
 	// update api externalcluster status.
 	newCluster.Status.State = apiv2.RECONCILING
 	if err := masterClient.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
@@ -149,12 +163,13 @@ func patchKubeOneCluster(ctx context.Context,
 
 func MigrateKubeOneToContainerd(ctx context.Context,
 	externalCluster *kubermaticv1.ExternalCluster,
+	oldCluster *apiv2.ExternalCluster,
+	newCluster *apiv2.ExternalCluster,
 	externalClusterProvider provider.ExternalClusterProvider,
-	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
-) (interface{}, error) {
+	masterClient ctrlruntimeclient.Client,
+) (*apiv2.ExternalCluster, error) {
 	kubeOneSpec := externalCluster.Spec.CloudSpec.KubeOne
 	manifest := kubeOneSpec.ManifestReference
-	masterClient := privilegedClusterProvider.GetMasterClient()
 
 	if kubeOneSpec.ClusterStatus.Status == kubermaticv1.StatusReconciling {
 		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
@@ -195,16 +210,15 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 
 	oldexternalCluster := externalCluster.DeepCopy()
 	// update kubeone externalcluster status.
-	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusMigrating
+	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusReconciling
 	// update api externalcluster status.
-	apiCluster := convertClusterToAPI(externalCluster)
-	apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.RECONCILING}
+	newCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.RECONCILING}
 
 	if err := masterClient.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		return nil, fmt.Errorf("failed to update kubeone cluster status %s: %w", externalCluster.Name, err)
 	}
 
-	return apiCluster, nil
+	return newCluster, nil
 }
 
 func isContainerRuntimeDocker(ctx context.Context,
@@ -217,9 +231,8 @@ func isContainerRuntimeDocker(ctx context.Context,
 		return containerRuntimeDocker, err
 	}
 	for _, node := range nodes.Items {
-		if _, ok := node.Labels["node-role.kubernetes.io/control-plane"]; ok {
-			if strings.Contains(node.Status.NodeInfo.ContainerRuntimeVersion, "docker") {
-				// container-runtime is docker
+		if _, ok := node.Labels[NodeControlPlaneLabel]; ok {
+			if strings.Contains(node.Status.NodeInfo.ContainerRuntimeVersion, ContainerRuntimeDocker) {
 				containerRuntimeDocker = true
 				break
 			}

@@ -87,9 +87,6 @@ const (
 	// node software. Details can be found in the `StatusMessage` field.
 	StatusReconciling Status = "Reconciling"
 
-	// StatusMigrating indicates that container runtime migration is actively being done on the cluster.
-	StatusMigrating Status = "Migrating"
-
 	// StatusDeleting status indicates the cluster is being deleted.
 	StatusDeleting Status = "Deleting"
 
