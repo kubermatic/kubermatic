@@ -24,6 +24,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
@@ -142,42 +143,12 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixCommonReq)
 
-		creds := providercommon.NutanixCredentials{
-			ProxyURL: req.NutanixProxyURL,
-			Username: req.NutanixUsername,
-			Password: req.NutanixPassword,
-		}
-
-		userInfo, err := userInfoGetter(ctx, "")
+		client, _, err := getNutanixClient(ctx, req, presetProvider, seedsGetter, userInfoGetter)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
-		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
-			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credential := preset.Spec.Nutanix; credential != nil {
-				creds.ProxyURL = credential.ProxyURL
-				creds.Username = credential.Username
-				creds.Password = credential.Password
-			}
-		}
-
-		if creds.Username == "" || creds.Password == "" {
-			return nil, errors.NewBadRequest("no valid credentials found")
-		}
-
-		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
-		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
-		}
-		if dc.Spec.Nutanix == nil {
-			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
-		}
-
-		clusters, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixClusters(ctx)
+		clusters, err := client.ListNutanixClusters(ctx)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list clusters: %s", err.Error()))
 		}
@@ -191,42 +162,12 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixCommonReq)
 
-		creds := providercommon.NutanixCredentials{
-			ProxyURL: req.NutanixProxyURL,
-			Username: req.NutanixUsername,
-			Password: req.NutanixPassword,
-		}
-
-		userInfo, err := userInfoGetter(ctx, "")
+		client, _, err := getNutanixClient(ctx, req, presetProvider, seedsGetter, userInfoGetter)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
-		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
-			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credential := preset.Spec.Nutanix; credential != nil {
-				creds.ProxyURL = credential.ProxyURL
-				creds.Username = credential.Username
-				creds.Password = credential.Password
-			}
-		}
-
-		if creds.Username == "" || creds.Password == "" {
-			return nil, errors.NewBadRequest("no valid credentials found")
-		}
-
-		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
-		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
-		}
-		if dc.Spec.Nutanix == nil {
-			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
-		}
-
-		projects, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixProjects(ctx)
+		projects, err := client.ListNutanixProjects(ctx)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list projects: %s", err.Error()))
 		}
@@ -239,54 +180,70 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NutanixSubnetReq)
+		commonReq := request.(NutanixCommonReq)
 
-		creds := providercommon.NutanixCredentials{
-			ProxyURL: req.NutanixProxyURL,
-			Username: req.NutanixUsername,
-			Password: req.NutanixPassword,
+		client, creds, err := getNutanixClient(ctx, commonReq, presetProvider, seedsGetter, userInfoGetter)
+		if err != nil {
+			return nil, err
 		}
 
 		cluster := req.NutanixCluster
 		project := req.NutanixProject
 
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+		if creds != nil {
+			cluster = creds.ClusterName
+			project = creds.ProjectName
 		}
 
-		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
-			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credential := preset.Spec.Nutanix; credential != nil {
-				creds.ProxyURL = credential.ProxyURL
-				creds.Username = credential.Username
-				creds.Password = credential.Password
-				cluster = credential.ClusterName
-				project = credential.ProjectName
-			}
-		}
-
-		if creds.Username == "" || creds.Password == "" {
-			return nil, errors.NewBadRequest("no valid credentials found")
-		}
-
-		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
-		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
-		}
-		if dc.Spec.Nutanix == nil {
-			return nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
-		}
-
-		subnets, err := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds).ListNutanixSubnets(ctx, cluster, project)
+		subnets, err := client.ListNutanixSubnets(ctx, cluster, project)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list subnets: %s", err.Error()))
 		}
 
 		return subnets, nil
 	}
+}
+
+func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) (providercommon.NutanixClientSet, *v1.Nutanix, error) {
+	creds := providercommon.NutanixCredentials{
+		ProxyURL: req.NutanixProxyURL,
+		Username: req.NutanixUsername,
+		Password: req.NutanixPassword,
+	}
+
+	var credential *v1.Nutanix
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if len(req.Credential) > 0 {
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+		if err != nil {
+			return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+		}
+		if credential = preset.Spec.Nutanix; credential != nil {
+			creds.ProxyURL = credential.ProxyURL
+			creds.Username = credential.Username
+			creds.Password = credential.Password
+		}
+	}
+
+	if creds.Username == "" || creds.Password == "" {
+		return nil, nil, errors.NewBadRequest("no valid credentials found")
+	}
+
+	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
+	if err != nil {
+		return nil, nil, errors.NewBadRequest(err.Error())
+	}
+	if dc.Spec.Nutanix == nil {
+		return nil, nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
+	}
+
+	client := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds)
+	return client, credential, nil
 }
 
 func NutanixSubnetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
