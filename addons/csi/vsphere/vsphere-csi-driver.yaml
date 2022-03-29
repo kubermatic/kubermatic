@@ -22,6 +22,9 @@
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
 #   - set image versions and features based on selected k8s version
+#   - set "block-volume-snapshot": "true"
+#   - add csi-snapshotter container
+
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -423,6 +426,19 @@ spec:
             # needed only for topology aware setup
             #- "--feature-gates=Topology=true"
             #- "--strict-topology"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - name: csi-snapshotter
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v4.1.1
+          args:
+            - "--v=4"
+            - "--timeout=300s"
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
