@@ -22,6 +22,8 @@ source hack/lib.sh
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
+KUBERMATIC_SEED=${KUBERMATIC_SEED:-europe-west3-c}
+KUBERMATIC_EXTERNAL_URL=${KUBERMATIC_EXTERNAL_URL:-dev.kubermatic.io}
 PPROF_PORT=${PPROF_PORT:-6600}
 
 # Deploy a user-cluster/ipam-controller for which we actuallly
@@ -63,13 +65,13 @@ set -x
 ./_build/seed-controller-manager $CTRL_EXTRA_ARGS \
   -namespace=kubermatic \
   -enable-leader-election=false \
-  -seed-name=europe-west3-c \
+  -seed-name=$KUBERMATIC_SEED \
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=$CA_BUNDLE \
   -addons-path=addons \
   -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
   -worker-name="$(worker_name)" \
-  -external-url=dev.kubermatic.io \
+  -external-url=$KUBERMATIC_EXTERNAL_URL \
   -docker-pull-config-json-file=$DOCKERCONFIGJSON \
   -oidc-issuer-url=$OIDC_ISSUER_URL \
   -oidc-issuer-client-id=$OIDC_ISSUER_CLIENT_ID \
