@@ -106,17 +106,17 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 	}
 
 	if len(projectName) == 0 {
-		return errors.New("unable to find owing project")
+		return errors.New("no project name specified")
 	}
 
 	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, projectName))
 	if err != nil {
-		return err
+		return fmt.Errorf("project name %q is not a valid label value", projectName)
 	}
 
 	bindings := &kubermaticv1.UserProjectBindingList{}
 	if err := r.List(ctx, bindings, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}); err != nil {
-		return err
+		return fmt.Errorf("failed to list UserProjectBindings for project: %w", err)
 	}
 
 	bindingExist := false
