@@ -195,7 +195,7 @@ func GenerateCluster(
 			return nil, kubermaticerrors.NewBadRequest("invalid credentials: %v", err)
 		}
 		body.Cluster.Spec.Cloud = *cloudSpec
-		partialCluster.Labels[kubermaticv1.IsCredentialPresetLabelKey] = "yes"
+		partialCluster.Labels[kubermaticv1.IsCredentialPresetLabelKey] = "true"
 		partialCluster.Annotations[kubermaticv1.PresetNameAnnotation] = credentialName
 	}
 
