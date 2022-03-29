@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: clustertemplates.kubermatic.k8c.io
 spec:
@@ -618,7 +617,7 @@ spec:
                             description: 'Optional: defaults to "false"'
                             type: boolean
                           storageContainer:
-                            description: 'Optional: defaults to "Default"'
+                            description: 'Optional: defaults to "SelfServiceContainer"'
                             type: string
                           username:
                             description: Prism Element Username for csi driver
@@ -914,6 +913,18 @@ spec:
                     description: KonnectivityEnabled enables konnectivity for controlplane
                       to node network communication.
                     type: boolean
+                  nodeCidrMaskSizeIPv4:
+                    description: NodeCIDRMaskSizeIPv4 is the mask size used to address
+                      the nodes within provided IPv4 Pods CIDR. It has to be larger
+                      than the provided IPv4 Pods CIDR. Defaults to 24.
+                    format: int32
+                    type: integer
+                  nodeCidrMaskSizeIPv6:
+                    description: NodeCIDRMaskSizeIPv6 is the mask size used to address
+                      the nodes within provided IPv6 Pods CIDR. It has to be larger
+                      than the provided IPv6 Pods CIDR. Defaults to 64.
+                    format: int32
+                    type: integer
                   nodeLocalDNSCacheEnabled:
                     default: true
                     description: NodeLocalDNSCacheEnabled controls whether the NodeLocal
@@ -921,6 +932,9 @@ spec:
                     type: boolean
                   pods:
                     description: The network ranges from which POD networks are allocated.
+                      It can contain one IPv4 and/or one IPv6 CIDR. If both address
+                      families are specified, the first one defines the primary address
+                      family.
                     properties:
                       cidrBlocks:
                         items:
@@ -941,6 +955,9 @@ spec:
                     type: string
                   services:
                     description: The network ranges from which service VIPs are allocated.
+                      It can contain one IPv4 and/or one IPv6 CIDR. If both address
+                      families are specified, the first one defines the primary address
+                      family.
                     properties:
                       cidrBlocks:
                         items:
@@ -1716,8 +1733,8 @@ spec:
                   for the PodNodeSelector. It''s used by the backend to create a configuration
                   file for this plugin. The key:value from the map is converted to
                   the namespace:<node-selectors-labels> in the file. The format in
-                  a file: podNodeSelectorPluginConfig:  clusterDefaultNodeSelector:
-                  <node-selectors-labels>  namespace1: <node-selectors-labels>  namespace2:
+                  a file: podNodeSelectorPluginConfig: clusterDefaultNodeSelector:
+                  <node-selectors-labels> namespace1: <node-selectors-labels> namespace2:
                   <node-selectors-labels>'
                 type: object
               serviceAccount:

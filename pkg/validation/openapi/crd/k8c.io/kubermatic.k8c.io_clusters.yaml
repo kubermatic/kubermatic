@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: clusters.kubermatic.k8c.io
 spec:
@@ -31,6 +30,9 @@ spec:
       type: string
     - jsonPath: .spec.cloud.dc
       name: Datacenter
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
       type: string
     - jsonPath: .spec.pause
       name: Paused
@@ -653,7 +655,7 @@ spec:
                             description: 'Optional: defaults to "false"'
                             type: boolean
                           storageContainer:
-                            description: 'Optional: defaults to "Default"'
+                            description: 'Optional: defaults to "SelfServiceContainer"'
                             type: string
                           username:
                             description: Prism Element Username for csi driver
@@ -949,6 +951,18 @@ spec:
                     description: KonnectivityEnabled enables konnectivity for controlplane
                       to node network communication.
                     type: boolean
+                  nodeCidrMaskSizeIPv4:
+                    description: NodeCIDRMaskSizeIPv4 is the mask size used to address
+                      the nodes within provided IPv4 Pods CIDR. It has to be larger
+                      than the provided IPv4 Pods CIDR. Defaults to 24.
+                    format: int32
+                    type: integer
+                  nodeCidrMaskSizeIPv6:
+                    description: NodeCIDRMaskSizeIPv6 is the mask size used to address
+                      the nodes within provided IPv6 Pods CIDR. It has to be larger
+                      than the provided IPv6 Pods CIDR. Defaults to 64.
+                    format: int32
+                    type: integer
                   nodeLocalDNSCacheEnabled:
                     default: true
                     description: NodeLocalDNSCacheEnabled controls whether the NodeLocal
@@ -956,6 +970,9 @@ spec:
                     type: boolean
                   pods:
                     description: The network ranges from which POD networks are allocated.
+                      It can contain one IPv4 and/or one IPv6 CIDR. If both address
+                      families are specified, the first one defines the primary address
+                      family.
                     properties:
                       cidrBlocks:
                         items:
@@ -976,6 +993,9 @@ spec:
                     type: string
                   services:
                     description: The network ranges from which service VIPs are allocated.
+                      It can contain one IPv4 and/or one IPv6 CIDR. If both address
+                      families are specified, the first one defines the primary address
+                      family.
                     properties:
                       cidrBlocks:
                         items:
@@ -1751,8 +1771,8 @@ spec:
                   for the PodNodeSelector. It''s used by the backend to create a configuration
                   file for this plugin. The key:value from the map is converted to
                   the namespace:<node-selectors-labels> in the file. The format in
-                  a file: podNodeSelectorPluginConfig:  clusterDefaultNodeSelector:
-                  <node-selectors-labels>  namespace1: <node-selectors-labels>  namespace2:
+                  a file: podNodeSelectorPluginConfig: clusterDefaultNodeSelector:
+                  <node-selectors-labels> namespace1: <node-selectors-labels> namespace2:
                   <node-selectors-labels>'
                 type: object
               serviceAccount:
@@ -1962,12 +1982,62 @@ spec:
                 description: NamespaceName defines the namespace the control plane
                   of this cluster is deployed in
                 type: string
+              phase:
+                description: Phase is a description of the current cluster status,
+                  summarizing the various conditions, possible active updates etc.
+                  This field is for informational purpose only and no logic should
+                  be tied to the phase.
+                enum:
+                - Creating
+                - Updating
+                - Running
+                - Terminating
+                type: string
               userEmail:
                 description: UserEmail contains the email of the owner of this cluster
                 type: string
               userName:
                 description: UserName contains the name of the owner of this cluster
                 type: string
+              versions:
+                description: Versions contains information regarding the current and
+                  desired versions of the cluster control plane and worker nodes.
+                properties:
+                  apiserver:
+                    description: Apiserver is the currently desired version of the
+                      kube-apiserver. During upgrades across multiple minor versions
+                      (e.g. from 1.20 to 1.23), this will gradually be increased by
+                      the update-controller until the desired cluster version (spec.version)
+                      is reached.
+                    type: string
+                  controlPlane:
+                    description: ControlPlane is the currently active cluster version.
+                      This can lag behind the apiserver version if an update is currently
+                      rolling out.
+                    type: string
+                  controllerManager:
+                    description: ControllerManager is the currently desired version
+                      of the kube-controller-manager. This field behaves the same
+                      as the apiserver field.
+                    type: string
+                  oldestNodeVersion:
+                    description: OldestNodeVersion is the oldest node version currently
+                      in use inside the cluster. This can be nil if there are no nodes.
+                      This field is primarily for speeding up reconciling, so that
+                      the controller doesn't have to re-fetch to the usercluster and
+                      query its node on every reconciliation.
+                    type: string
+                  scheduler:
+                    description: Scheduler is the currently desired version of the
+                      kube-scheduler. This field behaves the same as the apiserver
+                      field.
+                    type: string
+                required:
+                - apiserver
+                - controlPlane
+                - controllerManager
+                - scheduler
+                type: object
             type: object
         type: object
     served: true
