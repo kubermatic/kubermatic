@@ -130,42 +130,60 @@ func listNutanixSubnets(ctx context.Context, client *nutanixprovider.ClientSet, 
 }
 
 func NutanixSubnetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+	client, clusterName, projectName, err := getClientSetFromCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, projectID, clusterID)
+	if err != nil {
+		return nil, err
+	}
+
+	return listNutanixSubnets(ctx, client, clusterName, projectName)
+}
+
+func NutanixCategoriesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+	client, _, _, err := getClientSetFromCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, projectID, clusterID)
+	if err != nil {
+		return nil, err
+	}
+
+	return listNutanixCategories(ctx, client)
+}
+
+func getClientSetFromCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (client *nutanixprovider.ClientSet, clusterName string, projectName string, err error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 	if cluster.Spec.Cloud.Nutanix == nil {
-		return nil, errors.NewNotFound("no cloud spec for %s", clusterID)
+		return nil, "", "", errors.NewNotFound("no cloud spec for %s", clusterID)
 	}
 
 	datacenterName := cluster.Spec.Cloud.DatacenterName
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, "", "", errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, "", "", common.KubernetesErrorToHTTPError(err)
 	}
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
+		return nil, "", "", fmt.Errorf("failed to find Datacenter %q: %w", datacenterName, err)
 	}
 
-	clusterName := cluster.Spec.Cloud.Nutanix.ClusterName
-	projectName := cluster.Spec.Cloud.Nutanix.ProjectName
+	clusterName = cluster.Spec.Cloud.Nutanix.ClusterName
+	projectName = cluster.Spec.Cloud.Nutanix.ProjectName
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	client, err := nutanixprovider.GetClientSet(datacenter.Spec.Nutanix, cluster.Spec.Cloud.Nutanix, secretKeySelector)
+	client, err = nutanixprovider.GetClientSet(datacenter.Spec.Nutanix, cluster.Spec.Cloud.Nutanix, secretKeySelector)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get client set: %w", err)
+		return nil, "", "", fmt.Errorf("failed to get client set: %w", err)
 	}
 
-	return listNutanixSubnets(ctx, client, clusterName, projectName)
+	return
 }
 
 func (n *nutanixClientImpl) ListNutanixCategories(ctx context.Context) (apiv1.NutanixCategoryList, error) {

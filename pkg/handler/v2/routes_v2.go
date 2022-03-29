@@ -614,6 +614,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets").
 		Handler(r.listNutanixSubnetsNoCredentials())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories").
+		Handler(r.listNutanixCategoriesNoCredentials())
+
 	// Defines a set of kubernetes-dashboard-specific endpoints
 	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
 		Handler(r.kubernetesDashboardProxy())
@@ -3728,6 +3732,30 @@ func (r Routing) listNutanixSubnetsNoCredentials() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.NutanixSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories nutanix listNutanixCategoriesNoCredentials
+//
+// Lists available Nutanix categories
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NutanixCategoryList
+func (r Routing) listNutanixCategoriesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.NutanixCategoriesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeNutanixNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
