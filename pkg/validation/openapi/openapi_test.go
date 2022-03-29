@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -279,7 +279,7 @@ spec:
 				Spec:     sampleSpec{Val1: tc.saVal},
 			}
 
-			v, err := ValidatorFromCRD(strings.NewReader(tc.crd), s.GetObjectKind().GroupVersionKind().Version)
+			v, err := NewValidatorFromCRD(strings.NewReader(tc.crd), s.GetObjectKind().GroupVersionKind().Version)
 			res := validation.ValidateCustomResource(nil, s, v)
 
 			if tc.expValErrs != len(res) {
@@ -323,11 +323,11 @@ func TestValidatorForType(t *testing.T) {
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			res, err := ValidatorForType(tc.in)
+			res, err := NewValidatorForType(tc.in)
 
 			if res != nil {
 				if tc.expValidator && res.Schema == nil {
-					t.Errorf("Root Schema is empty, when they should not be")
+					t.Errorf("Root Schema is empty, when it should not be")
 				}
 			}
 
