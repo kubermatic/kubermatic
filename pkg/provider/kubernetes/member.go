@@ -23,7 +23,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -148,9 +147,6 @@ func (p *ProjectMemberProvider) Delete(ctx context.Context, userInfo *provider.U
 
 // Update updates the given binding.
 func (p *ProjectMemberProvider) Update(ctx context.Context, userInfo *provider.UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
-	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
-		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
-	}
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -237,33 +233,15 @@ func (p *ProjectMemberProvider) DeleteUnsecured(ctx context.Context, bindingName
 // UpdateUnsecured updates the given binding
 // This function is unsafe in a sense that it uses privileged account to update the resource.
 func (p *ProjectMemberProvider) UpdateUnsecured(ctx context.Context, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
-	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
-		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
-	}
+	err := p.clientPrivileged.Update(ctx, binding)
 
-	if err := p.clientPrivileged.Update(ctx, binding); err != nil {
-		return nil, err
-	}
-	return binding, nil
+	return binding, err
 }
 
 func genBinding(project *kubermaticv1.Project, memberEmail, group string) *kubermaticv1.UserProjectBinding {
-	finalizers := []string{}
-	if rbac.ExtractGroupPrefix(group) == rbac.OwnerGroupNamePrefix {
-		finalizers = append(finalizers, rbac.CleanupFinalizerName)
-	}
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
-			Name:       rand.String(10),
-			Finalizers: finalizers,
+			Name: rand.String(10),
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			ProjectID: project.Name,

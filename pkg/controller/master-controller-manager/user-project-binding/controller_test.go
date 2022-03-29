@@ -20,11 +20,12 @@ import (
 	"context"
 	"testing"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -35,6 +36,11 @@ import (
 func init() {
 	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
 }
+
+var (
+	jamesBond = test.CreateUser("James Bond")
+	bob       = test.CreateUser("Bob")
+)
 
 func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 	tests := []struct {
@@ -47,63 +53,31 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 	}{
 		{
 			name:            "scenario 1: the owner reference is removed from a project (no previous owners) for James Bond - an editor",
-			existingProject: test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			existingUsers:   []*kubermaticv1.User{test.CreateUser("James Bond")},
-			bindingToSync:   test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedProject: func() *kubermaticv1.Project {
-				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				prj.OwnerReferences = []metav1.OwnerReference{}
-				return prj
-			}(),
+			existingProject: test.CreateProject("thunderball", jamesBond),
+			existingUsers:   []*kubermaticv1.User{jamesBond},
+			bindingToSync:   test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", jamesBond)),
+			expectedProject: test.CreateProject("thunderball"),
 		},
 		{
-			name: "scenario 2: no - op the owner reference already removed from a project (no previous owners) for James Bond - an editor",
-			existingProject: func() *kubermaticv1.Project {
-				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				prj.OwnerReferences = []metav1.OwnerReference{}
-				return prj
-			}(),
-			existingUsers: []*kubermaticv1.User{test.CreateUser("James Bond")},
-			bindingToSync: test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedProject: func() *kubermaticv1.Project {
-				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				prj.OwnerReferences = []metav1.OwnerReference{}
-				return prj
-			}(),
+			name:            "scenario 2: no - op the owner reference already removed from a project (no previous owners) for James Bond - an editor",
+			existingProject: test.CreateProject("thunderball"),
+			existingUsers:   []*kubermaticv1.User{jamesBond},
+			bindingToSync:   test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", jamesBond)),
+			expectedProject: test.CreateProject("thunderball"),
 		},
 		{
-			name: "scenario 3: the owner reference was removed from a project (with previous owners) for James Bond - an editor",
-			existingProject: func() *kubermaticv1.Project {
-				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				prj.OwnerReferences = append(prj.OwnerReferences, metav1.OwnerReference{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.UserKindName,
-					UID:        "",
-					Name:       "Bob",
-				})
-				return prj
-			}(),
-			existingUsers: []*kubermaticv1.User{test.CreateUser("James Bond"), test.CreateUser("Bob")},
-			bindingToSync: test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedProject: func() *kubermaticv1.Project {
-				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				prj.OwnerReferences = []metav1.OwnerReference{
-					{
-						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-						Kind:       kubermaticv1.UserKindName,
-						UID:        "",
-						Name:       "Bob",
-					},
-				}
-				return prj
-			}(),
+			name:            "scenario 3: the owner reference was removed from a project (with previous owners) for James Bond - an editor",
+			existingProject: test.CreateProject("thunderball", jamesBond, bob),
+			existingUsers:   []*kubermaticv1.User{jamesBond, bob},
+			bindingToSync:   test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", jamesBond)),
+			expectedProject: test.CreateProject("thunderball", bob),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []ctrlruntimeclient.Object{}
+			objs := []ctrlruntimeclient.Object{test.bindingToSync}
 
 			for _, user := range test.existingUsers {
 				objs = append(objs, user)
@@ -125,7 +99,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			// act
 			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
 
-			err := target.ensureNotProjectOwnerForBinding(ctx, test.bindingToSync)
+			err := target.reconcile(ctx, zap.NewNop().Sugar(), test.bindingToSync)
 
 			// validate
 			if err != nil {
@@ -159,44 +133,31 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 	}{
 		{
 			name:            "scenario 1: no-op the owner reference already attached to the project",
-			existingProject: test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			existingUsers:   []*kubermaticv1.User{test.CreateUser("James Bond")},
-			bindingToSync:   test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedProject: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			existingProject: test.CreateProject("thunderball", jamesBond),
+			existingUsers:   []*kubermaticv1.User{jamesBond},
+			bindingToSync:   test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", jamesBond)),
+			expectedProject: test.CreateProject("thunderball", jamesBond),
 		},
 		{
-			name: "scenario 2: expected owner reference was added to a project - no previous owners)",
-			existingProject: func() *kubermaticv1.Project {
-				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				prj.OwnerReferences = []metav1.OwnerReference{}
-				return prj
-			}(),
-			existingUsers:   []*kubermaticv1.User{test.CreateUser("James Bond")},
-			bindingToSync:   test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedProject: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			name:            "scenario 2: expected owner reference was added to a project - no previous owners)",
+			existingProject: test.CreateProject("thunderball"),
+			existingUsers:   []*kubermaticv1.User{jamesBond},
+			bindingToSync:   test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", jamesBond)),
+			expectedProject: test.CreateProject("thunderball", jamesBond),
 		},
 		{
 			name:            "scenario 3: expected owner reference was added to a project - with previous owners)",
-			existingProject: test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			existingUsers:   []*kubermaticv1.User{test.CreateUser("James Bond"), test.CreateUser("Bob")},
-			bindingToSync:   test.CreateExpectedOwnerBinding("Bob", test.CreateProject("thunderball", test.CreateUser("Bob"))),
-			expectedProject: func() *kubermaticv1.Project {
-				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				prj.OwnerReferences = append(prj.OwnerReferences, metav1.OwnerReference{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.UserKindName,
-					UID:        "",
-					Name:       "Bob",
-				})
-				return prj
-			}(),
+			existingProject: test.CreateProject("thunderball", jamesBond),
+			existingUsers:   []*kubermaticv1.User{jamesBond, bob},
+			bindingToSync:   test.CreateExpectedOwnerBinding("Bob", test.CreateProject("thunderball", bob)),
+			expectedProject: test.CreateProject("thunderball", jamesBond, bob),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []ctrlruntimeclient.Object{}
+			objs := []ctrlruntimeclient.Object{test.bindingToSync}
 			for _, user := range test.existingUsers {
 				objs = append(objs, user)
 			}
@@ -216,7 +177,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 
 			// act
 			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
-			err := target.ensureProjectOwnerForBinding(ctx, test.bindingToSync)
+			err := target.reconcile(ctx, zap.NewNop().Sugar(), test.bindingToSync)
 
 			// validate
 			if err != nil {

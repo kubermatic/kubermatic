@@ -159,18 +159,10 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 }
 
 func genOwnerBinding(ownerEmail string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+	// The user-project-binding controller will take care of setting up owner references later.
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
-			Name:       rand.String(10),
-			Finalizers: []string{CleanupFinalizerName},
+			Name: rand.String(10),
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: ownerEmail,

@@ -287,3 +287,75 @@ func SortOwnerReferences(refs []metav1.OwnerReference) {
 		return refA.Name < refB.Name
 	})
 }
+
+func HasOwnerReference(o metav1.Object, ref metav1.OwnerReference) bool {
+	for _, r := range o.GetOwnerReferences() {
+		if equalOwnerRefs(r, ref) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// RemoveOwnerReference removes any reference that has the same
+// APIVersion, Kind and Name.
+func RemoveOwnerReferences(o metav1.Object, refToRemoves ...metav1.OwnerReference) {
+	removeOwnerReference(o, equalOwnerRefs, refToRemoves...)
+}
+
+// RemoveOwnerReferenceKinds removes any reference with the same
+// APIVersion and Kind, notably ignoring the name.
+func RemoveOwnerReferenceKinds(o metav1.Object, refKindsToRemove ...metav1.OwnerReference) {
+	removeOwnerReference(o, equalOwnerRefKinds, refKindsToRemove...)
+}
+
+func equalOwnerRefKinds(a, b metav1.OwnerReference) bool {
+	return a.APIVersion == b.APIVersion && a.Kind == b.Kind
+}
+
+func equalOwnerRefs(a, b metav1.OwnerReference) bool {
+	return equalOwnerRefKinds(a, b) && a.Name == b.Name
+}
+
+func removeOwnerReference(o metav1.Object, comparator func(a, b metav1.OwnerReference) bool, refs ...metav1.OwnerReference) {
+	newRefs := []metav1.OwnerReference{}
+
+	for _, r := range o.GetOwnerReferences() {
+		valid := true
+		for _, toRemove := range refs {
+			if comparator(r, toRemove) {
+				valid = false
+				break
+			}
+		}
+
+		if valid {
+			newRefs = append(newRefs, r)
+		}
+	}
+
+	o.SetOwnerReferences(newRefs)
+}
+
+// EnsureOwnerReference will add the given owner reference to the
+// object if it doesn't exist yet. Other references with the same
+// name can exist.
+func EnsureOwnerReference(o metav1.Object, ref metav1.OwnerReference) {
+	RemoveOwnerReferences(o, ref)
+
+	refs := o.GetOwnerReferences()
+	refs = append(refs, ref)
+	o.SetOwnerReferences(refs)
+}
+
+// EnsureUniqueOwnerReference will remove any owner ref with the same
+// APIVersion and Kind, and then add the given ref to the owner references.
+// This ensures that only one ref with a given kind exists.
+func EnsureUniqueOwnerReference(o metav1.Object, ref metav1.OwnerReference) {
+	RemoveOwnerReferenceKinds(o, ref)
+
+	refs := o.GetOwnerReferences()
+	refs = append(refs, ref)
+	o.SetOwnerReferences(refs)
+}
