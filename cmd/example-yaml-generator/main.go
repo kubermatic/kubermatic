@@ -167,6 +167,14 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 				},
 			},
 			ProxySettings: &proxySettings,
+			NodeportProxy: kubermaticv1.NodeportProxyConfig{
+				Annotations: map[string]string{},
+				Envoy: kubermaticv1.NodePortProxyComponentEnvoy{
+					LoadBalancerService: kubermaticv1.EnvoyLoadBalancerService{
+						SourceRanges: []kubermaticv1.CIDR{},
+					},
+				},
+			},
 			Metering: &kubermaticv1.MeteringConfiguration{
 				Enabled:          false,
 				StorageClassName: "kubermatic-fast",

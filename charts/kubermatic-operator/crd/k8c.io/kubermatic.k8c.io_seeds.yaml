@@ -1058,9 +1058,10 @@ spec:
                   annotations:
                     additionalProperties:
                       type: string
-                    description: Annotations are used to further tweak the LoadBalancer
+                    description: 'Annotations are used to further tweak the LoadBalancer
                       integration with the cloud provider where the seed cluster is
-                      running.
+                      running. Deprecated: Use .envoy.loadBalancerService.annotations
+                      instead.'
                     type: object
                   disable:
                     description: Disable will prevent the Kubermatic Operator from
@@ -1075,6 +1076,24 @@ spec:
                         description: DockerRepository is the repository containing
                           the component's image.
                         type: string
+                      loadBalancerService:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations are used to further tweak the
+                              LoadBalancer integration with the cloud provider.
+                            type: object
+                          sourceRanges:
+                            description: 'SourceRanges will restrict loadbalancer
+                              service to IP ranges specified using CIDR notation like
+                              172.25.0.0/16. This field will be ignored if the cloud-provider
+                              does not support the feature. More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/'
+                            items:
+                              pattern: ^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$
+                              type: string
+                            type: array
+                        type: object
                       resources:
                         description: Resources describes the requested and maximum
                           allowed CPU/memory usage.
