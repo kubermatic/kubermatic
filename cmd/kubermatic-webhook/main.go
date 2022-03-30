@@ -33,6 +33,7 @@ import (
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	"k8c.io/kubermatic/v2/pkg/webhook/etcdrestore"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
@@ -177,7 +178,11 @@ func main() {
 	ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
-	// Here we go!
+	// Setup EtcdRestore creation validator webhook
+	etcdRestoreValidator := etcdrestore.NewValidator(seedGetter, seedClientGetter)
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.EtcdRestore{}).WithValidator(etcdRestoreValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup etcdRestore validation webhook", zap.Error(err))
+	}
 
 	log.Info("Starting the webhook...")
 	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
