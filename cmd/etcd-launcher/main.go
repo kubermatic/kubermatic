@@ -458,7 +458,7 @@ func etcdCmd(config *etcdCluster) []string {
 	if config.enableCorruptionCheck {
 		cmd = append(cmd, []string{
 			"--experimental-initial-corrupt-check=true",
-			"--experimental-corrupt-check-time=10m",
+			"--experimental-corrupt-check-time=240m",
 		}...)
 	}
 	return cmd
