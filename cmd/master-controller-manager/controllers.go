@@ -29,6 +29,7 @@ import (
 	kubeone "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
+	presetsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/preset-synchronizer"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
 	projectsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -66,6 +67,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	userProjectBindingSynchronizerFactory := userProjectBindingSynchronizerFactoryCreator(ctrlCtx)
 	projectSynchronizerFactory := projectSynchronizerFactoryCreator(ctrlCtx)
 	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
+	presetSynchronizerFactory := presetSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -82,6 +84,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		userProjectBindingSynchronizerFactory,
 		projectSynchronizerFactory,
 		applicationdefinitionsynchronizerFactory,
+		presetSynchronizerFactory,
 	); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)
@@ -222,6 +225,16 @@ func applicationDefinitionSynchronizerFactoryCreator(ctrlCtx *controllerContext)
 			seedManagerMap,
 			ctrlCtx.log,
 			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func presetSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return presetsynchronizer.ControllerName, presetsynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
 		)
 	}
 }
