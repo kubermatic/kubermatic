@@ -32,7 +32,7 @@ import (
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
 	csimigration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-snapshotter"
+	csisnapshotter "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-snapshotter"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
@@ -257,6 +257,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if !r.userSSHKeyAgent {
+		if err := r.ensureUserSSHKeysResourcesAreRemoved(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -276,7 +282,6 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 func (r *reconciler) reconcileServiceAccounts(ctx context.Context) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
-		usersshkeys.ServiceAccountCreator(),
 		coredns.ServiceAccountCreator(),
 	}
 
@@ -1233,6 +1238,16 @@ func (r *reconciler) ensureOSMResourcesAreRemoved(ctx context.Context) error {
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !errors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureUserSSHKeysResourcesAreRemoved(ctx context.Context) error {
+	for _, resource := range usersshkeys.ResourcesForDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure user-ssh-keys resources are removed/not present: %w", err)
 		}
 	}
 	return nil

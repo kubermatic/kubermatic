@@ -28,6 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	networkPolicyName = "user-ssh-key-agent"
+)
+
 // NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world.
 func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
@@ -35,7 +39,7 @@ func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string)
 		apiPort := intstr.FromInt(k8sApiPort)
 		protoTcp := corev1.ProtocolTCP
 
-		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+		return networkPolicyName, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{resources.AppLabelKey: "user-ssh-keys-agent"},

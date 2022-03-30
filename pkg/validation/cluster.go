@@ -177,13 +177,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		)...)
 	}
 
-	if oldCluster.Spec.EnableUserSSHKeyAgent != nil {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			newCluster.Spec.EnableUserSSHKeyAgent,
-			oldCluster.Spec.EnableUserSSHKeyAgent,
-			specPath.Child("enableUserSSHKeyAgent"),
-		)...)
-	} else if newCluster.Spec.EnableUserSSHKeyAgent != nil && !*newCluster.Spec.EnableUserSSHKeyAgent {
+	if newCluster.Spec.EnableUserSSHKeyAgent != nil && !*newCluster.Spec.EnableUserSSHKeyAgent {
 		path := field.NewPath("cluster", "spec", "enableUserSSHKeyAgent")
 		allErrs = append(allErrs, field.Invalid(path, *newCluster.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version"))
 	}
