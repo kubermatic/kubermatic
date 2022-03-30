@@ -22,5 +22,5 @@ exec /usr/local/bin/etcd \
     --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
     --key-file /etc/etcd/pki/tls/etcd-tls.key \
     --experimental-initial-corrupt-check=true \
-    --experimental-corrupt-check-time=10m \
+    --experimental-corrupt-check-time=240m \
     --auto-compaction-retention=8
