@@ -111,12 +111,10 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 }
 
 func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
-	// if the userCluster client cannot be retrieved because the kubeconfig secret doesn't exist yet, then simply return StatusDown
+	// if the userCluster client cannot be retrieved for any reason, then log it and simply return StatusDown
 	userClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
-	if err != nil && !kerrors.IsNotFound(err) {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get user cluster client: %w", err)
-	}
-	if kerrors.IsNotFound(err) {
+	if err != nil {
+		r.log.Debug("cannot retrieve the user cluster client: %w", err)
 		return kubermaticv1.HealthStatusDown, nil
 	}
 
@@ -146,12 +144,14 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.MachineControllerWebhookDeploymentName, err)
 	}
 
-	// if both deployments are up, then return StatusUp
-	if mcStatus == kubermaticv1.HealthStatusDown || mcWebhookStatus == kubermaticv1.HealthStatusDown {
+	switch {
+	case mcStatus == kubermaticv1.HealthStatusDown && mcWebhookStatus == kubermaticv1.HealthStatusDown:
 		return kubermaticv1.HealthStatusDown, nil
+	case mcStatus == kubermaticv1.HealthStatusProvisioning || mcWebhookStatus == kubermaticv1.HealthStatusProvisioning:
+		return kubermaticv1.HealthStatusProvisioning, nil
+	default:
+		return kubermaticv1.HealthStatusUp, nil
 	}
-
-	return kubermaticv1.HealthStatusUp, nil
 }
 
 func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
