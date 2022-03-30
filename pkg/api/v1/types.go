@@ -2338,7 +2338,7 @@ type MeteringReport struct {
 	Size         int64     `json:"size"`
 }
 
-// MeteringReportConfigurations holds available report configurations
+// MeteringReportConfiguration holds report configuration
 // swagger:model MeteringReportConfiguration
 type MeteringReportConfiguration struct {
 	Name     string `json:"name"`

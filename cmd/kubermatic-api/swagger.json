@@ -25480,7 +25480,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "MeteringReportConfiguration": {
-      "description": "MeteringReportConfigurations holds available report configurations",
+      "description": "MeteringReportConfiguration holds report configuration",
       "type": "object",
       "properties": {
         "interval": {
