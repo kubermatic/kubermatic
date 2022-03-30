@@ -57,7 +57,7 @@ func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceCreatorGett
 			}
 
 			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
-			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is depracated.
+			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
 			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
 				for k, v := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
 					s.Annotations[k] = v

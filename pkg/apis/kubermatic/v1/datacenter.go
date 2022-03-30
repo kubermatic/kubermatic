@@ -29,7 +29,7 @@ import (
 
 type ProviderType string
 
-// +kubebuilder:validation:Pattern:="^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))?$"
+// +kubebuilder:validation:Pattern:=`^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$`
 type CIDR string
 
 const (
@@ -213,7 +213,7 @@ type EnvoyLoadBalancerService struct {
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider.
 	Annotations map[string]string `json:"annotations,omitempty"`
-	// SourceRanges will restrict front-loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16
+	// SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
 	// This field will be ignored if the cloud-provider does not support the feature.
 	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
 	SourceRanges []CIDR `json:"sourceRanges,omitempty"`
