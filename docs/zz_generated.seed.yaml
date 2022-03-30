@@ -81,6 +81,7 @@ spec:
         # EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
         # ignoring cluster-specific settings
         enforcePodSecurityPolicy: false
+        fake: null
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
           # https://cloud.google.com/compute/docs/regions-zones/
@@ -356,9 +357,8 @@ spec:
   nodeportProxy:
     # Annotations are used to further tweak the LoadBalancer integration with the
     # cloud provider where the seed cluster is running.
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
-      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    # Deprecated: Use .envoy.loadBalancerService.annotations instead.
+    annotations: {}
     # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
     # setup on the seed cluster. This should only be used if a suitable replacement
     # is installed (like the nodeport-proxy Helm chart).
@@ -367,6 +367,16 @@ spec:
     envoy:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: docker.io/envoyproxy/envoy-alpine
+      loadBalancerService:
+        # Annotations are used to further tweak the LoadBalancer integration with the
+        # cloud provider.
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+        # SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
+        # This field will be ignored if the cloud-provider does not support the feature.
+        # More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+        sourceRanges: []
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
