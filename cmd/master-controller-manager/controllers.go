@@ -22,7 +22,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/allowed-registry-controller"
 	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
@@ -101,14 +100,16 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create master constraint template controller: %w", err)
 	}
-	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
-		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
-	}
 	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create external cluster controller: %w", err)
 	}
 	if err := kubeone.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create kubeone controller: %w", err)
+	}
+
+	// init CE/EE-only controllers
+	if err := setupControllers(ctrlCtx); err != nil {
+		return err
 	}
 
 	return nil
