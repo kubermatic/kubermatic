@@ -29,6 +29,9 @@ import (
 
 type ProviderType string
 
+// +kubebuilder:validation:Pattern:="^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))?$"
+type CIDR string
+
 const (
 	// Constants defining known cloud providers.
 	FakeCloudProvider         ProviderType = "fake"
@@ -195,14 +198,29 @@ type NodeportProxyConfig struct {
 	Disable bool `json:"disable,omitempty"`
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider where the seed cluster is running.
+	// Deprecated: Use .envoy.loadBalancerService.annotations instead.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Envoy configures the Envoy application itself.
-	Envoy NodeportProxyComponent `json:"envoy,omitempty"`
+	Envoy NodePortProxyComponentEnvoy `json:"envoy,omitempty"`
 	// EnvoyManager configures the Kubermatic-internal Envoy manager.
 	EnvoyManager NodeportProxyComponent `json:"envoyManager,omitempty"`
 	// Updater configures the component responsible for updating the LoadBalancer
 	// service.
 	Updater NodeportProxyComponent `json:"updater,omitempty"`
+}
+
+type EnvoyLoadBalancerService struct {
+	// Annotations are used to further tweak the LoadBalancer integration with the
+	// cloud provider.
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// SourceRanges will restrict front-loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16
+	// This field will be ignored if the cloud-provider does not support the feature.
+	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+	SourceRanges []CIDR `json:"sourceRanges,omitempty"`
+}
+type NodePortProxyComponentEnvoy struct {
+	NodeportProxyComponent `json:",inline"`
+	LoadBalancerService    EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
 }
 
 type NodeportProxyComponent struct {
@@ -249,7 +267,7 @@ type DatacenterSpec struct {
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Fake *DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
+	Fake *DatacenterSpecFake `json:"fake,omitempty,omitempty"`
 
 	// Optional: When defined, only users with an e-mail address on the
 	// given domains can make use of this datacenter. You can define multiple

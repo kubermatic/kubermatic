@@ -1098,6 +1098,21 @@ spec:
                         description: DockerRepository is the repository containing
                           the component's image.
                         type: string
+                      loadBalancerService:
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations are used to further tweak the
+                              LoadBalancer integration with the cloud provider.
+                            type: object
+                          sourceRanges:
+                            description: LoadBalancerSourceRanges will restrict front-loadbalancer
+                              service to specific ip ranges
+                            items:
+                              type: string
+                            type: array
+                        type: object
                       resources:
                         description: Resources describes the requested and maximum
                           allowed CPU/memory usage.
