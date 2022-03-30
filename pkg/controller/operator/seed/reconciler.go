@@ -472,7 +472,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.Kub
 
 	creators := []reconciling.NamedSecretCreatorGetter{
 		common.WebhookServingCASecretCreator(cfg),
-		common.WebhookServingCertSecretCreator(cfg, client),
+		common.WebhookServingCertSecretCreator(ctx, cfg, client),
 	}
 
 	if cfg.Spec.ImagePullSecret != "" {
@@ -609,16 +609,16 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	log.Debug("reconciling Admission Webhooks")
 
 	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
-		common.SeedAdmissionWebhookCreator(cfg, client),
-		common.KubermaticConfigurationAdmissionWebhookCreator(cfg, client),
-		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(cfg, client),
+		common.SeedAdmissionWebhookCreator(ctx, cfg, client),
+		common.KubermaticConfigurationAdmissionWebhookCreator(ctx, cfg, client),
+		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(ctx, cfg, client),
 	}
 
 	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {
 		validatingWebhookCreators = append(
 			validatingWebhookCreators,
-			kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg, client),
-			kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg, client),
+			kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx, cfg, client),
+			kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx, cfg, client),
 		)
 	}
 
@@ -627,9 +627,9 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
-		kubermaticseed.ClusterMutatingWebhookConfigurationCreator(cfg, client),
-		kubermaticseed.AddonMutatingWebhookConfigurationCreator(cfg, client),
-		kubermaticseed.MLAAdminSettingMutatingWebhookConfigurationCreator(cfg, client),
+		kubermaticseed.ClusterMutatingWebhookConfigurationCreator(ctx, cfg, client),
+		kubermaticseed.AddonMutatingWebhookConfigurationCreator(ctx, cfg, client),
+		kubermaticseed.MLAAdminSettingMutatingWebhookConfigurationCreator(ctx, cfg, client),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookCreators, "", client); err != nil {

@@ -17,6 +17,7 @@ limitations under the License.
 package kubermatic
 
 import (
+	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -39,7 +40,7 @@ const (
 	OSPAdmissionWebhookName             = "kubermatic-operating-system-profiles"
 )
 
-func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ClusterValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -47,7 +48,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticCo
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
@@ -93,7 +94,7 @@ func ClusterValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticCo
 	}
 }
 
-func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func ClusterMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -102,7 +103,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
@@ -149,7 +150,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConf
 	}
 }
 
-func AddonMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func AddonMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return AddonAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -158,7 +159,7 @@ func AddonMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfig
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.NamespacedScope
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
@@ -205,7 +206,7 @@ func AddonMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfig
 	}
 }
 
-func MLAAdminSettingMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func MLAAdminSettingMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return MLAAdminSettingAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -214,7 +215,7 @@ func MLAAdminSettingMutatingWebhookConfigurationCreator(cfg *kubermaticv1.Kuberm
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.NamespacedScope
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
@@ -261,7 +262,7 @@ func MLAAdminSettingMutatingWebhookConfigurationCreator(cfg *kubermaticv1.Kuberm
 	}
 }
 
-func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return OSCAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -269,7 +270,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.AllScopes
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
@@ -314,7 +315,7 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(cfg *kubermaticv
 	}
 }
 
-func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return OSPAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -322,7 +323,7 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(cfg *kubermatic
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.AllScopes
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
