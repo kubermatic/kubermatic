@@ -141,7 +141,7 @@ spellcheck:
 
 .PHONY: cover
 cover:
-	./hack/cover.sh --html
+	./hack/coverage.sh --html
 
 .PHONY: run-controller-manager
 run-controller-manager:
