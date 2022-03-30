@@ -89,7 +89,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			// enable initial and periodic etcd data corruption checks by default if running etcd 3.5.
 			// The etcd team has recommended to enable this feature for etcd 3.5 due to data consistency issues.
 			// Reference: https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ
-			if matches, _ := etcdConstraint.Validate(imageTagVersion); matches {
+			if ok := etcdConstraint.Check(imageTagVersion); ok {
 				enableDataCorruptionChecks = true
 			}
 
