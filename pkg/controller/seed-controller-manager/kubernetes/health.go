@@ -29,7 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ExtendedClusterHealth, error) {
@@ -67,11 +66,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
 
-	userClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
-	}
-	mcHealthStatus, err := r.machineControllerHealthCheck(ctx, ns, userClient)
+	mcHealthStatus, err := r.machineControllerHealthCheck(ctx, cluster, ns)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get machine controller health: %w", err)
 	}
@@ -115,11 +110,20 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	})
 }
 
-func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, namespace string, userClient ctrlruntimeclient.Client) (kubermaticv1.HealthStatus, error) {
+func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	// if the userCluster client cannot be retrieved because the kubeconfig secret doesn't exist yet, then simply return StatusDown
+	userClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+	if kerrors.IsNotFound(err) {
+		return kubermaticv1.HealthStatusDown, nil
+	}
+
 	// check the existence of the mutatingWebhookConfiguration in the user cluster
 	key := types.NamespacedName{Name: resources.MachineControllerMutatingWebhookConfigurationName}
 	webhookMutatingConf := &admissionregistrationv1.MutatingWebhookConfiguration{}
-	err := userClient.Get(ctx, key, webhookMutatingConf)
+	err = userClient.Get(ctx, key, webhookMutatingConf)
 	if err != nil && !kerrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, err
 	}
