@@ -66,9 +66,14 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
 
-	mcHealthStatus, err := r.machineControllerHealthCheck(ctx, cluster, ns)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+	// check the actual status of the machineController components only if the API server is healthy
+	// because we need to access it to retrieve the machineController mutatingWebhookConfiguration
+	mcHealthStatus := kubermaticv1.HealthStatusDown
+	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
+		mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+		}
 	}
 	extendedHealth.MachineController = mcHealthStatus
 
@@ -111,11 +116,9 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 }
 
 func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
-	// if the userCluster client cannot be retrieved for any reason, then log it and simply return StatusDown
 	userClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
 	if err != nil {
-		r.log.Debug("cannot retrieve the user cluster client: %w", err)
-		return kubermaticv1.HealthStatusDown, nil
+		return kubermaticv1.HealthStatusDown, err
 	}
 
 	// check the existence of the mutatingWebhookConfiguration in the user cluster
@@ -145,12 +148,12 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 	}
 
 	switch {
-	case mcStatus == kubermaticv1.HealthStatusDown && mcWebhookStatus == kubermaticv1.HealthStatusDown:
-		return kubermaticv1.HealthStatusDown, nil
+	case mcStatus == kubermaticv1.HealthStatusUp && mcWebhookStatus == kubermaticv1.HealthStatusUp:
+		return kubermaticv1.HealthStatusUp, nil
 	case mcStatus == kubermaticv1.HealthStatusProvisioning || mcWebhookStatus == kubermaticv1.HealthStatusProvisioning:
 		return kubermaticv1.HealthStatusProvisioning, nil
 	default:
-		return kubermaticv1.HealthStatusUp, nil
+		return kubermaticv1.HealthStatusDown, nil
 	}
 }
 
