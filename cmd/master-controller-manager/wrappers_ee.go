@@ -21,7 +21,9 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 
+	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -30,6 +32,14 @@ import (
 
 func addFlags(fs *flag.FlagSet) {
 	// NOP
+}
+
+func setupControllers(ctrlCtx *controllerContext) error {
+	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
+		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
+	}
+
+	return nil
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
