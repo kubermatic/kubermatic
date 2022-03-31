@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
+
+	"k8s.io/utils/pointer"
 )
 
 func GetClusters(ctx context.Context, client *ClientSet) ([]nutanixv3.ClusterIntentResponse, error) {
@@ -111,6 +113,44 @@ func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName
 	}
 
 	return subnets, nil
+}
+
+func GetCategories(ctx context.Context, client *ClientSet) ([]nutanixv3.CategoryKeyStatus, error) {
+	resp, err := client.Prism.V3.ListCategories(ctx, &nutanixv3.CategoryListMetadata{Kind: pointer.String("category")})
+	if err != nil {
+		return nil, wrapNutanixError(err)
+	}
+
+	var categoryKeys []nutanixv3.CategoryKeyStatus
+
+	if resp != nil {
+		for _, entity := range resp.Entities {
+			if entity != nil {
+				categoryKeys = append(categoryKeys, *entity)
+			}
+		}
+	}
+
+	return categoryKeys, nil
+}
+
+func GetCategoryValues(ctx context.Context, client *ClientSet, category string) ([]nutanixv3.CategoryValueStatus, error) {
+	resp, err := client.Prism.V3.ListAllCategoryValues(ctx, category, "")
+	if err != nil {
+		return nil, wrapNutanixError(err)
+	}
+
+	var categoryValues []nutanixv3.CategoryValueStatus
+
+	if resp != nil {
+		for _, entity := range resp.Entities {
+			if entity != nil {
+				categoryValues = append(categoryValues, *entity)
+			}
+		}
+	}
+
+	return categoryValues, nil
 }
 
 func wrapNutanixError(initialErr error) error {

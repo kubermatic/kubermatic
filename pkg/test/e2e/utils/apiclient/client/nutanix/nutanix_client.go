@@ -28,6 +28,14 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListNutanixCategories(params *ListNutanixCategoriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoriesOK, error)
+
+	ListNutanixCategoriesNoCredentials(params *ListNutanixCategoriesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoriesNoCredentialsOK, error)
+
+	ListNutanixCategoryValues(params *ListNutanixCategoryValuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoryValuesOK, error)
+
+	ListNutanixCategoryValuesNoCredentials(params *ListNutanixCategoryValuesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoryValuesNoCredentialsOK, error)
+
 	ListNutanixClusters(params *ListNutanixClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixClustersOK, error)
 
 	ListNutanixProjects(params *ListNutanixProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixProjectsOK, error)
@@ -37,6 +45,158 @@ type ClientService interface {
 	ListNutanixSubnetsNoCredentials(params *ListNutanixSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixSubnetsNoCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListNutanixCategories List category keys from Nutanix
+*/
+func (a *Client) ListNutanixCategories(params *ListNutanixCategoriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoriesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListNutanixCategoriesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listNutanixCategories",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/nutanix/{dc}/categories",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListNutanixCategoriesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListNutanixCategoriesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNutanixCategoriesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListNutanixCategoriesNoCredentials Lists available Nutanix categories
+*/
+func (a *Client) ListNutanixCategoriesNoCredentials(params *ListNutanixCategoriesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoriesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListNutanixCategoriesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listNutanixCategoriesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListNutanixCategoriesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListNutanixCategoriesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNutanixCategoriesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListNutanixCategoryValues List available category values for a specific category from Nutanix
+*/
+func (a *Client) ListNutanixCategoryValues(params *ListNutanixCategoryValuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoryValuesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListNutanixCategoryValuesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listNutanixCategoryValues",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/nutanix/{dc}/categories/{category}/values",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListNutanixCategoryValuesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListNutanixCategoryValuesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNutanixCategoryValuesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListNutanixCategoryValuesNoCredentials Lists available Nutanix category values for a specific category
+*/
+func (a *Client) ListNutanixCategoryValuesNoCredentials(params *ListNutanixCategoryValuesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNutanixCategoryValuesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListNutanixCategoryValuesNoCredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listNutanixCategoryValuesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListNutanixCategoryValuesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListNutanixCategoryValuesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNutanixCategoryValuesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

@@ -13757,6 +13757,98 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories": {
+      "get": {
+        "description": "Lists available Nutanix categories",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoriesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values": {
+      "get": {
+        "description": "Lists available Nutanix category values for a specific category",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoryValuesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Category",
+            "description": "Category to query the available values for",
+            "name": "category",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryValueList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryValueList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets": {
       "get": {
         "description": "Lists available Nutanix Subnets",
@@ -18107,6 +18199,126 @@
             "description": "VirtualMachineInstancePresetList",
             "schema": {
               "$ref": "#/definitions/VirtualMachineInstancePresetList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/nutanix/{dc}/categories": {
+      "get": {
+        "description": "List category keys from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategories",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NutanixUsername",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixPassword",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/nutanix/{dc}/categories/{category}/values": {
+      "get": {
+        "description": "List available category values for a specific category from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoryValues",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NutanixUsername",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixPassword",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "Category",
+            "description": "Category to query the available values for",
+            "name": "category",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryValueList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryValueList"
             }
           },
           "default": {
@@ -25932,6 +26144,52 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "NutanixCategory": {
+      "type": "object",
+      "title": "NutanixCategory represents a Nutanix category.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "systemDefined": {
+          "type": "boolean",
+          "x-go-name": "SystemDefined"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryList": {
+      "type": "array",
+      "title": "NutanixCategoryList represents an array of Nutanix categories.",
+      "items": {
+        "$ref": "#/definitions/NutanixCategory"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryValue": {
+      "type": "object",
+      "title": "NutanixCategoryValue represents a Nutanix category value.",
+      "properties": {
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryValueList": {
+      "type": "array",
+      "title": "NutanixCategoryValueList represents an array of Nutanix category values.",
+      "items": {
+        "$ref": "#/definitions/NutanixCategoryValue"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "NutanixCloudSpec": {
       "type": "object",

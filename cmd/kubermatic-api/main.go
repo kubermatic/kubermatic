@@ -139,7 +139,7 @@ func main() {
 	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
 	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
-		log.Fatalw("failed to construct manager: %w", err)
+		log.Fatalw("failed to construct manager", zap.Error(err))
 	}
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Event{}, "involvedObject.name", func(rawObj ctrlruntimeclient.Object) []string {
 		event := rawObj.(*corev1.Event)
