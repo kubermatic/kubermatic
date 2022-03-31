@@ -19,7 +19,6 @@ package mutation
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -27,7 +26,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/webhook/util"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -79,10 +77,6 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
 		}
 
-		if err := h.ensureProjectRelation(ctx, sshKey, nil); err != nil {
-			return webhook.Errored(http.StatusBadRequest, err)
-		}
-
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, sshKey); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -94,10 +88,6 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.applyDefaults(ctx, sshKey, oldKey); err != nil {
 			h.log.Info("usersshkey mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
-		}
-
-		if err := h.ensureProjectRelation(ctx, sshKey, oldKey); err != nil {
-			return webhook.Errored(http.StatusBadRequest, err)
 		}
 
 	case admissionv1.Delete:
@@ -119,22 +109,4 @@ func (h *AdmissionHandler) applyDefaults(ctx context.Context, key *kubermaticv1.
 	_, err := defaulting.DefaultUserSSHKey(key, oldKey)
 
 	return err
-}
-
-func (h *AdmissionHandler) ensureProjectRelation(ctx context.Context, key *kubermaticv1.UserSSHKey, oldKey *kubermaticv1.UserSSHKey) error {
-	isUpdate := oldKey != nil
-
-	if isUpdate && key.Spec.Project != oldKey.Spec.Project {
-		return errors.New("cannot change the project for an UserSSHKey object")
-	}
-
-	if key.Spec.Project == "" {
-		return errors.New("project name must be configured")
-	}
-
-	if err := util.OptimisticallyCheckIfProjectIsValid(ctx, h.client, key.Spec.Project, isUpdate); err != nil {
-		return err
-	}
-
-	return nil
 }

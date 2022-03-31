@@ -21,7 +21,6 @@ import (
 	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/webhook/util"
 
@@ -31,12 +30,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// validator for validating Kubermatic User CRD.
+// validator for validating Kubermatic UserSSHKey CRD.
 type validator struct {
 	client ctrlruntimeclient.Client
 }
 
-// NewValidator returns a new user validator.
+// NewValidator returns a new user SSH key validator.
 func NewValidator(client ctrlruntimeclient.Client) *validator {
 	return &validator{
 		client: client,
@@ -46,14 +45,14 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 var _ admission.CustomValidator = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	user, ok := obj.(*kubermaticv1.User)
+	key, ok := obj.(*kubermaticv1.UserSSHKey)
 	if !ok {
-		return errors.New("object is not a User")
+		return errors.New("object is not a UserSSHKey")
 	}
 
-	errs := validation.ValidateUserCreate(user)
+	errs := validation.ValidateUserSSHKeyCreate(key)
 
-	if err := v.validateProjectRelationship(ctx, user, nil); err != nil {
+	if err := v.validateProjectRelationship(ctx, key, nil); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -61,19 +60,19 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 }
 
 func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	oldUser, ok := oldObj.(*kubermaticv1.User)
+	oldKey, ok := oldObj.(*kubermaticv1.UserSSHKey)
 	if !ok {
-		return errors.New("old object is not a User")
+		return errors.New("old object is not a UserSSHKey")
 	}
 
-	newUser, ok := newObj.(*kubermaticv1.User)
+	newKey, ok := newObj.(*kubermaticv1.UserSSHKey)
 	if !ok {
-		return errors.New("new object is not a User")
+		return errors.New("new object is not a UserSSHKey")
 	}
 
-	errs := validation.ValidateUserUpdate(oldUser, newUser)
+	errs := validation.ValidateUserSSHKeyUpdate(oldKey, newKey)
 
-	if err := v.validateProjectRelationship(ctx, newUser, oldUser); err != nil {
+	if err := v.validateProjectRelationship(ctx, newKey, oldKey); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -84,13 +83,9 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 	return nil
 }
 
-func (v *validator) validateProjectRelationship(ctx context.Context, user *kubermaticv1.User, oldUser *kubermaticv1.User) *field.Error {
-	if !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email) {
-		return nil
-	}
-
-	if err := util.OptimisticallyCheckIfProjectIsValid(ctx, v.client, user.Spec.Project, oldUser != nil); err != nil {
-		return field.Invalid(field.NewPath("spec", "project"), user.Spec.Project, err.Error())
+func (v *validator) validateProjectRelationship(ctx context.Context, key *kubermaticv1.UserSSHKey, oldKey *kubermaticv1.UserSSHKey) *field.Error {
+	if err := util.OptimisticallyCheckIfProjectIsValid(ctx, v.client, key.Spec.Project, oldKey != nil); err != nil {
+		return field.Invalid(field.NewPath("spec", "project"), key.Spec.Project, err.Error())
 	}
 
 	return nil
