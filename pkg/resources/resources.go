@@ -40,6 +40,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -48,7 +50,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -125,6 +126,8 @@ const (
 	OpenVPNServerServiceName = "openvpn-server"
 	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service.
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
+	// MachinesWebhookServiceName is the name of the machines webhook service.
+	MachinesWebhookServiceName = "machine-webhook"
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService.
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
 
@@ -148,6 +151,9 @@ const (
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider.
 	CloudControllerManagerKubeconfigSecretName = "cloud-controller-manager-kubeconfig"
+	// MachineWebhookServingCertSecretName is the name for the secret containing the serving cert for the
+	// machine webhook.
+	MachineWebhookServingCertSecretName = "machine-webhook-serving-cert"
 	// MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
 	// machine-controller webhook.
 	MachineControllerWebhookServingCertSecretName = "machinecontroller-webhook-serving-cert"
@@ -430,6 +436,10 @@ const (
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
+
+	// MachineValidatingWebhookConfigurationName is the name of the machine validating webhook
+	// configuration.
+	MachineValidatingWebhookConfigurationName = "machine.kubermatic.io"
 
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.

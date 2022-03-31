@@ -282,6 +282,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 							MountPath: "/opt/ca-bundle/",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.MachineWebhookServingCertSecretName,
+							MountPath: "/opt/webhook-serving-cert/",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -319,6 +324,14 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.CABundleConfigMapName,
 					},
+				},
+			},
+		},
+		{
+			Name: resources.MachineWebhookServingCertSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.MachineWebhookServingCertSecretName,
 				},
 			},
 		},

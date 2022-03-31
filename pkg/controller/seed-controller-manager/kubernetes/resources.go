@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -47,11 +48,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
 
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -266,6 +268,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
 		etcd.ServiceCreator(data),
 		machinecontroller.ServiceCreator(),
+		machine.ServiceCreator(),
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -359,6 +362,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.KubeletClientCertificateCreator(data),
 		apiserver.ServiceAccountKeyCreator(),
 		machinecontroller.TLSServingCertificateCreator(data),
+		machine.TLSServingCertificateCreator(data),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(namespace, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data, r.log),
