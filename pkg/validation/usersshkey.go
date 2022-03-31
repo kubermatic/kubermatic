@@ -25,19 +25,19 @@ import (
 func ValidateUserSSHKey(key *kubermaticv1.UserSSHKey) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if key.Spec.Owner != "" {
+	if key.Spec.Owner == "" {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "owner"), "no owner specified"))
 	}
 
-	if key.Spec.PublicKey != "" {
+	if key.Spec.PublicKey == "" {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "publicKey"), "no public key specified"))
 	}
 
-	if key.Spec.Fingerprint != "" {
+	if key.Spec.Fingerprint == "" {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "fingerprint"), "no fingerprint specified"))
 	}
 
-	if key.Spec.Project != "" {
+	if key.Spec.Project == "" {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "project"), "no project specified"))
 	}
 
