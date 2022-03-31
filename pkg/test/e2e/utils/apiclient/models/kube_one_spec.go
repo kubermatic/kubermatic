@@ -18,8 +18,8 @@ import (
 // swagger:model KubeOneSpec
 type KubeOneSpec struct {
 
-	// container runtime docker
-	ContainerRuntimeDocker bool `json:"containerRuntimeDocker,omitempty"`
+	// container runtime
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
 
 	// Manifest Base64 encoded manifest
 	Manifest string `json:"manifest,omitempty"`

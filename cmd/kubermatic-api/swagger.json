@@ -24754,9 +24754,9 @@
         "cloudSpec": {
           "$ref": "#/definitions/KubeOneCloudSpec"
         },
-        "containerRuntimeDocker": {
-          "type": "boolean",
-          "x-go-name": "ContainerRuntimeDocker"
+        "containerRuntime": {
+          "type": "string",
+          "x-go-name": "ContainerRuntime"
         },
         "manifest": {
           "description": "Manifest Base64 encoded manifest",

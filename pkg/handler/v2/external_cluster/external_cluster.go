@@ -609,11 +609,11 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 			if cloud.KubeOne != nil {
-				containerRuntimeDocker, err := isContainerRuntimeDocker(ctx, cluster, clusterProvider)
+				containerRuntime, err := checkContainerRuntime(ctx, cluster, clusterProvider)
 				if err != nil {
 					return nil, err
 				}
-				clusterToPatch.Cloud.KubeOne.ContainerRuntimeDocker = containerRuntimeDocker
+				clusterToPatch.Cloud.KubeOne.ContainerRuntime = containerRuntime
 				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
 					return nil, err
 				}
