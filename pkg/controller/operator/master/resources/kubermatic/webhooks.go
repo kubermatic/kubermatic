@@ -86,12 +86,11 @@ func UserSSHKeyMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticC
 	}
 }
 
-func UserMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
-		return common.UserAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+func UserSSHKeyValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+		return common.UserSSHKeyAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
-			reinvocationPolicy := admissionregistrationv1.NeverReinvocationPolicy
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
@@ -100,13 +99,12 @@ func UserMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfigu
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
 
-			hook.Webhooks = []admissionregistrationv1.MutatingWebhook{
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
-					Name:                    "users.kubermatic.io", // this should be a FQDN
+					Name:                    "usersshkeys.kubermatic.io", // this should be a FQDN
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
-					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffects,
 					TimeoutSeconds:          pointer.Int32Ptr(30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
@@ -114,7 +112,7 @@ func UserMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfigu
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/mutate-kubermatic-k8c-io-v1-user"),
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-usersshkey"),
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
@@ -125,7 +123,7 @@ func UserMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfigu
 							Rule: admissionregistrationv1.Rule{
 								APIGroups:   []string{kubermaticv1.GroupName},
 								APIVersions: []string{"*"},
-								Resources:   []string{"users"},
+								Resources:   []string{"usersshkeys"},
 								Scope:       &scope,
 							},
 							Operations: []admissionregistrationv1.OperationType{
