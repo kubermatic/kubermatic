@@ -1,5 +1,11 @@
 # Kubermatic 2.20
 
+## [v2.20.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.1)
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9480](https://github.com/kubermatic/kubermatic/issues/9480))
+
 ## [v2.20.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.0)
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.20/tutorials_howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
@@ -71,6 +77,12 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 
 # Kubermatic 2.19
+
+## [v2.19.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.4)
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9477](https://github.com/kubermatic/kubermatic/issues/9477))
 
 ## [v2.19.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.3)
 
@@ -412,6 +424,12 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Incompatibilty between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
 
 # Kubermatic 2.18
+
+## [v2.18.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.9)
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9477](https://github.com/kubermatic/kubermatic/issues/9477))
 
 ## [v2.18.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.8)
 
