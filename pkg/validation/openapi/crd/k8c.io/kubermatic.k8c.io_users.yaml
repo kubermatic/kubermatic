@@ -92,6 +92,11 @@ spec:
                 type: object
               name:
                 type: string
+              project:
+                description: Project is the name of the project that this service
+                  account user is tied to. This field is only applicable to service
+                  accounts and regular users must not set this field.
+                type: string
               settings:
                 description: UserSettings represent an user settings.
                 properties:

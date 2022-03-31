@@ -27,8 +27,8 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -86,7 +86,7 @@ func newUserGrafanaReconciler(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
 		user := object.(*kubermaticv1.User)
-		return !kubernetesprovider.IsProjectServiceAccount(user.Spec.Email)
+		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
 	})
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {

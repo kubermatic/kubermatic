@@ -57,10 +57,16 @@ type UserStatus struct {
 
 // UserSpec specifies a user.
 type UserSpec struct {
-	ID                     string                                  `json:"id"`
-	Name                   string                                  `json:"name"`
-	Email                  string                                  `json:"email"`
-	IsAdmin                bool                                    `json:"admin"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	IsAdmin bool   `json:"admin"`
+
+	// Project is the name of the project that this service account user is tied to. This
+	// field is only applicable to service accounts and regular users must not set this field.
+	// +optional
+	Project string `json:"project,omitempty"`
+
 	Settings               *UserSettings                           `json:"settings,omitempty"`
 	InvalidTokensReference *providerconfig.GlobalSecretKeySelector `json:"invalidTokensReference,omitempty"`
 }

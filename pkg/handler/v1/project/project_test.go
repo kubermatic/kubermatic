@@ -488,8 +488,8 @@ func TestListProjectMethod(t *testing.T) {
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
-			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
-			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount)
+			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
+			userProvider := kubernetes.NewUserProvider(fakeClient)
 
 			userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 			if err != nil {

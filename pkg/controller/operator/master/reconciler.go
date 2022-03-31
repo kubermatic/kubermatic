@@ -176,12 +176,24 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.UserAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.UserSSHKeyAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
+	}
+
 	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
 		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
 	}
 
 	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.KubermaticConfigurationAdmissionWebhookName(config)); err != nil {
 		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %w", err)
+	}
+
+	if err := common.CleanupClusterResource(ctx, r, &admissionregistrationv1.MutatingWebhookConfiguration{}, common.UserSSHKeyAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up MutatingWebhookConfiguration: %w", err)
 	}
 
 	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
@@ -390,6 +402,8 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(config, r.Client),
 		common.KubermaticConfigurationAdmissionWebhookCreator(config, r.Client),
+		kubermatic.UserValidatingWebhookConfigurationCreator(config, r.Client),
+		kubermatic.UserSSHKeyValidatingWebhookConfigurationCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
