@@ -25,10 +25,6 @@ import (
 func ValidateUserSSHKey(key *kubermaticv1.UserSSHKey) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if key.Spec.Owner == "" {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "owner"), "no owner specified"))
-	}
-
 	if key.Spec.PublicKey == "" {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "publicKey"), "no public key specified"))
 	}
