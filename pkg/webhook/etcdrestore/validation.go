@@ -83,7 +83,7 @@ func (v validator) getCluster(ctx context.Context, clusterRef v1.ObjectReference
 		return nil, fmt.Errorf("failed to get current Seed: %w", err)
 	}
 	if seed == nil {
-		return nil, fmt.Errorf("webhook not configured for a Seed cluster, cannot validate Addon resources")
+		return nil, fmt.Errorf("webhook not configured for a Seed cluster, cannot validate EtcdRestore resources")
 	}
 
 	client, err := v.seedClientGetter(seed)
