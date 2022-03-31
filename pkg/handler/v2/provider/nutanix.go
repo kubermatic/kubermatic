@@ -95,7 +95,7 @@ type NutanixCategoryValueReq struct {
 }
 
 // NutanixNoCredentialReq represent a request for Nutanix information with cluster-provided credentials
-// swagger:parameters listNutanixSubnetsNoCredentials
+// swagger:parameters listNutanixSubnetsNoCredentials listNutanixCategoriesNoCredentials
 type NutanixNoCredentialReq struct {
 	cluster.GetClusterReq
 }

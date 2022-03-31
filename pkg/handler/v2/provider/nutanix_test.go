@@ -288,6 +288,14 @@ func (m *mockClientImpl) ListNutanixSubnets(ctx context.Context, clusterName, pr
 	return nil, nil
 }
 
+func (m *mockClientImpl) ListNutanixCategories(ctx context.Context) (apiv1.NutanixCategoryList, error) {
+	return nil, nil
+}
+
+func (m *mockClientImpl) ListNutanixCategoryValues(ctx context.Context, categoryName string) (apiv1.NutanixCategoryValueList, error) {
+	return nil, nil
+}
+
 func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
 	t.Helper()
 	var actualResponse interface{}
