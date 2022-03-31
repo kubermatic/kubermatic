@@ -449,8 +449,8 @@ This patch release enables etcd corruption checks on every etcd ring that is run
 
 To replace a member in case of data consistency issues, please:
 
-- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.19/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
-- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.19/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
+- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.18/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
+- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.18/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
 
 Please be aware we do not recommend enabling `etcd-launcher` on existing Kubernetes 1.22 environments at the time. This is due to the fact that the migration to `etcd-launcher` requires several etcd restarts and we currently recommend keeping the etcd ring as stable as possible (apart from the restarts triggered by this patch release to roll out the consistency checks).
 
