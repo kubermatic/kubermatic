@@ -441,10 +441,23 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 					},
 				}
 			}
+
+			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
+				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
+					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
+				}
+			}
+
+			// Copy custom annotations if supplied by seed spec.
+			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				s.Annotations = data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations
+			}
+
 			if data.Cluster().Spec.Cloud.AWS != nil {
 				if s.Annotations == nil {
 					s.Annotations = make(map[string]string)
 				}
+
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
 				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
 

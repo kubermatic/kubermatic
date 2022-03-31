@@ -550,9 +550,9 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 		return seedCopy, err
 	}
 
-	if len(seedCopy.Spec.NodeportProxy.Annotations) == 0 {
-		seedCopy.Spec.NodeportProxy.Annotations = DefaultNodeportProxyServiceAnnotations
-		logger.Debugw("Defaulting field", "field", "nodeportProxy.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
+	if len(seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations) == 0 {
+		seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations = DefaultNodeportProxyServiceAnnotations
+		logger.Debugw("Defaulting field", "field", "nodeportProxy.envoy.loadBalancerService.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
 	}
 
 	// apply settings from the KubermaticConfiguration to the Seed, in case they are not set there;
