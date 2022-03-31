@@ -81,7 +81,6 @@ spec:
         # EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
         # ignoring cluster-specific settings
         enforcePodSecurityPolicy: false
-        fake: null
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
           # https://cloud.google.com/compute/docs/regions-zones/
