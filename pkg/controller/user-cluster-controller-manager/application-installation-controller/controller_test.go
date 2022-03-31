@@ -24,7 +24,6 @@ import (
 	"github.com/onsi/gomega"
 
 	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -87,7 +86,7 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			g := gomega.NewGomegaWithT(t)
 
-			enqueueApplicationInstallationFunc := enqueueAppInstallationForAppDef(context.Background(), kubermaticlog.Logger, tc.userClient)
+			enqueueApplicationInstallationFunc := enqueueAppInstallationForAppDef(context.Background(), tc.userClient)
 			actual := enqueueApplicationInstallationFunc(tc.applicationDefinition)
 
 			g.Expect(actual).Should(gomega.ConsistOf(tc.expectedReconcileRequests))

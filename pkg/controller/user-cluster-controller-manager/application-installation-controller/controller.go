@@ -79,7 +79,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		return fmt.Errorf("failed to get informer for applicationDefinition: %w", err)
 	}
 
-	if err = c.Watch(&source.Informer{Informer: appDefInformer}, handler.EnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(ctx, log, r.userClient))); err != nil {
+	if err = c.Watch(&source.Informer{Informer: appDefInformer}, handler.EnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(ctx, r.userClient))); err != nil {
 		return fmt.Errorf("failed to watch applicationDefinition: %w", err)
 	}
 
@@ -126,7 +126,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 
 // enqueueAppInstallationForAppDef fan-out updates from applicationDefinition to the ApplicationInstallation that reference
 // this applicationDefinition.
-func enqueueAppInstallationForAppDef(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueAppInstallationForAppDef(ctx context.Context, userClient ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
 	return func(applicationDefinition ctrlruntimeclient.Object) []reconcile.Request {
 		appList := &appkubermaticv1.ApplicationInstallationList{}
 		if err := userClient.List(ctx, appList); err != nil {
@@ -139,10 +139,6 @@ func enqueueAppInstallationForAppDef(ctx context.Context, log *zap.SugaredLogger
 			if appInstallation.Spec.ApplicationRef.Name == applicationDefinition.GetName() {
 				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: appInstallation.Name}})
 			}
-		}
-
-		if res != nil {
-			log.Debugf("ApplicationDefinition '%s' has changed. Enqueue ApplicationInstallations %v", applicationDefinition.GetName(), res)
 		}
 		return res
 	}
