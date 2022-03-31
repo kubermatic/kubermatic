@@ -20,7 +20,7 @@
 - [Control of user cluster pod placement over infra cluster nodes](#control-of-user-cluster-pod-placement-over-infra-cluster-nodes)
 ## Motivation and Background
 
-In our current offer, there is no control on the placement of the KubeVirt VMs on the underlying nodes. This problematic is the same at user cluster level, for the placement of pods.
+In our current offer, there is no control on the placement of the KubeVirt VMs on the underlying nodes. This problem is the same at user cluster level, for the placement of pods.
 
 **This proposal requires some tests/POC. For this, we would need an infra cluster with 2 or 3 nodes (currently, we only have 1).**
 
