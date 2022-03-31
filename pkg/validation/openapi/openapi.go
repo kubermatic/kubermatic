@@ -131,11 +131,11 @@ func v1Validator(u *unstructured.Unstructured, desVer string) (*validate.SchemaV
 	return sv, nil
 }
 
-// Efs is an embeded fs that contains kubermatic CRD manifest
+// Efs is an embedded fs that contains kubermatic CRD manifest
 //go:embed crd/k8c.io
 var Efs embed.FS
 
-// CRDRootFolder is the root folder where CRD manifest live in Efs
+// CRDRootFolder is the root folder where CRD manifest live in Efs.
 const CRDRootFolder = "crd/k8c.io/"
 
 // NewValidatorForType returns a suitable validator from its catalogue based on the supplied TypeMeta.

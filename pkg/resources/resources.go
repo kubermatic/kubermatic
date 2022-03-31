@@ -457,7 +457,7 @@ const (
 	// ApplicationInstallationCRDName defines the CRD name for application installation objects.
 	ApplicationInstallationCRDName = "applicationinstallations.apps.kubermatic.k8c.io"
 
-	// ApplicationInstallationCRDFilePath is the path of the crd in openapi.Efs
+	// ApplicationInstallationCRDFilePath is the path of the crd in openapi.Efs.
 	ApplicationInstallationCRDFilePath = openapi.CRDRootFolder + "apps.kubermatic.k8c.io_applicationinstallations.yaml"
 )
 
