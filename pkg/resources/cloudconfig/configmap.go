@@ -293,6 +293,7 @@ func CloudConfig(
 	case cloud.Kubevirt != nil:
 		cc := kubevirt.CloudConfig{
 			Kubeconfig: credentials.Kubevirt.KubeConfig,
+			Namespace:  cluster.Status.NamespaceName,
 		}
 		return cc.String()
 	}

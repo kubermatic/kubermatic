@@ -370,7 +370,7 @@ kind: Tenant
 metadata:
   name: tenant
 spec:
-  infraClusterNamespace: default
+  infraClusterNamespace: {{ .Cluster.Namespace }}
   infraClusterLabels: cluster-name={{ .Cluster.Name }}
 ---
 apiVersion: v1

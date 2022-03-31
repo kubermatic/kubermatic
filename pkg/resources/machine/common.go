@@ -406,14 +406,45 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 
 func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
 	config := kubevirt.RawConfig{
-		CPUs:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.CPUs},
-		PVCSize:          providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PVCSize},
-		StorageClassName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.StorageClassName},
-		SourceURL:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.SourceURL},
-		Namespace:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Namespace},
-		Memory:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Memory},
-		DNSPolicy:        providerconfig.ConfigVarString{Value: dc.Spec.Kubevirt.DNSPolicy},
-		DNSConfig:        dc.Spec.Kubevirt.DNSConfig,
+		VirtualMachine: kubevirt.VirtualMachine{
+			Flavor: kubevirt.Flavor{
+				Name:    providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorName},
+				Profile: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorProfile},
+			},
+			Template: kubevirt.Template{
+				CPUs:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.CPUs},
+				Memory: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Memory},
+				PrimaryDisk: kubevirt.PrimaryDisk{
+					Disk: kubevirt.Disk{
+						Size:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskSize},
+						StorageClassName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskStorageClassName},
+					},
+					OsImage: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskOSImage},
+				},
+			},
+			DNSPolicy: providerconfig.ConfigVarString{Value: dc.Spec.Kubevirt.DNSPolicy},
+			DNSConfig: dc.Spec.Kubevirt.DNSConfig.DeepCopy(),
+		},
+		Affinity: kubevirt.Affinity{
+			PodAffinityPreset:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAffinityPreset},
+			PodAntiAffinityPreset: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAntiAffinityPreset},
+			NodeAffinityPreset: kubevirt.NodeAffinityPreset{
+				Type: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Type},
+				Key:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Key},
+			},
+		},
+	}
+	config.VirtualMachine.Template.SecondaryDisks = make([]kubevirt.SecondaryDisks, 0, len(nodeSpec.Cloud.Kubevirt.SecondaryDisks))
+	for _, sd := range nodeSpec.Cloud.Kubevirt.SecondaryDisks {
+		secondaryDisk := kubevirt.SecondaryDisks{Disk: kubevirt.Disk{
+			Size:             providerconfig.ConfigVarString{Value: sd.Size},
+			StorageClassName: providerconfig.ConfigVarString{Value: sd.StorageClassName},
+		}}
+		config.VirtualMachine.Template.SecondaryDisks = append(config.VirtualMachine.Template.SecondaryDisks, secondaryDisk)
+	}
+	config.Affinity.NodeAffinityPreset.Values = make([]providerconfig.ConfigVarString, 0, len(nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Values))
+	for _, val := range nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Values {
+		config.Affinity.NodeAffinityPreset.Values = append(config.Affinity.NodeAffinityPreset.Values, providerconfig.ConfigVarString{Value: val})
 	}
 
 	ext := &runtime.RawExtension{}

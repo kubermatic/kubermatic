@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -23,25 +24,39 @@ type KubevirtNodeSpec struct {
 	// Required: true
 	CPUs *string `json:"cpus"`
 
+	// FlavorName states name of the virtual-machine flavor.
+	FlavorName string `json:"flavorName,omitempty"`
+
+	// FlavorProfile states name of virtual-machine profile.
+	FlavorProfile string `json:"flavorProfile,omitempty"`
+
 	// Memory states the memory that kubevirt node will have.
 	// Required: true
 	Memory *string `json:"memory"`
 
-	// Namespace states in which namespace kubevirt node will be provisioned.
-	// Required: true
-	Namespace *string `json:"namespace"`
+	// PodAffinityPreset describes pod affinity scheduling rules
+	PodAffinityPreset string `json:"podAffinityPreset,omitempty"`
 
-	// PVCSize states the size of the provisioned pvc per node.
-	// Required: true
-	PVCSize *string `json:"pvcSize"`
+	// PodAntiAffinityPreset describes pod anti-affinity scheduling rules
+	PodAntiAffinityPreset string `json:"podAntiAffinityPreset,omitempty"`
 
-	// SourceURL states the url from which the imported image will be downloaded.
+	// PrimaryDiskOSImage states the source from which the imported image will be downloaded.
 	// Required: true
-	SourceURL *string `json:"sourceURL"`
+	PrimaryDiskOSImage *string `json:"primaryDiskOSImage"`
 
-	// StorageClassName states the storage class name for the provisioned PVCs.
+	// PrimaryDiskSize states the size of the provisioned pvc per node.
 	// Required: true
-	StorageClassName *string `json:"storageClassName"`
+	PrimaryDiskSize *string `json:"primaryDiskSize"`
+
+	// PrimaryDiskStorageClassName states the storage class name for the provisioned PVCs.
+	// Required: true
+	PrimaryDiskStorageClassName *string `json:"primaryDiskStorageClassName"`
+
+	// SecondaryDisks contains list of secondary-disks
+	SecondaryDisks []*SecondaryDisks `json:"secondaryDisks"`
+
+	// node affinity preset
+	NodeAffinityPreset *NodeAffinityPreset `json:"nodeAffinityPreset,omitempty"`
 }
 
 // Validate validates this kubevirt node spec
@@ -56,19 +71,23 @@ func (m *KubevirtNodeSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateNamespace(formats); err != nil {
+	if err := m.validatePrimaryDiskOSImage(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validatePVCSize(formats); err != nil {
+	if err := m.validatePrimaryDiskSize(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateSourceURL(formats); err != nil {
+	if err := m.validatePrimaryDiskStorageClassName(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateStorageClassName(formats); err != nil {
+	if err := m.validateSecondaryDisks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNodeAffinityPreset(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -96,44 +115,129 @@ func (m *KubevirtNodeSpec) validateMemory(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateNamespace(formats strfmt.Registry) error {
+func (m *KubevirtNodeSpec) validatePrimaryDiskOSImage(formats strfmt.Registry) error {
 
-	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
+	if err := validate.Required("primaryDiskOSImage", "body", m.PrimaryDiskOSImage); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validatePVCSize(formats strfmt.Registry) error {
+func (m *KubevirtNodeSpec) validatePrimaryDiskSize(formats strfmt.Registry) error {
 
-	if err := validate.Required("pvcSize", "body", m.PVCSize); err != nil {
+	if err := validate.Required("primaryDiskSize", "body", m.PrimaryDiskSize); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateSourceURL(formats strfmt.Registry) error {
+func (m *KubevirtNodeSpec) validatePrimaryDiskStorageClassName(formats strfmt.Registry) error {
 
-	if err := validate.Required("sourceURL", "body", m.SourceURL); err != nil {
+	if err := validate.Required("primaryDiskStorageClassName", "body", m.PrimaryDiskStorageClassName); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateStorageClassName(formats strfmt.Registry) error {
+func (m *KubevirtNodeSpec) validateSecondaryDisks(formats strfmt.Registry) error {
+	if swag.IsZero(m.SecondaryDisks) { // not required
+		return nil
+	}
 
-	if err := validate.Required("storageClassName", "body", m.StorageClassName); err != nil {
-		return err
+	for i := 0; i < len(m.SecondaryDisks); i++ {
+		if swag.IsZero(m.SecondaryDisks[i]) { // not required
+			continue
+		}
+
+		if m.SecondaryDisks[i] != nil {
+			if err := m.SecondaryDisks[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("secondaryDisks" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("secondaryDisks" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil
 }
 
-// ContextValidate validates this kubevirt node spec based on context it is used
+func (m *KubevirtNodeSpec) validateNodeAffinityPreset(formats strfmt.Registry) error {
+	if swag.IsZero(m.NodeAffinityPreset) { // not required
+		return nil
+	}
+
+	if m.NodeAffinityPreset != nil {
+		if err := m.NodeAffinityPreset.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodeAffinityPreset")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeAffinityPreset")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this kubevirt node spec based on the context it is used
 func (m *KubevirtNodeSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateSecondaryDisks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNodeAffinityPreset(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *KubevirtNodeSpec) contextValidateSecondaryDisks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.SecondaryDisks); i++ {
+
+		if m.SecondaryDisks[i] != nil {
+			if err := m.SecondaryDisks[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("secondaryDisks" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("secondaryDisks" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *KubevirtNodeSpec) contextValidateNodeAffinityPreset(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NodeAffinityPreset != nil {
+		if err := m.NodeAffinityPreset.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodeAffinityPreset")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeAffinityPreset")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
