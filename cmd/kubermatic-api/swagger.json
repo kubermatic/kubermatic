@@ -18220,6 +18220,36 @@
           "nutanix"
         ],
         "operationId": "listNutanixCategories",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NutanixUsername",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixPassword",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "NutanixCategoryList",

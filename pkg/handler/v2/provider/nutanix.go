@@ -83,6 +83,12 @@ type NutanixSubnetReq struct {
 	NutanixProject string
 }
 
+// NutanixCategoryReq represents a request for Nutanix categories
+// swagger:parameters listNutanixCategories
+type NutanixCategoryReq struct {
+	NutanixCommonReq
+}
+
 // NutanixCategoryValueReq represents a request for Nutanix category values for a specific category
 // swagger:parameters listNutanixCategoryValues
 type NutanixCategoryValueReq struct {
