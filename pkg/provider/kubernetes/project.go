@@ -27,7 +27,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,22 +64,8 @@ type PrivilegedProjectProvider struct {
 
 var _ provider.PrivilegedProjectProvider = &PrivilegedProjectProvider{}
 
-// New creates a brand new project in the system with the given name
-//
-// Note:
-// a user cannot own more than one project with the given name
-// since we get the list of the current projects from a cache (lister) there is a small time window
-// during which a user can create more that one project with the given name.
-func (p *ProjectProvider) New(ctx context.Context, users []*kubermaticv1.User, projectName string, labels map[string]string) (*kubermaticv1.Project, error) {
-	if len(users) == 0 {
-		return nil, errors.New("users are missing but required")
-	}
-
-	owners := sets.NewString()
-	for _, user := range users {
-		owners.Insert(user.Name)
-	}
-
+// New creates a brand new project in the system with the given name.
+func (p *ProjectProvider) New(ctx context.Context, projectName string, labels map[string]string) (*kubermaticv1.Project, error) {
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   rand.String(10),
@@ -199,6 +184,7 @@ func (p *ProjectProvider) List(ctx context.Context, options *provider.ProjectLis
 	if options == nil {
 		options = &provider.ProjectListOptions{}
 	}
+
 	projects := &kubermaticv1.ProjectList{}
 	if err := p.clientPrivileged.List(ctx, projects); err != nil {
 		return nil, err
