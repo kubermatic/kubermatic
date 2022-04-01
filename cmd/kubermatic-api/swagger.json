@@ -21462,6 +21462,11 @@
           "type": "string",
           "x-go-name": "ContainerRuntime"
         },
+        "enableKubernetesDashboard": {
+          "description": "EnableKubernetesDashboard controls whether the kubernetes-dashboard should be deployed for the user cluster or not.",
+          "type": "boolean",
+          "x-go-name": "EnableKubernetesDashboard"
+        },
         "enableOperatingSystemManager": {
           "description": "EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration",
           "type": "boolean",

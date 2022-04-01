@@ -37,9 +37,14 @@ import (
 // The ClusterTemplate can be nil.
 func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter, config *kubermaticv1.KubermaticConfiguration, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool, features features.FeatureGate) (*kubermaticv1.ClusterSpec, error) {
 	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
+	var kubernetesDashboardEnabled = pointer.BoolPtr(true)
 
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
 		userSSHKeysAgentEnabled = apiCluster.Spec.EnableUserSSHKeyAgent
+	}
+
+	if apiCluster.Spec.EnableKubernetesDashboard != nil {
+		kubernetesDashboardEnabled = apiCluster.Spec.EnableKubernetesDashboard
 	}
 
 	spec := &kubermaticv1.ClusterSpec{
@@ -54,6 +59,7 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 		UseEventRateLimitAdmissionPlugin:     apiCluster.Spec.UseEventRateLimitAdmissionPlugin,
 		EnableUserSSHKeyAgent:                userSSHKeysAgentEnabled,
 		EnableOperatingSystemManager:         apiCluster.Spec.EnableOperatingSystemManager,
+		EnableKubernetesDashboard:            *kubernetesDashboardEnabled,
 		AuditLogging:                         apiCluster.Spec.AuditLogging,
 		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,
 		OPAIntegration:                       apiCluster.Spec.OPAIntegration,

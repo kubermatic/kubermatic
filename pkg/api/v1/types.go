@@ -855,6 +855,9 @@ type ClusterSpec struct {
 	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
 	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
+	// EnableKubernetesDashboard controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
+	EnableKubernetesDashboard *bool `json:"enableKubernetesDashboard,omitempty"`
+
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
@@ -911,6 +914,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UseEventRateLimitAdmissionPlugin     bool                                   `json:"useEventRateLimitAdmissionPlugin,omitempty"`
 		EnableUserSSHKeyAgent                *bool                                  `json:"enableUserSSHKeyAgent,omitempty"`
 		EnableOperatingSystemManager         bool                                   `json:"enableOperatingSystemManager,omitempty"`
+		EnableKubernetesDashboard            *bool                                  `json:"enableKubernetesDashboard,omitempty"`
 		AuditLogging                         *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 		AdmissionPlugins                     []string                               `json:"admissionPlugins,omitempty"`
 		PodNodeSelectorAdmissionPluginConfig map[string]string                      `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
@@ -948,6 +952,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UseEventRateLimitAdmissionPlugin:     cs.UseEventRateLimitAdmissionPlugin,
 		EnableUserSSHKeyAgent:                cs.EnableUserSSHKeyAgent,
 		EnableOperatingSystemManager:         cs.EnableOperatingSystemManager,
+		EnableKubernetesDashboard:            cs.EnableKubernetesDashboard,
 		AuditLogging:                         cs.AuditLogging,
 		AdmissionPlugins:                     cs.AdmissionPlugins,
 		PodNodeSelectorAdmissionPluginConfig: cs.PodNodeSelectorAdmissionPluginConfig,

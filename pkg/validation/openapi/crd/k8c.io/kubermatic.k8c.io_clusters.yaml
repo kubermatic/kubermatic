@@ -1472,6 +1472,11 @@ spec:
               debugLog:
                 description: DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
                 type: boolean
+              enableKubernetesDashboard:
+                default: true
+                description: EnableKubernetesDashboard controls whether the kubernetes-dashboard
+                  should be deployed for the user cluster or not.
+                type: boolean
               enableOperatingSystemManager:
                 description: EnableOperatingSystemManager enables OSM which in-turn
                   is responsible for creating and managing worker node configuration

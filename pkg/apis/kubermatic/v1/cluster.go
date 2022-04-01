@@ -176,6 +176,10 @@ type ClusterSpec struct {
 	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
 	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
+	// EnableKubernetesDashboard controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
+	// +kubebuilder:default=true
+	EnableKubernetesDashboard bool `json:"enableKubernetesDashboard,omitempty"`
+
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.

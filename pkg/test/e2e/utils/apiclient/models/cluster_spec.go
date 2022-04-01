@@ -25,6 +25,9 @@ type ClusterSpec struct {
 	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
 	ContainerRuntime string `json:"containerRuntime,omitempty"`
 
+	// EnableKubernetesDashboard controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
+	EnableKubernetesDashboard bool `json:"enableKubernetesDashboard,omitempty"`
+
 	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
 	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 

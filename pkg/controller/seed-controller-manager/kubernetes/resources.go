@@ -177,6 +177,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	}
 
+	// Ensure that kubernetes-dashboard is completely removed, when disabled
+	if !cluster.Spec.EnableKubernetesDashboard {
+		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	}
+
 	return &reconcile.Result{}, nil
 }
 
@@ -292,7 +299,10 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
-		kubernetesdashboard.DeploymentCreator(data),
+	}
+
+	if data.Cluster().Spec.EnableKubernetesDashboard {
+		deployments = append(deployments, kubernetesdashboard.DeploymentCreator(data))
 	}
 
 	if !data.IsKonnectivityEnabled() {
@@ -357,12 +367,17 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.GetInternalKubeconfigCreator(namespace, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data, r.log),
 		resources.GetInternalKubeconfigCreator(namespace, resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data, r.log),
 		resources.GetInternalKubeconfigCreator(namespace, resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data, r.log),
-		resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
 		resources.GetInternalKubeconfigCreator(namespace, resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data, r.log),
 		resources.AdminKubeconfigCreator(data),
 		apiserver.TokenViewerCreator(),
 		apiserver.TokenUsersCreator(data),
 		resources.ViewerKubeconfigCreator(data),
+	}
+
+	if data.Cluster().Spec.EnableKubernetesDashboard {
+		creators = append(creators,
+			resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
+		)
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -707,6 +722,16 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 		}
 	}
 
+	return nil
+}
+
+func (r *Reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range kubernetesdashboard.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure kubernetes-dashboard resources are removed/not present: %w", err)
+		}
+	}
 	return nil
 }
 

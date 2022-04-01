@@ -221,6 +221,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-operating-system-manager-enabled")
 			}
 
+			if data.Cluster().Spec.EnableKubernetesDashboard {
+				args = append(args, "-kubernetes-dashboard-enabled")
+			}
+
 			if kubermaticv1helper.NeedCCMMigration(data.Cluster()) {
 				args = append(args, "-ccm-migration")
 			}
