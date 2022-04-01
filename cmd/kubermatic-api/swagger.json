@@ -15900,11 +15900,6 @@
             "schema": {
               "type": "object"
             }
-          },
-          {
-            "type": "string",
-            "name": "UpgradeMD",
-            "in": "header"
           }
         ],
         "responses": {
@@ -24970,6 +24965,10 @@
       "properties": {
         "cloudSpec": {
           "$ref": "#/definitions/KubeOneCloudSpec"
+        },
+        "containerRuntime": {
+          "type": "string",
+          "x-go-name": "ContainerRuntime"
         },
         "manifest": {
           "description": "Manifest Base64 encoded manifest",

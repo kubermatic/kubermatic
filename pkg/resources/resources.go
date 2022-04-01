@@ -558,9 +558,11 @@ const (
 	// KubOne ConfigMap name.
 	KubeOneScriptConfigMapName = "kubeone"
 	// KubeOne secret keys.
-	KubeOneManifest      = "manifest"
-	KubeOneSSHPrivateKey = "id_rsa"
-	KubeOneSSHPassphrase = "passphrase"
+	KubeOneManifest            = "manifest"
+	KubeOneSSHPrivateKey       = "id_rsa"
+	KubeOneSSHPassphrase       = "passphrase"
+	ContainerRuntimeDocker     = "docker"
+	ContainerRuntimeContainerd = "containerd"
 	// KubeOne natively-supported providers.
 	KubeOneAWS              = "aws"
 	KubeOneGCP              = "gcp"
