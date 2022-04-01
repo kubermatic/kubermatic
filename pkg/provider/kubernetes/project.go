@@ -87,8 +87,7 @@ func (p *ProjectProvider) New(ctx context.Context, users []*kubermaticv1.User, p
 			Labels: labels,
 		},
 		Spec: kubermaticv1.ProjectSpec{
-			Name:   projectName,
-			Owners: owners.List(),
+			Name: projectName,
 		},
 	}
 
@@ -209,9 +208,6 @@ func (p *ProjectProvider) List(ctx context.Context, options *provider.ProjectLis
 	for _, project := range projects.Items {
 		// apply list filters
 		if len(options.ProjectName) > 0 && project.Spec.Name != options.ProjectName {
-			continue
-		}
-		if len(options.OwnerName) > 0 && !sets.NewString(project.Spec.Owners...).Has(options.OwnerName) {
 			continue
 		}
 

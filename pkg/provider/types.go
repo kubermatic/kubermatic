@@ -154,9 +154,6 @@ type ProjectGetOptions struct {
 type ProjectListOptions struct {
 	// ProjectName list only projects with the given name
 	ProjectName string
-
-	// OwnerName list only projects that belong to this user
-	OwnerName string
 }
 
 // ClusterProvider declares the set of methods for interacting with clusters

@@ -46,6 +46,7 @@ spec:
             description: ProjectSpec is a specification of a project.
             properties:
               name:
+                description: Name is the human-readable name given to the project.
                 type: string
             required:
             - name

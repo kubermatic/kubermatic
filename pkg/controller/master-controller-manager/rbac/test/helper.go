@@ -26,13 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func CreateProject(name string, owners ...*kubermaticv1.User) *kubermaticv1.Project {
-	ownerNames := []string{}
-
-	for _, owner := range owners {
-		ownerNames = append(ownerNames, owner.Name)
-	}
-
+func CreateProject(name string) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       kubermaticv1.ProjectKindName,
@@ -44,8 +38,7 @@ func CreateProject(name string, owners ...*kubermaticv1.User) *kubermaticv1.Proj
 			ResourceVersion: "1",
 		},
 		Spec: kubermaticv1.ProjectSpec{
-			Name:   name,
-			Owners: ownerNames,
+			Name: name,
 		},
 		Status: kubermaticv1.ProjectStatus{
 			Phase: kubermaticv1.ProjectInactive,
@@ -69,7 +62,7 @@ func CreateUser(name string) *kubermaticv1.User {
 	}
 }
 
-func createExpectedBindingFor(userName string, userGroup string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+func CreateBindingFor(userName string, userGroup string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
 	user := CreateUser(userName)
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -84,9 +77,9 @@ func createExpectedBindingFor(userName string, userGroup string, project *kuberm
 }
 
 func CreateExpectedOwnerBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	return createExpectedBindingFor(userName, "owners", project)
+	return CreateBindingFor(userName, "owners", project)
 }
 
 func CreateExpectedEditorBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	return createExpectedBindingFor(userName, "editors", project)
+	return CreateBindingFor(userName, "editors", project)
 }

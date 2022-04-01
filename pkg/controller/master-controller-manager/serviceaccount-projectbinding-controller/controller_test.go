@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -56,7 +57,7 @@ func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 				genProject("my-first-project-ID"),
 				genServiceAccount("abcd", "editors", "my-first-project-ID"),
 			},
-			expectedBinding: genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
+			expectedBinding: genSABindingWithOwnerRefs("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
 		},
 		{
 			name:   "scenario 2: this test update binding group from viewers to editors",
@@ -64,9 +65,9 @@ func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				genProject("my-first-project-ID"),
 				genServiceAccount("abcd", "editors", "my-first-project-ID"),
-				genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "viewers"),
+				genSABinding("my-first-project-ID", "serviceaccount-abcd@sa.kubermatic.io", "viewers"),
 			},
-			expectedBinding: genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
+			expectedBinding: genSABindingWithOwnerRefs("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
 		},
 	}
 
@@ -113,12 +114,22 @@ func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 	}
 }
 
-func genSABinding(projectID, saName, email, group string) *kubermaticv1.UserProjectBinding {
+func genSABinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
 	binding := test.GenBinding(projectID, email, group)
-	binding.OwnerReferences[0].Kind = kubermaticv1.UserKindName
-	binding.OwnerReferences[0].Name = saName
 	binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
 	binding.Spec.Group = fmt.Sprintf("%s-%s", group, projectID)
+	return binding
+}
+
+func genSABindingWithOwnerRefs(projectID, saName, email, group string) *kubermaticv1.UserProjectBinding {
+	binding := genSABinding(projectID, email, group)
+	binding.OwnerReferences = []metav1.OwnerReference{
+		{
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.UserKindName,
+			Name:       saName,
+		},
+	}
 	return binding
 }
 

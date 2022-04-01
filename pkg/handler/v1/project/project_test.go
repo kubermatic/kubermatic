@@ -88,9 +88,9 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ProjectToRename: "my-first-project-ID",
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				// add some projects
-				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp(), test.GenDefaultUser()),
-				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute), test.GenDefaultUser()),
-				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute), test.GenDefaultUser()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
 				test.GenDefaultUser(),
 				test.GenBinding("my-first-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
 				test.GenBinding("my-second-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
@@ -106,9 +106,9 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ProjectToRename: "my-first-project-ID",
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				// add some projects
-				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp(), test.GenDefaultUser()),
-				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute), test.GenDefaultUser()),
-				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute), test.GenDefaultUser()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
 				// add John and Bob
 				test.GenUser("JohnID", "John", "john@acme.com"),
 				test.GenDefaultUser(),

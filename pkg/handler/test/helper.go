@@ -912,20 +912,14 @@ func GenDefaultAdminUser() *kubermaticv1.User {
 }
 
 // GenProject generates new empty project.
-func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, owners ...*kubermaticv1.User) *kubermaticv1.Project {
-	ownerNames := []string{}
-	for _, owner := range owners {
-		ownerNames = append(ownerNames, owner.Name)
-	}
-
+func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),
 			CreationTimestamp: metav1.NewTime(creationTime),
 		},
 		Spec: kubermaticv1.ProjectSpec{
-			Name:   name,
-			Owners: ownerNames,
+			Name: name,
 		},
 		Status: kubermaticv1.ProjectStatus{
 			Phase: phase,
@@ -935,7 +929,7 @@ func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.
 
 // GenDefaultProject generates a default project.
 func GenDefaultProject() *kubermaticv1.Project {
-	return GenProject("my-first-project", kubermaticv1.ProjectActive, DefaultCreationTimestamp(), GenDefaultUser())
+	return GenProject("my-first-project", kubermaticv1.ProjectActive, DefaultCreationTimestamp())
 }
 
 // GenBinding generates a binding.
@@ -943,13 +937,6 @@ func GenBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					Name:       projectID,
-				},
-			},
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: email,
