@@ -41,6 +41,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
@@ -170,16 +171,19 @@ func main() {
 	// Using a set here for deduplication
 	imageSet := sets.NewString(staticImages...)
 	for _, clusterVersion := range clusterVersions {
-		versionLog := log.With(
-			zap.String("version", clusterVersion.Version.String()),
-		)
+		for _, cloudSpec := range getCloudSpecs() {
+			versionLog := log.With(
+				zap.String("version", clusterVersion.Version.String()),
+				zap.String("provider", cloudSpec.ProviderName),
+			)
 
-		versionLog.Info("Collecting images...")
-		images, err := getImagesForVersion(log, clusterVersion, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
-		if err != nil {
-			versionLog.Fatalw("failed to get images", zap.Error(err))
+			versionLog.Info("Collecting images...")
+			images, err := getImagesForVersion(log, clusterVersion, cloudSpec, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
+			if err != nil {
+				versionLog.Fatalw("failed to get images", zap.Error(err))
+			}
+			imageSet.Insert(images...)
 		}
-		imageSet.Insert(images...)
 	}
 
 	if o.chartsPath != "" {
@@ -232,8 +236,8 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
-	templateData, err := getTemplateData(clusterVersion, kubermaticVersions, caBundle)
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+	templateData, err := getTemplateData(clusterVersion, cloudSpec, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -274,6 +278,7 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
+	deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
@@ -319,7 +324,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -440,6 +445,12 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		resources.AdminKubeconfigSecretName,
 		resources.GatekeeperWebhookServerCertSecretName,
 	})
+	datacenter := &kubermaticv1.Datacenter{
+		Spec: kubermaticv1.DatacenterSpec{
+			VSphere:   &kubermaticv1.DatacenterSpecVSphere{},
+			Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+		},
+	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 
 	clusterSemver, err := ksemver.NewSemver(clusterVersion.Version.String())
@@ -447,7 +458,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		return nil, err
 	}
 	fakeCluster := &kubermaticv1.Cluster{}
-	fakeCluster.Spec.Cloud = kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}}
+	fakeCluster.Spec.Cloud = cloudSpec
 	fakeCluster.Spec.Version = *clusterSemver
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
@@ -468,7 +479,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		WithContext(context.Background()).
 		WithClient(fakeDynamicClient).
 		WithCluster(fakeCluster).
-		WithDatacenter(&kubermaticv1.Datacenter{}).
+		WithDatacenter(datacenter).
 		WithSeed(&kubermaticv1.Seed{}).
 		WithNodeAccessNetwork("192.0.2.0/24").
 		WithEtcdDiskSize(resource.Quantity{}).
@@ -536,6 +547,36 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 	}
 
 	return filteredVersions, nil
+}
+
+func getCloudSpecs() []kubermaticv1.CloudSpec {
+	return []kubermaticv1.CloudSpec{
+		{
+			ProviderName: string(kubermaticv1.VSphereCloudProvider),
+			VSphere:      &kubermaticv1.VSphereCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Domain:   "fakeDomain",
+				Username: "fakeUsername",
+				Password: "fakePassword",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.HetznerCloudProvider),
+			Hetzner: &kubermaticv1.HetznerCloudSpec{
+				Token:   "fakeToken",
+				Network: "fakeNetwork",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.AnexiaCloudProvider),
+			Anexia: &kubermaticv1.AnexiaCloudSpec{
+				Token: "fakeToken",
+			},
+		},
+	}
 }
 
 func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
