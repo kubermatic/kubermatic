@@ -27,8 +27,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -187,12 +185,5 @@ func TestGetUnsecuredProjects(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func genOwnerReference(name string) metav1.OwnerReference {
-	return metav1.OwnerReference{
-		Name: name,
-		UID:  types.UID(name),
 	}
 }

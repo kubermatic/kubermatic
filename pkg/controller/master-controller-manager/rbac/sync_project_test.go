@@ -19,7 +19,6 @@ package rbac
 import (
 	"context"
 	"reflect"
-	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -2213,11 +2212,4 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			}
 		})
 	}
-}
-
-func sortUserProjectBinding(bindings []kubermaticv1.UserProjectBinding) {
-	sort.Slice(bindings, func(i, j int) bool {
-		mi, mj := bindings[i], bindings[j]
-		return mi.Spec.UserEmail < mj.Spec.UserEmail
-	})
 }

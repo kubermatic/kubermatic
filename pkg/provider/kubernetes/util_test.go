@@ -124,12 +124,6 @@ func genUser(id, name, email string) *kubermaticv1.User {
 	}
 }
 
-// genDefaultUser generates a default user.
-func genDefaultUser() *kubermaticv1.User {
-	userEmail := "bob@acme.com"
-	return genUser("", "Bob", userEmail)
-}
-
 // genProject generates new empty project.
 func genProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
