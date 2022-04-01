@@ -96,7 +96,11 @@ func patchKubeOneCluster(ctx context.Context,
 		return UpgradeKubeOneCluster(ctx, cluster, oldCluster, newCluster, clusterProvider, masterClient)
 	}
 	if oldCluster.Cloud.KubeOne.ContainerRuntime != newCluster.Cloud.KubeOne.ContainerRuntime {
-		return MigrateKubeOneToContainerd(ctx, cluster, oldCluster, newCluster, clusterProvider, masterClient)
+		if oldCluster.Cloud.KubeOne.ContainerRuntime == resources.ContainerRuntimeDocker {
+			return MigrateKubeOneToContainerd(ctx, cluster, oldCluster, newCluster, clusterProvider, masterClient)
+		} else {
+			return nil, fmt.Errorf("Operation not supported: only migration from docker to containerd is supported: %s", oldCluster.Cloud.KubeOne.ContainerRuntime)
+		}
 	}
 
 	return newCluster, nil
@@ -180,7 +184,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 		"containerd": {},
 	}
 	if _, isSupported := supportedMigrationContainerRuntimes[wantedContainerRuntime]; !isSupported {
-		return nil, fmt.Errorf("container runtime not supported: %s", wantedContainerRuntime)
+		return nil, fmt.Errorf("Operation not supported: Only migration from docker to containerd is supported: %s", wantedContainerRuntime)
 	}
 	manifestSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
@@ -224,20 +228,18 @@ func checkContainerRuntime(ctx context.Context,
 	externalCluster *kubermaticv1.ExternalCluster,
 	externalClusterProvider provider.ExternalClusterProvider,
 ) (string, error) {
-	var containerRuntime string
 	nodes, err := externalClusterProvider.ListNodes(ctx, externalCluster)
 	if err != nil {
-		return "", fmt.Errorf("failed to list nodes: %w", err)
+		return "", fmt.Errorf("Failed to fetch container runtime: not able to list nodes %w", err)
 	}
 	for _, node := range nodes.Items {
 		if _, ok := node.Labels[NodeControlPlaneLabel]; ok {
 			containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
 			strSlice := strings.Split(containerRuntimeVersion, ":")
-			for _, v := range strSlice {
-				containerRuntime = v
-				break
+			for _, containerRuntime := range strSlice {
+				return containerRuntime, nil
 			}
 		}
 	}
-	return containerRuntime, nil
+	return "", fmt.Errorf("Failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
 }
