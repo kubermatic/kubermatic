@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -122,8 +123,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 				},
 			},
 			predicate: func(o ctrlruntimeclient.Object) bool {
-				// do not reconcile resources without "serviceaccount" prefix
-				return strings.HasPrefix(o.GetName(), "serviceaccount")
+				return kubermaticv1helper.IsProjectServiceAccount(o.GetName())
 			},
 		},
 

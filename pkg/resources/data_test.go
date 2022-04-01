@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	semverlib "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -50,6 +51,9 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+					},
 				},
 			},
 			wantFeatureGates: sets.String{},
@@ -73,6 +77,9 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+					},
 				},
 			},
 			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true"),
@@ -97,6 +104,9 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("1.20.0"),
+					},
 					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
 						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
@@ -107,7 +117,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "CSIMigrationOpenStackComplete=true"),
 		},
 		{
-			name: "CSI migration completed with k8s > 1.21",
+			name: "CSI migration completed with k8s >= 1.23",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
@@ -122,10 +132,13 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
-					Version: *semverlib.NewSemverOrDie("1.22.0"),
+					Version: *semverlib.NewSemverOrDie("1.23.5"),
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("1.23.5"),
+					},
 					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
 						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
@@ -134,6 +147,27 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 			},
 			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "InTreePluginOpenStackUnregister=true"),
+		},
+		{
+			name: "CSI migration disabled with k8s >= 1.23 and no CCM",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						AWS: &kubermaticv1.AWSCloudSpec{},
+					},
+					Version: *semverlib.NewSemverOrDie("1.23.5"),
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("1.23.5"),
+					},
+				},
+			},
+			wantFeatureGates: sets.NewString("CSIMigrationAWS=false"),
 		},
 	}
 

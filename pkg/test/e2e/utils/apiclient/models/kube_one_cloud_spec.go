@@ -25,7 +25,7 @@ type KubeOneCloudSpec struct {
 	Azure *KubeOneAzureCloudSpec `json:"azure,omitempty"`
 
 	// digitalocean
-	Digitalocean *KubeOneDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
+	Digitalocean *KubeOneDigitalOceanCloudSpec `json:"digitalocean,omitempty"`
 
 	// equinix
 	Equinix *KubeOneEquinixCloudSpec `json:"equinix,omitempty"`
@@ -40,7 +40,7 @@ type KubeOneCloudSpec struct {
 	Nutanix *KubeOneNutanixCloudSpec `json:"nutanix,omitempty"`
 
 	// openstack
-	Openstack *KubeOneOpenstackCloudSpec `json:"openstack,omitempty"`
+	Openstack *KubeOneOpenStackCloudSpec `json:"openstack,omitempty"`
 
 	// vsphere
 	Vsphere *KubeOneVSphereCloudSpec `json:"vsphere,omitempty"`
@@ -101,6 +101,8 @@ func (m *KubeOneCloudSpec) validateAws(formats strfmt.Registry) error {
 		if err := m.Aws.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aws")
 			}
 			return err
 		}
@@ -118,6 +120,8 @@ func (m *KubeOneCloudSpec) validateAzure(formats strfmt.Registry) error {
 		if err := m.Azure.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("azure")
 			}
 			return err
 		}
@@ -135,6 +139,8 @@ func (m *KubeOneCloudSpec) validateDigitalocean(formats strfmt.Registry) error {
 		if err := m.Digitalocean.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("digitalocean")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("digitalocean")
 			}
 			return err
 		}
@@ -152,6 +158,8 @@ func (m *KubeOneCloudSpec) validateEquinix(formats strfmt.Registry) error {
 		if err := m.Equinix.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("equinix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("equinix")
 			}
 			return err
 		}
@@ -169,6 +177,8 @@ func (m *KubeOneCloudSpec) validateGcp(formats strfmt.Registry) error {
 		if err := m.Gcp.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gcp")
 			}
 			return err
 		}
@@ -186,6 +196,8 @@ func (m *KubeOneCloudSpec) validateHetzner(formats strfmt.Registry) error {
 		if err := m.Hetzner.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("hetzner")
 			}
 			return err
 		}
@@ -203,6 +215,8 @@ func (m *KubeOneCloudSpec) validateNutanix(formats strfmt.Registry) error {
 		if err := m.Nutanix.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nutanix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nutanix")
 			}
 			return err
 		}
@@ -220,6 +234,8 @@ func (m *KubeOneCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 		if err := m.Openstack.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openstack")
 			}
 			return err
 		}
@@ -237,6 +253,8 @@ func (m *KubeOneCloudSpec) validateVsphere(formats strfmt.Registry) error {
 		if err := m.Vsphere.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vsphere")
 			}
 			return err
 		}
@@ -297,6 +315,8 @@ func (m *KubeOneCloudSpec) contextValidateAws(ctx context.Context, formats strfm
 		if err := m.Aws.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aws")
 			}
 			return err
 		}
@@ -311,6 +331,8 @@ func (m *KubeOneCloudSpec) contextValidateAzure(ctx context.Context, formats str
 		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("azure")
 			}
 			return err
 		}
@@ -325,6 +347,8 @@ func (m *KubeOneCloudSpec) contextValidateDigitalocean(ctx context.Context, form
 		if err := m.Digitalocean.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("digitalocean")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("digitalocean")
 			}
 			return err
 		}
@@ -339,6 +363,8 @@ func (m *KubeOneCloudSpec) contextValidateEquinix(ctx context.Context, formats s
 		if err := m.Equinix.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("equinix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("equinix")
 			}
 			return err
 		}
@@ -353,6 +379,8 @@ func (m *KubeOneCloudSpec) contextValidateGcp(ctx context.Context, formats strfm
 		if err := m.Gcp.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gcp")
 			}
 			return err
 		}
@@ -367,6 +395,8 @@ func (m *KubeOneCloudSpec) contextValidateHetzner(ctx context.Context, formats s
 		if err := m.Hetzner.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("hetzner")
 			}
 			return err
 		}
@@ -381,6 +411,8 @@ func (m *KubeOneCloudSpec) contextValidateNutanix(ctx context.Context, formats s
 		if err := m.Nutanix.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nutanix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nutanix")
 			}
 			return err
 		}
@@ -395,6 +427,8 @@ func (m *KubeOneCloudSpec) contextValidateOpenstack(ctx context.Context, formats
 		if err := m.Openstack.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openstack")
 			}
 			return err
 		}
@@ -409,6 +443,8 @@ func (m *KubeOneCloudSpec) contextValidateVsphere(ctx context.Context, formats s
 		if err := m.Vsphere.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vsphere")
 			}
 			return err
 		}

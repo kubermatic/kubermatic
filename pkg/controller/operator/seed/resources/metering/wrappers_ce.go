@@ -23,10 +23,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ReconcileMeteringResources reconciles the metering related resources.
-func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _ *kubermaticv1.KubermaticConfiguration, _ *kubermaticv1.Seed) error {
+func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _ *runtime.Scheme, _ *kubermaticv1.KubermaticConfiguration, _ *kubermaticv1.Seed) error {
 	return nil
 }

@@ -149,12 +149,14 @@ func TestController_combineManifests(t *testing.T) {
 }
 
 func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
+	version := *semver.NewSemverOrDie("v1.11.1")
+
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie("v1.11.1"),
+			Version: version,
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{
@@ -179,6 +181,11 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 					Token: "1234567890",
 				},
 				DatacenterName: "us-central1a",
+			},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: version,
 			},
 		},
 	}

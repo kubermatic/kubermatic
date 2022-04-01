@@ -33,11 +33,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -77,13 +77,6 @@ func NewTemplateData(
 		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}
 
-	// Ensure IPVS configuration is set
-	if cluster.Spec.ClusterNetwork.IPVS == nil {
-		cluster.Spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(resources.IPVSStrictArp)}
-	} else if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
-		cluster.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
-	}
-
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
@@ -93,7 +86,6 @@ func NewTemplateData(
 	}
 
 	var csiOptions CSIOptions
-
 	if cluster.Spec.Cloud.VSphere != nil {
 		csiOptions.StoragePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
 	}
@@ -105,6 +97,11 @@ func NewTemplateData(
 	}
 
 	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+
+	var ipvs kubermaticv1.IPVSConfiguration
+	if cluster.Spec.ClusterNetwork.IPVS != nil {
+		ipvs = *cluster.Spec.ClusterNetwork.IPVS
+	}
 
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
@@ -122,17 +119,22 @@ func NewTemplateData(
 			OwnerEmail:        cluster.Status.UserEmail,
 			Address:           cluster.Address,
 			CloudProviderName: providerName,
-			Version:           semver.MustParse(cluster.Spec.Version.String()),
-			MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
+			Version:           semver.MustParse(cluster.Status.Versions.ControlPlane.String()),
+			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),
 			Features:          sets.StringKeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
-				DNSDomain:         cluster.Spec.ClusterNetwork.DNSDomain,
-				DNSClusterIP:      dnsClusterIP,
-				DNSResolverIP:     dnsResolverIP,
-				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
-				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
-				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
-				StrictArp:         *cluster.Spec.ClusterNetwork.IPVS.StrictArp,
+				DNSDomain:            cluster.Spec.ClusterNetwork.DNSDomain,
+				DNSClusterIP:         dnsClusterIP,
+				DNSResolverIP:        dnsResolverIP,
+				PodCIDRBlocks:        cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
+				ServiceCIDRBlocks:    cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
+				ProxyMode:            cluster.Spec.ClusterNetwork.ProxyMode,
+				StrictArp:            ipvs.StrictArp,
+				DualStack:            network.IsDualStackCluster(cluster),
+				PodCIDRIPv4:          network.GetIPv4CIDR(cluster.Spec.ClusterNetwork.Pods),
+				PodCIDRIPv6:          network.GetIPv6CIDR(cluster.Spec.ClusterNetwork.Pods),
+				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),
+				NodeCIDRMaskSizeIPv6: resources.GetClusterNodeCIDRMaskSizeIPv6(cluster),
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
@@ -182,9 +184,10 @@ type ClusterData struct {
 	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
 	// the configured datacenters.
 	CloudProviderName string
-	// Version is the exact cluster version.
+	// Version is the exact current cluster version.
 	Version *semver.Version
-	// MajorMinorVersion is a shortcut for common testing on "Major.Minor".
+	// MajorMinorVersion is a shortcut for common testing on "Major.Minor" on the
+	// current cluster version.
 	MajorMinorVersion string
 	// Network contains DNS and CIDR settings for the cluster.
 	Network ClusterNetwork
@@ -201,13 +204,18 @@ type ClusterData struct {
 }
 
 type ClusterNetwork struct {
-	DNSDomain         string
-	DNSClusterIP      string
-	DNSResolverIP     string
-	PodCIDRBlocks     []string
-	ServiceCIDRBlocks []string
-	ProxyMode         string
-	StrictArp         bool
+	DNSDomain            string
+	DNSClusterIP         string
+	DNSResolverIP        string
+	PodCIDRBlocks        []string
+	ServiceCIDRBlocks    []string
+	ProxyMode            string
+	StrictArp            *bool
+	DualStack            bool
+	PodCIDRIPv4          string
+	PodCIDRIPv6          string
+	NodeCIDRMaskSizeIPv4 int32
+	NodeCIDRMaskSizeIPv6 int32
 }
 
 type CNIPlugin struct {

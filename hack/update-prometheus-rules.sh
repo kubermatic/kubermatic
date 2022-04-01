@@ -36,17 +36,17 @@ fi
 cd charts/monitoring/prometheus/rules/
 
 # remove old files
-rm -f *.yaml
+rm -f ./*.yaml
 
 cd src/
 
 for file in */*.yaml; do
-  newfile=$(dirname $file)-$(basename $file)
+  newfile=$(dirname "$file")-$(basename "$file")
   echo "$file => $newfile"
 
-  echo -e "# This file has been generated, DO NOT EDIT.\n" > ../$newfile
-  yq d $file 'groups.*.rules.*.runbook' >> ../$newfile
+  echo -e "# This file has been generated, DO NOT EDIT.\n" > "../$newfile"
+  yq d "$file" 'groups.*.rules.*.runbook' >> "../$newfile"
 done
 
 cd ..
-$promtool check rules *.yaml
+$promtool check rules ./*.yaml

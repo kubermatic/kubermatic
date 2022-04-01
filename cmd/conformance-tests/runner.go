@@ -763,6 +763,16 @@ func (r *testRunner) testCluster(
 		log.Errorf("failed to verify that pods have a seccomp profile: %v", err)
 	}
 
+	// Check security context (seccomp profiles) for control plane pods running on seed cluster - with retries
+	if err := junitReporterWrapper(
+		"[Kubermatic] Test pod security context on seed cluster", report, func() error {
+			return retryNAttempts(maxTestAttempts, func(attempt int) error {
+				return r.testUserClusterControlPlaneSecurityContext(ctx, log, cluster, r.seedClusterClient)
+			})
+		}); err != nil {
+		log.Errorf("failed to verify security context for control plane pods: %v", err)
+	}
+
 	return nil
 }
 

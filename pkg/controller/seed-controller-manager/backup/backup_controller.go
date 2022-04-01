@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/robfig/cron"
+	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -261,6 +261,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 
 	if cluster.Status.ExtendedHealth.Etcd != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping because the cluster has no running etcd yet")
+		return nil
+	}
+
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Skipping because the cluster has no version status yet")
 		return nil
 	}
 
@@ -566,7 +571,9 @@ func parseDuration(interval time.Duration) (string, error) {
 	// Refs:
 	// https://github.com/kubernetes/kubernetes/blob/d02cf08e27f640f09ebd489e094176fd075f3463/pkg/controller/cronjob/cronjob_controller.go#L253
 	// https://github.com/kubernetes/kubernetes/blob/d02cf08e27f640f09ebd489e094176fd075f3463/pkg/controller/cronjob/utils.go#L98
-	_, err := cron.ParseStandard(scheduleString)
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+
+	_, err := parser.Parse(scheduleString)
 	if err != nil {
 		return "", err
 	}

@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
+	nodeversioncontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-version-controller"
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
 	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
@@ -343,6 +344,11 @@ func main() {
 		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
 	}
 	log.Info("Registered nodelabel controller")
+
+	if err := nodeversioncontroller.Add(rootCtx, log, seedMgr, mgr, runOp.clusterName); err != nil {
+		log.Fatalw("Failed to register node-version controller", zap.Error(err))
+	}
+	log.Info("Registered node-version controller")
 
 	if err := clusterrolelabeler.Add(rootCtx, log, mgr, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))

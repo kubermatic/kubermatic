@@ -33,7 +33,7 @@ import (
 
 const (
 	KubeVirtCCMDeploymentName = "kubevirt-cloud-controller-manager"
-	KubeVirtCCMTag            = "v0.0.10"
+	KubeVirtCCMTag            = "v0.1.0"
 )
 
 var (

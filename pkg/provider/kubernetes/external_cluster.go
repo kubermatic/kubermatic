@@ -215,11 +215,7 @@ func (p *ExternalClusterProvider) GetClient(ctx context.Context, cluster *kuberm
 	if err != nil {
 		return nil, err
 	}
-	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	cfg, err := clientcmd.Load(kubeconfig)
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
 	if err != nil {
 		return nil, err
 	}
@@ -232,11 +228,7 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	if err != nil {
 		return nil, err
 	}
-	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	cfg, err := clientcmd.Load(kubeconfig)
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
 	if err != nil {
 		return nil, err
 	}
@@ -260,9 +252,13 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	return v, nil
 }
 
-func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error {
+func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, encodedKubeconfig string) error {
+	kubeconfig, err := base64.StdEncoding.DecodeString(encodedKubeconfig)
+	if err != nil {
+		return err
+	}
 	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, cluster, map[string][]byte{
-		resources.ExternalClusterKubeconfig: []byte(kubeconfig),
+		resources.ExternalClusterKubeconfig: kubeconfig,
 	})
 	if err != nil {
 		return err
@@ -467,7 +463,7 @@ func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
 }
 
 func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, encodedManifest string, externalCluster *kubermaticv1.ExternalCluster) error {
-	secretName := GetKubeOneManifestSecretName(externalCluster)
+	secretName := resources.KubeOneManifestSecretName
 	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
 	if err != nil {
 		return err
@@ -488,7 +484,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx contex
 }
 
 func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error {
-	secretName := GetKubeOneSSHSecretName(externalCluster)
+	secretName := resources.KubeOneSSHSecretName
 	privateKey, err := base64.StdEncoding.DecodeString(sshKey.PrivateKey)
 	if err != nil {
 		return err
@@ -510,12 +506,4 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Con
 	externalCluster.Spec.CloudSpec.KubeOne.SSHReference = *credentialRef
 
 	return nil
-}
-
-func GetKubeOneSSHSecretName(externalCluster *kubermaticv1.ExternalCluster) string {
-	return fmt.Sprintf("ssh-kubeone-external-cluster-%s", externalCluster.Name)
-}
-
-func GetKubeOneManifestSecretName(externalCluster *kubermaticv1.ExternalCluster) string {
-	return fmt.Sprintf("manifest-kubeone-external-cluster-%s", externalCluster.Name)
 }

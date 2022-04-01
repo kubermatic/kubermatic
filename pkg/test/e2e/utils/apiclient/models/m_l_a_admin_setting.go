@@ -52,6 +52,8 @@ func (m *MLAAdminSetting) validateLoggingRateLimits(formats strfmt.Registry) err
 		if err := m.LoggingRateLimits.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("loggingRateLimits")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("loggingRateLimits")
 			}
 			return err
 		}
@@ -69,6 +71,8 @@ func (m *MLAAdminSetting) validateMonitoringRateLimits(formats strfmt.Registry) 
 		if err := m.MonitoringRateLimits.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("monitoringRateLimits")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("monitoringRateLimits")
 			}
 			return err
 		}
@@ -101,6 +105,8 @@ func (m *MLAAdminSetting) contextValidateLoggingRateLimits(ctx context.Context, 
 		if err := m.LoggingRateLimits.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("loggingRateLimits")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("loggingRateLimits")
 			}
 			return err
 		}
@@ -115,6 +121,8 @@ func (m *MLAAdminSetting) contextValidateMonitoringRateLimits(ctx context.Contex
 		if err := m.MonitoringRateLimits.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("monitoringRateLimits")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("monitoringRateLimits")
 			}
 			return err
 		}

@@ -47,6 +47,8 @@ func (m *AuditLoggingSettings) validatePolicyPreset(formats strfmt.Registry) err
 	if err := m.PolicyPreset.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("policyPreset")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("policyPreset")
 		}
 		return err
 	}
@@ -73,6 +75,8 @@ func (m *AuditLoggingSettings) contextValidatePolicyPreset(ctx context.Context, 
 	if err := m.PolicyPreset.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("policyPreset")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("policyPreset")
 		}
 		return err
 	}

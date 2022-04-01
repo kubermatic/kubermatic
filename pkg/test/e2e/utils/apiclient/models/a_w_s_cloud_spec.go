@@ -75,6 +75,8 @@ func (m *AWSCloudSpec) validateCredentialsReference(formats strfmt.Registry) err
 		if err := m.CredentialsReference.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -103,6 +105,8 @@ func (m *AWSCloudSpec) contextValidateCredentialsReference(ctx context.Context, 
 		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}

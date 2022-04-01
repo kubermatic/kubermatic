@@ -24,8 +24,8 @@ import (
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -74,7 +74,7 @@ func Add(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
 		user := object.(*kubermaticv1.User)
-		return !kubernetes.IsProjectServiceAccount(user.Spec.Email)
+		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
 	})
 
 	for seedName, seedManager := range seedManagers {

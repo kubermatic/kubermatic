@@ -47,6 +47,12 @@ const (
 
 	// ForceRestartAnnotation is key of the annotation used to restart machine deployments.
 	ForceRestartAnnotation = "forceRestart"
+
+	// PresetNameAnnotation is key of the annotation used to hold preset name if was used for the cluster creation.
+	PresetNameAnnotation = "presetName"
+
+	// PresetInvalidatedAnnotation is key of the annotation used to indicate why the preset was invalidated.
+	PresetInvalidatedAnnotation = "presetInvalidated"
 )
 
 const (
@@ -55,9 +61,10 @@ const (
 )
 
 const (
-	WorkerNameLabelKey   = "worker-name"
-	ProjectIDLabelKey    = "project-id"
-	UpdatedByVPALabelKey = "updated-by-vpa"
+	WorkerNameLabelKey         = "worker-name"
+	ProjectIDLabelKey          = "project-id"
+	UpdatedByVPALabelKey       = "updated-by-vpa"
+	IsCredentialPresetLabelKey = "is-credential-preset"
 
 	DefaultEtcdClusterSize = 3
 	MinEtcdClusterSize     = 3
@@ -72,9 +79,17 @@ const (
 	AzureBasicLBSKU    = LBSKU("basic")
 )
 
+// +kubebuilder:validation:Enum=deleted;changed
+type PresetInvalidationReason string
+
+const (
+	PresetDeleted = PresetInvalidationReason("deleted")
+	PresetChanged = PresetInvalidationReason("changed")
+)
+
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
 // as they are security relevant.
-var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)
+var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey, IsCredentialPresetLabelKey)
 
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
@@ -85,6 +100,7 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.providerName",name="Provider",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.cloud.dc",name="Datacenter",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
@@ -292,6 +308,8 @@ const (
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
+	ClusterConditionUpdateProgress ClusterConditionType = "UpdateProgress"
+
 	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
 	// This condition is met when a CSI migration is ongoing and the CSI
@@ -334,6 +352,18 @@ type ClusterCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Creating;Updating;Running;Terminating
+
+type ClusterPhase string
+
+// These are the valid phases of a project.
+const (
+	ClusterCreating    ClusterPhase = "Creating"
+	ClusterUpdating    ClusterPhase = "Updating"
+	ClusterRunning     ClusterPhase = "Running"
+	ClusterTerminating ClusterPhase = "Terminating"
+)
+
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	// +optional
@@ -350,6 +380,11 @@ type ClusterStatus struct {
 	// NamespaceName defines the namespace the control plane of this cluster is deployed in
 	// +optional
 	NamespaceName string `json:"namespaceName"`
+
+	// Versions contains information regarding the current and desired versions
+	// of the cluster control plane and worker nodes.
+	// +optional
+	Versions ClusterVersionsStatus `json:"versions,omitempty"`
 
 	// UserName contains the name of the owner of this cluster
 	// +optional
@@ -369,6 +404,11 @@ type ClusterStatus struct {
 	// controllers and the API
 	// +optional
 	Conditions map[ClusterConditionType]ClusterCondition `json:"conditions,omitempty"`
+	// Phase is a description of the current cluster status, summarizing the various conditions,
+	// possible active updates etc. This field is for informational purpose only and no logic
+	// should be tied to the phase.
+	// +optional
+	Phase ClusterPhase `json:"phase,omitempty"`
 
 	// CloudMigrationRevision describes the latest version of the migration that has been done
 	// It is used to avoid redundant and potentially costly migrations
@@ -378,6 +418,30 @@ type ClusterStatus struct {
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+}
+
+// ClusterVersionsStatus contains information regarding the current and desired versions
+// of the cluster control plane and worker nodes.
+type ClusterVersionsStatus struct {
+	// ControlPlane is the currently active cluster version. This can lag behind the apiserver
+	// version if an update is currently rolling out.
+	ControlPlane semver.Semver `json:"controlPlane"`
+	// Apiserver is the currently desired version of the kube-apiserver. During
+	// upgrades across multiple minor versions (e.g. from 1.20 to 1.23), this will gradually
+	// be increased by the update-controller until the desired cluster version (spec.version)
+	// is reached.
+	Apiserver semver.Semver `json:"apiserver"`
+	// ControllerManager is the currently desired version of the kube-controller-manager. This
+	// field behaves the same as the apiserver field.
+	ControllerManager semver.Semver `json:"controllerManager"`
+	// Scheduler is the currently desired version of the kube-scheduler. This field behaves the
+	// same as the apiserver field.
+	Scheduler semver.Semver `json:"scheduler"`
+	// OldestNodeVersion is the oldest node version currently in use inside the cluster. This can be
+	// nil if there are no nodes. This field is primarily for speeding up reconciling, so that
+	// the controller doesn't have to re-fetch to the usercluster and query its node on every
+	// reconciliation.
+	OldestNodeVersion *semver.Semver `json:"oldestNodeVersion,omitempty"`
 }
 
 // HasConditionValue returns true if the cluster status has the given condition with the given status.
@@ -539,10 +603,24 @@ type LeaderElectionSettings struct {
 // parameters for a cluster.
 type ClusterNetworkingConfig struct {
 	// The network ranges from which service VIPs are allocated.
+	// It can contain one IPv4 and/or one IPv6 CIDR.
+	// If both address families are specified, the first one defines the primary address family.
 	Services NetworkRanges `json:"services"`
 
 	// The network ranges from which POD networks are allocated.
+	// It can contain one IPv4 and/or one IPv6 CIDR.
+	// If both address families are specified, the first one defines the primary address family.
 	Pods NetworkRanges `json:"pods"`
+
+	// NodeCIDRMaskSizeIPv4 is the mask size used to address the nodes within provided IPv4 Pods CIDR.
+	// It has to be larger than the provided IPv4 Pods CIDR. Defaults to 24.
+	// +optional
+	NodeCIDRMaskSizeIPv4 *int32 `json:"nodeCidrMaskSizeIPv4,omitempty"`
+
+	// NodeCIDRMaskSizeIPv6 is the mask size used to address the nodes within provided IPv6 Pods CIDR.
+	// It has to be larger than the provided IPv6 Pods CIDR. Defaults to 64.
+	// +optional
+	NodeCIDRMaskSizeIPv6 *int32 `json:"nodeCidrMaskSizeIPv6,omitempty"`
 
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
@@ -851,7 +929,7 @@ type NutanixCSIConfig struct {
 
 	// Storage Class options
 
-	// Optional: defaults to "Default"
+	// Optional: defaults to "SelfServiceContainer"
 	// +optional
 	StorageContainer string `json:"storageContainer,omitempty"`
 

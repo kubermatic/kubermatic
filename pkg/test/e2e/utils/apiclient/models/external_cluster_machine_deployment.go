@@ -109,6 +109,8 @@ func (m *ExternalClusterMachineDeployment) validateCloud(formats strfmt.Registry
 		if err := m.Cloud.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloud")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cloud")
 			}
 			return err
 		}
@@ -126,6 +128,8 @@ func (m *ExternalClusterMachineDeployment) validateSpec(formats strfmt.Registry)
 		if err := m.Spec.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("spec")
 			}
 			return err
 		}
@@ -143,6 +147,8 @@ func (m *ExternalClusterMachineDeployment) validateStatus(formats strfmt.Registr
 		if err := m.Status.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
 			}
 			return err
 		}
@@ -179,6 +185,8 @@ func (m *ExternalClusterMachineDeployment) contextValidateCloud(ctx context.Cont
 		if err := m.Cloud.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloud")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cloud")
 			}
 			return err
 		}
@@ -193,6 +201,8 @@ func (m *ExternalClusterMachineDeployment) contextValidateSpec(ctx context.Conte
 		if err := m.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("spec")
 			}
 			return err
 		}
@@ -207,6 +217,8 @@ func (m *ExternalClusterMachineDeployment) contextValidateStatus(ctx context.Con
 		if err := m.Status.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("status")
 			}
 			return err
 		}

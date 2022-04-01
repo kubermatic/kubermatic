@@ -48,7 +48,6 @@ const (
 )
 
 type reconciler struct {
-	ctx            context.Context
 	log            *zap.SugaredLogger
 	innerClient    ctrlruntimeclient.Client
 	outerClient    ctrlruntimeclient.Client
@@ -60,7 +59,6 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		ctx:            context.Background(),
 		log:            log,
 		innerClient:    inner.GetClient(),
 		outerClient:    outer.GetClient(),
@@ -133,7 +131,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	innerService := &corev1.Service{}
 	if err := r.innerClient.Get(ctx, request.NamespacedName, innerService); err != nil {
 		if kerrors.IsNotFound(err) {
-			log.Info("Got request for service that doesn't exist, returning")
+			log.Debug("Got request for service that doesn't exist, returning")
 			return nil
 		}
 		return fmt.Errorf("failed to get inner service: %w", err)
@@ -147,7 +145,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	outerService := getServiceFromServiceList(outerServices, request.NamespacedName)
 	if outerService == nil {
 		var err error
-		outerService, err = r.createOuterService(request.NamespacedName.String())
+		outerService, err = r.createOuterService(ctx, request.NamespacedName.String())
 		if err != nil {
 			return fmt.Errorf("failed to create service in outer cluster: %w", err)
 		}
@@ -184,7 +182,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	return nil
 }
 
-func (r *reconciler) createOuterService(targetServiceName string) (*corev1.Service, error) {
+func (r *reconciler) createOuterService(ctx context.Context, targetServiceName string) (*corev1.Service, error) {
 	newService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "cluster-exposer-",
@@ -207,19 +205,19 @@ func (r *reconciler) createOuterService(targetServiceName string) (*corev1.Servi
 	myself := &corev1.Pod{}
 	myselfName := types.NamespacedName{Namespace: "default", Name: r.jobID}
 	// Use APIreader so we don't create a pod cache
-	if err := r.outerAPIReader.Get(r.ctx, myselfName, myself); err != nil {
+	if err := r.outerAPIReader.Get(ctx, myselfName, myself); err != nil {
 		return nil, fmt.Errorf("failed to get pod for self from outer cluster: %w", err)
 	}
 	if err := controllerutil.SetControllerReference(myself, newService, scheme.Scheme); err != nil {
 		return nil, fmt.Errorf("failed to set owner ref for pod on outer service: %w", err)
 	}
-	if err := r.outerClient.Create(r.ctx, newService); err != nil {
+	if err := r.outerClient.Create(ctx, newService); err != nil {
 		return nil, fmt.Errorf("failed to create outer service: %w", err)
 	}
 	// We must set our TargetPort to the same port as our NodePort
 	oldSvc := newService.DeepCopy()
 	newService.Spec.Ports[0].TargetPort = intstr.FromInt(int(newService.Spec.Ports[0].NodePort))
-	if err := r.outerClient.Patch(r.ctx, newService, ctrlruntimeclient.MergeFrom(oldSvc)); err != nil {
+	if err := r.outerClient.Patch(ctx, newService, ctrlruntimeclient.MergeFrom(oldSvc)); err != nil {
 		return nil, fmt.Errorf("failed to set target port to nodeport: %w", err)
 	}
 	return newService, nil

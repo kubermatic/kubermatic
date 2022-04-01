@@ -20,8 +20,8 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 # To support a wider range of Kubernetes userclusters, we ship multiple
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.22.1/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.22
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.20.10/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.20
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.23.5/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.23
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.21.11/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.21
 
 RUN wget -O- https://get.helm.sh/helm-v3.5.0-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
@@ -35,7 +35,6 @@ COPY ./_build/image-loader \
      ./_build/kubermatic-installer \
      ./_build/kubermatic-webhook \
      ./_build/master-controller-manager \
-     ./_build/owner-remover \
      ./_build/seed-controller-manager \
      ./_build/user-cluster-controller-manager \
      /usr/local/bin/

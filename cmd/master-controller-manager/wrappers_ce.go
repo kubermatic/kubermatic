@@ -31,6 +31,11 @@ func addFlags(fs *flag.FlagSet) {
 	// NOP
 }
 
+func setupControllers(ctrlCtx *controllerContext) error {
+	// NOP, no CE-only controllers exist
+	return nil
+}
+
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
 	return provider.SeedsGetterFactory(ctx, client, namespace)
 }

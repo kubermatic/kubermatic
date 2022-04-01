@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -224,7 +223,7 @@ func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylis
 
 			tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
 			if err != nil {
-				panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
+				panic(fmt.Errorf("failed to marshal tcpProxyConfig: %w", err))
 			}
 
 			sniFilterChains = append(sniFilterChains, &envoylistenerv3.FilterChain{
@@ -346,7 +345,7 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 	}
 	httpManagerConfigMarshalled, err := anypb.New(hcm)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to marshal HTTP Connection Manager"))
+		panic(fmt.Errorf("failed to marshal HTTP Connection Manager: %w", err))
 	}
 
 	sb.log.Debugf("using a listener on port %d", sb.EnvoyTunnelingListenerPort)
@@ -438,7 +437,7 @@ func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servi
 
 		tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
 		if err != nil {
-			panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
+			panic(fmt.Errorf("failed to marshal tcpProxyConfig: %w", err))
 		}
 
 		sb.log.Debugw("creating NodePort listener", "service", serviceKey, "nodePort", servicePort.NodePort)
@@ -526,7 +525,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 	healthCheckMarshalled, err := anypb.New(healthCheck)
 	if err != nil {
 		// panic as this either never occurs or cannot recover
-		panic(errors.Wrap(err, "failed to marshal HealthCheck"))
+		panic(fmt.Errorf("failed to marshal HealthCheck: %w", err))
 	}
 
 	httpConnectionManager := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
@@ -573,7 +572,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 
 	httpConnectionManagerMarshalled, err := anypb.New(httpConnectionManager)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to marshal HTTPConnectionManager"))
+		panic(fmt.Errorf("failed to marshal HTTPConnectionManager: %w", err))
 	}
 
 	listener := &envoylistenerv3.Listener{

@@ -12,7 +12,7 @@
   "info": {
     "description": "This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.",
     "title": "Kubermatic Kubernetes Platform API",
-    "version": "2.20"
+    "version": "2.21"
   },
   "paths": {
     "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}": {
@@ -542,6 +542,43 @@
             "schema": {
               "$ref": "#/definitions/MeteringReportURL"
             }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Removes a specific metering report. Only available in Kubermatic Enterprise Edition",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metering",
+          "report"
+        ],
+        "operationId": "deleteMeteringReport",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ReportName",
+            "name": "report_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -8541,6 +8578,7 @@
           {
             "type": "string",
             "x-go-name": "Type",
+            "description": "Type is deprecated and not used anymore.",
             "name": "type",
             "in": "query"
           },
@@ -13719,6 +13757,98 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories": {
+      "get": {
+        "description": "Lists available Nutanix categories",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoriesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values": {
+      "get": {
+        "description": "Lists available Nutanix category values for a specific category",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoryValuesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Category",
+            "description": "Category to query the available values for",
+            "name": "category",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryValueList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryValueList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets": {
       "get": {
         "description": "Lists available Nutanix Subnets",
@@ -15770,6 +15900,11 @@
             "schema": {
               "type": "object"
             }
+          },
+          {
+            "type": "string",
+            "name": "UpgradeMD",
+            "in": "header"
           }
         ],
         "responses": {
@@ -18075,6 +18210,126 @@
         }
       }
     },
+    "/api/v2/providers/nutanix/{dc}/categories": {
+      "get": {
+        "description": "List category keys from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategories",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NutanixUsername",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixPassword",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/nutanix/{dc}/categories/{category}/values": {
+      "get": {
+        "description": "List available category values for a specific category from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoryValues",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NutanixUsername",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixPassword",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "Category",
+            "description": "Category to query the available values for",
+            "name": "category",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryValueList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryValueList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/nutanix/{dc}/clusters": {
       "get": {
         "description": "List clusters from Nutanix",
@@ -18533,6 +18788,7 @@
           {
             "type": "string",
             "x-go-name": "Type",
+            "description": "Type is deprecated and not used anymore.",
             "name": "type",
             "in": "query"
           }
@@ -18973,9 +19229,6 @@
         "clientSecret": {
           "type": "string",
           "x-go-name": "ClientSecret"
-        },
-        "clusterSpec": {
-          "$ref": "#/definitions/AKSClusterSpec"
         },
         "name": {
           "type": "string",
@@ -20963,6 +21216,7 @@
           "$ref": "#/definitions/ClusterStatus"
         },
         "type": {
+          "description": "Type is deprecated and not used anymore.",
           "type": "string",
           "x-go-name": "Type"
         }
@@ -21056,6 +21310,18 @@
           "description": "KonnectivityEnabled enables konnectivity for controlplane to node network communication.",
           "type": "boolean",
           "x-go-name": "KonnectivityEnabled"
+        },
+        "nodeCidrMaskSizeIPv4": {
+          "description": "NodeCIDRMaskSizeIPv4 is the mask size used to address the nodes within provided IPv4 Pods CIDR.\nIt has to be larger than the provided IPv4 Pods CIDR. Defaults to 24.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSizeIPv4"
+        },
+        "nodeCidrMaskSizeIPv6": {
+          "description": "NodeCIDRMaskSizeIPv6 is the mask size used to address the nodes within provided IPv6 Pods CIDR.\nIt has to be larger than the provided IPv6 Pods CIDR. Defaults to 64.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSizeIPv6"
         },
         "nodeLocalDNSCacheEnabled": {
           "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.\nDefaults to true.",
@@ -22315,9 +22581,6 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
-        "clusterSpec": {
-          "$ref": "#/definitions/EKSClusterSpec"
-        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -23086,6 +23349,15 @@
       "type": "object",
       "title": "ExternalClusterSpec defines the external cluster specification.",
       "properties": {
+        "aksclusterSpec": {
+          "$ref": "#/definitions/AKSClusterSpec"
+        },
+        "eksclusterSpec": {
+          "$ref": "#/definitions/EKSClusterSpec"
+        },
+        "gkeclusterSpec": {
+          "$ref": "#/definitions/GKEClusterSpec"
+        },
         "version": {
           "$ref": "#/definitions/Semver"
         }
@@ -23524,9 +23796,6 @@
     "GKECloudSpec": {
       "type": "object",
       "properties": {
-        "clusterSpec": {
-          "$ref": "#/definitions/GKEClusterSpec"
-        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -24521,7 +24790,7 @@
           "$ref": "#/definitions/KubeOneAzureCloudSpec"
         },
         "digitalocean": {
-          "$ref": "#/definitions/KubeOneDigitaloceanCloudSpec"
+          "$ref": "#/definitions/KubeOneDigitalOceanCloudSpec"
         },
         "equinix": {
           "$ref": "#/definitions/KubeOneEquinixCloudSpec"
@@ -24536,7 +24805,7 @@
           "$ref": "#/definitions/KubeOneNutanixCloudSpec"
         },
         "openstack": {
-          "$ref": "#/definitions/KubeOneOpenstackCloudSpec"
+          "$ref": "#/definitions/KubeOneOpenStackCloudSpec"
         },
         "vsphere": {
           "$ref": "#/definitions/KubeOneVSphereCloudSpec"
@@ -24544,9 +24813,9 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "KubeOneDigitaloceanCloudSpec": {
+    "KubeOneDigitalOceanCloudSpec": {
       "type": "object",
-      "title": "KubeOneDigitaloceanCloudSpec specifies access data to DigitalOcean.",
+      "title": "KubeOneDigitalOceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
         "token": {
           "description": "Token is used to authenticate with the DigitalOcean API.",
@@ -24647,9 +24916,9 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "KubeOneOpenstackCloudSpec": {
+    "KubeOneOpenStackCloudSpec": {
       "type": "object",
-      "title": "KubeOneOpenstackCloudSpec specifies access data to an OpenStack cloud.",
+      "title": "KubeOneOpenStackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
         "authURL": {
           "type": "string",
@@ -25157,18 +25426,13 @@
           "type": "boolean",
           "x-go-name": "Enabled"
         },
-        "interval": {
-          "description": "Interval defines the number of days consulted in the metering report.\n+kubebuilder:default=7",
-          "type": "integer",
-          "format": "int64",
-          "minimum": 1,
-          "x-go-name": "Interval"
-        },
-        "schedule": {
-          "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
-          "type": "string",
-          "default": "=`0 1 * * 6`",
-          "x-go-name": "Schedule"
+        "reports": {
+          "description": "ReportConfigurations is a map of report configuration definitions.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MeteringReportConfiguration"
+          },
+          "x-go-name": "ReportConfigurations"
         },
         "storageClassName": {
           "description": "StorageClassName is the name of the storage class that the metering tool uses to save processed files before\nexporting it to s3 bucket. Default value is kubermatic-fast.",
@@ -25203,6 +25467,23 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "MeteringReportConfiguration": {
+      "type": "object",
+      "properties": {
+        "interval": {
+          "description": "Interval defines the number of days consulted in the metering report.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Interval"
+        },
+        "schedule": {
+          "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
+          "type": "string",
+          "x-go-name": "Schedule"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "MeteringReportURL": {
       "description": "ReportURL represent an S3 pre signed URL to download a report",
@@ -25852,7 +26133,7 @@
           "x-go-name": "SsSegmentedIscsiNetwork"
         },
         "storageContainer": {
-          "description": "Optional: defaults to \"Default\"\n+optional",
+          "description": "Optional: defaults to \"SelfServiceContainer\"\n+optional",
           "type": "string",
           "x-go-name": "StorageContainer"
         },
@@ -25863,6 +26144,52 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "NutanixCategory": {
+      "type": "object",
+      "title": "NutanixCategory represents a Nutanix category.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "systemDefined": {
+          "type": "boolean",
+          "x-go-name": "SystemDefined"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryList": {
+      "type": "array",
+      "title": "NutanixCategoryList represents an array of Nutanix categories.",
+      "items": {
+        "$ref": "#/definitions/NutanixCategory"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryValue": {
+      "type": "object",
+      "title": "NutanixCategoryValue represents a Nutanix category value.",
+      "properties": {
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryValueList": {
+      "type": "array",
+      "title": "NutanixCategoryValueList represents an array of Nutanix category values.",
+      "items": {
+        "$ref": "#/definitions/NutanixCategoryValue"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "NutanixCloudSpec": {
       "type": "object",
@@ -27269,6 +27596,11 @@
           "type": "string",
           "x-go-name": "ID"
         },
+        "invalidated": {
+          "description": "Invalidated indicates if the token must be regenerated",
+          "type": "boolean",
+          "x-go-name": "Invalidated"
+        },
         "name": {
           "description": "Name represents human readable name for the resource",
           "type": "string",
@@ -27837,6 +28169,11 @@
           "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
           "type": "string",
           "x-go-name": "ID"
+        },
+        "invalidated": {
+          "description": "Invalidated indicates if the token must be regenerated",
+          "type": "boolean",
+          "x-go-name": "Invalidated"
         },
         "name": {
           "description": "Name represents human readable name for the resource",
@@ -28511,6 +28848,9 @@
           "description": "Name is human readable name for the external cluster",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ExternalClusterSpec"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"

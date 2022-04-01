@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -78,7 +77,13 @@ func (c *ClusterJig) SetUp(ctx context.Context, cloudSpec kubermaticv1.CloudSpec
 	}
 	c.Log.Debugw("secret created", "name", cloudSpec.Openstack.CredentialsReference.Name)
 
-	if err := c.createCluster(ctx, cloudSpec); err != nil {
+	project, err := c.createProject(ctx)
+	if err != nil {
+		return err
+	}
+	c.Log.Debugw("Project created", "name", project.Name)
+
+	if err := c.createCluster(ctx, project, cloudSpec); err != nil {
 		return err
 	}
 	c.Log.Debugw("Cluster created", "name", c.Name)
@@ -154,16 +159,36 @@ func (c *ClusterJig) createSecret(ctx context.Context, secretName string, osCred
 	}
 
 	if err := c.SeedClient.Create(ctx, credentialSecret); err != nil {
-		return errors.Wrap(err, "failed to create credential secret")
+		return fmt.Errorf("failed to create credential secret: %w", err)
 	}
 
 	return nil
 }
 
-func (c *ClusterJig) createCluster(ctx context.Context, cloudSpec kubermaticv1.CloudSpec) error {
+func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, error) {
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "proj1234",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "test project",
+		},
+	}
+
+	if err := c.SeedClient.Create(ctx, project); err != nil {
+		return nil, fmt.Errorf("failed to create project: %w", err)
+	}
+
+	return project, nil
+}
+
+func (c *ClusterJig) createCluster(ctx context.Context, project *kubermaticv1.Project, cloudSpec kubermaticv1.CloudSpec) error {
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: c.Name,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: cloudSpec,
@@ -204,13 +229,13 @@ func (c *ClusterJig) createCluster(ctx context.Context, cloudSpec kubermaticv1.C
 		},
 	}
 	if err := c.SeedClient.Create(ctx, c.Cluster); err != nil {
-		return errors.Wrap(err, "failed to create cluster")
+		return fmt.Errorf("failed to create cluster: %w", err)
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.SeedClient, c.Cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
-		return errors.Wrap(err, "failed to update cluster status")
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 
 	return nil
@@ -220,18 +245,18 @@ func (c *ClusterJig) createCluster(ctx context.Context, cloudSpec kubermaticv1.C
 func (c *ClusterJig) CleanUp(ctx context.Context) error {
 	clusterClientProvider, err := clusterclient.NewExternal(c.SeedClient)
 	if err != nil {
-		return errors.Wrap(err, "failed to get user cluster client provider")
+		return fmt.Errorf("failed to get user cluster client provider: %w", err)
 	}
 
 	userClient, err := clusterClientProvider.GetClient(ctx, c.Cluster)
 	if err != nil {
-		return errors.Wrap(err, "failed to get user cluster client")
+		return fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
 	// Skip eviction to speed up the clean up process
 	nodes := &corev1.NodeList{}
 	if err := userClient.List(ctx, nodes); err != nil {
-		return errors.Wrap(err, "failed to list user cluster nodes")
+		return fmt.Errorf("failed to list user cluster nodes: %w", err)
 	}
 
 	for _, node := range nodes.Items {
@@ -250,7 +275,7 @@ func (c *ClusterJig) CleanUp(ctx context.Context) error {
 			return userClient.Update(ctx, &n)
 		})
 		if retErr != nil {
-			return errors.Wrapf(retErr, "failed to annotate node %s", node.Name)
+			return fmt.Errorf("failed to annotate node %s: %w", node.Name, retErr)
 		}
 	}
 
@@ -267,30 +292,30 @@ func (c *ClusterJig) CleanUp(ctx context.Context) error {
 			}
 			err := userClient.Delete(ctx, md)
 			if err != nil {
-				return false, errors.Wrap(err, "failed to delete user cluster machinedeployment")
+				return false, fmt.Errorf("failed to delete user cluster machinedeployment: %w", err)
 			}
 			return false, nil
 		} else if err != nil && !k8serrors.IsNotFound(err) {
-			return false, errors.Wrap(err, "failed to get user cluster machinedeployment")
+			return false, fmt.Errorf("failed to get user cluster machinedeployment: %w", err)
 		}
 
 		clusters := &kubermaticv1.ClusterList{}
 		err = c.SeedClient.List(ctx, clusters)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to list user clusters")
+			return false, fmt.Errorf("failed to list user clusters: %w", err)
 		}
 
 		if len(clusters.Items) == 0 {
 			return true, nil
 		}
 		if len(clusters.Items) > 1 {
-			return false, errors.Wrap(err, "there is more than one user cluster, expected one or zero cluster")
+			return false, fmt.Errorf("there is more than one user cluster, expected one or zero cluster: %w", err)
 		}
 
 		if clusters.Items[0].DeletionTimestamp == nil {
 			err := c.SeedClient.Delete(ctx, c.Cluster)
 			if err != nil {
-				return false, errors.Wrap(err, "failed to delete user cluster")
+				return false, fmt.Errorf("failed to delete user cluster: %w", err)
 			}
 		}
 

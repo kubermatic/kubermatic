@@ -27,6 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -163,8 +164,9 @@ func TestCreateTokenProject(t *testing.T) {
 				if saTokenClaim.ProjectID != tc.projectToSync {
 					t.Fatalf("expected project name %s got %s", tc.projectToSync, saTokenClaim.ProjectID)
 				}
-				if saTokenClaim.Email != fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", tc.saToSync) {
-					t.Fatalf("expected email %s@sa.kubermatic.io got %s", tc.saToSync, saTokenClaim.Email)
+				user := kubermaticv1helper.EnsureProjectServiceAccountPrefix(tc.saToSync)
+				if expected := fmt.Sprintf("%s@sa.kubermatic.io", user); saTokenClaim.Email != expected {
+					t.Fatalf("expected email %s got %s", expected, saTokenClaim.Email)
 				}
 			}
 		})

@@ -29,6 +29,14 @@ import (
 // ExternalCloudControllerFeatureSupported checks if the cloud provider supports
 // external CCM.
 func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster, incompatibilities ...*version.ProviderIncompatibility) bool {
+	// This function is called during cluster creation and at that time, the
+	// cluster status might not have been initially set yet, so we must ensure
+	// to fallback to the spec version.
+	v := cluster.Status.Versions.ControlPlane
+	if v == "" {
+		v = cluster.Spec.Version
+	}
+
 	switch {
 	case cluster.Spec.Cloud.Openstack != nil:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
@@ -43,13 +51,13 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
+		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(v)
 
 	case cluster.Spec.Cloud.Hetzner != nil:
 		return cluster.Spec.Cloud.Hetzner.Network != "" || dc.Spec.Hetzner.Network != ""
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		supported, err := version.IsSupported(v.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}
@@ -69,6 +77,13 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 // MigrationToExternalCloudControllerSupported checks if the cloud provider supports the migration to the
 // external CCM.
 func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster, incompatibilities ...*version.ProviderIncompatibility) bool {
+	// This function is called during cluster creation and at that time, the
+	// cluster status might not have been initially set yet, so we must ensure
+	// to fallback to the spec version.
+	v := cluster.Status.Versions.ControlPlane
+	if v == "" {
+		v = cluster.Spec.Version
+	}
 	switch {
 	case cluster.Spec.Cloud.Openstack != nil:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
@@ -83,10 +98,10 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
+		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(v)
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		supported, err := version.IsSupported(cluster.Spec.Version.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		supported, err := version.IsSupported(v.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
 		}

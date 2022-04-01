@@ -65,6 +65,8 @@ func (m *ConstraintSpec) validateMatch(formats strfmt.Registry) error {
 		if err := m.Match.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("match")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("match")
 			}
 			return err
 		}
@@ -82,6 +84,8 @@ func (m *ConstraintSpec) validateParameters(formats strfmt.Registry) error {
 		if err := m.Parameters.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("parameters")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("parameters")
 			}
 			return err
 		}
@@ -99,6 +103,8 @@ func (m *ConstraintSpec) validateSelector(formats strfmt.Registry) error {
 		if err := m.Selector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("selector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("selector")
 			}
 			return err
 		}
@@ -135,6 +141,8 @@ func (m *ConstraintSpec) contextValidateMatch(ctx context.Context, formats strfm
 		if err := m.Match.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("match")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("match")
 			}
 			return err
 		}
@@ -148,6 +156,8 @@ func (m *ConstraintSpec) contextValidateParameters(ctx context.Context, formats 
 	if err := m.Parameters.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("parameters")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("parameters")
 		}
 		return err
 	}
@@ -161,6 +171,8 @@ func (m *ConstraintSpec) contextValidateSelector(ctx context.Context, formats st
 		if err := m.Selector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("selector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("selector")
 			}
 			return err
 		}

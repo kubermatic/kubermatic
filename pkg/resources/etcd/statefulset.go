@@ -22,12 +22,14 @@ import (
 	"strconv"
 	"text/template"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -72,6 +74,25 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			replicas := computeReplicas(data, set)
+			imageTag := ImageTag(data.Cluster())
+
+			imageTagVersion, err := semverlib.NewVersion(imageTag)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse etcd image tag: %w", err)
+			}
+
+			etcdConstraint, err := semverlib.NewConstraint(">= 3.5.0, < 3.6.0")
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse etcd constraint: %w", err)
+			}
+
+			// enable initial and periodic etcd data corruption checks by default if running etcd 3.5.
+			// The etcd team has recommended to enable this feature for etcd 3.5 due to data consistency issues.
+			// Reference: https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ
+			if ok := etcdConstraint.Check(imageTagVersion); ok {
+				enableDataCorruptionChecks = true
+			}
+
 			set.Name = resources.EtcdStatefulSetName
 			set.Spec.Replicas = resources.Int32(replicas)
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -203,7 +224,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				{
 					Name: resources.EtcdStatefulSetName,
 
-					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
+					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + imageTag,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         etcdStartCmd,
 					Env:             etcdEnv,
@@ -363,7 +384,12 @@ func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 // ImageTag returns the correct etcd image tag for a given Cluster
 // TODO: Other functions use this function, switch them to getLauncherImage.
 func ImageTag(c *kubermaticv1.Cluster) string {
-	if c.Spec.Version.Semver().Minor() < 22 {
+	// most other control plane parts refer to the controller-manager's version, which
+	// during updates lacks behind the apiserver by one minor version; this is so that
+	// also external components like the kubernetes dashboard or external ccms wait for
+	// the new apiserver to be ready; etcd however is different and gets updated together
+	// with the apiserver
+	if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
 		return "v3.4.3"
 	}
 
@@ -480,7 +506,7 @@ exec /usr/local/bin/etcd \
     --key-file /etc/etcd/pki/tls/etcd-tls.key \
 {{- if .EnableCorruptionCheck }}
     --experimental-initial-corrupt-check=true \
-    --experimental-corrupt-check-time=10m \
+    --experimental-corrupt-check-time=240m \
 {{- end }}
     --auto-compaction-retention=8
 `

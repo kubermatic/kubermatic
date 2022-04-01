@@ -18,9 +18,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -71,14 +71,14 @@ func (s *Server) Start(ctx context.Context) error {
 
 	lis, err := net.Listen("tcp", s.ListenAddress)
 	if err != nil {
-		return errors.Wrap(err, "envoy control plane server failed while start listening")
+		return fmt.Errorf("envoy control plane server failed while start listening: %w", err)
 	}
 
 	registerServer(grpcServer, srv3)
 
 	s.Log.Infow("starting management service", "listen-address", s.ListenAddress)
 	if err = grpcServer.Serve(lis); err != nil {
-		return errors.Wrap(err, "envoy control plane server failed while start serving incoming connections")
+		return fmt.Errorf("envoy control plane server failed while start serving incoming connections: %w", err)
 	}
 	<-ctx.Done()
 	return nil

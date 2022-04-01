@@ -399,7 +399,7 @@ func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.
 
 	// Reconcile kubernetes service endpoints, unless it is not supported or disabled in the apiserver override settings.
 	reconcileK8sSvcEndpoints = true
-	if cluster.Spec.Version.Semver().Major() <= 1 && cluster.Spec.Version.Semver().Minor() < 21 {
+	if cluster.Status.Versions.ControlPlane.Semver().Major() <= 1 && cluster.Status.Versions.ControlPlane.Semver().Minor() < 21 {
 		// Do not reconcile for kubernetes versions below v1.21+
 		// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
 		reconcileK8sSvcEndpoints = false

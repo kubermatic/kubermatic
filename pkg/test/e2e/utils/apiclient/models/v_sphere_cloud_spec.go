@@ -87,6 +87,8 @@ func (m *VSphereCloudSpec) validateCredentialsReference(formats strfmt.Registry)
 		if err := m.CredentialsReference.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -104,6 +106,8 @@ func (m *VSphereCloudSpec) validateInfraManagementUser(formats strfmt.Registry) 
 		if err := m.InfraManagementUser.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}
@@ -136,6 +140,8 @@ func (m *VSphereCloudSpec) contextValidateCredentialsReference(ctx context.Conte
 		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -150,6 +156,8 @@ func (m *VSphereCloudSpec) contextValidateInfraManagementUser(ctx context.Contex
 		if err := m.InfraManagementUser.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}

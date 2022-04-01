@@ -125,7 +125,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 	securityContext.ReadOnlyRootFilesystem = pointer.BoolPtr(true)
 	securityContext.AllowPrivilegeEscalation = pointer.BoolPtr(false)
 
-	tag, err := getDashboardVersion(data.Cluster().Spec.Version)
+	tag, err := getDashboardVersion(data.Cluster().Status.Versions.ControlPlane)
 	if err != nil {
 		return nil, err
 	}

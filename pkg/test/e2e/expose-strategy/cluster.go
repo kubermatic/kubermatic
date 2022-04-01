@@ -18,9 +18,9 @@ package exposestrategy
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -50,11 +50,36 @@ type ClusterJig struct {
 	Cluster *kubermaticv1.Cluster
 }
 
+func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, error) {
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "proj1234",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "test project",
+		},
+	}
+
+	if err := c.Client.Create(ctx, project); err != nil {
+		return nil, fmt.Errorf("failed to create project: %w", err)
+	}
+
+	return project, nil
+}
+
 func (c *ClusterJig) SetUp(ctx context.Context) error {
+	project, err := c.createProject(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create project: %w", err)
+	}
+
 	c.Log.Debugw("Creating cluster", "name", c.Name)
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: c.Name,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
@@ -98,13 +123,13 @@ func (c *ClusterJig) SetUp(ctx context.Context) error {
 		},
 	}
 	if err := c.Client.Create(ctx, c.Cluster); err != nil {
-		return errors.Wrap(err, "failed to create cluster")
+		return fmt.Errorf("failed to create cluster: %w", err)
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.Client, c.Cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@test.com"
 	}); err != nil {
-		return errors.Wrap(err, "failed to update cluster status")
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 
 	return c.waitForClusterControlPlaneReady(c.Cluster)

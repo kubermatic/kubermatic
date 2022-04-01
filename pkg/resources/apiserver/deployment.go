@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	semver "github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
@@ -74,7 +76,11 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			volumes := getVolumes(data.IsKonnectivityEnabled())
 			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled())
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			version := data.Cluster().Status.Versions.Apiserver.Semver()
+
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -126,7 +132,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, version)
 			if err != nil {
 				return nil, err
 			}
@@ -138,7 +144,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			apiserverContainer := &corev1.Container{
 				Name:    resources.ApiserverDeploymentName,
-				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + data.Cluster().Spec.Version.String(),
+				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + version.String(),
 				Command: []string{"/usr/local/bin/kube-apiserver"},
 				Env:     envVars,
 				Args:    flags,
@@ -242,7 +248,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool, version *semver.Version) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not get components override flags: %w", err)
@@ -332,41 +338,38 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	// kubernetes service endpoints are reconciled by KKP user-cluster-controller for kubernetes versions v1.21+
 	// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
-	if (cluster.Spec.Version.Semver().Major() >= 1 && cluster.Spec.Version.Semver().Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
+	if (version.Major() >= 1 && version.Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
 		flags = append(flags, "--endpoint-reconciler-type", "none")
 	}
 
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
 	// explicitly enabled in the cluster object
-	saConfig := cluster.Spec.ServiceAccount
-	if cluster.Spec.Version.Semver().Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
-		var audiences []string
+	var audiences []string
 
-		issuer := cluster.Address.URL
-		if saConfig != nil {
-			if saConfig.Issuer != "" {
-				issuer = saConfig.Issuer
-			}
-
-			if len(saConfig.APIAudiences) > 0 {
-				audiences = saConfig.APIAudiences
-			}
+	issuer := cluster.Address.URL
+	if saConfig := cluster.Spec.ServiceAccount; saConfig != nil {
+		if saConfig.Issuer != "" {
+			issuer = saConfig.Issuer
 		}
 
-		if len(audiences) == 0 {
-			audiences = []string{issuer}
+		if len(saConfig.APIAudiences) > 0 {
+			audiences = saConfig.APIAudiences
 		}
-
-		if data.IsKonnectivityEnabled() {
-			audiences = append(audiences, "system:konnectivity-server")
-		}
-
-		flags = append(flags,
-			"--service-account-issuer", issuer,
-			"--service-account-signing-key-file", serviceAccountKeyFile,
-			"--api-audiences", strings.Join(audiences, ","),
-		)
 	}
+
+	if len(audiences) == 0 {
+		audiences = []string{issuer}
+	}
+
+	if data.IsKonnectivityEnabled() {
+		audiences = append(audiences, "system:konnectivity-server")
+	}
+
+	flags = append(flags,
+		"--service-account-issuer", issuer,
+		"--service-account-signing-key-file", serviceAccountKeyFile,
+		"--api-audiences", strings.Join(audiences, ","),
+	)
 
 	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")

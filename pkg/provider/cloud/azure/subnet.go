@@ -19,6 +19,7 @@ package azure
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -26,6 +27,12 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	networkutil "k8c.io/kubermatic/v2/pkg/util/network"
+)
+
+const (
+	defaultSubnetCIDRIPv4 = "10.0.0.0/16"
+	defaultSubnetCIDRIPv6 = "fd00::/64"
 )
 
 func subnetName(cluster *kubermaticv1.Cluster) string {
@@ -62,7 +69,14 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 		})
 	}
 
-	target := targetSubnet(cluster.Spec.Cloud)
+	var cidrs []string
+	if networkutil.IsIPv4OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+		cidrs = append(cidrs, defaultSubnetCIDRIPv4)
+	}
+	if networkutil.IsIPv6OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+		cidrs = append(cidrs, defaultSubnetCIDRIPv6)
+	}
+	target := targetSubnet(cluster.Spec.Cloud, cidrs)
 
 	// check for attributes of the existing subnet and skip ensuring if all values are already
 	// as expected. Since there are a lot of pointers in the network.Subnet struct, we need to
@@ -70,7 +84,9 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	//
 	// Attributes we check:
 	// - Subnet CIDR
-	if !(subnet.SubnetPropertiesFormat != nil && subnet.SubnetPropertiesFormat.AddressPrefix != nil && *subnet.SubnetPropertiesFormat.AddressPrefix == *target.SubnetPropertiesFormat.AddressPrefix) {
+	if !(subnet.SubnetPropertiesFormat != nil &&
+		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefix, target.SubnetPropertiesFormat.AddressPrefix) &&
+		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefixes, target.SubnetPropertiesFormat.AddressPrefixes)) {
 		if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}
@@ -82,13 +98,17 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	})
 }
 
-func targetSubnet(cloud kubermaticv1.CloudSpec) *network.Subnet {
-	return &network.Subnet{
-		Name: to.StringPtr(cloud.Azure.SubnetName),
-		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
-			AddressPrefix: to.StringPtr("10.0.0.0/16"),
-		},
+func targetSubnet(cloud kubermaticv1.CloudSpec, cidrs []string) *network.Subnet {
+	s := &network.Subnet{
+		Name:                   to.StringPtr(cloud.Azure.SubnetName),
+		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{},
 	}
+	if len(cidrs) == 1 {
+		s.SubnetPropertiesFormat.AddressPrefix = to.StringPtr(cidrs[0])
+	} else {
+		s.SubnetPropertiesFormat.AddressPrefixes = &cidrs
+	}
+	return s
 }
 
 // ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.

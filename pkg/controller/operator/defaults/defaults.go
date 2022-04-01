@@ -211,49 +211,24 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.21.10"),
+		Default: semver.NewSemverOrDie("v1.22.7"),
 		Versions: []semver.Semver{
-			// Kubernetes 1.20
-			newSemver("v1.20.13"),
-			newSemver("v1.20.14"),
-			newSemver("v1.20.15"),
 			// Kubernetes 1.21
 			newSemver("v1.21.8"),
 			newSemver("v1.21.10"),
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
 			newSemver("v1.22.7"),
+			// Kubernetes 1.23
+			newSemver("v1.23.5"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.19 =======
-			{
-				// Auto-upgrade unsupported clusters.
-				// 'To' must not be a constraint, it has to be a specific version.
-				From:      "1.19.*",
-				To:        "1.20.13",
-				Automatic: pointer.BoolPtr(true),
-			},
-
 			// ======= 1.20 =======
 			{
-				// Allow to change to any patch version
-				From: "1.20.*",
-				To:   "1.20.*",
-			},
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2021-25741 (fixed >= 1.20.11)
-				// - CVE-2021-3711 (fixed >= 1.20.13)
-				// - CVE-2021-3712 (fixed >= 1.20.13)
-				// - CVE-2021-33910 (fixed >= 1.20.13)
-				From:      ">= 1.20.0, < 1.20.13",
-				To:        "1.20.13",
+				// Auto-upgrade unsupported clusters.
+				From:      "1.20.*",
+				To:        "1.21.10",
 				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.20.*",
-				To:   "1.21.*",
 			},
 
 			// ======= 1.21 =======
@@ -297,8 +272,27 @@ var (
 				To:        "1.22.5",
 				Automatic: pointer.BoolPtr(true),
 			},
+			{
+				// Allow to next minor release
+				From: "1.22.*",
+				To:   "1.23.*",
+			},
+
+			// ======= 1.23 =======
+			{
+				// Allow to change to any patch version
+				From: "1.23.*",
+				To:   "1.23.*",
+			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
+			{
+				// Applies to all providers.
+				Provider:  "",
+				Version:   "1.23.*",
+				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
 				Version:   "1.23.*",
@@ -584,9 +578,9 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 		return seedCopy, err
 	}
 
-	if len(seedCopy.Spec.NodeportProxy.Annotations) == 0 {
-		seedCopy.Spec.NodeportProxy.Annotations = DefaultNodeportProxyServiceAnnotations
-		logger.Debugw("Defaulting field", "field", "nodeportProxy.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
+	if len(seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations) == 0 {
+		seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations = DefaultNodeportProxyServiceAnnotations
+		logger.Debugw("Defaulting field", "field", "nodeportProxy.envoy.loadBalancerService.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
 	}
 
 	// apply settings from the KubermaticConfiguration to the Seed, in case they are not set there;

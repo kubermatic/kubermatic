@@ -22,6 +22,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -79,7 +80,7 @@ func (u *StoreUploader) Store(ctx context.Context, file, bucket, prefix string, 
 		return errors.New("prefix cannot be empty")
 	}
 
-	if _, err := os.Stat(file); os.IsNotExist(err) {
+	if _, err := os.Stat(file); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%s not found", file)
 	}
 

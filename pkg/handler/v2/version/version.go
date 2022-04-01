@@ -37,6 +37,7 @@ type listProviderVersionsReq struct {
 	// in: path
 	// required: true
 	ProviderName string `json:"provider_name"`
+	// Type is deprecated and not used anymore.
 	// in: query
 	Type string `json:"type"`
 }
@@ -85,7 +86,7 @@ func ListVersions(configGetter provider.KubermaticConfigurationGetter) endpoint.
 			return nil, err
 		}
 
-		versions, err := version.NewFromConfiguration(config).GetVersionsV2(req.Type, kubermaticv1.ProviderType(req.ProviderName))
+		versions, err := version.NewFromConfiguration(config).GetVersionsForProvider(kubermaticv1.ProviderType(req.ProviderName))
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}

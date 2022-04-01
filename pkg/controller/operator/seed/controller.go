@@ -32,6 +32,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -218,6 +219,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 
 	namespacedTypesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
+		&batchv1.CronJob{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
 		&corev1.Service{},

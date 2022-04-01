@@ -206,6 +206,8 @@ func (o *CreateDCBody) validateSpec(formats strfmt.Registry) error {
 		if err := o.Spec.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "spec")
 			}
 			return err
 		}
@@ -234,6 +236,8 @@ func (o *CreateDCBody) contextValidateSpec(ctx context.Context, formats strfmt.R
 		if err := o.Spec.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "spec")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "spec")
 			}
 			return err
 		}

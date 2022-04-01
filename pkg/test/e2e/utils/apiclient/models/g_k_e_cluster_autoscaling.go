@@ -71,6 +71,8 @@ func (m *GKEClusterAutoscaling) validateResourceLimits(formats strfmt.Registry) 
 			if err := m.ResourceLimits[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("resourceLimits" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("resourceLimits" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -90,6 +92,8 @@ func (m *GKEClusterAutoscaling) validateAutoprovisioningNodePoolDefaults(formats
 		if err := m.AutoprovisioningNodePoolDefaults.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("autoprovisioningNodePoolDefaults")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("autoprovisioningNodePoolDefaults")
 			}
 			return err
 		}
@@ -124,6 +128,8 @@ func (m *GKEClusterAutoscaling) contextValidateResourceLimits(ctx context.Contex
 			if err := m.ResourceLimits[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("resourceLimits" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("resourceLimits" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -140,6 +146,8 @@ func (m *GKEClusterAutoscaling) contextValidateAutoprovisioningNodePoolDefaults(
 		if err := m.AutoprovisioningNodePoolDefaults.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("autoprovisioningNodePoolDefaults")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("autoprovisioningNodePoolDefaults")
 			}
 			return err
 		}

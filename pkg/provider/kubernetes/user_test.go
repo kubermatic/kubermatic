@@ -134,7 +134,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 			}
 
 			// act
-			target := kubernetes.NewUserProvider(fakeClient, nil)
+			target := kubernetes.NewUserProvider(fakeClient)
 			if err := target.InvalidateToken(ctx, user, tc.token, tc.expiry); err != nil {
 				t.Fatal(err)
 			}

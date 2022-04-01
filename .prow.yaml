@@ -89,7 +89,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-lint
-    run_if_changed: "^(cmd|codegen|hack|pkg)/"
+    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -204,48 +204,6 @@ presubmits:
   # Base Kubernetes Tests (AWS, Flatcar)
   #########################################################
 
-  - name: pre-kubermatic-e2e-aws-ubuntu-1.20
-    decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws: "true"
-      preset-docker-mirror: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-vault: "true"
-      preset-repo-ssh: "true"
-      preset-e2e-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.14"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
-
   - name: pre-kubermatic-e2e-aws-ubuntu-1.21
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -330,7 +288,49 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-ubuntu-1.22-ce
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.23
+    decorate: true
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-vault: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
+        - name: VERSIONS_TO_TEST
+          value: "v1.23.5"
+        - name: DISTRIBUTIONS
+          value: ubuntu
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
+        command:
+        - "./hack/ci/run-e2e-tests.sh"
+        # docker-in-docker needs privileged mode
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 3.5
+          limits:
+            memory: 4Gi
+
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.23-ce
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -354,7 +354,7 @@ presubmits:
         - name: ONLY_TEST_CREATION
           value: "true"
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
@@ -378,7 +378,7 @@ presubmits:
   # Extended Kubernetes Tests (various cloud providers, OS)
   #########################################################
 
-  - name: pre-kubermatic-e2e-azure-ubuntu-1.22
+  - name: pre-kubermatic-e2e-azure-ubuntu-1.23
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -399,7 +399,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: PROVIDER
@@ -423,7 +423,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.22
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.23
     decorate: true
     always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -445,7 +445,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "gcp"
         - name: DISTRIBUTIONS
@@ -467,7 +467,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.22-psp
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.23-psp
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -488,7 +488,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "gcp"
         - name: DISTRIBUTIONS
@@ -514,7 +514,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-do-centos-1.22
+  - name: pre-kubermatic-e2e-do-centos-1.23
     decorate: true
     always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -536,7 +536,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: DISTRIBUTIONS
           value: centos
         - name: PROVIDER
@@ -558,7 +558,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-packet-ubuntu-1.22
+  - name: pre-kubermatic-e2e-packet-ubuntu-1.23
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -579,7 +579,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "packet"
         - name: DISTRIBUTIONS
@@ -601,11 +601,11 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-kubevirt-centos-1.22
+  - name: pre-kubermatic-e2e-kubevirt-centos-1.23
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-kubevirt: "true"
+      preset-kkp-kubevirt: "true"
       preset-vault: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
@@ -622,7 +622,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "kubevirt"
         - name: DISTRIBUTIONS
@@ -644,11 +644,11 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-kubevirt-ubuntu-1.22
+  - name: pre-kubermatic-e2e-kubevirt-ubuntu-1.23
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-kubevirt: "true"
+      preset-kkp-kubevirt: "true"
       preset-vault: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
@@ -665,7 +665,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "kubevirt"
         - name: DISTRIBUTIONS
@@ -687,7 +687,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-hetzner-ubuntu-1.22
+  - name: pre-kubermatic-e2e-hetzner-ubuntu-1.23
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -708,7 +708,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "hetzner"
         - name: DISTRIBUTIONS
@@ -732,7 +732,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-ubuntu-1.22
+  - name: pre-kubermatic-e2e-openstack-ubuntu-1.23
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -753,7 +753,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "openstack"
         - name: DISTRIBUTIONS
@@ -777,7 +777,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-centos-1.22
+  - name: pre-kubermatic-e2e-openstack-centos-1.23
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -798,7 +798,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -822,7 +822,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -844,7 +844,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.8"
+          value: "v1.22.7"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -866,7 +866,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-customfolder
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22-customfolder
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -888,7 +888,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.8"
+          value: "v1.22.7"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -912,7 +912,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-datastore-cluster
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22-datastore-cluster
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -934,7 +934,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.21.8"
+          value: "v1.22.7"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -958,7 +958,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-nutanix-ubuntu-1.22
+  - name: pre-kubermatic-e2e-nutanix-ubuntu-1.23
     decorate: true
     run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -980,7 +980,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "nutanix"
         - name: DISTRIBUTIONS
@@ -1002,7 +1002,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-nutanix-centos-1.22
+  - name: pre-kubermatic-e2e-nutanix-centos-1.23
     decorate: true
     run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -1019,12 +1019,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
+      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.7"
+          value: "v1.23.5"
         - name: PROVIDER
           value: "nutanix"
         - name: DISTRIBUTIONS
@@ -1074,7 +1074,7 @@ presubmits:
         - "./hack/ci/run-api-e2e.sh"
         env:
         - name: VERSION_TO_TEST
-          value: v1.22.7
+          value: v1.23.5
         - name: KUBERMATIC_EDITION
           value: ee
         - name: SERVICE_ACCOUNT_KEY
@@ -1115,7 +1115,7 @@ presubmits:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.22.7
+              value: v1.23.5
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -1156,7 +1156,7 @@ presubmits:
             - "./hack/ci/run-cilium-e2e-test.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.22.7
+              value: v1.23.5
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -1198,7 +1198,7 @@ presubmits:
         - "./hack/ci/run-etcd-launcher-tests.sh"
         env:
         - name: VERSION_TO_TEST
-          value: v1.21.8
+          value: v1.23.5
         - name: KUBERMATIC_EDITION
           value: ee
         - name: SERVICE_ACCOUNT_KEY
@@ -1268,7 +1268,7 @@ presubmits:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.22.7
+              value: v1.23.5
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -1317,23 +1317,76 @@ presubmits:
   # external ccm migration e2e tests
   #########################################################
 
-  - name: pre-kubermatic-ccm-migration-e2e
+  - name: pre-kubermatic-ccm-migration-openstack-e2e
     run_if_changed: "(pkg/|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-openstack: "true"
-      preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
+      preset-vault: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kind-volume-mounts: "true"
+      preset-kubeconfig-ci: "true"
       preset-goproxy: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
           env:
             - name: KUBERMATIC_EDITION
-              value: ce
+              value: ee
+            - name: PROVIDER
+              value: openstack
+            - name: VERSION_TO_TEST
+              value: "v1.22.5"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - ./hack/run-ccm-migration-e2e-test-in-kind.sh
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
+    
+  - name: pre-kubermatic-ccm-migration-vsphere-e2e
+    run_if_changed: "(pkg/|.prow.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-vsphere: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-vault: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
+      preset-kind-volume-mounts: "true"
+      preset-kubeconfig-ci: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-5
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: PROVIDER
+              value: vsphere
+            - name: VERSION_TO_TEST
+              value: "v1.22.5"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
           command:
             - ./hack/run-ccm-migration-e2e-test-in-kind.sh
           # docker-in-docker needs privileged mode
@@ -1401,7 +1454,7 @@ presubmits:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.22.7
+              value: v1.23.5
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY

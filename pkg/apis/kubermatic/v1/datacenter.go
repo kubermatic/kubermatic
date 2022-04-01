@@ -29,6 +29,9 @@ import (
 
 type ProviderType string
 
+// +kubebuilder:validation:Pattern:=`^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$`
+type CIDR string
+
 const (
 	// Constants defining known cloud providers.
 	FakeCloudProvider         ProviderType = "fake"
@@ -195,14 +198,29 @@ type NodeportProxyConfig struct {
 	Disable bool `json:"disable,omitempty"`
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider where the seed cluster is running.
+	// Deprecated: Use .envoy.loadBalancerService.annotations instead.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Envoy configures the Envoy application itself.
-	Envoy NodeportProxyComponent `json:"envoy,omitempty"`
+	Envoy NodePortProxyComponentEnvoy `json:"envoy,omitempty"`
 	// EnvoyManager configures the Kubermatic-internal Envoy manager.
 	EnvoyManager NodeportProxyComponent `json:"envoyManager,omitempty"`
 	// Updater configures the component responsible for updating the LoadBalancer
 	// service.
 	Updater NodeportProxyComponent `json:"updater,omitempty"`
+}
+
+type EnvoyLoadBalancerService struct {
+	// Annotations are used to further tweak the LoadBalancer integration with the
+	// cloud provider.
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
+	// This field will be ignored if the cloud-provider does not support the feature.
+	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+	SourceRanges []CIDR `json:"sourceRanges,omitempty"`
+}
+type NodePortProxyComponentEnvoy struct {
+	NodeportProxyComponent `json:",inline"`
+	LoadBalancerService    EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
 }
 
 type NodeportProxyComponent struct {
@@ -538,13 +556,24 @@ type MeteringConfiguration struct {
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
+
+	// +kubebuilder:default:={kubermatic-metering-report-weekly: {schedule: "0 1 * * 6", interval: 7}}
+
+	// ReportConfigurations is a map of report configuration definitions.
+	ReportConfigurations map[string]*MeteringReportConfiguration `json:"reports,omitempty"`
+}
+
+type MeteringReportConfiguration struct {
+	// +kubebuilder:default:=`0 1 * * 6`
+
 	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
 	// only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
-	// +kubebuilder:default:=`0 1 * * 6`
 	Schedule string `json:"schedule,omitempty"`
-	// Interval defines the number of days consulted in the metering report.
+
 	// +kubebuilder:default=7
 	// +kubebuilder:validation:Minimum:=1
+
+	// Interval defines the number of days consulted in the metering report.
 	Interval int `json:"interval,omitempty"`
 }
 

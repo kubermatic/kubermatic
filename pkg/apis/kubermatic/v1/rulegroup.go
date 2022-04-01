@@ -45,7 +45,8 @@ type RuleGroupSpec struct {
 	IsDefault bool `json:"isDefault,omitempty"`
 	// RuleGroupType is the type of this ruleGroup applies to. It can be `Metrics` or `Logs`.
 	RuleGroupType RuleGroupType `json:"ruleGroupType"`
-	// Cluster is the reference to the cluster the ruleGroup should be created in.
+	// Cluster is the reference to the cluster the ruleGroup should be created in. All fields
+	// except for the name are ignored.
 	Cluster corev1.ObjectReference `json:"cluster"`
 	// Data contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
 	Data []byte `json:"data"`

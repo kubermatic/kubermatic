@@ -22,11 +22,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/robfig/cron"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -206,10 +205,8 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		}
 	}
 
-	if subject.Spec.Metering != nil && subject.Spec.Metering.Schedule != "" {
-		if _, err := cron.ParseStandard(subject.Spec.Metering.Schedule); err != nil {
-			return fmt.Errorf("invalid cron expression format: %s", subject.Spec.Metering.Schedule)
-		}
+	if err := validation.ValidateMeteringConfiguration(subject.Spec.Metering); err != nil {
+		return err
 	}
 
 	return nil

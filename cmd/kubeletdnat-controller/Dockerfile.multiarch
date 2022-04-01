@@ -31,7 +31,7 @@ RUN make -C ./cmd/kubeletdnat-controller build
 FROM docker.io/alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-RUN apk add -u iptables
+RUN apk add -u --no-cache iptables
 
 COPY --from=builder /go/src/k8c.io/kubermatic/cmd/kubeletdnat-controller/_build/kubeletdnat-controller /usr/local/bin/kubeletdnat-controller
 

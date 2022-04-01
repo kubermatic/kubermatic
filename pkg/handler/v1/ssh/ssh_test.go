@@ -366,19 +366,12 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 func genSSHKey(creationTime time.Time, keyID string, keyName string, projectID string, clusters ...string) *kubermaticv1.UserSSHKey {
 	return &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("key-%s-%s", keyID, keyName),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "kubermatic.k8c.io/v1",
-					Kind:       "Project",
-					UID:        "",
-					Name:       projectID,
-				},
-			},
+			Name:              fmt.Sprintf("key-%s-%s", keyID, keyName),
 			CreationTimestamp: metav1.NewTime(creationTime),
 		},
 		Spec: kubermaticv1.SSHKeySpec{
 			Name:     keyName,
+			Project:  projectID,
 			Clusters: clusters,
 		},
 	}

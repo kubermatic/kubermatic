@@ -194,6 +194,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 		},
+		Versions: kubermaticv1.ClusterVersionsStatus{
+			ControlPlane:      *semver.NewSemverOrDie("1.22.5"),
+			Apiserver:         *semver.NewSemverOrDie("1.22.5"),
+			ControllerManager: *semver.NewSemverOrDie("1.22.5"),
+			Scheduler:         *semver.NewSemverOrDie("1.22.5"),
+		},
 	}
 
 	if err := mgr.GetClient().Status().Update(ctx, testCluster); err != nil {

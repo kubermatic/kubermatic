@@ -50,12 +50,7 @@ func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*sess
 		config = config.WithEndpoint(endpoint)
 	}
 
-	awsSession, err := session.NewSession(config)
-	if err != nil {
-		return awsSession, err
-	}
-
-	return awsSession, nil
+	return session.NewSession(config)
 }
 
 func getClientSet(accessKeyID, secretAccessKey, region, endpoint string) (*aws.ClientSet, error) {

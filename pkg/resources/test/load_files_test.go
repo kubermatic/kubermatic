@@ -150,13 +150,13 @@ func (tc testCase) fixturePath(resType, resName string) string {
 func TestLoadFiles(t *testing.T) {
 	versions := []*version.Version{
 		{
-			Version: semver.MustParse("1.20.0"),
-		},
-		{
 			Version: semver.MustParse("1.21.0"),
 		},
 		{
 			Version: semver.MustParse("1.22.1"),
+		},
+		{
+			Version: semver.MustParse("1.23.5"),
 		},
 	}
 
@@ -344,6 +344,12 @@ func TestLoadFiles(t *testing.T) {
 						},
 						Status: kubermaticv1.ClusterStatus{
 							NamespaceName: "cluster-de-test-01",
+							Versions: kubermaticv1.ClusterVersionsStatus{
+								ControlPlane:      *ksemver.NewSemverOrDie(ver.Version.String()),
+								Apiserver:         *ksemver.NewSemverOrDie(ver.Version.String()),
+								ControllerManager: *ksemver.NewSemverOrDie(ver.Version.String()),
+								Scheduler:         *ksemver.NewSemverOrDie(ver.Version.String()),
+							},
 						},
 					}
 

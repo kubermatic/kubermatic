@@ -780,6 +780,8 @@ type ExternalClusterProvider interface {
 
 	CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error)
 
+	CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error
+
 	CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error
 
 	CreateOrUpdateKubeOneManifestSecret(ctx context.Context, manifest string, externalCluster *kubermaticv1.ExternalCluster) error
@@ -965,7 +967,7 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	CreateUnsecured(ctx context.Context, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	CreateUnsecured(ctx context.Context, userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 
 	// GetUnsecured gets cluster template instance
 	//

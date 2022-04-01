@@ -455,6 +455,28 @@ type NutanixSubnet struct {
 // swagger:model NutanixSubnetList
 type NutanixSubnetList []NutanixSubnet
 
+// NutanixCategoryList represents an array of Nutanix categories.
+// swagger:model NutanixCategoryList
+type NutanixCategoryList []NutanixCategory
+
+// NutanixCategory represents a Nutanix category.
+// swagger:model NutanixCategory
+type NutanixCategory struct {
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	SystemDefined bool   `json:"systemDefined"`
+}
+
+// NutanixCategoryValueList represents an array of Nutanix category values.
+// swagger:model NutanixCategoryValueList
+type NutanixCategoryValueList []NutanixCategoryValue
+
+// NutanixCategoryValue represents a Nutanix category value.
+// swagger:model NutanixCategoryValue
+type NutanixCategoryValue struct {
+	Value string `json:"value"`
+}
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
@@ -579,6 +601,8 @@ type PublicServiceAccountToken struct {
 	// Expiry is a timestamp representing the time when this token will expire.
 	// swagger:strfmt date-time
 	Expiry Time `json:"expiry,omitempty"`
+	// Invalidated indicates if the token must be regenerated
+	Invalidated bool `json:"invalidated,omitempty"`
 }
 
 // ServiceAccountToken represent an API service account token
@@ -788,10 +812,11 @@ type Cluster struct {
 	ObjectMeta      `json:",inline"`
 	Labels          map[string]string `json:"labels,omitempty"`
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
-	Type            string            `json:"type"`
-	Credential      string            `json:"credential,omitempty"`
-	Spec            ClusterSpec       `json:"spec"`
-	Status          ClusterStatus     `json:"status"`
+	// Type is deprecated and not used anymore.
+	Type       string        `json:"type"`
+	Credential string        `json:"credential,omitempty"`
+	Spec       ClusterSpec   `json:"spec"`
+	Status     ClusterStatus `json:"status"`
 }
 
 // ClusterSpec defines the cluster specification.

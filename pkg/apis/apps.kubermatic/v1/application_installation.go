@@ -91,6 +91,9 @@ type ApplicationInstallationStatus struct {
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
 	Conditions []ApplicationInstallationCondition `json:"conditions,omitempty"`
+
+	// ApplicationVersion contains information installing / removing application
+	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
 }
 
 type ApplicationInstallationCondition struct {

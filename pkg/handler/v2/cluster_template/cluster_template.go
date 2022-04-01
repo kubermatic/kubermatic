@@ -464,7 +464,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 
 		if adminUserInfo.IsAdmin {
 			privilegedclusterTemplateInstanceProvider := clusterTemplateInstanceProvider.(provider.PrivilegedClusterTemplateInstanceProvider)
-			instance, err := privilegedclusterTemplateInstanceProvider.CreateUnsecured(ctx, ct, project, req.Body.Replicas)
+			instance, err := privilegedclusterTemplateInstanceProvider.CreateUnsecured(ctx, adminUserInfo, ct, project, req.Body.Replicas)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}

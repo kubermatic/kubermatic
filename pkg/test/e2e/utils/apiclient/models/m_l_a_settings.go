@@ -61,6 +61,8 @@ func (m *MLASettings) validateLoggingResources(formats strfmt.Registry) error {
 		if err := m.LoggingResources.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("loggingResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("loggingResources")
 			}
 			return err
 		}
@@ -78,6 +80,8 @@ func (m *MLASettings) validateMonitoringResources(formats strfmt.Registry) error
 		if err := m.MonitoringResources.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("monitoringResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("monitoringResources")
 			}
 			return err
 		}
@@ -110,6 +114,8 @@ func (m *MLASettings) contextValidateLoggingResources(ctx context.Context, forma
 		if err := m.LoggingResources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("loggingResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("loggingResources")
 			}
 			return err
 		}
@@ -124,6 +130,8 @@ func (m *MLASettings) contextValidateMonitoringResources(ctx context.Context, fo
 		if err := m.MonitoringResources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("monitoringResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("monitoringResources")
 			}
 			return err
 		}

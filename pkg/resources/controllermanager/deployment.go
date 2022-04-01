@@ -20,12 +20,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -60,7 +63,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Name = resources.ControllerManagerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
-			flags, err := getFlags(data)
+			version := data.Cluster().Status.Versions.ControllerManager.Semver()
+
+			flags, err := getFlags(data, version)
 			if err != nil {
 				return nil, err
 			}
@@ -90,7 +95,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				volumes = append(volumes, serviceAccountVolume)
 			}
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -145,7 +152,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + version.String(),
 					Command: []string{"/usr/local/bin/kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,
@@ -202,7 +209,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
-func getFlags(data *resources.TemplateData) ([]string, error) {
+func getFlags(data *resources.TemplateData, version *semver.Version) ([]string, error) {
 	cluster := data.Cluster()
 	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
 
@@ -231,15 +238,29 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 		flags = append(flags, "--allocate-node-cidrs")
 		flags = append(flags, "--cluster-cidr", strings.Join(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks, ","))
 		flags = append(flags, "--service-cluster-ip-range", strings.Join(cluster.Spec.ClusterNetwork.Services.CIDRBlocks, ","))
+		if network.IsDualStackCluster(cluster) {
+			if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv4=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
+			}
+			if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv6=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
+			}
+		} else {
+			if network.IsIPv4OnlyCluster(cluster) && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
+			}
+			if network.IsIPv6OnlyCluster(cluster) && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
+			}
+		}
 		if val := CloudRoutesFlagVal(cluster.Spec.Cloud); val != nil {
 			flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 		}
 	}
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
-
 	// starting with k8s 1.21, this is always true and cannot be toggled anymore
-	if cluster.Spec.Version.Semver().Minor() < 21 {
+	if version.LessThan(semver.MustParse("1.21.0")) {
 		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
 	}
 
@@ -253,7 +274,7 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		if cloudProviderName == "azure" && cluster.Spec.Version.Semver().Minor() >= 15 {
+		if cloudProviderName == "azure" && version.Minor() >= 15 {
 			// Required so multiple clusters using the same resource group can allocate public IPs.
 			// Ref: https://github.com/kubernetes/kubernetes/pull/77630
 			flags = append(flags, "--cluster-name", cluster.Name)

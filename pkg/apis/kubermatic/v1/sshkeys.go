@@ -34,6 +34,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.owner",name="Owner",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.project",name="Project",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.fingerprint",name="Fingerprint",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
@@ -46,11 +47,21 @@ type UserSSHKey struct {
 }
 
 type SSHKeySpec struct {
-	Owner       string   `json:"owner"`
-	Name        string   `json:"name"`
-	Fingerprint string   `json:"fingerprint"`
-	PublicKey   string   `json:"publicKey"`
-	Clusters    []string `json:"clusters"`
+	// Name is the human readable name for this SSH key.
+	Name string `json:"name"`
+	// Owner is the name of the User object that owns this SSH key.
+	// This field is immutable.
+	Owner string `json:"owner"`
+	// Project is the name of the Project object that this SSH key belongs to.
+	// This field is immutable.
+	Project string `json:"project"`
+	// Clusters is the list of cluster names that this SSH key is assigned to.
+	Clusters []string `json:"clusters"`
+	// Fingerprint is calculated on the server-side and doesn't need to be set
+	// by clients.
+	Fingerprint string `json:"fingerprint"`
+	// PublicKey is the SSH public key.
+	PublicKey string `json:"publicKey"`
 }
 
 func (sk *UserSSHKey) IsUsedByCluster(clustername string) bool {

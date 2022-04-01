@@ -19,7 +19,7 @@ limitations under the License.
 // This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.
 //
 //     Schemes: https
-//     Version: 2.20
+//     Version: 2.21
 //
 //     Consumes:
 //     - application/json
@@ -139,7 +139,7 @@ func main() {
 	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
 	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
-		log.Fatalw("failed to construct manager: %w", err)
+		log.Fatalw("failed to construct manager", zap.Error(err))
 	}
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Event{}, "involvedObject.name", func(rawObj ctrlruntimeclient.Object) []string {
 		event := rawObj.(*corev1.Event)
@@ -265,7 +265,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged SSH key provider: %w", err)
 	}
-	userProvider := kubernetesprovider.NewUserProvider(client, kubernetesprovider.IsProjectServiceAccount)
+	userProvider := kubernetesprovider.NewUserProvider(client)
 	settingsProvider := kubernetesprovider.NewSettingsProvider(client)
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(client)
 	adminProvider := kubernetesprovider.NewAdminProvider(client)
@@ -276,7 +276,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 	}
 
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClient, client, options.domain)
-	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, client, kubernetesprovider.IsProjectServiceAccount)
+	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create project provider: %w", err)

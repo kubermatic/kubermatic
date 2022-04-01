@@ -30,6 +30,17 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/network"
+)
+
+const (
+	selfRuleNamePattern         = "firewall-%s-self"
+	icmpRuleNamePattern         = "firewall-%s-icmp"
+	icmpIPv6RuleNamePattern     = "firewall-%s-icmp-ipv6"
+	nodePortRuleNamePattern     = "firewall-%s-nodeport"
+	nodePortIPv6RuleNamePattern = "firewall-%s-nodeport-ipv6"
+
+	ipv6ICMPProtoNumber = "58" // IANA-assigned Internet Protocol Number for IPv6-ICMP
 )
 
 func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, svc *compute.Service, projectID string) error {
@@ -40,27 +51,24 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 		Build().
 		NodePorts()
 
-	nodePortsAllowedIPRange := cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange
-	if nodePortsAllowedIPRange == "" {
-		nodePortsAllowedIPRange = "0.0.0.0/0"
-	}
-
 	firewallService := compute.NewFirewallsService(svc)
 	tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
-	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
-	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
-	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
+	selfRuleName := fmt.Sprintf(selfRuleNamePattern, cluster.Name)
+	icmpRuleName := fmt.Sprintf(icmpRuleNamePattern, cluster.Name)
+	icmpIPv6RuleName := fmt.Sprintf(icmpIPv6RuleNamePattern, cluster.Name)
+	nodePortRuleName := fmt.Sprintf(nodePortRuleNamePattern, cluster.Name)
+	nodePortIPv6RuleName := fmt.Sprintf(nodePortIPv6RuleNamePattern, cluster.Name)
 
-	//
+	ipv4Rules := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv6Rules := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+
+	// Allow all common IP protocols from within the cluster.
 	var allowedProtocols = []*compute.FirewallAllowed{
 		{
 			IPProtocol: "tcp",
 		},
 		{
 			IPProtocol: "udp",
-		},
-		{
-			IPProtocol: "icmp",
 		},
 		{
 			IPProtocol: "esp",
@@ -75,21 +83,38 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 			IPProtocol: "ipip",
 		},
 	}
+	if ipv4Rules {
+		allowedProtocols = append(allowedProtocols, &compute.FirewallAllowed{IPProtocol: "icmp"})
+	}
+	if ipv6Rules {
+		allowedProtocols = append(allowedProtocols, &compute.FirewallAllowed{IPProtocol: ipv6ICMPProtoNumber})
+	}
 	err := createOrPatchFirewall(ctx, firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, "", update, cluster, firewallSelfCleanupFinalizer)
 	if err != nil {
 		return err
 	}
 
-	allowedProtocols = []*compute.FirewallAllowed{
-		{
-			IPProtocol: "icmp",
-		},
+	// Allow ICMP from anywhere.
+	// Note that mixture of IPv4 and IPv6 in the same rule is not allowed by GCP,
+	// so we need to create a separate rule for each IP family.
+	if ipv4Rules {
+		err = createOrPatchFirewall(ctx, firewallService, projectID, icmpRuleName, tag, "",
+			[]*compute.FirewallAllowed{{IPProtocol: "icmp"}}, "0.0.0.0/0", update, cluster, firewallICMPCleanupFinalizer)
+		if err != nil {
+			return err
+		}
 	}
-	err = createOrPatchFirewall(ctx, firewallService, projectID, icmpRuleName, tag, "", allowedProtocols, "0.0.0.0/0", update, cluster, firewallICMPCleanupFinalizer)
-	if err != nil {
-		return err
+	if ipv6Rules {
+		err = createOrPatchFirewall(ctx, firewallService, projectID, icmpIPv6RuleName, tag, "",
+			[]*compute.FirewallAllowed{{IPProtocol: ipv6ICMPProtoNumber}}, "::/0", update, cluster, firewallICMPCleanupFinalizer)
+		if err != nil {
+			return err
+		}
 	}
 
+	// Allow all ports from the NodePort range.
+	// Note that mixture of IPv4 and IPv6 in the same rule is not allowed by GCP,
+	// so we need to create a separate rule for each IP family.
 	allowedProtocols = []*compute.FirewallAllowed{
 		{
 			IPProtocol: "tcp",
@@ -100,9 +125,18 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 			Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
 		},
 	}
-	err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "", allowedProtocols, nodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
-	if err != nil {
-		return err
+	if cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange != "" {
+		return createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
+			allowedProtocols, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
+	} else {
+		if ipv4Rules {
+			return createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
+				allowedProtocols, "0.0.0.0/0", update, cluster, firewallNodePortCleanupFinalizer)
+		}
+		if ipv6Rules {
+			return createOrPatchFirewall(ctx, firewallService, projectID, nodePortIPv6RuleName, tag, "",
+				allowedProtocols, "::/0", update, cluster, firewallNodePortCleanupFinalizer)
+		}
 	}
 
 	return nil
@@ -175,13 +209,17 @@ func createOrPatchFirewall(ctx context.Context,
 func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, log *zap.SugaredLogger, svc *compute.Service, projectID string) (*kubermaticv1.Cluster, error) {
 	firewallService := compute.NewFirewallsService(svc)
 
-	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
-	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
-	nodePortRuleName := fmt.Sprintf("firewall-%s-nodeport", cluster.Name)
+	selfRuleName := fmt.Sprintf(selfRuleNamePattern, cluster.Name)
+	icmpRuleName := fmt.Sprintf(icmpRuleNamePattern, cluster.Name)
+	icmpIPv6RuleName := fmt.Sprintf(icmpIPv6RuleNamePattern, cluster.Name)
+	nodePortRuleName := fmt.Sprintf(nodePortRuleNamePattern, cluster.Name)
+	nodePortIPv6RuleName := fmt.Sprintf(nodePortIPv6RuleNamePattern, cluster.Name)
+
+	ipv4Rules := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv6Rules := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
 		_, err := firewallService.Delete(projectID, selfRuleName).Context(ctx).Do()
-		// we ignore a Google API "not found" error
 		if err != nil && !isHTTPError(err, http.StatusNotFound) {
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", selfRuleName, err)
 		}
@@ -195,12 +233,20 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallICMPCleanupFinalizer) {
-		_, err := firewallService.Delete(projectID, icmpRuleName).Context(ctx).Do()
-		// we ignore a Google API "not found" error
-		if err != nil && !isHTTPError(err, http.StatusNotFound) {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", icmpRuleName, err)
+		if ipv4Rules {
+			_, err := firewallService.Delete(projectID, icmpRuleName).Context(ctx).Do()
+			if err != nil && !isHTTPError(err, http.StatusNotFound) {
+				return nil, fmt.Errorf("failed to delete firewall rule %s: %w", icmpRuleName, err)
+			}
+		}
+		if ipv6Rules {
+			_, err := firewallService.Delete(projectID, icmpIPv6RuleName).Context(ctx).Do()
+			if err != nil && !isHTTPError(err, http.StatusNotFound) {
+				return nil, fmt.Errorf("failed to delete firewall rule %s: %w", icmpRuleName, err)
+			}
 		}
 
+		var err error
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
@@ -211,12 +257,20 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 
 	// remove the nodeport firewall rule
 	if kuberneteshelper.HasFinalizer(cluster, firewallNodePortCleanupFinalizer) {
-		_, err := firewallService.Delete(projectID, nodePortRuleName).Context(ctx).Do()
-		// we ignore a Google API "not found" error
-		if err != nil && !isHTTPError(err, http.StatusNotFound) {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %w", nodePortRuleName, err)
+		if ipv4Rules {
+			_, err := firewallService.Delete(projectID, nodePortRuleName).Context(ctx).Do()
+			if err != nil && !isHTTPError(err, http.StatusNotFound) {
+				return nil, fmt.Errorf("failed to delete firewall rule %s: %w", nodePortRuleName, err)
+			}
+		}
+		if ipv6Rules {
+			_, err := firewallService.Delete(projectID, nodePortIPv6RuleName).Context(ctx).Do()
+			if err != nil && !isHTTPError(err, http.StatusNotFound) {
+				return nil, fmt.Errorf("failed to delete firewall rule %s: %w", nodePortRuleName, err)
+			}
 		}
 
+		var err error
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallNodePortCleanupFinalizer)
 		})

@@ -1,4 +1,123 @@
+# Kubermatic 2.20
+
+## [v2.20.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.1)
+
+This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
+
+To replace a member in case of data consistency issues, please:
+
+- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.20/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
+- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.20/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
+
+Please be aware we do not recommend enabling `etcd-launcher` on existing Kubernetes 1.22 environments at the time. This is due to the fact that the migration to `etcd-launcher` requires several etcd restarts and we currently recommend keeping the etcd ring as stable as possible (apart from the restarts triggered by this patch release to roll out the consistency checks).
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9480](https://github.com/kubermatic/kubermatic/issues/9480))
+
+## [v2.20.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.0)
+
+Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.20/tutorials_howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
+
+### Highlights
+
+- Migrate API group `kubermatic.k8s.io` to `kubermatic.k8c.io` ([#8783](https://github.com/kubermatic/kubermatic/issues/8783)). This change requires a migration of all KKP master/seed clusters. Please consult the [upgrade documentation](https://docs.kubermatic.com/kubermatic/v2.20/tutorials_howtos/upgrading/upgrade_from_2.19_to_2.20/) for more information.
+- Full Nutanix support([#8428](https://github.com/kubermatic/kubermatic/issues/8428))
+
+### Supported Kubernetes Versions
+
+- 1.20.13
+- 1.20.14
+- 1.21.8
+- 1.22.5
+
+### Breaking Changes
+
+- Add Canal CNI v3.22 support & make it the default CNI. NOTE: Automatically upgrades Canal to v3.22 in clusters with k8s v1.23 and higher and older Canal version ([#9258](https://github.com/kubermatic/kubermatic/issues/9258))
+- Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected version is necessary ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
+- Secret name for S3 credentials updated to `kubermatic-s3-credentials`. If the secret `s3-credentials` was manually created instead of using the `minio` helm chart, new secret `kubermatic-s3-credentials` must be created ([#9242](https://github.com/kubermatic/kubermatic/issues/9242))
+- The etcd-backup-related containers are now loaded dynamically from the KubermaticConfiguration, the relevant CLI flags like `-backup-container=<file>` have been removed. The deprecated configuration options `KubermaticConfiguration.spec.seedController.backupRestore` and `Seed.spec.backupRestore` have been removed. Please migrate to `Seed.spec.etcdBackupRestore` ([#9003](https://github.com/kubermatic/kubermatic/issues/9003))
+- etcd backup API now requires destination to be set for EtcdBackupConfig, EtcdRestore and BackupCredentials endpoints ([#9139](https://github.com/kubermatic/kubermatic/issues/9139))
+
+### Bugfixes
+
+- Automatic upgrades from Kubernetes 1.19.* to 1.20.13 work as intended now ([#8821](https://github.com/kubermatic/kubermatic/issues/8821))
+- Correctly handle the 'default' Nutanix project in API calls ([#9336](https://github.com/kubermatic/kubermatic/issues/9336))
+- Fix AWS cloud provider cleanup sometimes getting stuck when cleaning up tags ([#8879](https://github.com/kubermatic/kubermatic/issues/8879))
+- Fix Konnectivity authentication issue in some scenarios by fixing cluster-external-addr-allow apiserver network policy ([#9224](https://github.com/kubermatic/kubermatic/issues/9224))
+- Fix Preset API Body for preset creation and update API calls ([#9298](https://github.com/kubermatic/kubermatic/issues/9298))
+- Fix `OpenVPNServerDown` alerting rule to work as expected and not fire if Konnectivity is enabled ([#9216](https://github.com/kubermatic/kubermatic/issues/9216))
+- Fix apiserver network policy: allow all egress DNS traffic from the apiserver ([#8788](https://github.com/kubermatic/kubermatic/issues/8788))
+- Fix applying resource requirements when using incomplete overrides (e.g. specifying only limits, but no request for a container) ([#9045](https://github.com/kubermatic/kubermatic/issues/9045))
+- Fix bad owner references for ClusterRoleBindings ([#8858](https://github.com/kubermatic/kubermatic/issues/8858))
+- Fix installation issue with charts/logging/loki (error evaluating symlink) ([#8823](https://github.com/kubermatic/kubermatic/issues/8823))
+- Fix missing snapshot CRD's for cinder CSI ([#9042](https://github.com/kubermatic/kubermatic/issues/9042))
+- ICMP rules migration only runs on Azure NSGs created by KKP ([#8843](https://github.com/kubermatic/kubermatic/issues/8843))
+- If a network is set in the Hetzner cluster spec, it is now correctly applied to generated machines ([#8872](https://github.com/kubermatic/kubermatic/issues/8872))
+
+### Dashboard
+
+- Add allowed IP range override support to the GCP, Azure, AWS, and OpenStack providers ([#4318](https://github.com/kubermatic/dashboard/issues/4318))
+- Add option to get kubeconfig for external clusters ([#4164](https://github.com/kubermatic/dashboard/issues/4164))
+- Add support for Nutanix provider ([#4145](https://github.com/kubermatic/dashboard/issues/4145))
+- Admins can define default Rule Groups in Admin Settings ([#3971](https://github.com/kubermatic/dashboard/issues/3971))
+- Redesign cluster summary step. Update error notifications and event colors styling ([#4141](https://github.com/kubermatic/dashboard/issues/4141))
+- Support for application credentials in OpenStack preset ([#4192](https://github.com/kubermatic/dashboard/issues/4192))
+- Update OS default disk size to 64GB for the Azure provider when RHEL OS is selected ([#4318](https://github.com/kubermatic/dashboard/issues/4318))
+
+### Misc
+
+- Add Nutanix CSI support ([#9104](https://github.com/kubermatic/kubermatic/issues/9104), [#4251](https://github.com/kubermatic/dashboard/issues/4251))
+- Add `vsphereCSIClusterID` feature flag for the cluster object. This feature flag changes the cluster-id in the vSphere CSI config to the cluster name instead of the vSphere Compute Cluster name provided via Datacenter config. Migrating the cluster-id requires manual steps (docs link to be added) ([#9265](https://github.com/kubermatic/kubermatic/issues/9265))
+- Add credential validation for Hetzner and Equinixmetal ([#9051](https://github.com/kubermatic/kubermatic/issues/9051))
+- Add endpoints to v2 KKP API to query Nutanix clusters, projects and subnets ([#8736](https://github.com/kubermatic/kubermatic/issues/8736))
+- Do not reference Nutanix cluster in KKP API endpoint path for subnets ([#8906](https://github.com/kubermatic/kubermatic/issues/8906))
+- Ensure existing cluster have `.Spec.CNIPlugin` initialized ([#8829](https://github.com/kubermatic/kubermatic/issues/8829))
+- Metric `kubermatic_api_init_node_deployment_failures` was renamed to `kubermatic_api_failed_init_node_deployment_total`. Metric `kubermatic_cloud_controller_provider_reconciliations_successful` was renamed to `kubermatic_cloud_controller_provider_successful_reconciliations_total` ([#8763](https://github.com/kubermatic/kubermatic/issues/8763))
+- Remove deprecated fields from CRD types ([#8961](https://github.com/kubermatic/kubermatic/issues/8961))
+- Support custom Pod resources for NodePort-Proxy pod for the user cluster ([#9015](https://github.com/kubermatic/kubermatic/issues/9015))
+- Support for `network:ha_router_replicated_interface` ports when discovering existing subnet router in Openstack ([#9164](https://github.com/kubermatic/kubermatic/issues/9164))
+- Unused flatcar update resources are removed when no Flatcar `Nodes` are in a user cluster ([#8745](https://github.com/kubermatic/kubermatic/issues/8745))
+- Update example values and KubermaticConfiguration to respect OIDC settings ([#8851](https://github.com/kubermatic/kubermatic/issues/8851))
+- Update machine-controller to v1.45.0 ([#9293](https://github.com/kubermatic/kubermatic/issues/9293))
+- Update OSM to 0.4.1 ([#9329](https://github.com/kubermatic/kubermatic/issues/9329))
+
+
+
+
 # Kubermatic 2.19
+
+## [v2.19.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.4)
+
+This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
+
+To replace a member in case of data consistency issues, please:
+
+- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.19/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
+- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.19/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
+
+Please be aware we do not recommend enabling `etcd-launcher` on existing Kubernetes 1.22 environments at the time. This is due to the fact that the migration to `etcd-launcher` requires several etcd restarts and we currently recommend keeping the etcd ring as stable as possible (apart from the restarts triggered by this patch release to roll out the consistency checks).
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9477](https://github.com/kubermatic/kubermatic/issues/9477))
+
+## [v2.19.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.3)
+
+### Breaking Changes
+- ACTION REQUIRED: Secret name for S3 credentials updated to `kubermatic-s3-credentials`. If the secret `s3-credentials` was manually created instead of using the `minio` helm chart, new secret `kubermatic-s3-credentials` must be created. ([#9230](https://github.com/kubermatic/kubermatic/pull/9230))
+
+### Bugfixes
+- Fix LoadBalancer expose strategy for LBs with external DNS names instead of IPs ([#9105](https://github.com/kubermatic/kubermatic/pull/9105))
+- `image-loader` parses custom versions in KubermaticConfiguration configuration files correctly ([#9154](https://github.com/kubermatic/kubermatic/pull/9154))
+- Fix OpenVPNServerDown alerting rule to work as expected and not fire if Konnectivity is enabled. ([#9216](https://github.com/kubermatic/kubermatic/pull/9216))
+- Fixes Preset API Body for preset creation and update API calls. ([#9300](https://github.com/kubermatic/kubermatic/pull/9300))
+- Fix wrong CPU configs for the KubeVirt Virtual Machine Instances ([#1203](https://github.com/kubermatic/machine-controller/pull/1203))
+- Fix vSphere VolumeAttachment cleanups during cluster deletion or node draining ([#1190](https://github.com/kubermatic/machine-controller/pull/1190))
+
+### Misc
+- Upgrade machine controller to v1.42.5 ([#9440](https://github.com/kubermatic/kubermatic/pull/9440)) 
+- Support for `network:ha_router_replicated_interface` ports when discovering existing subnet router in Openstack ([#9176](https://github.com/kubermatic/kubermatic/pull/9176))
 
 ## [v2.19.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.2)
 
@@ -6,7 +125,7 @@
 
 - ACTION REQUIRED: Restore correct labels on nodeport-proxy-envoy Deployment. Deleting the existing Deployment for each cluster with the `LoadBalancer` expose strategy if upgrading from affected versions (v2.19.1 or v2.18.6) is necessary ([#9060](https://github.com/kubermatic/kubermatic/issues/9060))
 
-### Bugfixes 
+### Bugfixes
 
 - Fix applying resource requirements when using incomplete overrides (e.g. specifying only limits, but no request for a container) ([#9045](https://github.com/kubermatic/kubermatic/issues/9045))
 
@@ -66,11 +185,13 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - The old Docker repository at `quay.io/kubermatic/api` will not receive new images anymore, please use `quay.io/kubermatic/kubermatic` (CE) or `quay.io/kubermatic/kubermatic-ee` (EE) instead. This should only affect EE users who were still using the deprecated Helm chart ([#7922](https://github.com/kubermatic/kubermatic/issues/7922))
 - BREAKING: `-dynamic-datacenters` was effectively already always true when using the KKP Operator and has now been removed as a flag. Support for handling a `datacenters.yaml` has been removed ([#7779](https://github.com/kubermatic/kubermatic/issues/7779))
 
-**Dashboard:**
-- Add multiple backup destinations.  
+#### Dashboard:
+
+- Add multiple backup destinations.
   ACTION REQUIRED: KKP version 2.19 makes it possible to configure multiple destinations, therefore the current implementation of "backup buckets" will be deprecated soon. Migrate the configuration to a destination to keep using it in the future. It is reachable via the UI Admin Panel -> Backup Destinations ([#3911](https://github.com/kubermatic/dashboard/issues/3911))
 
 ### Supported Kubernetes Versions
+
 - 1.20.13
 - 1.20.14
 - 1.21.8
@@ -99,8 +220,8 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Integrating Operating System Manager in KKP ([#8473](https://github.com/kubermatic/kubermatic/issues/8473))
 - Validating webhooks for OSM resources, OperatingSystemProfile and OperatingSystemConfig ([#8503](https://github.com/kubermatic/kubermatic/issues/8503))
 - Deploy OSM CRDs in KKP seed clusters ([#8528](https://github.com/kubermatic/kubermatic/issues/8528))
-- Introduce new field enableOperatingSystemManager in Cluster and ClusterTemplate CRD specification:  
-  - use-osm flag is passed to machine-controller and machine-controller webhooks in case OSM is enabled  
+- Introduce new field enableOperatingSystemManager in Cluster and ClusterTemplate CRD specification:
+  - use-osm flag is passed to machine-controller and machine-controller webhooks in case OSM is enabled
   - API integration for OSM ([#8523](https://github.com/kubermatic/kubermatic/issues/8523))
 - CRDs for OSP and OSC are updated in kubermatic-operator and kubermatic-operator chart bumped to v0.3.37 ([#8573](https://github.com/kubermatic/kubermatic/issues/8573))
 
@@ -229,7 +350,7 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Fix Grafana dashboard for MinIO to display the correct Prometheus metrics ([#8687](https://github.com/kubermatic/kubermatic/issues/8687))
 - Fix Grafana dashboards using legacy kube-state-metrics metrics for CPU/memory limits and requests ([#8749](https://github.com/kubermatic/kubermatic/issues/8749))
 
-### Metering 
+### Metering
 - Fix some hardcoded Docker images for seed-proxy and metering components ([#8615](https://github.com/kubermatic/kubermatic/issues/8615))
 - Fix disabling metering not having any effect ([#8673](https://github.com/kubermatic/kubermatic/issues/8673))
 - Fixed high resource usage during metering startup ([#8270](https://github.com/kubermatic/kubermatic/issues/8270))
@@ -321,6 +442,33 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Incompatibilty between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
 
 # Kubermatic 2.18
+
+## [v2.18.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.9)
+
+This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
+
+To replace a member in case of data consistency issues, please:
+
+- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.18/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
+- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.18/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
+
+Please be aware we do not recommend enabling `etcd-launcher` on existing Kubernetes 1.22 environments at the time. This is due to the fact that the migration to `etcd-launcher` requires several etcd restarts and we currently recommend keeping the etcd ring as stable as possible (apart from the restarts triggered by this patch release to roll out the consistency checks).
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9477](https://github.com/kubermatic/kubermatic/issues/9477))
+
+## [v2.18.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.8)
+
+### Bugfixes
+- Fix LoadBalancer expose strategy for LBs with external DNS names instead of IPs ([#9105](https://github.com/kubermatic/kubermatic/pull/9105))
+- `image-loader` parses custom versions in KubermaticConfiguration configuration files correctly ([#9154](https://github.com/kubermatic/kubermatic/pull/9154))
+- Fix wrong CPU configs for the KubeVirt Virtual Machine Instances ([#1203](https://github.com/kubermatic/machine-controller/pull/1203))
+- Fix vSphere VolumeAttachment cleanups during cluster deletion or node draining ([#1190](https://github.com/kubermatic/machine-controller/pull/1190))
+
+### Misc
+- Upgrade machine controller to v1.36.4
+- Support for `network:ha_router_replicated_interface` ports when discovering existing subnet router in Openstack ([#9176](https://github.com/kubermatic/kubermatic/pull/9176))
 
 ## [v2.18.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.7)
 

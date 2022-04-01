@@ -63,6 +63,8 @@ func (m *NodeSettings) validateHTTPProxy(formats strfmt.Registry) error {
 	if err := m.HTTPProxy.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("httpProxy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("httpProxy")
 		}
 		return err
 	}
@@ -78,6 +80,8 @@ func (m *NodeSettings) validateNoProxy(formats strfmt.Registry) error {
 	if err := m.NoProxy.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("noProxy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("noProxy")
 		}
 		return err
 	}
@@ -108,6 +112,8 @@ func (m *NodeSettings) contextValidateHTTPProxy(ctx context.Context, formats str
 	if err := m.HTTPProxy.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("httpProxy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("httpProxy")
 		}
 		return err
 	}
@@ -120,6 +126,8 @@ func (m *NodeSettings) contextValidateNoProxy(ctx context.Context, formats strfm
 	if err := m.NoProxy.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("noProxy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("noProxy")
 		}
 		return err
 	}

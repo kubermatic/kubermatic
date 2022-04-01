@@ -29,19 +29,23 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
+	client  ctrlruntimeclient.Client
 	log     logr.Logger
 	decoder *admission.Decoder
 }
 
 // NewAdmissionHandler returns a new UserSSHKey AdmissionHandler.
-func NewAdmissionHandler() *AdmissionHandler {
-	return &AdmissionHandler{}
+func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
+	return &AdmissionHandler{
+		client: client,
+	}
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
@@ -68,8 +72,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		err := h.applyDefaults(ctx, sshKey, nil)
-		if err != nil {
+		if err := h.applyDefaults(ctx, sshKey, nil); err != nil {
 			h.log.Info("usersshkey mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
 		}
@@ -82,9 +85,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		// apply defaults to the existing sshKey
-		err := h.applyDefaults(ctx, sshKey, oldKey)
-		if err != nil {
+		if err := h.applyDefaults(ctx, sshKey, oldKey); err != nil {
 			h.log.Info("usersshkey mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("usersshkey mutation request %s failed: %w", req.UID, err))
 		}

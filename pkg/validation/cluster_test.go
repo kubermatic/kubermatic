@@ -326,7 +326,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			name: "valid dual-stack network config",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
-				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
@@ -337,7 +337,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			name: "invalid dual-stack network config (IPv6 as primary address)",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"fd00::/104", "10.241.0.0/16"}},
-				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"fd00::/104", "10.240.32.0/20"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"fd03::/120", "10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
@@ -349,6 +349,45 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid node CIDR mask sizes",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				NodeCIDRMaskSizeIPv4:     pointer.Int32(26),
+				NodeCIDRMaskSizeIPv6:     pointer.Int32(112),
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid node CIDR mask size - IPv4",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				NodeCIDRMaskSizeIPv4:     pointer.Int32(12),
+				NodeCIDRMaskSizeIPv6:     pointer.Int32(112),
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid node CIDR mask size - IPv6",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
+				NodeCIDRMaskSizeIPv6:     pointer.Int32(64),
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
 				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),

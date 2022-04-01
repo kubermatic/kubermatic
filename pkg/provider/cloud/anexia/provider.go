@@ -51,10 +51,8 @@ func (a *Anexia) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) 
 
 func (a *Anexia) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	_, err := GetCredentialsForCluster(spec, a.secretKeySelector)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 func (a *Anexia) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {

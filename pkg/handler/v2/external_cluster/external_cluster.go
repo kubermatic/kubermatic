@@ -72,6 +72,7 @@ type body struct {
 	// Kubeconfig Base64 encoded kubeconfig
 	Kubeconfig string                          `json:"kubeconfig,omitempty"`
 	Cloud      *apiv2.ExternalClusterCloudSpec `json:"cloud,omitempty"`
+	Spec       *apiv2.ExternalClusterSpec      `json:"spec,omitempty"`
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -174,6 +175,7 @@ func CreateEndpoint(
 		}
 
 		cloud := req.Body.Cloud
+		spec := req.Body.Spec
 
 		// connect cluster by kubeconfig
 		if cloud == nil {
@@ -219,7 +221,7 @@ func CreateEndpoint(
 					req.Body.Cloud.GKE.ServiceAccount = credentials.ServiceAccount
 				}
 			}
-			createdCluster, err := createOrImportGKECluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportGKECluster(ctx, req.Body.Name, userInfoGetter, project, spec, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -236,7 +238,7 @@ func CreateEndpoint(
 				}
 			}
 
-			createdCluster, err := createOrImportEKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportEKSCluster(ctx, req.Body.Name, userInfoGetter, project, spec, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -256,7 +258,7 @@ func CreateEndpoint(
 				}
 			}
 
-			createdCluster, err := createOrImportAKSCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
+			createdCluster, err := createOrImportAKSCluster(ctx, req.Body.Name, userInfoGetter, project, spec, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -592,7 +594,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
-
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
@@ -605,6 +606,9 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			}
 			if cloud.AKS != nil {
 				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
+			}
+			if cloud.KubeOne != nil {
+				return patchKubeOneCluster(ctx, cluster, patchedCluster, req.UpgradeMD, secretKeySelector, privilegedClusterProvider.GetMasterClient())
 			}
 		}
 		return convertClusterToAPI(cluster), nil
@@ -620,6 +624,11 @@ type patchClusterReq struct {
 	ClusterID string `json:"cluster_id"`
 	// in: body
 	Patch json.RawMessage
+	// in: header
+	// This field is specific to kubeone
+	// UpgradeMD: true, Upgrade control plane + all node pools
+	// UpgradeMD: false, control plane only
+	UpgradeMD string
 }
 
 // Validate validates CreateEndpoint request.
@@ -647,6 +656,7 @@ func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.ClusterID = clusterID
+	req.UpgradeMD = r.Header.Get("UpgradeMD")
 
 	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
@@ -1004,6 +1014,13 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 				return apiCluster
 			}
 			apiCluster.Status = *gkeStatus
+		}
+		if cloud.KubeOne != nil {
+			kubeoneStatus := &apiv2.ExternalClusterStatus{
+				State:         apiv2.ExternalClusterState(cloud.KubeOne.ClusterStatus.Status),
+				StatusMessage: cloud.KubeOne.ClusterStatus.StatusMessage,
+			}
+			apiCluster.Status = *kubeoneStatus
 		}
 	}
 

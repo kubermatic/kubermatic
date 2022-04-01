@@ -50,16 +50,18 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 		return err
 	}
 
-	if project.Status.Phase == "" {
-		klog.V(4).Info("Not reconciling project because status.phase has not been set yet.")
-		return nil
-	}
-
 	if project.DeletionTimestamp != nil {
 		if err := c.ensureProjectCleanup(ctx, project); err != nil {
 			return fmt.Errorf("failed to cleanup project: %w", err)
 		}
 		return nil
+	}
+
+	// set the initial phase for new projects
+	if project.Status.Phase == "" {
+		if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectInactive); err != nil {
+			return fmt.Errorf("failed to set initial project phase: %w", err)
+		}
 	}
 
 	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
@@ -86,8 +88,8 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %w", err)
 	}
-	if err := c.ensureProjectIsInActivePhase(ctx, project); err != nil {
-		return fmt.Errorf("failed to ensure that the project is set to active: %w", err)
+	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectActive); err != nil {
+		return fmt.Errorf("failed to set project phase to active: %w", err)
 	}
 
 	return nil
@@ -97,12 +99,13 @@ func (c *projectController) ensureCleanupFinalizerExists(ctx context.Context, pr
 	return kuberneteshelper.TryAddFinalizer(ctx, c.client, project, CleanupFinalizerName)
 }
 
-func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, project *kubermaticv1.Project) error {
-	if project.Status.Phase == kubermaticv1.ProjectInactive {
+func (c *projectController) ensureProjectPhase(ctx context.Context, project *kubermaticv1.Project, phase kubermaticv1.ProjectPhase) error {
+	if project.Status.Phase != phase {
 		oldProject := project.DeepCopy()
-		project.Status.Phase = kubermaticv1.ProjectActive
+		project.Status.Phase = phase
 		return c.client.Status().Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject))
 	}
+
 	return nil
 }
 
@@ -156,18 +159,10 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 }
 
 func genOwnerBinding(ownerEmail string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+	// The user-project-binding controller will take care of setting up owner references later.
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
-			Name:       rand.String(10),
-			Finalizers: []string{CleanupFinalizerName},
+			Name: rand.String(10),
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: ownerEmail,
@@ -479,23 +474,10 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.C
 //
 // In particular:
 // - removes no longer needed Subject from RBAC Binding for project's resources
-// - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
 // - removes cleanupFinalizer.
 func (c *projectController) ensureProjectCleanup(ctx context.Context, project *kubermaticv1.Project) error {
-	// cluster resources don't have OwnerReferences set thus we need to manually remove them
-	for _, seedClient := range c.seedClientMap {
-		var listObj kubermaticv1.ClusterList
-		if err := seedClient.List(ctx, &listObj); err != nil {
-			return err
-		}
-
-		for _, cluster := range listObj.Items {
-			if clusterProject := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
-				if err := seedClient.Delete(ctx, &cluster); err != nil {
-					return err
-				}
-			}
-		}
+	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectTerminating); err != nil {
+		return fmt.Errorf("failed to set project phase: %w", err)
 	}
 
 	// remove subjects from Cluster RBAC Bindings for project's resources

@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -54,6 +55,11 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.Var(&o.Format, "log-format", "Log format, one of "+AvailableFormats.String())
 }
 
+func (o *Options) AddPFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&o.Debug, "log-debug", o.Debug, "Enables debug logging")
+	fs.Var(&o.Format, "log-format", "Log format, one of "+AvailableFormats.String())
+}
+
 func (o *Options) Validate() error {
 	if !AvailableFormats.Contains(o.Format) {
 		return fmt.Errorf("invalid log-format specified %q; available: %s", o.Format, AvailableFormats.String())
@@ -62,6 +68,11 @@ func (o *Options) Validate() error {
 }
 
 type Format string
+
+// Type implements the pflag.Value interfaces.
+func (f *Format) Type() string {
+	return "string"
+}
 
 // String implements the cli.Value and flag.Value interfaces.
 func (f *Format) String() string {

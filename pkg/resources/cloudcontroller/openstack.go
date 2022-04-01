@@ -78,7 +78,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			version, err := getOSVersion(data.Cluster().Spec.Version)
+			version, err := getOSVersion(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}
@@ -176,9 +176,11 @@ func getOSVersion(version semver.Semver) (string, error) {
 	case 21:
 		return "1.21.0", nil
 	case 22:
+		return "1.22.0", nil
+	case 23:
 		fallthrough
 	default:
-		return "1.22.0", nil
+		return "1.23.1", nil
 	}
 }
 

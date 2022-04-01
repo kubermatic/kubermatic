@@ -65,6 +65,8 @@ func (m *ConstraintTemplateSpec) validateTargets(formats strfmt.Registry) error 
 			if err := m.Targets[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("targets" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("targets" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -84,6 +86,8 @@ func (m *ConstraintTemplateSpec) validateCrd(formats strfmt.Registry) error {
 		if err := m.Crd.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("crd")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("crd")
 			}
 			return err
 		}
@@ -101,6 +105,8 @@ func (m *ConstraintTemplateSpec) validateSelector(formats strfmt.Registry) error
 		if err := m.Selector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("selector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("selector")
 			}
 			return err
 		}
@@ -139,6 +145,8 @@ func (m *ConstraintTemplateSpec) contextValidateTargets(ctx context.Context, for
 			if err := m.Targets[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("targets" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("targets" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -155,6 +163,8 @@ func (m *ConstraintTemplateSpec) contextValidateCrd(ctx context.Context, formats
 		if err := m.Crd.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("crd")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("crd")
 			}
 			return err
 		}
@@ -169,6 +179,8 @@ func (m *ConstraintTemplateSpec) contextValidateSelector(ctx context.Context, fo
 		if err := m.Selector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("selector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("selector")
 			}
 			return err
 		}
