@@ -4,11 +4,11 @@ about: Report a bug encountered while operating KKP
 labels: kind/bug
 ---
 
-### What happened:
+### What happened
 
-### Expected behavior:
+### Expected behavior
 
-### How to reproduce:
+### How to reproduce
 
 ### Environment
 
