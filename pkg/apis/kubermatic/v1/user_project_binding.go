@@ -48,9 +48,12 @@ type UserProjectBinding struct {
 
 // UserProjectBindingSpec specifies a user.
 type UserProjectBindingSpec struct {
+	// UserEmail is the email of the user that is bound to the given project.
 	UserEmail string `json:"userEmail"`
+	// ProjectID is the name of the target project.
 	ProjectID string `json:"projectID"`
-	Group     string `json:"group"`
+	// Group is the user's group, determining their permissions within the project.
+	Group string `json:"group"`
 }
 
 // +kubebuilder:object:generate=true

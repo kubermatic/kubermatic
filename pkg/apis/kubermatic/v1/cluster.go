@@ -143,6 +143,7 @@ type ClusterSpec struct {
 
 	// Pause tells that this cluster is currently not managed by the controller.
 	// It indicates that the user needs to do some action to resolve the pause.
+	// +kubebuilder:default=false
 	Pause bool `json:"pause"`
 	// PauseReason is the reason why the cluster is no being managed.
 	PauseReason string `json:"pauseReason,omitempty"`
