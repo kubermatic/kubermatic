@@ -15,3 +15,11 @@ labels: kind/bug
 - KKP Version:
 - Shared or separate master/seed clusters?:
 - Master/seed cluster provider:
+
+### Current workaround
+
+### Affected user persona
+
+### Business goal to be improved
+
+### Metric to be improved
