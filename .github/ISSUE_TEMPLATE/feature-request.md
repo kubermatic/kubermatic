@@ -4,6 +4,10 @@ about: Suggest a new or improved feature
 labels: kind/feature
 ---
 
-### What would you like to be added? / User Story
+### User Story
 
 ### Acceptance criteria
+
+### Current workaround
+
+### Metric to be improved
