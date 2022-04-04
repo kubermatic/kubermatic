@@ -57,16 +57,17 @@ type ValidateCredentials struct {
 }
 
 // CreateOrUpdateCredentialSecretForClusterWithValidation creates a new secret for a credential.
-func CreateOrUpdateCredentialSecretForClusterWithValidation(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func CreateOrUpdateCredentialSecretForClusterWithValidation(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	return createOrUpdateCredentialSecretForCluster(ctx, seedClient, cluster, validate)
 }
 
 // CreateOrUpdateCredentialSecretForCluster creates a new secret for a credential.
 func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	return createOrUpdateCredentialSecretForCluster(ctx, seedClient, cluster, nil)
+	_, err := createOrUpdateCredentialSecretForCluster(ctx, seedClient, cluster, nil)
+	return err
 }
 
-func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	if cluster.Spec.Cloud.AWS != nil {
 		return createOrUpdateAWSSecret(ctx, seedClient, cluster, validate)
 	}
@@ -103,7 +104,7 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Nutanix != nil {
 		return createOrUpdateNutanixSecret(ctx, seedClient, cluster, validate)
 	}
-	return nil
+	return false, nil
 }
 
 func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
@@ -166,17 +167,17 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	}, nil
 }
 
-func createOrUpdateAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.AWS
 
 	// already migrated
 	if spec.AccessKeyID == "" && spec.SecretAccessKey == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := awsprovider.ValidateCredentials(spec.AccessKeyID, spec.SecretAccessKey); err != nil {
-			return fmt.Errorf("invalid AWS credentials: %w", err)
+			return false, fmt.Errorf("invalid AWS credentials: %w", err)
 		}
 	}
 
@@ -186,7 +187,7 @@ func createOrUpdateAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 		resources.AWSSecretAccessKey: []byte(spec.SecretAccessKey),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -196,15 +197,15 @@ func createOrUpdateAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 	cluster.Spec.Cloud.AWS.AccessKeyID = ""
 	cluster.Spec.Cloud.AWS.SecretAccessKey = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Azure
 
 	// already migrated
 	if spec.TenantID == "" && spec.SubscriptionID == "" && spec.ClientID == "" && spec.ClientSecret == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
@@ -214,7 +215,7 @@ func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient
 			ClientID:       spec.ClientID,
 			ClientSecret:   spec.ClientSecret,
 		}); err != nil {
-			return fmt.Errorf("invalid Azure credentials: %w", err)
+			return false, fmt.Errorf("invalid Azure credentials: %w", err)
 		}
 	}
 
@@ -226,7 +227,7 @@ func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient
 		resources.AzureClientSecret:   []byte(spec.ClientSecret),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -238,20 +239,20 @@ func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient
 	cluster.Spec.Cloud.Azure.ClientID = ""
 	cluster.Spec.Cloud.Azure.ClientSecret = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateDigitaloceanSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateDigitaloceanSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Digitalocean
 
 	// already migrated
 	if spec.Token == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := digitalocean.ValidateCredentials(ctx, spec.Token); err != nil {
-			return fmt.Errorf("invalid DigitalOcean token: %w", err)
+			return false, fmt.Errorf("invalid DigitalOcean token: %w", err)
 		}
 	}
 
@@ -260,7 +261,7 @@ func createOrUpdateDigitaloceanSecret(ctx context.Context, seedClient ctrlruntim
 		resources.DigitaloceanToken: []byte(spec.Token),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -269,20 +270,20 @@ func createOrUpdateDigitaloceanSecret(ctx context.Context, seedClient ctrlruntim
 	// clean old inline credentials
 	cluster.Spec.Cloud.Digitalocean.Token = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.GCP
 
 	// already migrated
 	if spec.ServiceAccount == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := gcp.ValidateCredentials(ctx, spec.ServiceAccount); err != nil {
-			return fmt.Errorf("invalid GCP credentials: %w", err)
+			return false, fmt.Errorf("invalid GCP credentials: %w", err)
 		}
 	}
 
@@ -291,7 +292,7 @@ func createOrUpdateGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 		resources.GCPServiceAccount: []byte(spec.ServiceAccount),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -300,20 +301,20 @@ func createOrUpdateGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 	// clean old inline credentials
 	cluster.Spec.Cloud.GCP.ServiceAccount = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Hetzner
 
 	// already migrated
 	if spec.Token == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := hetzner.ValidateCredentials(ctx, spec.Token); err != nil {
-			return fmt.Errorf("invalid Hetzner credentials: %w", err)
+			return false, fmt.Errorf("invalid Hetzner credentials: %w", err)
 		}
 	}
 
@@ -322,7 +323,7 @@ func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclie
 		resources.HetznerToken: []byte(spec.Token),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -331,21 +332,21 @@ func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclie
 	// clean old inline credentials
 	cluster.Spec.Cloud.Hetzner.Token = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Openstack
 
 	// already migrated
 	if spec.Username == "" && spec.Password == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
-		return nil
+		return false, nil
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
 	oldCred, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if spec.Project == "" {
 		spec.Project = oldCred.Project
@@ -361,7 +362,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 		t := ctx.Value(middleware.RawTokenContextKey)
 		token, ok := t.(string)
 		if !ok || token == "" {
-			return fmt.Errorf("failed to get authentication token")
+			return false, fmt.Errorf("failed to get authentication token")
 		}
 		authToken = token
 	}
@@ -380,7 +381,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 
 		dcSpec := validate.Datacenter.Spec.Openstack
 		if err := openstack.ValidateCredentials(dcSpec.AuthURL, dcSpec.Region, cred, validate.CABundle); err != nil {
-			return fmt.Errorf("invalid Openstack credentials: %w", err)
+			return false, fmt.Errorf("invalid Openstack credentials: %w", err)
 		}
 	}
 
@@ -396,7 +397,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 		resources.OpenstackToken:                       []byte(authToken),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -412,20 +413,20 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	cluster.Spec.Cloud.Openstack.ApplicationCredentialID = ""
 	cluster.Spec.Cloud.Openstack.UseToken = false
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Packet
 
 	// already migrated
 	if spec.APIKey == "" && spec.ProjectID == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := packet.ValidateCredentials(spec.APIKey, spec.ProjectID); err != nil {
-			return fmt.Errorf("invalid Equinixmetal credentials: %w", err)
+			return false, fmt.Errorf("invalid Equinixmetal credentials: %w", err)
 		}
 	}
 
@@ -435,7 +436,7 @@ func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclien
 		resources.PacketProjectID: []byte(spec.ProjectID),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -445,14 +446,14 @@ func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclien
 	cluster.Spec.Cloud.Packet.APIKey = ""
 	cluster.Spec.Cloud.Packet.ProjectID = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
 	spec := cluster.Spec.Cloud.Kubevirt
 	// already migrated
 	if spec.Kubeconfig == "" {
-		return nil
+		return false, nil
 	}
 
 	// ensure that CSI driver on user cluster will have an access to KubeVirt cluster
@@ -461,11 +462,11 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 	//   in a dedicated namespace <cluster-id>, after this namespace is reconciled.
 	r, err := kubevirt.NewReconciler(spec.Kubeconfig, cluster.Name)
 	if err != nil {
-		return err
+		return false, err
 	}
 	csiKubeconfig, err := r.ReconcileCSIServiceAccount(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// move credentials into dedicated Secret
@@ -474,7 +475,7 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 		resources.KubevirtCSIKubeConfig: csiKubeconfig,
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -483,20 +484,20 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 	// clean old inline credentials
 	cluster.Spec.Cloud.Kubevirt.Kubeconfig = ""
 
-	return nil
+	return true, nil
 }
 
-func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.VSphere
 
 	// already migrated
 	if spec.Username == "" && spec.Password == "" && spec.InfraManagementUser.Username == "" && spec.InfraManagementUser.Password == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := vsphere.ValidateCredentials(ctx, validate.Datacenter.Spec.VSphere, spec.Username, spec.Password, validate.CABundle); err != nil {
-			return fmt.Errorf("invalid VSphere credentials: %w", err)
+			return false, fmt.Errorf("invalid VSphere credentials: %w", err)
 		}
 	}
 
@@ -508,7 +509,7 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 		resources.VsphereInfraManagementUserPassword: []byte(spec.InfraManagementUser.Password),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -520,21 +521,21 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 	cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = ""
 	cluster.Spec.Cloud.VSphere.InfraManagementUser.Password = ""
 
-	return nil
+	return true, nil
 }
 
-func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Alibaba
 
 	// already migrated
 	if spec.AccessKeyID == "" && spec.AccessKeySecret == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		dcSpec := validate.Datacenter.Spec.Alibaba
 		if err := alibaba.ValidateCredentials(dcSpec.Region, spec.AccessKeyID, spec.AccessKeySecret); err != nil {
-			return fmt.Errorf("invalid Alibaba credentials: %w", err)
+			return false, fmt.Errorf("invalid Alibaba credentials: %w", err)
 		}
 	}
 
@@ -544,7 +545,7 @@ func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 		resources.AlibabaAccessKeySecret: []byte(spec.AccessKeySecret),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -554,20 +555,20 @@ func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 	cluster.Spec.Cloud.Alibaba.AccessKeyID = ""
 	cluster.Spec.Cloud.Alibaba.AccessKeySecret = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateAnexiaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateAnexiaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Anexia
 
 	// already migrated
 	if spec.Token == "" {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := anexia.ValidateCredentials(ctx, spec.Token, validate.Datacenter.Spec.Anexia.LocationID); err != nil {
-			return fmt.Errorf("invalid Anexia credentials: %w", err)
+			return false, fmt.Errorf("invalid Anexia credentials: %w", err)
 		}
 	}
 
@@ -576,7 +577,7 @@ func createOrUpdateAnexiaSecret(ctx context.Context, seedClient ctrlruntimeclien
 		resources.AnexiaToken: []byte(spec.Token),
 	})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key selectors to cluster object
@@ -585,20 +586,20 @@ func createOrUpdateAnexiaSecret(ctx context.Context, seedClient ctrlruntimeclien
 	// clean old inline credentials
 	cluster.Spec.Cloud.Anexia.Token = ""
 
-	return nil
+	return true, nil
 }
 
-func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) error {
+func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, validate *ValidateCredentials) (bool, error) {
 	spec := cluster.Spec.Cloud.Nutanix
 
 	// already migrated
 	if spec.Username == "" && spec.Password == "" && spec.ProxyURL == "" && (spec.CSI == nil || (spec.CSI.Username == "" && spec.CSI.Password == "")) {
-		return nil
+		return false, nil
 	}
 
 	if validate != nil {
 		if err := nutanix.ValidateCredentials(ctx, validate.Datacenter.Spec.Nutanix.Endpoint, validate.Datacenter.Spec.Nutanix.Port, &validate.Datacenter.Spec.Nutanix.AllowInsecure, spec.ProxyURL, spec.Username, spec.Password); err != nil {
-			return fmt.Errorf("invalid Nutanix credentials: %w", err)
+			return false, fmt.Errorf("invalid Nutanix credentials: %w", err)
 		}
 	}
 
@@ -626,13 +627,13 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, secretData)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// add secret key reference to cluster object
 	cluster.Spec.Cloud.Nutanix.CredentialsReference = credentialRef
 
-	return nil
+	return true, nil
 }
 
 func GetKubeOneNameSpaceName(externalClusterName string) string {

@@ -39,6 +39,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -276,7 +277,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount)
+	userProvider := kubernetes.NewUserProvider(fakeClient)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
 	settingsProvider := kubernetes.NewSettingsProvider(fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
@@ -290,7 +291,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
 		return nil, nil, err
@@ -300,7 +301,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	{
 		// if the API users is actually a service account use JWTTokenAuthentication
 		// that knows how to extract and verify the token
-		if strings.HasPrefix(user.Email, "serviceaccount-") {
+		if kubermaticv1helper.IsProjectServiceAccount(user.Email) {
 			saExtractorVerifier := auth.NewServiceAccountAuthClient(
 				auth.NewHeaderBearerTokenExtractor("Authorization"),
 				serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)),
@@ -836,19 +837,14 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 
 // GenInactiveProjectServiceAccount generates a Service Account resource.
 func GenInactiveProjectServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
-	user := GenUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
-	user.OwnerReferences = []metav1.OwnerReference{
-		{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.ProjectKindName,
-			Name:       projectName,
-			UID:        types.UID(id),
-		},
-	}
-	user.Spec.ID = id
-	user.Name = fmt.Sprintf("serviceaccount-%s", id)
+	userName := kubermaticv1helper.EnsureProjectServiceAccountPrefix(id)
+
+	user := GenUser(id, name, fmt.Sprintf("%s@sa.kubermatic.io", userName))
+	user.Name = userName
 	user.UID = ""
+	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
+	user.Spec.ID = id
+	user.Spec.Project = projectName
 
 	return user
 }
@@ -857,17 +853,6 @@ func GenProjectServiceAccount(id, name, group, projectName string) *kubermaticv1
 	sa := GenInactiveProjectServiceAccount(id, name, group, projectName)
 	sa.Labels = map[string]string{}
 	return sa
-}
-
-func GenMainServiceAccount(id, name, group, ownerEmail string) *kubermaticv1.User {
-	user := GenUser(id, name, fmt.Sprintf("main-serviceaccount-%s@sa.kubermatic.io", id))
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: group}
-	user.Annotations = map[string]string{kubernetes.ServiceAccountAnnotationOwner: ownerEmail}
-
-	user.Spec.ID = id
-	user.Name = fmt.Sprintf("main-serviceaccount-%s", id)
-	user.UID = ""
-	return user
 }
 
 // GenAPIUser generates a API user.
@@ -1888,10 +1873,7 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 			RuleGroupType: ruleGroupType,
 			IsDefault:     isDefault,
 			Cluster: corev1.ObjectReference{
-				Kind:       kubermaticv1.ClusterKindName,
-				Namespace:  "",
-				Name:       clusterName,
-				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Name: clusterName,
 			},
 			Data: GenerateTestRuleGroupData(name),
 		},
@@ -1910,10 +1892,8 @@ func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGr
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroupType,
-			Cluster: corev1.ObjectReference{
-				Kind: kubermaticv1.ClusterKindName,
-			},
-			Data: GenerateTestRuleGroupData(name),
+			Cluster:       corev1.ObjectReference{},
+			Data:          GenerateTestRuleGroupData(name),
 		},
 	}
 }

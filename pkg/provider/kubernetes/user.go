@@ -27,6 +27,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -43,19 +44,15 @@ type blacklistToken struct {
 }
 
 // NewUserProvider returns a user provider.
-func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool) *UserProvider {
+func NewUserProvider(runtimeClient ctrlruntimeclient.Client) *UserProvider {
 	return &UserProvider{
-		runtimeClient:        runtimeClient,
-		isServiceAccountFunc: isServiceAccountFunc,
+		runtimeClient: runtimeClient,
 	}
 }
 
 // UserProvider manages user resources.
 type UserProvider struct {
 	runtimeClient ctrlruntimeclient.Client
-	// since service account are special type of user this functions
-	// helps to determine if the given email address belongs to a service account
-	isServiceAccountFunc func(email string) bool
 }
 
 var _ provider.UserProvider = &UserProvider{}
@@ -99,7 +96,7 @@ func (p *UserProvider) CreateUser(ctx context.Context, id, name, email string) (
 		return nil, kerrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
 	}
 
-	if p.isServiceAccountFunc(email) {
+	if kubermaticv1helper.IsProjectServiceAccount(email) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
 	}
 

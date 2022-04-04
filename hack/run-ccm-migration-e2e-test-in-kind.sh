@@ -23,275 +23,68 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-function generate_secret {
-  cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
-  echo ''
-}
+export GIT_HEAD_HASH="$(git rev-parse HEAD)"
+export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 
-DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
-GOOS="${GOOS:-linux}"
-TAG="$(git rev-parse HEAD)"
-KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_PORT="${KIND_PORT-31000}"
-USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.7}"
-USER_CLUSTER_NAME="${USER_CLUSTER_NAME-$(head -3 /dev/urandom | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' | cut -c -10)}"
-API_SERVER_NODEPORT_MANIFEST="${API_SERVER_NODEPORT_MANIFEST-apiserver_nodeport.yaml}"
-KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
+TEST_NAME="Pre-warm Go build cache"
+echodate "Attempting to pre-warm Go build cache"
 
-REPOSUFFIX=""
-if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
-  REPOSUFFIX="-${KUBERMATIC_EDITION}"
-fi
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
-type kind > /dev/null || fatal \
-  "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
+echodate "Creating kind cluster"
+export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+source hack/ci/setup-kind-cluster.sh
 
-function clean_up {
-  echodate "Deleting cluster ${KIND_CLUSTER_NAME}"
-  kind delete cluster --name "${KIND_CLUSTER_NAME}" || true
-}
-appendTrap clean_up EXIT
+echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 
-# Only start docker daemon in CI envorinment.
-if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-  start_docker_daemon_ci
-fi
+beforeKubermaticSetup=$(nowms)
+source hack/ci/setup-kubermatic-in-kind.sh
+pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
-cat << EOF > kind-config.yaml
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: ${KIND_PORT}
-    hostPort: 6443
-    protocol: TCP
-EOF
-
-# setup Kind cluster
-time retry 5 kind create cluster \
-  --name="${KIND_CLUSTER_NAME}" \
-  --config=kind-config.yaml
-kind export kubeconfig --name=${KIND_CLUSTER_NAME}
-
-# build Docker images
-make clean
-make docker-build \
-  GOOS="${GOOS}" \
-  DOCKER_REPO="${DOCKER_REPO}" \
-  TAGS="${TAG}"
-make -C cmd/nodeport-proxy docker \
-  GOOS="${GOOS}" \
-  DOCKER_REPO="${DOCKER_REPO}" \
-  TAG="${TAG}"
-make -C cmd/kubeletdnat-controller docker \
-  GOOS="${GOOS}" \
-  DOCKER_REPO="${DOCKER_REPO}" \
-  TAG="${TAG}"
-make -C cmd/user-ssh-keys-agent docker \
-  GOOS="${GOOS}" \
-  DOCKER_REPO="${DOCKER_REPO}" \
-  TAG="${TAG}"
-make -C addons docker \
-  DOCKER_REPO="${DOCKER_REPO}" \
-  TAG="${TAG}"
-# the installer should be built for the target platform.
-rm _build/kubermatic-installer
-make _build/kubermatic-installer
-
-time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" --name "${KIND_CLUSTER_NAME}"
-
-# This is just used as a const
-# NB: The CE requires Seeds to be named this way
-export SEED_NAME=kubermatic
-
-# Tell the conformance tester what dummy account we configure for the e2e tests.
-export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
-export KUBERMATIC_OIDC_PASSWORD="password"
-
-# Build binaries and load the Docker images into the kind cluster
-echodate "Building binaries for ${TAG}"
-TEST_NAME="Build Kubermatic binaries"
-
-echodate "Successfully built and loaded all images"
-
-TMPDIR="$(mktemp -d -t k8c-XXXXXXXXXX)"
-echo "Config dir: ${TMPDIR}"
-# prepare to run kubermatic-installer
-KUBERMATIC_CONFIG="${TMPDIR}/kubermatic.yaml"
-
-cat << EOF > ${KUBERMATIC_CONFIG}
-apiVersion: kubermatic.k8c.io/v1
-kind: KubermaticConfiguration
-metadata:
-  name: e2e
-  namespace: kubermatic
-spec:
-  ingress:
-    domain: 127.0.0.1.nip.io
-    disable: true
-  userCluster:
-    apiserverReplicas: 1
-  api:
-    replicas: 0
-    debugLog: true
-  featureGates:
-    TunnelingExposeStrategy: true
-  ui:
-    replicas: 0
-  # Dex integration
-  auth:
-    #tokenIssuer: "http://dex.oauth:5556/dex"
-    #issuerRedirectURL: "http://localhost:8000"
-    tokenIssuer: "https://127.0.0.1.nip.io/dex"
-    serviceAccountKey: "$(generate_secret)"
-EOF
-
-HELM_VALUES_FILE="${TMPDIR}/values.yaml"
-cat << EOF > ${HELM_VALUES_FILE}
-dex:
-  replicas: 0
-kubermaticOperator:
-  image:
-    repository: "quay.io/kubermatic/kubermatic${REPOSUFFIX}"
-    tag: "${TAG}"
-EOF
-
-# install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy --disable-telemetry \
-  --storageclass copy-default \
-  --config "${KUBERMATIC_CONFIG}" \
-  --kubeconfig "${KUBECONFIG}" \
-  --helm-values "${HELM_VALUES_FILE}"
-
-# TODO: The installer should wait for everything to finish reconciling.
-#echodate "Waiting for Kubermatic Operator to deploy Master components..."
-# sleep a bit to prevent us from checking the Deployments too early, before
-# the operator had time to reconcile
-sleep 5
-retry 10 check_all_deployments_ready kubermatic
-
-echodate "Finished installing Kubermatic"
-
-echodate "Installing Seed..."
-SEED_MANIFEST="${TMPDIR}/seed.yaml"
-
-SEED_KUBECONFIG="$(cat ${KUBECONFIG} | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
-
-cat << EOF > ${SEED_MANIFEST}
-kind: Secret
-apiVersion: v1
-metadata:
-  name: "${SEED_NAME}-kubeconfig"
-  namespace: kubermatic
-data:
-  kubeconfig: "${SEED_KUBECONFIG}"
-
----
-kind: Seed
-apiVersion: kubermatic.k8c.io/v1
-metadata:
-  name: "${SEED_NAME}"
-  namespace: kubermatic
-spec:
-  country: Germany
-  location: Hamburg
-  kubeconfig:
-    name: "${SEED_NAME}-kubeconfig"
-    namespace: kubermatic
-    fieldPath: kubeconfig
-  datacenters:
-    syseleven-dbl1:
-      country: DE
-      location: Syseleven - dbl1
-      node: {}
-      spec:
-        openstack:
-          authURL: https://api.cbk.cloud.syseleven.net:5000/v3
-          availabilityZone: dbl1
-          dnsServers:
-          - 37.123.105.116
-          - 37.123.105.117
-          enabledFlavors: null
-          enforceFloatingIP: true
-          ignoreVolumeAZ: false
-          images:
-            centos: kubermatic-e2e-centos
-            coreos: kubermatic-e2e-coreos
-            flatcar: flatcar
-            ubuntu: kubermatic-e2e-ubuntu
-          manageSecurityGroups: null
-          nodeSizeRequirements:
-            minimumMemory: 0
-            minimumVCPUs: 0
-          region: dbl
-          trustDevicePath: null
-          useOctavia: null
-  exposeStrategy: Tunneling
-EOF
-
-retry 3 kubectl apply -f $SEED_MANIFEST
-echodate "Finished installing Seed"
-
-sleep 5
-echodate "Waiting for Kubermatic Operator to deploy Seed components..."
-retry 8 check_all_deployments_ready kubermatic
-echodate "Kubermatic Seed is ready."
-
-cat << EOF > "${API_SERVER_NODEPORT_MANIFEST}"
-apiVersion: v1
-kind: Service
-metadata:
-  name: apiserver-external-nodeport
-  namespace: cluster-${USER_CLUSTER_NAME}
-spec:
-  ports:
-  - name: secure
-    port: 6443
-    protocol: TCP
-    nodePort: ${KIND_PORT}
-  selector:
-    app: apiserver
-  type: NodePort
-EOF
-
-time retry 10 kubectl apply -f "${API_SERVER_NODEPORT_MANIFEST}" &
-
-EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-project=${OS_TENANT_NAME}
+export PROVIDER_TO_TEST="${PROVIDER}"
+if [[ "$PROVIDER_TO_TEST" == "openstack" ]]; then
+  export EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
+    -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
     -openstack-auth-url=${OS_AUTH_URL}
     -openstack-region=${OS_REGION}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
-    -openstack-network=${OS_NETWORK_NAME}"
+    -openstack-network=${OS_NETWORK_NAME}
+    -openstack-seed-datacenter=syseleven-dbl1
+    "
+fi
 
-# delete userclusters when ending the test
-appendTrap cleanup_kubermatic_clusters_in_kind EXIT
+if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
+  export EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
+    -vsphere-datacenter=dc-1
+    -vsphere-cluster=cl-1
+    -vsphere-auth-url=${VSPHERE_E2E_ADDRESS}
+    -vsphere-username=${VSPHERE_E2E_USERNAME}
+    -vsphere-password=${VSPHERE_E2E_PASSWORD}
+    "
+fi
 
 # run tests
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
 if [ -x "$(command -v ginkgo)" ]; then
-  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
+  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
     -r \
     --randomizeAllSpecs \
     --randomizeSuites \
     --failOnPending \
+    --timeout=30m \
     --cover \
     --trace \
     --race \
     --progress \
     -v \
     -- --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
-    --user-cluster-name="${USER_CLUSTER_NAME}" \
-    --datacenter="${OS_DATACENTER}" $EXTRA_ARGS
+    --provider "${PROVIDER_TO_TEST}"
 else
   CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
@@ -299,9 +92,8 @@ else
     --ginkgo.trace \
     --ginkgo.progress \
     --ginkgo.v \
+    --timeout=30m \
     --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
-    --user-cluster-name="${USER_CLUSTER_NAME}" \
-    --datacenter="${OS_DATACENTER}"
+    --provider "${PROVIDER_TO_TEST}"
 fi

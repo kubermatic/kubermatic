@@ -745,11 +745,7 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 }
 
 func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
-	supportedContainerRuntimes := map[string]struct{}{
-		"docker":     {},
-		"containerd": {},
-	}
-	if _, isSupported := supportedContainerRuntimes[spec.ContainerRuntime]; !isSupported {
+	if !sets.NewString("docker", "containerd").Has(spec.ContainerRuntime) {
 		return fmt.Errorf("container runtime not supported: %s", spec.ContainerRuntime)
 	}
 

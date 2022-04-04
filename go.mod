@@ -34,6 +34,7 @@ require (
 	github.com/go-openapi/validate v0.20.3
 	github.com/go-swagger/go-swagger v0.29.0
 	github.com/go-test/deep v1.0.7
+	github.com/gobuffalo/flect v0.2.3
 	github.com/google/go-cmp v0.5.6
 	github.com/gophercloud/gophercloud v0.24.0
 	github.com/gorilla/handlers v1.5.1
@@ -43,7 +44,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.33.1
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.7.1
-	github.com/kubermatic/grafanasdk v0.9.11
+	github.com/kubermatic/grafanasdk v0.9.12
 	github.com/kubermatic/machine-controller v1.43.0
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.5
@@ -89,6 +90,7 @@ require (
 	k8s.io/code-generator v0.23.4
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.23.4
+	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
 	k8s.io/kubectl v0.23.4
 	k8s.io/metrics v0.23.4
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
@@ -171,7 +173,6 @@ require (
 	github.com/go-openapi/loads v0.21.0 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/gobuffalo/flect v0.2.3 // indirect
 	github.com/gofrs/flock v0.8.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
@@ -279,7 +280,6 @@ require (
 	k8s.io/component-base v0.23.4 // indirect
 	k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/kubelet v0.22.2 // indirect
 	kubevirt.io/containerized-data-importer-api v1.41.1-0.20211201033752-05520fb9f18d // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk v0.2.1 // indirect

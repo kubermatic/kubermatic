@@ -614,6 +614,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets").
 		Handler(r.listNutanixSubnetsNoCredentials())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories").
+		Handler(r.listNutanixCategoriesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values").
+		Handler(r.listNutanixCategoryValuesNoCredentials())
+
 	// Defines a set of kubernetes-dashboard-specific endpoints
 	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
 		Handler(r.kubernetesDashboardProxy())
@@ -655,6 +663,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/nutanix/{dc}/subnets").
 		Handler(r.listNutanixSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/categories").
+		Handler(r.listNutanixCategories())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/categories/{category}/values").
+		Handler(r.listNutanixCategoryValues())
 
 	// Define a set of endpoints for preset management
 	mux.Methods(http.MethodGet).
@@ -3726,6 +3742,54 @@ func (r Routing) listNutanixSubnetsNoCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories nutanix listNutanixCategoriesNoCredentials
+//
+// Lists available Nutanix categories
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NutanixCategoryList
+func (r Routing) listNutanixCategoriesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.NutanixCategoriesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values nutanix listNutanixCategoryValuesNoCredentials
+//
+// Lists available Nutanix category values for a specific category
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NutanixCategoryValueList
+func (r Routing) listNutanixCategoryValuesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.NutanixCategoryValuesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCategoryValuesNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy
 //
 //    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
@@ -3945,6 +4009,50 @@ func (r Routing) listNutanixSubnets() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.NutanixSubnetEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeNutanixSubnetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/categories nutanix listNutanixCategories
+//
+// List category keys from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixCategoryList
+func (r Routing) listNutanixCategories() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixCategoryEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/categories/{category}/values nutanix listNutanixCategoryValues
+//
+// List available category values for a specific category from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixCategoryValueList
+func (r Routing) listNutanixCategoryValues() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixCategoryValuesEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCategoryValueReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

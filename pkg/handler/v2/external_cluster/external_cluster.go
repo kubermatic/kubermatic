@@ -551,7 +551,12 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	}
 }
 
-func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	clusterProvider provider.ExternalClusterProvider,
+	privilegedClusterProvider provider.PrivilegedExternalClusterProvider,
+	settingsProvider provider.SettingsProvider,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
 			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
@@ -570,49 +575,69 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		clusterToPatch := convertClusterToAPI(cluster)
 
 		version, err := clusterProvider.GetVersion(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-
-		clusterToPatch := convertClusterToAPI(cluster)
 		clusterToPatch.Spec = apiv2.ExternalClusterSpec{
 			Version: *version,
 		}
 
-		existingClusterJSON, err := json.Marshal(clusterToPatch)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
-		}
-		patchedClusterJSON, err := jsonpatch.MergePatch(existingClusterJSON, req.Patch)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
-		}
-		var patchedCluster *apiv2.ExternalCluster
-		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
-		}
 		cloud := cluster.Spec.CloudSpec
 		if cloud != nil {
 			secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+			patchedCluster := &apiv2.ExternalCluster{}
 
 			if cloud.GKE != nil {
+				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+					return nil, err
+				}
 				return patchGKECluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.GKE.CredentialsReference)
 			}
 			if cloud.EKS != nil {
+				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+					return nil, err
+				}
 				return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 			if cloud.AKS != nil {
+				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+					return nil, err
+				}
 				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 			if cloud.KubeOne != nil {
-				return patchKubeOneCluster(ctx, cluster, patchedCluster, req.UpgradeMD, secretKeySelector, privilegedClusterProvider.GetMasterClient())
+				containerRuntime, err := checkContainerRuntime(ctx, cluster, clusterProvider)
+				if err != nil {
+					return nil, err
+				}
+				clusterToPatch.Cloud.KubeOne.ContainerRuntime = containerRuntime
+				if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
+					return nil, err
+				}
+				return patchKubeOneCluster(ctx, cluster, clusterToPatch, patchedCluster, secretKeySelector, clusterProvider, privilegedClusterProvider.GetMasterClient())
 			}
 		}
 		return convertClusterToAPI(cluster), nil
 	}
+}
+
+func patchCluster(clusterToPatch, patchedCluster *apiv2.ExternalCluster, patchJson json.RawMessage) error {
+	existingClusterJSON, err := json.Marshal(clusterToPatch)
+	if err != nil {
+		return errors.NewBadRequest("cannot decode existing cluster: %v", err)
+	}
+	patchedClusterJSON, err := jsonpatch.MergePatch(existingClusterJSON, patchJson)
+	if err != nil {
+		return errors.NewBadRequest("cannot patch cluster: %v, %v", err, patchJson)
+	}
+	err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
+	if err != nil {
+		return errors.NewBadRequest("cannot decode patched cluster: %v", err)
+	}
+	return nil
 }
 
 // patchClusterReq defines HTTP request for patchExternalCluster
@@ -624,11 +649,6 @@ type patchClusterReq struct {
 	ClusterID string `json:"cluster_id"`
 	// in: body
 	Patch json.RawMessage
-	// in: header
-	// This field is specific to kubeone
-	// UpgradeMD: true, Upgrade control plane + all node pools
-	// UpgradeMD: false, control plane only
-	UpgradeMD string
 }
 
 // Validate validates CreateEndpoint request.
@@ -656,7 +676,6 @@ func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.ClusterID = clusterID
-	req.UpgradeMD = r.Header.Get("UpgradeMD")
 
 	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
@@ -944,7 +963,6 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 		Labels: internalCluster.Labels,
 	}
 	cloud := internalCluster.Spec.CloudSpec
-
 	if cloud != nil {
 		cluster.Cloud = &apiv2.ExternalClusterCloudSpec{}
 		if cloud.EKS != nil {
@@ -964,6 +982,9 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 				Name:          cloud.AKS.Name,
 				ResourceGroup: cloud.AKS.ResourceGroup,
 			}
+		}
+		if cloud.KubeOne != nil {
+			cluster.Cloud.KubeOne = &apiv2.KubeOneSpec{}
 		}
 	}
 

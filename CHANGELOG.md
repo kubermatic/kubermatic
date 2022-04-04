@@ -1,5 +1,20 @@
 # Kubermatic 2.20
 
+## [v2.20.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.1)
+
+This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
+
+To replace a member in case of data consistency issues, please:
+
+- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.20/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
+- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.20/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
+
+Please be aware we do not recommend enabling `etcd-launcher` on existing Kubernetes 1.22 environments at the time. This is due to the fact that the migration to `etcd-launcher` requires several etcd restarts and we currently recommend keeping the etcd ring as stable as possible (apart from the restarts triggered by this patch release to roll out the consistency checks).
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9480](https://github.com/kubermatic/kubermatic/issues/9480))
+
 ## [v2.20.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.0)
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.20/tutorials_howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
@@ -71,6 +86,38 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 
 # Kubermatic 2.19
+
+## [v2.19.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.4)
+
+This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
+
+To replace a member in case of data consistency issues, please:
+
+- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.19/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
+- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.19/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
+
+Please be aware we do not recommend enabling `etcd-launcher` on existing Kubernetes 1.22 environments at the time. This is due to the fact that the migration to `etcd-launcher` requires several etcd restarts and we currently recommend keeping the etcd ring as stable as possible (apart from the restarts triggered by this patch release to roll out the consistency checks).
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9477](https://github.com/kubermatic/kubermatic/issues/9477))
+
+## [v2.19.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.3)
+
+### Breaking Changes
+- ACTION REQUIRED: Secret name for S3 credentials updated to `kubermatic-s3-credentials`. If the secret `s3-credentials` was manually created instead of using the `minio` helm chart, new secret `kubermatic-s3-credentials` must be created. ([#9230](https://github.com/kubermatic/kubermatic/pull/9230))
+
+### Bugfixes
+- Fix LoadBalancer expose strategy for LBs with external DNS names instead of IPs ([#9105](https://github.com/kubermatic/kubermatic/pull/9105))
+- `image-loader` parses custom versions in KubermaticConfiguration configuration files correctly ([#9154](https://github.com/kubermatic/kubermatic/pull/9154))
+- Fix OpenVPNServerDown alerting rule to work as expected and not fire if Konnectivity is enabled. ([#9216](https://github.com/kubermatic/kubermatic/pull/9216))
+- Fixes Preset API Body for preset creation and update API calls. ([#9300](https://github.com/kubermatic/kubermatic/pull/9300))
+- Fix wrong CPU configs for the KubeVirt Virtual Machine Instances ([#1203](https://github.com/kubermatic/machine-controller/pull/1203))
+- Fix vSphere VolumeAttachment cleanups during cluster deletion or node draining ([#1190](https://github.com/kubermatic/machine-controller/pull/1190))
+
+### Misc
+- Upgrade machine controller to v1.42.5 ([#9440](https://github.com/kubermatic/kubermatic/pull/9440)) 
+- Support for `network:ha_router_replicated_interface` ports when discovering existing subnet router in Openstack ([#9176](https://github.com/kubermatic/kubermatic/pull/9176))
 
 ## [v2.19.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.2)
 
@@ -395,6 +442,21 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Incompatibilty between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
 
 # Kubermatic 2.18
+
+## [v2.18.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.9)
+
+This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
+
+To replace a member in case of data consistency issues, please:
+
+- Follow our documentation for [replacing an etcd member](https://docs.kubermatic.com/kubermatic/v2.18/cheat_sheets/etcd/replace_a_member/) if you are **not running etcd-launcher**.
+- Delete the `PersistentVolume` that backs the corrupted etcd member to trigger the [automated recovery procedure](https://docs.kubermatic.com/kubermatic/v2.18/cheat_sheets/etcd/etcd-launcher/#automated-persistent-volume-recovery) if you **are using etcd-launcher**.
+
+Please be aware we do not recommend enabling `etcd-launcher` on existing Kubernetes 1.22 environments at the time. This is due to the fact that the migration to `etcd-launcher` requires several etcd restarts and we currently recommend keeping the etcd ring as stable as possible (apart from the restarts triggered by this patch release to roll out the consistency checks).
+
+### Misc
+
+- For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9477](https://github.com/kubermatic/kubermatic/issues/9477))
 
 ## [v2.18.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.8)
 

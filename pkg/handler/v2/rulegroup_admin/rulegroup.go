@@ -164,10 +164,8 @@ func convertAPIToInternalRuleGroup(ruleGroup *apiv2.RuleGroup, ruleGroupID strin
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroup.Type,
-			Cluster: corev1.ObjectReference{
-				Kind: kubermaticv1.ClusterKindName,
-			},
-			Data: ruleGroup.Data,
+			Cluster:       corev1.ObjectReference{},
+			Data:          ruleGroup.Data,
 			// all rule group created here should be default
 			IsDefault: true,
 		},

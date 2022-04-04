@@ -38,6 +38,7 @@ var systemLabels apiv1.ResourceLabelMap = map[apiv1.ResourceType]apiv1.LabelKeyL
 	ClusterResourceType: {
 		kubermaticv1.WorkerNameLabelKey,
 		kubermaticv1.ProjectIDLabelKey,
+		kubermaticv1.IsCredentialPresetLabelKey,
 	},
 	NodeDeploymentResourceType: {},
 }

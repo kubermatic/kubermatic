@@ -29,11 +29,11 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,7 +67,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 
 		userEmail := user.Spec.Email
-		if kubernetes.IsProjectServiceAccount(userEmail) {
+		if kubermaticv1helper.IsProjectServiceAccount(userEmail) {
 			return createProjectByServiceAccount(ctx, userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
 		}
 
@@ -108,7 +108,7 @@ func createProjectByServiceAccount(ctx context.Context, saEmail string, projectR
 	}
 
 	for _, userEmail := range projectReq.Body.Users {
-		if kubernetes.IsProjectServiceAccount(userEmail) {
+		if kubermaticv1helper.IsProjectServiceAccount(userEmail) {
 			return nil, kubermaticerrors.New(http.StatusBadRequest, "user email list should contain only human users")
 		}
 		humanUserOwner, err := userProvider.UserByEmail(ctx, userEmail)

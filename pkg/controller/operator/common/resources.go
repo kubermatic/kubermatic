@@ -49,8 +49,11 @@ const (
 	// ClusterWebhookServiceName is deprecated and only exists to facilitate cleanup by the operator.
 	ClusterWebhookServiceName = "cluster-webhook"
 
-	// UserSSHKeyAdmissionWebhookName is the name of the mutation webhook for UserSSHKeys.
+	// UserSSHKeyAdmissionWebhookName is the name of the validating and mutation webhooks for UserSSHKeys.
 	UserSSHKeyAdmissionWebhookName = "kubermatic-usersshkeys"
+
+	// UserAdmissionWebhookName is the name of the validating webhook for Users.
+	UserAdmissionWebhookName = "kubermatic-users"
 
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks
 	// run in the same controller manager so it's much easier if they all use the

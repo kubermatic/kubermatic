@@ -455,6 +455,28 @@ type NutanixSubnet struct {
 // swagger:model NutanixSubnetList
 type NutanixSubnetList []NutanixSubnet
 
+// NutanixCategoryList represents an array of Nutanix categories.
+// swagger:model NutanixCategoryList
+type NutanixCategoryList []NutanixCategory
+
+// NutanixCategory represents a Nutanix category.
+// swagger:model NutanixCategory
+type NutanixCategory struct {
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	SystemDefined bool   `json:"systemDefined"`
+}
+
+// NutanixCategoryValueList represents an array of Nutanix category values.
+// swagger:model NutanixCategoryValueList
+type NutanixCategoryValueList []NutanixCategoryValue
+
+// NutanixCategoryValue represents a Nutanix category value.
+// swagger:model NutanixCategoryValue
+type NutanixCategoryValue struct {
+	Value string `json:"value"`
+}
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {

@@ -328,7 +328,7 @@ func WebhookServingCASecretCreator(cfg *kubermaticv1.KubermaticConfiguration) re
 	}
 }
 
-func WebhookServingCertSecretCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
+func WebhookServingCertSecretCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
 	altNames := []string{
 		fmt.Sprintf("%s.%s", WebhookServiceName, cfg.Namespace),
 		fmt.Sprintf("%s.%s.svc", WebhookServiceName, cfg.Namespace),
@@ -341,7 +341,7 @@ func WebhookServingCertSecretCreator(cfg *kubermaticv1.KubermaticConfiguration, 
 			Name:      WebhookServingCASecretName,
 		}
 
-		if err := client.Get(context.Background(), key, &se); err != nil {
+		if err := client.Get(ctx, key, &se); err != nil {
 			return nil, fmt.Errorf("CA certificate could not be retrieved: %w", err)
 		}
 
@@ -360,7 +360,7 @@ func SeedAdmissionWebhookName(cfg *kubermaticv1.KubermaticConfiguration) string 
 	return fmt.Sprintf("kubermatic-seeds-%s", cfg.Namespace)
 }
 
-func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func SeedAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -368,7 +368,7 @@ func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, clie
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.AllScopes
 
-			ca, err := WebhookCABundle(cfg, client)
+			ca, err := WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhhook CA bundle: %w", err)
 			}
@@ -421,7 +421,7 @@ func KubermaticConfigurationAdmissionWebhookName(cfg *kubermaticv1.KubermaticCon
 	return fmt.Sprintf("kubermatic-configuration-%s", cfg.Namespace)
 }
 
-func KubermaticConfigurationAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func KubermaticConfigurationAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return KubermaticConfigurationAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -429,7 +429,7 @@ func KubermaticConfigurationAdmissionWebhookCreator(cfg *kubermaticv1.Kubermatic
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.AllScopes
 
-			ca, err := WebhookCABundle(cfg, client)
+			ca, err := WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhhook CA bundle: %w", err)
 			}
@@ -499,14 +499,14 @@ func WebhookServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctr
 	}
 }
 
-func WebhookCABundle(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
+func WebhookCABundle(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
 	secret := corev1.Secret{}
 	key := types.NamespacedName{
 		Name:      WebhookServingCASecretName,
 		Namespace: cfg.Namespace,
 	}
 
-	err := client.Get(context.Background(), key, &secret)
+	err := client.Get(ctx, key, &secret)
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve admission webhook CA Secret %s: %w", WebhookServingCASecretName, err)
 	}

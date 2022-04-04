@@ -24,8 +24,8 @@ import (
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -77,7 +77,7 @@ func Add(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for UserProjectBinding of service account.
 		userProjectBinding := object.(*kubermaticv1.UserProjectBinding)
-		return !kubernetes.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail)
+		return !kubermaticv1helper.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail)
 	})
 
 	if err := c.Watch(
@@ -171,7 +171,7 @@ func enqueueUserProjectBindingsForSeed(client ctrlruntimeclient.Client, log *zap
 		}
 		for _, userProjectBinding := range userProjectBindingList.Items {
 			// We don't trigger reconciliation for UserProjectBinding of service account.
-			if !kubernetes.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail) {
+			if !kubermaticv1helper.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail) {
 				requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
 					Name: userProjectBinding.Name,
 				}})

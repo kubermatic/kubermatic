@@ -18,6 +18,7 @@ package test
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
@@ -25,23 +26,27 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func CreateProject(name string, owner *kubermaticv1.User) *kubermaticv1.Project {
+func CreateProject(name string, owners ...*kubermaticv1.User) *kubermaticv1.Project {
+	refs := []metav1.OwnerReference{}
+
+	for _, owner := range owners {
+		refs = append(refs, metav1.OwnerReference{
+			APIVersion: owner.APIVersion,
+			Kind:       owner.Kind,
+			UID:        owner.GetUID(),
+			Name:       owner.Name,
+		})
+	}
+
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       kubermaticv1.ProjectKindName,
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			UID:  types.UID(name) + "ID",
-			Name: name,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: owner.APIVersion,
-					Kind:       owner.Kind,
-					UID:        owner.GetUID(),
-					Name:       owner.Name,
-				},
-			},
+			UID:             types.UID(name) + "ID",
+			Name:            name,
+			OwnerReferences: refs,
 			ResourceVersion: "1",
 		},
 		Spec: kubermaticv1.ProjectSpec{
@@ -69,19 +74,11 @@ func CreateUser(name string) *kubermaticv1.User {
 	}
 }
 
-func CreateExpectedBindingFor(userName string, userGroup string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+func createExpectedBindingFor(userName string, userGroup string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
 	user := CreateUser(userName)
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("binding-for-%s", userName),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
+			Name: fmt.Sprintf("binding-for-%s", strings.ReplaceAll(userName, " ", "-")),
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: user.Spec.Email,
@@ -92,9 +89,9 @@ func CreateExpectedBindingFor(userName string, userGroup string, project *kuberm
 }
 
 func CreateExpectedOwnerBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	return CreateExpectedBindingFor(userName, "owners", project)
+	return createExpectedBindingFor(userName, "owners", project)
 }
 
 func CreateExpectedEditorBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	return CreateExpectedBindingFor(userName, "editors", project)
+	return createExpectedBindingFor(userName, "editors", project)
 }

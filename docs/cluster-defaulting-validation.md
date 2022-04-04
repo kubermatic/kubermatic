@@ -55,6 +55,61 @@ Validation now means that we have a single set of validation rules that we use f
 codebase. We do make a distinction between "validation NEW clusters" and "validate cluster updates", so
 we can ensure immutability for certain fields.
 
+### Open-API Validation
+
+In order to combine your custom validation code with [kubebuilder markers](https://book.kubebuilder.io/reference/markers/crd-validation.html) from the CRD, the generic `openapi` package can be used. It will automatically create a validator for your object against the corresponding CRD.
+
+When creating a new CRD, it is important to run `update-codegen.sh` once before developing. This is required as the openapi package needs a generated version of your CRD before it supports that type.
+
+#### Validating Whole Objects
+
+The openapi package can be easily integrated into your custom validation funcs. Here is an example for the ApplicationDefinition Type:
+
+```Go
+import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/validation/openapi"
+	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+)
+
+func ValidateApplicationDefinition(ad *kubermaticv1.ApplicationDefinition) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	v, _ := openapi.ValidatorForType(&ad.TypeMeta)
+	allErrs = append(allErrs, validation.ValidateCustomResource(nil, ad, v)...)
+
+	// your custom validation code
+	// ...
+	
+	return allErrs
+```
+
+#### Validating Child Elements
+
+Validating child elements is a bit more tricky, because openapi can only validate starting from the root element. In these cases we need to wrap the child first and later strip out the results that do not match. Here is an example for `Cluster.Spec`:
+
+```Go
+func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, ...) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	cwrap := &kubermaticv1.Cluster{}
+	cwrap.Spec = *spec
+	v, _ := openapi.ValidatorForType(&cwrap.TypeMeta)
+
+	res := validation.ValidateCustomResource(nil, cwrap, v)
+	for _, e := range res {
+		if strings.HasPrefix(e.Field, "spec") {
+			allErrs = append(allErrs, e)
+		}
+	}
+
+	// your custom validation code
+	// ...
+	
+	return allErrs
+```
+
 ## KKP API
 
 The KKP API does something funky: During cluster creation, it will create a `ClusterSpec` and then run the
