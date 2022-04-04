@@ -40,7 +40,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic preset on the master cluster to the seed clusters.
-	ControllerName = "preset_syncing_controller"
+	ControllerName = "kkp-preset-synchronizer"
 )
 
 type reconciler struct {
