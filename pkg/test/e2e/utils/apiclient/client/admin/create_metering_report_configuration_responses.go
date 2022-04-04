@@ -68,7 +68,7 @@ type CreateMeteringReportConfigurationCreated struct {
 }
 
 func (o *CreateMeteringReportConfigurationCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports][%d] createMeteringReportConfigurationCreated ", 201)
+	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports/{name}][%d] createMeteringReportConfigurationCreated ", 201)
 }
 
 func (o *CreateMeteringReportConfigurationCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -89,7 +89,7 @@ type CreateMeteringReportConfigurationUnauthorized struct {
 }
 
 func (o *CreateMeteringReportConfigurationUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports][%d] createMeteringReportConfigurationUnauthorized ", 401)
+	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports/{name}][%d] createMeteringReportConfigurationUnauthorized ", 401)
 }
 
 func (o *CreateMeteringReportConfigurationUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -110,7 +110,7 @@ type CreateMeteringReportConfigurationForbidden struct {
 }
 
 func (o *CreateMeteringReportConfigurationForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports][%d] createMeteringReportConfigurationForbidden ", 403)
+	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports/{name}][%d] createMeteringReportConfigurationForbidden ", 403)
 }
 
 func (o *CreateMeteringReportConfigurationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -141,7 +141,7 @@ func (o *CreateMeteringReportConfigurationDefault) Code() int {
 }
 
 func (o *CreateMeteringReportConfigurationDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports][%d] createMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[POST /api/v1/admin/metering/configurations/reports/{name}][%d] createMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
 }
 func (o *CreateMeteringReportConfigurationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
@@ -166,9 +166,6 @@ type CreateMeteringReportConfigurationBody struct {
 
 	// interval
 	Interval int64 `json:"interval,omitempty"`
-
-	// name
-	Name string `json:"name,omitempty"`
 
 	// schedule
 	Schedule string `json:"schedule,omitempty"`

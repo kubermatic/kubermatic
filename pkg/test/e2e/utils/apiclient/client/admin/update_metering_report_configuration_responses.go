@@ -68,7 +68,7 @@ type UpdateMeteringReportConfigurationCreated struct {
 }
 
 func (o *UpdateMeteringReportConfigurationCreated) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] updateMeteringReportConfigurationCreated ", 201)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationCreated ", 201)
 }
 
 func (o *UpdateMeteringReportConfigurationCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -89,7 +89,7 @@ type UpdateMeteringReportConfigurationUnauthorized struct {
 }
 
 func (o *UpdateMeteringReportConfigurationUnauthorized) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] updateMeteringReportConfigurationUnauthorized ", 401)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationUnauthorized ", 401)
 }
 
 func (o *UpdateMeteringReportConfigurationUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -110,7 +110,7 @@ type UpdateMeteringReportConfigurationForbidden struct {
 }
 
 func (o *UpdateMeteringReportConfigurationForbidden) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] updateMeteringReportConfigurationForbidden ", 403)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationForbidden ", 403)
 }
 
 func (o *UpdateMeteringReportConfigurationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -141,7 +141,7 @@ func (o *UpdateMeteringReportConfigurationDefault) Code() int {
 }
 
 func (o *UpdateMeteringReportConfigurationDefault) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] updateMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
 }
 func (o *UpdateMeteringReportConfigurationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

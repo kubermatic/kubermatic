@@ -62,6 +62,9 @@ type CreateMeteringReportConfigurationParams struct {
 	// Body.
 	Body CreateMeteringReportConfigurationBody
 
+	// Name.
+	Name string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -126,6 +129,17 @@ func (o *CreateMeteringReportConfigurationParams) SetBody(body CreateMeteringRep
 	o.Body = body
 }
 
+// WithName adds the name to the create metering report configuration params
+func (o *CreateMeteringReportConfigurationParams) WithName(name string) *CreateMeteringReportConfigurationParams {
+	o.SetName(name)
+	return o
+}
+
+// SetName adds the name to the create metering report configuration params
+func (o *CreateMeteringReportConfigurationParams) SetName(name string) {
+	o.Name = name
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *CreateMeteringReportConfigurationParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -134,6 +148,11 @@ func (o *CreateMeteringReportConfigurationParams) WriteToRequest(r runtime.Clien
 	}
 	var res []error
 	if err := r.SetBodyParam(o.Body); err != nil {
+		return err
+	}
+
+	// path param name
+	if err := r.SetPathParam("name", o.Name); err != nil {
 		return err
 	}
 

@@ -84,7 +84,7 @@ func (a *Client) CreateMeteringReportConfiguration(params *CreateMeteringReportC
 	op := &runtime.ClientOperation{
 		ID:                 "createMeteringReportConfiguration",
 		Method:             "POST",
-		PathPattern:        "/api/v1/admin/metering/configurations/reports",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports/{name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -274,7 +274,7 @@ func (a *Client) DeleteMeteringReportConfiguration(params *DeleteMeteringReportC
 	op := &runtime.ClientOperation{
 		ID:                 "deleteMeteringReportConfiguration",
 		Method:             "DELETE",
-		PathPattern:        "/api/v1/admin/metering/configurations/reports/{report_configuration_name}",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports/{name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -502,7 +502,7 @@ func (a *Client) GetMeteringReportConfiguration(params *GetMeteringReportConfigu
 	op := &runtime.ClientOperation{
 		ID:                 "getMeteringReportConfiguration",
 		Method:             "GET",
-		PathPattern:        "/api/v1/admin/metering/configurations/reports/{report_configuration_name}",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports/{name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -806,7 +806,7 @@ func (a *Client) UpdateMeteringReportConfiguration(params *UpdateMeteringReportC
 	op := &runtime.ClientOperation{
 		ID:                 "updateMeteringReportConfiguration",
 		Method:             "PUT",
-		PathPattern:        "/api/v1/admin/metering/configurations/reports/{report_configuration_name}",
+		PathPattern:        "/api/v1/admin/metering/configurations/reports/{name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

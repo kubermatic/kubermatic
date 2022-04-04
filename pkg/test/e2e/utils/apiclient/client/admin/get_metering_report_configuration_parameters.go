@@ -59,7 +59,7 @@ func NewGetMeteringReportConfigurationParamsWithHTTPClient(client *http.Client) 
 */
 type GetMeteringReportConfigurationParams struct {
 
-	// ReportConfigurationName.
+	// Name.
 	Name string
 
 	timeout    time.Duration
@@ -115,15 +115,15 @@ func (o *GetMeteringReportConfigurationParams) SetHTTPClient(client *http.Client
 	o.HTTPClient = client
 }
 
-// WithName adds the reportConfigurationName to the get metering report configuration params
-func (o *GetMeteringReportConfigurationParams) WithName(reportConfigurationName string) *GetMeteringReportConfigurationParams {
-	o.SetName(reportConfigurationName)
+// WithName adds the name to the get metering report configuration params
+func (o *GetMeteringReportConfigurationParams) WithName(name string) *GetMeteringReportConfigurationParams {
+	o.SetName(name)
 	return o
 }
 
-// SetName adds the reportConfigurationName to the get metering report configuration params
-func (o *GetMeteringReportConfigurationParams) SetName(reportConfigurationName string) {
-	o.Name = reportConfigurationName
+// SetName adds the name to the get metering report configuration params
+func (o *GetMeteringReportConfigurationParams) SetName(name string) {
+	o.Name = name
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -134,8 +134,8 @@ func (o *GetMeteringReportConfigurationParams) WriteToRequest(r runtime.ClientRe
 	}
 	var res []error
 
-	// path param report_configuration_name
-	if err := r.SetPathParam("report_configuration_name", o.Name); err != nil {
+	// path param name
+	if err := r.SetPathParam("name", o.Name); err != nil {
 		return err
 	}
 

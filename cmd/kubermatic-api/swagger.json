@@ -469,63 +469,9 @@
             }
           }
         }
-      },
-      "post": {
-        "description": "Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "admin"
-        ],
-        "operationId": "createMeteringReportConfiguration",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "interval": {
-                  "type": "integer",
-                  "format": "int64",
-                  "x-go-name": "Interval"
-                },
-                "name": {
-                  "type": "string",
-                  "x-go-name": "Name"
-                },
-                "schedule": {
-                  "type": "string",
-                  "x-go-name": "Schedule"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
       }
     },
-    "/api/v1/admin/metering/configurations/reports/{report_configuration_name}": {
+    "/api/v1/admin/metering/configurations/reports/{name}": {
       "get": {
         "description": "Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition",
         "produces": [
@@ -539,7 +485,7 @@
           {
             "type": "string",
             "x-go-name": "Name",
-            "name": "report_configuration_name",
+            "name": "name",
             "in": "path",
             "required": true
           }
@@ -581,7 +527,64 @@
           {
             "type": "string",
             "x-go-name": "Name",
-            "name": "report_configuration_name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "interval": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Interval"
+                },
+                "schedule": {
+                  "type": "string",
+                  "x-go-name": "Schedule"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "createMeteringReportConfiguration",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
             "in": "path",
             "required": true
           },
@@ -635,7 +638,7 @@
           {
             "type": "string",
             "x-go-name": "Name",
-            "name": "report_configuration_name",
+            "name": "name",
             "in": "path",
             "required": true
           }

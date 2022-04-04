@@ -67,7 +67,7 @@ type GetMeteringReportConfigurationOK struct {
 }
 
 func (o *GetMeteringReportConfigurationOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] getMeteringReportConfigurationOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationOK  %+v", 200, o.Payload)
 }
 func (o *GetMeteringReportConfigurationOK) GetPayload() *models.MeteringReportConfiguration {
 	return o.Payload
@@ -98,7 +98,7 @@ type GetMeteringReportConfigurationUnauthorized struct {
 }
 
 func (o *GetMeteringReportConfigurationUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] getMeteringReportConfigurationUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationUnauthorized ", 401)
 }
 
 func (o *GetMeteringReportConfigurationUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type GetMeteringReportConfigurationForbidden struct {
 }
 
 func (o *GetMeteringReportConfigurationForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] getMeteringReportConfigurationForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfigurationForbidden ", 403)
 }
 
 func (o *GetMeteringReportConfigurationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *GetMeteringReportConfigurationDefault) Code() int {
 }
 
 func (o *GetMeteringReportConfigurationDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] getMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports/{name}][%d] getMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
 }
 func (o *GetMeteringReportConfigurationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

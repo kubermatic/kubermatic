@@ -66,7 +66,7 @@ type DeleteMeteringReportConfigurationOK struct {
 }
 
 func (o *DeleteMeteringReportConfigurationOK) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] deleteMeteringReportConfigurationOK ", 200)
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationOK ", 200)
 }
 
 func (o *DeleteMeteringReportConfigurationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type DeleteMeteringReportConfigurationUnauthorized struct {
 }
 
 func (o *DeleteMeteringReportConfigurationUnauthorized) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] deleteMeteringReportConfigurationUnauthorized ", 401)
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationUnauthorized ", 401)
 }
 
 func (o *DeleteMeteringReportConfigurationUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type DeleteMeteringReportConfigurationForbidden struct {
 }
 
 func (o *DeleteMeteringReportConfigurationForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] deleteMeteringReportConfigurationForbidden ", 403)
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfigurationForbidden ", 403)
 }
 
 func (o *DeleteMeteringReportConfigurationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *DeleteMeteringReportConfigurationDefault) Code() int {
 }
 
 func (o *DeleteMeteringReportConfigurationDefault) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{report_configuration_name}][%d] deleteMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v1/admin/metering/configurations/reports/{name}][%d] deleteMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
 }
 func (o *DeleteMeteringReportConfigurationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

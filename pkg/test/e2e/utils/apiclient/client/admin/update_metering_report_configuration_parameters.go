@@ -62,7 +62,7 @@ type UpdateMeteringReportConfigurationParams struct {
 	// Body.
 	Body UpdateMeteringReportConfigurationBody
 
-	// ReportConfigurationName.
+	// Name.
 	Name string
 
 	timeout    time.Duration
@@ -129,15 +129,15 @@ func (o *UpdateMeteringReportConfigurationParams) SetBody(body UpdateMeteringRep
 	o.Body = body
 }
 
-// WithName adds the reportConfigurationName to the update metering report configuration params
-func (o *UpdateMeteringReportConfigurationParams) WithName(reportConfigurationName string) *UpdateMeteringReportConfigurationParams {
-	o.SetName(reportConfigurationName)
+// WithName adds the name to the update metering report configuration params
+func (o *UpdateMeteringReportConfigurationParams) WithName(name string) *UpdateMeteringReportConfigurationParams {
+	o.SetName(name)
 	return o
 }
 
-// SetName adds the reportConfigurationName to the update metering report configuration params
-func (o *UpdateMeteringReportConfigurationParams) SetName(reportConfigurationName string) {
-	o.Name = reportConfigurationName
+// SetName adds the name to the update metering report configuration params
+func (o *UpdateMeteringReportConfigurationParams) SetName(name string) {
+	o.Name = name
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -151,8 +151,8 @@ func (o *UpdateMeteringReportConfigurationParams) WriteToRequest(r runtime.Clien
 		return err
 	}
 
-	// path param report_configuration_name
-	if err := r.SetPathParam("report_configuration_name", o.Name); err != nil {
+	// path param name
+	if err := r.SetPathParam("name", o.Name); err != nil {
 		return err
 	}
 

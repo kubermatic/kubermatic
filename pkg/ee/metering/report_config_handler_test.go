@@ -142,6 +142,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 
 	testcases := []struct {
 		name                   string
+		reportName             string
 		body                   string
 		existingKubermaticObjs []ctrlruntimeclient.Object
 		existingAPIUser        *v1.User
@@ -150,9 +151,9 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name: "Create new metering report configuration.",
+			name:       "Create new metering report configuration.",
+			reportName: "monthly",
 			body: `{
-				"name": "monthly",
 				"interval": 30,
 				"schedule": "1 1 1 * *"
 			}`,
@@ -163,21 +164,22 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 		},
 		// scenario 2
 		{
-			name: "Create new metering report configuration. Missing name.",
+			name:       "Create new metering report configuration. Missing name.",
+			reportName: "",
 			body: `{
 				"interval": 30,
 				"schedule": "1 1 1 * *"
 			}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
-			httpStatus:             http.StatusBadRequest,
-			expectedResponse:       `{"error":{"code":400,"message":"name cannot be empty."}}`,
+			httpStatus:             http.StatusMethodNotAllowed,
+			expectedResponse:       ``,
 		},
 		// scenario 3
 		{
-			name: "Create new metering report configuration. Missing interval.",
+			name:       "Create new metering report configuration. Missing interval.",
+			reportName: "monthly",
 			body: `{
-				"name": "monthly",
 				"schedule": "1 1 1 * *"
 			}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
@@ -187,9 +189,9 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 		},
 		// scenario 4
 		{
-			name: "Create new metering report configuration. Incorrect schedule.",
+			name:       "Create new metering report configuration. Incorrect schedule.",
+			reportName: "monthly",
 			body: `{
-				"name": "monthly",
 				"interval": 30,
 				"schedule": "X 1 1 * *"
 			}`,
@@ -200,11 +202,11 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 		},
 		// scenario 5
 		{
-			name: "Create existing metering report configuration.",
+			name:       "Create existing metering report configuration.",
+			reportName: "weekly",
 			body: `{
-				"name": "weekly",
-				"interval": 30,
-				"schedule": "1 1 1 * *"
+				"interval": 7,
+				"schedule": "1 1 * * *"
 			}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
@@ -215,6 +217,9 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		reqURL := "/api/v1/admin/metering/configurations/reports"
+		if tc.reportName != "" {
+			reqURL += "/" + tc.reportName
+		}
 		req := httptest.NewRequest("POST", reqURL, strings.NewReader(tc.body))
 		res := httptest.NewRecorder()
 

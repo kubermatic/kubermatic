@@ -100,7 +100,7 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Handler(r.createOrUpdateMeteringConfigurations())
 
 	mux.Methods(http.MethodGet).
-		Path("/admin/metering/configurations/reports/{report_configuration_name}").
+		Path("/admin/metering/configurations/reports/{name}").
 		Handler(r.GetMeteringReportConfiguration())
 
 	mux.Methods(http.MethodGet).
@@ -108,15 +108,15 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Handler(r.ListMeteringReportConfigurations())
 
 	mux.Methods(http.MethodPost).
-		Path("/admin/metering/configurations/reports").
+		Path("/admin/metering/configurations/reports/{name}").
 		Handler(r.CreateMeteringReportConfiguration())
 
 	mux.Methods(http.MethodPut).
-		Path("/admin/metering/configurations/reports/{report_configuration_name}").
+		Path("/admin/metering/configurations/reports/{name}").
 		Handler(r.UpdateMeteringReportConfiguration())
 
 	mux.Methods(http.MethodDelete).
-		Path("/admin/metering/configurations/reports/{report_configuration_name}").
+		Path("/admin/metering/configurations/reports/{name}").
 		Handler(r.DeleteMeteringReportConfiguration())
 
 	mux.Methods(http.MethodGet).
@@ -523,7 +523,7 @@ func (r Routing) createOrUpdateMeteringConfigurations() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/admin/metering/configurations/reports/{report_configuration_name} admin getMeteringReportConfiguration
+// swagger:route GET /api/v1/admin/metering/configurations/reports/{name} admin getMeteringReportConfiguration
 //
 //     Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
@@ -571,7 +571,7 @@ func (r Routing) ListMeteringReportConfigurations() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/admin/metering/configurations/reports admin createMeteringReportConfiguration
+// swagger:route POST /api/v1/admin/metering/configurations/reports/{name} admin createMeteringReportConfiguration
 //
 //     Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
@@ -598,7 +598,7 @@ func (r Routing) CreateMeteringReportConfiguration() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v1/admin/metering/configurations/reports/{report_configuration_name} admin updateMeteringReportConfiguration
+// swagger:route PUT /api/v1/admin/metering/configurations/reports/{name} admin updateMeteringReportConfiguration
 //
 //     Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //
@@ -625,7 +625,7 @@ func (r Routing) UpdateMeteringReportConfiguration() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/admin/metering/configurations/reports/{report_configuration_name} admin deleteMeteringReportConfiguration
+// swagger:route DELETE /api/v1/admin/metering/configurations/reports/{name} admin deleteMeteringReportConfiguration
 //
 //     Removes report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition
 //

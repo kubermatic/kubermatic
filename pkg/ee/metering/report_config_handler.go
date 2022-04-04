@@ -47,28 +47,31 @@ import (
 type getMeteringReportConfig struct {
 	// in: path
 	// required: true
-	Name string `json:"report_configuration_name"`
+	Name string `json:"name"`
 }
 
 // swagger:parameters deleteMeteringReportConfiguration
 type deleteMeteringReportConfig struct {
 	// in: path
 	// required: true
-	Name string `json:"report_configuration_name"`
+	Name string `json:"name"`
 }
 
 // swagger:parameters createMeteringReportConfiguration
 type createReportConfigurationReq struct {
+	// in: path
+	// required: true
+	Name string `json:"name"`
+
 	// in: body
 	Body struct {
-		Name     string `json:"name"`
 		Schedule string `json:"schedule"`
 		Interval int    `json:"interval"`
 	}
 }
 
 func (m createReportConfigurationReq) Validate() error {
-	if m.Body.Name == "" {
+	if m.Name == "" {
 		return k8cerrors.NewBadRequest("name cannot be empty.")
 	}
 
@@ -88,7 +91,8 @@ func (m createReportConfigurationReq) Validate() error {
 type updateReportConfigurationReq struct {
 	// in: path
 	// required: true
-	Name string `json:"report_configuration_name"`
+	Name string `json:"name"`
+
 	// in: body
 	Body struct {
 		Schedule string `json:"schedule,omitempty"`
@@ -114,10 +118,10 @@ func (m updateReportConfigurationReq) Validate() error {
 func DecodeGetMeteringReportConfigurationReq(r *http.Request) (interface{}, error) {
 	var req getMeteringReportConfig
 
-	req.Name = mux.Vars(r)["report_configuration_name"]
+	req.Name = mux.Vars(r)["name"]
 
 	if req.Name == "" {
-		return nil, k8cerrors.NewBadRequest("`report_configuration_name` cannot be empty")
+		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
 	}
 
 	return req, nil
@@ -125,6 +129,8 @@ func DecodeGetMeteringReportConfigurationReq(r *http.Request) (interface{}, erro
 
 func DecodeCreateMeteringReportConfigurationReq(r *http.Request) (interface{}, error) {
 	var req createReportConfigurationReq
+
+	req.Name = mux.Vars(r)["name"]
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -136,7 +142,7 @@ func DecodeCreateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 func DecodeUpdateMeteringReportConfigurationReq(r *http.Request) (interface{}, error) {
 	var req updateReportConfigurationReq
 
-	req.Name = mux.Vars(r)["report_configuration_name"]
+	req.Name = mux.Vars(r)["name"]
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -148,10 +154,10 @@ func DecodeUpdateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 func DecodeDeleteMeteringReportConfigurationReq(r *http.Request) (interface{}, error) {
 	var req deleteMeteringReportConfig
 
-	req.Name = mux.Vars(r)["report_configuration_name"]
+	req.Name = mux.Vars(r)["name"]
 
 	if req.Name == "" {
-		return nil, k8cerrors.NewBadRequest("`report_configuration_name` cannot be empty")
+		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
 	}
 
 	return req, nil
@@ -304,19 +310,19 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 		seed.Spec.Metering.ReportConfigurations = make(map[string]*kubermaticv1.MeteringReportConfiguration)
 	}
 
-	if _, exists := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Body.Name]; exists {
+	if _, exists := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]; exists {
 		return k8cerrors.New(
 			http.StatusConflict,
-			fmt.Sprintf("report configuration %q already exists", reportCfgReq.Body.Name))
+			fmt.Sprintf("report configuration %q already exists", reportCfgReq.Name))
 	}
 
-	seed.Spec.Metering.ReportConfigurations[reportCfgReq.Body.Name] = &kubermaticv1.MeteringReportConfiguration{
+	seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
 		Interval: reportCfgReq.Body.Interval,
 		Schedule: reportCfgReq.Body.Schedule,
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
-		return fmt.Errorf("failed to create report configuration %q in seed %q: %w", reportCfgReq.Body.Name, seed.Name, err)
+		return fmt.Errorf("failed to create report configuration %q in seed %q: %w", reportCfgReq.Name, seed.Name, err)
 	}
 
 	return nil
