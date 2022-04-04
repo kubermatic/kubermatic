@@ -24,9 +24,13 @@ import (
 	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
+func GetCronExpressionParser() cron.Parser {
+	return cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+}
+
 func ValidateMeteringConfiguration(configuration *v1.MeteringConfiguration) error {
 	if configuration != nil && len(configuration.ReportConfigurations) > 0 {
-		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+		parser := GetCronExpressionParser()
 		for _, reportConfig := range configuration.ReportConfigurations {
 			if _, err := parser.Parse(reportConfig.Schedule); err != nil {
 				return fmt.Errorf("invalid cron expression format: %s", reportConfig.Schedule)

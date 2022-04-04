@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// MeteringReportConfiguration metering report configuration
+// MeteringReportConfiguration MeteringReportConfiguration holds report configuration
 //
 // swagger:model MeteringReportConfiguration
 type MeteringReportConfiguration struct {
