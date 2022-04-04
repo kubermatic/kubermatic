@@ -29,5 +29,4 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
   crd \
   object:headerFile=./hack/boilerplate/ce/boilerplate.go.txt \
   paths=./pkg/apis/... \
-  output:crd:dir=./charts/kubermatic-operator/crd/k8c.io \
   output:crd:dir=./pkg/validation/openapi/crd/k8c.io

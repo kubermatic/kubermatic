@@ -22,3 +22,6 @@ _cache
 _dist
 download-gocache
 /dev.*
+
+# this is filled during release
+charts/kubermatic-operator/crd/k8c.io

@@ -431,3 +431,14 @@ set_helm_charts_version() {
     fi
   done < <(find charts -name 'Chart.yaml' -print0 | sort --zero-terminated)
 }
+
+# copy_crds_to_chart is used during GitHub releases and for e2e tests,
+# it ensures that the auto-generated CRDs in pkg/ are copied into the
+# operator chart.
+copy_crds_to_chart() {
+  chartCRDs=charts/kubermatic-operator/crd/k8c.io
+  sourceCRDs=pkg/validation/openapi/crd/k8c.io
+
+  mkdir -p $chartCRDs
+  cp $sourceCRDs/* $chartCRDs
+}
