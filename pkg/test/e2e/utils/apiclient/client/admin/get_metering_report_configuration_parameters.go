@@ -60,7 +60,7 @@ func NewGetMeteringReportConfigurationParamsWithHTTPClient(client *http.Client) 
 type GetMeteringReportConfigurationParams struct {
 
 	// ReportConfigurationName.
-	ReportConfigurationName string
+	Name string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -115,15 +115,15 @@ func (o *GetMeteringReportConfigurationParams) SetHTTPClient(client *http.Client
 	o.HTTPClient = client
 }
 
-// WithReportConfigurationName adds the reportConfigurationName to the get metering report configuration params
-func (o *GetMeteringReportConfigurationParams) WithReportConfigurationName(reportConfigurationName string) *GetMeteringReportConfigurationParams {
-	o.SetReportConfigurationName(reportConfigurationName)
+// WithName adds the reportConfigurationName to the get metering report configuration params
+func (o *GetMeteringReportConfigurationParams) WithName(reportConfigurationName string) *GetMeteringReportConfigurationParams {
+	o.SetName(reportConfigurationName)
 	return o
 }
 
-// SetReportConfigurationName adds the reportConfigurationName to the get metering report configuration params
-func (o *GetMeteringReportConfigurationParams) SetReportConfigurationName(reportConfigurationName string) {
-	o.ReportConfigurationName = reportConfigurationName
+// SetName adds the reportConfigurationName to the get metering report configuration params
+func (o *GetMeteringReportConfigurationParams) SetName(reportConfigurationName string) {
+	o.Name = reportConfigurationName
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -135,7 +135,7 @@ func (o *GetMeteringReportConfigurationParams) WriteToRequest(r runtime.ClientRe
 	var res []error
 
 	// path param report_configuration_name
-	if err := r.SetPathParam("report_configuration_name", o.ReportConfigurationName); err != nil {
+	if err := r.SetPathParam("report_configuration_name", o.Name); err != nil {
 		return err
 	}
 

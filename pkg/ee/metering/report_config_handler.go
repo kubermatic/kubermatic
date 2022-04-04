@@ -47,14 +47,14 @@ import (
 type getMeteringReportConfig struct {
 	// in: path
 	// required: true
-	ReportConfigurationName string `json:"report_configuration_name"`
+	Name string `json:"report_configuration_name"`
 }
 
 // swagger:parameters deleteMeteringReportConfiguration
 type deleteMeteringReportConfig struct {
 	// in: path
 	// required: true
-	ReportConfigurationName string `json:"report_configuration_name"`
+	Name string `json:"report_configuration_name"`
 }
 
 // swagger:parameters createMeteringReportConfiguration
@@ -114,9 +114,9 @@ func (m updateReportConfigurationReq) Validate() error {
 func DecodeGetMeteringReportConfigurationReq(r *http.Request) (interface{}, error) {
 	var req getMeteringReportConfig
 
-	req.ReportConfigurationName = mux.Vars(r)["report_configuration_name"]
+	req.Name = mux.Vars(r)["report_configuration_name"]
 
-	if req.ReportConfigurationName == "" {
+	if req.Name == "" {
 		return nil, k8cerrors.NewBadRequest("`report_configuration_name` cannot be empty")
 	}
 
@@ -148,9 +148,9 @@ func DecodeUpdateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 func DecodeDeleteMeteringReportConfigurationReq(r *http.Request) (interface{}, error) {
 	var req deleteMeteringReportConfig
 
-	req.ReportConfigurationName = mux.Vars(r)["report_configuration_name"]
+	req.Name = mux.Vars(r)["report_configuration_name"]
 
-	if req.ReportConfigurationName == "" {
+	if req.Name == "" {
 		return nil, k8cerrors.NewBadRequest("`report_configuration_name` cannot be empty")
 	}
 
@@ -178,18 +178,18 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 		if seed.Spec.Metering == nil || seed.Spec.Metering.ReportConfigurations == nil {
 			continue
 		}
-		if report, ok := seed.Spec.Metering.ReportConfigurations[req.ReportConfigurationName]; ok {
+		if report, ok := seed.Spec.Metering.ReportConfigurations[req.Name]; ok {
 			// Metering configuration is replicated across all seeds.
 			// We can return after finding configuration in the first seed.
 			return &apiv1.MeteringReportConfiguration{
-				Name:     req.ReportConfigurationName,
+				Name:     req.Name,
 				Schedule: report.Schedule,
 				Interval: report.Interval,
 			}, nil
 		}
 	}
 
-	return nil, k8cerrors.NewNotFound("MeteringReportConfiguration", req.ReportConfigurationName)
+	return nil, k8cerrors.NewNotFound("MeteringReportConfiguration", req.Name)
 }
 
 // ListMeteringReportConfigurations lists metering report configurations.
@@ -287,7 +287,7 @@ func DeleteMeteringReportConfiguration(ctx context.Context, request interface{},
 	}
 
 	for _, seed := range seedList.Items {
-		if err := deleteMeteringReportConfiguration(ctx, req.ReportConfigurationName, &seed, masterClient); err != nil {
+		if err := deleteMeteringReportConfiguration(ctx, req.Name, &seed, masterClient); err != nil {
 			return err
 		}
 	}
