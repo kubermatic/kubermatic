@@ -449,6 +449,8 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kuberm
 		Spec: kubermaticv1.DatacenterSpec{
 			VSphere:   &kubermaticv1.DatacenterSpecVSphere{},
 			Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+			Hetzner:   &kubermaticv1.DatacenterSpecHetzner{},
+			Anexia:    &kubermaticv1.DatacenterSpecAnexia{},
 		},
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
@@ -574,6 +576,13 @@ func getCloudSpecs() []kubermaticv1.CloudSpec {
 			ProviderName: string(kubermaticv1.AnexiaCloudProvider),
 			Anexia: &kubermaticv1.AnexiaCloudSpec{
 				Token: "fakeToken",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.KubevirtCloudProvider),
+			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
+				Kubeconfig:    "fakeKubeconfig",
+				CSIKubeConfig: "fakeKubeconfig",
 			},
 		},
 	}
