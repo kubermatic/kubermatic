@@ -67,6 +67,7 @@ const (
 type etcdCluster struct {
 	namespace             string
 	clusterSize           int
+	clusterClient         ctrlruntimeclient.Client
 	podName               string
 	podIP                 string
 	etcdctlAPIVersion     string
@@ -74,6 +75,7 @@ type etcdCluster struct {
 	token                 string
 	enableCorruptionCheck bool
 	initialState          string
+	initialMembers        []string
 	usePeerTLSOnly        bool
 }
 
@@ -88,22 +90,24 @@ func main() {
 	}
 
 	// here we find the cluster state
-	clusterClient, err := inClusterClient(log)
+	e.clusterClient, err = inClusterClient(log)
 	if err != nil {
 		log.Panicw("failed to get in-cluster client", zap.Error(err))
 	}
 
-	if err := e.setClusterSize(clusterClient); err != nil {
+	if err := e.setClusterSize(); err != nil {
 		log.Panicw("failed to set cluster size", zap.Error(err))
 	}
 
-	if err := e.setInitialState(clusterClient, log); err != nil {
+	if err := e.setInitialState(log); err != nil {
 		log.Panicw("failed to set initialState", zap.Error(err))
 	}
 
+	e.initialMembers = initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly, e.clusterClient, log)
+
 	log.Info("initializing etcd..")
 	log.Infof("initial-state: %s", e.initialState)
-	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","))
+	log.Infof("initial-cluster: %s", strings.Join(e.initialMembers, ","))
 	if e.usePeerTLSOnly {
 		log.Info("peer-tls-mode: strict")
 	}
@@ -161,7 +165,7 @@ func main() {
 	go func() {
 		wait.Forever(func() {
 			// refresh the cluster size so the etcd-launcher is aware of scaling operations
-			if err := e.setClusterSize(clusterClient); err != nil {
+			if err := e.setClusterSize(); err != nil {
 				log.Warnw("failed to refresh cluster size", zap.Error(err))
 			} else if _, err := deleteUnwantedDeadMembers(e, log); err != nil {
 				log.Warnw("failed to remove dead members", zap.Error(err))
@@ -351,18 +355,44 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 	return nil
 }
 
-func initialMemberList(n int, namespace string, useTLSPeer bool) []string {
-	format := "etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380"
-
-	if useTLSPeer {
-		format = "etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381"
-	}
-
+func initialMemberList(n int, namespace string, useTLSPeer bool, client ctrlruntimeclient.Client, log *zap.SugaredLogger) []string {
 	members := []string{}
 	for i := 0; i < n; i++ {
-		members = append(members, fmt.Sprintf(format, i, i, namespace))
+		var pod corev1.Pod
+		if err := client.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, &pod); err != nil {
+			log.Warnw("failed to get Pod information for etcd, guessing peer URLs", zap.Error(err))
+			if useTLSPeer {
+				members = append(members, fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace))
+			} else {
+				members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+			}
+		} else {
+			// use information on the pod to determine if the plaintext and TLS peer ports are going to be open
+
+			if !hasStrictTLS(&pod) {
+				members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+			}
+
+			if _, ok := pod.ObjectMeta.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
+				members = append(
+					members,
+					fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace),
+				)
+			}
+		}
 	}
+
 	return members
+}
+
+func hasStrictTLS(pod *corev1.Pod) bool {
+	for _, env := range pod.Spec.Containers[0].Env {
+		if env.Name == "PEER_TLS_MODE" && env.Value == "strict" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func peerHostsList(n int, namespace string) []string {
@@ -422,7 +452,7 @@ func etcdCmd(config *etcdCluster) []string {
 	cmd := []string{
 		fmt.Sprintf("--name=%s", config.podName),
 		fmt.Sprintf("--data-dir=%s", config.dataDir),
-		fmt.Sprintf("--initial-cluster=%s", strings.Join(initialMemberList(config.clusterSize, config.namespace, config.usePeerTLSOnly), ",")),
+		fmt.Sprintf("--initial-cluster=%s", strings.Join(config.initialMembers, ",")),
 		fmt.Sprintf("--initial-cluster-token=%s", config.token),
 		fmt.Sprintf("--initial-cluster-state=%s", config.initialState),
 		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.podName, config.namespace, config.podIP),
@@ -691,7 +721,7 @@ func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cC
 		OutputDataDir:       e.dataDir,
 		OutputWALDir:        filepath.Join(e.dataDir, "member", "wal"),
 		PeerURLs:            []string{fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2381", e.podName, e.namespace)},
-		InitialCluster:      strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly), ","),
+		InitialCluster:      strings.Join(initialMemberList(e.clusterSize, e.namespace, e.usePeerTLSOnly, e.clusterClient, log), ","),
 		InitialClusterToken: e.token,
 		SkipHashCheck:       false,
 	})
@@ -704,8 +734,8 @@ func close(c io.Closer, log *zap.SugaredLogger) {
 	}
 }
 
-func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	k8cCluster, err := getK8cCluster(clusterClient, strings.ReplaceAll(e.namespace, "cluster-", ""), log)
+func (e *etcdCluster) setInitialState(log *zap.SugaredLogger) error {
+	k8cCluster, err := getK8cCluster(e.clusterClient, strings.ReplaceAll(e.namespace, "cluster-", ""), log)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster: %v", err)
 	}
@@ -722,18 +752,18 @@ func (e *etcdCluster) setInitialState(clusterClient ctrlruntimeclient.Client, lo
 		// new clusters can use "strict" TLS mode for etcd (TLS-only peering connections)
 		e.usePeerTLSOnly = true
 
-		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, clusterClient, log); err != nil {
-			return fmt.Errorf("failed to restore datadir from backup: %v", err)
+		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, e.clusterClient, log); err != nil {
+			return fmt.Errorf("failed to restore datadir from backup: %w", err)
 		}
 	}
 	return nil
 }
 
-func (e *etcdCluster) setClusterSize(clusterClient ctrlruntimeclient.Client) error {
+func (e *etcdCluster) setClusterSize() error {
 	sts := &appsv1.StatefulSet{}
 
-	if err := clusterClient.Get(context.Background(), types.NamespacedName{Name: "etcd", Namespace: e.namespace}, sts); err != nil {
-		return fmt.Errorf("failed to get etcd sts: %v", err)
+	if err := e.clusterClient.Get(context.Background(), types.NamespacedName{Name: "etcd", Namespace: e.namespace}, sts); err != nil {
+		return fmt.Errorf("failed to get etcd sts: %w", err)
 	}
 	e.clusterSize = defaultClusterSize
 	if sts.Spec.Replicas != nil {
