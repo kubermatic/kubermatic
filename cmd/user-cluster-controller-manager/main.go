@@ -28,6 +28,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications/fake"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	applicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/application-installation-controller"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
@@ -380,7 +381,7 @@ func main() {
 		log.Info("Registered constraintsyncer controller")
 	}
 
-	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker); err != nil {
+	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, fake.ApplicationInstallerLogger{}); err != nil {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")

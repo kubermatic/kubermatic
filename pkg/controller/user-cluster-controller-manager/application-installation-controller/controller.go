@@ -23,7 +23,9 @@ import (
 	"go.uber.org/zap"
 
 	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,6 +42,18 @@ import (
 
 const (
 	controllerName = "kkp-app-installation-controller"
+
+	// Event raise when an applicationInstallation which has been installed reference an applicationDefinition that does not exist anymore.
+	applicationDefinitionRemovedEvent = "ApplicationDefinitionRemoved"
+
+	// Event raise when an applicationInstallation which has been installed reference an applicationVersion that does not exist anymore.
+	applicationVersionRemovedEvent = "ApplicationVersionRemoved"
+
+	// Event raise when applicationInstallation refeence an applicalicationDefinition  that is being deleting.
+	applicationDefinitionDeletingEvent = "ApplicationDefinitionDeleting"
+
+	// Event raise when the reconilation of an applicationInstallation failed.
+	applicationInstallationReconcileFailedEvent = "ApplicationInstallationReconcileFailed"
 )
 
 type reconciler struct {
@@ -48,9 +62,10 @@ type reconciler struct {
 	userClient      ctrlruntimeclient.Client
 	userRecorder    record.EventRecorder
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
+	appInstaller    applications.ApplicationInstaller
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, appInstaller applications.ApplicationInstaller) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
@@ -59,6 +74,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		userClient:      userMgr.GetClient(),
 		userRecorder:    userMgr.GetEventRecorderFor(controllerName),
 		clusterIsPaused: clusterIsPaused,
+		appInstaller:    appInstaller,
 	}
 
 	c, err := controller.New(controllerName, userMgr, controller.Options{
@@ -112,7 +128,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err = r.reconcile(ctx, log, appInstallation)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
-		r.userRecorder.Event(appInstallation, corev1.EventTypeWarning, "ApplicationInstallationReconcileFailed", err.Error())
+		r.userRecorder.Event(appInstallation, corev1.EventTypeWarning, applicationInstallationReconcileFailedEvent, err.Error())
 	}
 
 	log.Debug("Processed")
@@ -120,8 +136,106 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appInstallation *appkubermaticv1.ApplicationInstallation) error {
-	// to implements logic in next PR
+	// handling deletion
+	if !appInstallation.DeletionTimestamp.IsZero() {
+		if err := r.handleDeletion(ctx, log, appInstallation); err != nil {
+			return fmt.Errorf("handling deletion of application installation: %w", err)
+		}
+		return nil
+	}
+
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.userClient, appInstallation, appkubermaticv1.ApplicationInstallationCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
+	}
+
+	appHasBeenInstalled := appInstallation.Status.ApplicationVersion != nil
+
+	// get applicationDefition. if it can not be found there is 2 cases:
+	//   1) KKP admin has remove the applicationDefition and we have to remove the corresponding ApplicationInstallation(s)
+	//   2) User made a mistake or applicationDefinition has not been sync yet on this seed. so  we just notify the user.
+	applicationDef := &appkubermaticv1.ApplicationDefinition{}
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: appInstallation.Spec.ApplicationRef.Name}, applicationDef); err != nil {
+		if apierrors.IsNotFound(err) {
+			if appHasBeenInstalled {
+				r.traceWarning(appInstallation, log, applicationDefinitionRemovedEvent, fmt.Sprintf("ApplicationDefinition '%s' has been deleted, removing applictionInstallation", applicationDef.Name))
+				return r.userClient.Delete(ctx, appInstallation)
+			} else {
+				return fmt.Errorf("ApplicationDefinition '%s' does not exist. can not install application", applicationDef.Name)
+			}
+		}
+		return err
+	}
+
+	if !applicationDef.DeletionTimestamp.IsZero() {
+		r.traceWarning(appInstallation, log, applicationDefinitionDeletingEvent, fmt.Sprintf("ApplicationDefinition '%s' is being deleted,  removing applictionInstallation", applicationDef.Name))
+		return r.userClient.Delete(ctx, appInstallation)
+	}
+
+	// get aplicationVersion. if it can not be found there is 2 cases:
+	//   1) KKP admin has remove the applicationVersion and we have to remove the corresponding ApplicationInstallation(s)
+	//   2) User made a mistake or applicationDefinition has not been sync yet on this seed. so  we just notify the user.
+	appVersion := &appkubermaticv1.ApplicationVersion{}
+	if err := r.getApplicationVersion(appInstallation, applicationDef, appVersion); err != nil {
+		if appHasBeenInstalled {
+			r.traceWarning(appInstallation, log, applicationVersionRemovedEvent, fmt.Sprintf("applicationVersion: '%s' has been deleted. removing Application", appInstallation.Spec.ApplicationRef.Version))
+			return r.userClient.Delete(ctx, appInstallation)
+		} else {
+			return fmt.Errorf("applicationVersion: '%s' does not exist. can not install application", appInstallation.Spec.ApplicationRef.Version)
+		}
+	}
+
+	oldAppInstallation := appInstallation.DeepCopy()
+	appInstallation.Status.ApplicationVersion = appVersion
+
+	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		return fmt.Errorf("failed to update status with applicationVersion: %w", err)
+	}
+
+	// install application into user-cluster
+	if err := r.handleInstallation(ctx, log, appInstallation); err != nil {
+		return fmt.Errorf("handling installation of application installation: %w", err)
+	}
+
 	return nil
+}
+
+// getApplicationVersion finds the applicationVersion defined by appInstallation into the applicationDef and update the struct appVersion with it.
+// an error is returned if the applicationVersion is not found.
+func (r *reconciler) getApplicationVersion(appInstallation *appkubermaticv1.ApplicationInstallation, applicationDef *appkubermaticv1.ApplicationDefinition, appVersion *appkubermaticv1.ApplicationVersion) error {
+	desiredVersion := appInstallation.Spec.ApplicationRef.Version.String()
+	for _, version := range applicationDef.Spec.Versions {
+		if version.Version == desiredVersion {
+			version.DeepCopyInto(appVersion)
+			return nil
+		}
+	}
+	return fmt.Errorf("application version '%s' does not exist in applicationDefinition %s", desiredVersion, applicationDef.Name)
+}
+
+// handleInstallation install or update the application in the user cluster.
+func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appInstallation *appkubermaticv1.ApplicationInstallation) error {
+	return r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appInstallation)
+}
+
+// // handleDeletion uninstall the application in the user cluster.
+func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, appInstallation *appkubermaticv1.ApplicationInstallation) error {
+	if kuberneteshelper.HasFinalizer(appInstallation, appkubermaticv1.ApplicationInstallationCleanupFinalizer) {
+		if err := r.appInstaller.Delete(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
+			return fmt.Errorf("failed to uninstall application: %w", err)
+		}
+
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.userClient, appInstallation, appkubermaticv1.ApplicationInstallationCleanupFinalizer); err != nil {
+			return fmt.Errorf("failed to remove application installation finalizer %s: %w", appInstallation.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// traceWarning log the message in warning mode and raise a k8s event on appInstallation with the eventReason and the message.
+func (r *reconciler) traceWarning(appInstallation *appkubermaticv1.ApplicationInstallation, log *zap.SugaredLogger, eventReason, message string) {
+	log.Warnf(message)
+	r.userRecorder.Event(appInstallation, corev1.EventTypeWarning, eventReason, message)
 }
 
 // enqueueAppInstallationForAppDef fan-out updates from applicationDefinition to the ApplicationInstallation that reference
