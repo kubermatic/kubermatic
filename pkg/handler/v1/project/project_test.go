@@ -59,15 +59,6 @@ func init() {
 func TestRenameProjectEndpoint(t *testing.T) {
 	t.Parallel()
 
-	oRef := func(user *kubermaticv1.User) metav1.OwnerReference {
-		return metav1.OwnerReference{
-			APIVersion: "kubermatic.k8c.io/v1",
-			Kind:       "User",
-			UID:        user.UID,
-			Name:       user.Name,
-		}
-	}
-
 	testcases := []struct {
 		Name                      string
 		Body                      string
@@ -97,9 +88,9 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ProjectToRename: "my-first-project-ID",
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				// add some projects
-				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp(), oRef(test.GenDefaultUser())),
-				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute), oRef(test.GenDefaultUser())),
-				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute), oRef(test.GenDefaultUser())),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
 				test.GenDefaultUser(),
 				test.GenBinding("my-first-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
 				test.GenBinding("my-second-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
@@ -115,9 +106,9 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ProjectToRename: "my-first-project-ID",
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				// add some projects
-				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp(), oRef(test.GenDefaultUser())),
-				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute), oRef(test.GenDefaultUser())),
-				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute), oRef(test.GenDefaultUser())),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
 				// add John and Bob
 				test.GenUser("JohnID", "John", "john@acme.com"),
 				test.GenDefaultUser(),

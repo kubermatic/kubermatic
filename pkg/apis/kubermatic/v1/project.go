@@ -63,6 +63,7 @@ type Project struct {
 
 // ProjectSpec is a specification of a project.
 type ProjectSpec struct {
+	// Name is the human-readable name given to the project.
 	Name string `json:"name"`
 }
 
