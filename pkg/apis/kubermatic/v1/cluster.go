@@ -859,6 +859,14 @@ type OpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIPPool"`
 	RouterID       string `json:"routerID"`
 	SubnetID       string `json:"subnetID"`
+	// IPv6SubnetID holds the ID of the subnet used for IPv6 networking.
+	// If not provided, a new subnet will be created if IPv6 is enabled.
+	// +optional
+	IPv6SubnetID string `json:"ipv6SubnetID"`
+	// IPv6SubnetPool holds the name of the subnet pool used for creating new IPv6 subnets.
+	// If not provided, the default IPv6 subnet pool will be used.
+	// +optional
+	IPv6SubnetPool string `json:"ipv6SubnetPool"`
 	// Whether or not to use Octavia for LoadBalancer type of Service
 	// implementation instead of using Neutron-LBaaS.
 	// Attention:Openstack CCM use Octavia as default load balancer
