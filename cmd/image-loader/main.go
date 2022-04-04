@@ -177,7 +177,7 @@ func main() {
 					zap.String("version", clusterVersion.Version.String()),
 					zap.String("provider", cloudSpec.ProviderName),
 					zap.String("CNI plugin", string(cniPlugin.Type)),
-					zap.String("CNI version", string(cniPlugin.Version)),
+					zap.String("CNI version", cniPlugin.Version),
 				)
 
 				versionLog.Info("Collecting images...")
@@ -455,6 +455,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kuberm
 			Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
 			Hetzner:   &kubermaticv1.DatacenterSpecHetzner{},
 			Anexia:    &kubermaticv1.DatacenterSpecAnexia{},
+			Kubevirt:  &kubermaticv1.DatacenterSpecKubevirt{},
 		},
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
@@ -552,7 +553,7 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 	return filteredVersions, nil
 }
 
-// list all the cloudSpecs for all the Cloud providers for which we are currently using the external CCM/CSI
+// list all the cloudSpecs for all the Cloud providers for which we are currently using the external CCM/CSI.
 func getCloudSpecs() []kubermaticv1.CloudSpec {
 	return []kubermaticv1.CloudSpec{
 		{
@@ -590,7 +591,7 @@ func getCloudSpecs() []kubermaticv1.CloudSpec {
 	}
 }
 
-// list all the supported CNI plugins along with their supported versions
+// list all the supported CNI plugins along with their supported versions.
 func getCNIPlugins() []*kubermaticv1.CNIPluginSettings {
 	cniPluginSettings := []*kubermaticv1.CNIPluginSettings{}
 	supportedCNIPlugins := cni.GetSupportedCNIPlugins()

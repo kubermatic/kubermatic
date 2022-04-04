@@ -24826,6 +24826,10 @@
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
+        "csiKubeconfig": {
+          "type": "string",
+          "x-go-name": "CSIKubeConfig"
+        },
         "kubeconfig": {
           "type": "string",
           "x-go-name": "Kubeconfig"
