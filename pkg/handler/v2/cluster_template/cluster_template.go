@@ -44,7 +44,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 )
 
 // scopeList holds a list of user cluster template access levels.
@@ -661,7 +660,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 				UsePodNodeSelectorAdmissionPlugin:    template.Spec.UsePodNodeSelectorAdmissionPlugin,
 				EnableUserSSHKeyAgent:                template.Spec.EnableUserSSHKeyAgent,
 				EnableOperatingSystemManager:         template.Spec.EnableOperatingSystemManager,
-				EnableKubernetesDashboard:            pointer.BoolPtr(template.Spec.EnableKubernetesDashboard),
+				KubernetesDashboard:                  &template.Spec.KubernetesDashboard,
 				AdmissionPlugins:                     template.Spec.AdmissionPlugins,
 				OPAIntegration:                       template.Spec.OPAIntegration,
 				PodNodeSelectorAdmissionPluginConfig: template.Spec.PodNodeSelectorAdmissionPluginConfig,

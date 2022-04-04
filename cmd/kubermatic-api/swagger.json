@@ -21462,11 +21462,6 @@
           "type": "string",
           "x-go-name": "ContainerRuntime"
         },
-        "enableKubernetesDashboard": {
-          "description": "EnableKubernetesDashboard controls whether the kubernetes-dashboard should be deployed for the user cluster or not.",
-          "type": "boolean",
-          "x-go-name": "EnableKubernetesDashboard"
-        },
         "enableOperatingSystemManager": {
           "description": "EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration",
           "type": "boolean",
@@ -21479,6 +21474,9 @@
         },
         "eventRateLimitConfig": {
           "$ref": "#/definitions/EventRateLimitConfig"
+        },
+        "kubernetesDashboard": {
+          "$ref": "#/definitions/KubernetesDashboard"
         },
         "machineNetworks": {
           "description": "MachineNetworks optionally specifies the parameters for IPAM.",
@@ -25017,6 +25015,17 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "KubernetesDashboard": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enabled controls whether the kubernetes-dashboard should be deployed for the user cluster or not.\n+kubebuilder:default=true",
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Kubevirt": {
       "type": "object",

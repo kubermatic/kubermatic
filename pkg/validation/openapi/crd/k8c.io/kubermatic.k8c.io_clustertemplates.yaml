@@ -1434,11 +1434,6 @@ spec:
               debugLog:
                 description: DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
                 type: boolean
-              enableKubernetesDashboard:
-                default: true
-                description: EnableKubernetesDashboard controls whether the kubernetes-dashboard
-                  should be deployed for the user cluster or not.
-                type: boolean
               enableOperatingSystemManager:
                 description: EnableOperatingSystemManager enables OSM which in-turn
                   is responsible for creating and managing worker node configuration
@@ -1540,6 +1535,18 @@ spec:
                 description: HumanReadableName is the cluster name provided by the
                   user
                 type: string
+              kubernetesDashboard:
+                description: KubernetesDashboard holds the configuration for kubernetes-dashboard
+                  component
+                properties:
+                  enabled:
+                    default: true
+                    description: Enabled controls whether the kubernetes-dashboard
+                      should be deployed for the user cluster or not.
+                    type: boolean
+                required:
+                - enabled
+                type: object
               machineNetworks:
                 items:
                   description: MachineNetworkingConfig specifies the networking parameters

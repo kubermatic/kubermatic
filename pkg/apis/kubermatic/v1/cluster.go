@@ -176,9 +176,8 @@ type ClusterSpec struct {
 	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
 	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
-	// EnableKubernetesDashboard controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
-	// +kubebuilder:default=true
-	EnableKubernetesDashboard bool `json:"enableKubernetesDashboard,omitempty"`
+	// KubernetesDashboard holds the configuration for kubernetes-dashboard component
+	KubernetesDashboard KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
 
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
@@ -219,6 +218,12 @@ type ClusterSpec struct {
 
 	// CNIPlugin contains the spec of the CNI plugin to be installed in the cluster.
 	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
+}
+
+type KubernetesDashboard struct {
+	// Enabled controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
+	// +kubebuilder:default=true
+	Enabled bool `json:"enabled"`
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
