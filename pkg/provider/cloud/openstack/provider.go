@@ -142,7 +142,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 			return fmt.Errorf("failed to get subnet pool %q: %w", spec.Openstack.IPv6SubnetPool, err)
 		}
 		if subnetPool.IPversion != 6 {
-			return fmt.Errorf("provided IPv6 subnet pool %q has incorect IP version: %d", spec.Openstack.IPv6SubnetPool, subnetPool.IPversion)
+			return fmt.Errorf("provided IPv6 subnet pool %q has incorrect IP version: %d", spec.Openstack.IPv6SubnetPool, subnetPool.IPversion)
 		}
 	}
 
