@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package scenarios
 
 import (
 	"context"
 	"fmt"
 
+	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// Returns a matrix of (version x operating system).
-func getDigitaloceanScenarios(versions []*semver.Semver) []testScenario {
-	var scenarios []testScenario
+// GetDigitaloceanScenarios returns a matrix of (version x operating system).
+func GetDigitaloceanScenarios(versions []*semver.Semver) []Scenario {
+	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &digitaloceanScenario{
@@ -56,7 +57,7 @@ func (s *digitaloceanScenario) Name() string {
 	return fmt.Sprintf("digitalocean-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *digitaloceanScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",
@@ -73,7 +74,7 @@ func (s *digitaloceanScenario) Cluster(secrets secrets) *apimodels.CreateCluster
 	}
 }
 
-func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := "4gb"
 	return []apimodels.NodeDeployment{

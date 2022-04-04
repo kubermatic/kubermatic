@@ -42,7 +42,7 @@ If the gate is present:
 * An addon for CSI will get automatically deployed into the cluster
 * The LoadBalancer cleanup must be adjusted to not wait for an event anymore
 
-Additionally, the `conformance-tests` CLI needs an extra arg to control if it should set the feature gate and a distinct
+Additionally, the `conformance-tester` CLI needs an extra arg to control if it should set the feature gate and a distinct
 e2e test must be added that verifies the functionality of LoadBalancers and Persistent Volume provisioning.
 
 

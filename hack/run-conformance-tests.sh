@@ -159,11 +159,11 @@ fi
 mkdir -p reports
 
 if [ -n "${NO_DOCKER:-}" ]; then
-  echodate "Compiling conformance-tests..."
-  make conformance-tests
+  echodate "Compiling conformance-tester..."
+  make conformance-tester
 
-  echodate "Starting conformance-tests..."
-  _build/conformance-tests $extraArgs \
+  echodate "Starting conformance-tester..."
+  _build/conformance-tester $extraArgs \
     -log-format=console \
     -worker-name="$USER" \
     -kubeconfig=$KUBECONFIG \
@@ -175,12 +175,12 @@ if [ -n "${NO_DOCKER:-}" ]; then
     -distributions="flatcar" \
     $@
 else
-  echodate "Compiling conformance-tests..."
+  echodate "Compiling conformance-tester..."
   # make sure to compile a conformance-tester binary that can actually
   # run inside the container
-  GOOS=linux GOARCH=amd64 make conformance-tests
+  GOOS=linux GOARCH=amd64 make conformance-tester
 
-  echodate "Starting conformance-tests in Docker..."
+  echodate "Starting conformance-tester in Docker..."
   docker run \
     --rm \
     --interactive \
@@ -195,7 +195,7 @@ else
     --env "KUBERMATIC_OIDC_PASSWORD=${KUBERMATIC_OIDC_PASSWORD-}" \
     --env "${EXTRA_ENV:-}" \
     quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24 \
-    _build/conformance-tests $extraArgs \
+    _build/conformance-tester $extraArgs \
     -log-format=console \
     -worker-name="$USER" \
     -kubeconfig=/kubeconfig \

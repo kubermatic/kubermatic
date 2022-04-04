@@ -82,7 +82,7 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
 fi
 
-timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
+timeout -s 9 90m ./_build/conformance-tester $EXTRA_ARGS \
   -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \
