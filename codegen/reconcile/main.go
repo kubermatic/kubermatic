@@ -225,6 +225,11 @@ func main() {
 				ResourceImportPath: "kubevirt.io/api/core/v1",
 				APIVersionPrefix:   "KubeVirtV1",
 			},
+			{
+				ResourceName:     "Preset",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
 		},
 	}
 
