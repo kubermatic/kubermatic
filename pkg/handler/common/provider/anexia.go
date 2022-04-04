@@ -43,7 +43,7 @@ func ListAnexiaVlans(ctx context.Context, token string) (apiv1.AnexiaVlanList, e
 		return nil, errors.New(http.StatusInternalServerError, err.Error())
 	}
 	v := vlan.NewAPI(cli)
-	vlans, err := v.List(ctx, 1, 1000)
+	vlans, err := v.List(ctx, 1, 1000, "")
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, err.Error())
 	}

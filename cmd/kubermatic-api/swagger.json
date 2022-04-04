@@ -25050,10 +25050,9 @@
       "required": [
         "cpus",
         "memory",
-        "namespace",
-        "sourceURL",
-        "storageClassName",
-        "pvcSize"
+        "primaryDiskOSImage",
+        "primaryDiskStorageClassName",
+        "primaryDiskSize"
       ],
       "properties": {
         "cpus": {
@@ -25061,30 +25060,56 @@
           "type": "string",
           "x-go-name": "CPUs"
         },
+        "flavorName": {
+          "description": "FlavorName states name of the virtual-machine flavor.",
+          "type": "string",
+          "x-go-name": "FlavorName"
+        },
+        "flavorProfile": {
+          "description": "FlavorProfile states name of virtual-machine profile.",
+          "type": "string",
+          "x-go-name": "FlavorProfile"
+        },
         "memory": {
           "description": "Memory states the memory that kubevirt node will have.",
           "type": "string",
           "x-go-name": "Memory"
         },
-        "namespace": {
-          "description": "Namespace states in which namespace kubevirt node will be provisioned.",
-          "type": "string",
-          "x-go-name": "Namespace"
+        "nodeAffinityPreset": {
+          "$ref": "#/definitions/NodeAffinityPreset"
         },
-        "pvcSize": {
-          "description": "PVCSize states the size of the provisioned pvc per node.",
+        "podAffinityPreset": {
+          "description": "PodAffinityPreset describes pod affinity scheduling rules",
           "type": "string",
-          "x-go-name": "PVCSize"
+          "x-go-name": "PodAffinityPreset"
         },
-        "sourceURL": {
-          "description": "SourceURL states the url from which the imported image will be downloaded.",
+        "podAntiAffinityPreset": {
+          "description": "PodAntiAffinityPreset describes pod anti-affinity scheduling rules",
           "type": "string",
-          "x-go-name": "SourceURL"
+          "x-go-name": "PodAntiAffinityPreset"
         },
-        "storageClassName": {
-          "description": "StorageClassName states the storage class name for the provisioned PVCs.",
+        "primaryDiskOSImage": {
+          "description": "PrimaryDiskOSImage states the source from which the imported image will be downloaded.",
           "type": "string",
-          "x-go-name": "StorageClassName"
+          "x-go-name": "PrimaryDiskOSImage"
+        },
+        "primaryDiskSize": {
+          "description": "PrimaryDiskSize states the size of the provisioned pvc per node.",
+          "type": "string",
+          "x-go-name": "PrimaryDiskSize"
+        },
+        "primaryDiskStorageClassName": {
+          "description": "PrimaryDiskStorageClassName states the storage class name for the provisioned PVCs.",
+          "type": "string",
+          "x-go-name": "PrimaryDiskStorageClassName"
+        },
+        "secondaryDisks": {
+          "description": "SecondaryDisks contains list of secondary-disks",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SecondaryDisks"
+          },
+          "x-go-name": "SecondaryDisks"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -25665,6 +25690,24 @@
           "type": "string",
           "x-go-name": "Type",
           "example": "ExternalIP, InternalIP, InternalDNS, ExternalDNS"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NodeAffinityPreset": {
+      "type": "object",
+      "properties": {
+        "Key": {
+          "type": "string"
+        },
+        "Type": {
+          "type": "string"
+        },
+        "Values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -27906,6 +27949,20 @@
         "publicKey": {
           "type": "string",
           "x-go-name": "PublicKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "SecondaryDisks": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "storageClassName": {
+          "type": "string",
+          "x-go-name": "StorageClassName"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
