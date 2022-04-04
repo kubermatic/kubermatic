@@ -49,11 +49,13 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	imageSet := sets.NewString()
 	for _, clusterVersion := range clusterVersions {
 		for _, cloudSpec := range getCloudSpecs() {
-			images, err := getImagesForVersion(log, clusterVersion, cloudSpec, config, addonPath, kubermaticVersions, caBundle)
-			if err != nil {
-				t.Errorf("Error calling getImagesForVersion: %v", err)
+			for _, cniPlugin := range getCNIPlugins() {
+				images, err := getImagesForVersion(log, clusterVersion, cloudSpec, cniPlugin, config, addonPath, kubermaticVersions, caBundle)
+				if err != nil {
+					t.Errorf("Error calling getImagesForVersion: %v", err)
+				}
+				imageSet.Insert(images...)
 			}
-			imageSet.Insert(images...)
 		}
 	}
 

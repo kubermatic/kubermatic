@@ -172,17 +172,21 @@ func main() {
 	imageSet := sets.NewString(staticImages...)
 	for _, clusterVersion := range clusterVersions {
 		for _, cloudSpec := range getCloudSpecs() {
-			versionLog := log.With(
-				zap.String("version", clusterVersion.Version.String()),
-				zap.String("provider", cloudSpec.ProviderName),
-			)
+			for _, cniPlugin := range getCNIPlugins() {
+				versionLog := log.With(
+					zap.String("version", clusterVersion.Version.String()),
+					zap.String("provider", cloudSpec.ProviderName),
+					zap.String("CNI plugin", string(cniPlugin.Type)),
+					zap.String("CNI version", string(cniPlugin.Version)),
+				)
 
-			versionLog.Info("Collecting images...")
-			images, err := getImagesForVersion(log, clusterVersion, cloudSpec, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
-			if err != nil {
-				versionLog.Fatalw("failed to get images", zap.Error(err))
+				versionLog.Info("Collecting images...")
+				images, err := getImagesForVersion(log, clusterVersion, cloudSpec, cniPlugin, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
+				if err != nil {
+					versionLog.Fatalw("failed to get images", zap.Error(err))
+				}
+				imageSet.Insert(images...)
 			}
-			imageSet.Insert(images...)
 		}
 	}
 
@@ -236,8 +240,8 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
-	templateData, err := getTemplateData(clusterVersion, cloudSpec, kubermaticVersions, caBundle)
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+	templateData, err := getTemplateData(clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -324,7 +328,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -465,10 +469,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kuberm
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-	fakeCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-		Type:    kubermaticv1.CNIPluginTypeCanal,
-		Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
-	}
+	fakeCluster.Spec.CNIPlugin = cniPlugin
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 	fakeCluster.Status.Versions.ControlPlane = *clusterSemver
 	fakeCluster.Status.Versions.Apiserver = *clusterSemver
@@ -551,6 +552,7 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 	return filteredVersions, nil
 }
 
+// list all the cloudSpecs for all the Cloud providers for which we are currently using the external CCM/CSI
 func getCloudSpecs() []kubermaticv1.CloudSpec {
 	return []kubermaticv1.CloudSpec{
 		{
@@ -586,6 +588,26 @@ func getCloudSpecs() []kubermaticv1.CloudSpec {
 			},
 		},
 	}
+}
+
+// list all the supported CNI plugins along with their supported versions
+func getCNIPlugins() []*kubermaticv1.CNIPluginSettings {
+	cniPluginSettings := []*kubermaticv1.CNIPluginSettings{}
+	supportedCNIPlugins := cni.GetSupportedCNIPlugins()
+
+	for _, cniPlugin := range supportedCNIPlugins.List() {
+		// error cannot ever occur since we just listed the supported CNIPluginTypes
+		versions, _ := cni.GetAllowedCNIPluginVersions(kubermaticv1.CNIPluginType(cniPlugin))
+
+		for _, version := range versions.List() {
+			cniPluginSettings = append(cniPluginSettings, &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginType(cniPlugin),
+				Version: version,
+			})
+		}
+	}
+
+	return cniPluginSettings
 }
 
 func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
