@@ -22,9 +22,6 @@ import (
 	"net/http"
 	"strings"
 
-	"k8s.io/utils/net"
-	"k8s.io/utils/pointer"
-
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
@@ -43,6 +40,9 @@ import (
 	"github.com/gophercloud/gophercloud/pagination"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/net"
+	"k8s.io/utils/pointer"
 )
 
 const (
