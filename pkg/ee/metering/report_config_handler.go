@@ -71,8 +71,8 @@ type createReportConfigurationReq struct {
 }
 
 func (m createReportConfigurationReq) Validate() error {
-	if m.Name == "" {
-		return k8cerrors.NewBadRequest("name cannot be empty.")
+	if !validation.MeteringReportNameValidator.MatchString(m.Name) {
+		return k8cerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
 	}
 
 	cronExpressionParser := validation.GetCronExpressionParser()
@@ -101,8 +101,8 @@ type updateReportConfigurationReq struct {
 }
 
 func (m updateReportConfigurationReq) Validate() error {
-	if m.Name == "" {
-		return k8cerrors.NewBadRequest("name cannot be empty.")
+	if !validation.MeteringReportNameValidator.MatchString(m.Name) {
+		return k8cerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
 	}
 
 	if m.Body.Schedule != "" {
@@ -132,6 +132,10 @@ func DecodeCreateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 
 	req.Name = mux.Vars(r)["name"]
 
+	if req.Name == "" {
+		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
@@ -143,6 +147,10 @@ func DecodeUpdateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 	var req updateReportConfigurationReq
 
 	req.Name = mux.Vars(r)["name"]
+
+	if req.Name == "" {
+		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
+	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err

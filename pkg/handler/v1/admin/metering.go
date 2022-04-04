@@ -138,7 +138,7 @@ func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 		}
 
 		if err := updateMeteringReportConfiguration(ctx, req, masterClient); err != nil {
-			return nil, fmt.Errorf("failed to create metering report configuration: %w", err)
+			return nil, fmt.Errorf("failed to update metering report configuration: %w", err)
 		}
 
 		return nil, nil
@@ -157,7 +157,7 @@ func DeleteMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 		}
 
 		if err := deleteMeteringReportConfiguration(ctx, req, masterClient); err != nil {
-			return nil, fmt.Errorf("failed to create metering report configuration: %w", err)
+			return nil, fmt.Errorf("failed to delete metering report configuration: %w", err)
 		}
 
 		return nil, nil
