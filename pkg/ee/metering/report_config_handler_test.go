@@ -39,10 +39,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var testSeed *kubermaticv1.Seed
+func TestGetMeteringReportConfigEndpoint(t *testing.T) {
+	t.Parallel()
 
-func init() {
-	testSeed = test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+	testSeed := test.GenTestSeed(func(seed *kubermaticv1.Seed) {
 		seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
 			Enabled:          true,
 			StorageClassName: "test",
@@ -55,10 +55,6 @@ func init() {
 			},
 		}
 	})
-}
-
-func TestGetMeteringReportConfigEndpoint(t *testing.T) {
-	t.Parallel()
 
 	testcases := []struct {
 		name                   string
@@ -139,6 +135,20 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 
 func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 	t.Parallel()
+
+	testSeed := test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+		seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
+			Enabled:          true,
+			StorageClassName: "test",
+			StorageSize:      "10Gi",
+			ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
+				"weekly": {
+					Schedule: "0 1 * * 6",
+					Interval: 7,
+				},
+			},
+		}
+	})
 
 	testcases := []struct {
 		name                   string
@@ -240,6 +250,20 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 	t.Parallel()
 
+	testSeed := test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+		seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
+			Enabled:          true,
+			StorageClassName: "test",
+			StorageSize:      "10Gi",
+			ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
+				"weekly": {
+					Schedule: "0 1 * * 6",
+					Interval: 7,
+				},
+			},
+		}
+	})
+
 	testcases := []struct {
 		name                   string
 		reportName             string
@@ -309,6 +333,20 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 
 func TestDeleteMeteringReportConfigEndpoint(t *testing.T) {
 	t.Parallel()
+
+	testSeed := test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+		seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
+			Enabled:          true,
+			StorageClassName: "test",
+			StorageSize:      "10Gi",
+			ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
+				"weekly": {
+					Schedule: "0 1 * * 6",
+					Interval: 7,
+				},
+			},
+		}
+	})
 
 	testcases := []struct {
 		name                   string
