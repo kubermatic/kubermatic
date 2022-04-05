@@ -652,7 +652,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: gets cluster with the given name that belongs to the given project",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"private-do1","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"private-do1","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -666,7 +666,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack auth with project and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -686,7 +686,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: gets cluster for Openstack auth with project and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","projectID":"projectID","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","projectID":"projectID","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -706,7 +706,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 4: the admin John can get Bob's cluster",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","project":"project","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs"},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Supported"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -898,7 +898,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: update the cluster version",
 			Body:             `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -930,7 +930,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: tried to update cluster with older but compatible nodes",
 			Body:             `{"spec":{"version":"9.11.3"}}`, // kubelet is 9.9.9, maximum compatible master is 9.11.x
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1000,7 +1000,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 6: the admin John can update Bob's cluster version",
 			Body:             `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
@@ -1038,7 +1038,7 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:             "scenario 8: update the pod node selector admission plugin config",
 			Body:             `{"spec":{"version":"1.2.3","podNodeSelectorAdmissionPluginConfig":{"clusterDefaultNodeSelector":"env=development"}}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{"enabled":false},"podNodeSelectorAdmissionPluginConfig":{"clusterDefaultNodeSelector":"env=development"},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"enableUserSSHKeyAgent":false,"kubernetesDashboard":{},"podNodeSelectorAdmissionPluginConfig":{"clusterDefaultNodeSelector":"env=development"},"clusterNetwork":{"services":{"cidrBlocks":["5.6.7.8/8"]},"pods":{"cidrBlocks":["1.2.3.4/8"]},"nodeCidrMaskSizeIPv4":24,"dnsDomain":"cluster.local","proxyMode":"ipvs","nodeLocalDNSCacheEnabled":true},"cniPlugin":{"type":"canal","version":"v3.22"}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","externalCCMMigration":"Unsupported"}}`,
 			cluster:          "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,

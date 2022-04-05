@@ -99,7 +99,6 @@ type controllerRunOptions struct {
 	konnectivityServerHost       string
 	konnectivityServerPort       int
 	enableOperatingSystemManager bool
-	kubernetesDashboardEnabled   bool
 }
 
 func main() {
@@ -146,7 +145,6 @@ func main() {
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
 	flag.BoolVar(&runOp.enableOperatingSystemManager, "operating-system-manager-enabled", false, "Enable Operating System Manager, this only enables deployment of OSM resources.")
-	flag.BoolVar(&runOp.kubernetesDashboardEnabled, "kubernetes-dashboard-enabled", false, "Enable Kubernetes dashboard for the user-cluster")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -299,7 +297,6 @@ func main() {
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
 		runOp.enableOperatingSystemManager,
-		runOp.kubernetesDashboardEnabled,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

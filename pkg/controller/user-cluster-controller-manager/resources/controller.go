@@ -103,7 +103,6 @@ func Add(
 	ccmMigration bool,
 	ccmMigrationCompleted bool,
 	enableOperatingSystemManager bool,
-	kubernetesDashboardEnabled bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		version:                      version,
@@ -135,7 +134,6 @@ func Add(
 		ccmMigration:                 ccmMigration,
 		ccmMigrationCompleted:        ccmMigrationCompleted,
 		enableOperatingSystemManager: enableOperatingSystemManager,
-		kubernetesDashboardEnabled:   kubernetesDashboardEnabled,
 	}
 
 	var err error
@@ -307,7 +305,6 @@ type reconciler struct {
 	ccmMigration                 bool
 	ccmMigrationCompleted        bool
 	enableOperatingSystemManager bool
-	kubernetesDashboardEnabled   bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

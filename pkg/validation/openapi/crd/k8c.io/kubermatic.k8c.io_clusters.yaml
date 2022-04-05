@@ -1582,8 +1582,6 @@ spec:
                     description: Enabled controls whether the kubernetes-dashboard
                       should be deployed for the user cluster or not.
                     type: boolean
-                required:
-                - enabled
                 type: object
               machineNetworks:
                 items:

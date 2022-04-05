@@ -316,7 +316,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 1: get global template",
 			TemplateID:       "ctID2",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct2","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{"enabled":false}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct2","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -348,7 +348,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: get user scope template",
 			TemplateID:       "ctID1",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct1","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{"enabled":false}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct1","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -364,7 +364,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 4: get project scope template",
 			TemplateID:       "ctID4",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct4","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{"enabled":false}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct4","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -605,7 +605,7 @@ func TestExportlusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 1: export global template",
 			TemplateID:       "ctID2",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct2","user":"john@acme.com","scope":"global","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{"enabled":false}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct2","user":"john@acme.com","scope":"global","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -637,7 +637,7 @@ func TestExportlusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: export user scope template",
 			TemplateID:       "ctID1",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct1","user":"bob@acme.com","scope":"user","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{"enabled":false}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct1","user":"bob@acme.com","scope":"user","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -653,7 +653,7 @@ func TestExportlusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 4: exportproject scope template",
 			TemplateID:       "ctID4",
-			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct4","user":"john@acme.com","scope":"project","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{"enabled":false}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
+			ExpectedResponse: `{"creationTimestamp":"0001-01-01T00:00:00Z","name":"ct4","user":"john@acme.com","scope":"project","cluster":{"spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"","oidc":{},"kubernetesDashboard":{}}},"nodeDeployment":{"spec":{"template":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
