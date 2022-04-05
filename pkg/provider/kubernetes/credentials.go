@@ -637,7 +637,7 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 }
 
 func GetKubeOneNameSpaceName(externalClusterName string) string {
-	return fmt.Sprintf("kubeone-%s", externalClusterName)
+	return fmt.Sprintf("%s-%s", resources.KubeOneNamespacePrefix, externalClusterName)
 }
 
 func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error {

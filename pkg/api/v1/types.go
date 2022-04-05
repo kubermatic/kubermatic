@@ -2377,6 +2377,8 @@ const (
 	ExternalClusterKubeOneManifestSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-manifest-secret"
 	// ExternalClusterKubeOneSSHSecretCleanupFinalizer indicates that secrets for ssh secret still need cleanup.
 	ExternalClusterKubeOneSSHSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-ssh-secret"
+	// ExternalClusterKubeOneNamespaceCleanupFinalizer indicates that kubeone cluster namespace still need cleanup.
+	ExternalClusterKubeOneNamespaceCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeone-namespace"
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
 	UserClusterRoleCleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
 	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.

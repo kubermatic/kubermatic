@@ -551,6 +551,8 @@ const (
 )
 
 const (
+	// KubeOneNamespacePrefix is the kubeone namespace prefix.
+	KubeOneNamespacePrefix = "kubeone"
 	// KubeOne secret names.
 	KubeOneSSHSecretName        = "ssh"
 	KubeOneManifestSecretName   = "manifest"
@@ -574,7 +576,6 @@ const (
 	KubeOneEquinix      = "equinix"
 	KubeOneVSphere      = "vsphere"
 	KubeOneImage        = "quay.io/kubermatic/kubeone"
-	KubeOneUpgradeMDMsg = "upgrading machine MD"
 	KubeOneScript       = `
 #!/usr/bin/env bash
 
