@@ -126,8 +126,6 @@ const (
 	OpenVPNServerServiceName = "openvpn-server"
 	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service.
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
-	// MachinesWebhookServiceName is the name of the machines webhook service.
-	MachinesWebhookServiceName = "machine-webhook"
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService.
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
 
@@ -822,6 +820,12 @@ const (
 	NetworkPolicyMetricsServerAllow            = "metrics-server-allow"
 	NetworkPolicyClusterExternalAddrAllow      = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
+)
+
+const (
+	UserClusterWebhookDeploymentName     = "usercluster-webhook"
+	UserClusterWebhookServiceName        = "usercluster-webhook"
+	UserClusterWebhookServiceAccountName = "usercluster-webhook"
 )
 
 const (

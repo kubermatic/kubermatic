@@ -39,7 +39,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 		return resources.MachineValidatingWebhookConfigurationName, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
-			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-cluster-k8s-io-v1-machine", resources.MachinesWebhookServiceName, namespace)
+			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-cluster-k8s-io-v1-machine", resources.UserClusterWebhookServiceName, namespace)
 			reviewVersions := []string{"v1", "v1beta1"}
 
 			// This only gets set when the APIServer supports it, so carry it over

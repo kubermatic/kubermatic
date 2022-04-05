@@ -38,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -47,6 +46,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
+	"k8c.io/kubermatic/v2/pkg/resources/webhook"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -268,7 +268,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
 		etcd.ServiceCreator(data),
 		machinecontroller.ServiceCreator(),
-		machine.ServiceCreator(),
+		webhook.ServiceCreator(),
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -302,6 +302,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
+		webhook.DeploymentCreator(data),
 	}
 
 	if data.Cluster().Spec.KubernetesDashboard.Enabled {
@@ -362,7 +363,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.KubeletClientCertificateCreator(data),
 		apiserver.ServiceAccountKeyCreator(),
 		machinecontroller.TLSServingCertificateCreator(data),
-		machine.TLSServingCertificateCreator(data),
+		webhook.TLSServingCertificateCreator(data),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(namespace, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data, r.log),
@@ -429,6 +430,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		usercluster.ServiceAccountCreator,
 		machinecontroller.ServiceAccountCreator,
 		machinecontroller.WebhookServiceAccountCreator,
+		webhook.ServiceAccountCreator,
 	}
 
 	if c.Spec.EnableOperatingSystemManager {

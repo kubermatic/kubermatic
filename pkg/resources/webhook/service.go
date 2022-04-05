@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package machine
+package webhook
 
 import (
 	"fmt"
@@ -23,22 +23,22 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	certutil "k8s.io/client-go/util/cert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	certutil "k8s.io/client-go/util/cert"
 )
 
-// ServiceCreator returns the function to reconcile the DNS service.
+// ServiceCreator returns the function to reconcile the usercluster webhook service.
 func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return resources.MachinesWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = resources.MachinesWebhookServiceName
-			se.Labels = resources.BaseAppLabels(resources.MachinesWebhookServiceName, nil)
+		return resources.UserClusterWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
+			se.Name = resources.UserClusterWebhookServiceName
+			se.Labels = resources.BaseAppLabels(resources.UserClusterWebhookServiceName, nil)
 
 			se.Spec.Type = corev1.ServiceTypeClusterIP
 			se.Spec.Selector = map[string]string{
-				// TODO move to dedicated webhook server
-				resources.AppLabelKey: resources.UserClusterControllerDeploymentName,
+				resources.AppLabelKey: resources.UserClusterWebhookDeploymentName,
 			}
 			se.Spec.Ports = []corev1.ServicePort{
 				{
@@ -71,20 +71,20 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			if err != nil {
 				return nil, fmt.Errorf("failed to get root ca: %w", err)
 			}
-			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.MachinesWebhookServiceName, data.Cluster().Status.NamespaceName)
+			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.UserClusterWebhookServiceName, data.Cluster().Status.NamespaceName)
 			altNames := certutil.AltNames{
 				DNSNames: []string{
-					resources.MachinesWebhookServiceName,
-					fmt.Sprintf("%s.%s", resources.MachinesWebhookServiceName, data.Cluster().Status.NamespaceName),
+					resources.UserClusterWebhookServiceName,
+					fmt.Sprintf("%s.%s", resources.UserClusterWebhookServiceName, data.Cluster().Status.NamespaceName),
 					commonName,
-					fmt.Sprintf("%s.%s.svc", resources.MachinesWebhookServiceName, data.Cluster().Status.NamespaceName),
-					fmt.Sprintf("%s.%s.svc.", resources.MachinesWebhookServiceName, data.Cluster().Status.NamespaceName),
+					fmt.Sprintf("%s.%s.svc", resources.UserClusterWebhookServiceName, data.Cluster().Status.NamespaceName),
+					fmt.Sprintf("%s.%s.svc.", resources.UserClusterWebhookServiceName, data.Cluster().Status.NamespaceName),
 				},
 			}
-			if b, exists := se.Data[resources.MachineControllerWebhookServingCertCertKeyName]; exists {
+			if b, exists := se.Data[resources.ServingCertSecretKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.MachineControllerWebhookServingCertCertKeyName, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.ServingCertSecretKey, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil
@@ -93,7 +93,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 
 			newKP, err := triple.NewServerKeyPair(ca,
 				commonName,
-				resources.MachinesWebhookServiceName,
+				resources.UserClusterWebhookServiceName,
 				data.Cluster().Status.NamespaceName,
 				"",
 				nil,
@@ -103,7 +103,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 			se.Data[resources.ServingCertSecretKey] = triple.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.ServingCertSecretKey] = triple.EncodePrivateKeyPEM(newKP.Key)
+			se.Data[resources.ServingCertKeySecretKey] = triple.EncodePrivateKeyPEM(newKP.Key)
 			// Include the CA for simplicity
 			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 
@@ -111,3 +111,4 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 		}
 	}
 }
+
