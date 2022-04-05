@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package scenarios
 
 import (
 	"context"
@@ -22,8 +22,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-openapi/runtime"
+
+	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	awsapiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/aws"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
@@ -33,20 +37,24 @@ import (
 
 const awsDC = "aws-eu-central-1a"
 
-// Returns a matrix of (version x operating system).
-func getAWSScenarios(versions []*semver.Semver) []testScenario {
-	var scenarios []testScenario
+// GetAWSScenarios returns a matrix of (version x operating system).
+func GetAWSScenarios(versions []*semver.Semver, kubermaticClient *apiclient.KubermaticKubernetesPlatformAPI, kubermaticAuthenticator runtime.ClientAuthInfoWriter) []Scenario {
+	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &awsScenario{
-			version: v,
+			version:                 v,
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
 			nodeOsSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// Flatcar
 		scenarios = append(scenarios, &awsScenario{
-			version: v,
+			version:                 v,
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
 			nodeOsSpec: apimodels.OperatingSystemSpec{
 				Flatcar: &apimodels.FlatcarSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
@@ -55,7 +63,9 @@ func getAWSScenarios(versions []*semver.Semver) []testScenario {
 			},
 		})
 		scenarios = append(scenarios, &awsScenario{
-			version: v,
+			version:                 v,
+			kubermaticClient:        kubermaticClient,
+			kubermaticAuthenticator: kubermaticAuthenticator,
 			nodeOsSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
@@ -65,15 +75,17 @@ func getAWSScenarios(versions []*semver.Semver) []testScenario {
 }
 
 type awsScenario struct {
-	version    *semver.Semver
-	nodeOsSpec apimodels.OperatingSystemSpec
+	version                 *semver.Semver
+	nodeOsSpec              apimodels.OperatingSystemSpec
+	kubermaticClient        *apiclient.KubermaticKubernetesPlatformAPI
+	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
 func (s *awsScenario) Name() string {
 	return fmt.Sprintf("aws-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *awsScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+func (s *awsScenario) Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",
@@ -91,7 +103,11 @@ func (s *awsScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *awsScenario) NodeDeployments(ctx context.Context, num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+func (s *awsScenario) NodeDeployments(
+	ctx context.Context,
+	num int,
+	secrets types.Secrets,
+) ([]apimodels.NodeDeployment, error) {
 	instanceType := "t2.medium"
 	volumeType := "gp2"
 	volumeSize := int64(100)
@@ -104,7 +120,7 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, num int, secrets secr
 	}
 	utils.SetupParams(nil, listVPCParams, 5*time.Second, 1*time.Minute)
 
-	vpcResponse, err := secrets.kubermaticClient.Aws.ListAWSVPCS(listVPCParams, secrets.kubermaticAuthenticator)
+	vpcResponse, err := s.kubermaticClient.Aws.ListAWSVPCS(listVPCParams, s.kubermaticAuthenticator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vpcs: %w", err)
 	}
@@ -128,7 +144,7 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, num int, secrets secr
 	}
 	utils.SetupParams(nil, listSubnetParams, 5*time.Second, 1*time.Minute)
 
-	subnetResponse, err := secrets.kubermaticClient.Aws.ListAWSSubnets(listSubnetParams, secrets.kubermaticAuthenticator)
+	subnetResponse, err := s.kubermaticClient.Aws.ListAWSSubnets(listSubnetParams, s.kubermaticAuthenticator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subnets: %w", err)
 	}

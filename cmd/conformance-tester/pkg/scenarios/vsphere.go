@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package scenarios
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// Returns a matrix of (version x operating system).
-func getVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []testScenario {
+// GetVSphereScenarios returns a matrix of (version x operating system).
+func GetVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []Scenario {
 	var (
 		customFolder     bool
 		datastoreCluster bool
@@ -41,7 +42,7 @@ func getVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 		}
 	}
 
-	var scenarios []testScenario
+	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &vSphereScenario{
@@ -77,7 +78,7 @@ func (s *vSphereScenario) Name() string {
 	return fmt.Sprintf("vsphere-%s-%s", getOSNameFromSpec(s.nodeOsSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
 }
 
-func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+func (s *vSphereScenario) Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",
@@ -107,7 +108,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	return spec
 }
 
-func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{

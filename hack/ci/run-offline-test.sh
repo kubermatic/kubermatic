@@ -253,18 +253,18 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --namespace ${NAMESPACE} \
   kubermatic-${BUILD_ID} charts/kubermatic/
 
-go build --tags "$KUBERMATIC_EDITION" ./cmd/conformance-tests
+go build --tags "$KUBERMATIC_EDITION" ./cmd/conformance-tester
 
 cp ${KUBECONFIG} /tmp/kubeconfig-remote
 kubectl --kubeconfig /tmp/kubeconfig-remote config set-cluster kubernetes --server=https://${KUBERNETES_CONTROLLER_ADDR}:6443
 
 SSH_OPTS="-i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} "mkdir -p /tmp/${BUILD_ID}/reports"
-scp ${SSH_OPTS} ./conformance-tests root@${PROXY_EXTERNAL_ADDR}:/tmp/${BUILD_ID}/conformance-tests
+scp ${SSH_OPTS} ./conformance-tester root@${PROXY_EXTERNAL_ADDR}:/tmp/${BUILD_ID}/conformance-tester
 scp ${SSH_OPTS} /tmp/kubeconfig-remote root@${PROXY_EXTERNAL_ADDR}:/tmp/${BUILD_ID}/kubeconfig
 scp ${SSH_OPTS} /tmp/id_rsa.pub root@${PROXY_EXTERNAL_ADDR}:/tmp/id_rsa.pub
 ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} << EOF
-  /tmp/${BUILD_ID}/conformance-tests \
+  /tmp/${BUILD_ID}/conformance-tester \
     -worker-name=${BUILD_ID} \
     -kubeconfig=/tmp/${BUILD_ID}/kubeconfig \
     -node-ssh-pub-key=/tmp/id_rsa.pub \
