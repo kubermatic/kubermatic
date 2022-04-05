@@ -154,9 +154,6 @@ type ProjectGetOptions struct {
 type ProjectListOptions struct {
 	// ProjectName list only projects with the given name
 	ProjectName string
-
-	// OwnerUID list only project that belong to this user
-	OwnerUID types.UID
 }
 
 // ClusterProvider declares the set of methods for interacting with clusters
@@ -332,7 +329,7 @@ type PrivilegedProjectProvider interface {
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
-	New(ctx context.Context, users []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
+	New(ctx context.Context, name string, labels map[string]string) (*kubermaticv1.Project, error)
 
 	// Delete deletes the given project as the given user
 	//

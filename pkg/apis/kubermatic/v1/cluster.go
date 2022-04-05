@@ -223,7 +223,7 @@ type ClusterSpec struct {
 type KubernetesDashboard struct {
 	// Enabled controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
 	// +kubebuilder:default=true
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.

@@ -64,7 +64,7 @@ func NewFakePrivilegedProjectProvider() *FakePrivilegedProjectProvider {
 	return &FakePrivilegedProjectProvider{}
 }
 
-func (f *FakeProjectProvider) New(ctx context.Context, user []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error) {
+func (f *FakeProjectProvider) New(ctx context.Context, name string, labels map[string]string) (*kubermaticv1.Project, error) {
 	return nil, errors.New("not implemented")
 }
 

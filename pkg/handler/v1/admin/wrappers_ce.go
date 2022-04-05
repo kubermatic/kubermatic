@@ -23,28 +23,69 @@ import (
 	"net/http"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+func createOrUpdateMeteringCredentials(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) error {
 	return nil
+}
+
+func createOrUpdateMeteringConfigurations(_ context.Context, _ interface{}, masterClient client.Client) error {
+	return nil
+}
+
+func getMeteringReportConfiguration(_ provider.SeedsGetter, _ interface{}) (*kubermaticv1.MeteringReportConfiguration, error) {
+	return nil, nil
+}
+
+func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]v1.MeteringReportConfiguration, error) {
+	return nil, nil
+}
+
+func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+	return nil
+}
+
+func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+	return nil
+}
+
+func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+	return nil
+}
+
+func listMeteringReports(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+	return nil, nil
+}
+
+func getMeteringReport(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) (string, error) {
+	return "", nil
+}
+
+func deleteMeteringReport(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) error {
+	return nil
+}
+
+func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeCreateMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeUpdateMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeDeleteMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
 }
 
 func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
-func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
-	return nil
-}
-
-func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return nil, nil
-}
-
-func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
 	return nil, nil
 }
 
@@ -52,15 +93,11 @@ func DecodeListMeteringReportReq(_ context.Context, r *http.Request) (interface{
 	return nil, nil
 }
 
-func getMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
-	return "", nil
-}
-
-func deleteMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
-	return nil
-}
-
 func DecodeGetMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
+func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return nil, nil
 }
 

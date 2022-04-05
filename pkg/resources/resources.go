@@ -38,6 +38,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -452,6 +453,12 @@ const (
 
 	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
+
+	// ApplicationInstallationCRDName defines the CRD name for application installation objects.
+	ApplicationInstallationCRDName = "applicationinstallations.apps.kubermatic.k8c.io"
+
+	// ApplicationInstallationCRDFilePath is the path of the crd in openapi.Efs.
+	ApplicationInstallationCRDFilePath = openapi.CRDRootFolder + "apps.kubermatic.k8c.io_applicationinstallations.yaml"
 )
 
 const (
@@ -551,9 +558,11 @@ const (
 	// KubOne ConfigMap name.
 	KubeOneScriptConfigMapName = "kubeone"
 	// KubeOne secret keys.
-	KubeOneManifest      = "manifest"
-	KubeOneSSHPrivateKey = "id_rsa"
-	KubeOneSSHPassphrase = "passphrase"
+	KubeOneManifest            = "manifest"
+	KubeOneSSHPrivateKey       = "id_rsa"
+	KubeOneSSHPassphrase       = "passphrase"
+	ContainerRuntimeDocker     = "docker"
+	ContainerRuntimeContainerd = "containerd"
 	// KubeOne natively-supported providers.
 	KubeOneAWS              = "aws"
 	KubeOneGCP              = "gcp"

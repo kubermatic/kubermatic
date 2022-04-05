@@ -17,6 +17,7 @@ limitations under the License.
 package kubermatic
 
 import (
+	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -30,7 +31,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func UserSSHKeyMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func UserSSHKeyMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return common.UserSSHKeyAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -39,7 +40,7 @@ func UserSSHKeyMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticC
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
@@ -86,7 +87,7 @@ func UserSSHKeyMutatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticC
 	}
 }
 
-func UserSSHKeyValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func UserSSHKeyValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return common.UserSSHKeyAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -94,7 +95,7 @@ func UserSSHKeyValidatingWebhookConfigurationCreator(cfg *kubermaticv1.Kubermati
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}
@@ -140,7 +141,7 @@ func UserSSHKeyValidatingWebhookConfigurationCreator(cfg *kubermaticv1.Kubermati
 	}
 }
 
-func UserValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func UserValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return common.UserAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -148,7 +149,7 @@ func UserValidatingWebhookConfigurationCreator(cfg *kubermaticv1.KubermaticConfi
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
-			ca, err := common.WebhookCABundle(cfg, client)
+			ca, err := common.WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
 			}

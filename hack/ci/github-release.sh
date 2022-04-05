@@ -225,6 +225,11 @@ set_helm_charts_version "$CHART_TAG" "$GIT_TAG"
 
 mkdir -p _dist
 
+# CRDs since KKP 2.21 are not directly put into the charts/ directory
+# anymore, but into pkg/ so they can be embedded. In our Github archives
+# we still want and need them to be part of the operator chart.
+copy_crds_to_chart
+
 for buildTarget in $RELEASE_PLATFORMS; do
   rm -rf _build
 

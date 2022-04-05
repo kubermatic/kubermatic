@@ -369,6 +369,11 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 		kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
 	}
 
+	// copy preset annotations
+	if partialCluster.Annotations != nil {
+		newClusterTemplate.Annotations = partialCluster.Annotations
+	}
+
 	newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
 
 	newClusterTemplate.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = adminUserInfo.Email
@@ -672,6 +677,17 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 		NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{
 			Spec: md.Spec,
 		},
+	}
+
+	// Add preset annotations
+	ct.Annotations = make(map[string]string)
+	if template.Annotations != nil {
+		if value, ok := template.Annotations[kubermaticv1.PresetNameAnnotation]; ok {
+			ct.Annotations[kubermaticv1.PresetNameAnnotation] = value
+		}
+		if value, ok := template.Annotations[kubermaticv1.PresetInvalidatedAnnotation]; ok {
+			ct.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = value
+		}
 	}
 
 	if len(template.UserSSHKeys) > 0 {

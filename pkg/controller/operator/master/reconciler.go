@@ -232,7 +232,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.
 
 	creators := []reconciling.NamedSecretCreatorGetter{
 		common.WebhookServingCASecretCreator(config),
-		common.WebhookServingCertSecretCreator(config, r.Client),
+		common.WebhookServingCertSecretCreator(ctx, config, r.Client),
 	}
 
 	if config.Spec.ImagePullSecret != "" {
@@ -400,10 +400,10 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 	logger.Debug("Reconciling Validating Webhooks")
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
-		common.SeedAdmissionWebhookCreator(config, r.Client),
-		common.KubermaticConfigurationAdmissionWebhookCreator(config, r.Client),
-		kubermatic.UserValidatingWebhookConfigurationCreator(config, r.Client),
-		kubermatic.UserSSHKeyValidatingWebhookConfigurationCreator(config, r.Client),
+		common.SeedAdmissionWebhookCreator(ctx, config, r.Client),
+		common.KubermaticConfigurationAdmissionWebhookCreator(ctx, config, r.Client),
+		kubermatic.UserValidatingWebhookConfigurationCreator(ctx, config, r.Client),
+		kubermatic.UserSSHKeyValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -417,7 +417,7 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 	logger.Debug("Reconciling Mutating Webhooks")
 
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
-		kubermatic.UserSSHKeyMutatingWebhookConfigurationCreator(config, r.Client),
+		kubermatic.UserSSHKeyMutatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {

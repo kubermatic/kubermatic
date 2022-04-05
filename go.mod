@@ -11,7 +11,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1509
-	github.com/anexia-it/go-anxcloud v0.3.8
+	github.com/anexia-it/go-anxcloud v0.3.26
 	github.com/aws/aws-sdk-go v1.43.12
 	github.com/aws/aws-sdk-go-v2/service/eks v1.18.0
 	github.com/cilium/cilium v1.11.1
@@ -45,7 +45,7 @@ require (
 	github.com/imdario/mergo v0.3.12
 	github.com/jetstack/cert-manager v1.7.1
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.43.0
+	github.com/kubermatic/machine-controller v1.46.0
 	github.com/minio/minio-go/v7 v7.0.13
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0

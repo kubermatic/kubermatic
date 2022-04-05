@@ -1168,7 +1168,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: desired RBAC Role Bindings for a project resource are created",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
@@ -1281,7 +1281,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 2
 		{
 			name:          "scenario 2: no op when desicred RBAC Role Bindings exist",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball"),
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1473,7 +1473,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 3
 		{
 			name:            "scenario 3: update when existing binding doesn't match desired ones",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"update", "update", "update"},
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
@@ -1771,7 +1771,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: desired RBAC Roles for a project resource are created",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
@@ -1870,7 +1870,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 2
 		{
 			name:          "scenario 2: no op when desicred RBAC Roles exist",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball"),
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -2030,7 +2030,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 3
 		{
 			name:            "scenario 3: update when desired are not the same as expected RBAC Roles",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"update", "update"},
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				{

@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/cloudinitsettings"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
@@ -591,6 +592,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
 		machinecontroller.ClusterCRDCreator(),
+		applications.ApplicationInstallationCRDCreator(),
 	}
 
 	if r.opaIntegration {

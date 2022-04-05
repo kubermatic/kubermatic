@@ -24,6 +24,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,7 +44,6 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.ApiserverDeploymentName:             {healthStatus: &extendedHealth.Apiserver, minReady: 1},
 		resources.ControllerManagerDeploymentName:     {healthStatus: &extendedHealth.Controller, minReady: 1},
 		resources.SchedulerDeploymentName:             {healthStatus: &extendedHealth.Scheduler, minReady: 1},
-		resources.MachineControllerDeploymentName:     {healthStatus: &extendedHealth.MachineController, minReady: 1},
 		resources.OpenVPNServerDeploymentName:         {healthStatus: &extendedHealth.OpenVPN, minReady: 1},
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
 	}
@@ -65,6 +65,17 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil, fmt.Errorf("failed to get etcd health: %w", err)
 	}
 	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
+
+	// check the actual status of the machineController components only if the API server is healthy
+	// because we need to access it to retrieve the machineController mutatingWebhookConfiguration
+	mcHealthStatus := kubermaticv1.HealthStatusDown
+	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
+		mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+		}
+	}
+	extendedHealth.MachineController = mcHealthStatus
 
 	return extendedHealth, nil
 }
@@ -102,6 +113,48 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 			)
 		}
 	})
+}
+
+func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	userClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, err
+	}
+
+	// check the existence of the mutatingWebhookConfiguration in the user cluster
+	key := types.NamespacedName{Name: resources.MachineControllerMutatingWebhookConfigurationName}
+	webhookMutatingConf := &admissionregistrationv1.MutatingWebhookConfiguration{}
+	err = userClient.Get(ctx, key, webhookMutatingConf)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return kubermaticv1.HealthStatusDown, err
+	}
+	// if the mutatingWebhookConfiguration doesn't exist yet, return StatusDown
+	if kerrors.IsNotFound(err) {
+		return kubermaticv1.HealthStatusDown, nil
+	}
+
+	// check the machine controller deployment is healthy
+	key = types.NamespacedName{Namespace: namespace, Name: resources.MachineControllerDeploymentName}
+	mcStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.MachineControllerDeploymentName, err)
+	}
+
+	// check the machine controller webhook deployment is healthy
+	key = types.NamespacedName{Namespace: namespace, Name: resources.MachineControllerWebhookDeploymentName}
+	mcWebhookStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.MachineControllerWebhookDeploymentName, err)
+	}
+
+	switch {
+	case mcStatus == kubermaticv1.HealthStatusUp && mcWebhookStatus == kubermaticv1.HealthStatusUp:
+		return kubermaticv1.HealthStatusUp, nil
+	case mcStatus == kubermaticv1.HealthStatusProvisioning || mcWebhookStatus == kubermaticv1.HealthStatusProvisioning:
+		return kubermaticv1.HealthStatusProvisioning, nil
+	default:
+		return kubermaticv1.HealthStatusDown, nil
+	}
 }
 
 func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {

@@ -67,6 +67,103 @@ func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter
 	}
 }
 
+// GetMeteringReportConfigurationEndpoint list report configurations for kkp metering tool.
+func GetMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
+
+		resp, err := getMeteringReportConfiguration(seedsGetter, req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get metering report configuration: %w", err)
+		}
+
+		return resp, nil
+	}
+}
+
+// ListMeteringReportConfigurationsEndpoint list report configurations for kkp metering tool.
+func ListMeteringReportConfigurationsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
+
+		resp, err := listMeteringReportConfigurations(seedsGetter)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list metering report configurations: %w", err)
+		}
+
+		return resp, nil
+	}
+}
+
+// CreateMeteringReportConfigurationEndpoint creates report configuration entry for kkp metering tool.
+func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
+
+		if err := createMeteringReportConfiguration(ctx, req, masterClient); err != nil {
+			return nil, fmt.Errorf("failed to create metering report configuration: %w", err)
+		}
+
+		return nil, nil
+	}
+}
+
+// UpdateMeteringReportConfigurationEndpoint updates existing report configuration entry for kkp metering tool.
+func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
+
+		if err := updateMeteringReportConfiguration(ctx, req, masterClient); err != nil {
+			return nil, fmt.Errorf("failed to update metering report configuration: %w", err)
+		}
+
+		return nil, nil
+	}
+}
+
+// DeleteMeteringReportConfigurationEndpoint deletes report configuration entry for kkp metering tool.
+func DeleteMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !userInfo.IsAdmin {
+			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		}
+
+		if err := deleteMeteringReportConfiguration(ctx, req, masterClient); err != nil {
+			return nil, fmt.Errorf("failed to delete metering report configuration: %w", err)
+		}
+
+		return nil, nil
+	}
+}
+
 // ListMeteringReportsEndpoint lists available reports.
 func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {

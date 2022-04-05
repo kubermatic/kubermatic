@@ -44,7 +44,7 @@ KUBECONFIG_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
 kubectl --namespace "$NAMESPACE" get secret internal-admin-kubeconfig -o json |
   jq '.data.kubeconfig' -r |
   base64 -d |
-  yq r --tojson - |
+  yq -o=json - |
   jq --arg url "$CLUSTER_URL" '.clusters[0].cluster.server = $url' \
     > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
 echo "Using kubeconfig $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE"
