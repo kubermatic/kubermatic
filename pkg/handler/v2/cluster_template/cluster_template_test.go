@@ -193,7 +193,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 	}
 }
 
-func x(t *testing.T) {
+func TestListClusterTemplates(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                     string
