@@ -213,6 +213,19 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			httpStatus:             http.StatusConflict,
 			expectedResponse:       `{"error":{"code":409,"message":"report configuration \"weekly\" already exists"}}`,
 		},
+		// scenario 6
+		{
+			name:       "Create new metering report configuration. Invalid name.",
+			reportName: "invalid_name_",
+			body: `{
+				"interval": 30,
+				"schedule": "1 1 1 * *"
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name can contain only alphanumeric characters or '-'"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
@@ -275,6 +288,19 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			expectedResponse:       `{"error":{"code":400,"message":"invalid cron expression format: X 1 1 * *"}}`,
 		},
 		// scenario 3
+		{
+			name:       "Update existing metering report configuration.",
+			reportName: "invalid_name_",
+			body: `{
+				"interval": 30,
+				"schedule": "1 1 1 * *"
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name can contain only alphanumeric characters or '-'"}}`,
+		},
+		// scenario 4
 		{
 			name:       "Update non-existing metering report configuration.",
 			reportName: "monthly",
