@@ -26,6 +26,8 @@ import (
 // BinaryForClusterVersion returns the full path to a kubectl binary
 // that shall be used to communicate with a usercluster. An error is
 // returned if no suitable kubectl can be determined.
+// We take advantage of version skew policy for kubectl, v1.1.1 would support v1.2.x and v1.0.x, to ship
+// only mandatory variants for kubectl.
 func BinaryForClusterVersion(version *semver.Version) (string, error) {
 	var binary string
 
