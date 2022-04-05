@@ -303,10 +303,10 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 		if nodePortsAllowedIPRange != "" {
 			req.nodePortsCIDRs = append(req.nodePortsCIDRs, nodePortsAllowedIPRange)
 		} else {
-			if network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster) {
+			if ipv4Network {
 				req.nodePortsCIDRs = append(req.nodePortsCIDRs, "0.0.0.0/0")
 			}
-			if network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster) {
+			if ipv6Network {
 				req.nodePortsCIDRs = append(req.nodePortsCIDRs, "::/0")
 			}
 		}
