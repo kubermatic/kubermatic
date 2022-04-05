@@ -19,7 +19,6 @@ package clients
 import (
 	"context"
 
-	"github.com/onsi/ginkgo/reporters"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
@@ -32,5 +31,5 @@ type Client interface {
 	CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) error
 	CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error)
 	CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, clusterName string) error
-	DeleteCluster(ctx context.Context, log *zap.SugaredLogger, report *reporters.JUnitTestSuite, cluster *kubermaticv1.Cluster) error
+	DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error
 }

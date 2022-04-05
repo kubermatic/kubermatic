@@ -25,13 +25,11 @@ import (
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/onsi/ginkgo/reporters"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
@@ -322,72 +320,65 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 	return nil
 }
 
-func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, report *reporters.JUnitTestSuite, cluster *kubermaticv1.Cluster) error {
+func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	var (
+		selector labels.Selector
+		err      error
+	)
+
+	if c.opts.WorkerName != "" {
+		selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", c.opts.WorkerName))
+		if err != nil {
+			return fmt.Errorf("failed to parse selector: %w", err)
+		}
+	}
+
 	deleteTimeout := 15 * time.Minute
 	if cluster.Spec.Cloud.Azure != nil {
 		// 15 Minutes are not enough for Azure
 		deleteTimeout = 30 * time.Minute
 	}
 
-	if err := util.JUnitWrapper(
-		"[Kubermatic] Delete cluster",
-		report,
-		func() error {
-			var selector labels.Selector
-			var err error
-			if c.opts.WorkerName != "" {
-				selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", c.opts.WorkerName))
-				if err != nil {
-					return fmt.Errorf("failed to parse selector: %w", err)
-				}
-			}
-			return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
-				clusterList := &kubermaticv1.ClusterList{}
-				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-				if err := c.opts.SeedClusterClient.List(ctx, clusterList, listOpts); err != nil {
-					log.Errorw("Listing clusters failed", zap.Error(err))
-					return false, nil
-				}
+	return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
+		clusterList := &kubermaticv1.ClusterList{}
+		listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
+		if err := c.opts.SeedClusterClient.List(ctx, clusterList, listOpts); err != nil {
+			log.Errorw("Listing clusters failed", zap.Error(err))
+			return false, nil
+		}
 
-				// Success!
-				if len(clusterList.Items) == 0 {
-					return true, nil
-				}
+		// Success!
+		if len(clusterList.Items) == 0 {
+			return true, nil
+		}
 
-				// Should never happen
-				if len(clusterList.Items) > 1 {
-					return false, fmt.Errorf("expected to find zero or one cluster, got %d", len(clusterList.Items))
-				}
+		// Should never happen
+		if len(clusterList.Items) > 1 {
+			return false, fmt.Errorf("expected to find zero or one cluster, got %d", len(clusterList.Items))
+		}
 
-				// Cluster is currently being deleted
-				if clusterList.Items[0].DeletionTimestamp != nil {
-					return false, nil
-				}
+		// Cluster is currently being deleted
+		if clusterList.Items[0].DeletionTimestamp != nil {
+			return false, nil
+		}
 
-				// Issue Delete call
-				log.With("cluster", clusterList.Items[0].Name).Info("Deleting user cluster now...")
+		// Issue Delete call
+		log.With("cluster", clusterList.Items[0].Name).Info("Deleting user cluster now...")
 
-				deleteParms := &projectclient.DeleteClusterParams{
-					Context:   ctx,
-					ProjectID: c.opts.KubermaticProject,
-					ClusterID: clusterList.Items[0].Name,
-					DC:        c.opts.Seed.Name,
-				}
-				utils.SetupParams(nil, deleteParms, 3*time.Second, deleteTimeout)
+		deleteParms := &projectclient.DeleteClusterParams{
+			Context:   ctx,
+			ProjectID: c.opts.KubermaticProject,
+			ClusterID: clusterList.Items[0].Name,
+			DC:        c.opts.Seed.Name,
+		}
+		utils.SetupParams(nil, deleteParms, 3*time.Second, deleteTimeout)
 
-				if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParms, c.opts.KubermaticAuthenticator); err != nil {
-					log.Warnw("Failed to delete cluster", zap.Error(err))
-				}
+		if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParms, c.opts.KubermaticAuthenticator); err != nil {
+			log.Warnw("Failed to delete cluster", zap.Error(err))
+		}
 
-				return false, nil
-			})
-		},
-	); err != nil {
-		log.Errorw("Failed to delete cluster", zap.Error(err))
-		return err
-	}
-
-	return nil
+		return false, nil
+	})
 }
 
 // getErrorResponse converts the client error response to string.

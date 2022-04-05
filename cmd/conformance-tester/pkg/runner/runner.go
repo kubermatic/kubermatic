@@ -237,7 +237,13 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		return report, nil
 	}
 
-	return report, r.kkpClient.DeleteCluster(ctx, log, report, cluster)
+	if err := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
+		return r.kkpClient.DeleteCluster(ctx, log, cluster)
+	}); err != nil {
+		return report, fmt.Errorf("failed to delete cluster: %w", err)
+	}
+
+	return report, nil
 }
 
 func (r *TestRunner) ensureCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, report *reporters.JUnitTestSuite) (*kubermaticv1.Cluster, error) {
