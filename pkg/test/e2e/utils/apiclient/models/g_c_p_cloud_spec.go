@@ -21,7 +21,8 @@ type GCPCloudSpec struct {
 	// network
 	Network string `json:"network,omitempty"`
 
-	// node ports allowed IP range
+	// NodePortsAllowedIPRange defines single IP range from which NodePort services will be available.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// service account
@@ -32,6 +33,9 @@ type GCPCloudSpec struct {
 
 	// credentials reference
 	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// node ports allowed IP ranges
+	NodePortsAllowedIPRanges *NetworkRanges `json:"nodePortsAllowedIPRanges,omitempty"`
 }
 
 // Validate validates this g c p cloud spec
@@ -39,6 +43,10 @@ func (m *GCPCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCredentialsReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNodePortsAllowedIPRanges(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -67,11 +75,34 @@ func (m *GCPCloudSpec) validateCredentialsReference(formats strfmt.Registry) err
 	return nil
 }
 
+func (m *GCPCloudSpec) validateNodePortsAllowedIPRanges(formats strfmt.Registry) error {
+	if swag.IsZero(m.NodePortsAllowedIPRanges) { // not required
+		return nil
+	}
+
+	if m.NodePortsAllowedIPRanges != nil {
+		if err := m.NodePortsAllowedIPRanges.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodePortsAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodePortsAllowedIPRanges")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this g c p cloud spec based on the context it is used
 func (m *GCPCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCredentialsReference(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNodePortsAllowedIPRanges(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -89,6 +120,22 @@ func (m *GCPCloudSpec) contextValidateCredentialsReference(ctx context.Context, 
 				return ve.ValidateName("credentialsReference")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("credentialsReference")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *GCPCloudSpec) contextValidateNodePortsAllowedIPRanges(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NodePortsAllowedIPRanges != nil {
+		if err := m.NodePortsAllowedIPRanges.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodePortsAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodePortsAllowedIPRanges")
 			}
 			return err
 		}

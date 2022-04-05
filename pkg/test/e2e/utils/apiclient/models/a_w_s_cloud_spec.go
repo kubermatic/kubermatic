@@ -33,7 +33,8 @@ type AWSCloudSpec struct {
 	// instance profile name
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
-	// node ports allowed IP range
+	// NodePortsAllowedIPRange defines single IP range from which NodePort services will be available.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// route table ID
@@ -50,6 +51,9 @@ type AWSCloudSpec struct {
 
 	// credentials reference
 	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// node ports allowed IP ranges
+	NodePortsAllowedIPRanges *NetworkRanges `json:"nodePortsAllowedIPRanges,omitempty"`
 }
 
 // Validate validates this a w s cloud spec
@@ -57,6 +61,10 @@ func (m *AWSCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCredentialsReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNodePortsAllowedIPRanges(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -85,11 +93,34 @@ func (m *AWSCloudSpec) validateCredentialsReference(formats strfmt.Registry) err
 	return nil
 }
 
+func (m *AWSCloudSpec) validateNodePortsAllowedIPRanges(formats strfmt.Registry) error {
+	if swag.IsZero(m.NodePortsAllowedIPRanges) { // not required
+		return nil
+	}
+
+	if m.NodePortsAllowedIPRanges != nil {
+		if err := m.NodePortsAllowedIPRanges.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodePortsAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodePortsAllowedIPRanges")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this a w s cloud spec based on the context it is used
 func (m *AWSCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCredentialsReference(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNodePortsAllowedIPRanges(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -107,6 +138,22 @@ func (m *AWSCloudSpec) contextValidateCredentialsReference(ctx context.Context, 
 				return ve.ValidateName("credentialsReference")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("credentialsReference")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AWSCloudSpec) contextValidateNodePortsAllowedIPRanges(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NodePortsAllowedIPRanges != nil {
+		if err := m.NodePortsAllowedIPRanges.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nodePortsAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodePortsAllowedIPRanges")
 			}
 			return err
 		}
