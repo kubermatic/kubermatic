@@ -46,6 +46,9 @@ type VSphereCloudSpec struct {
 	// StoragePolicy to be used for storage provisioning
 	StoragePolicy string `json:"storagePolicy,omitempty"`
 
+	// This is category for the machine deployment tags
+	TagCategoryID string `json:"tagCategoryID,omitempty"`
+
 	// Username is the vSphere user name.
 	// +optional
 	Username string `json:"username,omitempty"`
