@@ -83,6 +83,7 @@ elif [[ $provider == "nutanix" ]]; then
 fi
 
 timeout -s 9 90m ./_build/conformance-tester $EXTRA_ARGS \
+  -client="${SETUP_MODE:-api}" \
   -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \

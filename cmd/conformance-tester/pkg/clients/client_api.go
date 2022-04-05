@@ -177,7 +177,7 @@ func (c *apiClient) CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) e
 func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {
 	log.Info("Creating cluster...")
 
-	cluster := scenario.Cluster(c.opts.Secrets)
+	cluster := scenario.APICluster(c.opts.Secrets)
 	// The cluster name must be unique per project;
 	// we build up a readable name with the various cli parameters annd
 	// add a random string in the end to ensure we really have a unique name.
@@ -257,11 +257,11 @@ func (c *apiClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, s
 	return crCluster, nil
 }
 
-func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, clusterName string) error {
+func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	nodeDeploymentGetParams := &projectclient.ListNodeDeploymentsParams{
 		Context:   ctx,
 		ProjectID: c.opts.KubermaticProject,
-		ClusterID: clusterName,
+		ClusterID: cluster.Name,
 		DC:        c.opts.Seed.Name,
 	}
 	utils.SetupParams(nil, nodeDeploymentGetParams, 5*time.Second, 1*time.Minute)
@@ -305,7 +305,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 		params := &projectclient.CreateNodeDeploymentParams{
 			Context:   ctx,
 			ProjectID: c.opts.KubermaticProject,
-			ClusterID: clusterName,
+			ClusterID: cluster.Name,
 			DC:        c.opts.Seed.Name,
 			Body:      &nd,
 		}
@@ -320,7 +320,7 @@ func (c *apiClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredL
 	return nil
 }
 
-func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
 	var (
 		selector labels.Selector
 		err      error
@@ -333,13 +333,7 @@ func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, c
 		}
 	}
 
-	deleteTimeout := 15 * time.Minute
-	if cluster.Spec.Cloud.Azure != nil {
-		// 15 Minutes are not enough for Azure
-		deleteTimeout = 30 * time.Minute
-	}
-
-	return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
+	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
 		clusterList := &kubermaticv1.ClusterList{}
 		listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 		if err := c.opts.SeedClusterClient.List(ctx, clusterList, listOpts); err != nil {
@@ -371,7 +365,7 @@ func (c *apiClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, c
 			ClusterID: clusterList.Items[0].Name,
 			DC:        c.opts.Seed.Name,
 		}
-		utils.SetupParams(nil, deleteParms, 3*time.Second, deleteTimeout)
+		utils.SetupParams(nil, deleteParms, 3*time.Second, timeout)
 
 		if _, err := c.opts.KubermaticClient.Project.DeleteCluster(deleteParms, c.opts.KubermaticAuthenticator); err != nil {
 			log.Warnw("Failed to delete cluster", zap.Error(err))

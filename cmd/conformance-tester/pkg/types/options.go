@@ -44,6 +44,7 @@ import (
 
 // Options represent combination of flags and ENV options.
 type Options struct {
+	Client                       string
 	NamePrefix                   string
 	providersFlag                string
 	Providers                    sets.String
@@ -93,6 +94,7 @@ func NewDefaultOptions() *Options {
 	providers := sets.NewString("aws", "digitalocean", "openstack", "hetzner", "vsphere", "azure", "packet", "gcp", "nutanix")
 
 	return &Options{
+		Client:                       "api",
 		providersFlag:                strings.Join(providers.List(), ","),
 		Providers:                    providers,
 		PublicKeys:                   [][]byte{},
@@ -115,6 +117,7 @@ func (o *Options) AddFlags() {
 	// user.Current does not work in Alpine
 	pubKeyPath = path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
 
+	flag.StringVar(&o.Client, "client", o.Client, "controls how to interact with KKP; can be either `api` or `gitops`")
 	flag.StringVar(&o.ExistingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
 	flag.StringVar(&o.providersFlag, "providers", o.providersFlag, "comma separated list of providers to test")
 	flag.StringVar(&o.NamePrefix, "name-prefix", "", "prefix used for all cluster names")
@@ -151,6 +154,10 @@ func (o *Options) AddFlags() {
 func (o *Options) ParseFlags() error {
 	if o.ExistingClusterLabel != "" && o.ClusterParallelCount != 1 {
 		return errors.New("-cluster-parallel-count must be 1 when testing an existing cluster")
+	}
+
+	if !sets.NewString("api", "gitops").Has(o.Client) {
+		return fmt.Errorf("invalid -client option %q", o.Client)
 	}
 
 	o.Providers = sets.NewString()

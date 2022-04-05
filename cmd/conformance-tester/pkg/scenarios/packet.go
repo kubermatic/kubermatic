@@ -20,9 +20,18 @@ import (
 	"context"
 	"fmt"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	equinixmetaltypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+)
+
+const (
+	packetInstanceType = "t1.small.x86"
+	packetDatacenter   = "packet-ewr1"
 )
 
 // GetPacketScenarios returns a matrix of (version x operating system).
@@ -32,14 +41,14 @@ func GetPacketScenarios(versions []*semver.Semver) []Scenario {
 		// Ubuntu
 		scenarios = append(scenarios, &packetScenario{
 			version: v,
-			nodeOsSpec: apimodels.OperatingSystemSpec{
+			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		scenarios = append(scenarios, &packetScenario{
 			version: v,
-			nodeOsSpec: apimodels.OperatingSystemSpec{
+			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
 		})
@@ -49,21 +58,20 @@ func GetPacketScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type packetScenario struct {
-	version    *semver.Semver
-	nodeOsSpec apimodels.OperatingSystemSpec
+	version *semver.Semver
+	osSpec  apimodels.OperatingSystemSpec
 }
 
 func (s *packetScenario) Name() string {
-	return fmt.Sprintf("packet-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
+	return fmt.Sprintf("packet-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
 }
 
-func (s *packetScenario) Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
+func (s *packetScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
-			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: "packet-ewr1",
+					DatacenterName: packetDatacenter,
 					Packet: &apimodels.PacketCloudSpec{
 						APIKey:    secrets.Packet.APIKey,
 						ProjectID: secrets.Packet.ProjectID,
@@ -75,8 +83,21 @@ func (s *packetScenario) Cluster(secrets types.Secrets) *apimodels.CreateCluster
 	}
 }
 
+func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
+	return &kubermaticv1.ClusterSpec{
+		Cloud: kubermaticv1.CloudSpec{
+			DatacenterName: packetDatacenter,
+			Packet: &kubermaticv1.PacketCloudSpec{
+				APIKey:    secrets.Packet.APIKey,
+				ProjectID: secrets.Packet.ProjectID,
+			},
+		},
+		Version: *s.version,
+	}
+}
+
 func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	instanceType := "t1.small.x86"
+	instanceType := packetInstanceType
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
 		{
@@ -91,13 +112,24 @@ func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ types.Sec
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.nodeOsSpec,
+					OperatingSystem: &s.osSpec,
 				},
 			},
 		},
 	}, nil
 }
 
+func (s *packetScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderPacket, equinixmetaltypes.RawConfig{
+		InstanceType: providerconfig.ConfigVarString{Value: packetInstanceType},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return []clusterv1alpha1.MachineDeployment{md}, nil
+}
+
 func (s *packetScenario) OS() apimodels.OperatingSystemSpec {
-	return s.nodeOsSpec
+	return s.osSpec
 }

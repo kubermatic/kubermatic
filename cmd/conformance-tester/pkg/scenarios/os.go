@@ -17,24 +17,25 @@ limitations under the License.
 package scenarios
 
 import (
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) string {
+func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) providerconfig.OperatingSystem {
 	if spec.Centos != nil {
-		return "centos"
+		return providerconfig.OperatingSystemCentOS
 	}
 	if spec.Ubuntu != nil {
-		return "ubuntu"
+		return providerconfig.OperatingSystemUbuntu
 	}
 	if spec.Sles != nil {
-		return "sles"
+		return providerconfig.OperatingSystemSLES
 	}
 	if spec.Rhel != nil {
-		return "rhel"
+		return providerconfig.OperatingSystemRHEL
 	}
 	if spec.Flatcar != nil {
-		return "flatcar"
+		return providerconfig.OperatingSystemFlatcar
 	}
 
 	return ""
