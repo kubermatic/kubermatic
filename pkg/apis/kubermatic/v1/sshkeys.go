@@ -50,8 +50,9 @@ type SSHKeySpec struct {
 	// Name is the human readable name for this SSH key.
 	Name string `json:"name"`
 	// Owner is the name of the User object that owns this SSH key.
-	// This field is immutable.
-	Owner string `json:"owner"`
+	// Deprecated: This field is not used anymore.
+	// +optional
+	Owner string `json:"owner,omitempty"`
 	// Project is the name of the Project object that this SSH key belongs to.
 	// This field is immutable.
 	Project string `json:"project"`
@@ -59,6 +60,7 @@ type SSHKeySpec struct {
 	Clusters []string `json:"clusters"`
 	// Fingerprint is calculated on the server-side and doesn't need to be set
 	// by clients.
+	// +optional
 	Fingerprint string `json:"fingerprint"`
 	// PublicKey is the SSH public key.
 	PublicKey string `json:"publicKey"`

@@ -57,10 +57,18 @@ type UserStatus struct {
 
 // UserSpec specifies a user.
 type UserSpec struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	IsAdmin bool   `json:"admin"`
+	// ID is an unnused legacy field.
+	// Deprecated: do not set this field anymore.
+	ID string `json:"id,omitempty"`
+	// Name is the full name of this user.
+	Name string `json:"name"`
+	// Email is the email address of this user. Emails must be globally unique across
+	// all KKP users.
+	Email string `json:"email"`
+	// IsAdmin defines whether this user is an administrator with additional permissions.
+	// Admins can for example see all projects and clusters in the KKP dashboard.
+	// +kubebuilder:default=false
+	IsAdmin bool `json:"admin"`
 
 	// Project is the name of the project that this service account user is tied to. This
 	// field is only applicable to service accounts and regular users must not set this field.
