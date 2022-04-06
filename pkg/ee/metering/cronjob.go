@@ -133,7 +133,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 						`mkdir -p /report/` + reportName + `
 kubermatic-metering-report \
   -workdir=/metering-data \
-  -reportdir=/report` + reportName + ` \
+  -reportdir=/report/` + reportName + ` \
   -last-number-of-days=` + strconv.Itoa(mrc.Interval) + ` \
   -seed=` + seedName + ` \
   -scrape-interval=300
