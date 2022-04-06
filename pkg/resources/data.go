@@ -538,6 +538,10 @@ func (d *TemplateData) IsEncryptionConfigurationEnabled() bool {
 	return d.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest] && d.Cluster().Spec.EncryptionConfiguration != nil && d.Cluster().Spec.EncryptionConfiguration.Enabled
 }
 
+func (d *TemplateData) IsEncryptionActive() bool {
+	return d.Cluster().Status.ActiveEncryptionKey != "" || d.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
+}
+
 func UnwrapCommand(container corev1.Container) (found bool, command httpproberapi.Command) {
 	for i, arg := range container.Args {
 		kubermaticlog.Logger.Debugw("unwrap command processing argument", "arg", arg)

@@ -17,8 +17,6 @@ limitations under the License.
 package apiserver
 
 import (
-	"errors"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -41,14 +39,18 @@ func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconcil
 			}
 
 			// if encryption was initialized but re-encryption of data hasn't finished, do not update the secret.
-			// we are waiting for kubermatic_encryption_controller to finish the job.
+			// we are waiting for kubermatic_encryption_controller to finish the re-encryption job. You do not want
+			// to mess with the EncryptionConfiguration at that moment as introducing different keys might make the
+			// encrypted data unreadable for kube-apiserver.
 			if data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) &&
 				data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionFinished, corev1.ConditionFalse) {
 				return secret, nil
 			}
 
-			if data.IsEncryptionConfigurationEnabled() && data.Cluster().Spec.EncryptionConfiguration.Secretbox == nil {
-				return nil, errors.New("cannot configure encryption, encryption is enabled but no secretbox key is provided")
+			// encryption has been disabled but there is still active encryption;
+			// we need to decrypt all data before removing the encryption configuration
+			if !data.IsEncryptionConfigurationEnabled() && data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) {
+
 			}
 
 			var config apiserverconfigv1.EncryptionConfiguration
