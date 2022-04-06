@@ -14,20 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package scenarios
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-// Returns a matrix of (version x operating system).
-func getNutanixScenarios(versions []*semver.Semver) []testScenario {
-	var scenarios []testScenario
+// GetNutanixScenarios returns a matrix of (version x operating system).
+func GetNutanixScenarios(versions []*semver.Semver) []Scenario {
+	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &nutanixScenario{
@@ -57,7 +58,7 @@ func (s *nutanixScenario) Name() string {
 	return fmt.Sprintf("nutanix-%s-%s", getOSNameFromSpec(s.nodeOsSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
 }
 
-func (s *nutanixScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+func (s *nutanixScenario) Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",
@@ -85,7 +86,7 @@ func (s *nutanixScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	return spec
 }
 
-func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	replicas := int32(num)
 

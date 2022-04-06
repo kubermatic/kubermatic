@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,28 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package util
 
 import (
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	"io"
+	"os"
 )
 
-func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) string {
-	if spec.Centos != nil {
-		return "centos"
+func PrintFileUnbuffered(filename string) error {
+	fd, err := os.Open(filename)
+	if err != nil {
+		return err
 	}
-	if spec.Ubuntu != nil {
-		return "ubuntu"
-	}
-	if spec.Sles != nil {
-		return "sles"
-	}
-	if spec.Rhel != nil {
-		return "rhel"
-	}
-	if spec.Flatcar != nil {
-		return "flatcar"
-	}
+	defer fd.Close()
+	return PrintUnbuffered(fd)
+}
 
-	return ""
+// printUnbuffered uses io.Copy to print data to stdout.
+// It should be used for all bigger logs, to avoid buffering
+// them in memory and getting oom killed because of that.
+func PrintUnbuffered(src io.Reader) error {
+	_, err := io.Copy(os.Stdout, src)
+	return err
 }

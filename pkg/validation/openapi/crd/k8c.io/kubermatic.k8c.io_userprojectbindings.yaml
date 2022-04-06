@@ -51,10 +51,15 @@ spec:
             description: UserProjectBindingSpec specifies a user.
             properties:
               group:
+                description: Group is the user's group, determining their permissions
+                  within the project.
                 type: string
               projectID:
+                description: ProjectID is the name of the target project.
                 type: string
               userEmail:
+                description: UserEmail is the email of the user that is bound to the
+                  given project.
                 type: string
             required:
             - group

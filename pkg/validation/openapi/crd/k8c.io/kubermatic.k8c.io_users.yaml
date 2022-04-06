@@ -46,10 +46,18 @@ spec:
             description: UserSpec specifies a user.
             properties:
               admin:
+                default: false
+                description: IsAdmin defines whether this user is an administrator
+                  with additional permissions. Admins can for example see all projects
+                  and clusters in the KKP dashboard.
                 type: boolean
               email:
+                description: Email is the email address of this user. Emails must
+                  be globally unique across all KKP users.
                 type: string
               id:
+                description: 'ID is an unnused legacy field. Deprecated: do not set
+                  this field anymore.'
                 type: string
               invalidTokensReference:
                 description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector
@@ -91,6 +99,7 @@ spec:
                     type: string
                 type: object
               name:
+                description: Name is the full name of this user.
                 type: string
               project:
                 description: Project is the name of the project that this service
@@ -118,7 +127,6 @@ spec:
             required:
             - admin
             - email
-            - id
             - name
             type: object
           status:

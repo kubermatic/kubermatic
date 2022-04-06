@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,31 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package scenarios
 
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
-const alibabaDC = "alibaba-eu-central-1a"
-
-// Returns a matrix of (version x operating system).
-func getAlibabaScenarios(versions []*semver.Semver) []testScenario {
-	var scenarios []testScenario
+// GetGCPScenarios returns a matrix of (version x operating system).
+func GetGCPScenarios(versions []*semver.Semver) []Scenario {
+	var scenarios []Scenario
 	for _, v := range versions {
 		// Ubuntu
-		scenarios = append(scenarios, &alibabaScenario{
+		scenarios = append(scenarios, &gcpScenario{
 			version: v,
 			nodeOsSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
-		scenarios = append(scenarios, &alibabaScenario{
+		scenarios = append(scenarios, &gcpScenario{
 			version: v,
 			nodeOsSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
@@ -48,25 +48,27 @@ func getAlibabaScenarios(versions []*semver.Semver) []testScenario {
 	return scenarios
 }
 
-type alibabaScenario struct {
+type gcpScenario struct {
 	version    *semver.Semver
 	nodeOsSpec apimodels.OperatingSystemSpec
 }
 
-func (s *alibabaScenario) Name() string {
-	return fmt.Sprintf("alibaba-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
+func (s *gcpScenario) Name() string {
+	version := strings.ReplaceAll(s.version.String(), ".", "-")
+	return fmt.Sprintf("gcp-%s-%s", getOSNameFromSpec(s.nodeOsSpec), version)
 }
 
-func (s *alibabaScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+func (s *gcpScenario) Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: alibabaDC,
-					Alibaba: &apimodels.AlibabaCloudSpec{
-						AccessKeySecret: secrets.Alibaba.AccessKeySecret,
-						AccessKeyID:     secrets.Alibaba.AccessKeyID,
+					DatacenterName: "gcp-westeurope",
+					Gcp: &apimodels.GCPCloudSpec{
+						ServiceAccount: secrets.GCP.ServiceAccount,
+						Network:        secrets.GCP.Network,
+						Subnetwork:     secrets.GCP.Subnetwork,
 					},
 				},
 				Version: apimodels.Semver(s.version.String()),
@@ -75,19 +77,24 @@ func (s *alibabaScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 }
 
-func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+func (s *gcpScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
+	replicas := int32(num)
+
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
+				Replicas: &replicas,
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
-						Alibaba: &apimodels.AlibabaNodeSpec{
-							InstanceType:            "ecs.c6.xsmall",
-							DiskSize:                "40",
-							DiskType:                "cloud_efficiency",
-							VSwitchID:               "vsw-gw8g8mn4ohmj483hsylmn",
-							InternetMaxBandwidthOut: "10",
-							ZoneID:                  alibabaDC,
+						Gcp: &apimodels.GCPNodeSpec{
+							Zone:        secrets.GCP.Zone,
+							MachineType: "n1-standard-2",
+							DiskType:    "pd-standard",
+							DiskSize:    50,
+							Preemptible: false,
+							Labels: map[string]string{
+								"kubernetes-cluster": "my-cluster",
+							},
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -100,6 +107,6 @@ func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets se
 	}, nil
 }
 
-func (s *alibabaScenario) OS() apimodels.OperatingSystemSpec {
+func (s *gcpScenario) OS() apimodels.OperatingSystemSpec {
 	return s.nodeOsSpec
 }

@@ -619,7 +619,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 
 			name:          "Scenario 1: When a project is removed corresponding Subject from the Cluster RBAC Binding are removed",
 			projectToSync: test.CreateProject("plan9"),
-			// projectToSync: test.CreateProject("plan9", test.CreateUser("James Bond")),
 			projectResourcesToSync: []projectResource{
 				{
 					object: &kubermaticv1.Cluster{
@@ -1933,7 +1932,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 
 			name:          "Scenario 1: When a project is removed corresponding Subject from the RBAC Binding are removed",
 			projectToSync: test.CreateProject("plan9"),
-			// projectToSync: test.CreateProject("plan9", test.CreateUser("James Bond")),
 			projectResourcesToSync: []projectResource{
 
 				{

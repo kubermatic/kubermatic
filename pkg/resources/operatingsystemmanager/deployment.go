@@ -43,7 +43,7 @@ var (
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("2"),
+				corev1.ResourceCPU:    resource.MustParse("1"),
 			},
 		},
 	}
@@ -51,7 +51,7 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v0.3.9"
+	Tag  = "v0.4.2"
 )
 
 type operatingSystemManagerData interface {
@@ -240,16 +240,8 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
 		}
 		if nodeSettings.PauseImage != "" {
-			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
+			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
 		}
-	}
-
-	if cs.podCidr != "" {
-		flags = append(flags, "-pod-cidr", cs.podCidr)
-	}
-
-	if cs.nodePortRange != "" {
-		flags = append(flags, "-node-port-range", cs.nodePortRange)
 	}
 
 	if cs.containerRuntime != "" {

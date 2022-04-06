@@ -877,6 +877,9 @@ spec:
                       storagePolicy:
                         description: StoragePolicy to be used for storage provisioning
                         type: string
+                      tagCategoryID:
+                        description: This is category for the machine deployment tags
+                        type: string
                       username:
                         description: Username is the vSphere user name.
                         type: string
@@ -1718,6 +1721,7 @@ spec:
                     type: integer
                 type: object
               pause:
+                default: false
                 description: Pause tells that this cluster is currently not managed
                   by the controller. It indicates that the user needs to do some action
                   to resolve the pause.
@@ -1785,8 +1789,12 @@ spec:
               description: ClusterTemplateSSHKey is the object for holding SSH key.
               properties:
                 id:
+                  description: ID is the name of the UserSSHKey object that is supposed
+                    to be assigned to any ClusterTemplateInstance created based on
+                    this template.
                   type: string
                 name:
+                  description: Name is the human readable SSH key name.
                   type: string
               required:
               - id
