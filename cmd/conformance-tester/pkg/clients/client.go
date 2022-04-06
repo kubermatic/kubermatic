@@ -18,11 +18,14 @@ package clients
 
 import (
 	"context"
+	"time"
 
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Client interface {
@@ -30,6 +33,6 @@ type Client interface {
 	CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error)
 	CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) error
 	CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error)
-	CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, clusterName string) error
-	DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error
+	CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error
+	DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error
 }

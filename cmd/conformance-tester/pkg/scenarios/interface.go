@@ -18,22 +18,32 @@ package scenarios
 
 import (
 	"context"
+	"encoding/json"
 	"math/rand"
 	"strings"
 	"time"
 
 	"go.uber.org/zap"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilrand "k8s.io/apimachinery/pkg/util/rand"
 )
 
 type Scenario interface {
 	Name() string
-	Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec
-	NodeDeployments(ctx context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error)
 	OS() apimodels.OperatingSystemSpec
+	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
+	APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec
+	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error)
+	NodeDeployments(ctx context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error)
 }
 
 func GetScenarios(opts *types.Options, log *zap.SugaredLogger) []Scenario {
@@ -42,7 +52,7 @@ func GetScenarios(opts *types.Options, log *zap.SugaredLogger) []Scenario {
 	var scenarios []Scenario
 	if opts.Providers.Has("aws") {
 		log.Info("Adding AWS scenarios")
-		scenarios = append(scenarios, GetAWSScenarios(opts.Versions, opts.KubermaticClient, opts.KubermaticAuthenticator)...)
+		scenarios = append(scenarios, GetAWSScenarios(opts.Versions, opts.KubermaticClient, opts.KubermaticAuthenticator, opts.Seed)...)
 	}
 	if opts.Providers.Has("digitalocean") {
 		log.Info("Adding Digitalocean scenarios")
@@ -123,4 +133,66 @@ func shuffle(vals []Scenario) []Scenario {
 		vals = append(vals[:randIndex], vals[randIndex+1:]...)
 	}
 	return ret
+}
+
+func createMachineDeployment(replicas int, version *semver.Semver, os providerconfig.OperatingSystem, osSpec interface{}, provider providerconfig.CloudProvider, providerSpec interface{}) (clusterv1alpha1.MachineDeployment, error) {
+	replicas32 := int32(replicas)
+
+	encodedOSSpec, err := json.Marshal(osSpec)
+	if err != nil {
+		return clusterv1alpha1.MachineDeployment{}, err
+	}
+
+	encodedCloudProviderSpec, err := json.Marshal(providerSpec)
+	if err != nil {
+		return clusterv1alpha1.MachineDeployment{}, err
+	}
+
+	cfg := providerconfig.Config{
+		CloudProvider: provider,
+		CloudProviderSpec: runtime.RawExtension{
+			Raw: encodedCloudProviderSpec,
+		},
+		OperatingSystem: os,
+		OperatingSystemSpec: runtime.RawExtension{
+			Raw: encodedOSSpec,
+		},
+	}
+
+	encodedConfig, err := json.Marshal(cfg)
+	if err != nil {
+		return clusterv1alpha1.MachineDeployment{}, err
+	}
+
+	machineLabels := map[string]string{
+		"machine": "md-" + utilrand.String(5),
+	}
+
+	return clusterv1alpha1.MachineDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "e2e-" + utilrand.String(5),
+			Namespace: metav1.NamespaceSystem,
+		},
+		Spec: clusterv1alpha1.MachineDeploymentSpec{
+			Replicas: &replicas32,
+			Selector: metav1.LabelSelector{
+				MatchLabels: machineLabels,
+			},
+			Template: clusterv1alpha1.MachineTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: machineLabels,
+				},
+				Spec: clusterv1alpha1.MachineSpec{
+					Versions: clusterv1alpha1.MachineVersionInfo{
+						Kubelet: version.String(),
+					},
+					ProviderSpec: clusterv1alpha1.ProviderSpec{
+						Value: &runtime.RawExtension{
+							Raw: encodedConfig,
+						},
+					},
+				},
+			},
+		},
+	}, nil
 }

@@ -104,16 +104,21 @@ func main() {
 		log.Fatalw("Failed to setup kube clients", zap.Error(err))
 	}
 
-	// setup test runner, choose between API-based or GitOps-based implementations
-	runner := runner.NewAPIRunner(opts, log)
+	// setup test runner, choose between API-based or Kubernetes-based implementations
+	var testRunner *runner.TestRunner
+	if opts.Client == "kube" {
+		testRunner = runner.NewKubeRunner(opts, log)
+	} else {
+		testRunner = runner.NewAPIRunner(opts, log)
+	}
 
 	// setup runner and KKP clients
 	log.Info("Preparing project...")
-	if err := runner.Setup(rootCtx); err != nil {
+	if err := testRunner.Setup(rootCtx); err != nil {
 		log.Fatalw("Failed to setup runner", zap.Error(err))
 	}
 
-	if err := runner.SetupProject(rootCtx); err != nil {
+	if err := testRunner.SetupProject(rootCtx); err != nil {
 		log.Fatalw("Failed to setup project", zap.Error(err))
 	}
 
@@ -122,7 +127,7 @@ func main() {
 	// let the magic happen!
 	log.Info("Running E2E tests...")
 	start := time.Now()
-	if err := runner.Run(rootCtx, scenarios.GetScenarios(opts, log)); err != nil {
+	if err := testRunner.Run(rootCtx, scenarios.GetScenarios(opts, log)); err != nil {
 		log.Fatalw("Test failed", zap.Error(err))
 	}
 

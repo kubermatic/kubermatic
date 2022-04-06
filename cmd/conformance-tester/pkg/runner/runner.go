@@ -46,6 +46,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,18 +66,26 @@ func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	}
 }
 
+func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
+	return &TestRunner{
+		log:       log.With("client", "kube"),
+		opts:      opts,
+		kkpClient: clients.NewKubeClient(opts),
+	}
+}
+
 func (r *TestRunner) Setup(ctx context.Context) error {
 	return r.kkpClient.Setup(ctx, r.log)
 }
 
 func (r *TestRunner) SetupProject(ctx context.Context) error {
 	if r.opts.KubermaticProject == "" {
-		project, err := r.kkpClient.CreateProject(ctx, r.log, "kubermatic-conformance-tester")
+		projectName, err := r.kkpClient.CreateProject(ctx, r.log, "e2e-"+rand.String(5))
 		if err != nil {
 			return fmt.Errorf("failed to create project: %w", err)
 		}
 
-		r.opts.KubermaticProject = project
+		r.opts.KubermaticProject = projectName
 	}
 
 	if err := r.kkpClient.CreateSSHKeys(ctx, r.log); err != nil {
@@ -200,7 +209,11 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		return report, err
 	}
 
-	// cluster could become nil during the wait loop, save its name in a local variable
+	// cluster could become nil during the wait loop, save its name in a local variable;
+	// NB: It's important for this health check loop to refresh the cluster object, as
+	// during reconciliation some cloud providers will fill in missing fields in the CloudSpec,
+	// and later when we create MachineDeployments we potentially rely on these fields
+	// being set in the cluster variable.
 	clusterName := cluster.Name
 	log = log.With("cluster", clusterName)
 
@@ -237,8 +250,14 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		return report, nil
 	}
 
+	deleteTimeout := 15 * time.Minute
+	if cluster.Spec.Cloud.Azure != nil {
+		// 15 Minutes are not enough for Azure
+		deleteTimeout = 30 * time.Minute
+	}
+
 	if err := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
-		return r.kkpClient.DeleteCluster(ctx, log, cluster)
+		return r.kkpClient.DeleteCluster(ctx, log, cluster, deleteTimeout)
 	}); err != nil {
 		return report, fmt.Errorf("failed to delete cluster: %w", err)
 	}
@@ -348,7 +367,7 @@ func (r *TestRunner) executeTests(
 	}
 
 	if err := util.JUnitWrapper("[KKP] Create NodeDeployments", report, func() error {
-		return r.kkpClient.CreateNodeDeployments(ctx, log, scenario, clusterName)
+		return r.kkpClient.CreateNodeDeployments(ctx, log, scenario, userClusterClient, cluster)
 	}); err != nil {
 		return fmt.Errorf("failed to setup nodes: %w", err)
 	}
@@ -407,6 +426,7 @@ func (r *TestRunner) executeTests(
 	}
 
 	if r.opts.OnlyTestCreation {
+		log.Info("All nodes are ready. Only testing cluster creation, skipping further tests.")
 		return nil
 	}
 

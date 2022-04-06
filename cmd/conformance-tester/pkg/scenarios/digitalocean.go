@@ -18,11 +18,21 @@ package scenarios
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+)
+
+const (
+	dropletSize            = "4gb"
+	digitaloceanDatacenter = "do-ams3"
 )
 
 // GetDigitaloceanScenarios returns a matrix of (version x operating system).
@@ -32,14 +42,14 @@ func GetDigitaloceanScenarios(versions []*semver.Semver) []Scenario {
 		// Ubuntu
 		scenarios = append(scenarios, &digitaloceanScenario{
 			version: v,
-			nodeOsSpec: apimodels.OperatingSystemSpec{
+			osSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		scenarios = append(scenarios, &digitaloceanScenario{
 			version: v,
-			nodeOsSpec: apimodels.OperatingSystemSpec{
+			osSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
 		})
@@ -49,21 +59,20 @@ func GetDigitaloceanScenarios(versions []*semver.Semver) []Scenario {
 }
 
 type digitaloceanScenario struct {
-	version    *semver.Semver
-	nodeOsSpec apimodels.OperatingSystemSpec
+	version *semver.Semver
+	osSpec  apimodels.OperatingSystemSpec
 }
 
 func (s *digitaloceanScenario) Name() string {
-	return fmt.Sprintf("digitalocean-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
+	return fmt.Sprintf("digitalocean-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
 }
 
-func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
+func (s *digitaloceanScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
-			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: "do-ams3",
+					DatacenterName: digitaloceanDatacenter,
 					Digitalocean: &apimodels.DigitaloceanCloudSpec{
 						Token: secrets.Digitalocean.Token,
 					},
@@ -74,9 +83,22 @@ func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *apimodels.CreateC
 	}
 }
 
+func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
+	return &kubermaticv1.ClusterSpec{
+		Cloud: kubermaticv1.CloudSpec{
+			DatacenterName: digitaloceanDatacenter,
+			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+				Token: secrets.Digitalocean.Token,
+			},
+		},
+		Version: *s.version,
+	}
+}
+
 func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
-	size := "4gb"
+	size := dropletSize
+
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -90,13 +112,28 @@ func (s *digitaloceanScenario) NodeDeployments(_ context.Context, num int, _ typ
 					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: &s.nodeOsSpec,
+					OperatingSystem: &s.osSpec,
 				},
 			},
 		},
 	}, nil
 }
 
+func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	// See alibaba provider for more info on this.
+	return nil, errors.New("not implemented for gitops yet")
+
+	//nolint:govet
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderDigitalocean, digitaloceantypes.RawConfig{
+		Size: providerconfig.ConfigVarString{Value: dropletSize},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return []clusterv1alpha1.MachineDeployment{md}, nil
+}
+
 func (s *digitaloceanScenario) OS() apimodels.OperatingSystemSpec {
-	return s.nodeOsSpec
+	return s.osSpec
 }
