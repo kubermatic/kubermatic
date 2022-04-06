@@ -374,7 +374,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-ubuntu-1.23-gitops
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.23-headless
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -396,7 +396,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: "ee"
         - name: SETUP_MODE
-          value: "gitops"
+          value: "kube"
         - name: VERSIONS_TO_TEST
           value: "v1.23.5"
         - name: DISTRIBUTIONS

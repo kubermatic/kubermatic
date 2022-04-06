@@ -156,7 +156,7 @@ func (o *Options) ParseFlags() error {
 		return errors.New("-cluster-parallel-count must be 1 when testing an existing cluster")
 	}
 
-	if !sets.NewString("api", "gitops").Has(o.Client) {
+	if !sets.NewString("api", "kube").Has(o.Client) {
 		return fmt.Errorf("invalid -client option %q", o.Client)
 	}
 

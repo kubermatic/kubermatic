@@ -66,11 +66,11 @@ func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	}
 }
 
-func NewGitopsRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
+func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	return &TestRunner{
-		log:       log.With("client", "gitops"),
+		log:       log.With("client", "kube"),
 		opts:      opts,
-		kkpClient: clients.NewGitopsClient(opts),
+		kkpClient: clients.NewKubeClient(opts),
 	}
 }
 

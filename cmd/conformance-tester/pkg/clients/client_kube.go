@@ -35,23 +35,24 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type gitopsClient struct {
+// kubeClient uses a regular Kubernetes client to interact with KKP.
+type kubeClient struct {
 	opts *ctypes.Options
 }
 
-var _ Client = &gitopsClient{}
+var _ Client = &kubeClient{}
 
-func NewGitopsClient(opts *ctypes.Options) Client {
-	return &gitopsClient{
+func NewKubeClient(opts *ctypes.Options) Client {
+	return &kubeClient{
 		opts: opts,
 	}
 }
 
-func (c *gitopsClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
+func (c *kubeClient) Setup(ctx context.Context, log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (c *gitopsClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error) {
+func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error) {
 	log.Info("Creating project...")
 
 	project := &kubermaticv1.Project{}
@@ -81,7 +82,7 @@ func (c *gitopsClient) CreateProject(ctx context.Context, log *zap.SugaredLogger
 	return name, nil
 }
 
-func (c *gitopsClient) CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
+func (c *kubeClient) CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
 	for i, key := range c.opts.PublicKeys {
 		log.Infow("Creating UserSSHKey...", "pubkey", string(key))
 
@@ -100,7 +101,7 @@ func (c *gitopsClient) CreateSSHKeys(ctx context.Context, log *zap.SugaredLogger
 	return nil
 }
 
-func (c *gitopsClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {
+func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error) {
 	log.Info("Creating cluster...")
 
 	name := fmt.Sprintf("%s-%s", c.opts.NamePrefix, rand.String(5))
@@ -169,7 +170,7 @@ func (c *gitopsClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger
 	return cluster, nil
 }
 
-func (c *gitopsClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	log.Info("Getting existing MachineDeployments...")
 
 	mdList := &clusterv1alpha1.MachineDeploymentList{}
@@ -217,7 +218,7 @@ func (c *gitopsClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugar
 	return nil
 }
 
-func (c *gitopsClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
+func (c *kubeClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error {
 	var (
 		selector labels.Selector
 		err      error

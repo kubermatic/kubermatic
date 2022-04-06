@@ -40,8 +40,8 @@ source hack/ci/setup-kind-cluster.sh
 echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
-if [ "${SETUP_MODE:-api}" == "gitops" ]; then
-  export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_gitops.yaml
+if [ "${SETUP_MODE:-api}" == "kube" ]; then
+  export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_headless.yaml
 fi
 
 beforeKubermaticSetup=$(nowms)

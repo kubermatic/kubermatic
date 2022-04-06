@@ -45,6 +45,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// apiClient uses the KKP REST API to interact with KKP.
 type apiClient struct {
 	opts *ctypes.Options
 }

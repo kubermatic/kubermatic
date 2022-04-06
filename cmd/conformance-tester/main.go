@@ -104,10 +104,10 @@ func main() {
 		log.Fatalw("Failed to setup kube clients", zap.Error(err))
 	}
 
-	// setup test runner, choose between API-based or GitOps-based implementations
+	// setup test runner, choose between API-based or Kubernetes-based implementations
 	var testRunner *runner.TestRunner
-	if opts.Client == "gitops" {
-		testRunner = runner.NewGitopsRunner(opts, log)
+	if opts.Client == "kube" {
+		testRunner = runner.NewKubeRunner(opts, log)
 	} else {
 		testRunner = runner.NewAPIRunner(opts, log)
 	}
