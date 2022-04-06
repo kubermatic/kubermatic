@@ -71,7 +71,16 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return createProjectByServiceAccount(ctx, userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
 		}
 
-		kubermaticProject, err := projectProvider.New(ctx, []*kubermaticv1.User{user}, projectRq.Body.Name, projectRq.Body.Labels)
+		// create the project
+		kubermaticProject, err := projectProvider.New(ctx, projectRq.Body.Name, projectRq.Body.Labels)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// bind user to the project
+		generatedGroupName := rbac.GenerateActualGroupNameFor(kubermaticProject.Name, rbac.OwnerGroupNamePrefix)
+
+		_, err = privilegedMemberProvider.CreateUnsecured(ctx, kubermaticProject, userEmail, generatedGroupName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -81,7 +90,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 				ObjectMeta: apiv1.ObjectMeta{
 					Name: user.Spec.Name,
 				},
-				Email: user.Spec.Email,
+				Email: userEmail,
 			},
 		}
 
@@ -90,7 +99,6 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 }
 
 func createProjectByServiceAccount(ctx context.Context, saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
-	var humanUserOwnerList []*kubermaticv1.User
 	bindings, err := memberMapper.MappingsFor(ctx, saEmail)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -103,9 +111,9 @@ func createProjectByServiceAccount(ctx context.Context, saEmail string, projectR
 	if !strings.HasPrefix(saBinding.Spec.Group, rbac.ProjectManagerGroupNamePrefix) {
 		return nil, kubermaticerrors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
 	}
-	if len(projectReq.Body.Users) == 0 {
-		return nil, kubermaticerrors.New(http.StatusBadRequest, "owner user email list required for project creation by Service Account")
-	}
+
+	// determine regular (human) users that will own the project
+	var humanUserOwnerList []*kubermaticv1.User
 
 	for _, userEmail := range projectReq.Body.Users {
 		if kubermaticv1helper.IsProjectServiceAccount(userEmail) {
@@ -118,16 +126,32 @@ func createProjectByServiceAccount(ctx context.Context, saEmail string, projectR
 		humanUserOwnerList = append(humanUserOwnerList, humanUserOwner)
 	}
 
-	kubermaticProject, err := projectProvider.New(ctx, humanUserOwnerList, projectReq.Body.Name, projectReq.Body.Labels)
+	if len(humanUserOwnerList) == 0 {
+		return nil, kubermaticerrors.New(http.StatusBadRequest, "owner user email list required for project creation by Service Account")
+	}
+
+	// create the project
+	kubermaticProject, err := projectProvider.New(ctx, projectReq.Body.Name, projectReq.Body.Labels)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+
+	// bind Service Account to the project
 	generatedGroupName := rbac.GenerateActualGroupNameFor(kubermaticProject.Name, rbac.ProjectManagerGroupNamePrefix)
 
 	_, err = memberProvider.CreateUnsecuredForServiceAccount(ctx, kubermaticProject, saEmail, generatedGroupName)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+
+	// bind all regular users to the project
+	for _, user := range humanUserOwnerList {
+		_, err = memberProvider.CreateUnsecured(ctx, kubermaticProject, user.Spec.Email, generatedGroupName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+	}
+
 	var owners []apiv1.User
 	for _, owner := range humanUserOwnerList {
 		owners = append(owners, apiv1.User{

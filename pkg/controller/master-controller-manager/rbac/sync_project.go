@@ -19,7 +19,6 @@ package rbac
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -27,11 +26,8 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -66,9 +62,6 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 
 	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %w", err)
-	}
-	if err := c.ensureProjectOwner(ctx, project); err != nil {
-		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %w", err)
 	}
 	if err := ensureClusterRBACRoleForNamedResource(ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %w", err)
@@ -107,69 +100,6 @@ func (c *projectController) ensureProjectPhase(ctx context.Context, project *kub
 	}
 
 	return nil
-}
-
-// ensureProjectOwner makes sure that the owner of the project is assign to "owners" group.
-func (c *projectController) ensureProjectOwner(ctx context.Context, project *kubermaticv1.Project) error {
-	var sharedOwnerPtrList []*kubermaticv1.User
-	for _, ref := range project.OwnerReferences {
-		if ref.Kind == kubermaticv1.UserKindName {
-			var sharedOwner kubermaticv1.User
-			key := types.NamespacedName{Name: ref.Name}
-			if err := c.client.Get(ctx, key, &sharedOwner); err != nil {
-				if !kerrors.IsNotFound(err) {
-					return err
-				}
-				continue
-			}
-			sharedOwnerPtrList = append(sharedOwnerPtrList, sharedOwner.DeepCopy())
-		}
-	}
-	if len(sharedOwnerPtrList) == 0 {
-		return fmt.Errorf("the given project %s doesn't have associated owner/user", project.Name)
-	}
-
-	var bindings kubermaticv1.UserProjectBindingList
-	if err := c.client.List(ctx, &bindings); err != nil {
-		return err
-	}
-
-	projectOwnerMap := sets.NewString()
-
-	for _, owner := range sharedOwnerPtrList {
-		for _, binding := range bindings.Items {
-			if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
-				binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
-				projectOwnerMap.Insert(owner.Spec.Email)
-			}
-		}
-	}
-
-	for _, owner := range sharedOwnerPtrList {
-		// create a new binding for the owner when doesn't exist
-		if !projectOwnerMap.Has(owner.Spec.Email) {
-			ownerBinding := genOwnerBinding(owner.Spec.Email, project)
-			if err := c.client.Create(ctx, ownerBinding); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func genOwnerBinding(ownerEmail string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	// The user-project-binding controller will take care of setting up owner references later.
-	return &kubermaticv1.UserProjectBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: rand.String(10),
-		},
-		Spec: kubermaticv1.UserProjectBindingSpec{
-			UserEmail: ownerEmail,
-			ProjectID: project.Name,
-			Group:     GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix),
-		},
-	}
 }
 
 func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Context) error {

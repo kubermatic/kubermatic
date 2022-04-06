@@ -87,6 +87,7 @@ function deploy {
 chmod 600 "$KUBECONFIG"
 
 set_helm_charts_version "v9.9.9-${GIT_HEAD_HASH}" "${GIT_HEAD_HASH}"
+copy_crds_to_chart
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in

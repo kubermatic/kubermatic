@@ -388,7 +388,7 @@ func TestGetCredentialsForCluster(t *testing.T) {
 	}{
 		// there are 3 kinds of auth mode for openstack which are mutualy exclusive
 		//   * domain + token
-		//   * domain + ApplicationCredential (ApplicationCredentialID and ApplicationCredentialSecret)
+		//   * ApplicationCredential (ApplicationCredentialID and ApplicationCredentialSecret)
 		//   * domain + user (ie  Username, Password, (Project or Tenant) and (ProjectID or tenantID))
 		{
 			name:    "valid spec with values - auth with token",
@@ -406,15 +406,15 @@ func TestGetCredentialsForCluster(t *testing.T) {
 		},
 		{
 			name:    "valid spec with values - auth with applicationCredential",
-			spec:    &kubermaticv1.OpenstackCloudSpec{Domain: "domain", ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
+			spec:    &kubermaticv1.OpenstackCloudSpec{ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
 			mock:    test.ShouldNotBeCalled,
-			want:    &resources.OpenstackCredentials{Domain: "domain", ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
+			want:    &resources.OpenstackCredentials{ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
 			wantErr: false,
 		},
 		{
 			name:    "valid spec with CredentialsReference - auth with token",
 			spec:    &kubermaticv1.OpenstackCloudSpec{UseToken: false, CredentialsReference: &providerconfig.GlobalSecretKeySelector{ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"}, Key: "data"}},
-			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: "the_token"}),
+			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: "the_token", resources.OpenstackApplicationCredentialID: ""}),
 			want:    &resources.OpenstackCredentials{Domain: "domain-value", Token: "the_token"},
 			wantErr: false,
 		},
@@ -436,14 +436,14 @@ func TestGetCredentialsForCluster(t *testing.T) {
 			name:    "valid spec with CredentialsReference - auth with applicationCredential",
 			spec:    &kubermaticv1.OpenstackCloudSpec{UseToken: false, CredentialsReference: &providerconfig.GlobalSecretKeySelector{ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"}, Key: "data"}},
 			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: ""}),
-			want:    &resources.OpenstackCredentials{Domain: "domain-value", ApplicationCredentialID: "applicationCredentialID-value", ApplicationCredentialSecret: "applicationCredentialSecret-value"},
+			want:    &resources.OpenstackCredentials{ApplicationCredentialID: "applicationCredentialID-value", ApplicationCredentialSecret: "applicationCredentialSecret-value"},
 			wantErr: false,
 		},
 
 		{
 			name:    "invalid spec CredentialsReference - missing Domain",
 			spec:    &kubermaticv1.OpenstackCloudSpec{CredentialsReference: &providerconfig.GlobalSecretKeySelector{ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"}, Key: "data"}},
-			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackDomain: test.MissingKeyErr(resources.OpenstackDomain)}),
+			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: "", resources.OpenstackApplicationCredentialID: "", resources.OpenstackDomain: test.MissingKeyErr(resources.OpenstackDomain)}),
 			want:    &resources.OpenstackCredentials{},
 			wantErr: true,
 		},

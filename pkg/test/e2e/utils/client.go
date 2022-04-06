@@ -528,7 +528,6 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 	if replicas > 0 {
 		cpu := "1"
 		memory := "2Gi"
-		namespace := "default"
 		pvcSize := "20Gi"
 		sourceURL := "http://vm-repo.default.svc.cluster.local/CentOS-7-x86_64-GenericCloud.qcow2"
 		storageClassName := "standard"
@@ -539,12 +538,11 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 				Template: &models.NodeSpec{
 					Cloud: &models.NodeCloudSpec{
 						Kubevirt: &models.KubevirtNodeSpec{
-							CPUs:             &cpu,
-							Memory:           &memory,
-							Namespace:        &namespace,
-							PVCSize:          &pvcSize,
-							SourceURL:        &sourceURL,
-							StorageClassName: &storageClassName,
+							CPUs:                        &cpu,
+							Memory:                      &memory,
+							PrimaryDiskOSImage:          &sourceURL,
+							PrimaryDiskSize:             &pvcSize,
+							PrimaryDiskStorageClassName: &storageClassName,
 						},
 					},
 					OperatingSystem: &models.OperatingSystemSpec{

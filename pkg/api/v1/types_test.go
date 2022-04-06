@@ -594,61 +594,82 @@ func TestKubevirtNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 1: should fail when required parameters are not provided",
 			&apiv1.KubevirtNodeSpec{},
-			"missing or invalid required parameter(s): cpus, memory, namespace, sourceURL, storageClassName, pvcSize",
+			"missing or invalid required parameter(s): cpus, memory, primaryDiskOSImage, primaryDiskStorageClassName, primaryDiskSize",
 		},
+
 		{
 			"case 2: should fail when only cpus is provided",
 			&apiv1.KubevirtNodeSpec{
-				CPUs: "1",
+				CPUs: "2",
 			},
-			"missing or invalid required parameter(s): memory, namespace, sourceURL, storageClassName, pvcSize",
+			"missing or invalid required parameter(s): memory, primaryDiskOSImage, primaryDiskStorageClassName, primaryDiskSize",
 		},
 		{
 			"case 3: should fail when only memory is provided",
 			&apiv1.KubevirtNodeSpec{
 				Memory: "1",
 			},
-			"missing or invalid required parameter(s): cpus, namespace, sourceURL, storageClassName, pvcSize",
+			"missing or invalid required parameter(s): cpus, primaryDiskOSImage, primaryDiskStorageClassName, primaryDiskSize",
 		},
 		{
-			"case 4: should fail when only namespace is provided",
+			"case 4: should fail when only primaryDiskOSImageURL is provided",
 			&apiv1.KubevirtNodeSpec{
-				Namespace: "test-ns",
+				PrimaryDiskOSImage: "test-url",
 			},
-			"missing or invalid required parameter(s): cpus, memory, sourceURL, storageClassName, pvcSize",
+			"missing or invalid required parameter(s): cpus, memory, primaryDiskStorageClassName, primaryDiskSize",
 		},
 		{
-			"case 5: should fail when only sourceURL is provided",
+			"case 5: should fail when only primaryDiskStorageClassName is provided",
 			&apiv1.KubevirtNodeSpec{
-				SourceURL: "test-url",
+				PrimaryDiskStorageClassName: "test-sc",
 			},
-			"missing or invalid required parameter(s): cpus, memory, namespace, storageClassName, pvcSize",
+			"missing or invalid required parameter(s): cpus, memory, primaryDiskOSImage, primaryDiskSize",
 		},
 		{
-			"case 6: should fail when only storageClassName is provided",
+			"case 6: should fail when only primaryDiskSize is provided",
 			&apiv1.KubevirtNodeSpec{
-				StorageClassName: "test-sc",
+				PrimaryDiskSize: "1",
 			},
-			"missing or invalid required parameter(s): cpus, memory, namespace, sourceURL, pvcSize",
+			"missing or invalid required parameter(s): cpus, memory, primaryDiskOSImage, primaryDiskStorageClassName",
 		},
 		{
-			"case 7: should fail when only pvcSize is provided",
+			"case 7: should marshal when instance type is provided",
 			&apiv1.KubevirtNodeSpec{
-				PVCSize: "1",
+				CPUs:                        "1",
+				Memory:                      "1",
+				PrimaryDiskOSImage:          "test-url",
+				PrimaryDiskStorageClassName: "test-sc",
+				PrimaryDiskSize:             "1",
 			},
-			"missing or invalid required parameter(s): cpus, memory, namespace, sourceURL, storageClassName",
+			"{\"flavorName\":\"\",\"flavorProfile\":\"\",\"cpus\":\"1\",\"memory\":\"1\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"\",\"Key\":\"\",\"Values\":null}}",
 		},
 		{
-			"case 8: should marshal when instance type is provided",
+			"case 8: should marshal when instance type is provided with vm-flavor",
 			&apiv1.KubevirtNodeSpec{
-				CPUs:             "1",
-				Memory:           "1",
-				Namespace:        "test-ns",
-				SourceURL:        "test-url",
-				StorageClassName: "test-sc",
-				PVCSize:          "1",
+				FlavorName:                  "test-flavor",
+				PrimaryDiskOSImage:          "test-url",
+				PrimaryDiskStorageClassName: "test-sc",
+				PrimaryDiskSize:             "1",
 			},
-			"{\"cpus\":\"1\",\"memory\":\"1\",\"namespace\":\"test-ns\",\"sourceURL\":\"test-url\",\"storageClassName\":\"test-sc\",\"pvcSize\":\"1\"}",
+			"{\"flavorName\":\"test-flavor\",\"flavorProfile\":\"\",\"cpus\":\"\",\"memory\":\"\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"\",\"Key\":\"\",\"Values\":null}}",
+		},
+		{
+			"case 9: should marshal when instance type is provided with affinity",
+			&apiv1.KubevirtNodeSpec{
+				CPUs:                        "1",
+				Memory:                      "1",
+				PrimaryDiskOSImage:          "test-url",
+				PrimaryDiskStorageClassName: "test-sc",
+				PrimaryDiskSize:             "1",
+				PodAffinityPreset:           "soft",
+				PodAntiAffinityPreset:       "soft",
+				NodeAffinityPreset: apiv1.NodeAffinityPreset{
+					Type:   "soft",
+					Key:    "foo",
+					Values: []string{"bar"},
+				},
+			},
+			"{\"flavorName\":\"\",\"flavorProfile\":\"\",\"cpus\":\"1\",\"memory\":\"1\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"soft\",\"podAntiAffinityPreset\":\"soft\",\"nodeAffinityPreset\":{\"Type\":\"soft\",\"Key\":\"foo\",\"Values\":[\"bar\"]}}",
 		},
 	}
 

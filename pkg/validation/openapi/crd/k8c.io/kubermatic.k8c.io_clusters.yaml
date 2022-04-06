@@ -915,6 +915,9 @@ spec:
                       storagePolicy:
                         description: StoragePolicy to be used for storage provisioning
                         type: string
+                      tagCategoryID:
+                        description: This is category for the machine deployment tags
+                        type: string
                       username:
                         description: Username is the vSphere user name.
                         type: string
@@ -1756,6 +1759,7 @@ spec:
                     type: integer
                 type: object
               pause:
+                default: false
                 description: Pause tells that this cluster is currently not managed
                   by the controller. It indicates that the user needs to do some action
                   to resolve the pause.

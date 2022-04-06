@@ -158,6 +158,9 @@ kubermaticOperator:
     tag: "${TAG}"
 EOF
 
+# prepare CRDs
+copy_crds_to_chart
+
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \

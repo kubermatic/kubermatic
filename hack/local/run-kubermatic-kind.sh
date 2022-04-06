@@ -191,6 +191,9 @@ cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 echodate "Debug HELM_VALUES_FILE=$HELM_VALUES_FILE"
 echodate "Debug KUBERMATIC_CONFIG=$KUBERMATIC_CONFIG"
 
+# prepare CRDs
+copy_crds_to_chart
+
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \

@@ -61,7 +61,7 @@ Once new Docker images are ready, KKP can be updated as well.
   - The latest Hetzner CCM version can be found in the
   [`hetznercloud/hcloud-cloud-controller-manager` repository](https://github.com/hetznercloud/hcloud-cloud-controller-manager)
 - Update the cluster-autoscaler addon manifests (`addon/cluster-autoscaler`) to include the new minor version.
-- The conformance-tests runner (`cmd/conformance-tests/runner.go`) has a list of
+- The conformance-tests runner (`cmd/conformance-tester/pkg/tests/conformance.go`) has a list of
   exclusion filters to skip tests that cannot work in the CI environment. Make sure to
   update said list, or else you will be greeted by lots of NodePort Service related
   errors.
