@@ -127,17 +127,17 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 					Name:            "kubermatic-metering-report",
 					Image:           getMeteringImage(getRegistry),
 					ImagePullPolicy: corev1.PullAlways,
-					Command: []string{
-						"/bin/sh",
-					},
+					Command:         []string{"/bin/sh"},
 					Args: []string{
 						"-c",
-						`/usr/local/bin/kubermatic-metering-report -workdir=/metering-data \
-                                                          -reportdir=/report \
-                                                          -last-number-of-days=` + strconv.Itoa(mrc.Interval) + ` \
-                                                          -seed=` + seedName + ` \
-                                                          -scrape-interval=300
-                        touch /report/finished`,
+						`mkdir -p /report/` + reportName + `
+kubermatic-metering-report \
+  -workdir=/metering-data \
+  -reportdir=/report/` + reportName + ` \
+  -last-number-of-days=` + strconv.Itoa(mrc.Interval) + ` \
+  -seed=` + seedName + ` \
+  -scrape-interval=300
+touch /report/finished`,
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
