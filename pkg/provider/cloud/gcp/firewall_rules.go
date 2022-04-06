@@ -88,7 +88,7 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 	if ipv6Rules {
 		allowedProtocols = append(allowedProtocols, &compute.FirewallAllowed{IPProtocol: ipv6ICMPProtoNumber})
 	}
-	err := createOrPatchFirewall(ctx, firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, "", update, cluster, firewallSelfCleanupFinalizer)
+	err := createOrPatchFirewall(ctx, firewallService, projectID, selfRuleName, tag, tag, allowedProtocols, nil, update, cluster, firewallSelfCleanupFinalizer)
 	if err != nil {
 		return err
 	}
@@ -98,14 +98,14 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 	// so we need to create a separate rule for each IP family.
 	if ipv4Rules {
 		err = createOrPatchFirewall(ctx, firewallService, projectID, icmpRuleName, tag, "",
-			[]*compute.FirewallAllowed{{IPProtocol: "icmp"}}, "0.0.0.0/0", update, cluster, firewallICMPCleanupFinalizer)
+			[]*compute.FirewallAllowed{{IPProtocol: "icmp"}}, []string{resources.IPv4MatchAnyCIDR}, update, cluster, firewallICMPCleanupFinalizer)
 		if err != nil {
 			return err
 		}
 	}
 	if ipv6Rules {
 		err = createOrPatchFirewall(ctx, firewallService, projectID, icmpIPv6RuleName, tag, "",
-			[]*compute.FirewallAllowed{{IPProtocol: ipv6ICMPProtoNumber}}, "::/0", update, cluster, firewallICMPCleanupFinalizer)
+			[]*compute.FirewallAllowed{{IPProtocol: ipv6ICMPProtoNumber}}, []string{resources.IPv6MatchAnyCIDR}, update, cluster, firewallICMPCleanupFinalizer)
 		if err != nil {
 			return err
 		}
@@ -124,17 +124,21 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 			Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
 		},
 	}
-	if cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange != "" {
-		return createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
-			allowedProtocols, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange, update, cluster, firewallNodePortCleanupFinalizer)
-	} else {
-		if ipv4Rules {
-			return createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
-				allowedProtocols, "0.0.0.0/0", update, cluster, firewallNodePortCleanupFinalizer)
+	nodePortsAllowedIPRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRanges, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange)
+	nodePortsIPv4CIDRs := nodePortsAllowedIPRanges.GetIPv4CIDRs()
+	nodePortsIPv6CIDRs := nodePortsAllowedIPRanges.GetIPv6CIDRs()
+	if len(nodePortsIPv4CIDRs) > 0 {
+		err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortRuleName, tag, "",
+			allowedProtocols, nodePortsIPv4CIDRs, update, cluster, firewallNodePortCleanupFinalizer)
+		if err != nil {
+			return err
 		}
-		if ipv6Rules {
-			return createOrPatchFirewall(ctx, firewallService, projectID, nodePortIPv6RuleName, tag, "",
-				allowedProtocols, "::/0", update, cluster, firewallNodePortCleanupFinalizer)
+	}
+	if len(nodePortsIPv6CIDRs) > 0 {
+		err = createOrPatchFirewall(ctx, firewallService, projectID, nodePortIPv6RuleName, tag, "",
+			allowedProtocols, nodePortsIPv6CIDRs, update, cluster, firewallNodePortCleanupFinalizer)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -148,21 +152,19 @@ func createOrPatchFirewall(ctx context.Context,
 	targetTag string,
 	sourceTag string,
 	protocols []*compute.FirewallAllowed,
-	allowedIPRange string,
+	allowedIPRanges []string,
 	update provider.ClusterUpdater,
 	cluster *kubermaticv1.Cluster,
 	finalizer string) error {
 	firewall := &compute.Firewall{
-		Name:       firewallName,
-		Network:    cluster.Spec.Cloud.GCP.Network,
-		TargetTags: []string{targetTag},
-		Allowed:    protocols,
+		Name:         firewallName,
+		Network:      cluster.Spec.Cloud.GCP.Network,
+		TargetTags:   []string{targetTag},
+		Allowed:      protocols,
+		SourceRanges: allowedIPRanges,
 	}
 	if sourceTag != "" {
 		firewall.SourceTags = []string{sourceTag}
-	}
-	if allowedIPRange != "" {
-		firewall.SourceRanges = []string{allowedIPRange}
 	}
 
 	existingFirewall, err := firewallService.Get(projectID, firewallName).Context(ctx).Do()

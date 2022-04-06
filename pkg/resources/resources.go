@@ -831,6 +831,13 @@ const (
 	DefaultNodeCIDRMaskSizeIPv6 = 64
 )
 
+const (
+	// IPv4MatchAnyCIDR is the CIDR used for matching with any IPv4 address.
+	IPv4MatchAnyCIDR = "0.0.0.0/0"
+	// IPv6MatchAnyCIDR is the CIDR used for matching with any IPv6 address.
+	IPv6MatchAnyCIDR = "::/0"
+)
+
 // List of allowed TLS cipher suites.
 var allowedTLSCipherSuites = []string{
 	// TLS 1.3 cipher suites
@@ -1516,4 +1523,22 @@ func GetClusterNodeCIDRMaskSizeIPv6(cluster *kubermaticv1.Cluster) int32 {
 		return *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
 	}
 	return DefaultNodeCIDRMaskSizeIPv6
+}
+
+// GetNodePortsAllowedIPRanges returns effective CIDR range to be used for NodePort services for the given cluster
+// and provided allowed IP ranges coming from provider-specific API.
+func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges kubermaticv1.NetworkRanges, allowedIPRange string) (res kubermaticv1.NetworkRanges) {
+	res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRanges.CIDRBlocks...)
+	if allowedIPRange != "" {
+		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRange)
+	}
+	if len(res.CIDRBlocks) == 0 {
+		if cluster.IsIPv4Only() || cluster.IsDualStack() {
+			res.CIDRBlocks = append(res.CIDRBlocks, IPv4MatchAnyCIDR)
+		}
+		if cluster.IsIPv6Only() || cluster.IsDualStack() {
+			res.CIDRBlocks = append(res.CIDRBlocks, IPv6MatchAnyCIDR)
+		}
+	}
+	return
 }

@@ -22,6 +22,8 @@ import (
 	"context"
 	"testing"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
+
 	"github.com/aws/aws-sdk-go/service/ec2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -82,7 +84,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	permissions := getCommonSecurityGroupPermissions(*group.GroupId, true, true)
 
 	lowPort, highPort := getNodePortRange(cluster)
-	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, []string{"0.0.0.0/0"}, []string{"::/0"})...)
+	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, []string{resources.IPv4MatchAnyCIDR}, []string{resources.IPv6MatchAnyCIDR})...)
 
 	stringPermissions := sets.NewString()
 	for _, perm := range permissions {

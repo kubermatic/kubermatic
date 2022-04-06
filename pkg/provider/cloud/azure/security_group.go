@@ -27,7 +27,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
-	"k8s.io/utils/net"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -57,25 +56,9 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		WithCluster(cluster).
 		Build().
 		NodePorts()
+	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange)
 
-	var nodePortsIPv4CIDRs, nodePortsIPv6CIDRs []string
-	nodePortsAllowedIPRange := cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange
-	if nodePortsAllowedIPRange != "" {
-		if net.IsIPv4CIDRString(nodePortsAllowedIPRange) {
-			nodePortsIPv4CIDRs = append(nodePortsIPv4CIDRs, nodePortsAllowedIPRange)
-		} else {
-			nodePortsIPv6CIDRs = append(nodePortsIPv6CIDRs, nodePortsAllowedIPRange)
-		}
-	} else {
-		if cluster.IsIPv4Only() || cluster.IsDualStack() {
-			nodePortsIPv4CIDRs = append(nodePortsIPv4CIDRs, "0.0.0.0/0")
-		}
-		if cluster.IsIPv6Only() || cluster.IsDualStack() {
-			nodePortsIPv6CIDRs = append(nodePortsIPv6CIDRs, "::/0")
-		}
-	}
-
-	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsIPv4CIDRs, nodePortsIPv6CIDRs)
+	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsAllowedIPRanges.GetIPv4CIDRs(), nodePortsAllowedIPRanges.GetIPv6CIDRs())
 
 	// check for attributes of the existing security group and return early if all values are already
 	// as expected. Since there are a lot of pointers in the network.SecurityGroup struct, we need to

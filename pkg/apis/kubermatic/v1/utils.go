@@ -145,19 +145,3 @@ func (r NetworkRanges) GetIPv6CIDRs() (res []string) {
 func (r NetworkRanges) HasIPv6CIDR() bool {
 	return r.GetIPv6CIDR() != ""
 }
-
-// IsEmpty returns true if the network ranges is empty.
-func (r NetworkRanges) IsEmpty() bool {
-	return len(r.CIDRBlocks) == 0
-}
-
-// AppendCIDR appends provided CIDR into network ranges.
-// It does not modify the original network ranges struct - returns a new one if it needs to be modified.
-func (r NetworkRanges) AppendCIDR(cidr string) (res NetworkRanges) {
-	if cidr == "" {
-		return r
-	}
-	res.CIDRBlocks = append(res.CIDRBlocks, r.CIDRBlocks...)
-	res.CIDRBlocks = append(res.CIDRBlocks, cidr)
-	return
-}

@@ -126,22 +126,10 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 
 	permissions := getCommonSecurityGroupPermissions(groupID, ipv4Permissions, ipv6Permissions)
 
-	var nodePortsIPv4CIDRs, nodePortsIPv6CIDRs []string
 	lowPort, highPort := getNodePortRange(cluster)
-	nodePortsAllowedIPRanges := cluster.Spec.Cloud.AWS.NodePortsAllowedIPRanges.AppendCIDR(cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange)
+	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRanges, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange)
 
-	if nodePortsAllowedIPRanges.IsEmpty() {
-		if ipv4Permissions {
-			nodePortsIPv4CIDRs = append(nodePortsIPv4CIDRs, "0.0.0.0/0")
-		}
-		if ipv6Permissions {
-			nodePortsIPv6CIDRs = append(nodePortsIPv6CIDRs, "::/0")
-		}
-	} else {
-		nodePortsIPv4CIDRs = nodePortsAllowedIPRanges.GetIPv4CIDRs()
-		nodePortsIPv6CIDRs = nodePortsAllowedIPRanges.GetIPv6CIDRs()
-	}
-	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, nodePortsIPv4CIDRs, nodePortsIPv6CIDRs)...)
+	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, nodePortsAllowedIPRanges.GetIPv4CIDRs(), nodePortsAllowedIPRanges.GetIPv6CIDRs())...)
 
 	// Iterate over the permissions and add them one by one, because if an error occurs
 	// (e.g., one permission already exists) none of them would be created
@@ -193,12 +181,12 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 	}
 	if ipv4Permissions {
 		sshPermission.IpRanges = []*ec2.IpRange{{
-			CidrIp: aws.String("0.0.0.0/0"),
+			CidrIp: aws.String(kubermaticresources.IPv4MatchAnyCIDR),
 		}}
 	}
 	if ipv6Permissions {
 		sshPermission.Ipv6Ranges = []*ec2.Ipv6Range{{
-			CidrIpv6: aws.String("::/0"),
+			CidrIpv6: aws.String(kubermaticresources.IPv6MatchAnyCIDR),
 		}}
 	}
 	permissions = append(permissions, sshPermission)
@@ -210,7 +198,7 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 			FromPort:   aws.Int64(-1), // any port
 			ToPort:     aws.Int64(-1), // any port
 			IpRanges: []*ec2.IpRange{{
-				CidrIp: aws.String("0.0.0.0/0"),
+				CidrIp: aws.String(kubermaticresources.IPv4MatchAnyCIDR),
 			}},
 		})
 	}
@@ -222,7 +210,7 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 			FromPort:   aws.Int64(-1), // any port
 			ToPort:     aws.Int64(-1), // any port
 			Ipv6Ranges: []*ec2.Ipv6Range{{
-				CidrIpv6: aws.String("::/0"),
+				CidrIpv6: aws.String(kubermaticresources.IPv6MatchAnyCIDR),
 			}},
 		})
 	}
