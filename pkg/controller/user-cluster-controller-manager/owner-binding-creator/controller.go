@@ -43,7 +43,7 @@ import (
 
 const (
 	// This controller creates cluster role bindings for the API roles.
-	controllerName = "owner_binding_controller"
+	controllerName = "kkp-owner-binding-creator"
 )
 
 type reconciler struct {
@@ -77,7 +77,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, owner
 	}
 	// Watch for changes to ClusterRoleBindings
 	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, enqueueAPIBindings(mgr.GetClient()), predicateutil.ByLabel(handlercommon.UserClusterComponentKey, handlercommon.UserClusterBindingComponentValue)); err != nil {
-		return fmt.Errorf("failed to establish watch for the ClusterRoles: %w", err)
+		return fmt.Errorf("failed to establish watch for the ClusterRoleBindings: %w", err)
 	}
 
 	return nil
@@ -92,21 +92,24 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	log := r.log.With("ClusterRole", request.Name)
+	log := r.log.With("clusterrole", request.Name)
 	log.Debug("Reconciling")
 
 	err = r.reconcile(ctx, log, request.Name)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: request.Name}}, corev1.EventTypeWarning, "AddingBindingFailed", err.Error())
+		r.recorder.Event(&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: request.Name}}, corev1.EventTypeWarning, "AddBindingFailed", err.Error())
 	}
+
 	return reconcile.Result{}, err
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clusterRoleName string) error {
+	labels := map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}
+
 	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-	if err := r.client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
-		return fmt.Errorf("failed get cluster role binding list: %w", err)
+	if err := r.client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels(labels)); err != nil {
+		return fmt.Errorf("failed to list ClusterRoleBindings: %w", err)
 	}
 
 	var existingClusterRoleBinding *rbacv1.ClusterRoleBinding
@@ -119,11 +122,12 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// Create Cluster Role Binding if doesn't exist
 	if existingClusterRoleBinding == nil {
-		log.Debug("creating cluster role binding for cluster role ", clusterRoleName)
+		log.Infow("Creating ClusterRoleBinding", "clusterrole", clusterRoleName)
+
 		crb := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   fmt.Sprintf("%s:%s", rand.String(10), clusterRoleName),
-				Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+				Labels: labels,
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -131,6 +135,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				Name:     clusterRoleName,
 			},
 		}
+
 		// Bind user who created the cluster to the `cluster-admin` ClusterRole.
 		// Add cluster owner only once when binding doesn't exist yet.
 		// Later the user can remove/add subjects from the binding using the API.
@@ -143,19 +148,21 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				},
 			}
 		}
+
 		if err := r.client.Create(ctx, crb); err != nil {
-			return fmt.Errorf("failed to create cluster role binding: %w", err)
+			return fmt.Errorf("failed to create ClusterRoleBinding: %w", err)
 		}
 	}
+
 	return nil
 }
 
 // enqueueAPIBindings enqueues the ClusterRoleBindings with a special label component=userClusterRole.
 func enqueueAPIBindings(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(_ ctrlruntimeclient.Object) []reconcile.Request {
 		clusterRoleList := &rbacv1.ClusterRoleList{}
 		if err := client.List(context.Background(), clusterRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Cluster Roles: %w", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list ClusterRoles: %w", err))
 			return []reconcile.Request{}
 		}
 
