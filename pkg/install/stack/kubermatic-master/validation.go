@@ -167,21 +167,24 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 		failures = append(failures, errors.New("the namespace must be \"kubermatic\""))
 	}
 
-	if !config.Spec.Ingress.Disable {
-		if config.Spec.Ingress.Domain == "" {
-			failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
+	// only validate auth-related keys if we are not setting up a headless system
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		if !config.Spec.Ingress.Disable {
+			if config.Spec.Ingress.Domain == "" {
+				failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
+			}
 		}
-	}
 
-	failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
+		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
 
-	if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
-		failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
-	}
+		if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
+			failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
+		}
 
-	if config.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
-		failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
-		failures = validateRandomSecret(config, config.Spec.Auth.IssuerCookieKey, "spec.auth.issuerCookieKey", failures)
+		if config.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
+			failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
+			failures = validateRandomSecret(config, config.Spec.Auth.IssuerCookieKey, "spec.auth.issuerCookieKey", failures)
+		}
 	}
 
 	return failures
@@ -203,13 +206,7 @@ func validateRandomSecret(config *kubermaticv1.KubermaticConfiguration, value st
 func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
 	failures := []error{}
 
-	path := yamled.Path{"dex", "ingress", "host"}
-	if domain, _ := helmValues.GetString(path); domain == "" {
-		logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
-		helmValues.Set(path, config.Spec.Ingress.Domain)
-	}
-
-	path = yamled.Path{"kubermaticOperator", "imagePullSecret"}
+	path := yamled.Path{"kubermaticOperator", "imagePullSecret"}
 	if value, _ := helmValues.GetString(path); value == "" {
 		logger.Warnf("Helm values: %s is empty, setting to spec.imagePullSecret from KubermaticConfiguration", path.String())
 		helmValues.Set(path, config.Spec.ImagePullSecret)
@@ -222,49 +219,59 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		}
 	}
 
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		path := yamled.Path{"dex", "ingress", "host"}
+		if domain, _ := helmValues.GetString(path); domain == "" {
+			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
+			helmValues.Set(path, config.Spec.Ingress.Domain)
+		}
+	}
+
 	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading
 	}
 
-	clientID := defaultedConfig.Spec.Auth.ClientID
-	hasDexIssues := false
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		clientID := defaultedConfig.Spec.Auth.ClientID
+		hasDexIssues := false
 
-	clients, ok := helmValues.GetArray(yamled.Path{"dex", "clients"})
-	if !ok {
-		hasDexIssues = true
-		logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
-	} else {
-		hasMatchingClient := false
+		clients, ok := helmValues.GetArray(yamled.Path{"dex", "clients"})
+		if !ok {
+			hasDexIssues = true
+			logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
+		} else {
+			hasMatchingClient := false
 
-		for _, client := range clients {
-			if mapSlice, ok := client.(yaml.MapSlice); ok {
-				for _, item := range mapSlice {
-					if item.Key == "id" && item.Value == clientID {
-						hasMatchingClient = true
-						break
+			for _, client := range clients {
+				if mapSlice, ok := client.(yaml.MapSlice); ok {
+					for _, item := range mapSlice {
+						if item.Key == "id" && item.Value == clientID {
+							hasMatchingClient = true
+							break
+						}
 					}
 				}
 			}
+
+			if !hasMatchingClient {
+				hasDexIssues = true
+				logger.Warnf("Helm values: The Dex configuration does not contain a `%s` client to allow logins to the Kubermatic dashboard.", clientID)
+			}
 		}
 
-		if !hasMatchingClient {
+		connectors, _ := helmValues.GetArray(yamled.Path{"dex", "connectors"})
+		staticPasswords, _ := helmValues.GetArray(yamled.Path{"dex", "staticPasswords"})
+
+		if len(connectors) == 0 && len(staticPasswords) == 0 {
 			hasDexIssues = true
-			logger.Warnf("Helm values: The Dex configuration does not contain a `%s` client to allow logins to the Kubermatic dashboard.", clientID)
+			logger.Warn("Helm values: There are no connectors or static passwords configured for Dex.")
 		}
-	}
 
-	connectors, _ := helmValues.GetArray(yamled.Path{"dex", "connectors"})
-	staticPasswords, _ := helmValues.GetArray(yamled.Path{"dex", "staticPasswords"})
-
-	if len(connectors) == 0 && len(staticPasswords) == 0 {
-		hasDexIssues = true
-		logger.Warn("Helm values: There are no connectors or static passwords configured for Dex.")
-	}
-
-	if hasDexIssues {
-		logger.Warnf("If you intend to use Dex, please refer to the example configuration to define a `%s` client and connectors.", clientID)
+		if hasDexIssues {
+			logger.Warnf("If you intend to use Dex, please refer to the example configuration to define a `%s` client and connectors.", clientID)
+		}
 	}
 
 	return failures
