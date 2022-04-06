@@ -30,8 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/network"
-
-	"k8s.io/utils/net"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -129,26 +127,22 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 
 	permissions := getCommonSecurityGroupPermissions(groupID, ipv4Permissions, ipv6Permissions)
 
+	var nodePortsIPv4CIDRs, nodePortsIPv6CIDRs []string
 	lowPort, highPort := getNodePortRange(cluster)
-	ipv4NodePortRange := ""
-	ipv6NodePortRange := ""
-	nodePortsAllowedIPRange := cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange
+	nodePortsAllowedIPRanges := network.JoinCIDRBlocks(cluster.Spec.Cloud.AWS.NodePortsAllowedIPRanges, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange)
 
-	if nodePortsAllowedIPRange != "" {
-		if net.IsIPv4CIDRString(nodePortsAllowedIPRange) {
-			ipv4NodePortRange = nodePortsAllowedIPRange
-		} else {
-			ipv6NodePortRange = nodePortsAllowedIPRange
-		}
-	} else {
+	if network.IsEmpty(nodePortsAllowedIPRanges) {
 		if ipv4Permissions {
-			ipv4NodePortRange = "0.0.0.0/0"
+			nodePortsIPv4CIDRs = append(nodePortsIPv4CIDRs, "0.0.0.0/0")
 		}
 		if ipv6Permissions {
-			ipv6NodePortRange = "::/0"
+			nodePortsIPv6CIDRs = append(nodePortsIPv6CIDRs, "::/0")
 		}
+	} else {
+		nodePortsIPv4CIDRs = network.GetIPv4CIDRs(nodePortsAllowedIPRanges)
+		nodePortsIPv6CIDRs = network.GetIPv6CIDRs(nodePortsAllowedIPRanges)
 	}
-	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, ipv4NodePortRange, ipv6NodePortRange)...)
+	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, nodePortsIPv4CIDRs, nodePortsIPv6CIDRs)...)
 
 	// Iterate over the permissions and add them one by one, because if an error occurs
 	// (e.g., one permission already exists) none of them would be created
@@ -237,7 +231,7 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 	return permissions
 }
 
-func getNodePortSecurityGroupPermissions(lowPort, highPort int, ipv4IPRange, ipv6IPRange string) []*ec2.IpPermission {
+func getNodePortSecurityGroupPermissions(lowPort, highPort int, ipv4IPRanges, ipv6IPRanges []string) []*ec2.IpPermission {
 	tcpNodePortPermission := &ec2.IpPermission{
 		IpProtocol: aws.String("tcp"),
 		FromPort:   aws.Int64(int64(lowPort)),
@@ -249,21 +243,21 @@ func getNodePortSecurityGroupPermissions(lowPort, highPort int, ipv4IPRange, ipv
 		ToPort:     aws.Int64(int64(highPort)),
 	}
 
-	if ipv4IPRange != "" {
-		tcpNodePortPermission.IpRanges = []*ec2.IpRange{{
-			CidrIp: aws.String(ipv4IPRange),
-		}}
-		udpNodePortPermission.IpRanges = []*ec2.IpRange{{
-			CidrIp: aws.String(ipv4IPRange),
-		}}
+	for _, cidr := range ipv4IPRanges {
+		tcpNodePortPermission.IpRanges = append(tcpNodePortPermission.IpRanges, &ec2.IpRange{
+			CidrIp: aws.String(cidr),
+		})
+		udpNodePortPermission.IpRanges = append(udpNodePortPermission.IpRanges, &ec2.IpRange{
+			CidrIp: aws.String(cidr),
+		})
 	}
-	if ipv6IPRange != "" {
-		tcpNodePortPermission.Ipv6Ranges = []*ec2.Ipv6Range{{
-			CidrIpv6: aws.String(ipv6IPRange),
-		}}
-		udpNodePortPermission.Ipv6Ranges = []*ec2.Ipv6Range{{
-			CidrIpv6: aws.String(ipv6IPRange),
-		}}
+	for _, cidr := range ipv6IPRanges {
+		tcpNodePortPermission.Ipv6Ranges = append(tcpNodePortPermission.Ipv6Ranges, &ec2.Ipv6Range{
+			CidrIpv6: aws.String(cidr),
+		})
+		udpNodePortPermission.Ipv6Ranges = append(udpNodePortPermission.Ipv6Ranges, &ec2.Ipv6Range{
+			CidrIpv6: aws.String(cidr),
+		})
 	}
 
 	return []*ec2.IpPermission{tcpNodePortPermission, udpNodePortPermission}
