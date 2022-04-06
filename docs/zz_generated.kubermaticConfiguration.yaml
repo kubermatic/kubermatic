@@ -36,7 +36,8 @@ spec:
       requests:
         cpu: 100m
         memory: 150Mi
-  # Auth defines keys and URLs for Dex.
+  # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
+  # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
   auth:
     clientID: kubermatic
     issuerClientID: kubermaticIssuer

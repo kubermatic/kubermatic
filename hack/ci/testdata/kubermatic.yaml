@@ -18,8 +18,23 @@ metadata:
   name: e2e
   namespace: kubermatic
 spec:
+  ingress:
+    domain: '__KUBERMATIC_DOMAIN__'
+    disable: true
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
     apiserverReplicas: 1
+  api:
+    replicas: 1
+    debugLog: true
   featureGates:
-    HeadlessInstallation: true
+    # VPA won't do anything useful due to missing Prometheus, but we can
+    # at least ensure we deploy a working set of Deployments.
+    VerticalPodAutoscaler: true
+  ui:
+    replicas: 0
+  # Dex integration
+  auth:
+    tokenIssuer: "http://dex.oauth:5556/dex"
+    issuerRedirectURL: "http://localhost:8000"
+    serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"

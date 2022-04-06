@@ -167,14 +167,12 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 		failures = append(failures, errors.New("the namespace must be \"kubermatic\""))
 	}
 
+	if config.Spec.Ingress.Domain == "" {
+		failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
+	}
+
 	// only validate auth-related keys if we are not setting up a headless system
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
-		if !config.Spec.Ingress.Disable {
-			if config.Spec.Ingress.Domain == "" {
-				failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
-			}
-		}
-
 		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
 
 		if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
