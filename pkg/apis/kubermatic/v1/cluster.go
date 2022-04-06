@@ -894,7 +894,7 @@ type KubevirtCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
 	Kubeconfig    string `json:"kubeconfig,omitempty"`
-	CSIKubeConfig string `json:"csiKubeconfig,omitempty"`
+	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
 }
 
 // AlibabaCloudSpec specifies the access data to Alibaba.

@@ -572,8 +572,8 @@ func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {
 		return KubevirtCredentials{}, err
 	}
 
-	if spec.CSIKubeConfig != "" {
-		kubevirtCredentials.CSIKubeConfig = spec.CSIKubeConfig
+	if spec.CSIKubeconfig != "" {
+		kubevirtCredentials.CSIKubeConfig = spec.CSIKubeconfig
 	} else if kubevirtCredentials.CSIKubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubevirtCSIKubeConfig); err != nil {
 		return KubevirtCredentials{}, err
 	}

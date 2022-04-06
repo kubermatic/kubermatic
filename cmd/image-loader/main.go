@@ -585,7 +585,7 @@ func getCloudSpecs() []kubermaticv1.CloudSpec {
 			ProviderName: string(kubermaticv1.KubevirtCloudProvider),
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 				Kubeconfig:    "fakeKubeconfig",
-				CSIKubeConfig: "fakeKubeconfig",
+				CSIKubeconfig: "fakeKubeconfig",
 			},
 		},
 	}

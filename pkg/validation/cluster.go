@@ -641,12 +641,6 @@ func validateKubevirtCloudSpec(spec *kubermaticv1.KubevirtCloudSpec) error {
 		}
 	}
 
-	if spec.CSIKubeConfig == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.KubevirtCSIKubeConfig); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
