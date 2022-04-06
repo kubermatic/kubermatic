@@ -30,7 +30,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -248,10 +247,10 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	}
 
 	// Verify that node CIDR mask sizes are longer than the mask size of pod CIDRs
-	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv4, network.GetIPv4CIDR(n.Pods), fldPath.Child("nodeCidrMaskSizeIPv4")); err != nil {
+	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv4, n.Pods.GetIPv4CIDR(), fldPath.Child("nodeCidrMaskSizeIPv4")); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv6, network.GetIPv6CIDR(n.Pods), fldPath.Child("nodeCidrMaskSizeIPv6")); err != nil {
+	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv6, n.Pods.GetIPv6CIDR(), fldPath.Child("nodeCidrMaskSizeIPv6")); err != nil {
 		allErrs = append(allErrs, err)
 	}
 

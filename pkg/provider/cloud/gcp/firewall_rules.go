@@ -30,7 +30,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/network"
 )
 
 const (
@@ -59,8 +58,8 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 	nodePortRuleName := fmt.Sprintf(nodePortRuleNamePattern, cluster.Name)
 	nodePortIPv6RuleName := fmt.Sprintf(nodePortIPv6RuleNamePattern, cluster.Name)
 
-	ipv4Rules := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
-	ipv6Rules := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv4Rules := cluster.IsIPv4Only() || cluster.IsDualStack()
+	ipv6Rules := cluster.IsIPv6Only() || cluster.IsDualStack()
 
 	// Allow all common IP protocols from within the cluster.
 	var allowedProtocols = []*compute.FirewallAllowed{
@@ -215,8 +214,8 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 	nodePortRuleName := fmt.Sprintf(nodePortRuleNamePattern, cluster.Name)
 	nodePortIPv6RuleName := fmt.Sprintf(nodePortIPv6RuleNamePattern, cluster.Name)
 
-	ipv4Rules := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
-	ipv6Rules := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv4Rules := cluster.IsIPv4Only() || cluster.IsDualStack()
+	ipv6Rules := cluster.IsIPv6Only() || cluster.IsDualStack()
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
 		_, err := firewallService.Delete(projectID, selfRuleName).Context(ctx).Do()

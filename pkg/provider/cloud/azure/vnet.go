@@ -27,7 +27,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	networkutil "k8c.io/kubermatic/v2/pkg/util/network"
 )
 
 const (
@@ -63,10 +62,10 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	}
 
 	var cidrs []string
-	if networkutil.IsIPv4OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+	if cluster.IsIPv4Only() || cluster.IsDualStack() {
 		cidrs = append(cidrs, defaultVNetCIDRIPv4)
 	}
-	if networkutil.IsIPv6OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+	if cluster.IsIPv6Only() || cluster.IsDualStack() {
 		cidrs = append(cidrs, defaultVNetCIDRIPv6)
 	}
 	target := targetVnet(cluster.Spec.Cloud, location, cluster.Name, cidrs)

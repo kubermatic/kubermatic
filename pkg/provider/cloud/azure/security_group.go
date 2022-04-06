@@ -27,8 +27,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
-	networkutil "k8c.io/kubermatic/v2/pkg/util/network"
-
 	"k8s.io/utils/net"
 )
 
@@ -69,10 +67,10 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 			nodePortsIPv6CIDRs = append(nodePortsIPv6CIDRs, nodePortsAllowedIPRange)
 		}
 	} else {
-		if networkutil.IsIPv4OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+		if cluster.IsIPv4Only() || cluster.IsDualStack() {
 			nodePortsIPv4CIDRs = append(nodePortsIPv4CIDRs, "0.0.0.0/0")
 		}
-		if networkutil.IsIPv6OnlyCluster(cluster) || networkutil.IsDualStackCluster(cluster) {
+		if cluster.IsIPv6Only() || cluster.IsDualStack() {
 			nodePortsIPv6CIDRs = append(nodePortsIPv6CIDRs, "::/0")
 		}
 	}

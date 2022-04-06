@@ -29,7 +29,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/network"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -122,16 +121,16 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 		groupID = *out.GroupId
 	}
 
-	ipv4Permissions := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
-	ipv6Permissions := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv4Permissions := cluster.IsIPv4Only() || cluster.IsDualStack()
+	ipv6Permissions := cluster.IsIPv6Only() || cluster.IsDualStack()
 
 	permissions := getCommonSecurityGroupPermissions(groupID, ipv4Permissions, ipv6Permissions)
 
 	var nodePortsIPv4CIDRs, nodePortsIPv6CIDRs []string
 	lowPort, highPort := getNodePortRange(cluster)
-	nodePortsAllowedIPRanges := network.JoinCIDRBlocks(cluster.Spec.Cloud.AWS.NodePortsAllowedIPRanges, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange)
+	nodePortsAllowedIPRanges := cluster.Spec.Cloud.AWS.NodePortsAllowedIPRanges.AppendCIDR(cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange)
 
-	if network.IsEmpty(nodePortsAllowedIPRanges) {
+	if nodePortsAllowedIPRanges.IsEmpty() {
 		if ipv4Permissions {
 			nodePortsIPv4CIDRs = append(nodePortsIPv4CIDRs, "0.0.0.0/0")
 		}
@@ -139,8 +138,8 @@ func reconcileSecurityGroup(ctx context.Context, client ec2iface.EC2API, cluster
 			nodePortsIPv6CIDRs = append(nodePortsIPv6CIDRs, "::/0")
 		}
 	} else {
-		nodePortsIPv4CIDRs = network.GetIPv4CIDRs(nodePortsAllowedIPRanges)
-		nodePortsIPv6CIDRs = network.GetIPv6CIDRs(nodePortsAllowedIPRanges)
+		nodePortsIPv4CIDRs = nodePortsAllowedIPRanges.GetIPv4CIDRs()
+		nodePortsIPv6CIDRs = nodePortsAllowedIPRanges.GetIPv6CIDRs()
 	}
 	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, nodePortsIPv4CIDRs, nodePortsIPv6CIDRs)...)
 

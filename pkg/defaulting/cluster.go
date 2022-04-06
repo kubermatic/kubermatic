@@ -27,7 +27,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -192,10 +191,10 @@ func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
 		}
 	}
 
-	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && network.HasIPv4CIDR(spec.ClusterNetwork.Pods) {
+	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && spec.ClusterNetwork.Pods.HasIPv4CIDR() {
 		spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv4)
 	}
-	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 == nil && network.HasIPv6CIDR(spec.ClusterNetwork.Pods) {
+	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 == nil && spec.ClusterNetwork.Pods.HasIPv6CIDR() {
 		spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv6)
 	}
 
