@@ -18,6 +18,7 @@ package scenarios
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -127,6 +128,10 @@ func (s *gcpScenario) NodeDeployments(_ context.Context, num int, secrets types.
 }
 
 func (s *gcpScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	// See alibaba provider for more info on this.
+	return nil, errors.New("not implemented for gitops yet")
+
+	//nolint:govet
 	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderGoogle, gcetypes.RawConfig{
 		Zone:        providerconfig.ConfigVarString{Value: secrets.GCP.Zone},
 		MachineType: providerconfig.ConfigVarString{Value: "n1-standard-2"},

@@ -18,6 +18,7 @@ package scenarios
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -120,6 +121,10 @@ func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ types.Sec
 }
 
 func (s *packetScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	// See alibaba provider for more info on this.
+	return nil, errors.New("not implemented for gitops yet")
+
+	//nolint:govet
 	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderPacket, equinixmetaltypes.RawConfig{
 		InstanceType: providerconfig.ConfigVarString{Value: packetInstanceType},
 	})

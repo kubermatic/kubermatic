@@ -18,6 +18,7 @@ package scenarios
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -166,6 +167,10 @@ func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Se
 }
 
 func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	// See alibaba provider for more info on this.
+	return nil, errors.New("not implemented for gitops yet")
+
+	//nolint:govet
 	os := getOSNameFromSpec(s.osSpec)
 	template := fmt.Sprintf("machine-controller-e2e-%s", os)
 

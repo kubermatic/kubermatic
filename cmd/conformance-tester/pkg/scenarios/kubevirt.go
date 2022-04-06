@@ -18,6 +18,7 @@ package scenarios
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -136,6 +137,10 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ types.S
 }
 
 func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	// See alibaba provider for more info on this.
+	return nil, errors.New("not implemented for gitops yet")
+
+	//nolint:govet
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
