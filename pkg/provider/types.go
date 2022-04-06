@@ -123,7 +123,7 @@ func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimecl
 			return "", errors.New("configVar.Name is empty")
 		}
 		if configVar.Namespace == "" {
-			return "", errors.New("configVar.Namspace is empty")
+			return "", errors.New("configVar.Namespace is empty")
 		}
 		if key == "" {
 			return "", errors.New("key is empty")

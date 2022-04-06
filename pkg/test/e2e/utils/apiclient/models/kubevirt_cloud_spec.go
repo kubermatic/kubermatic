@@ -18,6 +18,9 @@ import (
 // swagger:model KubevirtCloudSpec
 type KubevirtCloudSpec struct {
 
+	// c s i kubeconfig
+	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
+
 	// kubeconfig
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
