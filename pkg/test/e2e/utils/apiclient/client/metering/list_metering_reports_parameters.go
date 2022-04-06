@@ -60,6 +60,9 @@ func NewListMeteringReportsParamsWithHTTPClient(client *http.Client) *ListMeteri
 */
 type ListMeteringReportsParams struct {
 
+	// ConfigurationName.
+	ConfigurationName *string
+
 	// MaxKeys.
 	//
 	// Format: int64
@@ -121,6 +124,17 @@ func (o *ListMeteringReportsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithConfigurationName adds the configurationName to the list metering reports params
+func (o *ListMeteringReportsParams) WithConfigurationName(configurationName *string) *ListMeteringReportsParams {
+	o.SetConfigurationName(configurationName)
+	return o
+}
+
+// SetConfigurationName adds the configurationName to the list metering reports params
+func (o *ListMeteringReportsParams) SetConfigurationName(configurationName *string) {
+	o.ConfigurationName = configurationName
+}
+
 // WithMaxKeys adds the maxKeys to the list metering reports params
 func (o *ListMeteringReportsParams) WithMaxKeys(maxKeys *int64) *ListMeteringReportsParams {
 	o.SetMaxKeys(maxKeys)
@@ -150,6 +164,23 @@ func (o *ListMeteringReportsParams) WriteToRequest(r runtime.ClientRequest, reg 
 		return err
 	}
 	var res []error
+
+	if o.ConfigurationName != nil {
+
+		// query param configuration_name
+		var qrConfigurationName string
+
+		if o.ConfigurationName != nil {
+			qrConfigurationName = *o.ConfigurationName
+		}
+		qConfigurationName := qrConfigurationName
+		if qConfigurationName != "" {
+
+			if err := r.SetQueryParam("configuration_name", qConfigurationName); err != nil {
+				return err
+			}
+		}
+	}
 
 	if o.MaxKeys != nil {
 
