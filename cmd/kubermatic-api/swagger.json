@@ -24828,7 +24828,7 @@
         },
         "csiKubeconfig": {
           "type": "string",
-          "x-go-name": "CSIKubeConfig"
+          "x-go-name": "CSIKubeconfig"
         },
         "kubeconfig": {
           "type": "string",
