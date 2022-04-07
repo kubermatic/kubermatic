@@ -14,18 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package s3
+package collectors
 
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -33,7 +31,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type s3Exporter struct {
+type s3Collector struct {
 	ObjectCount            *prometheus.Desc
 	ObjectLastModifiedDate *prometheus.Desc
 	EmptyObjectCount       *prometheus.Desc
@@ -44,49 +42,42 @@ type s3Exporter struct {
 	logger                 *zap.SugaredLogger
 }
 
-// MustRun starts a s3 exporter or panic.
-func MustRun(minioClient *minio.Client, client ctrlruntimeclient.Reader, bucket, listenAddress string, logger *zap.SugaredLogger) {
-	exporter := s3Exporter{}
-	exporter.minioClient = minioClient
-	exporter.client = client
-	exporter.bucket = bucket
-	exporter.logger = logger
+// MustRegisterS3Collector registers the S3 collector.
+func MustRegisterS3Collector(minioClient *minio.Client, client ctrlruntimeclient.Reader, bucket string, logger *zap.SugaredLogger) {
+	collector := s3Collector{}
+	collector.minioClient = minioClient
+	collector.client = client
+	collector.bucket = bucket
+	collector.logger = logger
 
-	exporter.ObjectCount = prometheus.NewDesc(
+	collector.ObjectCount = prometheus.NewDesc(
 		"kubermatic_s3_object_count",
 		"The amount of objects partitioned by cluster",
 		[]string{"cluster"}, nil)
-	exporter.ObjectLastModifiedDate = prometheus.NewDesc(
+	collector.ObjectLastModifiedDate = prometheus.NewDesc(
 		"kubermatic_s3_object_last_modified_time_seconds",
 		"Modification time of the last modified object",
 		[]string{"cluster"}, nil)
-	exporter.EmptyObjectCount = prometheus.NewDesc(
+	collector.EmptyObjectCount = prometheus.NewDesc(
 		"kubermatic_s3_empty_object_count",
 		"The amount of empty objects (size=0) partitioned by cluster",
 		[]string{"cluster"}, nil)
-	exporter.QuerySuccess = prometheus.NewDesc(
+	collector.QuerySuccess = prometheus.NewDesc(
 		"kubermatic_s3_query_success",
 		"Whether querying the S3 was successful",
 		nil, nil)
 
-	prometheus.MustRegister(&exporter)
-
-	http.Handle("/", promhttp.Handler())
-	go func() {
-		if err := http.ListenAndServe(listenAddress, nil); err != nil {
-			logger.Fatalw("Failed to listen", zap.Error(err))
-		}
-	}()
+	prometheus.MustRegister(&collector)
 }
 
-func (e *s3Exporter) Describe(ch chan<- *prometheus.Desc) {
+func (e *s3Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.ObjectCount
 	ch <- e.ObjectLastModifiedDate
 	ch <- e.EmptyObjectCount
 	ch <- e.QuerySuccess
 }
 
-func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
+func (e *s3Collector) Collect(ch chan<- prometheus.Metric) {
 	var clusterList *kubermaticv1.ClusterList
 	if err := e.client.List(context.Background(), clusterList); err != nil {
 		e.logger.Errorw("Failed to list clusters", zap.Error(err))
@@ -120,7 +111,7 @@ func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func (e *s3Exporter) setMetricsForCluster(ch chan<- prometheus.Metric, allObjects []minio.ObjectInfo, clusterName string) {
+func (e *s3Collector) setMetricsForCluster(ch chan<- prometheus.Metric, allObjects []minio.ObjectInfo, clusterName string) {
 	var clusterObjects []minio.ObjectInfo
 	for _, object := range allObjects {
 		if strings.HasPrefix(object.Key, fmt.Sprintf("%s-", clusterName)) {
