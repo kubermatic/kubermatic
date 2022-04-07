@@ -16,5 +16,7 @@ limitations under the License.
 
 /*
 Package presetcontroller contains a controller that is responsible for managing presets.
+Preset deletion can affect all the clusters which were created with this preset. Setting `presetInvalidated`
+annotation for all those clusters will indicate a need to evaluate the credentials.
 */
 package presetcontroller

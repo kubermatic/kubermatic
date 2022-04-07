@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	ControllerName = "kkp_preset_controller"
+	ControllerName = "kkp-preset-controller"
 )
 
 type reconciler struct {
@@ -107,7 +107,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, preset *kubermaticv1.Preset, log *zap.SugaredLogger) error {
 	// handle deletion to change all cluster annotation
 	if !preset.DeletionTimestamp.IsZero() {
-		log.Debugf("The preset %s was deleted", preset.Name)
+		log.Debug("The preset was deleted")
 		workerNameLabelSelectorRequirements, _ := r.workerNameLabelSelector.Requirements()
 		presetLabelRequirement, err := labels.NewRequirement(kubermaticv1.IsCredentialPresetLabelKey, selection.Equals, []string{"true"})
 		if err != nil {
@@ -120,17 +120,15 @@ func (r *reconciler) reconcile(ctx context.Context, preset *kubermaticv1.Preset,
 
 		clusters := &kubermaticv1.ClusterList{}
 		if err := r.seedClient.List(ctx, clusters, listOpts); err != nil {
-			log.Errorw("Failed to get clusters", zap.Error(err))
 			return fmt.Errorf("failed to get clusters %w", err)
 		}
-		log.Debugf("Update clusters after preset deletion")
+		log.Debug("Update clusters after preset deletion")
 		for _, cluster := range clusters.Items {
 			if cluster.Annotations != nil && cluster.Annotations[kubermaticv1.PresetNameAnnotation] == preset.Name {
-				log.Debugf("Update cluster %s", cluster.Name)
+				log.Debugw("Update cluster", "cluster", cluster.Name)
 				copyCluster := cluster.DeepCopy()
 				copyCluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = string(kubermaticv1.PresetDeleted)
 				if err := r.seedClient.Update(ctx, copyCluster); err != nil {
-					log.Errorw("Failed to update cluster", zap.Error(err))
 					return err
 				}
 			}

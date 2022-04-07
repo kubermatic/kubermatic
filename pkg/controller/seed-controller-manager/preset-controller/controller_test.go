@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("can't get expected cluster %s", clusterName)
 				}
 				if cluster.Annotations == nil {
-					t.Fatalf("expected annotations for the cluster")
+					t.Fatal("expected annotations for the cluster")
 				}
 				if cluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] != string(kubermaticv1.PresetDeleted) {
 					t.Fatalf("expected annotation %s with value %s", kubermaticv1.PresetInvalidatedAnnotation, kubermaticv1.PresetDeleted)
