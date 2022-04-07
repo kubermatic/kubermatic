@@ -180,23 +180,37 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	switch cluster.Status.Encryption.Phase {
 	case kubermaticv1.ClusterEncryptionPhasePending:
 		// TODO: in this phase, check health status. Is the secret up-to-date? is the apiserver up-to-date and healthy?
-		// transition to ClusterEncryptionPhaseEncryptionNeeded.
+		// transition to ClusterEncryptionPhaseEncryptionNeeded or ClusterEncryptionPhaseActive.
 		ok, err := r.isApiserverUpdated(ctx, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
+
 		if !ok {
 			log.Debug("kube-apiserver is not using updated EncryptionConfiguration yet, retrying in 10s ...")
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
+		key, err := r.getActiveKey(ctx, cluster)
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+
 		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded
+			if c.Status.Encryption.ActiveKey != key {
+				// the active key as per the parsed EncryptionConfiguration has changed; we need to re-run encryption
+				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded
+			} else {
+				// EncryptionConfiguration was changed but the primary key did not change, so there is no need to re-run
+				// encryption. We can skip right to ClusterEncryptionPhaseActive.
+				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseActive
+			}
 		}); err != nil {
 			return &reconcile.Result{}, err
 		}
 
 		return &reconcile.Result{}, nil
+
 	case kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded:
 		// TODO: in this phase, check for encryption Jobs and run one if it does not exist yet.
 		// transition to ClusterEncryptionPhaseActive or ClusterEncryptionPhaseFailed.
@@ -206,6 +220,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		return r.encryptData(ctx, log, cluster, key)
+
 	case kubermaticv1.ClusterEncryptionPhaseActive:
 		// TODO: in this phase, check if configuration changed and we need to transition to ClusterEncryptionPhasePending.
 		if cluster.Status.Encryption.ActiveKey != fmt.Sprintf("secretbox:%s", cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name) {
@@ -216,9 +231,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 		}
 		return &reconcile.Result{}, nil
+
 	case kubermaticv1.ClusterEncryptionPhaseFailed:
 		// TODO: how to recover from a failed encryption? Can you even recover?
 		return &reconcile.Result{}, nil
+
 	default:
 		return &reconcile.Result{}, nil
 	}
@@ -229,8 +246,7 @@ func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kuber
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 		if cluster.Status.Encryption == nil {
 			cluster.Status.Encryption = &kubermaticv1.ClusterEncryptionStatus{
-				ActiveKey: fmt.Sprintf("secretbox:%s", cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name),
-				Phase:     kubermaticv1.ClusterEncryptionPhasePending,
+				Phase: kubermaticv1.ClusterEncryptionPhasePending,
 			}
 		}
 
@@ -358,7 +374,9 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 				}
 				return &reconcile.Result{}, nil
 			}
-			return &reconcile.Result{}, nil
+
+			// no job result yet, requeue to read job status again in 10 seconds
+			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 	}
 }
