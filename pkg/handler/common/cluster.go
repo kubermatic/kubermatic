@@ -244,6 +244,9 @@ func GenerateCluster(ctx context.Context, projectID string, body apiv1.CreateClu
 		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {
 			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
 		}
+		if partialCluster.Spec.Cloud.VSphere != nil {
+			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
+		}
 	}
 	return partialCluster, nil
 }
