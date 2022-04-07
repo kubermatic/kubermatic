@@ -37,6 +37,7 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	presetcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/preset-controller"
 	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
@@ -67,6 +68,7 @@ var AllControllers = map[string]controllerCreator{
 	clustertemplatecontroller.ControllerName:      createClusterTemplateController,
 	projectcontroller.ControllerName:              createProjectController,
 	clusterphasecontroller.ControllerName:         createClusterPhaseController,
+	presetcontroller.ControllerName:               createPresetController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -362,6 +364,15 @@ func createClusterTemplateController(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.namespace,
+		ctrlCtx.runOptions.workerCount,
+	)
+}
+
+func createPresetController(ctrlCtx *controllerContext) error {
+	return presetcontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.workerCount,
 	)
 }
