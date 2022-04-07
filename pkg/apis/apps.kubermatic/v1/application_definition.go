@@ -175,6 +175,11 @@ type ApplicationDefinitionSpec struct {
 	Versions []ApplicationVersion `json:"versions"`
 }
 
+const (
+	// ApplicationDefinitionResourceName represents "Resource" defined in Kubernetes.
+	ApplicationDefinitionResourceName = "applicationdefinitions"
+)
+
 //+kubebuilder:object:root=true
 //+kubebuilder:resource:scope=Cluster
 
