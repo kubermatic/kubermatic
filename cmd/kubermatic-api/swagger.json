@@ -26934,6 +26934,16 @@
           "type": "string",
           "x-go-name": "FloatingIPPool"
         },
+        "ipv6SubnetID": {
+          "description": "IPv6SubnetID holds the ID of the subnet used for IPv6 networking.\nIf not provided, a new subnet will be created if IPv6 is enabled.\n+optional",
+          "type": "string",
+          "x-go-name": "IPv6SubnetID"
+        },
+        "ipv6SubnetPool": {
+          "description": "IPv6SubnetPool holds the name of the subnet pool used for creating new IPv6 subnets.\nIf not provided, the default IPv6 subnet pool will be used.\n+optional",
+          "type": "string",
+          "x-go-name": "IPv6SubnetPool"
+        },
         "network": {
           "description": "Network holds the name of the internal network\nWhen specified, all worker nodes will be attached to this network. If not specified, a network, subnet \u0026 router will be created\n\nNote that the network is internal if the \"External\" field is set to false",
           "type": "string",

@@ -33,18 +33,24 @@ import (
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	ossecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	osports "github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/net"
+	"k8s.io/utils/pointer"
 )
 
 const (
 	subnetCIDR         = "192.168.1.0/24"
 	subnetFirstAddress = "192.168.1.2"
 	subnetLastAddress  = "192.168.1.254"
+
+	defaultIPv6SubnetCIDR = "fd00::/64"
 
 	resourceNamePrefix = "kubernetes-"
 )
@@ -152,10 +158,12 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 }
 
 type createKubermaticSecurityGroupRequest struct {
-	clusterName             string
-	lowPort                 int
-	highPort                int
-	nodePortsAllowedIPRange string
+	clusterName    string
+	ipv4Rules      bool
+	ipv6Rules      bool
+	nodePortsCIDRs []string
+	lowPort        int
+	highPort       int
 }
 
 func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req createKubermaticSecurityGroupRequest) (string, error) {
@@ -187,64 +195,91 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 			len(secGroups), secGroupName)
 	}
 
-	rules := []ossecuritygrouprules.CreateOpts{
-		{
-			// Allows ipv4 traffic within this group
-			Direction:     ossecuritygrouprules.DirIngress,
-			EtherType:     ossecuritygrouprules.EtherType4,
-			SecGroupID:    securityGroupID,
-			RemoteGroupID: securityGroupID,
-		},
-		{
-			// Allows ipv6 traffic within this group
-			Direction:     ossecuritygrouprules.DirIngress,
-			EtherType:     ossecuritygrouprules.EtherType6,
-			SecGroupID:    securityGroupID,
-			RemoteGroupID: securityGroupID,
-		},
-		{
-			// Allows ssh from external
-			Direction:    ossecuritygrouprules.DirIngress,
-			EtherType:    ossecuritygrouprules.EtherType4,
-			SecGroupID:   securityGroupID,
-			PortRangeMin: provider.DefaultSSHPort,
-			PortRangeMax: provider.DefaultSSHPort,
-			Protocol:     ossecuritygrouprules.ProtocolTCP,
-		},
-		{
+	var rules []ossecuritygrouprules.CreateOpts
+
+	if req.ipv4Rules {
+		rules = append(rules, []ossecuritygrouprules.CreateOpts{
+			{
+				// Allows ipv4 traffic within this group
+				Direction:     ossecuritygrouprules.DirIngress,
+				EtherType:     ossecuritygrouprules.EtherType4,
+				SecGroupID:    securityGroupID,
+				RemoteGroupID: securityGroupID,
+			},
+			{
+				// Allows ssh from external
+				Direction:    ossecuritygrouprules.DirIngress,
+				EtherType:    ossecuritygrouprules.EtherType4,
+				SecGroupID:   securityGroupID,
+				PortRangeMin: provider.DefaultSSHPort,
+				PortRangeMax: provider.DefaultSSHPort,
+				Protocol:     ossecuritygrouprules.ProtocolTCP,
+			},
+			{
+				// Allows ICMP traffic
+				Direction:  ossecuritygrouprules.DirIngress,
+				EtherType:  ossecuritygrouprules.EtherType4,
+				SecGroupID: securityGroupID,
+				Protocol:   ossecuritygrouprules.ProtocolICMP,
+			},
+		}...)
+	}
+
+	if req.ipv6Rules {
+		rules = append(rules, []ossecuritygrouprules.CreateOpts{
+			{
+				// Allows ipv6 traffic within this group
+				Direction:     ossecuritygrouprules.DirIngress,
+				EtherType:     ossecuritygrouprules.EtherType6,
+				SecGroupID:    securityGroupID,
+				RemoteGroupID: securityGroupID,
+			},
+			{
+				// Allows ssh from external
+				Direction:    ossecuritygrouprules.DirIngress,
+				EtherType:    ossecuritygrouprules.EtherType6,
+				SecGroupID:   securityGroupID,
+				PortRangeMin: provider.DefaultSSHPort,
+				PortRangeMax: provider.DefaultSSHPort,
+				Protocol:     ossecuritygrouprules.ProtocolTCP,
+			},
+			{
+				// Allows ICMPv6 traffic
+				Direction:  ossecuritygrouprules.DirIngress,
+				EtherType:  ossecuritygrouprules.EtherType6,
+				SecGroupID: securityGroupID,
+				Protocol:   ossecuritygrouprules.ProtocolIPv6ICMP,
+			},
+		}...)
+	}
+
+	for _, cidr := range req.nodePortsCIDRs {
+		tcp := ossecuritygrouprules.CreateOpts{
 			// Allows TCP traffic to nodePorts from external
 			Direction:      ossecuritygrouprules.DirIngress,
-			EtherType:      ossecuritygrouprules.EtherType4,
 			SecGroupID:     securityGroupID,
 			PortRangeMin:   req.lowPort,
 			PortRangeMax:   req.highPort,
 			Protocol:       ossecuritygrouprules.ProtocolTCP,
-			RemoteIPPrefix: req.nodePortsAllowedIPRange,
-		},
-		{
+			RemoteIPPrefix: cidr,
+		}
+		udp := ossecuritygrouprules.CreateOpts{
 			// Allows UDP traffic to nodePorts from external
 			Direction:      ossecuritygrouprules.DirIngress,
-			EtherType:      ossecuritygrouprules.EtherType4,
 			SecGroupID:     securityGroupID,
 			PortRangeMin:   req.lowPort,
 			PortRangeMax:   req.highPort,
 			Protocol:       ossecuritygrouprules.ProtocolUDP,
-			RemoteIPPrefix: req.nodePortsAllowedIPRange,
-		},
-		{
-			// Allows ICMP traffic
-			Direction:  ossecuritygrouprules.DirIngress,
-			EtherType:  ossecuritygrouprules.EtherType4,
-			SecGroupID: securityGroupID,
-			Protocol:   ossecuritygrouprules.ProtocolICMP,
-		},
-		{
-			// Allows ICMPv6 traffic
-			Direction:  ossecuritygrouprules.DirIngress,
-			EtherType:  ossecuritygrouprules.EtherType6,
-			SecGroupID: securityGroupID,
-			Protocol:   ossecuritygrouprules.ProtocolIPv6ICMP,
-		},
+			RemoteIPPrefix: cidr,
+		}
+		if net.IsIPv4CIDRString(cidr) {
+			tcp.EtherType = ossecuritygrouprules.EtherType4
+			udp.EtherType = ossecuritygrouprules.EtherType4
+		} else {
+			tcp.EtherType = ossecuritygrouprules.EtherType6
+			udp.EtherType = ossecuritygrouprules.EtherType6
+		}
+		rules = append(rules, tcp, udp)
 	}
 
 	for _, opts := range rules {
@@ -318,7 +353,7 @@ func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 
 func createKubermaticSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID string, dnsServers []string) (*ossubnets.Subnet, error) {
 	iTrue := true
-	res := ossubnets.Create(netClient, ossubnets.CreateOpts{
+	subnetOpts := ossubnets.CreateOpts{
 		Name:       resourceNamePrefix + clusterName,
 		NetworkID:  networkID,
 		IPVersion:  gophercloud.IPv4,
@@ -331,12 +366,98 @@ func createKubermaticSubnet(netClient *gophercloud.ServiceClient, clusterName, n
 				End:   subnetLastAddress,
 			},
 		},
-		DNSNameservers: dnsServers,
-	})
+	}
+
+	for _, s := range dnsServers {
+		if net.IsIPv4String(s) {
+			subnetOpts.DNSNameservers = append(subnetOpts.DNSNameservers, s)
+		}
+	}
+
+	res := ossubnets.Create(netClient, subnetOpts)
 	if res.Err != nil {
 		return nil, res.Err
 	}
 	return res.Extract()
+}
+
+func createKubermaticIPv6Subnet(netClient *gophercloud.ServiceClient, clusterName, networkID, subnetPoolName string, dnsServers []string) (*ossubnets.Subnet, error) {
+	subnetOpts := ossubnets.CreateOpts{
+		Name:            resourceNamePrefix + clusterName + "-ipv6",
+		NetworkID:       networkID,
+		IPVersion:       gophercloud.IPv6,
+		GatewayIP:       nil,
+		EnableDHCP:      pointer.BoolPtr(true),
+		IPv6AddressMode: "dhcpv6-stateless",
+		IPv6RAMode:      "dhcpv6-stateless",
+	}
+	subnetPoolID := ""
+
+	// if IPv6 subnet pool name is provided - resolve to ID
+	if subnetPoolName != "" {
+		subnetPool, err := getSubnetPoolByName(netClient, subnetPoolName)
+		if err != nil {
+			return nil, err
+		}
+		subnetPoolID = subnetPool.ID
+	}
+
+	// if IPv6 subnet pool name is not provided - look for the default IPv6 subnet pool
+	if subnetPoolID == "" {
+		pools, err := getAllSubnetPools(netClient, subnetpools.ListOpts{IPVersion: 6, IsDefault: pointer.BoolPtr(true)})
+		if err != nil {
+			return nil, err
+		}
+		if len(pools) > 0 {
+			subnetPoolID = pools[0].ID
+		}
+	}
+
+	if subnetPoolID != "" {
+		subnetOpts.SubnetPoolID = subnetPoolID
+	} else {
+		// if no IPv6 subnet pool was provided / found, use the default IPv6 subnet CIDR
+		subnetOpts.CIDR = defaultIPv6SubnetCIDR
+	}
+
+	for _, s := range dnsServers {
+		if net.IsIPv6String(s) {
+			subnetOpts.DNSNameservers = append(subnetOpts.DNSNameservers, s)
+		}
+	}
+
+	res := ossubnets.Create(netClient, subnetOpts)
+	if res.Err != nil {
+		return nil, res.Err
+	}
+	return res.Extract()
+}
+
+func getSubnetPoolByName(netClient *gophercloud.ServiceClient, name string) (*subnetpools.SubnetPool, error) {
+	pools, err := getAllSubnetPools(netClient, subnetpools.ListOpts{Name: name})
+	if err != nil {
+		return nil, err
+	}
+	switch len(pools) {
+	case 1:
+		return &pools[0], nil
+	case 0:
+		return nil, fmt.Errorf("subnet pool named '%s' not found", name)
+	default:
+		return nil, fmt.Errorf("found %d subnet pools for name '%s', expected exactly one", len(pools), name)
+	}
+}
+
+func getAllSubnetPools(netClient *gophercloud.ServiceClient, listOpts subnetpools.ListOpts) ([]subnetpools.SubnetPool, error) {
+	allPages, err := subnetpools.List(netClient, listOpts).AllPages()
+	if err != nil {
+		return nil, err
+	}
+	allSubnetPools, err := subnetpools.ExtractSubnetPools(allPages)
+	if err != nil {
+		return nil, err
+	}
+	return allSubnetPools, nil
 }
 
 func createKubermaticRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkName string) (*osrouters.Router, error) {

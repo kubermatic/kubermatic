@@ -36,6 +36,16 @@ type OpenstackCloudSpec struct {
 	// Note that the network is external if the "External" field is set to true
 	FloatingIPPool string `json:"floatingIPPool,omitempty"`
 
+	// IPv6SubnetID holds the ID of the subnet used for IPv6 networking.
+	// If not provided, a new subnet will be created if IPv6 is enabled.
+	// +optional
+	IPV6SubnetID string `json:"ipv6SubnetID,omitempty"`
+
+	// IPv6SubnetPool holds the name of the subnet pool used for creating new IPv6 subnets.
+	// If not provided, the default IPv6 subnet pool will be used.
+	// +optional
+	IPV6SubnetPool string `json:"ipv6SubnetPool,omitempty"`
+
 	// Network holds the name of the internal network
 	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
 	//

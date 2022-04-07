@@ -43,6 +43,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/network"
 )
 
 const (
@@ -54,12 +55,16 @@ const (
 
 	// NetworkCleanupFinalizer will instruct the deletion of the network.
 	NetworkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-network-v2"
-	// SubnetCleanupFinalizer will instruct the deletion of the subnet.
+	// SubnetCleanupFinalizer will instruct the deletion of the IPv4 subnet.
 	SubnetCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-subnet-v2"
+	// IPv6SubnetCleanupFinalizer will instruct the deletion of the IPv6 subnet.
+	IPv6SubnetCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-subnet-ipv6"
 	// RouterCleanupFinalizer will instruct the deletion of the router.
 	RouterCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-v2"
-	// RouterSubnetLinkCleanupFinalizer will instruct the deletion of the link between the router and the subnet.
+	// RouterSubnetLinkCleanupFinalizer will instruct the deletion of the link between the router and the IPv4 subnet.
 	RouterSubnetLinkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-subnet-link-v2"
+	// RouterIPv6SubnetLinkCleanupFinalizer will instruct the deletion of the link between the router and the IPv6 subnet.
+	RouterIPv6SubnetLinkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-subnet-link-ipv6"
 )
 
 type getClientFunc func(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)
@@ -131,6 +136,16 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 		}
 	}
 
+	if spec.Openstack.IPv6SubnetPool != "" {
+		subnetPool, err := getSubnetPoolByName(netClient, spec.Openstack.IPv6SubnetPool)
+		if err != nil {
+			return fmt.Errorf("failed to get subnet pool %q: %w", spec.Openstack.IPv6SubnetPool, err)
+		}
+		if subnetPool.IPversion != 6 {
+			return fmt.Errorf("provided IPv6 subnet pool %q has incorrect IP version: %d", spec.Openstack.IPv6SubnetPool, subnetPool.IPversion)
+		}
+	}
+
 	return nil
 }
 
@@ -196,6 +211,10 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 
 	var routerID string
 	var finalizers []string
+
+	ipv4Network := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv6Network := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+
 	// if security group has to be created add the corresponding finalizer.
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		finalizers = append(finalizers, SecurityGroupCleanupFinalizer)
@@ -204,19 +223,45 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 	if cluster.Spec.Cloud.Openstack.Network == "" {
 		finalizers = append(finalizers, NetworkCleanupFinalizer)
 	}
-	// If subnet has to be created, router and router port should be
-	// created too thus we add the finalizers.
-	if cluster.Spec.Cloud.Openstack.SubnetID == "" {
-		finalizers = append(finalizers, SubnetCleanupFinalizer, RouterCleanupFinalizer, RouterSubnetLinkCleanupFinalizer)
-	} else if cluster.Spec.Cloud.Openstack.RouterID == "" {
+
+	// if SubnetID is provided but RouterID not, try to retrieve RouterID
+	if cluster.Spec.Cloud.Openstack.SubnetID != "" && cluster.Spec.Cloud.Openstack.RouterID == "" {
 		var err error
 		routerID, err = getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %w", cluster.Spec.Cloud.Openstack.SubnetID, err)
 		}
-		// Subnet exists but we need to create the router
-		if routerID == "" {
-			finalizers = append(finalizers, RouterCleanupFinalizer, RouterSubnetLinkCleanupFinalizer)
+	}
+	if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" && cluster.Spec.Cloud.Openstack.RouterID == "" && routerID == "" {
+		var err error
+		routerID, err = getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %w", cluster.Spec.Cloud.Openstack.IPv6SubnetID, err)
+		}
+	}
+	// If router has to be created, add associated finalizer.
+	if cluster.Spec.Cloud.Openstack.RouterID == "" && routerID == "" {
+		finalizers = append(finalizers, RouterCleanupFinalizer)
+	}
+
+	if ipv4Network {
+		// If subnet has to be created, add associated finalizer.
+		if cluster.Spec.Cloud.Openstack.SubnetID == "" {
+			finalizers = append(finalizers, SubnetCleanupFinalizer)
+		}
+		// If subnet or router has to be created, subnet needs to be attached to the router.
+		if cluster.Spec.Cloud.Openstack.SubnetID == "" || (cluster.Spec.Cloud.Openstack.RouterID == "" && routerID == "") {
+			finalizers = append(finalizers, RouterSubnetLinkCleanupFinalizer)
+		}
+	}
+	if ipv6Network {
+		// If subnet has to be created, add associated finalizer.
+		if cluster.Spec.Cloud.Openstack.IPv6SubnetID == "" {
+			finalizers = append(finalizers, IPv6SubnetCleanupFinalizer)
+		}
+		// If subnet or router has to be created, subnet needs to be attached to the router.
+		if cluster.Spec.Cloud.Openstack.IPv6SubnetID == "" || (cluster.Spec.Cloud.Openstack.RouterID == "" && routerID == "") {
+			finalizers = append(finalizers, RouterIPv6SubnetLinkCleanupFinalizer)
 		}
 	}
 
@@ -246,16 +291,24 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 			Build().
 			NodePorts()
 
-		nodePortsAllowedIPRange := cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange
-		if nodePortsAllowedIPRange == "" {
-			nodePortsAllowedIPRange = "0.0.0.0/0"
+		req := createKubermaticSecurityGroupRequest{
+			clusterName: cluster.Name,
+			ipv4Rules:   ipv4Network,
+			ipv6Rules:   ipv6Network,
+			lowPort:     lowPort,
+			highPort:    highPort,
 		}
 
-		req := createKubermaticSecurityGroupRequest{
-			clusterName:             cluster.Name,
-			lowPort:                 lowPort,
-			highPort:                highPort,
-			nodePortsAllowedIPRange: nodePortsAllowedIPRange,
+		nodePortsAllowedIPRange := cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange
+		if nodePortsAllowedIPRange != "" {
+			req.nodePortsCIDRs = append(req.nodePortsCIDRs, nodePortsAllowedIPRange)
+		} else {
+			if ipv4Network {
+				req.nodePortsCIDRs = append(req.nodePortsCIDRs, "0.0.0.0/0")
+			}
+			if ipv6Network {
+				req.nodePortsCIDRs = append(req.nodePortsCIDRs, "::/0")
+			}
 		}
 
 		secGroupName, err := createKubermaticSecurityGroup(netClient, req)
@@ -288,17 +341,29 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("failed to get network '%s': %w", cluster.Spec.Cloud.Openstack.Network, err)
 	}
 
-	if cluster.Spec.Cloud.Openstack.SubnetID == "" {
+	if ipv4Network && cluster.Spec.Cloud.Openstack.SubnetID == "" {
 		subnet, err := createKubermaticSubnet(netClient, cluster.Name, network.ID, os.dc.DNSServers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic subnet: %w", err)
 		}
-
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to add subnet cleanup finalizer: %w", err)
+		}
+	}
+
+	if ipv6Network && cluster.Spec.Cloud.Openstack.IPv6SubnetID == "" {
+		subnet, err := createKubermaticIPv6Subnet(netClient, cluster.Name, network.ID, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, os.dc.DNSServers)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create the v6 subnet: %w", err)
+		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.Openstack.IPv6SubnetID = subnet.ID
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update v6 subnet ID: %w", err)
 		}
 	}
 
@@ -331,10 +396,16 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 	// reconciliations so far. This is to avoid hitting OpenStack API at each
 	// iteration.
 	// TODO: this is terrible, find a better way.
-	if cluster.Status.ExtendedHealth.CloudProviderInfrastructure != kubermaticv1.HealthStatusUp &&
-		kubernetes.HasFinalizer(cluster, RouterSubnetLinkCleanupFinalizer) {
-		if _, err = attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
-			return nil, fmt.Errorf("failed to attach subnet to router: %w", err)
+	if cluster.Status.ExtendedHealth.CloudProviderInfrastructure != kubermaticv1.HealthStatusUp {
+		if kubernetes.HasFinalizer(cluster, RouterSubnetLinkCleanupFinalizer) {
+			if _, err = attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
+				return nil, fmt.Errorf("failed to attach subnet to router: %w", err)
+			}
+		}
+		if kubernetes.HasFinalizer(cluster, RouterIPv6SubnetLinkCleanupFinalizer) {
+			if _, err = attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
+				return nil, fmt.Errorf("failed to attach subnet to router: %w", err)
+			}
 		}
 	}
 
@@ -372,10 +443,26 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 		}
 	}
 
+	if kubernetes.HasFinalizer(cluster, RouterIPv6SubnetLinkCleanupFinalizer) {
+		if _, err = detachSubnetFromRouter(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
+			if !isNotFoundErr(err) {
+				return nil, fmt.Errorf("failed to detach subnet from router: %w", err)
+			}
+		}
+	}
+
 	if kubernetes.HasFinalizer(cluster, SubnetCleanupFinalizer) || kubernetes.HasFinalizer(cluster, OldNetworkCleanupFinalizer) {
 		if err := deleteSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID); err != nil {
 			if !isNotFoundErr(err) {
 				return nil, fmt.Errorf("failed to delete subnet '%s': %w", cluster.Spec.Cloud.Openstack.SubnetID, err)
+			}
+		}
+	}
+
+	if kubernetes.HasFinalizer(cluster, IPv6SubnetCleanupFinalizer) {
+		if err := deleteSubnet(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID); err != nil {
+			if !isNotFoundErr(err) {
+				return nil, fmt.Errorf("failed to delete subnet '%s': %w", cluster.Spec.Cloud.Openstack.IPv6SubnetID, err)
 			}
 		}
 	}
@@ -403,7 +490,9 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 			cluster,
 			SecurityGroupCleanupFinalizer,
 			RouterSubnetLinkCleanupFinalizer,
+			RouterIPv6SubnetLinkCleanupFinalizer,
 			SubnetCleanupFinalizer,
+			IPv6SubnetCleanupFinalizer,
 			NetworkCleanupFinalizer,
 			RouterCleanupFinalizer,
 			OldNetworkCleanupFinalizer,

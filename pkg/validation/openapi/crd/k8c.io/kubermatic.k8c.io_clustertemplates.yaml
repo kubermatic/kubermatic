@@ -698,6 +698,16 @@ spec:
                           public ip from this floating ip pool \n Note that the network
                           is external if the \"External\" field is set to true"
                         type: string
+                      ipv6SubnetID:
+                        description: IPv6SubnetID holds the ID of the subnet used
+                          for IPv6 networking. If not provided, a new subnet will
+                          be created if IPv6 is enabled.
+                        type: string
+                      ipv6SubnetPool:
+                        description: IPv6SubnetPool holds the name of the subnet pool
+                          used for creating new IPv6 subnets. If not provided, the
+                          default IPv6 subnet pool will be used.
+                        type: string
                       network:
                         description: "Network holds the name of the internal network
                           When specified, all worker nodes will be attached to this

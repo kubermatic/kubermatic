@@ -28,6 +28,7 @@ import (
 const (
 	NetworkID       = "8bb661f5-76b9-45f1-9ef9-eeffcd025fe4"
 	SubnetID        = "bec43a98-2d0a-4b1d-9df0-0f21e8f89d8a"
+	SubnetPoolID    = "bed43a98-2d0a-4b1d-9df0-0f21e8f89d8a"
 	RouterID        = "b8a25073-b35f-4b64-b205-6d21c8221d98"
 	PortID          = "6f5c4730-aa3f-4677-bca2-3b1ead8545d9"
 	InterfaceInfoID = "6f5c4730-aa3f-4677-bca2-3b1ead8545d9"
@@ -41,6 +42,7 @@ const (
 	NetworksEndpoint       = "/networks"
 	SubnetsEndpoint        = "/subnets"
 	RoutersEndpoint        = "/routers"
+	SubnetPoolsEndpoint    = "/subnetpools"
 )
 
 func AddRouterInterfaceEndpoint(routerID string) string {
