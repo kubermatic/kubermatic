@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -32,10 +33,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
@@ -244,6 +247,11 @@ func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 
 		erLists, err := listProjectEtcdRestore(ctx, req.ProjectID)
 		if err != nil {
+			// if cluster is unreachable, do not forward the error to the user and log only
+			if kubenetutil.IsConnectionRefused(err) {
+				kubermaticlog.Logger.Errorw("cluster is unreachable", zap.Error(err))
+				return nil, nil
+			}
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
