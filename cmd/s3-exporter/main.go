@@ -26,9 +26,10 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/exporters/s3"
+	"k8c.io/kubermatic/v2/pkg/collectors"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -112,7 +113,14 @@ func main() {
 
 	minioClient.SetAppInfo("kubermatic-exporter", "v0.2")
 
-	s3.MustRun(minioClient, client, *bucket, *listenAddress, logger)
+	collectors.MustRegisterS3Collector(minioClient, client, *bucket, logger)
+
+	http.Handle("/", promhttp.Handler())
+	go func() {
+		if err := http.ListenAndServe(*listenAddress, nil); err != nil {
+			logger.Fatalw("Failed to listen", zap.Error(err))
+		}
+	}()
 
 	logger.Infof("Successfully started, listening on %s", *listenAddress)
 	<-stopChannel
