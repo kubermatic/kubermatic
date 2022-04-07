@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
