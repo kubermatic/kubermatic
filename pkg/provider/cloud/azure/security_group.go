@@ -210,10 +210,10 @@ func deleteSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
 	res, err := clients.SecurityGroups.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, "")
 	if err != nil {
+		if isNotFound(res.Response) {
+			return nil
+		}
 		return err
-	}
-	if isNotFound(res.Response) {
-		return nil
 	}
 
 	future, err := clients.SecurityGroups.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)

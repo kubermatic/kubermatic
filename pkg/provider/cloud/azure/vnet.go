@@ -135,10 +135,10 @@ func deleteVNet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Clou
 	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
 	res, err := clients.Networks.Get(ctx, resourceGroup, cloud.Azure.VNetName, "")
 	if err != nil {
+		if isNotFound(res.Response) {
+			return nil
+		}
 		return err
-	}
-	if isNotFound(res.Response) {
-		return nil
 	}
 
 	deleteVNetFuture, err := clients.Networks.Delete(ctx, resourceGroup, cloud.Azure.VNetName)

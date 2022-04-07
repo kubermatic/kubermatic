@@ -118,10 +118,10 @@ func deleteAvailabilitySet(ctx context.Context, clients *ClientSet, cloud kuberm
 	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
 	res, err := clients.AvailabilitySets.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
 	if err != nil {
+		if isNotFound(res.Response) {
+			return nil
+		}
 		return err
-	}
-	if isNotFound(res.Response) {
-		return nil
 	}
 
 	_, err = clients.AvailabilitySets.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
