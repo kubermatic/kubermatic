@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -28,7 +29,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -63,10 +63,10 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %w", err)
 	}
-	if err := ensureClusterRBACRoleForNamedResource(ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err := ensureClusterRBACRoleForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %w", err)
 	}
-	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %w", err)
 	}
 	if err := c.ensureClusterRBACRoleForResources(ctx); err != nil {
@@ -117,13 +117,13 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 		for _, groupPrefix := range AllGroupsPrefixes {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
-					err := ensureClusterRBACRoleForResource(ctx, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
+					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(ctx, c.client, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
+				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
 				if err != nil {
 					return err
 				}
@@ -148,7 +148,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -180,13 +180,13 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 	return nil
 }
 
-func ensureClusterRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, kind string) error {
+func ensureClusterRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName, resource, kind string) error {
 	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group, kind)
 	if err != nil {
 		return err
 	}
 	if generatedClusterRole == nil {
-		klog.V(4).Infof("skipping ClusterRole generation because the resource for group %q and resource %q will not be created", groupName, resource)
+		log.Debugw("skipping ClusterRole generation", "group", groupName, "resource", resource)
 		return nil
 	}
 
@@ -263,6 +263,7 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureRBACRoleForResource(
 						ctx,
+						c.log,
 						seedClusterRESTClient,
 						groupPrefix,
 						rmapping.Resource,
@@ -275,6 +276,7 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 			} else {
 				err := ensureRBACRoleForResource(
 					ctx,
+					c.log,
 					c.client,
 					groupPrefix,
 					rmapping.Resource,
@@ -289,13 +291,13 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 	return nil
 }
 
-func ensureRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
+func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
 	generatedRole, err := generateRBACRoleForResource(groupName, gvr.Resource, gvr.Group, kind, namespace)
 	if err != nil {
 		return err
 	}
 	if generatedRole == nil {
-		klog.V(4).Infof("skipping Role generation because the resource for group %q and resource %q in namespace %q will not be created", groupName, gvr.Resource, namespace)
+		log.Debugw("skipping Role generation", "group", groupName, "resource", gvr.Resource, "namespace", namespace)
 		return nil
 	}
 	var sharedExistingRole rbacv1.Role
@@ -330,7 +332,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind, projectResource.namespace); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind, projectResource.namespace); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -424,7 +426,7 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(project.Name, groupPrefix)
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, gvk.Kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, gvk.Kind); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -460,7 +462,7 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(project.Name, groupPrefix)
-			if skip, err := shouldSkipRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, gvk.Kind, projectResource.namespace); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, gvk.Kind, projectResource.namespace); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -544,13 +546,13 @@ func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, 
 // thus before doing something with ClusterRoleBinding check if the role was generated for the given resource and the group
 //
 // note: this method will add status to the log file
-func shouldSkipClusterRBACRoleBindingFor(groupName, policyResource, policyAPIGroups, projectName, kind string) (bool, error) {
+func shouldSkipClusterRBACRoleBindingFor(log *zap.SugaredLogger, groupName, policyResource, policyAPIGroups, projectName, kind string) (bool, error) {
 	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind)
 	if err != nil {
 		return false, err
 	}
 	if generatedClusterRole == nil {
-		klog.V(4).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupName, policyResource, projectName)
+		log.Debugw("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not (will not be) created", "group", groupName, "resource", policyResource, "project", projectName)
 		return true, nil
 	}
 	return false, nil
@@ -560,13 +562,13 @@ func shouldSkipClusterRBACRoleBindingFor(groupName, policyResource, policyAPIGro
 // thus before doing something with RoleBinding check if the role was generated for the given resource and the group
 //
 // note: this method will add status to the log file
-func shouldSkipRBACRoleBindingFor(groupName, policyResource, policyAPIGroups, projectName, kind, namespace string) (bool, error) {
+func shouldSkipRBACRoleBindingFor(log *zap.SugaredLogger, groupName, policyResource, policyAPIGroups, projectName, kind, namespace string) (bool, error) {
 	generatedRole, err := generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind, namespace)
 	if err != nil {
 		return false, err
 	}
 	if generatedRole == nil {
-		klog.V(4).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupName, policyResource, projectName, namespace)
+		log.Debugw("skipping operation on RoleBinding because corresponding Role was not (will not be) created", "group", groupName, "resource", policyResource, "project", projectName, "namespace", namespace)
 		return true, nil
 	}
 	return false, nil
