@@ -96,7 +96,9 @@ spec:
                     type: object
                 type: object
               auth:
-                description: Auth defines keys and URLs for Dex.
+                description: Auth defines keys and URLs for Dex. These must be defined
+                  unless the HeadlessInstallation feature gate is set, which will
+                  disable the UI/API and its need for an OIDC provider entirely.
                 properties:
                   clientID:
                     type: string
@@ -771,8 +773,6 @@ spec:
                         type: object
                     type: object
                 type: object
-            required:
-            - auth
             type: object
         type: object
     served: true
