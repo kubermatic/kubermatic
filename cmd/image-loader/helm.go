@@ -67,6 +67,11 @@ func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config 
 			continue
 		}
 
+		chartLog.Info("Fetching chart dependencies")
+		if err := helmClient.BuildChartDependencies(chartPath, nil); err != nil {
+			return nil, fmt.Errorf("failed to download chart dependencies: %w", err)
+		}
+
 		chartLog.Info("Rendering chart")
 
 		rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil)
