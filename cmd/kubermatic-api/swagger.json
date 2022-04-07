@@ -21708,6 +21708,9 @@
         "eventRateLimitConfig": {
           "$ref": "#/definitions/EventRateLimitConfig"
         },
+        "kubernetesDashboard": {
+          "$ref": "#/definitions/KubernetesDashboard"
+        },
         "machineNetworks": {
           "description": "MachineNetworks optionally specifies the parameters for IPAM.",
           "type": "array",
@@ -25249,6 +25252,17 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "KubernetesDashboard": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enabled controls whether the kubernetes-dashboard should be deployed for the user cluster or not.\n+kubebuilder:default=true",
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Kubevirt": {
       "type": "object",

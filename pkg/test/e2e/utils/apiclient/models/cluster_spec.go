@@ -72,6 +72,9 @@ type ClusterSpec struct {
 	// event rate limit config
 	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
 
+	// kubernetes dashboard
+	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
+
 	// mla
 	Mla *MLASettings `json:"mla,omitempty"`
 
@@ -116,6 +119,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateEventRateLimitConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubernetesDashboard(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -270,6 +277,25 @@ func (m *ClusterSpec) validateEventRateLimitConfig(formats strfmt.Registry) erro
 	return nil
 }
 
+func (m *ClusterSpec) validateKubernetesDashboard(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubernetesDashboard) { // not required
+		return nil
+	}
+
+	if m.KubernetesDashboard != nil {
+		if err := m.KubernetesDashboard.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubernetesDashboard")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubernetesDashboard")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ClusterSpec) validateMla(formats strfmt.Registry) error {
 	if swag.IsZero(m.Mla) { // not required
 		return nil
@@ -410,6 +436,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateKubernetesDashboard(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMla(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -532,6 +562,22 @@ func (m *ClusterSpec) contextValidateEventRateLimitConfig(ctx context.Context, f
 				return ve.ValidateName("eventRateLimitConfig")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("eventRateLimitConfig")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateKubernetesDashboard(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.KubernetesDashboard != nil {
+		if err := m.KubernetesDashboard.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubernetesDashboard")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubernetesDashboard")
 			}
 			return err
 		}
