@@ -17,6 +17,10 @@ limitations under the License.
 package apiserver
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"encoding/json"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -43,7 +47,7 @@ func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconcil
 			// to mess with the EncryptionConfiguration at that moment as introducing different keys might make the
 			// encrypted data unreadable for kube-apiserver.
 			if data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) &&
-				data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionFinished, corev1.ConditionFalse) {
+				data.Cluster().Status.Encryption != nil && data.Cluster().Status.Encryption.Phase == kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded {
 				return secret, nil
 			}
 
@@ -107,6 +111,16 @@ func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconcil
 			}
 
 			secret.Data = secretData
+
+			if secret.ObjectMeta.Labels == nil {
+				secret.ObjectMeta.Labels = map[string]string{}
+			}
+
+			spec, err := json.Marshal(data.Cluster().Spec.EncryptionConfiguration)
+			hash := sha1.New()
+			hash.Write(spec)
+
+			secret.ObjectMeta.Labels["kubermatic.k8c.io/encryption-spec-hash"] = hex.EncodeToString(hash.Sum(nil))
 
 			return secret, nil
 		}

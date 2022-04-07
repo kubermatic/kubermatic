@@ -1917,6 +1917,22 @@ spec:
                   primary use case is status signaling between controllers or between
                   controllers and the API
                 type: object
+              encryption:
+                description: Encryption describes the status of the encryption-at-rest
+                  feature for encrypting data stored in etcd.
+                properties:
+                  activeKey:
+                    type: string
+                  phase:
+                    enum:
+                    - Pending
+                    - Active
+                    - EncryptionNeeded
+                    type: string
+                required:
+                - activeKey
+                - phase
+                type: object
               errorMessage:
                 description: ErrorMessage contains a default error message in case
                   the controller encountered an error. Will be reset if the error

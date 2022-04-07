@@ -307,6 +307,7 @@ const (
 	ClusterConditionAddonInstallerControllerReconcilingSuccess    ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
 	ClusterConditionBackupControllerReconcilingSuccess            ClusterConditionType = "BackupControllerReconciledSuccessfully"
 	ClusterConditionCloudControllerReconcilingSuccess             ClusterConditionType = "CloudControllerReconcilledSuccessfully"
+	ClusterConditionEncryptionControllerReconcilingSuccess        ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionUpdateControllerReconcilingSuccess            ClusterConditionType = "UpdateControllerReconciledSuccessfully"
 	ClusterConditionMonitoringControllerReconcilingSuccess        ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
@@ -318,9 +319,6 @@ const (
 	ClusterConditionUpdateProgress ClusterConditionType = "UpdateProgress"
 
 	ClusterConditionEncryptionInitialized ClusterConditionType = "EncryptionInitialized"
-	// ClusterConditionEncryptionFinished is met when the encryption_controller signals that all resources
-	// have been re-encrypted in the cluster data store.
-	ClusterConditionEncryptionFinished ClusterConditionType = "EncryptionFinished"
 
 	// ClusterConditionNone is a special value indicating that no cluster condition should be set.
 	ClusterConditionNone ClusterConditionType = ""
@@ -431,9 +429,30 @@ type ClusterStatus struct {
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
 
+	// Encryption describes the status of the encryption-at-rest feature for encrypting data stored
+	// in etcd.
+	// +optional
+	Encryption *ClusterEncryptionStatus `json:"encryption,omitempty"`
+
 	// +optional
 	ActiveEncryptionKey string `json:"activeEncryptionKey,omitempty"`
 }
+
+// ClusterEncryptionStatus holds status information about the encryption-at-rest feature on the user cluster.
+type ClusterEncryptionStatus struct {
+	ActiveKey string                 `json:"activeKey"`
+	Phase     ClusterEncryptionPhase `json:"phase"`
+}
+
+// +kubebuilder:validation:Enum=Pending;Active;EncryptionNeeded
+type ClusterEncryptionPhase string
+
+const (
+	ClusterEncryptionPhasePending          ClusterEncryptionPhase = "Pending"
+	ClusterEncryptionPhaseFailed           ClusterEncryptionPhase = "Failed"
+	ClusterEncryptionPhaseActive           ClusterEncryptionPhase = "Active"
+	ClusterEncryptionPhaseEncryptionNeeded ClusterEncryptionPhase = "EncryptionNeeded"
+)
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
 // of the cluster control plane and worker nodes.

@@ -18,6 +18,9 @@ package encryption
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -144,7 +147,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.workerName,
 		cluster,
 		r.versions,
-		kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
+		kubermaticv1.ClusterConditionEncryptionControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, log, cluster)
 		},
@@ -163,54 +166,74 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	// wait for apiserver rollout to complete before updating status
-	if ok, err := r.isApiserverUpdated(ctx, cluster); err != nil || !ok {
-		log.Debugf("apiserver is not updated and ready yet, skipping...", err)
-		return &reconcile.Result{}, err
-	}
 	// reconcile until encryption is successfully initialized
 	if cluster.Spec.EncryptionConfiguration.Enabled && !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) {
-		log.Debug("EncryptionInitialized is not set yet, setting the condition ...")
+		log.Debug("EncryptionInitialized is not set yet, setting initial encryption status and condition ...")
 		return r.setInitializedCondition(ctx, cluster)
 	}
 
-	primaryKey, err := r.getActiveKey(ctx, cluster)
-	if err != nil {
-		return &reconcile.Result{}, err
+	if cluster.Status.Encryption == nil {
+		// TODO: handle this situation differently?
+		return &reconcile.Result{}, nil
 	}
 
-	if cluster.Status.ActiveEncryptionKey != primaryKey {
+	switch cluster.Status.Encryption.Phase {
+	case kubermaticv1.ClusterEncryptionPhasePending:
+		// TODO: in this phase, check health status. Is the secret up-to-date? is the apiserver up-to-date and healthy?
+		// transition to ClusterEncryptionPhaseEncryptionNeeded.
+		ok, err := r.isApiserverUpdated(ctx, cluster)
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+		if !ok {
+			log.Debug("kube-apiserver is not using updated EncryptionConfiguration yet, retrying in 10s ...")
+			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		}
+
 		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.ActiveEncryptionKey = primaryKey
-			kubermaticv1helper.SetClusterCondition(
-				cluster,
-				r.versions,
-				kubermaticv1.ClusterConditionEncryptionFinished,
-				corev1.ConditionFalse,
-				"",
-				fmt.Sprintf("Data re-encryption with key '%s' is pending", primaryKey),
-			)
+			c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded
 		}); err != nil {
 			return &reconcile.Result{}, err
 		}
 
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-	}
-
-	if cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionFinished, corev1.ConditionFalse) {
-		if ok, err := r.isApiserverUpdated(ctx, cluster); err != nil || !ok {
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, err
+		return &reconcile.Result{}, nil
+	case kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded:
+		// TODO: in this phase, check for encryption Jobs and run one if it does not exist yet.
+		// transition to ClusterEncryptionPhaseActive or ClusterEncryptionPhaseFailed.
+		key, err := r.getActiveKey(ctx, cluster)
+		if err != nil {
+			return &reconcile.Result{}, err
 		}
 
-		return r.encryptData(ctx, log, cluster, primaryKey)
+		return r.encryptData(ctx, log, cluster, key)
+	case kubermaticv1.ClusterEncryptionPhaseActive:
+		// TODO: in this phase, check if configuration changed and we need to transition to ClusterEncryptionPhasePending.
+		if cluster.Status.Encryption.ActiveKey != fmt.Sprintf("secretbox:%s", cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name) {
+			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhasePending
+			}); err != nil {
+				return &reconcile.Result{}, err
+			}
+		}
+		return &reconcile.Result{}, nil
+	case kubermaticv1.ClusterEncryptionPhaseFailed:
+		// TODO: how to recover from a failed encryption? Can you even recover?
+		return &reconcile.Result{}, nil
+	default:
+		return &reconcile.Result{}, nil
 	}
-
-	return &reconcile.Result{}, nil
 }
 
 func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// set the encryption initialized condition (should only happen once on every cluster)
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+		if cluster.Status.Encryption == nil {
+			cluster.Status.Encryption = &kubermaticv1.ClusterEncryptionStatus{
+				ActiveKey: fmt.Sprintf("secretbox:%s", cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name),
+				Phase:     kubermaticv1.ClusterEncryptionPhasePending,
+			}
+		}
+
 		kubermaticv1helper.SetClusterCondition(
 			cluster,
 			r.versions,
@@ -245,9 +268,10 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 		return &reconcile.Result{}, err
 	} else {
 		if len(jobList.Items) == 0 {
+			// TODO: move to reconcile helpers (?)
 			job := batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: fmt.Sprintf("%s-%s", encryptionJobPrefix, cluster.Name),
+					GenerateName: fmt.Sprintf("%s-%s-", encryptionJobPrefix, cluster.Name),
 					Namespace:    cluster.Status.NamespaceName,
 					Labels: map[string]string{
 						// TODO: do we have well-known labels aready?
@@ -319,30 +343,16 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 			job := jobList.Items[0]
 			if job.Status.Succeeded == 1 {
 				if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-					kubermaticv1helper.SetClusterCondition(
-						cluster,
-						r.versions,
-						kubermaticv1.ClusterConditionEncryptionFinished,
-						corev1.ConditionTrue,
-						"",
-						fmt.Sprintf("Data re-encryption with key '%s' finished", cluster.Status.ActiveEncryptionKey),
-					)
+					cluster.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseActive
+					cluster.Status.Encryption.ActiveKey = key
 				}); err != nil {
 					return &reconcile.Result{}, err
 				}
 
 				return &reconcile.Result{}, nil
 			} else if job.Status.Failed > 0 {
-				// TODO: probably should handle failed encryption jobs differently
 				if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-					kubermaticv1helper.SetClusterCondition(
-						cluster,
-						r.versions,
-						kubermaticv1.ClusterConditionEncryptionFinished,
-						corev1.ConditionFalse,
-						"JobFailed",
-						fmt.Sprintf("Data re-encryption with key '%s' failed", cluster.Status.ActiveEncryptionKey),
-					)
+					cluster.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseFailed
 				}); err != nil {
 					return &reconcile.Result{}, err
 				}
@@ -354,45 +364,90 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 }
 
 func (r *Reconciler) isApiserverUpdated(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
-	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
-		return false, nil
-	}
-
-	var deployment appsv1.Deployment
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      resources.ApiserverDeploymentName,
-		Namespace: cluster.Status.NamespaceName,
-	}, &deployment); err != nil {
-		return false, err
-	}
-
-	hasSecretVolume := false
-	for _, volume := range deployment.Spec.Template.Spec.Volumes {
-		if volume.Secret != nil && volume.Secret.SecretName == resources.EncryptionConfigurationSecretName {
-			hasSecretVolume = true
-		}
-	}
-
-	if !hasSecretVolume {
-		return false, nil
-	}
-
-	if deployment.Status.Replicas != deployment.Status.UpdatedReplicas {
-		return false, nil
-	}
-
 	var secret corev1.Secret
 	if err := r.Get(ctx, types.NamespacedName{
 		Name:      resources.EncryptionConfigurationSecretName,
 		Namespace: cluster.Status.NamespaceName,
 	}, &secret); err != nil {
+		if kerrors.IsNotFound(err) {
+			return false, nil
+		}
 		return false, err
 	}
 
-	// TODO: replace hardcoded label
-	if val, ok := deployment.Spec.Template.ObjectMeta.Labels["apiserver-encryption-configuration-secret-revision"]; !ok || val != secret.ObjectMeta.ResourceVersion {
+	spec, err := json.Marshal(cluster.Spec.EncryptionConfiguration)
+	if err != nil {
+		return false, err
+	}
+
+	hash := sha1.New()
+	hash.Write(spec)
+
+	if val, ok := secret.ObjectMeta.Labels["kubermatic.k8c.io/encryption-spec-hash"]; !ok || val != hex.EncodeToString(hash.Sum(nil)) {
+		// the secret on the cluster (or in the cache) doesn't seem updated yet
 		return false, nil
 	}
+
+	var podList corev1.PodList
+	if err := r.List(ctx, &podList, ctrlruntimeclient.MatchingLabels{
+		"app": "apiserver",
+	}); err != nil {
+		return false, err
+	}
+
+	if len(podList.Items) == 0 {
+		return false, nil
+	}
+
+	for _, pod := range podList.Items {
+		if val, ok := pod.Labels["apiserver-encryption-configuration-secret-revision"]; !ok || val != secret.ResourceVersion {
+			return false, nil
+		}
+	}
+
+	return true, nil
+
+	/*
+		if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
+			return false, nil
+		}
+
+		var deployment appsv1.Deployment
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      resources.ApiserverDeploymentName,
+			Namespace: cluster.Status.NamespaceName,
+		}, &deployment); err != nil {
+			return false, err
+		}
+
+		hasSecretVolume := false
+		for _, volume := range deployment.Spec.Template.Spec.Volumes {
+			if volume.Secret != nil && volume.Secret.SecretName == resources.EncryptionConfigurationSecretName {
+				hasSecretVolume = true
+			}
+		}
+
+		if !hasSecretVolume {
+			return false, nil
+		}
+
+		if deployment.Status.Replicas != deployment.Status.UpdatedReplicas {
+			return false, nil
+		}
+
+		var secret corev1.Secret
+		if err := r.Get(ctx, types.NamespacedName{
+			Name:      resources.EncryptionConfigurationSecretName,
+			Namespace: cluster.Status.NamespaceName,
+		}, &secret); err != nil {
+			return false, err
+		}
+
+		// TODO: replace hardcoded label
+		if val, ok := deployment.Spec.Template.ObjectMeta.Labels["apiserver-encryption-configuration-secret-revision"]; !ok || val != secret.ObjectMeta.ResourceVersion {
+			return false, nil
+		}
+	*/
 
 	return true, nil
 }
