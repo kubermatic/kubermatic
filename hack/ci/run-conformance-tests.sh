@@ -37,7 +37,12 @@ echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 
 
 EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
-if [[ $provider == "aws" ]]; then
+if [[ $provider == "anexia" ]]; then
+  EXTRA_ARGS="-anexia-token=${ANEXIA_TOKEN}"
+  EXTRA_ARGS="-anexia-template-id=${ANEXIA_TEMPLATE_ID}"
+  EXTRA_ARGS="-anexia-vlan-id=${ANEXIA_VLAN_ID}"
+  EXTRA_ARGS="-anexia-location-id=${ANEXIA_LOCATION_ID}"
+elif [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
 elif [[ $provider == "packet" ]]; then

@@ -45,6 +45,12 @@ spec:
       spec:
         alibaba:
           region: eu-central-1
+    anexia-at:
+      location: Vienna
+      country: AT
+      spec:
+        anexia:
+          locationID: "__ANEXIA_LOCATION_ID__"
     aws-eu-central-1a:
       location: EU (Frankfurt)
       country: DE
@@ -92,14 +98,14 @@ spec:
         gcp:
           region: europe-west3
           zoneSuffixes:
-          - c
+            - c
     packet-ewr1:
       location: "Packet EWR1 (New York)"
       country: US
       spec:
         packet:
           facilities:
-          - ewr1
+            - ewr1
     do-ams3:
       location: Amsterdam
       country: NL
@@ -119,7 +125,7 @@ spec:
         kubevirt:
           dnsConfig:
             nameservers:
-            - 8.8.8.8
+              - 8.8.8.8
     syseleven-dbl1:
       country: DE
       location: Syseleven - dbl1
@@ -128,8 +134,8 @@ spec:
           authURL: https://api.cbk.cloud.syseleven.net:5000/v3
           availabilityZone: dbl1
           dnsServers:
-          - 37.123.105.116
-          - 37.123.105.117
+            - 37.123.105.116
+            - 37.123.105.117
           enforceFloatingIP: true
           ignoreVolumeAZ: false
           images:
