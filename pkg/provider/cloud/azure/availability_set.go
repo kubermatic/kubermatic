@@ -114,6 +114,16 @@ func ensureAvailabilitySet(ctx context.Context, client computeapi.AvailabilitySe
 }
 
 func deleteAvailabilitySet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	_, err := clients.AvailabilitySets.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
+	// We first do Get to check existence of the availability set to see if its already gone or not.
+	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
+	res, err := clients.AvailabilitySets.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
+	if err != nil {
+		return err
+	}
+	if isNotFound(res.Response) {
+		return nil
+	}
+
+	_, err = clients.AvailabilitySets.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
 	return err
 }

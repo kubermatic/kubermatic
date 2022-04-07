@@ -138,6 +138,17 @@ func deleteSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.Cl
 	if cloud.Azure.VNetResourceGroup != "" {
 		resourceGroup = cloud.Azure.VNetResourceGroup
 	}
+
+	// We first do Get to check existence of the subnet to see if its already gone or not.
+	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
+	res, err := clients.Subnets.Get(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, "")
+	if err != nil {
+		return err
+	}
+	if isNotFound(res.Response) {
+		return nil
+	}
+
 	deleteSubnetFuture, err := clients.Subnets.Delete(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
 	if err != nil {
 		return err

@@ -89,7 +89,6 @@ func ensureResourceGroup(ctx context.Context, groupsClient resourcesapi.GroupsCl
 func deleteResourceGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
 	// We first check existence of the resource group to see if its already gone or not.
 	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
-	// Doing a get is simpler.
 	resp, err := clients.Groups.CheckExistence(ctx, cloud.Azure.ResourceGroup)
 	if err != nil {
 		return err
