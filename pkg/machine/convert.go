@@ -213,6 +213,13 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			DiskSizeGB: config.DiskSizeGB,
 			Template:   config.TemplateVMName.Value,
 		}
+		for _, v := range config.Tags {
+			cloudSpec.VSphere.Tags = append(cloudSpec.VSphere.Tags, apiv1.VSphereTag{
+				Name:        v.Name,
+				Description: v.Description,
+				CategoryID:  v.CategoryID,
+			})
+		}
 	case providerconfig.CloudProviderEquinixMetal:
 		config := &equinixmetal.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
