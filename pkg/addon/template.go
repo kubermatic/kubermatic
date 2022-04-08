@@ -242,8 +242,13 @@ type CSIOptions struct {
 	SsSegmentedIscsiNetwork *bool
 }
 
-func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {
-	var allManifests []runtime.RawExtension
+type Manifest struct {
+	Content    runtime.RawExtension
+	SourceFile string
+}
+
+func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]Manifest, error) {
+	var allManifests []Manifest
 
 	infos, err := os.ReadDir(manifestPath)
 	if err != nil {
@@ -261,6 +266,11 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 				return nil, err
 			}
 			allManifests = append(allManifests, subManifests...)
+			continue
+		}
+
+		if !strings.HasSuffix(filename, ".yaml") {
+			infoLog.Debug("Ignoring non-YAML file")
 			continue
 		}
 
@@ -291,7 +301,13 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 		if err != nil {
 			return nil, fmt.Errorf("decoding failed for file %s: %w", filename, err)
 		}
-		allManifests = append(allManifests, addonManifests...)
+
+		for _, m := range addonManifests {
+			allManifests = append(allManifests, Manifest{
+				Content:    m,
+				SourceFile: filename,
+			})
+		}
 	}
 
 	return allManifests, nil
