@@ -182,6 +182,10 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 	}
 
 	if subject.Spec.EtcdBackupRestore != nil {
+		if !v.features.Enabled(features.EtcdLauncher) {
+			return errors.New("EtcdLauncher feature must be enabled for etcd backup and restore")
+		}
+
 		if len(subject.Spec.EtcdBackupRestore.Destinations) == 0 {
 			return errors.New("invalid etcd backup configuration: must define at least one backup destination")
 		}
