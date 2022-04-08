@@ -61,7 +61,7 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 			},
 		},
 		{
-			name:                  "scenario 2: when no application reference ApplicationDef 'app-def-1' nothing is enqueued",
+			name:                  "scenario 2: when no application reference ApplicationDef 'app-def-1', nothing is enqueued",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -73,7 +73,7 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 			expectedReconcileRequests: []reconcile.Request{},
 		},
 		{
-			name:                  "scenario 3: when no application in cluster nothing is enqueued",
+			name:                  "scenario 3: when no application in cluster, nothing is enqueued",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().

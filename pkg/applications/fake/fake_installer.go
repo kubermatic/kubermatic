@@ -27,7 +27,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ApplicationInstallerRecorder is a fake ApplicationInstaller that record call to apply and delete for testing assertions.
+// ApplicationInstallerRecorder is a fake ApplicationInstaller that records calls to apply and delete for testing assertions.
 type ApplicationInstallerRecorder struct {
 	// ApplyEvents stores the call to apply function. Key is the name of the applicationInstallation.
 	ApplyEvents sync.Map
@@ -46,7 +46,7 @@ func (a *ApplicationInstallerRecorder) Delete(ctx context.Context, log *zap.Suga
 	return nil
 }
 
-// ApplicationInstallerLogger is a fake ApplicationInstaller that just log actions. it used for development of controller.
+// ApplicationInstallerLogger is a fake ApplicationInstaller that just logs actions. it's used for the development of the controller.
 type ApplicationInstallerLogger struct {
 }
 

@@ -26,13 +26,11 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ApplicationInstaller handle the installation / uninstallation of an Application on a user cluster.
+// ApplicationInstaller handles the installation / uninstallation of an Application on the user cluster.
 type ApplicationInstaller interface {
-	// Apply function install the application on user cluster and return error if the installation failed.
-	// this function is idempotent
+	// Apply function installs the application on the user-cluster and returns an error if the installation has failed; this is idempotent.
 	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appkubermaticv1.ApplicationInstallation) error
 
-	// Delete function uninstall the application on user cluster and return error if the installation failed.
-	// this function is idempotent
-	Delete(ctx context.Context, log *zap.SugaredLogger, seddClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appkubermaticv1.ApplicationInstallation) error
+	// Delete function uninstalls the application on the user-cluster and returns an error if the uninstallation has failed; this is idempotent.
+	Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appkubermaticv1.ApplicationInstallation) error
 }

@@ -35,7 +35,7 @@ const (
 )
 
 var _ = Describe("application Installation controller", func() {
-	Context("when application is created", func() {
+	Context("when an application is created", func() {
 		It("should update application.Status with applicationVersion and install application", func() {
 			appDefName := "app-def-1"
 			appInstallName := "app-1"
@@ -62,8 +62,8 @@ var _ = Describe("application Installation controller", func() {
 		})
 	})
 
-	Context("when creating an application that reference an ApplicationDefinton that not exist", func() {
-		It("nothing should happened", func() {
+	Context("when creating an application that references an ApplicationDefinton that does not exist", func() {
+		It("nothing should happen", func() {
 			appDefName := "app-def-2"
 			appInstallName := "app-2"
 
@@ -89,8 +89,8 @@ var _ = Describe("application Installation controller", func() {
 		})
 	})
 
-	Context("when creating an application that reference an applicationVersion that not exist", func() {
-		It("nothing should happened", func() {
+	Context("when creating an application that references an applicationVersion that does not exist", func() {
+		It("nothing should happen", func() {
 			appDefName := "app-def-3"
 			appInstallName := "app-3"
 
