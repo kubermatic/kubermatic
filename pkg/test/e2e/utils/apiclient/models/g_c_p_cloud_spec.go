@@ -21,8 +21,8 @@ type GCPCloudSpec struct {
 	// network
 	Network string `json:"network,omitempty"`
 
-	// NodePortsAllowedIPRange defines single IP range from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRange defines IP range from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// service account

@@ -97,7 +97,7 @@ func (c *Cluster) IsDualStack() bool {
 }
 
 // GetIPv4CIDR returns the first found IPv4 CIDR in the network ranges, or an empty string if no IPv4 CIDR is found.
-func (r NetworkRanges) GetIPv4CIDR() string {
+func (r *NetworkRanges) GetIPv4CIDR() string {
 	for _, cidr := range r.CIDRBlocks {
 		if net.IsIPv4CIDRString(cidr) {
 			return cidr
@@ -107,7 +107,7 @@ func (r NetworkRanges) GetIPv4CIDR() string {
 }
 
 // GetIPv4CIDRs returns all IPv4 CIDRs in the network ranges, or an empty string if no IPv4 CIDR is found.
-func (r NetworkRanges) GetIPv4CIDRs() (res []string) {
+func (r *NetworkRanges) GetIPv4CIDRs() (res []string) {
 	for _, cidr := range r.CIDRBlocks {
 		if net.IsIPv4CIDRString(cidr) {
 			res = append(res, cidr)
@@ -117,12 +117,12 @@ func (r NetworkRanges) GetIPv4CIDRs() (res []string) {
 }
 
 // HasIPv4CIDR returns true if the network ranges contain any IPv4 CIDR, false otherwise.
-func (r NetworkRanges) HasIPv4CIDR() bool {
+func (r *NetworkRanges) HasIPv4CIDR() bool {
 	return r.GetIPv4CIDR() != ""
 }
 
 // GetIPv6CIDR returns the first found IPv6 CIDR in the network ranges, or an empty string if no IPv6 CIDR is found.
-func (r NetworkRanges) GetIPv6CIDR() string {
+func (r *NetworkRanges) GetIPv6CIDR() string {
 	for _, cidr := range r.CIDRBlocks {
 		if net.IsIPv6CIDRString(cidr) {
 			return cidr
@@ -132,7 +132,7 @@ func (r NetworkRanges) GetIPv6CIDR() string {
 }
 
 // GetIPv6CIDRs returns all IPv6 CIDRs in the network ranges, or an empty string if no IPv6 CIDR is found.
-func (r NetworkRanges) GetIPv6CIDRs() (res []string) {
+func (r *NetworkRanges) GetIPv6CIDRs() (res []string) {
 	for _, cidr := range r.CIDRBlocks {
 		if net.IsIPv6CIDRString(cidr) {
 			res = append(res, cidr)
@@ -142,6 +142,6 @@ func (r NetworkRanges) GetIPv6CIDRs() (res []string) {
 }
 
 // HasIPv6CIDR returns true if the network ranges contain any IPv6 CIDR, false otherwise.
-func (r NetworkRanges) HasIPv6CIDR() bool {
+func (r *NetworkRanges) HasIPv6CIDR() bool {
 	return r.GetIPv6CIDR() != ""
 }

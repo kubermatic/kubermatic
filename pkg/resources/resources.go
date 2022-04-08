@@ -1527,8 +1527,10 @@ func GetClusterNodeCIDRMaskSizeIPv6(cluster *kubermaticv1.Cluster) int32 {
 
 // GetNodePortsAllowedIPRanges returns effective CIDR range to be used for NodePort services for the given cluster
 // and provided allowed IP ranges coming from provider-specific API.
-func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges kubermaticv1.NetworkRanges, allowedIPRange string) (res kubermaticv1.NetworkRanges) {
-	res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRanges.CIDRBlocks...)
+func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges *kubermaticv1.NetworkRanges, allowedIPRange string) (res kubermaticv1.NetworkRanges) {
+	if allowedIPRanges != nil {
+		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRanges.CIDRBlocks...)
+	}
 	if allowedIPRange != "" {
 		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRange)
 	}

@@ -33,8 +33,8 @@ type AWSCloudSpec struct {
 	// instance profile name
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
-	// NodePortsAllowedIPRange defines single IP range from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRange defines IP range from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// route table ID
