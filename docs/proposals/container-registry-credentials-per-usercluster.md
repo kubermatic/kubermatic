@@ -58,7 +58,7 @@ cluster.
 
 For this first iteration the secrets referenced on `Cluster` resources need to be created manually.
 
-There is a also the possibility to define default credentlals in the `KubermaticConfiguration` at
+There is a also the possibility to define default credentials in the `KubermaticConfiguration` at
 `spec.userCluster.imagePullSecret`. If defined, this will be used for any user cluster that has no
 explicit `imagePullSecrets` set.
 
@@ -162,7 +162,7 @@ does not cover reconciled KKP components nor user apps.
 
 ### A look ahead
 
-To make this more accessible to customers we could build ontop of this and extend the KKP dashboard
+To make this more accessible to customers we could build on top of this and extend the KKP dashboard
 with an interface to manage this. Similar to the [SSH key feature][ssh key agent] container registry
 credentials could be managed from there.
 
