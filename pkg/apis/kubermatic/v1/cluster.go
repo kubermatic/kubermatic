@@ -72,6 +72,7 @@ const (
 )
 
 // +kubebuilder:validation:Enum=standard;basic
+// LBSKU is the Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
 type LBSKU string
 
 const (
@@ -410,10 +411,12 @@ type ClusterStatus struct {
 	// +optional
 	Versions ClusterVersionsStatus `json:"versions,omitempty"`
 
-	// UserName contains the name of the owner of this cluster.
+	// Deprecated: UserName contains the name of the owner of this cluster.
+	// This field is not actively used and will be removed in the future.
 	// +optional
 	UserName string `json:"userName,omitempty"`
 	// UserEmail contains the email of the owner of this cluster.
+	// During cluster creation only, this field will be used to bind the `cluster-admin` `ClusterRole` to a cluster owner.
 	// +optional
 	UserEmail string `json:"userEmail"`
 
@@ -710,14 +713,15 @@ type IPVSConfiguration struct {
 	StrictArp *bool `json:"strictArp,omitempty"`
 }
 
-// CloudSpec mutually stores access data to a cloud provider.
+// CloudSpec stores configuration options for a given cloud provider. Provider specs are mutually exclusive.
 type CloudSpec struct {
-	// DatacenterName where the users 'cloud' lives in.
+	// DatacenterName states the name of a cloud provider "datacenter" (defined in `Seed` resources)
+	// this cluster should be deployed into.
 	DatacenterName string `json:"dc"`
 
 	// ProviderName is the name of the cloud provider used for this cluster.
 	// This must match the given provider spec (e.g. if the providerName is
-	// "aws", then the AWSCloudSpec must be set).
+	// "aws", then the `aws` field must be set).
 	ProviderName string `json:"providerName"`
 
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
@@ -779,17 +783,23 @@ type AzureCloudSpec struct {
 	// Can be read from `credentialsReference` instead.
 	ClientSecret string `json:"clientSecret,omitempty"`
 
-	// ResourceGroup is the resource group that cloud resources will be created in.
-	ResourceGroup           string `json:"resourceGroup"`
-	VNetResourceGroup       string `json:"vnetResourceGroup"`
+	// ResourceGroup is the resource group that will be used to look up and create resources in.
+	// If set to empty string at cluster creation, a new resource group will be created and this field will be updated.
+	ResourceGroup string `json:"resourceGroup"`
+	// Optional: VNetResourceGroup optionally defines a second resource group that will be used for VNet related resources instead.
+	// If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.
+	VNetResourceGroup string `json:"vnetResourceGroup"`
+	// VNetName is the name of a VNet
 	VNetName                string `json:"vnet"`
 	SubnetName              string `json:"subnet"`
 	RouteTableName          string `json:"routeTable"`
 	SecurityGroup           string `json:"securityGroup"`
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-	AssignAvailabilitySet   *bool  `json:"assignAvailabilitySet,omitempty"`
-	AvailabilitySet         string `json:"availabilitySet"`
-	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+	// Optional: AssignAvailabilitySet determines whether KKP creates and assigns an AvailabilitySet to machines.
+	AssignAvailabilitySet *bool `json:"assignAvailabilitySet,omitempty"`
+	// AvailabilitySet
+	AvailabilitySet string `json:"availabilitySet"`
+	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster. If empty, `basic` will be used.
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
