@@ -35,9 +35,3 @@ rules:
   - secrets
   verbs:
   - get
-- apiGroups:
-  - operator.kubermatic.io
-  resources:
-  - kubermaticconfigurations
-  verbs:
-  - list
