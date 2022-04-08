@@ -19,11 +19,12 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -70,9 +71,14 @@ func main() {
 
 	log.Info("Rendering addons and collecting manifests…")
 
-	manifests, err := addon.ParseFromFolder(log, "", addonsDir, createTemplateData())
+	templateData, err := createTemplateData()
 	if err != nil {
-		log.Fatalf("Failed to parse addons: %v", err)
+		log.Fatalw("Failed to create addon templating data", zap.Error(err))
+	}
+
+	manifests, err := addon.ParseFromFolder(log, "", addonsDir, templateData)
+	if err != nil {
+		log.Fatalw("Failed to parse addons", zap.Error(err))
 	}
 
 	// group manifests by addon
@@ -108,7 +114,7 @@ func main() {
 		for _, manifest := range manifests {
 			objectInfo, err := parseManifest(manifest)
 			if err != nil {
-				log.Fatalf("Failed to determine resources: %v", err)
+				log.Fatalw("Failed to determine resources", zap.Error(err))
 			}
 			if objectInfo == nil {
 				continue
@@ -128,19 +134,21 @@ func main() {
 
 	f, err := os.Create(*outputFile)
 	if err != nil {
-		log.Fatalf("Failed to create output file: %v", err)
+		log.Fatalw("Failed to create output file", zap.Error(err))
 	}
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
 	encoder.SetIndent("", "  ")
 
-	encoder.Encode(result)
+	if err := encoder.Encode(result); err != nil {
+		log.Fatalw("Failed to encode output as JSON", zap.Error(err))
+	}
 
 	log.Info("Done.")
 }
 
-func createTemplateData() *addon.TemplateData {
+func createTemplateData() (*addon.TemplateData, error) {
 	dnsClusterIP := "1.2.3.4"
 	variables := map[string]interface{}{
 		"NodeAccessNetwork": "172.26.0.0/16",
@@ -164,12 +172,7 @@ func createTemplateData() *addon.TemplateData {
 		},
 	}
 
-	data, err := addon.NewTemplateData(cluster, resources.Credentials{}, "", dnsClusterIP, "", variables)
-	if err != nil {
-		log.Fatalf("Failed to create addon templating data: %v", err)
-	}
-
-	return data
+	return addon.NewTemplateData(cluster, resources.Credentials{}, "", dnsClusterIP, "", variables)
 }
 
 func parseManifest(manifest addon.Manifest) (*objectData, error) {
