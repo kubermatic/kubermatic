@@ -19,7 +19,7 @@ appVersion: v9.9.9-dev
 description: Helm chart to install the Kubermatic Operator
 keywords:
   - kubermatic
-home: https://www.kubermatic.io/
+home: https://www.kubermatic.com/
 sources:
   - https://github.com/kubermatic/kubermatic
 maintainers:
