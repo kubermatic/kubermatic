@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
-	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -34,10 +33,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -554,17 +551,10 @@ func getNumberOfClustersForProject(ctx context.Context, clusterProviderGetter pr
 	for datacenter, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
-			// if a seed is bad, do not forward the error to the user and log only
-			kubermaticlog.Logger.Errorw("failed to get cluster provider", "seed", seed.Name, "datacenter", datacenter, zap.Error(err))
-			continue
+			return clustersNumber, kubermaticerrors.NewNotFound("cluster-provider", datacenter)
 		}
 		clusters, err := clusterProvider.List(ctx, project, nil)
 		if err != nil {
-			// if cluster is unreachable, do not forward the error to the user and log only
-			if kubenetutil.IsConnectionRefused(err) {
-				kubermaticlog.Logger.Errorw("cluster is unreachable", "seed", seed.Name, zap.Error(err))
-				continue
-			}
 			return clustersNumber, err
 		}
 		clustersNumber += len(clusters.Items)
@@ -583,17 +573,10 @@ func getNumberOfClusters(ctx context.Context, clusterProviderGetter provider.Clu
 	for datacenter, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
-			// if a seed is bad, do not forward the error to the user and log only
-			kubermaticlog.Logger.Errorw("failed to get cluster provider", "seed", seed.Name, "datacenter", datacenter, zap.Error(err))
-			continue
+			return nil, kubermaticerrors.NewNotFound("cluster-provider", datacenter)
 		}
 		clusters, err := clusterProvider.ListAll(ctx)
 		if err != nil {
-			// if cluster is unreachable, do not forward the error to the user and log only
-			if kubenetutil.IsConnectionRefused(err) {
-				kubermaticlog.Logger.Errorw("cluster is unreachable", "seed", seed.Name, zap.Error(err))
-				continue
-			}
 			return clustersNumber, err
 		}
 		for _, cluster := range clusters.Items {

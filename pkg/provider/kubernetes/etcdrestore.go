@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -194,6 +195,10 @@ func (p *EtcdRestoreProjectProvider) List(ctx context.Context, userInfo *provide
 		erList := &kubermaticv1.EtcdRestoreList{}
 		err = impersonationClient.List(ctx, erList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
+			// skip if cluster is unreachable
+			if kubenetutil.IsConnectionRefused(err) {
+				continue
+			}
 			return nil, err
 		}
 		etcdRestoreLists = append(etcdRestoreLists, erList)
@@ -208,6 +213,10 @@ func (p *EtcdRestoreProjectProvider) ListUnsecured(ctx context.Context, projectI
 		erList := &kubermaticv1.EtcdRestoreList{}
 		err := clientPrivileged.List(ctx, erList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
+			// skip if cluster is unreachable
+			if kubenetutil.IsConnectionRefused(err) {
+				continue
+			}
 			return nil, err
 		}
 		etcdRestoreLists = append(etcdRestoreLists, erList)

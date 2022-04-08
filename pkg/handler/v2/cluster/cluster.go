@@ -40,7 +40,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
-	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 )
 
 func CreateEndpoint(
@@ -100,11 +99,6 @@ func ListEndpoint(
 			}
 			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter)
 			if err != nil {
-				// if cluster is unreachable, do not forward the error to the user and log only
-				if kubenetutil.IsConnectionRefused(err) {
-					kubermaticlog.Logger.Errorw("cluster is unreachable", "seed", seed.Name, zap.Error(err))
-					continue
-				}
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			allClusters = append(allClusters, apiClusters...)
