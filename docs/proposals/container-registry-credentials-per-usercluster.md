@@ -4,7 +4,6 @@
 
 **Status**: Draft proposal; prototype in progress.
 
-
 * [Goals](#goals)
 * [Non-Goals](#non-goals)
 * [Motivation and Background](#motivation-and-background)
@@ -12,16 +11,16 @@
   * [Proposed feature](#proposed-feature)
 * [Implementation](#implementation)
   * [KubermaticConfiguration](#kubermaticconfiguration)
-  * [Custom Resources](#custom-resources)
+  * [CRD changes](#crd-changes)
   * [Master Cluster](#master-cluster)
   * [Seed Cluster](#seed-cluster)
-  * [User Cluster](#user-cluster)
-  * [Agent](#agent)
-  * [UI](#ui)
+* [Alternative implementation](#alternative-implementation)
+  * [Set imagePullSecrets on user cluster ServiceAccounts](#set-imagepullsecrets-on-user-cluster-serviceaccounts)
 * [Alternatives considered](#alternatives-considered)
+  * [Set imagePullSecrets through an Addon](#set-imagepullsecrets-through-an-addon)
   * [Reconciliation of all Pods running on user clusters](#reconciliation-of-all-pods-running-on-user-clusters)
-  * [Setting imagePullSecrets on ServiceAccounts](#setting-imagepullsecrets-on-serviceaccounts)
   * [Extension of addon templates with imagePullSecrets](#extension-of-addon-templates-with-imagepullsecrets)
+  * [A look ahead](#a-look-ahead)
 * [Task and effort](#task-and-effort)
 
 ## Goals
@@ -52,35 +51,18 @@ addons nor user deployed applications by default.
 
 ### Proposed feature
 
-Similar to the [SSH key feature][ssh key agent] container registry credentials can be managed in the KKP
-dashboard.
+`Cluster` resources get a new field `imagePullSecrets` that resembles `imagePullSecrets` on other
+resources like Deployments or Pods. The secrets referenced here get synchronized into the user
+cluster and a mutating admission webhook injects them into every Pod that is created on that user
+cluster.
 
-* **KKP admins** can create credentials to be made available for KKP projects
-* **KKP admins** can define default fallback credentials for KKP projects
-* **Project Owners/Editors** can create or select credentials to be made available for user clusters
-* **Project Owners/Editors** can define default fallback credentials for user clusters
-* **User cluster admins** can create or select credentials to be used in all kinds of Pods on the
-user cluster
+For this first iteration the secrets referenced on `Cluster` resources need to be created manually.
 
-For details see the [UI section of Implementation](#ui).
-
-There is a possibility to define a default fallback set of credentials in the
-`KubermaticConfiguration` at `spec.userCluster.imagePullSecret`. If there are no credentials
-selected on any level, this will be used as a fallback.
-
-#### Limitations
-
-1. For now only containerd is supported. Because of the [dockershim deprecation][] currently there
-   is no support planned for nodes using docker as container runtime.
-2. Only one credential set per registry can be chosen. Validation will fail if multiple credentials
-   for the same registry are chosen to avoid unexpected behavior.
+There is a also the possibility to define default credentlals in the `KubermaticConfiguration` at
+`spec.userCluster.imagePullSecret`. If defined, this will be used for any user cluster that has no
+explicit `imagePullSecrets` set.
 
 ## Implementation
-
-There are quite some similarities to the implementation of the [SSH key feature][ssh key agent].
-Writing the containerd-config on every worker node of a user cluster based on credentials managed
-and selected in the dashboard sounds quite familiar. This opens up some potential for refactoring
-the current SSH key agent into a more general Agent controlling files on worker node's file system.
 
 ### KubermaticConfiguration
 
@@ -100,131 +82,70 @@ spec:
       {
         "auths": {
           "quay.io": {
-            "username": "<<QUAY_USERNAME>>",
-            "password": "<<QUAY_PASSWORD>>",
+            "username": "<<DOCKERHUB_USERNAME>>",
+            "password": "<<DOCKERHUB_PASSWORD>>",
           }
         }
       }
 ```
 
-### Custom Resources
+### CRD changes
 
-Similar to user ssh keys the `RegistryCredentialSet` is tied to a project, so credentials created in
-one project can be used in all user clusters created in that same project.
+#### `Cluster`
 
-`RegistryCredentialSets` wrap `kubernetes.io/dockerconfigjson` typed secrets and have owner
-references to manage visibility and the ability to select credentials.
+* New field `imagePullSecrets` on `ClusterSpec`: Analog to `imagePullSecrets` on `PodSpec`, but with
+namespace as additional selector.
 
-#### Example
-
-```yaml
-apiVersion: kubermatic.k8c.io/v1
-kind: RegistryCredentialSet
-metadata:
-  name: my-registry-credentials
-  uid: ..
-  ownerReferences:
-  - apiVersion: kubermatic.k8c.io/v1
-    kind: Project
-    name: <<PROJECT_ID>>
-    uid: ..
-spec:
-  requiredEmailDomain: example.com
-  secretRefs:
-  - name: my-registry-credentials-quay
-    key: .dockerconfigjson
-  - name: my-registry-credentials-dockerhub
-    key: .dockerconfigjson
 ```
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: my-registry-credentials-quay
-type: kubernetes.io/dockerconfigjson
-stringData:
-  .dockerconfigjson: |
-    {
-      "auths": {
-        "quay.io": {
-          "auth": "<<base64(username:password)>>"
-        }
-      }
-    }
+spec:
+  imagePullSecrets:
+  - name: my-dockerhub-creds
+    namespace: kubermatic
 ```
 
 ### Master Cluster
-
-* A controller that synchronizes selected credentials into the cluster namespace on the seed
-cluster
+ 
+* The cluster-controller in the seed-controller-user-manager creates all resources (Deployment,
+Service, TLSServingCertificate) for the Webhook in the cluster-namespace on the seed cluster
 
 ### Seed Cluster
 
-* A controller within the user-cluster-controller-manager to set up the DaemonSet running the Agent
-on every user cluster node. (similar to usersshkeys)
-* The user-cluster-controller synchronizes selected RegistryCredentialSets and referenced secrets
-from the cluster namespace to the user cluster. If none is selected, it uses the default fallback
-credentials that was either set in the admin panel or in the KubermaticConfiguration.
+* The user-cluster-controller synchronizes imagePullSecrets of the Cluster resource into all
+namespaces on the user cluster. This means the Namespace type needs to be added to the typed that
+are being watched.
+* The user-cluster-controller does the same for the default imagePullSecret if it's defined in the
+KubermaticConfiguration.
+* The user-cluster-controller adds the MutatingWebhookConfiguration for our Webhook.
 
-### User Cluster
+#### Webhook
 
-* The DaemonSet running the Agent on every user cluster node (see above)
+A simple webhook for Pods that merges imagePullSecrets from the Cluster and from the PodSpec. This
+way users can still specify their own secrets for private registries but also have the "global"
+secrets as fallback.
 
-### Agent
+## Alternative implementation
 
-Similar to the SSH key agent this agent watches a named Secret containing registry credentials and
-also the containerd-config on the node the agent is running on. It makes sure that the containerd-
-config always contain the selected credentials.
+### Set imagePullSecrets on user cluster ServiceAccounts
 
-#### Refactoring potential
+It's possible to set `imagePullSecrets` on `ServiceAccount` resources. All pods created with such a
+ServiceAccount "inherits" its imagePullSecrets implicitly. So instead of having a Webhook we could
+use our reconciling mechanics to set `imagePullSecrets` on all ServiceAccounts in the user cluster.
 
-The general functionality of the user registry credentials agent is very similar to the SSH key
-agent: They watch some kubernetes resource and local files and have a reconciliation process that
-makes sure the content of the local files always match the content of the resources.
+See:
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account
 
-This agent could just mirror the behavior of the SSH key agent for different resources and files, so
-a good share of code might be reusable. Another direction could be to refactor the whole SSH key
-agent to become a more general "node-file-agent" that can manage all kinds of files based on
-resources.
-
-### UI
-
-This is just to outline the general idea. Details are to be discussed with `#sig-ui`.
-
-#### Admin Panel
-
-* Similar to provider presets it should be possible to create CredentialSets to be used in projects
-and clusters.
-* Similar to provider presets it should be possible to restrict visibility and usability of
-CredentialSets to specific users with specific email domains.
-* One CredentialSet can contain credentials for multiple registries (e.g. dockerhub, quay.io,
-private registry, ...) but not 2 credentials for the same registry.
-* Editing registry credentials in CredentialSets is a write-only operation. It's not possible to see
-or edit credentials for a registry, only overriding is possible.
-* It should be possible to select default fallback credentials for the case projects or
-clusters don't pick any.
-* It should be possible to link credentials to projects to limit visibility and usability to these
-projects
-
-#### Project Management
-
-* Similar to the interface on the admin panel.
-* The list should also display default credentials and credentials linked to this project
-
-#### Cluster Creation Wizard
-
-* Similar to SSH key selection it should be possible to select credentials available to the project
-the cluster is created in.
-* It should be possible to add credentials to the project and use then in the cluster, similar to
-the "+ Add SSH Key" button.
-
-#### Cluster Management
-
-* Similar to SSH key management it should be possible to manage credentials from the cluster
-overview
+It's not fully decided if we go with the Webhook modifying Pods or with setting imagePullSecrets on
+ServiceAccounts.
 
 ## Alternatives considered
+
+### Set imagePullSecrets through an Addon
+
+Solving this problem in an Addon would isolate the feature to everyone who really needs it and keep
+the KKP codebase mostly clean of it. The problem is, that doing this in an Addon is just too late.
+In the case where this secret needs to be set before any image is pulled, because the external IP of
+the cluster has already hit the free tier limit of image pulls on dockerhub, the user cluster would
+be broken from the get go and could not even install this addon to fix itself.
 
 ### Reconciliation of all Pods running on user clusters
 
@@ -234,31 +155,45 @@ creators and modifiers can be used, but it only affects KKP internal components 
 addons nor user deployed applications. This means if we decide to go with this approach, we would
 need to add handling for the not covered cases.
 
-### Setting imagePullSecrets on ServiceAccounts
-
-Instead of setting `imagePullSecret` explicitly on podspecs, it's possible to set `imagePullSecret`
-on ServiceAccounts. Every Pod created using a ServiceAccount with an imagePullSecret attached will
-automatically have this imagePullSecret set in its spec. This approach would require less
-reconciliation than reconciling Pods directly but doesn't cover anything created using
-ServiceAccounts that have been created outside of the user cluster's reconciler.
-
 ### Extension of addon templates with imagePullSecrets
 
 Pods or ServiceAccounts in addon templates could be templated to use an imagePullSecret, but this
-does not cover reconciled KKP components nor user apps. So this approach would need to be combined
-with at least one of the 2 above.
+does not cover reconciled KKP components nor user apps.
+
+### A look ahead
+
+To make this more accessible to customers we could build ontop of this and extend the KKP dashboard
+with an interface to manage this. Similar to the [SSH key feature][ssh key agent] container registry
+credentials could be managed from there.
+
+For example:
+
+#### Admin Penal
+
+* **KKP admins** could create credentials to be made available for selection in KKP projects
+* **KKP admins** could define default fallback credentials for KKP projects
+
+#### Project overview
+
+* **Project Owners/Editors** could create or select credentials to be made available for selection
+in user clusters
+* **Project Owners/Editors** could define default fallback credentials for user clusters
+
+#### Cluster Creation Wizard
+
+* Similar to SSH key selection it could be possible to select credentials available to the project
+the cluster is created in.
+* It could be possible to add credentials to the project and use then in the cluster, similar to the
+"+ Add SSH Key" button.
+
+#### Cluster Management
+
+* **User cluster admins** can create or select credentials to be used in all kinds of Pods on the
+user cluster
 
 ## Task and effort
-* Create CRD `RegistryCredentialSet`
-* [UI] Extend Admin UI by Registry Credential Management
-* [UI] Extend Project Management UI by Registry Credential Management
-* [UI] Extend Cluster Management UI by Registry Credential Management
-* Create CredentialSet-Controller that synchronizes selected CredentialSets into cluster namespaces
-* Create CredentialSet-Agent that generates containerd-configs to match CredentialSets
-* Extend user-cluster-controller-manager to synchronize selected CredentialSets into the user
-cluster and to create a DaemonSet for the CredentialSet-Agent
 
+- tbd.
 
 [#6231]: https://github.com/kubermatic/kubermatic/issues/6231
-[dockershim deprecation]: https://kubernetes.io/blog/2020/12/02/dockershim-faq/
 [ssh key agent]: https://docs.kubermatic.com/kubermatic/master/tutorials_howtos/administration/user_settings/user_ssh_key_agent/
