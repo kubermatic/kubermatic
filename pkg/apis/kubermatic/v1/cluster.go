@@ -127,18 +127,19 @@ type ClusterList struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	Cloud           CloudSpec                 `json:"cloud"`
+	// CloudSpec defines cloud provider specific settings for this cluster.
+	Cloud CloudSpec `json:"cloud"`
+	// ClusterNetwork holds various configuration options related to the cluster's networking functionality.
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
-	// Version defines the wanted version of the control plane
+	// Version defines the wanted version of the control plane.
 	Version semver.Semver `json:"version"`
 
-	// HumanReadableName is the cluster name provided by the user
+	// HumanReadableName is the cluster name provided by the user.
 	HumanReadableName string `json:"humanReadableName"`
 
-	// ExposeStrategy is the approach we use to expose this cluster, either via NodePort
-	// or via a dedicated LoadBalancer
+	// ExposeStrategy configures how a cluster control plane is exposed to the outside world.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy"`
 
 	// Pause tells that this cluster is currently not managed by the controller.
@@ -151,21 +152,26 @@ type ClusterSpec struct {
 	// DebugLog enables more verbose logging by KKP's usercluster-controller-manager.
 	DebugLog bool `json:"debugLog,omitempty"`
 
-	// Optional component specific overrides
+	// Optional: Component specific overrides that allow customization of control plane components.
 	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
 
 	OIDC OIDCSettings `json:"oidc,omitempty"`
 
-	// Feature flags
-	// This unfortunately has to be a string map, because we use it in templating and that
-	// can not cope with string types
+	// Features is a map of optional or early-stage features that can be enabled on the cluster.
+	// Some feature gates cannot be disabled after being enabled. The available feature gates vary based on KKP or Kubernetes version.
+	// Please consult the KKP documentation for specific feature gates.
 	Features map[string]bool `json:"features,omitempty"`
 
+	// UpdateWindow configures automatic update systems to respect a maintenance window for
+	// applying OS updates to nodes. This is only respected on Flatcar nodes currently.
 	UpdateWindow *UpdateWindow `json:"updateWindow,omitempty"`
 
+	// Enables the admission plugin `PodSecurityPolicy`. This plugin is deprecated by Kubernetes.
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
-	UsePodNodeSelectorAdmissionPlugin   bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
-	UseEventRateLimitAdmissionPlugin    bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
+	// Enables the admission plugin `PodNodeSelector`. Needs additional configuration via the `podNodeSelectorAdmissionPluginConfig` field.
+	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+	// Enables the admission plugin `EventRateLimit`. Needs additional configuration via the `eventRateLimitConfig` field.
+	UseEventRateLimitAdmissionPlugin bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
 
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
@@ -174,38 +180,42 @@ type ClusterSpec struct {
 	// it cannot be changed after the cluster is being created.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
-	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
+	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration.
 	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
 
-	// KubernetesDashboard holds the configuration for kubernetes-dashboard component
+	// KubernetesDashboard holds the configuration for kubernetes-dashboard component.
 	KubernetesDashboard KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
 
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
 	// The format in a file:
+	// ```yaml
 	// podNodeSelectorPluginConfig:
 	//  clusterDefaultNodeSelector: <node-selectors-labels>
 	//  namespace1: <node-selectors-labels>
 	//  namespace2: <node-selectors-labels>
+	// ```
 	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
 
-	// EventRateLimitConfig allows configuring the EventRateLimit admission plugin (if enabled via useEventRateLimitAdmissionPlugin)
-	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing incoming Events
-	// to several configured buckets based on the type of event rate limit.
+	// EventRateLimitConfig allows configuring the EventRateLimit admission plugin (if enabled via `useEventRateLimitAdmissionPlugin`)
+	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing and rate limiting incoming
+	// `Events` based on several configured buckets.
 	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
 
-	// AdmissionPlugins provides the ability to pass arbitrary names of admission plugins to kube-apiserver
+	// AdmissionPlugins provides the ability to pass arbitrary names of admission plugins to kube-apiserver.
 	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
 
+	// AuditLogging configures Kubernetes API audit logging (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/)
+	// for the user cluster.
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 
-	// OPAIntegration is a preview feature that enables OPA integration with Kubermatic for the cluster.
-	// Enabling it causes gatekeeper and its resources to be deployed on the user cluster.
+	// OPAIntegration is a preview feature that enables OPA integration for the cluster.
+	// Enabling it causes OPA Gatekeeper and its resources to be deployed on the user cluster.
 	// By default it is disabled.
 	OPAIntegration *OPAIntegrationSettings `json:"opaIntegration,omitempty"`
 
-	// ServiceAccount contains service account related settings for the kube-apiserver of user cluster.
+	// ServiceAccount contains service account related settings for the user cluster's kube-apiserver.
 	ServiceAccount *ServiceAccountSettings `json:"serviceAccount,omitempty"`
 
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
@@ -214,13 +224,14 @@ type ClusterSpec struct {
 	// +kubebuilder:validation:Enum=docker;containerd
 	// +kubebuilder:default=containerd
 
-	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
+	// ContainerRuntime to use, i.e. Docker or containerd. By default `containerd` will be used.
 	ContainerRuntime string `json:"containerRuntime,omitempty"`
 
 	// CNIPlugin contains the spec of the CNI plugin to be installed in the cluster.
 	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
 }
 
+// KubernetesDashboard contains settings for the kubernetes-dashboard component in the cluster control plane.
 type KubernetesDashboard struct {
 	// Enabled controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
 	// +kubebuilder:default=true
@@ -229,13 +240,16 @@ type KubernetesDashboard struct {
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
 type CNIPluginSettings struct {
-	Type    CNIPluginType `json:"type"`
-	Version string        `json:"version"`
+	// Type is the CNI plugin type to be used.
+	Type CNIPluginType `json:"type"`
+	// Version defines the CNI plugin version to be used. This varies by chosen CNI plugin type.
+	Version string `json:"version"`
 }
 
 // +kubebuilder:validation:Enum=canal;cilium;none
 
-// CNIPluginType define the type of CNI plugin installed. e.g. Canal.
+// CNIPluginType defines the type of CNI plugin installed.
+// Possible values are `canal`, `cilium` or `none`.
 type CNIPluginType string
 
 func (c CNIPluginType) String() string {
@@ -387,7 +401,7 @@ type ClusterStatus struct {
 	// not re-check things like security groups, networks etc.).
 	// +optional
 	LastProviderReconciliation metav1.Time `json:"lastProviderReconciliation,omitempty"`
-	// NamespaceName defines the namespace the control plane of this cluster is deployed in
+	// NamespaceName defines the namespace the control plane of this cluster is deployed in.
 	// +optional
 	NamespaceName string `json:"namespaceName"`
 
@@ -396,22 +410,22 @@ type ClusterStatus struct {
 	// +optional
 	Versions ClusterVersionsStatus `json:"versions,omitempty"`
 
-	// UserName contains the name of the owner of this cluster
+	// UserName contains the name of the owner of this cluster.
 	// +optional
 	UserName string `json:"userName,omitempty"`
-	// UserEmail contains the email of the owner of this cluster
+	// UserEmail contains the email of the owner of this cluster.
 	// +optional
 	UserEmail string `json:"userEmail"`
 
-	// ErrorReason contains a error reason in case the controller encountered an error. Will be reset if the error was resolved
+	// ErrorReason contains a error reason in case the controller encountered an error. Will be reset if the error was resolved.
 	// +optional
 	ErrorReason *ClusterStatusError `json:"errorReason,omitempty"`
-	// ErrorMessage contains a default error message in case the controller encountered an error. Will be reset if the error was resolved
+	// ErrorMessage contains a default error message in case the controller encountered an error. Will be reset if the error was resolved.
 	// +optional
 	ErrorMessage *string `json:"errorMessage,omitempty"`
 
 	// Conditions contains conditions the cluster is in, its primary use case is status signaling between controllers or between
-	// controllers and the API
+	// controllers and the API.
 	// +optional
 	Conditions map[ClusterConditionType]ClusterCondition `json:"conditions,omitempty"`
 	// Phase is a description of the current cluster status, summarizing the various conditions,
@@ -421,7 +435,7 @@ type ClusterStatus struct {
 	Phase ClusterPhase `json:"phase,omitempty"`
 
 	// CloudMigrationRevision describes the latest version of the migration that has been done
-	// It is used to avoid redundant and potentially costly migrations
+	// It is used to avoid redundant and potentially costly migrations.
 	// +optional
 	CloudMigrationRevision int `json:"cloudMigrationRevision,omitempty"`
 
@@ -487,7 +501,8 @@ type OIDCSettings struct {
 }
 
 // +kubebuilder:validation:Enum="";metadata;recommended;minimal
-
+// AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values
+// are `metadata`, `recommended` and `minimal`.
 type AuditPolicyPreset string
 
 const (
@@ -496,8 +511,11 @@ const (
 	AuditPolicyMinimal     AuditPolicyPreset = "minimal"
 )
 
+// AuditLoggingSettings configures audit logging functionality.
 type AuditLoggingSettings struct {
-	Enabled      bool              `json:"enabled,omitempty"`
+	// Enabled will enable or disable audit logging.
+	Enabled bool `json:"enabled,omitempty"`
+	// Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.
 	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
 }
 
@@ -699,7 +717,7 @@ type CloudSpec struct {
 
 	// ProviderName is the name of the cloud provider used for this cluster.
 	// This must match the given provider spec (e.g. if the providerName is
-	// "aws", then the AWSCloudSpec must be set)
+	// "aws", then the AWSCloudSpec must be set).
 	ProviderName string `json:"providerName"`
 
 	Fake         *FakeCloudSpec         `json:"fake,omitempty"`
@@ -743,15 +761,25 @@ type HetznerCloudSpec struct {
 	Network string `json:"network,omitempty"`
 }
 
-// AzureCloudSpec specifies access credentials to Azure cloud.
+// AzureCloudSpec defines cloud resource references for Microsoft Azure.
 type AzureCloudSpec struct {
+	// CredentialsReference allows referencing a `Secret` resource instead of passing secret data in this spec.
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	TenantID       string `json:"tenantID,omitempty"`
+	// TenantID is the Azure Active Directory Tenant used for this cluster.
+	// Can be read from `credentialsReference` instead.
+	TenantID string `json:"tenantID,omitempty"`
+	// SubscriptionID is the Azure Subscription used for this cluster.
+	// Can be read from `credentialsReference` instead.
 	SubscriptionID string `json:"subscriptionID,omitempty"`
-	ClientID       string `json:"clientID,omitempty"`
-	ClientSecret   string `json:"clientSecret,omitempty"`
+	// ClientID is the service principal used to access Azure.
+	// Can be read from `credentialsReference` instead.
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret is the client secret corresponding to the given service principal.
+	// Can be read from `credentialsReference` instead.
+	ClientSecret string `json:"clientSecret,omitempty"`
 
+	// ResourceGroup is the resource group that cloud resources will be created in.
 	ResourceGroup           string `json:"resourceGroup"`
 	VNetResourceGroup       string `json:"vnetResourceGroup"`
 	VNetName                string `json:"vnet"`

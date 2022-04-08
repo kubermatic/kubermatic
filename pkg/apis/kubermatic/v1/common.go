@@ -18,7 +18,8 @@ package v1
 
 // +kubebuilder:validation:Enum=NodePort;LoadBalancer;Tunneling
 
-// ExposeStrategy is the strategy to expose the cluster with.
+// ExposeStrategy is the strategy used to expose a cluster control plane.
+// Possible values are `NodePort`, `LoadBalancer` or `Tunneling` (requires a feature gate).
 type ExposeStrategy string
 
 const (
