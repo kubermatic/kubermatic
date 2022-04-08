@@ -33,6 +33,8 @@ spec:
     replicas: 1
   ui:
     replicas: 0
+  featureGates:
+    EtcdLauncher: true
   # Dex integration
   auth:
     tokenIssuer: "http://dex.oauth:5556/dex"
