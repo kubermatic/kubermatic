@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
@@ -41,7 +42,6 @@ import (
 	usersshkeyprojectownershipcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-project-ownership"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkeyssynchronizer"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +53,7 @@ import (
 func createAllControllers(ctrlCtx *controllerContext) error {
 	rbacControllerFactory := rbacControllerFactoryCreator(
 		ctrlCtx.mgr.GetConfig(),
+		ctrlCtx.log,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
 		ctrlCtx.workerCount,
@@ -70,7 +71,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	presetSynchronizerFactory := presetSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
-		kubermaticlog.Logger,
+		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.namespace,
 		ctrlCtx.seedsGetter,
@@ -124,6 +125,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 
 func rbacControllerFactoryCreator(
 	mastercfg *rest.Config,
+	log *zap.SugaredLogger,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	workerCount int,
@@ -134,7 +136,7 @@ func rbacControllerFactoryCreator(
 	prometheus.MustRegister(rbacMetrics.Workers)
 
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		_, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
+		_, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, log, selectorOps, workerNamePredicate, workerCount)
 		if err != nil {
 			return "", fmt.Errorf("failed to create rbac controller: %w", err)
 		}

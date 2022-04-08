@@ -88,7 +88,7 @@ require (
 	k8s.io/cli-runtime v0.23.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.23.4
-	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.30.0
 	k8s.io/kube-aggregator v0.23.4
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
 	k8s.io/kubectl v0.23.4
@@ -279,7 +279,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/component-base v0.23.4 // indirect
 	k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c // indirect
-	k8s.io/klog/v2 v2.30.0 // indirect
+	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kubelet v0.22.2 // indirect
 	kubevirt.io/containerized-data-importer-api v1.41.1-0.20211201033752-05520fb9f18d // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk v0.2.1 // indirect
