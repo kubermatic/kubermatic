@@ -902,11 +902,11 @@ type AWSCloudSpec struct {
 	RouteTableID        string `json:"routeTableID"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroupID     string `json:"securityGroupID"`
-	// NodePortsAllowedIPRange defines single IP range from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRange defines IP range from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-	// NodePortsAllowedIPRanges defines IP ranges from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRanges defines IP ranges from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	// +optional
 	NodePortsAllowedIPRanges NetworkRanges `json:"nodePortsAllowedIPRanges,omitempty"`
 }
@@ -936,11 +936,11 @@ type OpenstackCloudSpec struct {
 	// Note that the network is internal if the "External" field is set to false
 	Network        string `json:"network"`
 	SecurityGroups string `json:"securityGroups"`
-	// NodePortsAllowedIPRange defines single IP range from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRange defines IP range from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-	// NodePortsAllowedIPRanges defines IP ranges from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRanges defines IP ranges from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	// +optional
 	NodePortsAllowedIPRanges NetworkRanges `json:"nodePortsAllowedIPRanges,omitempty"`
 	// FloatingIPPool holds the name of the public network
@@ -988,11 +988,11 @@ type GCPCloudSpec struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
-	// NodePortsAllowedIPRange defines single IP range from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRange defines IP range from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-	// NodePortsAllowedIPRanges defines IP ranges from which NodePort services will be available.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, NodePort services can be accessed from anywhere.
+	// NodePortsAllowedIPRanges defines IP ranges from which access to NodePort services is allowed.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
 	// +optional
 	NodePortsAllowedIPRanges NetworkRanges `json:"nodePortsAllowedIPRanges,omitempty"`
 }
