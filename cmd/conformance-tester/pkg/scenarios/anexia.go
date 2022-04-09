@@ -123,7 +123,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 	return nil, errors.New("not implemented for gitops yet")
 
 	//nolint:govet
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAlibaba, anexiatypes.RawConfig{
+	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAnexia, anexiatypes.RawConfig{
 		Token:      providerconfig.ConfigVarString{Value: secrets.Anexia.Token},
 		TemplateID: providerconfig.ConfigVarString{Value: secrets.Anexia.TemplateID},
 		VlanID:     providerconfig.ConfigVarString{Value: secrets.Anexia.VlanID},
