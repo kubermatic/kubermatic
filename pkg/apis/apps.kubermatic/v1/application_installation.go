@@ -49,12 +49,8 @@ type ApplicationInstallationList struct {
 }
 
 type ApplicationInstallationSpec struct {
-	// TargetNamespace is the namespace to deploy the Application into
-	TargetNamespace string `json:"targetNamespace"`
-
-	// +kubebuilder:default:=true
-	// CreateNamespace defines whether the namespace should be created if it does not exist. Defaults to true
-	CreateNamespace bool `json:"createNamespace"`
+	// Namespace describe the desired state of the namespace where application will be created.
+	Namespace NamespaceSpec `json:"namespace"`
 
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
@@ -62,6 +58,26 @@ type ApplicationInstallationSpec struct {
 	// Values describe overrides for manifest-rendering
 	Values json.RawMessage `json:"values,omitempty"`
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
+}
+
+// NamespaceSpec describe the desired state of the namespace where application will be created.
+type NamespaceSpec struct {
+	// Name is the namespace to deploy the Application into
+	Name string `json:"name"`
+
+	// +kubebuilder:default:=true
+	// Create defines whether the namespace should be created if it does not exist. Defaults to true
+	Create bool `json:"create"`
+
+	// Labels of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // ApplicationRef describes a KKP-wide, unique reference to an Application.
