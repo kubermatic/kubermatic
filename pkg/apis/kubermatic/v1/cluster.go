@@ -72,6 +72,7 @@ const (
 )
 
 // +kubebuilder:validation:Enum=standard;basic
+
 // Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
 type LBSKU string
 
@@ -228,8 +229,9 @@ type ClusterSpec struct {
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
 type KubernetesDashboard struct {
-	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
 	// +kubebuilder:default=true
+
+	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
@@ -507,6 +509,7 @@ type OIDCSettings struct {
 }
 
 // +kubebuilder:validation:Enum="";metadata;recommended;minimal
+
 // AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values
 // are `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.
 type AuditPolicyPreset string
@@ -525,8 +528,8 @@ type AuditLoggingSettings struct {
 	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
 }
 
-// EventRateLimitConfig configures the `EventRateLimit` admission plugin. Also see:
-// https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
+// EventRateLimitConfig configures the `EventRateLimit` admission plugin.
+// Also see: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
 	Server          *EventRateLimitConfigItem `json:"server,omitempty"`
 	Namespace       *EventRateLimitConfigItem `json:"namespace,omitempty"`
