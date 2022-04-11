@@ -636,14 +636,14 @@ func createOrUpdateNutanixSecret(ctx context.Context, seedClient ctrlruntimeclie
 	return true, nil
 }
 
-func GetKubeOneNameSpaceName(externalClusterName string) string {
-	return fmt.Sprintf("%s-%s", resources.KubeOneNamespacePrefix, externalClusterName)
+func GetKubeOneNamespaceName(externalClusterName string) string {
+	return fmt.Sprintf("%s%s", resources.KubeOneNamespacePrefix, externalClusterName)
 }
 
 func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error {
 	kubeOneNamespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: GetKubeOneNameSpaceName(externalCluster.Name),
+			Name: GetKubeOneNamespaceName(externalCluster.Name),
 		},
 	}
 	if err := p.GetMasterClient().Create(ctx, kubeOneNamespace); err != nil {
@@ -654,7 +654,7 @@ func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Cont
 }
 
 func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	kubeOneNamespaceName := GetKubeOneNameSpaceName(externalcluster.Name)
+	kubeOneNamespaceName := GetKubeOneNamespaceName(externalcluster.Name)
 	namespacedName := types.NamespacedName{Namespace: kubeOneNamespaceName, Name: secretName}
 	existingSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {

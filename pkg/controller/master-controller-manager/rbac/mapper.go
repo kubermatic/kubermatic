@@ -48,7 +48,7 @@ const (
 const (
 	saSecretsNamespaceName = "kubermatic"
 	// KubeOneNamespacePrefix is the kubeone namespace prefix.
-	KubeOneNamespacePrefix              = "kubeone"
+	KubeOneNamespacePrefix              = "kubeone-"
 	alertmanagerName                    = "alertmanager"
 	defaultAlertmanagerConfigSecretName = "alertmanager"
 

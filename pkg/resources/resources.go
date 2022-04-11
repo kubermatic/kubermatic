@@ -552,7 +552,7 @@ const (
 
 const (
 	// KubeOneNamespacePrefix is the kubeone namespace prefix.
-	KubeOneNamespacePrefix = "kubeone"
+	KubeOneNamespacePrefix = "kubeone-"
 	// KubeOne secret names.
 	KubeOneSSHSecretName        = "ssh"
 	KubeOneManifestSecretName   = "manifest"
