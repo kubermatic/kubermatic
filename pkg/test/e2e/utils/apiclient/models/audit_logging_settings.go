@@ -13,12 +13,12 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AuditLoggingSettings audit logging settings
+// AuditLoggingSettings AuditLoggingSettings configures audit logging functionality.
 //
 // swagger:model AuditLoggingSettings
 type AuditLoggingSettings struct {
 
-	// enabled
+	// Enabled will enable or disable audit logging.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// policy preset

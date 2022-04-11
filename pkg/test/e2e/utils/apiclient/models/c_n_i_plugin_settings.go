@@ -18,7 +18,7 @@ import (
 // swagger:model CNIPluginSettings
 type CNIPluginSettings struct {
 
-	// version
+	// Version defines the CNI plugin version to be used. This varies by chosen CNI plugin type.
 	Version string `json:"version,omitempty"`
 
 	// type

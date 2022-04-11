@@ -13,17 +13,18 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// CloudSpec CloudSpec mutually stores access data to a cloud provider.
+// CloudSpec CloudSpec stores configuration options for a given cloud provider. Provider specs are mutually exclusive.
 //
 // swagger:model CloudSpec
 type CloudSpec struct {
 
-	// DatacenterName where the users 'cloud' lives in.
+	// DatacenterName states the name of a cloud provider "datacenter" (defined in `Seed` resources)
+	// this cluster should be deployed into.
 	DatacenterName string `json:"dc,omitempty"`
 
 	// ProviderName is the name of the cloud provider used for this cluster.
 	// This must match the given provider spec (e.g. if the providerName is
-	// "aws", then the AWSCloudSpec must be set)
+	// "aws", then the `aws` field must be set).
 	ProviderName string `json:"providerName,omitempty"`
 
 	// alibaba
