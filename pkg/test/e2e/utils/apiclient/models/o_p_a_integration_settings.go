@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// OPAIntegrationSettings o p a integration settings
+// OPAIntegrationSettings OPAIntegrationSettings configures the usage of OPA (Open Policy Agent) Gatekeeper inside the user cluster.
 //
 // swagger:model OPAIntegrationSettings
 type OPAIntegrationSettings struct {

@@ -188,10 +188,9 @@ type ClusterSpec struct {
 	// `Events` based on several configured buckets.
 	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
 
-	// Optional: Deploys the UserSSHKeyAgent to the user cluster.
+	// Optional: Deploys the UserSSHKeyAgent to the user cluster. This field is immutable.
 	// If enabled, the agent will be deployed and used to sync user ssh keys attached by users to the cluster.
-	// No SSH keys will be synced after node creation if this is disabled. Once the agent is enabled/disabled
-	// it cannot be changed after cluster creation.
+	// No SSH keys will be synced after node creation if this is disabled.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
 	// Optional: Enables operating-system-manager (OSM), which is responsible for creating and managing worker node configuration.
@@ -216,11 +215,12 @@ type ClusterSpec struct {
 	// Optional: MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
 
-	// Pause tells that this cluster is currently not managed by the controller.
-	// It indicates that the user needs to do some action to resolve the pause.
+	// If this is set to true, the cluster will not be reconciled by KKP.
+	// This indicates that the user needs to do some action to resolve the pause.
 	// +kubebuilder:default=false
 	Pause bool `json:"pause"`
-	// PauseReason is the reason why the cluster is no being managed.
+	// PauseReason is the reason why the cluster is not being managed. This field is for informational
+	// purpose only and can be set by a user or a controller to communicate the reason for pausing the cluster.
 	PauseReason string `json:"pauseReason,omitempty"`
 
 	// Enables more verbose logging in KKP's user-cluster-controller-manager.
@@ -529,7 +529,7 @@ type AuditLoggingSettings struct {
 }
 
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.
-// Also see: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
+// More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
 	Server          *EventRateLimitConfigItem `json:"server,omitempty"`
 	Namespace       *EventRateLimitConfigItem `json:"namespace,omitempty"`
@@ -543,6 +543,7 @@ type EventRateLimitConfigItem struct {
 	CacheSize int32 `json:"cacheSize,omitempty"`
 }
 
+// OPAIntegrationSettings configures the usage of OPA (Open Policy Agent) Gatekeeper inside the user cluster.
 type OPAIntegrationSettings struct {
 	// Enables OPA Gatekeeper integration.
 	Enabled bool `json:"enabled,omitempty"`

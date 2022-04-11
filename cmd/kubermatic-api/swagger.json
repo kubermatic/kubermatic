@@ -23375,7 +23375,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "EventRateLimitConfig": {
-      "description": "Also see: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit",
+      "description": "More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit",
       "type": "object",
       "title": "EventRateLimitConfig configures the `EventRateLimit` admission plugin.",
       "properties": {
@@ -26714,6 +26714,7 @@
     },
     "OPAIntegrationSettings": {
       "type": "object",
+      "title": "OPAIntegrationSettings configures the usage of OPA (Open Policy Agent) Gatekeeper inside the user cluster.",
       "properties": {
         "auditResources": {
           "$ref": "#/definitions/ResourceRequirements"

@@ -1521,10 +1521,9 @@ spec:
                 type: boolean
               enableUserSSHKeyAgent:
                 description: 'Optional: Deploys the UserSSHKeyAgent to the user cluster.
-                  If enabled, the agent will be deployed and used to sync user ssh
-                  keys attached by users to the cluster. No SSH keys will be synced
-                  after node creation if this is disabled. Once the agent is enabled/disabled
-                  it cannot be changed after cluster creation.'
+                  This field is immutable. If enabled, the agent will be deployed
+                  and used to sync user ssh keys attached by users to the cluster.
+                  No SSH keys will be synced after node creation if this is disabled.'
                 type: boolean
               eventRateLimitConfig:
                 description: 'Optional: Configures the EventRateLimit admission plugin
@@ -1810,13 +1809,15 @@ spec:
                 type: object
               pause:
                 default: false
-                description: Pause tells that this cluster is currently not managed
-                  by the controller. It indicates that the user needs to do some action
-                  to resolve the pause.
+                description: If this is set to true, the cluster will not be reconciled
+                  by KKP. This indicates that the user needs to do some action to
+                  resolve the pause.
                 type: boolean
               pauseReason:
-                description: PauseReason is the reason why the cluster is no being
-                  managed.
+                description: PauseReason is the reason why the cluster is not being
+                  managed. This field is for informational purpose only and can be
+                  set by a user or a controller to communicate the reason for pausing
+                  the cluster.
                 type: string
               podNodeSelectorAdmissionPluginConfig:
                 additionalProperties:

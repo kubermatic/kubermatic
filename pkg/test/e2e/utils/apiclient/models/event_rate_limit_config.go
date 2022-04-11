@@ -15,7 +15,7 @@ import (
 
 // EventRateLimitConfig EventRateLimitConfig configures the `EventRateLimit` admission plugin.
 //
-// Also see: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
+// More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 //
 // swagger:model EventRateLimitConfig
 type EventRateLimitConfig struct {
