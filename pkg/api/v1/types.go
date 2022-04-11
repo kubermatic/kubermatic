@@ -1495,6 +1495,17 @@ type VSphereNodeSpec struct {
 	Memory     int    `json:"memory"`
 	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
 	Template   string `json:"template"`
+	// Additional metadata to set
+	// required: false
+	Tags []VSphereTag `json:"tags,omitempty"`
+}
+
+// VSphereTag represents vsphere tag.
+type VSphereTag struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// CategoryID when empty the default category will be used.
+	CategoryID string `json:"categoryID,omitempty"`
 }
 
 func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1521,15 +1532,17 @@ func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		CPUs       int    `json:"cpus"`
-		Memory     int    `json:"memory"`
-		DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
-		Template   string `json:"template"`
+		CPUs       int          `json:"cpus"`
+		Memory     int          `json:"memory"`
+		DiskSizeGB *int64       `json:"diskSizeGB,omitempty"`
+		Template   string       `json:"template"`
+		Tags       []VSphereTag `json:"tags,omitempty"`
 	}{
 		CPUs:       spec.CPUs,
 		Memory:     spec.Memory,
 		DiskSizeGB: spec.DiskSizeGB,
 		Template:   spec.Template,
+		Tags:       spec.Tags,
 	}
 
 	return json.Marshal(&res)

@@ -13435,6 +13435,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13446,13 +13453,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -29043,9 +29043,37 @@
           "format": "int64",
           "x-go-name": "Memory"
         },
+        "tags": {
+          "description": "Additional metadata to set",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VSphereTag"
+          },
+          "x-go-name": "Tags"
+        },
         "template": {
           "type": "string",
           "x-go-name": "Template"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VSphereTag": {
+      "type": "object",
+      "title": "VSphereTag represents vsphere tag.",
+      "properties": {
+        "categoryID": {
+          "description": "CategoryID when empty the default category will be used.",
+          "type": "string",
+          "x-go-name": "CategoryID"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
