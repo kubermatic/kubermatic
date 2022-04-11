@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package applicationinstallationcontroller contains a controller that is responsible for reconciling ApplicationInstallation
-(ie install, update or uninstall applications into the user-cluster)
+Package applications contains logic to download the source of an application (eg download manifest from git) and
+install / uninstall the application into the user-cluster.
 */
-package applicationinstallationcontroller
+package applications
