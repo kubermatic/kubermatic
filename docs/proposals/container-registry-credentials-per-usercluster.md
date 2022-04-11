@@ -19,18 +19,18 @@
 * [Alternatives considered](#alternatives-considered)
   * [Set imagePullSecrets through an Addon](#set-imagepullsecrets-through-an-addon)
   * [Reconciliation of all Pods running on user clusters](#reconciliation-of-all-pods-running-on-user-clusters)
-  * [Extension of addon templates with imagePullSecrets](#extension-of-addon-templates-with-imagepullsecrets)
+  * [Extension of Addon templates with imagePullSecrets](#extension-of-addon-templates-with-imagepullsecrets)
   * [A look ahead](#a-look-ahead)
 * [Task and effort](#task-and-effort)
 
 ## Goals
 
-Defining separate container registry credentials per user cluster so cluster owners can make use of
-their dockerhub credentials to avoid image pull limits or to access private images.
+Defining separate container registry credentials per user cluster, so cluster owners can make use of
+their docker hub credentials to avoid image pull limits or to access private images.
 
 ## Non-Goals
 
-Setting local mirrors or private container registries for KKP components or addons.
+Setting local mirrors or private container registries for KKP components or Addons.
 
 ## Motivation and Background
 
@@ -39,15 +39,15 @@ mitigate image pull limits. Setting this up cluster wide is currently not possib
 
 ### Current state
 
-Currently it's possible to set `spec.imagePullSecret` in the `KubermaticConfiguration`. The
+Currently, it's possible to set `spec.imagePullSecret` in the `KubermaticConfiguration`. The
 dockerconfig-json defined on this key is used in the Kubermatic Operator where the master- and the
 seed-controller create a `dockerconfigjson`-secret respectively. When creating the deployments for
 KKP master and seed components this secret gets referenced as `imagePullSecret` in all of their
-podspecs.
+pod specs.
 
 This dockerconfig has no effect on anything running on the user clusters, so currently KKP does not
 offer a way to manage container registry credentials to be used by KKP internal components, KKP
-addons nor user deployed applications by default.
+Addons nor user deployed applications by default.
 
 ### Proposed feature
 
@@ -58,7 +58,7 @@ cluster.
 
 For this first iteration the secrets referenced on `Cluster` resources need to be created manually.
 
-There is a also the possibility to define default credentials in the `KubermaticConfiguration` at
+There is also the possibility to define default credentials in the `KubermaticConfiguration` at
 `spec.userCluster.imagePullSecret`. If defined, this will be used for any user cluster that has no
 explicit `imagePullSecrets` set.
 
@@ -144,20 +144,20 @@ ServiceAccounts.
 Solving this problem in an Addon would isolate the feature to everyone who really needs it and keep
 the KKP codebase mostly clean of it. The problem is, that doing this in an Addon is just too late.
 In the case where this secret needs to be set before any image is pulled, because the external IP of
-the cluster has already hit the free tier limit of image pulls on dockerhub, the user cluster would
-be broken from the get go and could not even install this addon to fix itself.
+the cluster has already hit the free tier limit of image pulls on docker hub, the user cluster would
+be broken from the get go and could not even install this Addon to fix itself.
 
 ### Reconciliation of all Pods running on user clusters
 
 Similar to the reconciliation of master- and seed-component Deployments custom credentials can be
-injected into podspecs of Deployments and DaemonSets. In this approach the current concept of
+injected into pod specs of Deployments and DaemonSets. In this approach the current concept of
 creators and modifiers can be used, but it only affects KKP internal components and neither KKP
-addons nor user deployed applications. This means if we decide to go with this approach, we would
+Addons nor user deployed applications. This means if we decide to go with this approach, we would
 need to add handling for the not covered cases.
 
-### Extension of addon templates with imagePullSecrets
+### Extension of Addon templates with imagePullSecrets
 
-Pods or ServiceAccounts in addon templates could be templated to use an imagePullSecret, but this
+Pods or ServiceAccounts in Addon templates could be templated to use an imagePullSecret, but this
 does not cover reconciled KKP components nor user apps.
 
 ### A look ahead
