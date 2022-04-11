@@ -92,6 +92,7 @@ Validating child elements is a bit more tricky, because openapi can only validat
 ```Go
 func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, ...) field.ErrorList {
 	allErrs := field.ErrorList{}
+	filter := "spec" // this can be stacked using dot notation (e.g. "spec.cloud")
 
 	cwrap := &kubermaticv1.Cluster{}
 	cwrap.Spec = *spec
@@ -99,7 +100,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, ...) field.ErrorList {
 
 	res := validation.ValidateCustomResource(nil, cwrap, v)
 	for _, e := range res {
-		if strings.HasPrefix(e.Field, "spec") {
+		if strings.HasPrefix(e.Field, filter) {
 			allErrs = append(allErrs, e)
 		}
 	}
