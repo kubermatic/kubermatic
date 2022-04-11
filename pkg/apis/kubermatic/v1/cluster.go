@@ -232,7 +232,7 @@ type ClusterSpec struct {
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
 type KubernetesDashboard struct {
-	// Control whether kubernetes-dashboard is deployed to the user cluster or not.
+	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
 	// +kubebuilder:default=true
 	Enabled bool `json:"enabled,omitempty"`
 }
@@ -512,7 +512,7 @@ type OIDCSettings struct {
 
 // +kubebuilder:validation:Enum="";metadata;recommended;minimal
 // AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values
-// are `metadata`, `recommended` and `minimal`.
+// are `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.
 type AuditPolicyPreset string
 
 const (
@@ -545,19 +545,19 @@ type EventRateLimitConfigItem struct {
 }
 
 type OPAIntegrationSettings struct {
-	// Enabled is the flag for enabling OPA integration
+	// Enables OPA Gatekeeper integration.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// +kubebuilder:default=10
 
-	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
-	// By default 10 seconds.
+	// The timeout in seconds that is set for the Gatekeeper validating webhook admission review calls.
+	// Defaults to `10` (seconds).
 	WebhookTimeoutSeconds *int32 `json:"webhookTimeoutSeconds,omitempty"`
-	// Enable mutation
+	// Optional: Enables experimental mutation in Gatekeeper.
 	ExperimentalEnableMutation bool `json:"experimentalEnableMutation,omitempty"`
-	// ControllerResources is the resource requirements for user cluster gatekeeper controller.
+	// Optional: ControllerResources is the resource requirements for user cluster gatekeeper controller.
 	ControllerResources *corev1.ResourceRequirements `json:"controllerResources,omitempty"`
-	// AuditResources is the resource requirements for user cluster gatekeeper audit.
+	// Optional: AuditResources is the resource requirements for user cluster gatekeeper audit.
 	AuditResources *corev1.ResourceRequirements `json:"auditResources,omitempty"`
 }
 
@@ -737,16 +737,17 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
-	Azure        *AzureCloudSpec        `json:"azure,omitempty"`
-	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
-	Packet       *PacketCloudSpec       `json:"packet,omitempty"`
-	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
-	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
-	GCP          *GCPCloudSpec          `json:"gcp,omitempty"`
-	Kubevirt     *KubevirtCloudSpec     `json:"kubevirt,omitempty"`
-	Alibaba      *AlibabaCloudSpec      `json:"alibaba,omitempty"`
-	Anexia       *AnexiaCloudSpec       `json:"anexia,omitempty"`
-	Nutanix      *NutanixCloudSpec      `json:"nutanix,omitempty"`
+	// Configures Microsoft Azure.
+	Azure     *AzureCloudSpec     `json:"azure,omitempty"`
+	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
+	Packet    *PacketCloudSpec    `json:"packet,omitempty"`
+	Hetzner   *HetznerCloudSpec   `json:"hetzner,omitempty"`
+	VSphere   *VSphereCloudSpec   `json:"vsphere,omitempty"`
+	GCP       *GCPCloudSpec       `json:"gcp,omitempty"`
+	Kubevirt  *KubevirtCloudSpec  `json:"kubevirt,omitempty"`
+	Alibaba   *AlibabaCloudSpec   `json:"alibaba,omitempty"`
+	Anexia    *AnexiaCloudSpec    `json:"anexia,omitempty"`
+	Nutanix   *NutanixCloudSpec   `json:"nutanix,omitempty"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
@@ -792,21 +793,38 @@ type AzureCloudSpec struct {
 	// Can be read from `credentialsReference` instead.
 	ClientSecret string `json:"clientSecret,omitempty"`
 
-	// ResourceGroup is the resource group that will be used to look up and create resources in.
-	// If set to empty string at cluster creation, a new resource group will be created and this field will be updated.
+	// The resource group that will be used to look up and create resources for the cluster in.
+	// If set to empty string at cluster creation, a new resource group will be created and this field will be updated to
+	// the generated resource group's name.
 	ResourceGroup string `json:"resourceGroup"`
 	// Optional: VNetResourceGroup optionally defines a second resource group that will be used for VNet related resources instead.
 	// If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.
 	VNetResourceGroup string `json:"vnetResourceGroup"`
-	// VNetName is the name of a VNet
-	VNetName                string `json:"vnet"`
-	SubnetName              string `json:"subnet"`
-	RouteTableName          string `json:"routeTable"`
-	SecurityGroup           string `json:"securityGroup"`
+	// The name of the VNet resource used for setting up networking in.
+	// If set to empty string at cluster creation, a new VNet will be created and this field will be updated to
+	// the generated VNet's name.
+	VNetName string `json:"vnet"`
+	// The name of a subnet in the VNet referenced by `vnet`.
+	// If set to empty string at cluster creation, a new subnet will be created and this field will be updated to
+	// the generated subnet's name. If no VNet is defined at cluster creation, this field should be empty as well.
+	SubnetName string `json:"subnet"`
+	// The name of a route table associated with the subnet referenced by `subnet`.
+	// If set to empty string at cluster creation, a new route table will be created and this field will be updated to
+	// the generated route table's name. If no subnet is defined at cluster creation, this field should be empty as well.
+	RouteTableName string `json:"routeTable"`
+	// The name of a security group associated with the subnet referenced by `subnet`.
+	// If set to empty string at cluster creation, a new security group will be created and this field will be updated to
+	// the generated security group's name. If no subnet is defined at cluster creation, this field should be empty as well.
+	SecurityGroup string `json:"securityGroup"`
+	// A CIDR range that will be used to allow access to the node port range in the security group to. Only applies if
+	// the security group is generated by KKP and not preexisting. Defaults to `0.0.0.0/0` internally if not set.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
-	// Optional: AssignAvailabilitySet determines whether KKP creates and assigns an AvailabilitySet to machines.
+	// AssignAvailabilitySet determines whether KKP creates and assigns an AvailabilitySet to machines.
+	// Defaults to `true` internally if not set.
 	AssignAvailabilitySet *bool `json:"assignAvailabilitySet,omitempty"`
-	// AvailabilitySet
+	// An availability set that will be associated with nodes created for this cluster. If this field is set to empty string
+	// at cluster creation and `AssignAvailabilitySet` is set to `true`, a new availability set will be created and this field
+	// wil be updated to the generated availability set's name.
 	AvailabilitySet string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster. If empty, `basic` will be used.
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
