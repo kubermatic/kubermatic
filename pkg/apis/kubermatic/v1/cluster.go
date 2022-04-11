@@ -128,30 +128,30 @@ type ClusterList struct {
 
 // ClusterSpec describes the desired state of a user cluster.
 type ClusterSpec struct {
-	// CloudSpec defines cloud provider specific settings for this cluster.
-	Cloud CloudSpec `json:"cloud"`
-	// ClusterNetwork holds various configuration options related to the cluster's networking functionality.
-	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
-	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
+	// HumanReadableName is the cluster name provided by the user.
+	HumanReadableName string `json:"humanReadableName"`
 
 	// Version defines the wanted version of the control plane.
 	Version semver.Semver `json:"version"`
 
-	// HumanReadableName is the cluster name provided by the user.
-	HumanReadableName string `json:"humanReadableName"`
+	// CloudSpec defines cloud provider specific settings for this cluster.
+	Cloud CloudSpec `json:"cloud"`
+
+	// +kubebuilder:validation:Enum=docker;containerd
+	// +kubebuilder:default=containerd
+
+	// ContainerRuntime to use, i.e. `docker` or `containerd`. By default `containerd` will be used.
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
+
+	// CNIPlugin contains the spec of the CNI plugin to be installed in the user cluster.
+	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
+
+	// ClusterNetwork holds various configuration options related to the cluster's networking functionality.
+	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
+	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
 	// Configures how a user cluster control plane is exposed to outside entities, e.g. nodes and users.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy"`
-
-	// Pause tells that this cluster is currently not managed by the controller.
-	// It indicates that the user needs to do some action to resolve the pause.
-	// +kubebuilder:default=false
-	Pause bool `json:"pause"`
-	// PauseReason is the reason why the cluster is no being managed.
-	PauseReason string `json:"pauseReason,omitempty"`
-
-	// Enables more verbose logging in KKP's user-cluster-controller-manager.
-	DebugLog bool `json:"debugLog,omitempty"`
 
 	// Optional: Component specific overrides that allow customization of control plane components.
 	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
@@ -176,6 +176,21 @@ type ClusterSpec struct {
 	// This plugin is considered "alpha" by Kubernetes.
 	UseEventRateLimitAdmissionPlugin bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
 
+	// A list of arbitrary admission plugin names that are passed to kube-apiserver. Must not include admission plugins
+	// that can be enabled via a separate setting.
+	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
+
+	// Optional: Provides configuration for the PodNodeSelector admission plugin (needs plugin enabled
+	// via `usePodNodeSelectorAdmissionPlugin`). It's used by the backend to create a configuration file for this plugin.
+	// The key:value from this map is converted to <namespace>:<node-selectors-labels> in the file. Use `clusterDefaultNodeSelector`
+	// as key to configure a default node selector.
+	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
+
+	// Optional: Configures the EventRateLimit admission plugin (if enabled via `useEventRateLimitAdmissionPlugin`)
+	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing and rate limiting incoming
+	// `Events` based on several configured buckets.
+	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
+
 	// Optional: Deploys the UserSSHKeyAgent to the user cluster.
 	// If enabled, the agent will be deployed and used to sync user ssh keys attached by users to the cluster.
 	// No SSH keys will be synced after node creation if this is disabled. Once the agent is enabled/disabled
@@ -188,27 +203,6 @@ type ClusterSpec struct {
 
 	// KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
 	KubernetesDashboard KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
-
-	// Optional: Provides configuration for the PodNodeSelector admission plugin.
-	// It's used by the backend to create a configuration file for this plugin.
-	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
-	// The format in a file:
-	// ```yaml
-	// podNodeSelectorPluginConfig:
-	//  clusterDefaultNodeSelector: <node-selectors-labels>
-	//  namespace1: <node-selectors-labels>
-	//  namespace2: <node-selectors-labels>
-	// ```
-	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
-
-	// Optional: Configures the EventRateLimit admission plugin (if enabled via `useEventRateLimitAdmissionPlugin`)
-	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing and rate limiting incoming
-	// `Events` based on several configured buckets.
-	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
-
-	// A list of arbitrary admission plugin names that are passed to kube-apiserver. Must not include admission plugins
-	// that can be enabled via a separate setting.
-	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
 
 	// Optional: AuditLogging configures Kubernetes API audit logging (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/)
 	// for the user cluster.
@@ -225,14 +219,15 @@ type ClusterSpec struct {
 	// Optional: MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
 
-	// +kubebuilder:validation:Enum=docker;containerd
-	// +kubebuilder:default=containerd
+	// Pause tells that this cluster is currently not managed by the controller.
+	// It indicates that the user needs to do some action to resolve the pause.
+	// +kubebuilder:default=false
+	Pause bool `json:"pause"`
+	// PauseReason is the reason why the cluster is no being managed.
+	PauseReason string `json:"pauseReason,omitempty"`
 
-	// ContainerRuntime to use, i.e. `docker` or `containerd`. By default `containerd` will be used.
-	ContainerRuntime string `json:"containerRuntime,omitempty"`
-
-	// CNIPlugin contains the spec of the CNI plugin to be installed in the user cluster.
-	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
+	// Enables more verbose logging in KKP's user-cluster-controller-manager.
+	DebugLog bool `json:"debugLog,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
