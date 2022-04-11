@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -209,6 +210,10 @@ func (p *EtcdBackupConfigProjectProvider) List(ctx context.Context, userInfo *pr
 		ebcList := &kubermaticv1.EtcdBackupConfigList{}
 		err = impersonationClient.List(ctx, ebcList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
+			// skip if cluster is unreachable
+			if kubenetutil.IsConnectionRefused(err) {
+				continue
+			}
 			return nil, err
 		}
 		etcdBackupConfigLists = append(etcdBackupConfigLists, ebcList)
@@ -223,6 +228,10 @@ func (p *EtcdBackupConfigProjectProvider) ListUnsecured(ctx context.Context, pro
 		ebcList := &kubermaticv1.EtcdBackupConfigList{}
 		err := clientPrivileged.List(ctx, ebcList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
+			// skip if cluster is unreachable
+			if kubenetutil.IsConnectionRefused(err) {
+				continue
+			}
 			return nil, err
 		}
 		etcdBackupConfigLists = append(etcdBackupConfigLists, ebcList)

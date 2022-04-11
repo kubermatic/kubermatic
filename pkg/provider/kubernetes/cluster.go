@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -219,6 +220,10 @@ func (p *ClusterProvider) List(ctx context.Context, project *kubermaticv1.Projec
 	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 	if err := p.client.List(ctx, projectClusters, listOpts); err != nil {
+		// ignore error if cluster is unreachable
+		if kubenetutil.IsConnectionRefused(err) {
+			return projectClusters, nil
+		}
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
@@ -479,6 +484,10 @@ func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
 func (p *ClusterProvider) ListAll(ctx context.Context) (*kubermaticv1.ClusterList, error) {
 	projectClusters := &kubermaticv1.ClusterList{}
 	if err := p.client.List(ctx, projectClusters); err != nil {
+		// ignore error if cluster is unreachable
+		if kubenetutil.IsConnectionRefused(err) {
+			return projectClusters, nil
+		}
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
