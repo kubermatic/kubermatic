@@ -819,7 +819,7 @@ type AzureCloudSpec struct {
 	AssignAvailabilitySet *bool `json:"assignAvailabilitySet,omitempty"`
 	// An availability set that will be associated with nodes created for this cluster. If this field is set to empty string
 	// at cluster creation and `AssignAvailabilitySet` is set to `true`, a new availability set will be created and this field
-	// wil be updated to the generated availability set's name.
+	// will be updated to the generated availability set's name.
 	AvailabilitySet string `json:"availabilitySet"`
 
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
