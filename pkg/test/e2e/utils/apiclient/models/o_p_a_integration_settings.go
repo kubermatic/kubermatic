@@ -13,19 +13,19 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// OPAIntegrationSettings o p a integration settings
+// OPAIntegrationSettings OPAIntegrationSettings configures the usage of OPA (Open Policy Agent) Gatekeeper inside the user cluster.
 //
 // swagger:model OPAIntegrationSettings
 type OPAIntegrationSettings struct {
 
-	// Enabled is the flag for enabling OPA integration
+	// Enables OPA Gatekeeper integration.
 	Enabled bool `json:"enabled,omitempty"`
 
-	// Enable mutation
+	// Optional: Enables experimental mutation in Gatekeeper.
 	ExperimentalEnableMutation bool `json:"experimentalEnableMutation,omitempty"`
 
-	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
-	// By default 10 seconds.
+	// The timeout in seconds that is set for the Gatekeeper validating webhook admission review calls.
+	// Defaults to `10` (seconds).
 	WebhookTimeoutSeconds int32 `json:"webhookTimeoutSeconds,omitempty"`
 
 	// audit resources

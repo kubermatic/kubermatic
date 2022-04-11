@@ -12,13 +12,12 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// KubernetesDashboard kubernetes dashboard
+// KubernetesDashboard KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
 //
 // swagger:model KubernetesDashboard
 type KubernetesDashboard struct {
 
-	// Enabled controls whether the kubernetes-dashboard should be deployed for the user cluster or not.
-	// +kubebuilder:default=true
+	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

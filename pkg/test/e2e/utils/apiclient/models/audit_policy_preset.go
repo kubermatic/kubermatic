@@ -11,7 +11,8 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// AuditPolicyPreset audit policy preset
+// AuditPolicyPreset AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values
+// are `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.
 //
 // swagger:model AuditPolicyPreset
 type AuditPolicyPreset string

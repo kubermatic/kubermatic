@@ -11,7 +11,9 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// CNIPluginType CNIPluginType define the type of CNI plugin installed. e.g. Canal.
+// CNIPluginType CNIPluginType defines the type of CNI plugin installed.
+//
+// Possible values are `canal`, `cilium` or `none`.
 //
 // swagger:model CNIPluginType
 type CNIPluginType string

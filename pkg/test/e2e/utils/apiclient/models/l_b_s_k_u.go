@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// LBSKU +kubebuilder:validation:Enum=standard;basic
+// LBSKU Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
 //
 // swagger:model LBSKU
 type LBSKU string
