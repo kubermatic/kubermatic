@@ -916,6 +916,15 @@ type KubevirtCloudSpec struct {
 
 	Kubeconfig    string `json:"kubeconfig,omitempty"`
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
+
+	PreAllocatedDataVolumes []PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
+}
+
+type PreAllocatedDataVolume struct {
+	Name         string `json:"name"`
+	URL          string `json:"url"`
+	Size         string `json:"size"`
+	StorageClass string `json:"storageClass"`
 }
 
 // AlibabaCloudSpec specifies the access data to Alibaba.

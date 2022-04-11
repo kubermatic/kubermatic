@@ -96,6 +96,7 @@ require (
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 	kubevirt.io/api v0.48.1
+	kubevirt.io/containerized-data-importer-api v1.42.0
 	sigs.k8s.io/aws-iam-authenticator v0.5.5
 	sigs.k8s.io/controller-runtime v0.11.1
 	sigs.k8s.io/controller-tools v0.8.0
@@ -281,7 +282,6 @@ require (
 	k8s.io/gengo v0.0.0-20210813121822-485abfe95c7c // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kubelet v0.22.2 // indirect
-	kubevirt.io/containerized-data-importer-api v1.41.1-0.20211201033752-05520fb9f18d // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk v0.2.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
 	sigs.k8s.io/kustomize/api v0.10.1 // indirect
