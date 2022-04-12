@@ -35,6 +35,8 @@ import (
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 )
 
 // listPresetsReq represents a request for a list of presets
@@ -651,6 +653,101 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 
 		enabled := preset.Spec.IsEnabled()
 		return newAPIPreset(preset, enabled), nil
+	}
+}
+
+// getPresetSatsReq represents a request to get preset stats
+// swagger:parameters getPresetStats
+type getPresetSatsReq struct {
+	// in: path
+	// required: true
+	PresetName string `json:"preset_name"`
+}
+
+// Validate validates getPresetSatsReq request.
+func (r getPresetSatsReq) Validate() error {
+	if len(r.PresetName) == 0 {
+		return fmt.Errorf("preset name cannot be empty")
+	}
+	return nil
+}
+
+func DecodeGetPresetStats(_ context.Context, r *http.Request) (interface{}, error) {
+	var req getPresetSatsReq
+
+	req.PresetName = mux.Vars(r)["preset_name"]
+
+	return req, nil
+}
+
+// GetPresetStats gets preset stats.
+func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter, clusterTemplateProvider provider.ClusterTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(getPresetSatsReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil, errors.NewBadRequest("preset was not found.")
+			}
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		stats := v2.PresetStats{}
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+		presetLabelRequirement, err := labels.NewRequirement(kubermaticv1.IsCredentialPresetLabelKey, selection.Equals, []string{"true"})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		for datacenter, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, errors.NewNotFound("cluster-provider", datacenter)
+			}
+			clusters, err := clusterProvider.ListAll(ctx, labels.NewSelector().Add(*presetLabelRequirement))
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			for _, cluster := range clusters.Items {
+				if cluster.Annotations != nil {
+					if presetName := cluster.Annotations[kubermaticv1.PresetNameAnnotation]; presetName == preset.Name {
+						stats.AssociatedClusters++
+					}
+				}
+			}
+		}
+
+		templates, err := clusterTemplateProvider.ListALL(ctx, labels.NewSelector().Add(*presetLabelRequirement))
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		for _, template := range templates {
+			if template.Annotations != nil {
+				if presetName := template.Annotations[kubermaticv1.PresetNameAnnotation]; presetName == preset.Name {
+					stats.AssociatedClusterTemplates++
+				}
+			}
+		}
+
+		return stats, err
 	}
 }
 

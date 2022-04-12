@@ -154,6 +154,13 @@ type PresetProvider struct {
 	Enabled bool                      `json:"enabled"`
 }
 
+// PresetStats represents a preset statistics
+// swagger:model PresetStats
+type PresetStats struct {
+	AssociatedClusters         int `json:"associatedClusters"`
+	AssociatedClusterTemplates int `json:"associatedClusterTemplates"`
+}
+
 // Alertmanager represents an Alertmanager Configuration
 // swagger:model Alertmanager
 type Alertmanager struct {

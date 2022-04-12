@@ -481,13 +481,16 @@ func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
 // ListAll gets all clusters
 //
 // Note that the admin privileges are used to list all clusters.
-func (p *ClusterProvider) ListAll(ctx context.Context) (*kubermaticv1.ClusterList, error) {
+func (p *ClusterProvider) ListAll(ctx context.Context, labelSelector labels.Selector) (*kubermaticv1.ClusterList, error) {
+	optionsLabelSelector := labels.Everything()
+	if labelSelector != nil {
+		optionsLabelSelector = labelSelector
+	}
+
 	projectClusters := &kubermaticv1.ClusterList{}
-	if err := p.client.List(ctx, projectClusters); err != nil {
-		// ignore error if cluster is unreachable
-		if kubenetutil.IsConnectionRefused(err) {
-			return projectClusters, nil
-		}
+	if err := p.client.List(ctx, projectClusters, ctrlruntimeclient.MatchingLabelsSelector{
+		Selector: optionsLabelSelector,
+	}); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
