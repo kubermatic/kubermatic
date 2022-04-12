@@ -1059,6 +1059,9 @@ func ValidateClusterSpec(updateManager common.UpdateManager, body apiv1.CreateCl
 	if body.Cluster.Spec.Version.Semver() == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
+	if len(body.Cluster.Name) > 100 {
+		return fmt.Errorf("invalid cluster name: too long (greater than 100 characters)")
+	}
 
 	providerName, err := provider.ClusterCloudProviderName(body.Cluster.Spec.Cloud)
 	if err != nil {
