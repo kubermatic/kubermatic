@@ -135,7 +135,7 @@ See:
 https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account
 
 It's not fully decided if we go with the Webhook modifying Pods or with setting imagePullSecrets on
-ServiceAccounts.
+ServiceAccounts during reconciliation.
 
 ## Alternatives considered
 
@@ -191,9 +191,19 @@ the cluster is created in.
 * **User cluster admins** can create or select credentials to be used in all kinds of Pods on the
 user cluster
 
-## Task and effort
+## Tasks and effort
 
-- tbd.
+* Implement a controller in the user-cluster-controller-manager that distributes all secrets referenced
+in the `Cluster` resource into all namespaces on the user cluster.
+  * Extend the `Cluster` CRD
+  * Implement the controller
+* Implement a mutating admission webhook that merges the imagePullSecrets from the Cluster resource
+into the imagePullSecrets of every Pod that's being created.
+  * Implement the webhook handler
+  * Package the webhook handler as image
+  * Add roll out of the webhook handler to cluster-controller in the seed-controller-user-manager
+  * Extend user-cluster-controller reconciliation with adding the MutatingWebhookConfiguration for
+  the webhook
 
 [#6231]: https://github.com/kubermatic/kubermatic/issues/6231
 [ssh key agent]: https://docs.kubermatic.com/kubermatic/master/tutorials_howtos/administration/user_settings/user_ssh_key_agent/
