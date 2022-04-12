@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -46,9 +47,7 @@ const (
 )
 
 const (
-	saSecretsNamespaceName = "kubermatic"
-	// KubeOneNamespacePrefix is the kubeone namespace prefix.
-	KubeOneNamespacePrefix              = "kubeone-"
+	saSecretsNamespaceName              = "kubermatic"
 	alertmanagerName                    = "alertmanager"
 	defaultAlertmanagerConfigSecretName = "alertmanager"
 
@@ -604,7 +603,7 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 func generateVerbsForNamespacedResource(groupName, resourceKind, namespace string) ([]string, error) {
 	// special case - only the owners of a project and project managers can create secrets in "saSecretsNamespaceName" namespace
 	//
-	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, KubeOneNamespacePrefix) {
+	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
 		switch {
 		case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind:
 			return []string{"create"}, nil
@@ -624,7 +623,7 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace string) ([]string, error) {
 	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceNam" namespace
 	//
-	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, KubeOneNamespacePrefix) {
+	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
 		switch {
 		case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind:
 			return []string{"get", "update", "delete"}, nil

@@ -27,7 +27,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -546,12 +545,21 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 			}
 		}
 		if !bindingAlreadyExists {
-			groupPrefix := rbac.ExtractGroupPrefix(binding.Spec.Group)
+			groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
 			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
 		}
 	}
 
 	return apiUser
+}
+
+// ExtractGroupPrefix extracts only group prefix from the given group name.
+func ExtractGroupPrefix(groupName string) string {
+	ret := strings.Split(groupName, "-")
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	return groupName
 }
 
 // Admin represents admin user
