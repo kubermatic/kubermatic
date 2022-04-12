@@ -73,7 +73,7 @@ func getImagesFromAddon(log *zap.SugaredLogger, addonPath string, decoder runtim
 
 	var images []string
 	for _, manifest := range allManifests {
-		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Raw)
+		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Content.Raw)
 		if err != nil {
 			return nil, err
 		}
