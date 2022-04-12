@@ -102,7 +102,7 @@ func Add(
 	}
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}},
 		enqueueExternalCluster(reconciler.Client, reconciler.log),
-		withManifestEventFilter(),
+		updateEventsOnly(),
 		ByNameAndNamespace(),
 	); err != nil {
 		return fmt.Errorf("failed to create kubeone manifest watcher: %w", err)
@@ -112,7 +112,7 @@ func Add(
 			IsController: true,
 			OwnerType:    &kubermaticv1.ExternalCluster{},
 		},
-		withPodEventFilter(),
+		createEventsOnly(),
 	); err != nil {
 		return fmt.Errorf("failed to create kubeone pod watcher: %w", err)
 	}
@@ -137,13 +137,13 @@ func ByNameAndNamespace() predicate.Funcs {
 	})
 }
 
-func withPodEventFilter() predicate.Predicate {
+func createEventsOnly() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return true
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return true
+			return false
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			return false
@@ -154,7 +154,7 @@ func withPodEventFilter() predicate.Predicate {
 	}
 }
 
-func withManifestEventFilter() predicate.Predicate {
+func updateEventsOnly() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return false
@@ -286,7 +286,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 			return reconcile.Result{}, err
 		}
 	} else {
-		if pod.Status.Phase == corev1.PodRunning {
+		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning {
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
 		} else {
 			err = r.checkPodStatus(ctx, log, pod, externalCluster)
