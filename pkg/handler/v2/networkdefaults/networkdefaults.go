@@ -26,6 +26,7 @@ import (
 
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 )
@@ -77,13 +78,24 @@ func GetNetworkDefaultsEndpoint() endpoint.Endpoint {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		// kubermaticv1.ProviderType(req.ProviderName)
+		provider := kubermaticv1.ProviderType(req.ProviderName)
+		cni := kubermaticv1.CNIPluginType(req.CNIPluginType)
 
 		return v2.NetworkDefaults{
 			IPv4: v2.NetworkDefaultsIPFamily{
-				PodsCIDR:     "1.2.3.4/5",
-				ServicesCIDR: req.CNIPluginType,
+				PodsCIDR:                resources.GetDefaultPodCIDRIPv4(provider),
+				ServicesCIDR:            resources.GetDefaultServicesCIDRIPv4(provider),
+				NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
+				NodePortsAllowedIPRange: "0.0.0.0/0",
 			},
+			IPv6: v2.NetworkDefaultsIPFamily{
+				PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
+				ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
+				NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
+				NodePortsAllowedIPRange: "::/0",
+			},
+			ProxyMode:                resources.GetDefaultProxyMode(provider, cni),
+			NodeLocalDNSCacheEnabled: true,
 		}, nil
 	}
 }

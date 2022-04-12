@@ -822,15 +822,19 @@ const (
 )
 
 const (
-	// DefaultClusterPodsCIDR is the default network range from which POD networks are allocated.
-	DefaultClusterPodsCIDR = "172.25.0.0/16"
-	// DefaultClusterPodsCIDRKubeVirt is the default network range from which POD networks are allocated for KubeVirt clusters.
-	DefaultClusterPodsCIDRKubeVirt = "172.26.0.0/16"
+	// DefaultClusterPodsCIDRIPv4 is the default network range from which IPv4 POD networks are allocated.
+	defaultClusterPodsCIDRIPv4 = "172.25.0.0/16"
+	// DefaultClusterPodsCIDRIPv4KubeVirt is the default network range from which IPv4 POD networks are allocated for KubeVirt clusters.
+	defaultClusterPodsCIDRIPv4KubeVirt = "172.26.0.0/16"
+	// DefaultClusterPodsCIDRIPv6 is the default network range from which IPv6 POD networks are allocated.
+	DefaultClusterPodsCIDRIPv6 = "fd01::/48"
 
-	// DefaultClusterServicesCIDR is the default network range from which service VIPs are allocated.
-	DefaultClusterServicesCIDR = "10.240.16.0/20"
-	// DefaultClusterServicesCIDRKubeVirt is the default network range from which service VIPs are allocated for KubeVirt clusters.
-	DefaultClusterServicesCIDRKubeVirt = "10.241.0.0/20"
+	// DefaultClusterServicesCIDRIPv4 is the default network range from which IPv4 service VIPs are allocated.
+	defaultClusterServicesCIDRIPv4 = "10.240.16.0/20"
+	// DefaultClusterServicesCIDRIPv4KubeVirt is the default network range from which IPv4 service VIPs are allocated for KubeVirt clusters.
+	defaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
+	// DefaultClusterServicesCIDRIPv6 is the default network range from which IPv6 service VIPs are allocated.
+	DefaultClusterServicesCIDRIPv6 = "fd02::/120"
 
 	// DefaultNodeCIDRMaskSizeIPv4 is the default mask size used to address the nodes within provided IPv4 Pods CIDR.
 	DefaultNodeCIDRMaskSizeIPv4 = 24
@@ -1550,4 +1554,37 @@ func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges 
 		}
 	}
 	return
+}
+
+// GetDefaultPodCIDRIPv4 returns the default IPv4 pod CIDR for the given provider.
+func GetDefaultPodCIDRIPv4(provider kubermaticv1.ProviderType) string {
+	if provider == kubermaticv1.KubevirtCloudProvider {
+		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+		// thus we have to avoid network collision
+		return defaultClusterPodsCIDRIPv4KubeVirt
+	}
+	return defaultClusterPodsCIDRIPv4
+}
+
+// GetDefaultServicesCIDRIPv4 returns the default IPv4 services CIDR for the given provider.
+func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
+	if provider == kubermaticv1.KubevirtCloudProvider {
+		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+		// thus we have to avoid network collision
+		return defaultClusterServicesCIDRIPv4KubeVirt
+	}
+	return defaultClusterServicesCIDRIPv4
+}
+
+// GetDefaultProxyMode returns the default proxy mode for the given provider.
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType, cni kubermaticv1.CNIPluginType) string {
+
+	// TODO: (rastislavs) make ebpf the default proxy mode for Cilium CNI after Konenctivity is GA
+
+	if provider == kubermaticv1.HetznerCloudProvider {
+		// IPVS causes issues with Hetzner's LoadBalancers, which should
+		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
+		return IPTablesProxyMode
+	}
+	return IPVSProxyMode
 }
