@@ -49,7 +49,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	} else {
 		// GenerateName can be set only if Name is empty to avoid confusing error:
 		// https://github.com/kubernetes/kubernetes/issues/32220
-		md.GenerateName = fmt.Sprintf("%s-worker-", c.Spec.HumanReadableName)
+		md.GenerateName = fmt.Sprintf("%s-worker-", c.Name)
 	}
 
 	// Add Annotations to Machine Deployment
