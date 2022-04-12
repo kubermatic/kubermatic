@@ -96,45 +96,45 @@ func init() {
 }
 
 const (
-	// UserID holds a test user ID
+	// UserID holds a test user ID.
 	UserID = "1233"
-	// UserID2 holds a test user ID
+	// UserID2 holds a test user ID.
 	UserID2 = "1523"
-	// UserName holds a test user name
+	// UserName holds a test user name.
 	UserName = "user1"
-	// UserName2 holds a test user name
+	// UserName2 holds a test user name.
 	UserName2 = "user2"
-	// UserEmail holds a test user email
+	// UserEmail holds a test user email.
 	UserEmail = "john@acme.com"
-	// UserEmail2 holds a test user email
+	// UserEmail2 holds a test user email.
 	UserEmail2 = "bob@example.com"
-	// ClusterID holds the test cluster ID
+	// ClusterID holds the test cluster ID.
 	ClusterID = "AbcClusterID"
-	// DefaultClusterID holds the test default cluster ID
+	// DefaultClusterID holds the test default cluster ID.
 	DefaultClusterID = "defClusterID"
-	// DefaultClusterName holds the test default cluster name
+	// DefaultClusterName holds the test default cluster name.
 	DefaultClusterName = "defClusterName"
-	// ProjectName holds the test project ID
+	// ProjectName holds the test project ID.
 	ProjectName = "my-first-project-ID"
-	// TestDatacenter holds datacenter name
+	// TestDatacenter holds datacenter name.
 	TestSeedDatacenter = "us-central1"
-	// TestServiceAccountHashKey authenticates the service account's token value using HMAC
+	// TestServiceAccountHashKey authenticates the service account's token value using HMAC.
 	TestServiceAccountHashKey = "eyJhbGciOiJIUzI1NeyJhbGciOiJIUzI1N"
-	// TestFakeToken signed JWT token with fake data
-	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
-	// TestOSdomain OpenStack domain
+	// TestFakeToken signed JWT token with fake data. It will expire after 3 years from 12-04-2022. To generate new token use kubermatic/pkg/serviceaccount/jwt_test.go.
+	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NDQ0NjQ1OTYsImlhdCI6MTY0OTc3MDE5NiwibmJmIjoxNjQ5NzcwMTk2LCJwcm9qZWN0X2lkIjoidGVzdFByb2plY3QiLCJ0b2tlbl9pZCI6InRlc3RUb2tlbiJ9.IGcnVhrTGeemEZ_dOGCRE1JXwpSMWJEbrG8hylpTEUY"
+	// TestOSdomain OpenStack domain.
 	TestOSdomain = "OSdomain"
-	// TestOSuserPass OpenStack user password
+	// TestOSuserPass OpenStack user password.
 	TestOSuserPass = "OSpass"
-	// TestOSuserName OpenStack user name
+	// TestOSuserName OpenStack user name.
 	TestOSuserName = "OSuser"
-	// TestFakeCredential Fake provider credential name
+	// TestFakeCredential Fake provider credential name.
 	TestFakeCredential = "fake"
-	// RequiredEmailDomain required domain for predefined credentials
+	// RequiredEmailDomain required domain for predefined credentials.
 	RequiredEmailDomain = "acme.com"
-	// DefaultKubernetesVersion kubernetes version
+	// DefaultKubernetesVersion kubernetes version.
 	DefaultKubernetesVersion = "1.22.5"
-	// Kubermatic namespace
+	// Kubermatic namespace.
 	KubermaticNamespace = "kubermatic"
 )
 
