@@ -150,8 +150,11 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 			Name: name,
 		},
 		Spec: appkubermaticv1.ApplicationInstallationSpec{
-			TargetNamespace: "default",
-			CreateNamespace: false,
+			Namespace: appkubermaticv1.NamespaceSpec{
+				Name:   "default",
+				Create: false,
+			},
+
 			ApplicationRef: appkubermaticv1.ApplicationRef{
 				Name:    applicationDefName,
 				Version: appkubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
