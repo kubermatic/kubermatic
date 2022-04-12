@@ -160,13 +160,11 @@ need to add handling for the not covered cases.
 Pods or ServiceAccounts in Addon templates could be templated to use an imagePullSecret, but this
 does not cover reconciled KKP components nor user apps.
 
-### A look ahead
+### Looking ahead
 
 To make this more accessible to customers we could build on top of this and extend the KKP dashboard
 with an interface to manage this. Similar to the [SSH key feature][ssh key agent] container registry
 credentials could be managed from there.
-
-For example:
 
 #### Admin Penal
 
