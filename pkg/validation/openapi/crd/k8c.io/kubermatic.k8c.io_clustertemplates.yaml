@@ -1595,6 +1595,64 @@ spec:
                   and used to sync user ssh keys attached by users to the cluster.
                   No SSH keys will be synced after node creation if this is disabled.'
                 type: boolean
+              encryptionConfiguration:
+                description: 'Optional: Configures encryption-at-rest for Kubernetes
+                  API data. This needs the `encryptionAtRest` feature gate. THIS IS
+                  A PLACEHOLDER AND NOT FUNCTIONAL YET.'
+                properties:
+                  enabled:
+                    description: Enables encryption-at-rest on this cluster.
+                    type: boolean
+                  resources:
+                    description: List of resources that will be stored encrypted in
+                      etcd.
+                    items:
+                      type: string
+                    type: array
+                  secretbox:
+                    description: 'Configuration for the `secretbox` static key encryption
+                      scheme as supported by Kubernetes. More info: https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#providers'
+                    properties:
+                      keys:
+                        items:
+                          description: SecretboxKey stores a key or key reference
+                            for encrypting Kubernetes API data at rest with a static
+                            key.
+                          properties:
+                            name:
+                              type: string
+                            secretRef:
+                              description: SecretKeySelector selects a key of a Secret.
+                              properties:
+                                key:
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                            value:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    required:
+                    - keys
+                    type: object
+                required:
+                - enabled
+                - resources
+                type: object
               eventRateLimitConfig:
                 description: 'Optional: Configures the EventRateLimit admission plugin
                   (if enabled via `useEventRateLimitAdmissionPlugin`) to create limits

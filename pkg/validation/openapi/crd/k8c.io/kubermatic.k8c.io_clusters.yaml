@@ -1633,6 +1633,64 @@ spec:
                   and used to sync user ssh keys attached by users to the cluster.
                   No SSH keys will be synced after node creation if this is disabled.'
                 type: boolean
+              encryptionConfiguration:
+                description: 'Optional: Configures encryption-at-rest for Kubernetes
+                  API data. This needs the `encryptionAtRest` feature gate. THIS IS
+                  A PLACEHOLDER AND NOT FUNCTIONAL YET.'
+                properties:
+                  enabled:
+                    description: Enables encryption-at-rest on this cluster.
+                    type: boolean
+                  resources:
+                    description: List of resources that will be stored encrypted in
+                      etcd.
+                    items:
+                      type: string
+                    type: array
+                  secretbox:
+                    description: 'Configuration for the `secretbox` static key encryption
+                      scheme as supported by Kubernetes. More info: https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#providers'
+                    properties:
+                      keys:
+                        items:
+                          description: SecretboxKey stores a key or key reference
+                            for encrypting Kubernetes API data at rest with a static
+                            key.
+                          properties:
+                            name:
+                              type: string
+                            secretRef:
+                              description: SecretKeySelector selects a key of a Secret.
+                              properties:
+                                key:
+                                  description: The key of the secret to select from.  Must
+                                    be a valid secret key.
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
+                                  type: string
+                                optional:
+                                  description: Specify whether the Secret or its key
+                                    must be defined
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                            value:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    required:
+                    - keys
+                    type: object
+                required:
+                - enabled
+                - resources
+                type: object
               eventRateLimitConfig:
                 description: 'Optional: Configures the EventRateLimit admission plugin
                   (if enabled via `useEventRateLimitAdmissionPlugin`) to create limits
@@ -2041,6 +2099,31 @@ spec:
                 description: Conditions contains conditions the cluster is in, its
                   primary use case is status signaling between controllers or between
                   controllers and the API.
+                type: object
+              encryption:
+                description: Encryption describes the status of the encryption-at-rest
+                  feature for encrypted data in etcd.
+                properties:
+                  activeKey:
+                    description: The current "primary" key used to encrypt data written
+                      to etcd. Secondary keys that can be used for decryption (but
+                      not encryption) might be configured in the ClusterSpec.
+                    type: string
+                  phase:
+                    description: The current phase of the encryption process. Can
+                      be one of `Pending`, `Failed`, `Active` or `EncryptionNeeded`.
+                      The `encryption_controller` logic will process the cluster based
+                      on the current phase and issue necessary changes to make sure
+                      encryption on the cluster is active and updated with what the
+                      ClusterSpec defines.
+                    enum:
+                    - Pending
+                    - Active
+                    - EncryptionNeeded
+                    type: string
+                required:
+                - activeKey
+                - phase
                 type: object
               errorMessage:
                 description: ErrorMessage contains a default error message in case
