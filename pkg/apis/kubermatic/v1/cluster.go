@@ -300,6 +300,10 @@ const (
 	// KubeSystemNetworkPolicies enables the deployment of network policies to kube-system namespace that
 	// restrict traffic from all pods in the namespace.
 	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
+
+	// ClusterFeatureEncryptionAtRest enables the experimental "encryption-at-rest" feature, which allows encrypting
+	// Kubernetes data in etcd with a user-provided encryption key or KMS service.
+	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
 )
 
 // +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
