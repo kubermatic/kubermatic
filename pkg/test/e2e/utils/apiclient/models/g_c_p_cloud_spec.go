@@ -21,8 +21,8 @@ type GCPCloudSpec struct {
 	// network
 	Network string `json:"network,omitempty"`
 
-	// NodePortsAllowedIPRange defines IP range from which access to NodePort services is allowed.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, access to NodePort services is allowed from anywhere.
+	// A CIDR range that will be used to allow access to the node port range in the firewall rules to.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 
 	// service account
