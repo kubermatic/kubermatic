@@ -215,6 +215,10 @@ type ClusterSpec struct {
 	// Optional: MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
 
+	// Optional: Configures encryption-at-rest for Kubernetes API data. This needs the `encryptionAtRest` feature gate.
+	// THIS IS A PLACEHOLDER AND NOT FUNCTIONAL YET.
+	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
+
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	// +kubebuilder:default=false
@@ -317,6 +321,29 @@ type UpdateWindow struct {
 	// Sets the length of the update window beginning with the start time. This needs to be a valid duration
 	// as parsed by Go's time.ParseDuration (https://pkg.go.dev/time#ParseDuration), e.g. `2h`.
 	Length string `json:"length,omitempty"`
+}
+
+// EncryptionConfiguration configures encryption-at-rest for Kubernetes API data.
+type EncryptionConfiguration struct {
+	// Enables encryption-at-rest on this cluster.
+	Enabled bool `json:"enabled"`
+	// List of resources that will be stored encrypted in etcd.
+	Resources []string `json:"resources"`
+	// Configuration for the `secretbox` static key encryption scheme as supported by Kubernetes.
+	// More info: https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#providers
+	Secretbox *SecretboxEncryptionConfiguration `json:"secretbox,omitempty"`
+}
+
+// SecretboxEncryptionConfiguration defines static key encryption based on the 'secretbox' solution for Kubernetes.
+type SecretboxEncryptionConfiguration struct {
+	Keys []SecretboxKey `json:"keys"`
+}
+
+// SecretboxKey stores a key or key reference for encrypting Kubernetes API data at rest with a static key.
+type SecretboxKey struct {
+	Name      string                    `json:"name"`
+	Value     string                    `json:"value,omitempty"`
+	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
 }
 
 const (
@@ -450,6 +477,10 @@ type ClusterStatus struct {
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+
+	// Encryption describes the status of the encryption-at-rest feature for encrypted data in etcd.
+	// +optional
+	Encryption *ClusterEncryptionStatus `json:"encryption,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
@@ -496,6 +527,27 @@ const (
 	InvalidConfigurationClusterError ClusterStatusError = "InvalidConfiguration"
 	UnsupportedChangeClusterError    ClusterStatusError = "UnsupportedChange"
 	ReconcileClusterError            ClusterStatusError = "ReconcileError"
+)
+
+// ClusterEncryptionStatus holds status information about the encryption-at-rest feature on the user cluster.
+type ClusterEncryptionStatus struct {
+	// The current "primary" key used to encrypt data written to etcd. Secondary keys that can be used for decryption
+	// (but not encryption) might be configured in the ClusterSpec.
+	ActiveKey string `json:"activeKey"`
+	// The current phase of the encryption process. Can be one of `Pending`, `Failed`, `Active` or `EncryptionNeeded`.
+	// The `encryption_controller` logic will process the cluster based on the current phase and issue necessary changes
+	// to make sure encryption on the cluster is active and updated with what the ClusterSpec defines.
+	Phase ClusterEncryptionPhase `json:"phase"`
+}
+
+// +kubebuilder:validation:Enum=Pending;Active;EncryptionNeeded
+type ClusterEncryptionPhase string
+
+const (
+	ClusterEncryptionPhasePending          ClusterEncryptionPhase = "Pending"
+	ClusterEncryptionPhaseFailed           ClusterEncryptionPhase = "Failed"
+	ClusterEncryptionPhaseActive           ClusterEncryptionPhase = "Active"
+	ClusterEncryptionPhaseEncryptionNeeded ClusterEncryptionPhase = "EncryptionNeeded"
 )
 
 type OIDCSettings struct {
