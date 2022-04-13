@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -124,6 +125,11 @@ func (c *ClusterJig) SetUp(ctx context.Context) error {
 	}
 	if err := c.Client.Create(ctx, c.Cluster); err != nil {
 		return fmt.Errorf("failed to create cluster: %w", err)
+	}
+
+	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, c.Client, c.Log, ctrlruntimeclient.ObjectKeyFromObject(c.Cluster), c.Cluster)
+	if err := wait.Poll(100*time.Millisecond, 5*time.Second, waiter); err != nil {
+		return fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.Client, c.Cluster, func(c *kubermaticv1.Cluster) {

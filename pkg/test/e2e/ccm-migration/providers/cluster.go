@@ -19,12 +19,14 @@ package providers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -62,6 +64,11 @@ func (ccj *CommonClusterJig) generateAndCreateCluster(ctx context.Context, cloud
 
 	if err := ccj.SeedClient.Create(ctx, cluster); err != nil {
 		return err
+	}
+
+	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, ccj.SeedClient, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
+	if err := wait.Poll(100*time.Millisecond, 5*time.Second, waiter); err != nil {
+		return fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
 	}
 
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, ccj.SeedClient, cluster, func(c *kubermaticv1.Cluster) {
