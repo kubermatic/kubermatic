@@ -7,7 +7,7 @@ reviewers:
   - sig-app-management
 
 labels:
-  - sig-app-management
+  - sig/app-management
 
 options:
   no_parent_owners: true
