@@ -43,7 +43,6 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/network"
 )
 
 const (
@@ -212,8 +211,8 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 	var routerID string
 	var finalizers []string
 
-	ipv4Network := network.IsIPv4OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
-	ipv6Network := network.IsIPv6OnlyCluster(cluster) || network.IsDualStackCluster(cluster)
+	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
+	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
 
 	// if security group has to be created add the corresponding finalizer.
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
@@ -299,17 +298,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 			highPort:    highPort,
 		}
 
-		nodePortsAllowedIPRange := cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange
-		if nodePortsAllowedIPRange != "" {
-			req.nodePortsCIDRs = append(req.nodePortsCIDRs, nodePortsAllowedIPRange)
-		} else {
-			if ipv4Network {
-				req.nodePortsCIDRs = append(req.nodePortsCIDRs, "0.0.0.0/0")
-			}
-			if ipv6Network {
-				req.nodePortsCIDRs = append(req.nodePortsCIDRs, "::/0")
-			}
-		}
+		req.nodePortsCIDRs = resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
 
 		secGroupName, err := createKubermaticSecurityGroup(netClient, req)
 		if err != nil {

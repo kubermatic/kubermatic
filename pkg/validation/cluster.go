@@ -30,7 +30,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -240,18 +239,18 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	}
 
 	// Verify that provided CIDRs are well-formed
-	if err := validateCIDRBlocks(n.Pods.CIDRBlocks, fldPath.Child("pods", "cidrBlocks")); err != nil {
+	if err := validateClusterCIDRBlocks(n.Pods.CIDRBlocks, fldPath.Child("pods", "cidrBlocks")); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := validateCIDRBlocks(n.Services.CIDRBlocks, fldPath.Child("services", "cidrBlocks")); err != nil {
+	if err := validateClusterCIDRBlocks(n.Services.CIDRBlocks, fldPath.Child("services", "cidrBlocks")); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
 	// Verify that node CIDR mask sizes are longer than the mask size of pod CIDRs
-	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv4, network.GetIPv4CIDR(n.Pods), fldPath.Child("nodeCidrMaskSizeIPv4")); err != nil {
+	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv4, n.Pods.GetIPv4CIDR(), fldPath.Child("nodeCidrMaskSizeIPv4")); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv6, network.GetIPv6CIDR(n.Pods), fldPath.Child("nodeCidrMaskSizeIPv6")); err != nil {
+	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv6, n.Pods.GetIPv6CIDR(), fldPath.Child("nodeCidrMaskSizeIPv6")); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
@@ -278,7 +277,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	return allErrs
 }
 
-func validateCIDRBlocks(cidrBlocks []string, fldPath *field.Path) *field.Error {
+func validateClusterCIDRBlocks(cidrBlocks []string, fldPath *field.Path) *field.Error {
 	for i, cidr := range cidrBlocks {
 		addr, _, err := net.ParseCIDR(cidr)
 		if err != nil {
@@ -487,6 +486,9 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 			return err
 		}
 	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
+	}
 
 	var errs []error
 	if spec.Project == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" && spec.CredentialsReference.Namespace == "" {
@@ -522,6 +524,9 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 			return err
 		}
 	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -536,6 +541,9 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
+	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -607,6 +615,9 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
+	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 
 	return nil
