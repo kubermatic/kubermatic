@@ -55,7 +55,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 			existingUser:   genUser("", "john", "john@acme.com"),
 			token:          TestFakeToken,
 			expiry:         apiv1.Date(2222, 02, 03, 19, 55, 0, 0, time.UTC),
-			expectedTokens: []string{"eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"},
+			expectedTokens: []string{TestFakeToken},
 		},
 		{
 			name: "scenario 2: add expired token to not existing list",

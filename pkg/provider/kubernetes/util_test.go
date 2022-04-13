@@ -39,7 +39,7 @@ import (
 
 const (
 	// TestFakeToken signed JWT token with fake data.
-	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
+	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NDQ0NjQ1OTYsImlhdCI6MTY0OTc3MDE5NiwibmJmIjoxNjQ5NzcwMTk2LCJwcm9qZWN0X2lkIjoidGVzdFByb2plY3QiLCJ0b2tlbl9pZCI6InRlc3RUb2tlbiJ9.IGcnVhrTGeemEZ_dOGCRE1JXwpSMWJEbrG8hylpTEUY"
 
 	// TestFakeFinalizer is a dummy finalizer with no special meaning.
 	TestFakeFinalizer = "test.kubermatic.k8c.io/dummy"
