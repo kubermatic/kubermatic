@@ -211,16 +211,71 @@ func TestScaling(t *testing.T) {
 	}
 	waitForQuorum(t)
 
-	if err := breakAndRecover(ctx, t, client, cluster); err != nil {
-		t.Fatalf("failed to test volume recovery: %v", err)
-	}
-	waitForQuorum(t)
-
 	if err := disableLauncher(ctx, t, client, cluster); err != nil {
 		t.Fatalf("succeeded in disabling immutable feature etcd-launcher: %v", err)
 	}
 
 	t.Log("tests succeeded")
+}
+
+func TestRecovery(t *testing.T) {
+	ctx := context.Background()
+
+	client, _, _, err := utils.GetClients()
+	if err != nil {
+		t.Fatalf("failed to get client for seed cluster: %v", err)
+	}
+
+	// login
+	masterToken, err := utils.RetrieveMasterToken(ctx)
+	if err != nil {
+		t.Fatalf("failed to get master token: %v", err)
+	}
+	testClient := utils.NewTestClient(masterToken, t)
+
+	// create dummy project
+	t.Log("creating project...")
+	project, err := testClient.CreateProject(rand.String(10))
+	if err != nil {
+		t.Fatalf("failed to create project: %v", err)
+	}
+	defer cleanupProject(t, project.ID)
+
+	// create dummy cluster (NB: If these tests fail, the etcd ring can be
+	// _so_ dead that any cleanup attempt is futile; make sure to not create
+	// any cloud resources, as they might be orphaned)
+
+	t.Log("creating cluster...")
+	apiCluster, err := testClient.CreateHetznerCluster(project.ID, datacenter, rand.String(10), credential, version, location, 0)
+	if err != nil {
+		t.Fatalf("failed to create cluster: %v", err)
+	}
+
+	// wait for the cluster to become healthy
+	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
+
+	// get the cluster object (the CRD, not the API's representation)
+	cluster := &kubermaticv1.Cluster{}
+	if err := client.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
+		t.Fatalf("failed to get cluster: %v", err)
+	}
+
+	if err := enableLauncher(ctx, t, client, cluster); err != nil {
+		t.Fatalf("failed to enable etcd-launcher: %v", err)
+	}
+	waitForQuorum(t)
+
+	if err := breakAndRecoverPV(ctx, t, client, cluster); err != nil {
+		t.Fatalf("failed to test volume recovery: %v", err)
+	}
+	waitForQuorum(t)
+
+	if err := breakAndRecoverPVC(ctx, t, client, cluster); err != nil {
+		t.Fatalf("failed to recover from PVC deletion: %v", err)
+	}
+	waitForQuorum(t)
 }
 
 func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (error, *kubermaticv1.EtcdBackupConfig) {
@@ -353,7 +408,7 @@ func scaleDown(ctx context.Context, t *testing.T, client ctrlruntimeclient.Clien
 	return nil
 }
 
-func breakAndRecover(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func breakAndRecoverPV(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	// delete one of the etcd node PVs
 	t.Log("testing etcd node PV automatic recovery...")
 	if err := forceDeleteEtcdPV(ctx, client, cluster); err != nil {
@@ -369,6 +424,24 @@ func breakAndRecover(ctx context.Context, t *testing.T, client ctrlruntimeclient
 		return fmt.Errorf("etcd cluster is not healthy: %w", err)
 	}
 	t.Log("etcd node PV recovered successfully.")
+
+	return nil
+}
+
+func breakAndRecoverPVC(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	// delete one of the etcd node PVCs
+	t.Log("testing etcd-launcher recovery from deleted PVC ...")
+	if err := deleteEtcdPVC(ctx, client, cluster); err != nil {
+		return fmt.Errorf("failed to delete etcd node PVC: %w", err)
+	}
+
+	time.Sleep(30 * time.Second)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		return fmt.Errorf("etcd cluster is not healthy: %w", err)
+	}
+
+	t.Log("etcd node recovered from PVC deletion successfully.")
 
 	return nil
 }
@@ -631,6 +704,57 @@ func forceDeleteEtcdPV(ctx context.Context, client ctrlruntimeclient.Client, clu
 	return wait.PollImmediate(2*time.Second, 3*time.Minute, func() (bool, error) {
 		if err := client.Get(ctx, typedName, pv); kerrors.IsNotFound(err) {
 			return true, nil
+		}
+		return false, nil
+	})
+}
+
+func deleteEtcdPVC(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	ns := clusterNamespace(cluster)
+
+	selector, err := labels.Parse("app=etcd")
+	if err != nil {
+		return fmt.Errorf("failed to parse label selector: %w", err)
+	}
+
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	opt := &ctrlruntimeclient.ListOptions{
+		LabelSelector: selector,
+		Namespace:     ns,
+	}
+	if err := client.List(ctx, pvcList, opt); err != nil || len(pvcList.Items) == 0 {
+		return fmt.Errorf("failed to list PVCs or empty list in cluster namespace: %w", err)
+	}
+
+	// pick a random PVC and get the corresponding pod
+	index := rand.Intn(len(pvcList.Items))
+	pvc := pvcList.Items[index]
+	oldPvc := pvc.DeepCopy()
+
+	podList := &corev1.PodList{}
+	if err := client.List(ctx, podList, opt); err != nil || len(podList.Items) != len(pvcList.Items) {
+		return fmt.Errorf("failed to list etcd pods or bad number of pods: %w", err)
+	}
+
+	pod := podList.Items[index]
+
+	// first, we delete it
+	if err := client.Delete(ctx, &pvc); err != nil {
+		return fmt.Errorf("failed to delete etcd node PVC %s: %w", pvc.Name, err)
+	}
+
+	// now, we delete the pod so the PVC can be finalised
+	if err := client.Delete(ctx, &pod); err != nil {
+		return fmt.Errorf("failed to delete etcd pod %s: %w", pod.Name, err)
+	}
+
+	// make sure the PVC is recreated by checking the CreationTimestamp against a DeepCopy
+	// created of the PVC resource.
+	return wait.PollImmediate(2*time.Second, 3*time.Minute, func() (bool, error) {
+		if err := client.Get(ctx, types.NamespacedName{Name: pvc.Name, Namespace: pvc.Namespace}, &pvc); err == nil {
+			if oldPvc.ObjectMeta.CreationTimestamp.Before(&pvc.ObjectMeta.CreationTimestamp) {
+				return true, nil
+			}
 		}
 		return false, nil
 	})
