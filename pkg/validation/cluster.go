@@ -239,10 +239,10 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	}
 
 	// Verify that provided CIDRs are well-formed
-	if err := validateCIDRBlocks(n.Pods.CIDRBlocks, fldPath.Child("pods", "cidrBlocks")); err != nil {
+	if err := validateClusterCIDRBlocks(n.Pods.CIDRBlocks, fldPath.Child("pods", "cidrBlocks")); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := validateCIDRBlocks(n.Services.CIDRBlocks, fldPath.Child("services", "cidrBlocks")); err != nil {
+	if err := validateClusterCIDRBlocks(n.Services.CIDRBlocks, fldPath.Child("services", "cidrBlocks")); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
@@ -277,7 +277,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	return allErrs
 }
 
-func validateCIDRBlocks(cidrBlocks []string, fldPath *field.Path) *field.Error {
+func validateClusterCIDRBlocks(cidrBlocks []string, fldPath *field.Path) *field.Error {
 	for i, cidr := range cidrBlocks {
 		addr, _, err := net.ParseCIDR(cidr)
 		if err != nil {
@@ -486,12 +486,8 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 			return err
 		}
 	}
-	if spec.NodePortsAllowedIPRanges != nil {
-		for _, cidr := range spec.NodePortsAllowedIPRanges.CIDRBlocks {
-			if _, _, err := net.ParseCIDR(cidr); err != nil {
-				return fmt.Errorf("unable to parse nodePortsAllowedIPRanges CIDR %q: %w", cidr, err)
-			}
-		}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 
 	var errs []error
@@ -528,12 +524,8 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 			return err
 		}
 	}
-	if spec.NodePortsAllowedIPRanges != nil {
-		for _, cidr := range spec.NodePortsAllowedIPRanges.CIDRBlocks {
-			if _, _, err := net.ParseCIDR(cidr); err != nil {
-				return fmt.Errorf("unable to parse nodePortsAllowedIPRanges CIDR %q: %w", cidr, err)
-			}
-		}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 
 	return nil
@@ -550,12 +542,8 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 			return err
 		}
 	}
-	if spec.NodePortsAllowedIPRanges != nil {
-		for _, cidr := range spec.NodePortsAllowedIPRanges.CIDRBlocks {
-			if _, _, err := net.ParseCIDR(cidr); err != nil {
-				return fmt.Errorf("unable to parse nodePortsAllowedIPRanges CIDR %q: %w", cidr, err)
-			}
-		}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -628,12 +616,8 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 			return err
 		}
 	}
-	if spec.NodePortsAllowedIPRanges != nil {
-		for _, cidr := range spec.NodePortsAllowedIPRanges.CIDRBlocks {
-			if _, _, err := net.ParseCIDR(cidr); err != nil {
-				return fmt.Errorf("unable to parse nodePortsAllowedIPRanges CIDR %q: %w", cidr, err)
-			}
-		}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 
 	return nil
