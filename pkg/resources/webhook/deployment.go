@@ -52,7 +52,7 @@ type webhookData interface {
 
 func webhookPodLabels() map[string]string {
 	return map[string]string{
-		"name": resources.UserClusterWebhookDeploymentName,
+		resources.AppLabelKey: resources.UserClusterWebhookDeploymentName,
 	}
 }
 

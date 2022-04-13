@@ -823,9 +823,9 @@ const (
 )
 
 const (
-	UserClusterWebhookDeploymentName     = "usercluster-webhook"
-	UserClusterWebhookServiceName        = "usercluster-webhook"
-	UserClusterWebhookServiceAccountName = "usercluster-webhook"
+	UserClusterWebhookDeploymentName     = "user-cluster-webhook"
+	UserClusterWebhookServiceName        = "user-cluster-webhook"
+	UserClusterWebhookServiceAccountName = "user-cluster-webhook"
 )
 
 const (
