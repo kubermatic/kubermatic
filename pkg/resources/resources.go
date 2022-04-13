@@ -823,16 +823,16 @@ const (
 
 const (
 	// DefaultClusterPodsCIDRIPv4 is the default network range from which IPv4 POD networks are allocated.
-	defaultClusterPodsCIDRIPv4 = "172.25.0.0/16"
+	DefaultClusterPodsCIDRIPv4 = "172.25.0.0/16"
 	// DefaultClusterPodsCIDRIPv4KubeVirt is the default network range from which IPv4 POD networks are allocated for KubeVirt clusters.
-	defaultClusterPodsCIDRIPv4KubeVirt = "172.26.0.0/16"
+	DefaultClusterPodsCIDRIPv4KubeVirt = "172.26.0.0/16"
 	// DefaultClusterPodsCIDRIPv6 is the default network range from which IPv6 POD networks are allocated.
 	DefaultClusterPodsCIDRIPv6 = "fd01::/48"
 
 	// DefaultClusterServicesCIDRIPv4 is the default network range from which IPv4 service VIPs are allocated.
-	defaultClusterServicesCIDRIPv4 = "10.240.16.0/20"
+	DefaultClusterServicesCIDRIPv4 = "10.240.16.0/20"
 	// DefaultClusterServicesCIDRIPv4KubeVirt is the default network range from which IPv4 service VIPs are allocated for KubeVirt clusters.
-	defaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
+	DefaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
 	// DefaultClusterServicesCIDRIPv6 is the default network range from which IPv6 service VIPs are allocated.
 	DefaultClusterServicesCIDRIPv6 = "fd02::/120"
 
@@ -1561,9 +1561,9 @@ func GetDefaultPodCIDRIPv4(provider kubermaticv1.ProviderType) string {
 	if provider == kubermaticv1.KubevirtCloudProvider {
 		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
 		// thus we have to avoid network collision
-		return defaultClusterPodsCIDRIPv4KubeVirt
+		return DefaultClusterPodsCIDRIPv4KubeVirt
 	}
-	return defaultClusterPodsCIDRIPv4
+	return DefaultClusterPodsCIDRIPv4
 }
 
 // GetDefaultServicesCIDRIPv4 returns the default IPv4 services CIDR for the given provider.
@@ -1571,9 +1571,9 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 	if provider == kubermaticv1.KubevirtCloudProvider {
 		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
 		// thus we have to avoid network collision
-		return defaultClusterServicesCIDRIPv4KubeVirt
+		return DefaultClusterServicesCIDRIPv4KubeVirt
 	}
-	return defaultClusterServicesCIDRIPv4
+	return DefaultClusterServicesCIDRIPv4
 }
 
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
