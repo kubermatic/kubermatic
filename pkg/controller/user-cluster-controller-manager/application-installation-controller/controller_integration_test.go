@@ -40,11 +40,7 @@ var _ = Describe("application Installation controller", func() {
 			appDefName := "app-def-1"
 			appInstallName := "app-1"
 
-			Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
-
-			def := &appkubermaticv1.ApplicationDefinition{}
-			Expect(userClient.Get(ctx, types.NamespacedName{Name: appDefName}, def)).To(Succeed())
-
+			def := createApplicationDef(appDefName)
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0"))).To(Succeed())
 
 			app := &appkubermaticv1.ApplicationInstallation{}
@@ -67,7 +63,7 @@ var _ = Describe("application Installation controller", func() {
 			appDefName := "app-def-2"
 			appInstallName := "app-2"
 
-			Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
+			createApplicationDef(appDefName)
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, "app-def-not-exist", "1.0.0"))).To(Succeed())
 
 			By("wait for application to be created")
@@ -94,7 +90,7 @@ var _ = Describe("application Installation controller", func() {
 			appDefName := "app-def-3"
 			appInstallName := "app-3"
 
-			Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
+			createApplicationDef(appDefName)
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0-not-exist"))).To(Succeed())
 
 			By("wait for application to be created")
@@ -121,11 +117,8 @@ var _ = Describe("application Installation controller", func() {
 			appDefName := "app-def-5"
 			appInstallName := "app-5"
 
-			Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
+			def := createApplicationDef(appDefName)
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0"))).To(Succeed())
-
-			def := &appkubermaticv1.ApplicationDefinition{}
-			Expect(userClient.Get(ctx, types.NamespacedName{Name: appDefName}, def)).To(Succeed())
 
 			By("wait for application to be created")
 			app := &appkubermaticv1.ApplicationInstallation{}
@@ -157,11 +150,8 @@ var _ = Describe("application Installation controller", func() {
 			appDefName := "app-def-4"
 			appInstallName := "app-4"
 
-			Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
+			def := createApplicationDef(appDefName)
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0"))).To(Succeed())
-
-			def := &appkubermaticv1.ApplicationDefinition{}
-			Expect(userClient.Get(ctx, types.NamespacedName{Name: appDefName}, def)).To(Succeed())
 
 			By("wait for application to be created")
 			app := &appkubermaticv1.ApplicationInstallation{}
@@ -211,6 +201,17 @@ var _ = Describe("application Installation controller", func() {
 	})
 
 })
+
+func createApplicationDef(appDefName string) *appkubermaticv1.ApplicationDefinition {
+	Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
+
+	def := &appkubermaticv1.ApplicationDefinition{}
+	EventuallyWithOffset(1, func(g Gomega) {
+		g.Expect(userClient.Get(ctx, types.NamespacedName{Name: appDefName}, def)).To(Succeed())
+	}, timeout, interval).Should(Succeed())
+
+	return def
+}
 
 func expectApplicationInstalledWithVersion(appName string, expectedVersion appkubermaticv1.ApplicationVersion) {
 	By("check application has been installed")
