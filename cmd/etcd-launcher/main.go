@@ -124,6 +124,35 @@ func main() {
 		}
 	}
 
+	thisMember, err := e.getMemberByName(e.podName, log)
+	if err != nil {
+		log.Warnw("failed to check cluster membership", zap.Error(err))
+	}
+
+	if thisMember != nil {
+		log.Infof("%v is a member", thisMember.GetPeerURLs())
+
+		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); errors.Is(err, fs.ErrNotExist) {
+			client, err := e.getClusterClient()
+			if err != nil {
+				log.Panicw("can't find cluster client: %v", zap.Error(err))
+			}
+
+			log.Warnw("No data dir, removing stale membership to rejoin cluster as new member")
+
+			_, err = client.MemberRemove(context.Background(), thisMember.ID)
+			if err != nil {
+				closeClient(client, log)
+				log.Panicw("remove itself due to data dir loss", zap.Error(err))
+			}
+
+			closeClient(client, log)
+			if err := joinCluster(e, log); err != nil {
+				log.Panicw("join cluster as fresh member", zap.Error(err))
+			}
+		}
+	}
+
 	// setup and start etcd command
 	etcdCmd, err := startEtcdCmd(e, log)
 	if err != nil {
@@ -134,33 +163,6 @@ func main() {
 		return e.isClusterHealthy(log)
 	}); err != nil {
 		log.Panicw("manager thread failed to connect to cluster", zap.Error(err))
-	}
-
-	thisMember, err := e.getMemberByName(e.podName, log)
-	if err != nil {
-		log.Panicw("failed to check cluster membership", zap.Error(err))
-	}
-	if thisMember != nil {
-		log.Infof("%v is a member", thisMember.GetPeerURLs())
-
-		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); errors.Is(err, fs.ErrNotExist) {
-			client, err := e.getClusterClient()
-			if err != nil {
-				log.Panicw("can't find cluster client: %v", zap.Error(err))
-			}
-			log.Warnw("No data dir, to ensure recovery removing and adding the member")
-			_, err = client.MemberRemove(context.Background(), thisMember.ID)
-			if err != nil {
-				closeClient(client, log)
-				log.Panicw("remove itself due to data dir loss", zap.Error(err))
-			}
-			closeClient(client, log)
-			if err := joinCluster(e, log); err != nil {
-				log.Panicw("join cluster as fresh member", zap.Error(err))
-			}
-		}
-	} else if err := joinCluster(e, log); err != nil {
-		log.Panicw("join cluster as fresh member", zap.Error(err))
 	}
 
 	// reconcile dead members continuously. Initially we did this once as a step at the end of start up. We did that because scale up/down operations required a full restart of the ring with each node add/remove. However, this is no longer the case, so we need to separate the reconcile from the start up process and do it continuously.
