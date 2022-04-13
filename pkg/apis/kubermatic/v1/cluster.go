@@ -331,6 +331,9 @@ type UpdateWindow struct {
 type EncryptionConfiguration struct {
 	// Enables encryption-at-rest on this cluster.
 	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:validation:MinItems=1
+
 	// List of resources that will be stored encrypted in etcd.
 	Resources []string `json:"resources"`
 	// Configuration for the `secretbox` static key encryption scheme as supported by Kubernetes.
@@ -340,13 +343,24 @@ type EncryptionConfiguration struct {
 
 // SecretboxEncryptionConfiguration defines static key encryption based on the 'secretbox' solution for Kubernetes.
 type SecretboxEncryptionConfiguration struct {
+	// +kubebuilder:validation:MinItems=1
+
+	// List of 'secretbox' encryption keys. The first element of this list is considered
+	// the "primary" key which will be used for encrypting data while writing it. Additional
+	// keys will be used for decrypting data while reading it, if keys higher in the list
+	// did not succeed in decrypting it.
 	Keys []SecretboxKey `json:"keys"`
 }
 
 // SecretboxKey stores a key or key reference for encrypting Kubernetes API data at rest with a static key.
 type SecretboxKey struct {
-	Name      string                    `json:"name"`
-	Value     string                    `json:"value,omitempty"`
+	// Identifier of a key, used in various places to refer to the key.
+	Name string `json:"name"`
+	// Value contains a 32-byte random key that is base64 encoded. This is the key used
+	// for encryption. Can be generated via `head -c 32 /dev/urandom | base64`, for example.
+	Value string `json:"value,omitempty"`
+	// Instead of passing the sensitive encryption key via the `value` field, a secret can be
+	// referenced. The key of the secret referenced here needs to hold a key equivalent to the `value` field.
 	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
 }
 
