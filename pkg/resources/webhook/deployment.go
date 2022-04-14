@@ -60,6 +60,7 @@ func webhookPodLabels() map[string]string {
 func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterWebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Name = resources.UserClusterWebhookDeploymentName
 			d.Spec.Replicas = pointer.Int32Ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: webhookPodLabels(),
