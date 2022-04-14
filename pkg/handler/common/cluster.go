@@ -1048,19 +1048,19 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 
 func ValidateClusterSpec(updateManager common.UpdateManager, body apiv1.CreateClusterSpec) error {
 	if body.Cluster.Spec.Cloud.DatacenterName == "" {
-		return fmt.Errorf("cluster datacenter name is empty")
+		return errors.New("cluster datacenter name is empty")
 	}
 	if body.Cluster.ID != "" {
-		return fmt.Errorf("cluster.ID is read-only")
+		return errors.New("cluster.ID is read-only")
 	}
 	if !ClusterTypes.Has(body.Cluster.Type) {
 		return fmt.Errorf("invalid cluster type %s", body.Cluster.Type)
 	}
 	if body.Cluster.Spec.Version.Semver() == nil {
-		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
+		return errors.New("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
 	if len(body.Cluster.Name) > 100 {
-		return fmt.Errorf("invalid cluster name: too long (greater than 100 characters)")
+		return errors.New("invalid cluster name: too long (greater than 100 characters)")
 	}
 
 	providerName, err := provider.ClusterCloudProviderName(body.Cluster.Spec.Cloud)
