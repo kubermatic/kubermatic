@@ -26,7 +26,7 @@ spec:
         - -webhook-key-name=serving.key
         - -v=2
         command:
-        - usercluster-webhook
+        - user-cluster-webhook
         image: quay.io/kubermatic/kubermatic:v0.0.0-test
         name: usercluster-controller
         ports:
