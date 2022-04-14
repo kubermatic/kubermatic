@@ -815,6 +815,13 @@ const (
 )
 
 const (
+	UserClusterWebhookDeploymentName        = "user-cluster-webhook"
+	UserClusterWebhookServiceName           = "user-cluster-webhook"
+	UserClusterWebhookServiceAccountName    = "user-cluster-webhook"
+	UserClusterWebhookServingCertSecretName = "user-cluster-webhook-serving-cert"
+)
+
+const (
 	// DefaultClusterPodsCIDR is the default network range from which POD networks are allocated.
 	DefaultClusterPodsCIDR = "172.25.0.0/16"
 	// DefaultClusterPodsCIDRKubeVirt is the default network range from which POD networks are allocated for KubeVirt clusters.
