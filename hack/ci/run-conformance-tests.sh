@@ -37,15 +37,18 @@ echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 
 
 EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
+maxDuration=60 # in minutes
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
 elif [[ $provider == "packet" ]]; then
+  maxDuration=90
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
     -packet-project-id=${PACKET_PROJECT_ID}"
 elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
 elif [[ $provider == "azure" ]]; then
+  maxDuration=90
   EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
     -azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
@@ -82,7 +85,16 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
 fi
 
-timeout -s 9 90m ./_build/conformance-tester $EXTRA_ARGS \
+# in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),
+# so we must multiply the maxDuration with the number of scenarios
+numDists=$(echo "${DISTRIBUTIONS:-}" | tr "," "\n" | wc -l)
+numVersions=$(echo "${VERSIONS_TO_TEST:-}" | tr "," "\n" | wc -l)
+((maxDuration = $numDists * $numVersions * $maxDuration))
+
+# add a bit of setup time to bring up the project, tear it down again etc.
+((maxDuration = $maxDuration + 30))
+
+timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -client="${SETUP_MODE:-api}" \
   -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
