@@ -62,7 +62,7 @@ type tlsServingCertCreatorData interface {
 // TLSServingCertificateCreator returns a function to create/update the secret with the machine-webhook tls certificate.
 func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.MachineWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+		return resources.UserClusterWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}

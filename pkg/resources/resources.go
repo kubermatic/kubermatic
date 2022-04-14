@@ -148,9 +148,6 @@ const (
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider.
 	CloudControllerManagerKubeconfigSecretName = "cloud-controller-manager-kubeconfig"
-	// MachineWebhookServingCertSecretName is the name for the secret containing the serving cert for the
-	// machine webhook.
-	MachineWebhookServingCertSecretName = "machine-webhook-serving-cert"
 	// MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
 	// machine-controller webhook.
 	MachineControllerWebhookServingCertSecretName = "machinecontroller-webhook-serving-cert"
@@ -433,10 +430,6 @@ const (
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
-
-	// MachineValidatingWebhookConfigurationName is the name of the machine validating webhook
-	// configuration.
-	MachineValidatingWebhookConfigurationName = "machine.kubermatic.io"
 
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
@@ -822,9 +815,10 @@ const (
 )
 
 const (
-	UserClusterWebhookDeploymentName     = "user-cluster-webhook"
-	UserClusterWebhookServiceName        = "user-cluster-webhook"
-	UserClusterWebhookServiceAccountName = "user-cluster-webhook"
+	UserClusterWebhookDeploymentName        = "user-cluster-webhook"
+	UserClusterWebhookServiceName           = "user-cluster-webhook"
+	UserClusterWebhookServiceAccountName    = "user-cluster-webhook"
+	UserClusterWebhookServingCertSecretName = "user-cluster-webhook-serving-cert"
 )
 
 const (

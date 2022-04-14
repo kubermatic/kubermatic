@@ -92,7 +92,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 					Name: "webhook-serving-cert",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: resources.MachineWebhookServingCertSecretName,
+							SecretName: resources.UserClusterWebhookServingCertSecretName,
 						},
 					},
 				},
