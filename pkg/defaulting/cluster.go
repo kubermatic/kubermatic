@@ -201,7 +201,7 @@ func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
 	}
 
 	if spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
+		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(resources.DefaultNodeLocalDNSCacheEnabled)
 	}
 
 	if spec.ClusterNetwork.DNSDomain == "" {

@@ -17,7 +17,7 @@ import (
 // swagger:model NetworkDefaultsIPFamily
 type NetworkDefaultsIPFamily struct {
 
-	// NodeCIDRMaskSize contains the defaukt mask size used to address the nodes within provided Pods CIDR.
+	// NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.
 	NodeCIDRMaskSize int32 `json:"nodeCidrMaskSize,omitempty"`
 
 	// NodePortsAllowedIPRange defines the default IP range from which access to NodePort services is allowed for applicable cloud providers.

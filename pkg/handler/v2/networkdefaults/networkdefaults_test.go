@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -52,13 +52,13 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode:    http.StatusOK,
 			ExpectedResponse: &apiv2.NetworkDefaults{
-				IPv4: apiv2.NetworkDefaultsIPFamily{
+				IPv4: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv4,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
 					NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
 				},
-				IPv6: apiv2.NetworkDefaultsIPFamily{
+				IPv6: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
@@ -76,13 +76,13 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode:    http.StatusOK,
 			ExpectedResponse: &apiv2.NetworkDefaults{
-				IPv4: apiv2.NetworkDefaultsIPFamily{
+				IPv4: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv4,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
 					NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
 				},
-				IPv6: apiv2.NetworkDefaultsIPFamily{
+				IPv6: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
@@ -100,13 +100,13 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode:    http.StatusOK,
 			ExpectedResponse: &apiv2.NetworkDefaults{
-				IPv4: apiv2.NetworkDefaultsIPFamily{
+				IPv4: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4KubeVirt,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv4KubeVirt,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
 					NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
 				},
-				IPv6: apiv2.NetworkDefaultsIPFamily{
+				IPv6: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
@@ -124,13 +124,13 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode:    http.StatusOK,
 			ExpectedResponse: &apiv2.NetworkDefaults{
-				IPv4: apiv2.NetworkDefaultsIPFamily{
+				IPv4: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv4,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv4,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
 					NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
 				},
-				IPv6: apiv2.NetworkDefaultsIPFamily{
+				IPv6: &apiv2.NetworkDefaultsIPFamily{
 					PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
 					ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
 					NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,

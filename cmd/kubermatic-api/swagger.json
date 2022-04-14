@@ -26034,7 +26034,7 @@
       "title": "NetworkDefaultsIPFamily contains cluster network default settings for an IP family.",
       "properties": {
         "nodeCidrMaskSize": {
-          "description": "NodeCIDRMaskSize contains the defaukt mask size used to address the nodes within provided Pods CIDR.",
+          "description": "NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.",
           "type": "integer",
           "format": "int32",
           "x-go-name": "NodeCIDRMaskSize"

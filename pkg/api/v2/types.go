@@ -1358,9 +1358,9 @@ type CNIVersions struct {
 // swagger:model NetworkDefaults
 type NetworkDefaults struct {
 	// IPv4 contains cluster network default settings for IPv4 network family.
-	IPv4 NetworkDefaultsIPFamily `json:"ipv4,omitempty"`
+	IPv4 *NetworkDefaultsIPFamily `json:"ipv4,omitempty"`
 	// IPv6 contains cluster network default settings for IPv6 network family.
-	IPv6 NetworkDefaultsIPFamily `json:"ipv6,omitempty"`
+	IPv6 *NetworkDefaultsIPFamily `json:"ipv6,omitempty"`
 	// ProxyMode defines the default kube-proxy mode ("ipvs" / "iptables" / "ebpf").
 	ProxyMode string `json:"proxyMode,omitempty"`
 	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
@@ -1374,7 +1374,7 @@ type NetworkDefaultsIPFamily struct {
 	PodsCIDR string `json:"podsCidr,omitempty"`
 	// ServicesCIDR contains the default network range from which service VIPs are allocated.
 	ServicesCIDR string `json:"servicesCidr,omitempty"`
-	// NodeCIDRMaskSize contains the defaukt mask size used to address the nodes within provided Pods CIDR.
+	// NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.
 	NodeCIDRMaskSize int32 `json:"nodeCidrMaskSize,omitempty"`
 	// NodePortsAllowedIPRange defines the default IP range from which access to NodePort services is allowed for applicable cloud providers.
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`

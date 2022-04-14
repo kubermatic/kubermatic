@@ -669,9 +669,10 @@ const (
 )
 
 const (
-	NodeLocalDNSServiceAccountName = "node-local-dns"
-	NodeLocalDNSConfigMapName      = "node-local-dns"
-	NodeLocalDNSDaemonSetName      = "node-local-dns"
+	NodeLocalDNSServiceAccountName  = "node-local-dns"
+	NodeLocalDNSConfigMapName       = "node-local-dns"
+	NodeLocalDNSDaemonSetName       = "node-local-dns"
+	DefaultNodeLocalDNSCacheEnabled = true
 )
 
 const (
