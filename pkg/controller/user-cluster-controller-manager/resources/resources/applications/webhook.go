@@ -41,11 +41,11 @@ func ApplicationInstallationValidatingWebhookConfigurationCreator(caCert *x509.C
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.AllScopes
 
-			url := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-application-installation", resources.KubermaticWebhookServiceName, namespace)
+			url := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-application-installation", resources.UserClusterWebhookServiceName, namespace)
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
-					Name:                    "applicationdefinitions.apps.kubermatic.k8c.io", // this should be a FQDN
+					Name:                    "applicationdinstallations.apps.kubermatic.k8c.io", // this should be a FQDN
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,

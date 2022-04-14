@@ -819,7 +819,6 @@ const (
 const (
 	UserClusterWebhookDeploymentName        = "user-cluster-webhook"
 	UserClusterWebhookServiceName           = "user-cluster-webhook"
-	UserClusterWebhookServiceAccountName    = "user-cluster-webhook"
 	UserClusterWebhookServingCertSecretName = "user-cluster-webhook-serving-cert"
 )
 

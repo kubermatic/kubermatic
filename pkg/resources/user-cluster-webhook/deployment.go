@@ -66,7 +66,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 				MatchLabels: webhookPodLabels(),
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-			d.Spec.Template.Spec.ServiceAccountName = resources.UserClusterWebhookServiceAccountName
+			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{
