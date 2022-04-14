@@ -25,18 +25,18 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-8
-          command:
-            - make
-          args:
-            - test
-          resources:
-            requests:
-              memory: 7Gi
-              cpu: 2
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
+      - image: quay.io/kubermatic/build:go-1.18-node-16-0
+        command:
+        - make
+        args:
+        - test
+        resources:
+          requests:
+            memory: 7Gi
+            cpu: 2
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-test-integration
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
@@ -48,21 +48,25 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/integration-tests:5-1
-          command:
-            - make
-          args:
-            - test-integration
-          # docker-in-docker (for localstack) needs privileged mode
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 2
-            limits:
-              memory: 6Gi
-              cpu: 2
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
+      - image: quay.io/kubermatic/integration-tests:5-1
+        command:
+        - make
+        args:
+        - test-integration
+        # docker-in-docker (for localstack) needs privileged mode
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 2
+          limits:
+            memory: 6Gi
+            cpu: 2
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
+            cpu: 2
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
