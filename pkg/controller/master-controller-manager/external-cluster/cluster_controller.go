@@ -18,7 +18,6 @@ package externalcluster
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -315,7 +314,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 	}
 
 	secretData := map[string][]byte{
-		resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
+		resources.ExternalClusterKubeconfig: kubeconfig,
 	}
 
 	// update if already exists

@@ -551,8 +551,8 @@ const (
 )
 
 const (
-	// KubeOneNamespacePrefix is the main kubeone namespace prefix.
-	KubeOneNamespacePrefix = "kubeone"
+	// KubeOneNamespacePrefix is the kubeone namespace prefix.
+	KubeOneNamespacePrefix = "kubeone-"
 	// KubeOne secret names.
 	KubeOneSSHSecretName        = "ssh"
 	KubeOneManifestSecretName   = "manifest"
@@ -566,17 +566,17 @@ const (
 	ContainerRuntimeDocker     = "docker"
 	ContainerRuntimeContainerd = "containerd"
 	// KubeOne natively-supported providers.
-	KubeOneAWS              = "aws"
-	KubeOneGCP              = "gcp"
-	KubeOneAzure            = "azure"
-	KubeOneDigitalOcean     = "digitalocean"
-	KubeOneHetzner          = "hetzner"
-	KubeOneNutanix          = "nutanix"
-	KubeOneOpenStack        = "openstack"
-	KubeOneEquinix          = "equinix"
-	KubeOneVSphere          = "vsphere"
-	KubeOneImage            = "quay.io/kubermatic/kubeone"
-	KubeOneKubeConfigScript = `
+	KubeOneAWS          = "aws"
+	KubeOneGCP          = "gcp"
+	KubeOneAzure        = "azure"
+	KubeOneDigitalOcean = "digitalocean"
+	KubeOneHetzner      = "hetzner"
+	KubeOneNutanix      = "nutanix"
+	KubeOneOpenStack    = "openstack"
+	KubeOneEquinix      = "equinix"
+	KubeOneVSphere      = "vsphere"
+	KubeOneImage        = "quay.io/kubermatic/kubeone"
+	KubeOneScript       = `
 #!/usr/bin/env bash
 
 eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
@@ -584,7 +584,6 @@ printf "#!/bin/sh\necho $PASSPHRASE" > script_returning_pass
 chmod +x script_returning_pass
 DISPLAY=1 SSH_ASKPASS="./script_returning_pass" ssh-add ~/.ssh/id_rsa > /dev/null 2> /dev/null
 rm ${SSH_ASKPASS} -f
-kubeone kubeconfig -m kubeonemanifest/manifest
 			`
 )
 
@@ -615,6 +614,7 @@ const (
 	OpenstackToken                       = "token"
 	// Below OpenStack constant is added for KubeOne Clusters.
 	OpenstackAuthURL = "authURL"
+	OpenstackRegion  = "region"
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"

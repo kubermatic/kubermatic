@@ -513,6 +513,7 @@ type KubeOneOpenStackCloudSpec struct {
 	ProjectID string `json:"projectID"`
 
 	Domain string `json:"domain"`
+	Region string `json:"region"`
 }
 
 // KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.

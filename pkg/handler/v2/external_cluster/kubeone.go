@@ -33,6 +33,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -56,24 +57,21 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+	kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneNamespaceCleanupFinalizer)
 
 	err = clusterProvider.CreateOrUpdateKubeOneSSHSecret(ctx, cloud.KubeOne.SSHKey, newCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneSSHSecretCleanupFinalizer)
-
 	err = clusterProvider.CreateOrUpdateKubeOneManifestSecret(ctx, cloud.KubeOne.Manifest, newCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeOneManifestSecretCleanupFinalizer)
 
 	err = clusterProvider.CreateOrUpdateKubeOneCredentialSecret(ctx, *cloud.KubeOne.CloudSpec, newCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
 	newCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusProvisioning
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
@@ -152,15 +150,8 @@ func UpgradeKubeOneCluster(ctx context.Context,
 		return nil, fmt.Errorf("failed to update kubeone manifest secret for upgrade version %s/%s: %w", manifest.Name, manifest.Namespace, err)
 	}
 
-	oldexternalCluster := externalCluster.DeepCopy()
-	// update kubeone externalcluster status.
-	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusReconciling
 	// update api externalcluster status.
 	newCluster.Status.State = apiv2.RECONCILING
-	if err := masterClient.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
-		return nil, fmt.Errorf("failed to update kubeone cluster status %s: %w", externalCluster.Name, err)
-	}
-
 	return newCluster, nil
 }
 
@@ -180,12 +171,10 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	}
 
 	// currently only migration to containerd is supported
-	supportedMigrationContainerRuntimes := map[string]struct{}{
-		"containerd": {},
-	}
-	if _, isSupported := supportedMigrationContainerRuntimes[wantedContainerRuntime]; !isSupported {
+	if !sets.NewString("containerd").Has(wantedContainerRuntime) {
 		return nil, fmt.Errorf("Operation not supported: Only migration from docker to containerd is supported: %s", wantedContainerRuntime)
 	}
+
 	manifestSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
 		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
@@ -211,15 +200,8 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 		return nil, fmt.Errorf("failed to update kubeone manifest secret for container-runtime containerd %s/%s: %w", manifest.Name, manifest.Namespace, err)
 	}
 
-	oldexternalCluster := externalCluster.DeepCopy()
-	// update kubeone externalcluster status.
-	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusReconciling
 	// update api externalcluster status.
 	newCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.RECONCILING}
-
-	if err := masterClient.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
-		return nil, fmt.Errorf("failed to update kubeone cluster status %s: %w", externalCluster.Name, err)
-	}
 
 	return newCluster, nil
 }

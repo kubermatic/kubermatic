@@ -32,6 +32,9 @@ type KubeOneOpenStackCloudSpec struct {
 	// ProjectID, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
 
+	// region
+	Region string `json:"region,omitempty"`
+
 	// username
 	Username string `json:"username,omitempty"`
 }

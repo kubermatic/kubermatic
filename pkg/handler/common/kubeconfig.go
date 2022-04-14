@@ -110,12 +110,7 @@ func GetKubeconfigEndpoint(ctx context.Context, cluster *kubermaticv1.ExternalCl
 		return nil, err
 	}
 
-	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-	if err != nil {
-		panic(fmt.Sprintf("Invalid base64 string %q", rawKubeconfig))
-	}
-
-	cfg, err := clientcmd.Load(kubeconfig)
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
 	}
