@@ -111,7 +111,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 				{
 					Name:    resources.UserClusterControllerDeploymentName,
 					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
-					Command: []string{"usercluster-webhook"},
+					Command: []string{"user-cluster-webhook"},
 					Args:    args,
 					Ports: []corev1.ContainerPort{
 						{
