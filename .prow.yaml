@@ -26,7 +26,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-0
         command:
         - make
         args:
@@ -77,7 +77,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-0
         command:
         - ./hack/ci/verify.sh
         resources:
@@ -138,7 +138,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-0
         command:
         - ./hack/ci/test-github-release.sh
         resources:
@@ -158,7 +158,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
           command:
             - "./hack/ci/test-helm-charts.sh"
           env:
@@ -183,7 +183,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -221,7 +221,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -263,7 +263,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -305,7 +305,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -347,7 +347,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: "ce"
@@ -391,7 +391,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: "ee"
@@ -438,7 +438,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -484,7 +484,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -527,7 +527,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -575,7 +575,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -618,7 +618,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -661,7 +661,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -704,7 +704,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -747,7 +747,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -792,7 +792,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -837,7 +837,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -883,7 +883,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -927,7 +927,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -973,7 +973,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1019,7 +1019,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1063,7 +1063,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1113,7 +1113,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         command:
         - "./hack/ci/run-api-e2e.sh"
         env:
@@ -1153,7 +1153,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-5
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
@@ -1194,7 +1194,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-5
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
@@ -1237,7 +1237,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         command:
         - "./hack/ci/run-etcd-launcher-tests.sh"
         env:
@@ -1275,7 +1275,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         command:
         - ./hack/run-nodeport-proxy-e2e-test-in-kind.sh
         securityContext:
@@ -1307,7 +1307,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
@@ -1345,7 +1345,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         command:
         - ./hack/run-expose-strategy-e2e-test-in-kind.sh
         securityContext:
@@ -1377,7 +1377,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -1459,7 +1459,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+      - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
         command:
         - "./hack/ci/run-offline-test.sh"
         # docker-in-docker needs privileged mode
@@ -1493,7 +1493,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-0
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
