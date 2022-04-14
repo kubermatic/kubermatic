@@ -216,7 +216,7 @@ require (
 	go.etcd.io/etcd/pkg/v3 v3.5.3 // indirect
 	go.etcd.io/etcd/raft/v3 v3.5.3 // indirect
 	go.etcd.io/etcd/server/v3 v3.5.3 // indirect
-	go.mongodb.org/mongo-driver v1.8.2 // indirect
+	go.mongodb.org/mongo-driver v1.5.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/contrib v0.20.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0 // indirect
