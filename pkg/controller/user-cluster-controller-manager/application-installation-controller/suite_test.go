@@ -29,6 +29,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/applications/fake"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,6 +44,10 @@ var userClient ctrlruntimeclient.Client
 var ctx context.Context
 var cancel context.CancelFunc
 var applicationInstallerRecorder fake.ApplicationInstallerRecorder
+
+const (
+	ApplicationNamespace = "apps"
+)
 
 func TestApplicationInstallerController(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -70,8 +78,18 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	userClient = mgr.GetClient()
+	userClient, err = ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
+	Expect(err).ToNot(HaveOccurred())
+	Expect(userClient).ToNot(BeNil())
+
 	applicationInstallerRecorder = fake.ApplicationInstallerRecorder{}
+
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: ApplicationNamespace,
+		},
+	}
+	Expect(userClient.Create(ctx, ns)).To(Succeed())
 
 	err = Add(ctx, kubermaticlog.Logger, mgr, mgr, func(ctx context.Context) (bool, error) {
 		return false, nil
@@ -87,8 +105,24 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	// stop controller
+	cleanupAppsNamespace()
 	cancel()
 	By("tearing down the test environment")
+
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func cleanupAppsNamespace() {
+	ns := &corev1.Namespace{}
+	err := userClient.Get(ctx, types.NamespacedName{Name: ApplicationNamespace}, ns)
+	if err != nil && !kerrors.IsNotFound(err) {
+		Fail(err.Error())
+	}
+
+	// Delete ns if it exists
+	err = userClient.Delete(ctx, ns)
+	if err != nil && !kerrors.IsNotFound(err) {
+		Fail(err.Error())
+	}
+}

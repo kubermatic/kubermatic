@@ -56,8 +56,8 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0")).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-1"}},
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-3"}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-1", Namespace: "apps"}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-3", Namespace: "apps"}},
 			},
 		},
 		{
@@ -148,7 +148,7 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 	return &appkubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "default",
+			Namespace: "apps",
 		},
 		Spec: appkubermaticv1.ApplicationInstallationSpec{
 			Namespace: appkubermaticv1.NamespaceSpec{
