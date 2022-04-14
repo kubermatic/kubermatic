@@ -239,15 +239,6 @@ const (
 	// The cluster-name flag is often used for naming cloud resources, such as load balancers.
 	ClusterFeatureCCMClusterName = "ccmClusterName"
 
-	// ClusterFeatureVsphereCSIClusterID sets the cluster-id in the vSphere CSI config to
-	// the name of the user cluster. Originally, we have been setting cluster-id to the
-	// vSphere Compute Cluster name (provided via the Datacenter object), however,
-	// this is supposed to identify the Kubernetes cluster, therefore it must be unique.
-	// This feature flag is enabled by default for new vSphere clusters, while existing
-	// vSphere clusters must be migrated manually (preferably by following advice here:
-	// https://kb.vmware.com/s/article/84446).
-	ClusterFeatureVsphereCSIClusterID = "vsphereCSIClusterID"
-
 	// ClusterFeatureEtcdLauncher enables features related to the experimental etcd-launcher. This includes user-cluster
 	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
