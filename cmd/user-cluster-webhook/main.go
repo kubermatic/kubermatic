@@ -24,15 +24,17 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func main() {
@@ -61,7 +63,7 @@ func main() {
 
 	// say hello
 	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "Webhook", options.log.Debug, &versions)
+	cli.Hello(log, "User Cluster Webhook", options.log.Debug, &versions)
 
 	// /////////////////////////////////////////
 	// get kubeconfig
