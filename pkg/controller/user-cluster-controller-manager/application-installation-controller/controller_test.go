@@ -147,7 +147,8 @@ func genApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 func genApplicationInstallation(name string, applicationDefName string, appVersion string) *appkubermaticv1.ApplicationInstallation {
 	return &appkubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: "default",
 		},
 		Spec: appkubermaticv1.ApplicationInstallationSpec{
 			Namespace: appkubermaticv1.NamespaceSpec{
