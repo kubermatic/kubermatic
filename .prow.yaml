@@ -17,27 +17,6 @@ presubmits:
   # unit tests
   #########################################################
 
-  - name: pre-kubermatic-test
-    run_if_changed: "^(cmd|codegen|hack|pkg)/"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-8
-          command:
-            - make
-          args:
-            - test
-          resources:
-            requests:
-              memory: 7Gi
-              cpu: 2
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-
   - name: pre-kubermatic-test-integration
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true

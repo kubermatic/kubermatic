@@ -32,6 +32,7 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export CGO_ENABLED=1
 
+SKIP_AWS_PROVIDER=true
 LOCALSTACK_TAG="${LOCALSTACK_TAG:-0.12.19}"
 LOCALSTACK_IMAGE="${LOCALSTACK_IMAGE:-localstack/localstack:$LOCALSTACK_TAG}"
 

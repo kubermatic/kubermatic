@@ -80,7 +80,7 @@ var _ = BeforeSuite(func() {
 
 	userClient, err = ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
-	Expect(err).ToNot(BeNil())
+	Expect(err).To(BeNil())
 
 	applicationInstallerRecorder = fake.ApplicationInstallerRecorder{}
 
