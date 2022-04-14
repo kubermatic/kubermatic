@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type appOptions struct {

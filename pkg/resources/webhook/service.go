@@ -24,9 +24,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	certutil "k8s.io/client-go/util/cert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 // ServiceCreator returns the function to reconcile the usercluster webhook service.
@@ -111,4 +111,3 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 		}
 	}
 }
-
