@@ -61,5 +61,5 @@ spec:
       volumes:
       - name: webhook-serving-cert
         secret:
-          secretName: machine-webhook-serving-cert
+          secretName: user-cluster-webhook-serving-cert
 status: {}
