@@ -652,6 +652,13 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 				}
 				machineDeployment = *np
 			}
+			if cloud.KubeOne != nil {
+				md, err := getKubeOneMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
+				if err != nil {
+					return nil, err
+				}
+				machineDeployment = *createAPIMachineDeployment(md)
+			}
 		}
 
 		return machineDeployment, nil
@@ -717,6 +724,18 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 					return nil, err
 				}
 				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cluster.Spec.CloudSpec)
+			}
+			if cloud.KubeOne != nil {
+				machineDeployment, err := getKubeOneMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
+				if err != nil {
+					return nil, err
+				}
+				md := createAPIMachineDeployment(machineDeployment)
+				mdToPatch.NodeDeployment = md.NodeDeployment
+				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+					return nil, err
+				}
+				return patchKubeOneMachineDeployment(ctx, machineDeployment, &mdToPatch, &patchedMD, cluster, clusterProvider)
 			}
 		}
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")

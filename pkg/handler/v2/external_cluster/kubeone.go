@@ -21,10 +21,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Azure/go-autorest/autorest/to"
+
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -32,6 +37,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -224,4 +231,59 @@ func checkContainerRuntime(ctx context.Context,
 		}
 	}
 	return "", fmt.Errorf("Failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
+}
+
+func createAPIMachineDeployment(md *clusterv1alpha1.MachineDeployment) *apiv2.ExternalClusterMachineDeployment {
+	apimd := apiv2.ExternalClusterMachineDeployment{
+		NodeDeployment: apiv1.NodeDeployment{
+			ObjectMeta: apiv1.ObjectMeta{
+				ID:   md.Name,
+				Name: md.Name,
+			},
+			Spec: apiv1.NodeDeploymentSpec{
+				Replicas: to.Int32(md.Spec.Replicas),
+				Template: apiv1.NodeSpec{
+					Versions: apiv1.NodeVersionInfo{
+						Kubelet: to.String(&md.Spec.Template.Spec.Versions.Kubelet),
+					},
+				},
+			},
+			Status: clusterv1alpha1.MachineDeploymentStatus{
+				Replicas:      md.Status.Replicas,
+				ReadyReplicas: md.Status.ReadyReplicas,
+			},
+		},
+	}
+
+	return &apimd
+}
+
+func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeployment, error) {
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+	if err := userClusterClient.Get(ctx, types.NamespacedName{Name: mdName, Namespace: metav1.NamespaceSystem}, machineDeployment); err != nil && !meta.IsNoMatchError(err) {
+		return nil, fmt.Errorf("failed to get MachineDeployment: %w", err)
+	}
+	return machineDeployment, nil
+}
+
+func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+	currentVersion := oldmd.NodeDeployment.Spec.Template.Versions.Kubelet
+	desiredVersion := newmd.NodeDeployment.Spec.Template.Versions.Kubelet
+	if desiredVersion != currentVersion {
+		machineDeployment.Spec.Template.Spec.Versions.Kubelet = newmd.NodeDeployment.Spec.Template.Versions.Kubelet
+		userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
+		if err != nil {
+			return nil, err
+		}
+		if err := userClusterClient.Update(ctx, machineDeployment); err != nil && !meta.IsNoMatchError(err) {
+			return nil, fmt.Errorf("failed to update MachineDeployment: %w", err)
+		}
+		return newmd, nil
+	}
+
+	return oldmd, nil
 }
