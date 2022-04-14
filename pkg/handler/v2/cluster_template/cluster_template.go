@@ -380,6 +380,10 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateProjectLabelKey] = project.Name
 	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] = scope
 	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey] = name
+	if val, ok := partialCluster.Labels[kubermaticv1.IsCredentialPresetLabelKey]; ok {
+		newClusterTemplate.Labels[kubermaticv1.IsCredentialPresetLabelKey] = val
+		newClusterTemplate.Annotations[kubermaticv1.PresetNameAnnotation] = partialCluster.Annotations[kubermaticv1.PresetNameAnnotation]
+	}
 
 	// SSH check
 	if len(userSSHKeys) > 0 && scope == kubermaticv1.ProjectClusterTemplateScope {

@@ -9766,6 +9766,50 @@
         }
       }
     },
+    "/api/v2/presets/{preset_name}/stats": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "summary": "Gets presets stats.",
+        "operationId": "getPresetStats",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PresetStats",
+            "schema": {
+              "$ref": "#/definitions/PresetStats"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "404": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/presets/{preset_name}/status": {
       "put": {
         "consumes": [
@@ -13435,13 +13479,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13453,6 +13490,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -27642,6 +27686,23 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "PresetStats": {
+      "description": "PresetStats represents a preset statistics",
+      "type": "object",
+      "properties": {
+        "associatedClusterTemplates": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "AssociatedClusterTemplates"
+        },
+        "associatedClusters": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "AssociatedClusters"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Project": {
       "description": "Project is a top-level container for a set of resources",

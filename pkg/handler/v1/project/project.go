@@ -575,7 +575,7 @@ func getNumberOfClusters(ctx context.Context, clusterProviderGetter provider.Clu
 		if err != nil {
 			return nil, kubermaticerrors.NewNotFound("cluster-provider", datacenter)
 		}
-		clusters, err := clusterProvider.ListAll(ctx)
+		clusters, err := clusterProvider.ListAll(ctx, nil)
 		if err != nil {
 			return clustersNumber, err
 		}
