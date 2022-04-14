@@ -86,7 +86,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, us
 			if err != nil {
 				return nil, err
 			}
-			return handlercommon.GetKubeOneUpgradesEndpoint(ctx, cluster, version.String(), configGetter)
+			return handlercommon.GetKubeOneUpgradesEndpoint(ctx, cluster, version, configGetter)
 		}
 
 		return nil, fmt.Errorf("can not find any upgrades for the given cloud provider")

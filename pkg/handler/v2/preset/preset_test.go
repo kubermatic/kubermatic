@@ -26,6 +26,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
@@ -1470,6 +1471,80 @@ func TestDeletePreset(t *testing.T) {
 			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
 				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
 			}
+		})
+	}
+}
+
+func TestPresetStats(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		PresetName             string
+		HTTPStatus             int
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExpectedResponse       string
+	}{
+		{
+			Name:             "scenario 1: test preset stats when cluster and template created with preset",
+			ExpectedResponse: `{"associatedClusters":1,"associatedClusterTemplates":1}`,
+			PresetName:       test.GenDefaultPreset().Name,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+				test.GenDefaultOwnerBinding(),
+				test.GenDefaultPreset(),
+				func() *kubermaticv1.Cluster {
+					c := test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					c.Labels[kubermaticv1.IsCredentialPresetLabelKey] = "true"
+					c.Annotations = map[string]string{kubermaticv1.PresetNameAnnotation: test.GenDefaultPreset().Name}
+					return c
+				}(),
+				func() *kubermaticv1.ClusterTemplate {
+					t := test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email)
+					t.Labels[kubermaticv1.IsCredentialPresetLabelKey] = "true"
+					t.Annotations = map[string]string{kubermaticv1.PresetNameAnnotation: test.GenDefaultPreset().Name}
+					return t
+				}(),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 2: cluster and template created with credentials",
+			ExpectedResponse: `{"associatedClusters":0,"associatedClusterTemplates":0}`,
+			PresetName:       test.GenDefaultPreset().Name,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+				test.GenDefaultOwnerBinding(),
+				test.GenDefaultPreset(),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/presets/%s/stats", tc.PresetName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			var kubermaticObj []ctrlruntimeclient.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint: %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}
 }

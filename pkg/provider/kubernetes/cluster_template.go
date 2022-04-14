@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -158,4 +159,20 @@ func (p *ClusterTemplateProvider) Delete(ctx context.Context, userInfo *provider
 	}
 
 	return p.clientPrivileged.Delete(ctx, result)
+}
+
+func (p *ClusterTemplateProvider) ListALL(ctx context.Context, labelSelector labels.Selector) ([]kubermaticv1.ClusterTemplate, error) {
+	optionsLabelSelector := labels.Everything()
+	if labelSelector != nil {
+		optionsLabelSelector = labelSelector
+	}
+
+	globalUserResult := &kubermaticv1.ClusterTemplateList{}
+	if err := p.clientPrivileged.List(ctx, globalUserResult, ctrlruntimeclient.MatchingLabelsSelector{
+		Selector: optionsLabelSelector,
+	}); err != nil {
+		return nil, err
+	}
+
+	return globalUserResult.Items, nil
 }
