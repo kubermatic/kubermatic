@@ -56,7 +56,7 @@ func webhookPodLabels() map[string]string {
 	}
 }
 
-// DeploymentCreator returns the function to create and update the user cluster webhook deployment
+// DeploymentCreator returns the function to create and update the user cluster webhook deployment.
 func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterWebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
