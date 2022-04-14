@@ -37,6 +37,7 @@ COPY ./_build/image-loader \
      ./_build/master-controller-manager \
      ./_build/seed-controller-manager \
      ./_build/user-cluster-controller-manager \
+     ./_build/user-cluster-webhook \
      /usr/local/bin/
 
 COPY ./cmd/kubermatic-api/swagger.json /opt/swagger.json
