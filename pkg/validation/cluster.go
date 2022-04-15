@@ -100,6 +100,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
+	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryption")); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
 	return allErrs
 }
 
@@ -205,6 +209,10 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, err)
 	}
 
+	if errs := validateEncryptionUpdate(newCluster, oldCluster); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
 	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("typeMeta"), "type meta cannot be changed"))
 	}
@@ -272,6 +280,63 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("proxyMode"), n.ProxyMode,
 			fmt.Sprintf("%s proxy mode can be used only when Konnectivity is enabled", resources.EBPFProxyMode)))
+	}
+
+	return allErrs
+}
+
+func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if spec.EncryptionConfiguration != nil && spec.EncryptionConfiguration.Enabled {
+		if enabled, ok := spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]; !ok || !enabled {
+			allErrs = append(allErrs, field.Forbidden(fieldPath.Child("enabled"),
+				fmt.Sprintf("cannot enable encryption configuration if feature gate '%s' is not set", kubermaticv1.ClusterFeatureEncryptionAtRest)))
+		}
+
+		// TODO: Update with implementations of other encryption providers (KMS)
+
+		if spec.EncryptionConfiguration.Secretbox == nil {
+			allErrs = append(allErrs, field.Required(fieldPath.Child("secretbox"),
+				"exactly one encryption provider (secretbox, kms) needs to be configured"))
+		}
+
+		for i, key := range spec.EncryptionConfiguration.Secretbox.Keys {
+			childPath := fieldPath.Child("secretbox", "keys").Index(i)
+			if key.Name == "" {
+				allErrs = append(allErrs, field.Required(childPath.Child("name"),
+					"secretbox key name is required"))
+			}
+
+			if key.Value == "" && key.SecretRef == nil {
+				allErrs = append(allErrs, field.Required(childPath,
+					"either 'value' or 'secretRef' must be set"))
+			}
+
+			if key.Value != "" && key.SecretRef != nil {
+				allErrs = append(allErrs, field.Invalid(childPath, key,
+					"'value' and 'secretRef' cannot be set at the same time"))
+			}
+		}
+
+		// END TODO
+	}
+
+	return allErrs
+}
+
+func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kubermaticv1.Cluster) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if enabled, ok := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]; ok && enabled {
+		if oldCluster.Status.Encryption != nil {
+			if oldCluster.Status.Encryption.Phase != "" && oldCluster.Status.Encryption.Phase != kubermaticv1.ClusterEncryptionPhaseActive {
+				if !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration, newCluster.Spec.EncryptionConfiguration) {
+					allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "encryptionConfiguration"),
+						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase)))
+				}
+			}
+		}
 	}
 
 	return allErrs
