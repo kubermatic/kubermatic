@@ -117,9 +117,8 @@ logging)
   ;;
 
 kubermatic)
-
-  if [ -n "${DOCKER_CONFIG:-}" ]; then
-    yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $DOCKER_CONFIG)"
+  if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
+    yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $IMAGE_PULL_SECRET)"
   fi
 
   # Kubermatic
