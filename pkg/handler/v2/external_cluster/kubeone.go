@@ -213,7 +213,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	return newCluster, nil
 }
 
-func checkContainerRuntime(ctx context.Context,
+func CheckContainerRuntime(ctx context.Context,
 	externalCluster *kubermaticv1.ExternalCluster,
 	externalClusterProvider provider.ExternalClusterProvider,
 ) (string, error) {
