@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"go.uber.org/zap"
 
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // validator for validating Kubermatic Machine CRD.
