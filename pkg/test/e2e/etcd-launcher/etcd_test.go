@@ -130,7 +130,10 @@ func TestBackup(t *testing.T) {
 	if err := enableLauncher(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
-	waitForQuorum(t)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 
 	// restore from backup
 	if err := restoreBackup(ctx, t, client, cluster, backup); err != nil {
@@ -138,7 +141,9 @@ func TestBackup(t *testing.T) {
 	}
 	t.Log("restored etcd backup")
 
-	waitForQuorum(t)
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 
 	// check if resource was restored
 	restoredNamespace := &corev1.Namespace{}
@@ -199,17 +204,26 @@ func TestScaling(t *testing.T) {
 	if err := enableLauncher(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
-	waitForQuorum(t)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 
 	if err := scaleUp(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to scale up: %v", err)
 	}
-	waitForQuorum(t)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 
 	if err := scaleDown(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to scale down: %v", err)
 	}
-	waitForQuorum(t)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 
 	if err := disableLauncher(ctx, t, client, cluster); err != nil {
 		t.Fatalf("succeeded in disabling immutable feature etcd-launcher: %v", err)
@@ -265,17 +279,26 @@ func TestRecovery(t *testing.T) {
 	if err := enableLauncher(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to enable etcd-launcher: %v", err)
 	}
-	waitForQuorum(t)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 
 	if err := breakAndRecoverPV(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to test volume recovery: %v", err)
 	}
-	waitForQuorum(t)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 
 	if err := breakAndRecoverPVC(ctx, t, client, cluster); err != nil {
 		t.Fatalf("failed to recover from PVC deletion: %v", err)
 	}
-	waitForQuorum(t)
+
+	if err := waitForClusterHealthy(ctx, t, client, cluster); err != nil {
+		t.Fatalf("cluster did not become healthy: %v", err)
+	}
 }
 
 func createBackup(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (error, *kubermaticv1.EtcdBackupConfig) {
@@ -590,6 +613,9 @@ func waitForEtcdRestore(ctx context.Context, t *testing.T, client ctrlruntimecli
 }
 
 func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	// let's briefly sleep to give controllers a chance to kick in
+	time.Sleep(10 * time.Second)
+
 	before := time.Now()
 
 	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
@@ -653,12 +679,6 @@ func waitForRollout(ctx context.Context, t *testing.T, client ctrlruntimeclient.
 	}
 
 	return nil
-}
-
-// TODO: Make this much smarter.
-func waitForQuorum(t *testing.T) {
-	t.Log("waiting for etcd to regain quorum...")
-	time.Sleep(2 * time.Minute)
 }
 
 func forceDeleteEtcdPV(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
