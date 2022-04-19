@@ -48,10 +48,10 @@ func (r getNetworkDefaultsReq) Validate() error {
 		return fmt.Errorf("the provider name cannot be empty")
 	}
 	if !kubermaticv1.IsProviderSupported(r.ProviderName) {
-		return fmt.Errorf("invalid provider name %s", r.ProviderName)
+		return fmt.Errorf("unsupported provider: %q", r.ProviderName)
 	}
 	if r.CNIPluginType == "" {
-		return fmt.Errorf("the CNI plugin type cannot be empty")
+		return fmt.Errorf("CNI plugin type cannot be empty")
 	}
 	if !cni.GetSupportedCNIPlugins().Has(r.CNIPluginType) {
 		return fmt.Errorf("CNI plugin type %q not supported. Supported types: %v", r.CNIPluginType, cni.GetSupportedCNIPlugins().List())
