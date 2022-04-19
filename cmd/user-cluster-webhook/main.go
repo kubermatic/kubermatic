@@ -30,9 +30,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	applicationinstallationvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/validation"
+	machinevalidation "k8c.io/kubermatic/v2/pkg/webhook/machine/validation"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -97,10 +99,16 @@ func main() {
 	}
 
 	// /////////////////////////////////////////
-	// setup Application webhooks
+	// setup webhooks
 
 	// Setup the validation admission handler for ApplicationInstallation CRDs
 	applicationinstallationvalidation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
+
+	// Setup Machine Webhook
+	machineValidator := machinevalidation.NewValidator(mgr.GetClient(), log)
+	if err := builder.WebhookManagedBy(mgr).For(&clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup Machine validation webhook", zap.Error(err))
+	}
 
 	// /////////////////////////////////////////
 	// Start manager
