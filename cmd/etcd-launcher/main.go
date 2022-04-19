@@ -125,9 +125,11 @@ func main() {
 	}
 
 	thisMember, err := e.getMemberByName(e.podName, log)
-	if err != nil {
+
+	switch {
+	case err != nil:
 		log.Warnw("failed to check cluster membership", zap.Error(err))
-	} else if thisMember != nil {
+	case thisMember != nil:
 		log.Infof("%v is a member", thisMember.GetPeerURLs())
 
 		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); errors.Is(err, fs.ErrNotExist) {
@@ -149,7 +151,7 @@ func main() {
 				log.Panicw("join cluster as fresh member", zap.Error(err))
 			}
 		}
-	} else {
+	default:
 		// if no membership information was found but we were able to list from an etcd cluster, we can attempt to join
 		if err := joinCluster(e, log); err != nil {
 			log.Panicw("failed to join cluster as fresh member", zap.Error(err))
