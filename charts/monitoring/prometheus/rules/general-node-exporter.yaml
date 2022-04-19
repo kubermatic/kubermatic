@@ -179,7 +179,7 @@ groups:
           and
           node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.4
           and
-          node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
+          node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
         for: 1h
         labels:
           severity: warning
@@ -194,7 +194,7 @@ groups:
           and
           node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.2
           and
-          node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
+          node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
         for: 1h
         labels:
           severity: critical
@@ -202,26 +202,26 @@ groups:
           service: 'node-exporter'
       - alert: NodeFilesystemOutOfSpace
         annotations:
-          message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available space left.
+          message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemoutofspace
         expr: |
-          node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
+          node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
           and
-          node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
-        for: 1h
+          node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+        for: 30m
         labels:
           severity: warning
           resource: '{{ $labels.instance }} {{ $labels.device }}'
           service: 'node-exporter'
       - alert: NodeFilesystemOutOfSpace
         annotations:
-          message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available space left.
+          message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemoutofspace
         expr: |
-          node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 3
+          node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
           and
-          node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
-        for: 1h
+          node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+        for: 10m
         labels:
           severity: critical
           resource: '{{ $labels.instance }} {{ $labels.device }}'
@@ -271,10 +271,10 @@ groups:
           service: 'node-exporter'
       - alert: NodeFilesystemOutOfSpace
         annotations:
-          message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available space left.
+          message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemoutofspace
         expr: |
-          node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 3
+          node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
           and
           node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
         for: 1h
