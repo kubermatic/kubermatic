@@ -533,6 +533,16 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 	return false
 }
 
+// IsEncryptionConfigurationEnabled returns whether encryption-at-rest is configured or not.
+func (d *TemplateData) IsEncryptionConfigurationEnabled() bool {
+	return d.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest] && d.Cluster().Spec.EncryptionConfiguration != nil && d.Cluster().Spec.EncryptionConfiguration.Enabled
+}
+
+// IsEncryptionActive returns whether encryption-at-rest is active on this cluster. Might return a different result than `IsEncryptionConfigurationEnabled()`.
+func (d *TemplateData) IsEncryptionActive() bool {
+	return d.Cluster().Status.Encryption.ActiveKey != "" || d.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
+}
+
 func UnwrapCommand(container corev1.Container) (found bool, command httpproberapi.Command) {
 	for i, arg := range container.Args {
 		kubermaticlog.Logger.Debugw("unwrap command processing argument", "arg", arg)

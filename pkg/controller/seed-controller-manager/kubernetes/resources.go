@@ -402,6 +402,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		)
 	}
 
+	if data.IsEncryptionConfigurationEnabled() {
+		creators = append(creators, apiserver.EncryptionConfigurationSecretCreator(data))
+	}
+
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
 		creators = append(creators, resources.GetInternalKubeconfigCreator(
 			namespace, resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data, r.log,
