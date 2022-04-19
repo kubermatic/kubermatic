@@ -299,23 +299,23 @@ func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *
 		if spec.EncryptionConfiguration.Secretbox == nil {
 			allErrs = append(allErrs, field.Required(fieldPath.Child("secretbox"),
 				"exactly one encryption provider (secretbox, kms) needs to be configured"))
-		}
+		} else {
+			for i, key := range spec.EncryptionConfiguration.Secretbox.Keys {
+				childPath := fieldPath.Child("secretbox", "keys").Index(i)
+				if key.Name == "" {
+					allErrs = append(allErrs, field.Required(childPath.Child("name"),
+						"secretbox key name is required"))
+				}
 
-		for i, key := range spec.EncryptionConfiguration.Secretbox.Keys {
-			childPath := fieldPath.Child("secretbox", "keys").Index(i)
-			if key.Name == "" {
-				allErrs = append(allErrs, field.Required(childPath.Child("name"),
-					"secretbox key name is required"))
-			}
+				if key.Value == "" && key.SecretRef == nil {
+					allErrs = append(allErrs, field.Required(childPath,
+						"either 'value' or 'secretRef' must be set"))
+				}
 
-			if key.Value == "" && key.SecretRef == nil {
-				allErrs = append(allErrs, field.Required(childPath,
-					"either 'value' or 'secretRef' must be set"))
-			}
-
-			if key.Value != "" && key.SecretRef != nil {
-				allErrs = append(allErrs, field.Invalid(childPath, key,
-					"'value' and 'secretRef' cannot be set at the same time"))
+				if key.Value != "" && key.SecretRef != nil {
+					allErrs = append(allErrs, field.Invalid(childPath, key,
+						"'value' and 'secretRef' cannot be set at the same time"))
+				}
 			}
 		}
 
