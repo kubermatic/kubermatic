@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/distribution/distribution/v3/reference"
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"

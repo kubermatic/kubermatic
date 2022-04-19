@@ -35,7 +35,7 @@ helm upgrade \
 
 if ! which cmctl; then
   echodate "Downloading cmctl..."
-  OS=$(go env GOOS); ARCH=$(go env GOARCH); curl -sLo cmctl.tar.gz https://github.com/jetstack/cert-manager/releases/latest/download/cmctl-$OS-$ARCH.tar.gz
+  OS=$(go env GOOS); ARCH=$(go env GOARCH); curl -sLo cmctl.tar.gz https://github.com/cert-manager/cert-manager/releases/latest/download/cmctl-$OS-$ARCH.tar.gz
   tar xzf cmctl.tar.gz
 
   function cmctl_cleanup {

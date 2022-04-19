@@ -14,6 +14,7 @@ require (
 	github.com/anexia-it/go-anxcloud v0.3.26
 	github.com/aws/aws-sdk-go v1.43.12
 	github.com/aws/aws-sdk-go-v2/service/eks v1.18.0
+	github.com/cert-manager/cert-manager v1.8.0
 	github.com/cilium/cilium v1.11.1
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
@@ -43,7 +44,6 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/hetznercloud/hcloud-go v1.33.1
 	github.com/imdario/mergo v0.3.12
-	github.com/jetstack/cert-manager v1.7.1
 	github.com/kubermatic/grafanasdk v0.9.12
 	github.com/kubermatic/machine-controller v1.47.0
 	github.com/minio/minio-go/v7 v7.0.13
@@ -128,7 +128,7 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
-	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/BurntSushi/toml v0.4.1 // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -208,11 +208,11 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/minio/md5-simd v1.1.0 // indirect
 	github.com/minio/sha256-simd v0.1.1 // indirect
-	github.com/mitchellh/copystructure v1.1.1 // indirect
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
-	github.com/mitchellh/reflectwalk v1.0.1 // indirect
+	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20210610120745-9d4ed1856297 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -283,6 +283,7 @@ require (
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kubelet v0.22.2 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk v0.2.1 // indirect
+	sigs.k8s.io/gateway-api v0.4.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
 	sigs.k8s.io/kustomize/api v0.10.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.0 // indirect
