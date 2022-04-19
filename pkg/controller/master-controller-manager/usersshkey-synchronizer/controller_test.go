@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package usersshkeyssynchronizer
+package usersshkeysynchronizer
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 			name: "Test cleanup cluster ids in UserSSHKey on cluster deletion",
 			reconciler: &Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				client: fakectrlruntimeclient.NewClientBuilder().WithObjects(
+				masterClient: fakectrlruntimeclient.NewClientBuilder().WithObjects(
 					&kubermaticv1.UserSSHKey{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "test_user_ssh_keys",
@@ -100,7 +100,7 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 
 			userSSHKey := &kubermaticv1.UserSSHKey{}
 			identifier := types.NamespacedName{Namespace: "test_namespace", Name: "test_user_ssh_keys"}
-			if err := tc.reconciler.client.Get(ctx, identifier, userSSHKey); err != nil {
+			if err := tc.reconciler.masterClient.Get(ctx, identifier, userSSHKey); err != nil {
 				t.Fatalf("failed to get usersshkey: %v", err)
 			}
 
