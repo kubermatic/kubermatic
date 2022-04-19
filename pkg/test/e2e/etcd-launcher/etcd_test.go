@@ -613,10 +613,10 @@ func waitForEtcdRestore(ctx context.Context, t *testing.T, client ctrlruntimecli
 }
 
 func waitForClusterHealthy(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	before := time.Now()
+
 	// let's briefly sleep to give controllers a chance to kick in
 	time.Sleep(10 * time.Second)
-
-	before := time.Now()
 
 	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
 		// refresh cluster object for updated health status
