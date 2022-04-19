@@ -14,10 +14,9 @@
 
 helmExporter:
   replicas: 1
-  tillerNamespace: kubermatic-installer
   image:
     repository: docker.io/sstarcher/helm-exporter
-    tag: 0.4.3
+    tag: 1.2.2
     pullPolicy: IfNotPresent
   nameOverride: ''
 

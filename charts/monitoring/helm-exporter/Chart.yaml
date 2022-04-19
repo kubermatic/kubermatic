@@ -15,7 +15,7 @@
 apiVersion: v1
 name: helm-exporter
 version: v9.9.9-dev
-appVersion: 0.4.3
+appVersion: 1.2.2
 description: Exports Helm release information to Prometheus
 keywords:
   - kubermatic
