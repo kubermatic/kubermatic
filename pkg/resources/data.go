@@ -540,6 +540,10 @@ func (d *TemplateData) IsEncryptionConfigurationEnabled() bool {
 
 // IsEncryptionActive returns whether encryption-at-rest is active on this cluster. Might return a different result than `IsEncryptionConfigurationEnabled()`.
 func (d *TemplateData) IsEncryptionActive() bool {
+	if d.Cluster().Status.Encryption == nil {
+		return false
+	}
+
 	return d.Cluster().Status.Encryption.ActiveKey != "" || d.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
 }
 
