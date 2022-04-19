@@ -14,6 +14,12 @@
 
 helmExporter:
   replicas: 1
+  args:
+    # many of the charts in the KKP distribution are not from public registries,
+    # making these scans pointless
+    - -latest-chart-version=false
+    - -interval-duration=5m
+    - -namespaces-ignore=cluster-.*,kubeone-.*
   image:
     repository: docker.io/sstarcher/helm-exporter
     tag: 1.2.2
@@ -23,10 +29,10 @@ helmExporter:
   resources:
     requests:
       cpu: 50m
-      memory: 32Mi
-    limits:
-      cpu: 250m
       memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
   nodeSelector: {}
   tolerations: []
   affinity: {}
