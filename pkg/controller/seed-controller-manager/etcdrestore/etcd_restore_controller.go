@@ -144,6 +144,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	if !cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
+		return reconcile.Result{}, fmt.Errorf("etcdLauncher not enabled on cluster: %q", cluster.Name)
+	}
+
 	if cluster.Status.NamespaceName == "" {
 		log.Debug("Cluster has no namespace name yet, skipping")
 		return reconcile.Result{}, nil
