@@ -108,6 +108,12 @@ type Cluster struct {
 
 	Spec   ClusterSpec   `json:"spec,omitempty"`
 	Status ClusterStatus `json:"status,omitempty"`
+
+	// Address contains the IPs/URLs to access the cluster control plane.
+	// This field is optional and replaced by the identical struct in the
+	// ClusterStatus. No code should rely on these fields anymore.
+	// +optional
+	Address ClusterAddress `json:"address,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
