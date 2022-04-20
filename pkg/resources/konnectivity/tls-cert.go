@@ -57,9 +57,9 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			altNames := certutil.AltNames{
 				DNSNames: []string{
 					// external address - nodeport / LB expose strategy
-					data.Cluster().Address.ExternalName,
+					data.Cluster().Status.Address.ExternalName,
 					// external address - tunneling expose strategy
-					fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, data.Cluster().Address.ExternalName),
+					fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, data.Cluster().Status.Address.ExternalName),
 				},
 				IPs: []net.IP{
 					*inClusterIP,
@@ -68,7 +68,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			}
 
 			if data.Cluster().Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
-				externalIP := data.Cluster().Address.IP
+				externalIP := data.Cluster().Status.Address.IP
 				if externalIP == "" {
 					return nil, errors.New("externalIP is unset")
 				}

@@ -86,7 +86,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// We should not proceed without having an IP address unless tunneling
 	// strategy is used. Its required for all Kubeconfigs & triggers errors
 	// otherwise.
-	if cluster.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+	if cluster.Status.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
 		// This can happen e.g. if a LB external IP address has not yet been allocated by a CCM.
 		// Try to reconcile after some time and do not return an error.
 		r.log.Debugf("Cluster IP address not known, retry after %.0f s", clusterIPUnknownRetryTimeout.Seconds())
@@ -271,14 +271,14 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 // GetServiceCreators returns all service creators that are currently in use.
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
+		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Status.Address.ExternalName),
 		etcd.ServiceCreator(data),
 		machinecontroller.ServiceCreator(),
 		userclusterwebhook.ServiceCreator(),
 	}
 
 	if data.IsKonnectivityEnabled() {
-		creators = append(creators, konnectivity.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName))
+		creators = append(creators, konnectivity.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Status.Address.ExternalName))
 	} else {
 		creators = append(creators,
 			openvpn.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
@@ -536,9 +536,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 
 		if data.IsKonnectivityEnabled() {
 			// allow egress traffic to all resolved cluster external IPs
-			ipList, err := hostnameToIPList(resolverCtx, c.Address.ExternalName)
+			ipList, err := hostnameToIPList(resolverCtx, c.Status.Address.ExternalName)
 			if err != nil {
-				return fmt.Errorf("failed to resolve cluster external name %q: %w", c.Address.ExternalName, err)
+				return fmt.Errorf("failed to resolve cluster external name %q: %w", c.Status.Address.ExternalName, err)
 			}
 
 			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.ClusterExternalAddrAllowCreator(ipList, c.Spec.ExposeStrategy))

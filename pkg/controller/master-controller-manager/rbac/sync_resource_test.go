@@ -62,8 +62,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						kubermaticv1.ProjectIDLabelKey: "thunderball",
 					},
 				},
-				Spec:    kubermaticv1.ClusterSpec{},
-				Address: kubermaticv1.ClusterAddress{},
+				Spec: kubermaticv1.ClusterSpec{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-abcd",
 				},
@@ -661,8 +660,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Name: "abcd",
 					UID:  types.UID("abcdID"),
 				},
-				Spec:    kubermaticv1.ClusterSpec{},
-				Address: kubermaticv1.ClusterAddress{},
+				Spec: kubermaticv1.ClusterSpec{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-abcd",
 				},

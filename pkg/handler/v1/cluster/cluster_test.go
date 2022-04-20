@@ -2058,12 +2058,12 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 				if err := clientsSets.FakeClient.Get(context.Background(), types.NamespacedName{Name: test.DefaultClusterID}, updatedCluster); err != nil {
 					t.Fatalf("failed to get cluster from fake client: %v", err)
 				}
-				updatedToken := updatedCluster.Address.AdminToken
+				updatedToken := updatedCluster.Status.Address.AdminToken
 				if err := kuberneteshelper.ValidateKubernetesToken(updatedToken); err != nil {
 					t.Fatalf("generated token '%s' is malformed: %v", updatedToken, err)
 				}
-				if updatedToken == tc.clusterToGet.Address.AdminToken {
-					t.Fatalf("generated token '%s' is exactly the same as the old one : %s", updatedToken, tc.clusterToGet.Address.AdminToken)
+				if updatedToken == tc.clusterToGet.Status.Address.AdminToken {
+					t.Fatalf("generated token '%s' is exactly the same as the old one : %s", updatedToken, tc.clusterToGet.Status.Address.AdminToken)
 				}
 			}
 		})

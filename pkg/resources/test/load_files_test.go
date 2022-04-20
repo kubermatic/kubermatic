@@ -337,14 +337,6 @@ func TestLoadFiles(t *testing.T) {
 								LoggingEnabled:    false,
 							},
 						},
-						Address: kubermaticv1.ClusterAddress{
-							ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
-							IP:           "35.198.93.90",
-							AdminToken:   "6hzr76.u8txpkk4vhgmtgdp",
-							InternalName: "apiserver-external.cluster-de-test-01.svc.cluster.local.",
-							URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000",
-							Port:         30000,
-						},
 						Status: kubermaticv1.ClusterStatus{
 							NamespaceName: "cluster-de-test-01",
 							Versions: kubermaticv1.ClusterVersionsStatus{
@@ -352,6 +344,14 @@ func TestLoadFiles(t *testing.T) {
 								Apiserver:         *ksemver.NewSemverOrDie(ver.Version.String()),
 								ControllerManager: *ksemver.NewSemverOrDie(ver.Version.String()),
 								Scheduler:         *ksemver.NewSemverOrDie(ver.Version.String()),
+							},
+							Address: kubermaticv1.ClusterAddress{
+								ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
+								IP:           "35.198.93.90",
+								AdminToken:   "6hzr76.u8txpkk4vhgmtgdp",
+								InternalName: "apiserver-external.cluster-de-test-01.svc.cluster.local.",
+								URL:          "https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000",
+								Port:         30000,
 							},
 						},
 					}

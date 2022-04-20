@@ -106,9 +106,8 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec    ClusterSpec    `json:"spec,omitempty"`
-	Address ClusterAddress `json:"address,omitempty"`
-	Status  ClusterStatus  `json:"status,omitempty"`
+	Spec   ClusterSpec   `json:"spec,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -439,6 +438,10 @@ const (
 
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
+	// Address contains the IPs/URLs to access the cluster control plane.
+	// +optional
+	Address ClusterAddress `json:"address,omitempty"`
+
 	// +optional
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// ExtendedHealth exposes information about the current health state.

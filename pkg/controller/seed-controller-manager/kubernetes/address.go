@@ -30,10 +30,10 @@ import (
 func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) error {
 	var err error
 	// TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?
-	if cluster.Address.AdminToken == "" {
+	if cluster.Status.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Address.AdminToken = kubernetes.GenerateToken()
+			c.Status.Address.AdminToken = kubernetes.GenerateToken()
 		})
 		if err != nil {
 			return err

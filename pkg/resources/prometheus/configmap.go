@@ -86,7 +86,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			// get custom scraping configs and rules
 			customData := &CustomizationData{
 				Cluster:                  cluster,
-				APIServerHost:            cluster.Address.InternalName,
+				APIServerHost:            cluster.Status.Address.InternalName,
 				EtcdTLS:                  etcdTLS,
 				ApiserverTLS:             apiserverTLS,
 				ScrapingAnnotationPrefix: scrapeAnnotationPrefix,

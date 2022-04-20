@@ -132,7 +132,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-metrics-listen-address", "0.0.0.0:8085",
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
-				"-cluster-url", data.Cluster().Address.URL,
+				"-cluster-url", data.Cluster().Status.Address.URL,
 				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
 				"-overwrite-registry", data.ImageRegistry(""),
@@ -154,7 +154,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			if data.IsKonnectivityEnabled() {
 				args = append(args, "-konnectivity-enabled=true")
 
-				kHost := data.Cluster().Address.ExternalName
+				kHost := data.Cluster().Status.Address.ExternalName
 				if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 					kHost = fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, kHost)
 				}
@@ -177,8 +177,8 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-				args = append(args, "-tunneling-agent-ip", data.Cluster().Address.IP)
-				args = append(args, "-kas-secure-port", fmt.Sprint(data.Cluster().Address.Port))
+				args = append(args, "-tunneling-agent-ip", data.Cluster().Status.Address.IP)
+				args = append(args, "-kas-secure-port", fmt.Sprint(data.Cluster().Status.Address.Port))
 			}
 
 			providerName, err := data.GetCloudProviderName()
@@ -212,7 +212,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					if err != nil {
 						return nil, err
 					}
-					mlaEndpoint := net.JoinHostPort(data.Cluster().Address.ExternalName, fmt.Sprintf("%d", mlaGatewayPort))
+					mlaEndpoint := net.JoinHostPort(data.Cluster().Status.Address.ExternalName, fmt.Sprintf("%d", mlaGatewayPort))
 					if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 						mlaEndpoint = resources.MLAGatewaySNIPrefix + mlaEndpoint
 					}

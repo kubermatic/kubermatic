@@ -92,7 +92,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				Annotations: map[string]string{
 					"prometheus.io/scrape_with_kube_cert": "true",
 					"prometheus.io/path":                  "/metrics",
-					"prometheus.io/port":                  fmt.Sprint(data.Cluster().Address.Port),
+					"prometheus.io/port":                  fmt.Sprint(data.Cluster().Status.Address.Port),
 				},
 			}
 
@@ -126,7 +126,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				dnatControllerSidecar, err = vpnsidecar.DnatControllerContainer(
 					data,
 					"dnat-controller",
-					fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
+					fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Status.Address.Port),
 				)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
@@ -152,7 +152,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				Args:    flags,
 				Ports: []corev1.ContainerPort{
 					{
-						ContainerPort: data.Cluster().Address.Port,
+						ContainerPort: data.Cluster().Status.Address.Port,
 						Protocol:      corev1.ProtocolTCP,
 					},
 				},
@@ -160,7 +160,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/healthz",
-							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
+							Port:   intstr.FromInt(int(data.Cluster().Status.Address.Port)),
 							Scheme: "HTTPS",
 						},
 					},
@@ -173,7 +173,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/healthz",
-							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
+							Port:   intstr.FromInt(int(data.Cluster().Status.Address.Port)),
 							Scheme: "HTTPS",
 						},
 					},
@@ -293,7 +293,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--enable-admission-plugins", strings.Join(admissionPlugins.List(), ","),
 		"--admission-control-config-file", "/etc/kubernetes/adm-control/admission-control.yaml",
 		"--authorization-mode", "Node,RBAC",
-		"--external-hostname", cluster.Address.ExternalName,
+		"--external-hostname", cluster.Status.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth",
 		"--service-account-key-file", serviceAccountKeyFile,
@@ -335,11 +335,11 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	flags = append([]string{
 		// advertise-address is the external IP under which the apiserver is available.
 		// The same address is used for all apiserver replicas.
-		"--advertise-address", cluster.Address.IP,
+		"--advertise-address", cluster.Status.Address.IP,
 		// The port on which apiserver is serving.
 		// For Nodeport / LoadBalancer expose strategies we use the apiserver-external service NodePort value.
 		// For Tunneling expose strategy we use a fixed port.
-		"--secure-port", fmt.Sprint(cluster.Address.Port),
+		"--secure-port", fmt.Sprint(cluster.Status.Address.Port),
 	}, flags...)
 
 	if auditLogEnabled {
@@ -356,7 +356,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	// explicitly enabled in the cluster object
 	var audiences []string
 
-	issuer := cluster.Address.URL
+	issuer := cluster.Status.Address.URL
 	if saConfig := cluster.Spec.ServiceAccount; saConfig != nil {
 		if saConfig.Issuer != "" {
 			issuer = saConfig.Issuer
@@ -779,7 +779,7 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
 
-	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil
+	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...), nil
 }
 
 func intPtr(n int32) *int32 {

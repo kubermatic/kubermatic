@@ -117,7 +117,7 @@ func NewTemplateData(
 			// nolint:staticcheck
 			OwnerName:         cluster.Status.UserName,
 			OwnerEmail:        cluster.Status.UserEmail,
-			Address:           cluster.Address,
+			Address:           cluster.Status.Address,
 			CloudProviderName: providerName,
 			Version:           semverlib.MustParse(cluster.Status.Versions.ControlPlane.String()),
 			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),

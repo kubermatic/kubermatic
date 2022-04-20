@@ -206,8 +206,7 @@ func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster,
 			Labels:      getClusterLabels(cluster.Labels, project.Name, workerName),
 			Name:        name,
 		},
-		Spec:    cluster.Spec,
-		Address: kubermaticv1.ClusterAddress{},
+		Spec: cluster.Spec,
 	}
 }
 
@@ -372,7 +371,7 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(ctx context.Context, c *kuberma
 // RevokeAdminKubeconfig revokes the viewer token and kubeconfig.
 func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
 	oldCluster := c.DeepCopy()
-	c.Address.AdminToken = kuberneteshelper.GenerateToken()
+	c.Status.Address.AdminToken = kuberneteshelper.GenerateToken()
 	if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to patch cluster with new token: %w", err)
 	}
@@ -398,9 +397,9 @@ func (p *ClusterProvider) GetTokenForCustomerCluster(ctx context.Context, userIn
 	parts := strings.Split(userInfo.Group, "-")
 	switch parts[0] {
 	case "editors":
-		return cluster.Address.AdminToken, nil
+		return cluster.Status.Address.AdminToken, nil
 	case "owners":
-		return cluster.Address.AdminToken, nil
+		return cluster.Status.Address.AdminToken, nil
 	case "viewers":
 		s := &corev1.Secret{}
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ViewerTokenSecretName}

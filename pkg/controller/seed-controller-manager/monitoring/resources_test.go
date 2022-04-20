@@ -50,7 +50,6 @@ func TestCreateConfigMap(t *testing.T) {
 					},
 					Version: *semver.NewSemverOrDie("v1.11.3"),
 				},
-				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-nico1",
 				},
@@ -69,7 +68,6 @@ func TestCreateConfigMap(t *testing.T) {
 					},
 					Version: *semver.NewSemverOrDie("v1.11.3"),
 				},
-				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "cluster-nico1",
 				},
