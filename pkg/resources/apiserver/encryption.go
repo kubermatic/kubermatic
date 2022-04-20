@@ -31,7 +31,14 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+type encryptionData interface {
+	Cluster() *kubermaticv1.Cluster
+	IsEncryptionConfigurationEnabled() bool
+	IsEncryptionActive() bool
+	GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte, error)
+}
+
+func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.EncryptionConfigurationSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Name = resources.EncryptionConfigurationSecretName
@@ -94,8 +101,15 @@ func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconcil
 					if existingKey := getKeyByName(existingKeys, key.Name); existingKey != nil {
 						secretboxKey.Secret = existingKey.Secret
 					} else {
-						// TODO: read from Secret if secretRef exists
-						secretboxKey.Secret = key.Value
+						if key.SecretRef != nil {
+							val, err := data.GetSecretKeyValue(key.SecretRef)
+							if err != nil {
+								return secret, err
+							}
+							secretboxKey.Secret = string(val)
+						} else {
+							secretboxKey.Secret = key.Value
+						}
 					}
 
 					secretboxKeys = append(secretboxKeys, secretboxKey)

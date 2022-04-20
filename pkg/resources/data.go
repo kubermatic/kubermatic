@@ -485,6 +485,21 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 	return provider.SecretKeySelectorValueFuncFactory(d.ctx, d.client)(configVar, key)
 }
 
+func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte, error) {
+	secret := corev1.Secret{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ref.Name, Namespace: d.cluster.Status.NamespaceName}, &secret); err != nil {
+		return nil, err
+	}
+
+	val, ok := secret.Data[ref.Key]
+
+	if !ok {
+		return nil, fmt.Errorf("key %q not found in secret", ref.Key)
+	}
+
+	return val, nil
+}
+
 func (d *TemplateData) GetCloudProviderName() (string, error) {
 	return provider.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
