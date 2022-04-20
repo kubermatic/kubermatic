@@ -24,6 +24,7 @@ run:
     - e2e
     - ee
     - integration
+    - dualstack
   skip-files:
   - zz_generated.*.go
 
