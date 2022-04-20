@@ -155,8 +155,9 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			return
 		}
 
-		go writer(req.Context(), providers, ws)
-		requestLoggingReader(ws)
+		writer(req.Context(), providers, ws)
+		// commenting this because the websocket reader should be used to read the user messages (shell commands), not for logs
+		//requestLoggingReader(ws)
 	}
 }
 
