@@ -1,4 +1,4 @@
-//go:build !ee
+//go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
@@ -53,7 +53,7 @@ func getFakeQuotaRequest(config *types.Config) (*ResourceQuota, error) {
 		return nil, fmt.Errorf("error parsing quantity: %v", err)
 	}
 
-	return NewResourceQuota(&cpu, &mem, &storage), nil
+	return NewResourceQuota(cpu, mem, storage), nil
 }
 
 type FakeProviderSpec struct {

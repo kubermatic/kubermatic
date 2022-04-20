@@ -1,4 +1,4 @@
-//go:build !ee
+//go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
@@ -33,8 +33,9 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
-	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // ValidateQuota validates if the requested Machine resource consumption fits in the quota of the clusters project.
@@ -66,29 +67,26 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	}
 
 	// add requested resources to current usage and compare
-	usageCPU := currentUsage.Cpu()
-	usageMEM := currentUsage.Memory()
-	usageSTO := currentUsage.Storage()
+	combinedUsage := NewResourceQuota(currentUsage.cpu, currentUsage.mem, currentUsage.storage)
+	combinedUsage.Cpu().Add(*quotaReq.Cpu())
+	combinedUsage.Memory().Add(*quotaReq.Memory())
+	combinedUsage.Storage().Add(*quotaReq.Storage())
 
-	usageCPU.Add(*quotaReq.Cpu())
-	usageMEM.Add(*quotaReq.Memory())
-	usageSTO.Add(*quotaReq.Storage())
-
-	if quota.Cpu().Cmp(*usageCPU) < 0 {
+	if quota.Cpu().Cmp(*combinedUsage.Cpu()) < 0 {
 		log.Debugf("requested CPU %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Cpu(), quota.Cpu(), currentUsage.Cpu())
 		return fmt.Errorf("requested CPU %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Cpu(), quota.Cpu(), currentUsage.Cpu())
 	}
 
-	if quota.Memory().Cmp(*usageMEM) < 0 {
+	if quota.Memory().Cmp(*combinedUsage.Memory()) < 0 {
 		log.Debugf("requested Memory %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Memory(), quota.Memory(), currentUsage.Memory())
 		return fmt.Errorf("requested Memory %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Memory(), quota.Memory(), currentUsage.Memory())
 	}
 
-	if quota.Storage().Cmp(*usageSTO) < 0 {
+	if quota.Storage().Cmp(*combinedUsage.Storage()) < 0 {
 		log.Debugf("requested Storage %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Storage(), quota.Storage(), currentUsage.Storage())
 		return fmt.Errorf("requested Storage %q would exceed current quota (quota/used %q/%q)",
@@ -98,7 +96,7 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	return nil
 }
 
-// TODO we should get it from the resourceQuota CRD for the project
+// TODO we should get it from the resourceQuota CRD for the project, for now just some hardcoded values for tests
 func getResourceQuota() (*ResourceQuota, *ResourceQuota, error) {
 	cpu, err := resource.ParseQuantity("5")
 	if err != nil {
@@ -127,17 +125,17 @@ func getResourceQuota() (*ResourceQuota, *ResourceQuota, error) {
 		return nil, nil, fmt.Errorf("error parsing quantity: %v", err)
 	}
 
-	return NewResourceQuota(&cpu, &mem, &storage),
-		NewResourceQuota(&cpuUsed, &memUsed, &storageUsed), nil
+	return NewResourceQuota(cpu, mem, storage),
+		NewResourceQuota(cpuUsed, memUsed, storageUsed), nil
 }
 
 type ResourceQuota struct {
-	cpu     *resource.Quantity
-	mem     *resource.Quantity
-	storage *resource.Quantity
+	cpu     resource.Quantity
+	mem     resource.Quantity
+	storage resource.Quantity
 }
 
-func NewResourceQuota(cpu *resource.Quantity, mem *resource.Quantity, storage *resource.Quantity) *ResourceQuota {
+func NewResourceQuota(cpu resource.Quantity, mem resource.Quantity, storage resource.Quantity) *ResourceQuota {
 	return &ResourceQuota{
 		cpu:     cpu,
 		mem:     mem,
@@ -146,13 +144,13 @@ func NewResourceQuota(cpu *resource.Quantity, mem *resource.Quantity, storage *r
 }
 
 func (r *ResourceQuota) Cpu() *resource.Quantity {
-	return r.cpu
+	return &r.cpu
 }
 
 func (r *ResourceQuota) Memory() *resource.Quantity {
-	return r.mem
+	return &r.mem
 }
 
 func (r *ResourceQuota) Storage() *resource.Quantity {
-	return r.storage
+	return &r.storage
 }
