@@ -254,6 +254,18 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 		allErrs = append(allErrs, err)
 	}
 
+	// Verify that IP family is consistent with provided pod CIDRs
+	if (n.IPFamily == "" || n.IPFamily == kubermaticv1.IPFamilyIPv4) && len(n.Pods.CIDRBlocks) != 1 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
+			fmt.Sprintf("IP family %q does not match with provided pods CIDRs %q", n.IPFamily, n.Pods.CIDRBlocks)),
+		)
+	}
+	if n.IPFamily == kubermaticv1.IPFamilyDualStack && len(n.Pods.CIDRBlocks) != 2 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
+			fmt.Sprintf("IP family %q does not match with provided pods CIDRs %q", n.IPFamily, n.Pods.CIDRBlocks)),
+		)
+	}
+
 	// Verify that node CIDR mask sizes are longer than the mask size of pod CIDRs
 	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv4, n.Pods.GetIPv4CIDR(), fldPath.Child("nodeCidrMaskSizeIPv4")); err != nil {
 		allErrs = append(allErrs, err)

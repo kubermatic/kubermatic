@@ -1085,6 +1085,18 @@ spec:
                   dnsDomain:
                     description: Domain name for services.
                     type: string
+                  ipFamily:
+                    description: 'Optional: IP family used for cluster networking.
+                      Supported values are "", "IPv4" or "IPv4+IPv6". Can be omitted
+                      / empty if pods and services network ranges are specified. In
+                      that case it defaults according to the IP families of the provided
+                      network ranges. If neither ipFamily nor pods & services network
+                      ranges are specified, defaults to "IPv4".'
+                    enum:
+                    - ""
+                    - IPv4
+                    - IPv4+IPv6
+                    type: string
                   ipvs:
                     description: IPVS defines kube-proxy ipvs configuration options
                     properties:
