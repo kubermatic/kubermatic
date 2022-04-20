@@ -18,9 +18,12 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
+
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -67,12 +70,14 @@ var upgrader = websocket.Upgrader{
 
 type WebsocketSettingsWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
+type WebsocketTerminalWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
 
 	mux.HandleFunc("/ws/admin/settings", getSettingsWatchHandler(wsh.WriteSettings, providers, r))
 	mux.HandleFunc("/ws/me", getUserWatchHandler(wsh.WriteUser, providers, r))
+	mux.HandleFunc("/ws/projects/{project_id}/clusters/{cluster_id}/terminal", getTerminalWatchHandler(wsh.Terminal, providers, r))
 }
 
 func getProviders(r Routing) watcher.Providers {
@@ -119,6 +124,38 @@ func getUserWatchHandler(writer WebsocketUserWriter, providers watcher.Providers
 		}
 
 		go writer(req.Context(), providers, ws, user.Email)
+		requestLoggingReader(ws)
+	}
+}
+
+func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.Providers, routing Routing) func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		ctx := context.Background()
+		user, err := verifyAuthorizationToken(req, routing.tokenVerifiers, routing.tokenExtractors)
+		if err != nil {
+			log.Logger.Debug(err)
+			return
+		}
+
+		clusterID, err := common.DecodeClusterID(ctx, req)
+		if err != nil {
+			return
+		}
+
+		projectID, err := common.DecodeProjectRequest(ctx, req)
+		if err != nil {
+			return
+		}
+
+		fmt.Printf("user: %s, clusterID: %s, projectID %s", user.Email, clusterID, projectID)
+
+		ws, err := upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			log.Logger.Debug(err)
+			return
+		}
+
+		go writer(req.Context(), providers, ws)
 		requestLoggingReader(ws)
 	}
 }
