@@ -23,27 +23,28 @@ import (
 	"io"
 
 	"github.com/gorilla/websocket"
+
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/watcher"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/scheme"
-
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/watcher"
 )
 
 const END_OF_TRANSMISSION = "\u0004"
 
-// PtyHandler is what remotecommand expects from a pty
+// PtyHandler is what remote command expects from a pty.
 type PtyHandler interface {
 	io.Reader
 	io.Writer
 	remotecommand.TerminalSizeQueue
 }
 
-// TerminalSession implements PtyHandler (using a websocket connection)
+// TerminalSession implements PtyHandler (using a websocket connection).
 type TerminalSession struct {
 	websocketConn *websocket.Conn
 	sizeChan      chan remotecommand.TerminalSize
@@ -57,14 +58,14 @@ type TerminalSession struct {
 // stdin   fe->be     Data           Keystrokes/paste buffer
 // resize  fe->be     Rows, Cols     New terminal size
 // stdout  be->fe     Data           Output from the process
-// toast   be->fe     Data           OOB message to be shown to the user
+// toast   be->fe     Data           OOB message to be shown to the user.
 type TerminalMessage struct {
 	Op, Data, SessionID string
 	Rows, Cols          uint16
 }
 
-// TerminalSize handles pty->process resize events
-// Called in a loop from remotecommand as long as the process is running
+// TerminalSize handles pty->process resize events.
+// Called in a loop from remotecommand as long as the process is running.
 func (t TerminalSession) Next() *remotecommand.TerminalSize {
 	select {
 	case size := <-t.sizeChan:
@@ -74,8 +75,8 @@ func (t TerminalSession) Next() *remotecommand.TerminalSize {
 	}
 }
 
-// Read handles pty->process messages (stdin, resize)
-// Called in a loop from remotecommand as long as the process is running
+// Read handles pty->process messages (stdin, resize).
+// Called in a loop from remotecommand as long as the process is running.
 func (t TerminalSession) Read(p []byte) (int, error) {
 	_, m, err := t.websocketConn.ReadMessage()
 	if err != nil {
@@ -99,8 +100,8 @@ func (t TerminalSession) Read(p []byte) (int, error) {
 	}
 }
 
-// Write handles process->pty stdout
-// Called from remotecommand whenever there is any output
+// Write handles process->pty stdout.
+// Called from remotecommand whenever there is any output.
 func (t TerminalSession) Write(p []byte) (int, error) {
 	msg, err := json.Marshal(TerminalMessage{
 		Op:   "stdout",
@@ -117,8 +118,8 @@ func (t TerminalSession) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// Toast can be used to send the user any OOB messages
-// hterm puts these in the center of the terminal
+// Toast can be used to send the user any OOB messages.
+// hterm puts these in the center of the terminal.
 func (t TerminalSession) Toast(p string) error {
 	msg, err := json.Marshal(TerminalMessage{
 		Op:   "toast",
@@ -134,8 +135,8 @@ func (t TerminalSession) Toast(p string) error {
 	return nil
 }
 
-// startProcess is called by terminal session creation
-// Executed cmd in the container specified in request and connects it up with the ptyHandler (a session)
+// startProcess is called by terminal session creation.
+// Executed cmd in the container specified in request and connects it up with the ptyHandler (a session).
 func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, podName, containerName string, cmd []string, ptyHandler PtyHandler) error {
 	req := k8sClient.CoreV1().RESTClient().Post().
 		Resource("pods").
@@ -171,7 +172,7 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, p
 	return nil
 }
 
-// Terminal is called for any new websocket connection
+// Terminal is called for any new websocket connection.
 func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn) {
 	defer ws.Close()
 
