@@ -37,7 +37,8 @@ const (
 func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return resources.MachineValidatingWebhookConfigurationName, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
-			failurePolicy := admissionregistrationv1.Fail
+			// TODO - change to Fail when the resource quotas are fully implemented
+			failurePolicy := admissionregistrationv1.Ignore
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-cluster-k8s-io-v1-machine", resources.UserClusterWebhookServiceName, namespace)
 			reviewVersions := []string{"v1", "v1beta1"}
