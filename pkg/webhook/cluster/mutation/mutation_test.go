@@ -906,7 +906,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs/strictArp", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
@@ -1029,7 +1028,6 @@ func TestHandle(t *testing.T) {
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"ccm-migration.k8c.io/migration-needed": "", "csi-migration.k8c.io/migration-needed": ""}),
 				jsonpatch.NewOperation("add", "/spec/cloud/openstack/useOctavia", true),
 			),
