@@ -25425,6 +25425,13 @@
         "kubeconfig": {
           "type": "string",
           "x-go-name": "Kubeconfig"
+        },
+        "preAllocatedDataVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreAllocatedDataVolume"
+          },
+          "x-go-name": "PreAllocatedDataVolumes"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -27644,6 +27651,28 @@
         }
       },
       "x-go-package": "k8s.io/api/rbac/v1"
+    },
+    "PreAllocatedDataVolume": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "size": {
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "storageClass": {
+          "type": "string",
+          "x-go-name": "StorageClass"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Preset": {
       "description": "Preset represents a preset",

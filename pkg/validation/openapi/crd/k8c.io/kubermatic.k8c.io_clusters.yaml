@@ -701,6 +701,24 @@ spec:
                         type: string
                       kubeconfig:
                         type: string
+                      preAllocatedDataVolumes:
+                        items:
+                          properties:
+                            name:
+                              type: string
+                            size:
+                              type: string
+                            storageClass:
+                              type: string
+                            url:
+                              type: string
+                          required:
+                          - name
+                          - size
+                          - storageClass
+                          - url
+                          type: object
+                        type: array
                     type: object
                   nutanix:
                     description: NutanixCloudSpec specifies the access data to Nutanix.
