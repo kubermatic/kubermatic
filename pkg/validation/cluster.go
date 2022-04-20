@@ -255,7 +255,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	}
 
 	// Verify that IP family is consistent with provided pod CIDRs
-	if (n.IPFamily == "" || n.IPFamily == kubermaticv1.IPFamilyIPv4) && len(n.Pods.CIDRBlocks) != 1 {
+	if (n.IPFamily == kubermaticv1.IPFamilyIPv4) && len(n.Pods.CIDRBlocks) != 1 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
 			fmt.Sprintf("IP family %q does not match with provided pods CIDRs %q", n.IPFamily, n.Pods.CIDRBlocks)),
 		)
