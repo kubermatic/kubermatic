@@ -33,9 +33,8 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	"k8s.io/apimachinery/pkg/api/resource"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ValidateQuota validates if the requested Machine resource consumption fits in the quota of the clusters project.
