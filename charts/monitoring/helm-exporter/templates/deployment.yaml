@@ -41,7 +41,7 @@ spec:
         image: '{{ .Values.helmExporter.image.repository }}:{{ .Values.helmExporter.image.tag }}'
         imagePullPolicy: {{ .Values.helmExporter.image.pullPolicy }}
         args:
-        - '-tiller-namespaces={{ .Values.helmExporter.tillerNamespace }}'
+{{ .Values.helmExporter.args | toYaml | indent 10 }}
         ports:
         - name: http
           containerPort: 9571
