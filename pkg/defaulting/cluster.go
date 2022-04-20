@@ -176,11 +176,27 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
 	provider := kubermaticv1.ProviderType(spec.Cloud.ProviderName)
 
+	if spec.ClusterNetwork.IPFamily == "" {
+		if len(spec.ClusterNetwork.Pods.CIDRBlocks) < 2 {
+			spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyIPv4
+		} else {
+			spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
+		}
+	}
+
 	if len(spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider)}
+		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyIPv4 {
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider)}
+		} else {
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider), resources.DefaultClusterPodsCIDRIPv6}
+		}
 	}
 	if len(spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider)}
+		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyIPv4 {
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider)}
+		} else {
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider), resources.DefaultClusterServicesCIDRIPv6}
+		}
 	}
 
 	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && spec.ClusterNetwork.Pods.HasIPv4CIDR() {

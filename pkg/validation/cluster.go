@@ -888,6 +888,14 @@ func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) *field.Err
 func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
+	if oldC.IPFamily != "" {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.IPFamily,
+			oldC.IPFamily,
+			fldPath.Child("ipFamily"),
+		)...)
+	}
+
 	if len(oldC.Pods.CIDRBlocks) != 0 {
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 			c.Pods.CIDRBlocks,
