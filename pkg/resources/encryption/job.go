@@ -18,6 +18,7 @@ package encryption
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -29,18 +30,25 @@ import (
 )
 
 const (
-	EncryptionJobPrefix = "data-encryption"
+	EncryptionJobPrefix    = "data-encryption"
+	ClusterLabelKey        = "kubermatic.k8c.io/cluster"
+	SecretRevisionLabelKey = "kubermatic.k8c.io/secret-revision"
 )
 
-func EncryptionJob(cluster *kubermaticv1.Cluster, secret *corev1.Secret, key string) batchv1.Job {
+type encryptionData interface {
+	ImageRegistry(string) string
+}
+
+func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, secret *corev1.Secret, key string) batchv1.Job {
+	resourceList := strings.Join(cluster.Spec.EncryptionConfiguration.Resources, ",")
+
 	return batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-%s-", EncryptionJobPrefix, cluster.Name),
 			Namespace:    cluster.Status.NamespaceName,
 			Labels: map[string]string{
-				// TODO: do we have well-known labels aready?
-				"kubermatic.k8c.io/cluster":         cluster.Name,
-				"kubermatic.k8c.io/secret-revision": secret.ObjectMeta.ResourceVersion,
+				ClusterLabelKey:        cluster.Name,
+				SecretRevisionLabelKey: secret.ObjectMeta.ResourceVersion,
 			},
 			// TODO: add owner reference?
 		},
@@ -54,13 +62,15 @@ func EncryptionJob(cluster *kubermaticv1.Cluster, secret *corev1.Secret, key str
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							Name: "encryption-runner",
-							// TODO: reconfigure image based on registry information
-							Image:   "quay.io/kubermatic/util:2.0.0",
+							Name:    "encryption-runner",
+							Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/util:2.0.0",
 							Command: []string{"/bin/bash"},
 							Args: []string{
 								"-c",
-								"kubectl get secrets --all-namespaces -o json | kubectl replace -f -"},
+								// TODO: this is terribly dangerous and might result in resetting some resources to an older version of it.
+								// Replace this with something better!
+								fmt.Sprintf("kubectl get %s --all-namespaces -o json | kubectl replace -f -", resourceList),
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "KUBECONFIG",

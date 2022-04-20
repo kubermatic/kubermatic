@@ -401,6 +401,9 @@ func createEncryptionController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
+		ctrlCtx.seedGetter,
+		ctrlCtx.configGetter,
 		ctrlCtx.versions,
+		ctrlCtx.runOptions.overwriteRegistry,
 	)
 }

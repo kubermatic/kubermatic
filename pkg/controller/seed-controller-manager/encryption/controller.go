@@ -18,9 +18,6 @@ package encryption
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -32,16 +29,13 @@ import (
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	apiserverconfigv1 "k8s.io/apiserver/pkg/apis/config/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -49,12 +43,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"sigs.k8s.io/yaml"
 )
 
 const (
-	ControllerName      = "kubermatic_encryption_controller"
-	encryptionJobPrefix = "data-encryption"
+	ControllerName = "kubermatic_encryption_controller"
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
@@ -64,21 +56,33 @@ type userClusterConnectionProvider interface {
 
 type Reconciler struct {
 	ctrlruntimeclient.Client
+
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
+
 	log                     *zap.SugaredLogger
 	userClusterConnProvider userClusterConnectionProvider
 	workerName              string
 	recorder                record.EventRecorder
 
-	versions kubermatic.Versions
+	overwriteRegistry string
+	versions          kubermatic.Versions
 }
 
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
+
 	numWorkers int,
 	workerName string,
+
 	userClusterConnProvider userClusterConnectionProvider,
-	versions kubermatic.Versions) error {
+	seedGetter provider.SeedGetter,
+	configGetter provider.KubermaticConfigurationGetter,
+
+	versions kubermatic.Versions,
+	overwriteRegistry string,
+) error {
 
 	reconciler := &Reconciler{
 		log:                     log.Named(ControllerName),
@@ -88,7 +92,8 @@ func Add(
 
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 
-		versions: versions,
+		versions:          versions,
+		overwriteRegistry: overwriteRegistry,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -177,9 +182,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	switch cluster.Status.Encryption.Phase {
 	case kubermaticv1.ClusterEncryptionPhasePending:
-		// TODO: in this phase, check health status. Is the secret up-to-date? is the apiserver up-to-date and healthy?
-		// transition to ClusterEncryptionPhaseEncryptionNeeded or ClusterEncryptionPhaseActive.
-		ok, err := r.isApiserverUpdated(ctx, cluster)
+		ok, err := isApiserverUpdated(ctx, r.Client, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
@@ -189,7 +192,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
-		key, err := r.getActiveKey(ctx, cluster)
+		key, err := getActiveKey(ctx, r.Client, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
@@ -210,9 +213,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{}, nil
 
 	case kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded:
-		// TODO: in this phase, check for encryption Jobs and run one if it does not exist yet.
 		// transition to ClusterEncryptionPhaseActive or ClusterEncryptionPhaseFailed.
-		key, err := r.getActiveKey(ctx, cluster)
+		key, err := getActiveKey(ctx, r.Client, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
@@ -262,125 +264,6 @@ func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kuber
 	return &reconcile.Result{}, nil
 }
 
-// TODO: create a better job that uses cmd/data-encryption-runner
-func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, key string) (*reconcile.Result, error) {
-	var secret corev1.Secret
-	if err := r.Get(ctx, types.NamespacedName{
-		Name:      resources.EncryptionConfigurationSecretName,
-		Namespace: cluster.Status.NamespaceName,
-	}, &secret); err != nil {
-		return &reconcile.Result{}, err
-	}
-
-	var jobList batchv1.JobList
-	if err := r.List(ctx, &jobList, ctrlruntimeclient.MatchingLabels{
-		"kubermatic.k8c.io/cluster":         cluster.Name,
-		"kubermatic.k8c.io/secret-revision": secret.ObjectMeta.ResourceVersion,
-	}); err != nil {
-		return &reconcile.Result{}, err
-	} else {
-		if len(jobList.Items) == 0 {
-			job := encryptionresources.EncryptionJob(cluster, &secret, key)
-
-			if err := r.Create(ctx, &job); err != nil {
-				return &reconcile.Result{}, err
-			}
-
-			// we just created the job and need to check in with it later
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		} else {
-			job := jobList.Items[0]
-			if job.Status.Succeeded == 1 {
-				if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-					cluster.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseActive
-					cluster.Status.Encryption.ActiveKey = key
-				}); err != nil {
-					return &reconcile.Result{}, err
-				}
-
-				return &reconcile.Result{}, nil
-			} else if job.Status.Failed > 0 {
-				if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-					cluster.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseFailed
-				}); err != nil {
-					return &reconcile.Result{}, err
-				}
-				return &reconcile.Result{}, nil
-			}
-
-			// no job result yet, requeue to read job status again in 10 seconds
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		}
-	}
-}
-
-func (r *Reconciler) isApiserverUpdated(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
-	var secret corev1.Secret
-	if err := r.Get(ctx, types.NamespacedName{
-		Name:      resources.EncryptionConfigurationSecretName,
-		Namespace: cluster.Status.NamespaceName,
-	}, &secret); err != nil {
-		if kerrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	spec, err := json.Marshal(cluster.Spec.EncryptionConfiguration)
-	if err != nil {
-		return false, err
-	}
-
-	hash := sha1.New()
-	hash.Write(spec)
-
-	if val, ok := secret.ObjectMeta.Labels["kubermatic.k8c.io/encryption-spec-hash"]; !ok || val != hex.EncodeToString(hash.Sum(nil)) {
-		// the secret on the cluster (or in the cache) doesn't seem updated yet
-		return false, nil
-	}
-
-	var podList corev1.PodList
-	if err := r.List(ctx, &podList, []ctrlruntimeclient.ListOption{
-		ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName),
-		ctrlruntimeclient.MatchingLabels{resources.AppLabelKey: "apiserver"},
-	}...); err != nil {
-		return false, err
-	}
-
-	if len(podList.Items) == 0 {
-		return false, nil
-	}
-
-	for _, pod := range podList.Items {
-		if val, ok := pod.Labels["apiserver-encryption-configuration-secret-revision"]; !ok || val != secret.ResourceVersion {
-			return false, nil
-		}
-	}
-
-	return true, nil
-}
-
-func (r *Reconciler) getActiveKey(ctx context.Context, cluster *kubermaticv1.Cluster) (string, error) {
-	var (
-		secret corev1.Secret
-		config apiserverconfigv1.EncryptionConfiguration
-	)
-
-	if err := r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.EncryptionConfigurationSecretName}, &secret); err != nil {
-		return "", err
-	}
-
-	if data, ok := secret.Data[resources.EncryptionConfigurationKeyName]; ok {
-		if err := yaml.Unmarshal(data, &config); err != nil {
-			return "", err
-		}
-	}
-
-	keyName := config.Resources[0].Providers[0].Secretbox.Keys[0].Name
-
-	return fmt.Sprintf("secretbox/%s", keyName), nil
-}
-
 func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster), opts ...ctrlruntimeclient.MergeFromOption) error {
 	oldCluster := cluster.DeepCopy()
 	modify(cluster)
@@ -389,4 +272,21 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...))
+}
+
+func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration) (*resources.TemplateData, error) {
+	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
+	}
+
+	return resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithClient(r).
+		WithCluster(cluster).
+		WithDatacenter(&datacenter).
+		WithSeed(seed.DeepCopy()).
+		WithKubermaticConfiguration(config.DeepCopy()).
+		WithOverwriteRegistry(r.overwriteRegistry).
+		Build(), nil
 }
