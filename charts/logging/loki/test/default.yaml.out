@@ -5,7 +5,7 @@ kind: ServiceAccount
 metadata:
   labels:
     app: loki
-    chart: loki-2.9.1
+    chart: loki-2.11.0
     heritage: Helm
     release: release-name
   annotations:
@@ -22,7 +22,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.9.1
+    chart: loki-2.11.0
     release: release-name
     heritage: Helm
 data:
@@ -36,7 +36,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.9.1
+    chart: loki-2.11.0
     heritage: Helm
     release: release-name
 ---
@@ -48,7 +48,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.9.1
+    chart: loki-2.11.0
     heritage: Helm
     release: release-name
 roleRef:
@@ -67,7 +67,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.9.1
+    chart: loki-2.11.0
     release: release-name
     heritage: Helm
     variant: headless
@@ -90,7 +90,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.9.1
+    chart: loki-2.11.0
     release: release-name
     heritage: Helm
   annotations:
@@ -114,7 +114,7 @@ metadata:
   namespace: default
   labels:
     app: loki
-    chart: loki-2.9.1
+    chart: loki-2.11.0
     release: release-name
     heritage: Helm
   annotations:
@@ -136,7 +136,7 @@ spec:
         name: loki
         release: release-name
       annotations:
-        checksum/config: 25618b2f882eec3a9146b352792bb7f6bca8dcefa1d167b7d40b40b184b75abd
+        checksum/config: d182eab74745b766a712591bd89913ac99e174d99036d72dc5a2850225f967ab
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
     spec:
@@ -150,11 +150,13 @@ spec:
         []
       containers:
         - name: loki
-          image: "docker.io/grafana/loki:2.4.2"
+          image: "docker.io/grafana/loki:2.5.0"
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/loki/loki.yaml"
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: config
               mountPath: /etc/loki
             - name: storage
@@ -177,7 +179,7 @@ spec:
           resources:
             limits:
               cpu: "1"
-              memory: 700Mi
+              memory: 1Gi
             requests:
               cpu: 300m
               memory: 256Mi
@@ -192,6 +194,8 @@ spec:
         []
       terminationGracePeriodSeconds: 4800
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: config
           secret:
             secretName: loki
