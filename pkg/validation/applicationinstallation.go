@@ -72,31 +72,32 @@ func ValidateApplicationInstallationUpdate(ctx context.Context, client ctrlrunti
 	}
 
 	// Validate .Spec.Namespace.Create for immutability
-	if oldAI.Spec.Namespace.Create != newAI.Spec.Namespace.Create {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			newAI.Spec.Namespace.Create,
-			oldAI.Spec.Namespace.Create,
-			specPath.Child("namespace", "create"),
-		)...)
-	}
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newAI.Spec.Namespace.Create,
+		oldAI.Spec.Namespace.Create,
+		specPath.Child("namespace", "create"),
+	)...)
 
 	// Validate .Spec.Namespace.Name for immutability
-	if oldAI.Spec.Namespace.Name != newAI.Spec.Namespace.Name {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			newAI.Spec.Namespace.Name,
-			oldAI.Spec.Namespace.Name,
-			specPath.Child("namespace", "name"),
-		)...)
-	}
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newAI.Spec.Namespace.Name,
+		oldAI.Spec.Namespace.Name,
+		specPath.Child("namespace", "name"),
+	)...)
 
-	// Validate .Spec.ApplicationRef for immutability
-	if oldAI.Spec.ApplicationRef != newAI.Spec.ApplicationRef {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			newAI.Spec.ApplicationRef,
-			oldAI.Spec.ApplicationRef,
-			specPath.Child("applicationRef"),
-		)...)
-	}
+	// Validate .Spec.ApplicationRef.Version for immutability
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newAI.Spec.ApplicationRef.Version.Version.String(),
+		oldAI.Spec.ApplicationRef.Version.Version.String(),
+		specPath.Child("applicationRef", "version"),
+	)...)
+
+	// Validate .Spec.ApplicationRef.Name for immutability
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		newAI.Spec.ApplicationRef.Name,
+		oldAI.Spec.ApplicationRef.Name,
+		specPath.Child("applicationRef", "name"),
+	)...)
 
 	return allErrs
 }

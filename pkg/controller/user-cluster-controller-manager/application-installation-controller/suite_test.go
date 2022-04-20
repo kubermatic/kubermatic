@@ -45,10 +45,6 @@ var ctx context.Context
 var cancel context.CancelFunc
 var applicationInstallerRecorder fake.ApplicationInstallerRecorder
 
-const (
-	ApplicationNamespace = "apps"
-)
-
 func TestApplicationInstallerController(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -86,7 +82,7 @@ var _ = BeforeSuite(func() {
 
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ApplicationNamespace,
+			Name: applicationNamespace,
 		},
 	}
 	Expect(userClient.Create(ctx, ns)).To(Succeed())
@@ -115,7 +111,7 @@ var _ = AfterSuite(func() {
 
 func cleanupAppsNamespace() {
 	ns := &corev1.Namespace{}
-	err := userClient.Get(ctx, types.NamespacedName{Name: ApplicationNamespace}, ns)
+	err := userClient.Get(ctx, types.NamespacedName{Name: applicationNamespace}, ns)
 	if err != nil && !kerrors.IsNotFound(err) {
 		Fail(err.Error())
 	}

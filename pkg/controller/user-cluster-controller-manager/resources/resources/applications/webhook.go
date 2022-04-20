@@ -45,7 +45,7 @@ func ApplicationInstallationValidatingWebhookConfigurationCreator(caCert *x509.C
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
-					Name:                    "applicationdinstallations.apps.kubermatic.k8c.io", // this should be a FQDN
+					Name:                    "applicationinstallations.apps.kubermatic.k8c.io", // this should be a FQDN
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
@@ -66,7 +66,8 @@ func ApplicationInstallationValidatingWebhookConfigurationCreator(caCert *x509.C
 								Scope:       &scope,
 							},
 							Operations: []admissionregistrationv1.OperationType{
-								admissionregistrationv1.OperationAll,
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
 							},
 						},
 					},

@@ -45,7 +45,7 @@ var _ = Describe("application Installation controller", func() {
 
 			app := &appkubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
-				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, app); err != nil {
+				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, app); err != nil {
 					return false
 				}
 				return app.Status.ApplicationVersion != nil
@@ -69,13 +69,13 @@ var _ = Describe("application Installation controller", func() {
 			By("wait for application to be created")
 			app := appkubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, &app)
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 				return err == nil
 			}, 3*time.Second, interval).Should(BeTrue())
 
 			By("ensure application is not deleted")
 			Consistently(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, &app)
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -96,13 +96,13 @@ var _ = Describe("application Installation controller", func() {
 			By("wait for application to be created")
 			app := appkubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, &app)
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 				return err == nil
 			}, 3*time.Second, interval).Should(BeTrue())
 
 			By("ensure application is not deleted")
 			Consistently(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, &app)
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -123,7 +123,7 @@ var _ = Describe("application Installation controller", func() {
 			By("wait for application to be created")
 			app := &appkubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
-				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, app); err != nil {
+				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, app); err != nil {
 					return false
 				}
 				return app.Status.ApplicationVersion != nil
@@ -136,7 +136,7 @@ var _ = Describe("application Installation controller", func() {
 
 			By("Checking application Installation CR is removed")
 			Eventually(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, &appkubermaticv1.ApplicationInstallation{})
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appkubermaticv1.ApplicationInstallation{})
 
 				return err != nil && apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
@@ -156,7 +156,7 @@ var _ = Describe("application Installation controller", func() {
 			By("wait for application to be created")
 			app := &appkubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
-				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, app); err != nil {
+				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, app); err != nil {
 					return false
 				}
 				return app.Status.ApplicationVersion != nil
@@ -191,7 +191,7 @@ var _ = Describe("application Installation controller", func() {
 
 			By("Checking application Installation CR is removed")
 			Eventually(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: ApplicationNamespace}, &appkubermaticv1.ApplicationInstallation{})
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appkubermaticv1.ApplicationInstallation{})
 
 				return err != nil && apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())

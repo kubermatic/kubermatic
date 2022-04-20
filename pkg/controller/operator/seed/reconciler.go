@@ -616,7 +616,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		common.SeedAdmissionWebhookCreator(ctx, cfg, client),
 		common.KubermaticConfigurationAdmissionWebhookCreator(ctx, cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(ctx, cfg, client),
-		kubermaticseed.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, cfg, client),
+		common.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, cfg, client),
 	}
 
 	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {

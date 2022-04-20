@@ -31,9 +31,10 @@ import (
 )
 
 const (
-	defaultAppName    = "app"
-	defaultAppVersion = "1.2.3"
-	invalidResource   = "invalid"
+	defaultAppName             = "app"
+	defaultAppVersion          = "1.2.3"
+	defaultAppSecondaryVersion = "1.2.4"
+	invalidResource            = "invalid"
 )
 
 var (
@@ -152,7 +153,19 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					return *spec
 				}(),
 			},
-			expectedError: `[spec.applicationRef: Invalid value: v1.ApplicationRef{Name:"app", Version:v1.Version{Version:semver.Version{major:0x1, minor:0x2, patch:0x3, pre:"", metadata:"", original:"1.2.3"}}}: field is immutable]`,
+			expectedError: `[spec.applicationRef.name: Invalid value: "app": field is immutable]`,
+		},
+		{
+			name: "Update ApplicationInstallation Failure - .ApplicationRef.Version is immutable",
+			ai:   ai,
+			updatedAI: &appkubermaticv1.ApplicationInstallation{
+				Spec: func() appkubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.ApplicationRef.Version = appkubermaticv1.Version{Version: *semverlib.MustParse(defaultAppSecondaryVersion)}
+					return *spec
+				}(),
+			},
+			expectedError: `[spec.applicationRef.version: Invalid value: "1.2.3": field is immutable]`,
 		},
 	}
 
@@ -179,6 +192,9 @@ func getApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 			Versions: []appkubermaticv1.ApplicationVersion{
 				{
 					Version: defaultAppVersion,
+				},
+				{
+					Version: defaultAppSecondaryVersion,
 				},
 			},
 		},
