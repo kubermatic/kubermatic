@@ -19463,6 +19463,54 @@
           }
         }
       }
+    },
+    "/providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "networkdefaults"
+        ],
+        "summary": "Retrieves the cluster networking defaults for the given provider and CNI.",
+        "operationId": "getNetworkDefaults",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "CNIPluginType",
+            "name": "cni_plugin_type",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NetworkDefaults",
+            "schema": {
+              "$ref": "#/definitions/NetworkDefaults"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -25957,6 +26005,57 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NetworkDefaults": {
+      "type": "object",
+      "title": "NetworkDefaults contains cluster network default settings.",
+      "properties": {
+        "ipv4": {
+          "$ref": "#/definitions/NetworkDefaultsIPFamily"
+        },
+        "ipv6": {
+          "$ref": "#/definitions/NetworkDefaultsIPFamily"
+        },
+        "nodeLocalDNSCacheEnabled": {
+          "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.",
+          "type": "boolean",
+          "x-go-name": "NodeLocalDNSCacheEnabled"
+        },
+        "proxyMode": {
+          "description": "ProxyMode defines the default kube-proxy mode (\"ipvs\" / \"iptables\" / \"ebpf\").",
+          "type": "string",
+          "x-go-name": "ProxyMode"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "NetworkDefaultsIPFamily": {
+      "type": "object",
+      "title": "NetworkDefaultsIPFamily contains cluster network default settings for an IP family.",
+      "properties": {
+        "nodeCidrMaskSize": {
+          "description": "NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSize"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange defines the default IP range from which access to NodePort services is allowed for applicable cloud providers.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
+        },
+        "podsCidr": {
+          "description": "PodsCIDR contains the default network range from which POD networks are allocated.",
+          "type": "string",
+          "x-go-name": "PodsCIDR"
+        },
+        "servicesCidr": {
+          "description": "ServicesCIDR contains the default network range from which service VIPs are allocated.",
+          "type": "string",
+          "x-go-name": "ServicesCIDR"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "NetworkRanges": {
       "type": "object",

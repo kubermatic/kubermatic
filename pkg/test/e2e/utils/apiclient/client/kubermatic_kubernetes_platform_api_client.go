@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metering"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metric"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mlaadminsetting"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/networkdefaults"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/nutanix"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/openstack"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/operations"
@@ -126,6 +127,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Metering = metering.New(transport, formats)
 	cli.Metric = metric.New(transport, formats)
 	cli.Mlaadminsetting = mlaadminsetting.New(transport, formats)
+	cli.Networkdefaults = networkdefaults.New(transport, formats)
 	cli.Nutanix = nutanix.New(transport, formats)
 	cli.Openstack = openstack.New(transport, formats)
 	cli.Operations = operations.New(transport, formats)
@@ -242,6 +244,8 @@ type KubermaticKubernetesPlatformAPI struct {
 
 	Mlaadminsetting mlaadminsetting.ClientService
 
+	Networkdefaults networkdefaults.ClientService
+
 	Nutanix nutanix.ClientService
 
 	Openstack openstack.ClientService
@@ -308,6 +312,7 @@ func (c *KubermaticKubernetesPlatformAPI) SetTransport(transport runtime.ClientT
 	c.Metering.SetTransport(transport)
 	c.Metric.SetTransport(transport)
 	c.Mlaadminsetting.SetTransport(transport)
+	c.Networkdefaults.SetTransport(transport)
 	c.Nutanix.SetTransport(transport)
 	c.Openstack.SetTransport(transport)
 	c.Operations.SetTransport(transport)
