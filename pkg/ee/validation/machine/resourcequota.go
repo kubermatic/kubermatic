@@ -41,7 +41,7 @@ import (
 func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, machine *v1alpha1.Machine) error {
 	config, err := types.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
-		return fmt.Errorf("failed to read machine.spec.providerSpec: %v", err)
+		return fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
 	}
 
 	// TODO add all providers
@@ -51,7 +51,7 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	case types.CloudProviderFake:
 		quotaReq, err = getFakeQuotaRequest(config)
 		if err != nil {
-			return fmt.Errorf("error getting fake quota req: %v", err)
+			return fmt.Errorf("error getting fake quota req: %w", err)
 		}
 	default:
 		// TODO skip for now, when all providers are added, throw error
@@ -62,7 +62,7 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	// TODO Get quota and usage from ResourceQuota when its implemented
 	quota, currentUsage, err := getResourceQuota()
 	if err != nil {
-		return fmt.Errorf("failed to get resouce quota: %v", err)
+		return fmt.Errorf("failed to get resource quota: %w", err)
 	}
 
 	// add requested resources to current usage and compare
@@ -95,33 +95,33 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	return nil
 }
 
-// TODO we should get it from the resourceQuota CRD for the project, for now just some hardcoded values for tests
+// TODO we should get it from the resourceQuota CRD for the project, for now just some hardcoded values for tests.
 func getResourceQuota() (*ResourceQuota, *ResourceQuota, error) {
 	cpu, err := resource.ParseQuantity("5")
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 	cpuUsed, err := resource.ParseQuantity("3")
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
 	mem, err := resource.ParseQuantity("5G")
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 	memUsed, err := resource.ParseQuantity("3G")
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
 	storage, err := resource.ParseQuantity("100G")
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 	storageUsed, err := resource.ParseQuantity("60G")
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
 	return NewResourceQuota(cpu, mem, storage),

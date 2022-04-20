@@ -36,7 +36,6 @@ import (
 )
 
 func TestResourceQuotaValidation(t *testing.T) {
-
 	l := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	testCases := []struct {

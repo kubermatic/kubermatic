@@ -36,21 +36,21 @@ import (
 func getFakeQuotaRequest(config *types.Config) (*ResourceQuota, error) {
 	spec := &FakeProviderSpec{}
 	if err := json.Unmarshal(config.CloudProviderSpec.Raw, spec); err != nil {
-		return nil, fmt.Errorf("error unmarshalling fake raw config: %v", err)
+		return nil, fmt.Errorf("error unmarshalling fake raw config: %w", err)
 	}
 	cpu, err := resource.ParseQuantity(spec.Cpu)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
 	mem, err := resource.ParseQuantity(spec.Memory)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
 	storage, err := resource.ParseQuantity(spec.Storage)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing quantity: %v", err)
+		return nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
 	return NewResourceQuota(cpu, mem, storage), nil
