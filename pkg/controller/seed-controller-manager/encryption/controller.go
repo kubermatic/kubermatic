@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -34,17 +33,16 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	apiserverconfigv1 "k8s.io/apiserver/pkg/apis/config/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -222,8 +220,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return r.encryptData(ctx, log, cluster, key)
 
 	case kubermaticv1.ClusterEncryptionPhaseActive:
-		// TODO: in this phase, check if configuration changed and we need to transition to ClusterEncryptionPhasePending.
-		if cluster.Status.Encryption.ActiveKey != fmt.Sprintf("secretbox:%s", cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name) {
+		if cluster.Status.Encryption.ActiveKey != fmt.Sprintf("secretbox/%s", cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name) {
 			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhasePending
 			}); err != nil {
@@ -277,77 +274,13 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 
 	var jobList batchv1.JobList
 	if err := r.List(ctx, &jobList, ctrlruntimeclient.MatchingLabels{
-		"kubermatic.k8c.io/cluster":        cluster.Name,
-		"kubermatic.k8c.io/encryption-key": strings.ReplaceAll(key, ":", "-"),
-		"kubermatic.k8c.io/revision":       secret.ObjectMeta.ResourceVersion,
+		"kubermatic.k8c.io/cluster":         cluster.Name,
+		"kubermatic.k8c.io/secret-revision": secret.ObjectMeta.ResourceVersion,
 	}); err != nil {
 		return &reconcile.Result{}, err
 	} else {
 		if len(jobList.Items) == 0 {
-			// TODO: move to reconcile helpers (?)
-			job := batchv1.Job{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: fmt.Sprintf("%s-%s-", encryptionJobPrefix, cluster.Name),
-					Namespace:    cluster.Status.NamespaceName,
-					Labels: map[string]string{
-						// TODO: do we have well-known labels aready?
-						"kubermatic.k8c.io/cluster":        cluster.Name,
-						"kubermatic.k8c.io/encryption-key": strings.ReplaceAll(key, ":", "-"),
-						"kubermatic.k8c.io/revision":       secret.ObjectMeta.ResourceVersion,
-					},
-					// TODO: add owner reference?
-				},
-				Spec: batchv1.JobSpec{
-					Parallelism:             pointer.Int32(1),
-					Completions:             pointer.Int32(1),
-					BackoffLimit:            pointer.Int32(0),
-					TTLSecondsAfterFinished: pointer.Int32(86400),
-					Template: corev1.PodTemplateSpec{
-						Spec: corev1.PodSpec{
-							RestartPolicy: corev1.RestartPolicyNever,
-							Containers: []corev1.Container{
-								{
-									Name: "encryption-runner",
-									// TODO: reconfigure image based on registry information
-									Image:   "quay.io/kubermatic/util:2.0.0",
-									Command: []string{"/bin/bash"},
-									Args: []string{
-										"-c",
-										"kubectl get secrets --all-namespaces -o json | kubectl replace -f -"},
-									Env: []corev1.EnvVar{
-										{
-											Name:  "KUBECONFIG",
-											Value: "/opt/kubeconfig/kubeconfig",
-										},
-									},
-									VolumeMounts: []corev1.VolumeMount{
-										{
-											Name:      "kubeconfig",
-											ReadOnly:  true,
-											MountPath: "/opt/kubeconfig",
-										},
-									},
-								},
-							},
-							SecurityContext: &corev1.PodSecurityContext{
-								SeccompProfile: &corev1.SeccompProfile{
-									Type: corev1.SeccompProfileTypeRuntimeDefault,
-								},
-							},
-							Volumes: []corev1.Volume{
-								{
-									Name: "kubeconfig",
-									VolumeSource: corev1.VolumeSource{
-										Secret: &corev1.SecretVolumeSource{
-											SecretName: resources.AdminKubeconfigSecretName,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			}
+			job := encryptionresources.EncryptionJob(cluster, &secret, key)
 
 			if err := r.Create(ctx, &job); err != nil {
 				return &reconcile.Result{}, err
@@ -407,9 +340,10 @@ func (r *Reconciler) isApiserverUpdated(ctx context.Context, cluster *kubermatic
 	}
 
 	var podList corev1.PodList
-	if err := r.List(ctx, &podList, ctrlruntimeclient.MatchingLabels{
-		"app": "apiserver",
-	}); err != nil {
+	if err := r.List(ctx, &podList, []ctrlruntimeclient.ListOption{
+		ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName),
+		ctrlruntimeclient.MatchingLabels{resources.AppLabelKey: "apiserver"},
+	}...); err != nil {
 		return false, err
 	}
 
@@ -431,6 +365,7 @@ func (r *Reconciler) getActiveKey(ctx context.Context, cluster *kubermaticv1.Clu
 		secret corev1.Secret
 		config apiserverconfigv1.EncryptionConfiguration
 	)
+
 	if err := r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.EncryptionConfigurationSecretName}, &secret); err != nil {
 		return "", err
 	}
@@ -443,7 +378,7 @@ func (r *Reconciler) getActiveKey(ctx context.Context, cluster *kubermaticv1.Clu
 
 	keyName := config.Resources[0].Providers[0].Secretbox.Keys[0].Name
 
-	return fmt.Sprintf("secretbox:%s", keyName), nil
+	return fmt.Sprintf("secretbox/%s", keyName), nil
 }
 
 func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster), opts ...ctrlruntimeclient.MergeFromOption) error {

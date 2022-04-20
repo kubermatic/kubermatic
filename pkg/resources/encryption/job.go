@@ -15,3 +15,85 @@ limitations under the License.
 */
 
 package encryption
+
+import (
+	"fmt"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
+
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
+)
+
+const (
+	EncryptionJobPrefix = "data-encryption"
+)
+
+func EncryptionJob(cluster *kubermaticv1.Cluster, secret *corev1.Secret, key string) batchv1.Job {
+	return batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: fmt.Sprintf("%s-%s-", EncryptionJobPrefix, cluster.Name),
+			Namespace:    cluster.Status.NamespaceName,
+			Labels: map[string]string{
+				// TODO: do we have well-known labels aready?
+				"kubermatic.k8c.io/cluster":         cluster.Name,
+				"kubermatic.k8c.io/secret-revision": secret.ObjectMeta.ResourceVersion,
+			},
+			// TODO: add owner reference?
+		},
+		Spec: batchv1.JobSpec{
+			Parallelism:             pointer.Int32(1),
+			Completions:             pointer.Int32(1),
+			BackoffLimit:            pointer.Int32(0),
+			TTLSecondsAfterFinished: pointer.Int32(86400),
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyNever,
+					Containers: []corev1.Container{
+						{
+							Name: "encryption-runner",
+							// TODO: reconfigure image based on registry information
+							Image:   "quay.io/kubermatic/util:2.0.0",
+							Command: []string{"/bin/bash"},
+							Args: []string{
+								"-c",
+								"kubectl get secrets --all-namespaces -o json | kubectl replace -f -"},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "KUBECONFIG",
+									Value: "/opt/kubeconfig/kubeconfig",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "kubeconfig",
+									ReadOnly:  true,
+									MountPath: "/opt/kubeconfig",
+								},
+							},
+						},
+					},
+					SecurityContext: &corev1.PodSecurityContext{
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "kubeconfig",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: resources.AdminKubeconfigSecretName,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+}

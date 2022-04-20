@@ -57,7 +57,14 @@ func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconcil
 
 			}
 
-			var config apiserverconfigv1.EncryptionConfiguration
+			var existingConfig, config apiserverconfigv1.EncryptionConfiguration
+
+			// Unmarshal existing configuration, if there was any
+			if val, ok := secret.Data[resources.EncryptionConfigurationKeyName]; ok {
+				if err := yaml.Unmarshal(val, &existingConfig); err != nil {
+					return secret, err
+				}
+			}
 
 			resourceList := data.Cluster().Spec.EncryptionConfiguration.Resources
 			if len(resourceList) == 0 {
@@ -67,14 +74,31 @@ func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconcil
 			var providerList []apiserverconfigv1.ProviderConfiguration
 
 			if data.Cluster().Spec.EncryptionConfiguration.Secretbox != nil {
-				var secretboxKeys []apiserverconfigv1.Key
+				var existingKeys, secretboxKeys []apiserverconfigv1.Key
+
+				if len(existingConfig.Resources) == 1 && len(existingConfig.Resources[0].Providers) == 2 &&
+					existingConfig.Resources[0].Providers[0].Secretbox != nil {
+					existingKeys = existingConfig.Resources[0].Providers[0].Secretbox.Keys
+				}
 
 				for _, key := range data.Cluster().Spec.EncryptionConfiguration.Secretbox.Keys {
-					secretboxKeys = append(secretboxKeys, apiserverconfigv1.Key{
+					secretboxKey := apiserverconfigv1.Key{
 						Name: key.Name,
+					}
+
+					// If a key with the given name exists, we will prefer the existing key value
+					// over the cluster spec. This is done to prevent changing encryption keys in
+					// place, as that is not supported and might result in unreadable resources.
+					// This is especially aimed at keys read from Secret references, as those are
+					// hard to keep track of.
+					if existingKey := getKeyByName(existingKeys, key.Name); existingKey != nil {
+						secretboxKey.Secret = existingKey.Secret
+					} else {
 						// TODO: read from Secret if secretRef exists
-						Secret: key.Value,
-					})
+						secretboxKey.Secret = key.Value
+					}
+
+					secretboxKeys = append(secretboxKeys, secretboxKey)
 				}
 
 				providerList = append(providerList, apiserverconfigv1.ProviderConfiguration{
@@ -125,4 +149,14 @@ func EncryptionConfigurationSecretCreator(data *resources.TemplateData) reconcil
 			return secret, nil
 		}
 	}
+}
+
+func getKeyByName(keys []apiserverconfigv1.Key, name string) *apiserverconfigv1.Key {
+	for _, key := range keys {
+		if key.Name == name {
+			return &key
+		}
+	}
+
+	return nil
 }
