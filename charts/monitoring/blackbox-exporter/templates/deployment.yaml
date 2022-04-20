@@ -40,6 +40,10 @@ spec:
         ports:
         - containerPort: 9115
           name: web
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: web
         volumeMounts:
         - name: config
           mountPath: /etc/blackbox_exporter
