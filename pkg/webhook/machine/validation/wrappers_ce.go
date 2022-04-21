@@ -28,6 +28,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateQuota(_ context.Context, _ *zap.SugaredLogger, _ ctrlruntimeclient.Client, _ *clusterv1alpha1.Machine) error {
+func validateQuota(_ context.Context, _ *zap.SugaredLogger, _, _ ctrlruntimeclient.Client, _ *clusterv1alpha1.Machine) error {
 	return nil
 }

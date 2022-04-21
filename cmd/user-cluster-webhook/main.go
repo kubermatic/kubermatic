@@ -33,6 +33,7 @@ import (
 	machinevalidation "k8c.io/kubermatic/v2/pkg/webhook/machine/validation"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -70,31 +71,41 @@ func main() {
 	// /////////////////////////////////////////
 	// get kubeconfig
 
-	cfg, err := ctrlruntime.GetConfig()
+	seedCfg, err := rest.InClusterConfig()
 	if err != nil {
-		log.Fatalw("Failed to get kubeconfig", zap.Error(err))
+		log.Fatalw("Failed to get seed kubeconfig", zap.Error(err))
+	}
+
+	userCfg, err := ctrlruntime.GetConfig()
+	if err != nil {
+		log.Fatalw("Failed to get user cluster kubeconfig")
 	}
 
 	// /////////////////////////////////////////
 	// create manager
 
-	mgr, err := manager.New(cfg, manager.Options{})
+	seedMgr, err := manager.New(seedCfg, manager.Options{})
 	if err != nil {
-		log.Fatalw("Failed to create the manager", zap.Error(err))
+		log.Fatalw("Failed to create the seed cluster manager", zap.Error(err))
+	}
+
+	userMgr, err := manager.New(userCfg, manager.Options{})
+	if err != nil {
+		log.Fatalw("Failed to create the user cluster manager", zap.Error(err))
 	}
 
 	// apply the CLI flags for configuring the  webhook server to the manager
-	if err := options.webhook.Configure(mgr.GetWebhookServer()); err != nil {
+	if err := options.webhook.Configure(seedMgr.GetWebhookServer()); err != nil {
 		log.Fatalw("Failed to configure webhook server", zap.Error(err))
 	}
 
 	// add APIs we use
-	addAPIs(mgr.GetScheme(), log)
+	addAPIs(seedMgr.GetScheme(), log)
 
 	// /////////////////////////////////////////
 	// add pprof runnable, which will start a websever if configured
 
-	if err := mgr.Add(&options.pprof); err != nil {
+	if err := seedMgr.Add(&options.pprof); err != nil {
 		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
 	}
 
@@ -105,8 +116,8 @@ func main() {
 	applicationinstallationvalidation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
 
 	// Setup Machine Webhook
-	machineValidator := machinevalidation.NewValidator(mgr.GetClient(), log)
-	if err := builder.WebhookManagedBy(mgr).For(&clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
+	machineValidator := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log)
+	if err := builder.WebhookManagedBy(seedMgr).For(&clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup Machine validation webhook", zap.Error(err))
 	}
 
@@ -114,7 +125,7 @@ func main() {
 	// Start manager
 
 	log.Info("Starting the webhook...")
-	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
+	if err := seedMgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
 		log.Fatalw("The webhook has failed", zap.Error(err))
 	}
 }

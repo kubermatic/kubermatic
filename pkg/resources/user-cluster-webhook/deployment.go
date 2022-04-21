@@ -76,6 +76,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 			}
 
 			args := []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"-webhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-webhook-cert-name=%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-webhook-key-name=%s", resources.ServingCertKeySecretKey),
@@ -96,12 +97,25 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 						},
 					},
 				},
+				{
+					Name: resources.InternalUserClusterAdminKubeconfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+						},
+					},
+				},
 			}
 
 			volumeMounts := []corev1.VolumeMount{
 				{
 					Name:      "webhook-serving-cert",
 					MountPath: "/opt/webhook-serving-cert/",
+					ReadOnly:  true,
+				},
+				{
+					Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
+					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
 			}

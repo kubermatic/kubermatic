@@ -33,13 +33,15 @@ import (
 type validator struct {
 	log        *zap.SugaredLogger
 	seedClient ctrlruntimeclient.Client
+	userClient ctrlruntimeclient.Client
 }
 
 // NewValidator returns a new Machine validator.
-func NewValidator(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *validator {
+func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *validator {
 	return &validator{
 		log:        log,
 		seedClient: seedClient,
+		userClient: userClient,
 	}
 }
 
@@ -54,7 +56,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	log := v.log.With("machine", machine.Name)
 	log.Debug("validating create")
 
-	return validateQuota(ctx, log, v.seedClient, machine)
+	return validateQuota(ctx, log, v.seedClient, v.userClient, machine)
 }
 
 // ValidateUpdate validates Machine updates. As mutating Machine spec is disallowed by the Machine Mutating webhook,
