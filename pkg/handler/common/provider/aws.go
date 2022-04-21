@@ -232,7 +232,8 @@ func AWSSizes(region, architecture string, quota kubermaticv1.MachineDeploymentV
 	}
 
 	sizes := apiv1.AWSSizeList{}
-	for _, i := range *data {
+	for a, i := range *data {
+		fmt.Println(fmt.Sprintf("%d type: %s, CPU: %d, MEM: %f", a, i.InstanceType, i.VCPU, i.Memory))
 		pricing, ok := i.Pricing[region]
 		if !ok {
 			continue
@@ -319,4 +320,21 @@ type AWSCredential struct {
 	SecretAccessKey      string
 	AssumeRoleARN        string
 	AssumeRoleExternalID string
+}
+
+func GetAWSInstance(instanceType string) (*apiv1.AWSSize, error) {
+	if data == nil {
+		return nil, fmt.Errorf("AWS instance type data not initialized")
+	}
+
+	for _, i := range *data {
+		if strings.EqualFold(i.InstanceType, instanceType) {
+			return &apiv1.AWSSize{
+				Memory: i.Memory,
+				VCPUs:  i.VCPU,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find instance %q in aws instance type data", instanceType)
 }

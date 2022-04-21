@@ -51,7 +51,12 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	case types.CloudProviderFake:
 		quotaReq, err = getFakeQuotaRequest(config)
 		if err != nil {
-			return fmt.Errorf("error getting fake quota req: %w", err)
+			return fmt.Errorf("error getting fake quota reqest: %w", err)
+		}
+	case types.CloudProviderAWS:
+		quotaReq, err = getAWSResourceRequirements(ctx, seedClient, config)
+		if err != nil {
+			return fmt.Errorf("error getting aws quota request: %w", err)
 		}
 	default:
 		// TODO skip for now, when all providers are added, throw error
