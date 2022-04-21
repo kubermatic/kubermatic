@@ -24,6 +24,9 @@ type ClusterHealth struct {
 	// apiserver
 	Apiserver HealthStatus `json:"apiserver,omitempty"`
 
+	// application controller
+	ApplicationController HealthStatus `json:"applicationController,omitempty"`
+
 	// cloud provider infrastructure
 	CloudProviderInfrastructure HealthStatus `json:"cloudProviderInfrastructure,omitempty"`
 
@@ -67,6 +70,10 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateApiserver(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateApplicationController(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -147,6 +154,23 @@ func (m *ClusterHealth) validateApiserver(formats strfmt.Registry) error {
 			return ve.ValidateName("apiserver")
 		} else if ce, ok := err.(*errors.CompositeError); ok {
 			return ce.ValidateName("apiserver")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateApplicationController(formats strfmt.Registry) error {
+	if swag.IsZero(m.ApplicationController) { // not required
+		return nil
+	}
+
+	if err := m.ApplicationController.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("applicationController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("applicationController")
 		}
 		return err
 	}
@@ -353,6 +377,10 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateApplicationController(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCloudProviderInfrastructure(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -424,6 +452,20 @@ func (m *ClusterHealth) contextValidateApiserver(ctx context.Context, formats st
 			return ve.ValidateName("apiserver")
 		} else if ce, ok := err.(*errors.CompositeError); ok {
 			return ce.ValidateName("apiserver")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateApplicationController(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ApplicationController.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("applicationController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("applicationController")
 		}
 		return err
 	}

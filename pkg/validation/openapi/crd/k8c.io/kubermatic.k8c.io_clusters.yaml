@@ -2171,6 +2171,12 @@ spec:
                     - HealthStatusUp
                     - HealthStatusProvisioning
                     type: string
+                  applicationController:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   cloudProviderInfrastructure:
                     enum:
                     - HealthStatusDown

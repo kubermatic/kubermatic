@@ -47,7 +47,7 @@ import (
 )
 
 const (
-	operatorName = "usersshkeys-controller"
+	operatorName = "kkp-usersshkeys-controller"
 )
 
 type Reconciler struct {

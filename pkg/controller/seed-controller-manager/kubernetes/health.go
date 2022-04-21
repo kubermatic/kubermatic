@@ -77,6 +77,15 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 	extendedHealth.MachineController = mcHealthStatus
 
+	applicationControllerHealthStatus := kubermaticv1.HealthStatusDown
+	if extendedHealth.ApplicationController == kubermaticv1.HealthStatusUp {
+		applicationControllerHealthStatus, err = r.applicationControllerHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to evaluate application controller health: %w", err)
+		}
+	}
+	extendedHealth.ApplicationController = applicationControllerHealthStatus
+
 	return extendedHealth, nil
 }
 
@@ -155,6 +164,11 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 	default:
 		return kubermaticv1.HealthStatusDown, nil
 	}
+}
+
+func (r *Reconciler) applicationControllerHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	// TODO: Implement this
+	return kubermaticv1.HealthStatusUp, nil
 }
 
 func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {

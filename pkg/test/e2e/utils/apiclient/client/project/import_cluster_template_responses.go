@@ -181,6 +181,9 @@ type ImportClusterTemplateBody struct {
 	// Annotations that can be added to the resource
 	Annotations map[string]string `json:"annotations,omitempty"`
 
+	// applications
+	Applications []*models.Application `json:"applications"`
+
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
 	// Format: date-time
 	CreationTimestamp strfmt.DateTime `json:"creationTimestamp,omitempty"`
@@ -218,6 +221,10 @@ type ImportClusterTemplateBody struct {
 func (o *ImportClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := o.validateApplications(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := o.validateCreationTimestamp(formats); err != nil {
 		res = append(res, err)
 	}
@@ -241,6 +248,32 @@ func (o *ImportClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (o *ImportClusterTemplateBody) validateApplications(formats strfmt.Registry) error {
+	if swag.IsZero(o.Applications) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(o.Applications); i++ {
+		if swag.IsZero(o.Applications[i]) { // not required
+			continue
+		}
+
+		if o.Applications[i] != nil {
+			if err := o.Applications[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -336,6 +369,10 @@ func (o *ImportClusterTemplateBody) validateNodeDeployment(formats strfmt.Regist
 func (o *ImportClusterTemplateBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := o.contextValidateApplications(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := o.contextValidateUserSSHKeys(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -351,6 +388,26 @@ func (o *ImportClusterTemplateBody) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (o *ImportClusterTemplateBody) contextValidateApplications(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(o.Applications); i++ {
+
+		if o.Applications[i] != nil {
+			if err := o.Applications[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
