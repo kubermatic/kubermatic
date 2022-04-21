@@ -25,12 +25,14 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
+	applicationdefinitionvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/validation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
@@ -191,6 +193,9 @@ func main() {
 	// Setup the validation admission handler for OperatingSystemProfile CRDs
 	ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
+	// Setup the validation admission handler for ApplicationDefinition CRDs
+	applicationdefinitionvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+
 	// /////////////////////////////////////////
 	// Here we go!
 
@@ -209,6 +214,9 @@ func addAPIs(dst *runtime.Scheme, log *zap.SugaredLogger) {
 	}
 	if err := osmv1alpha1.AddToScheme(dst); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := appkubermaticv1.AddToScheme(dst); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", appkubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 }
 

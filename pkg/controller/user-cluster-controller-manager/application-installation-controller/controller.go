@@ -251,7 +251,7 @@ func enqueueAppInstallationForAppDef(ctx context.Context, userClient ctrlruntime
 		var res []reconcile.Request
 		for _, appInstallation := range appList.Items {
 			if appInstallation.Spec.ApplicationRef.Name == applicationDefinition.GetName() {
-				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: appInstallation.Name}})
+				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: appInstallation.Name, Namespace: appInstallation.Namespace}})
 			}
 		}
 		return res

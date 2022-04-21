@@ -34,6 +34,10 @@ import (
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+const (
+	defaultNamespace = "default"
+)
+
 func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -149,11 +153,7 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 	userClient := fakectrlruntimeclient.
 		NewClientBuilder().
 		WithObjects(
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: nsName,
-				},
-			}).
+			genNamespace(nsName), genNamespace(defaultNamespace)).
 		Build()
 
 	namespaceSpec := appkubermaticv1.NamespaceSpec{
@@ -194,11 +194,7 @@ func TestApplicationManager_deleteNamespace(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					&corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: nsName,
-						},
-					}).
+					genNamespace(nsName), genNamespace(defaultNamespace)).
 				Build(),
 			createNamespace: true,
 		},
@@ -280,6 +276,7 @@ func genApplicationInstallation(namspaceSpec appkubermaticv1.NamespaceSpec) *app
 	return &appkubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-",
+			Namespace:    defaultNamespace,
 		},
 		Spec: appkubermaticv1.ApplicationInstallationSpec{
 			Namespace: namspaceSpec,
@@ -289,5 +286,13 @@ func genApplicationInstallation(namspaceSpec appkubermaticv1.NamespaceSpec) *app
 			},
 		},
 		Status: appkubermaticv1.ApplicationInstallationStatus{},
+	}
+}
+
+func genNamespace(name string) *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
 	}
 }

@@ -338,6 +338,8 @@ const (
 
 	// KubermaticNamespace is the main kubermatic namespace.
 	KubermaticNamespace = "kubermatic"
+	// KubermaticWebhookServiceName is the name of the kuberamtic webhook service in seed cluster.
+	KubermaticWebhookServiceName = "kubermatic-webhook"
 	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment.
 	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
 	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment.
@@ -818,7 +820,6 @@ const (
 const (
 	UserClusterWebhookDeploymentName        = "user-cluster-webhook"
 	UserClusterWebhookServiceName           = "user-cluster-webhook"
-	UserClusterWebhookServiceAccountName    = "user-cluster-webhook"
 	UserClusterWebhookServingCertSecretName = "user-cluster-webhook-serving-cert"
 )
 

@@ -201,6 +201,10 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up KubermaticConfiguration ValidatingWebhookConfiguration: %w", err)
 	}
 
+	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.ApplicationDefinitionAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up ApplicationDefinition ValidatingWebhookConfiguration: %w", err)
+	}
+
 	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
 		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
 	}
@@ -612,6 +616,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		common.SeedAdmissionWebhookCreator(ctx, cfg, client),
 		common.KubermaticConfigurationAdmissionWebhookCreator(ctx, cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(ctx, cfg, client),
+		common.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, cfg, client),
 	}
 
 	if cfg.Spec.FeatureGates[features.OperatingSystemManager] {

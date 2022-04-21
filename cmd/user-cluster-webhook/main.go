@@ -24,10 +24,12 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	applicationinstallationvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/validation"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -94,6 +96,15 @@ func main() {
 		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
 	}
 
+	// /////////////////////////////////////////
+	// setup Application webhooks
+
+	// Setup the validation admission handler for ApplicationInstallation CRDs
+	applicationinstallationvalidation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// Start manager
+
 	log.Info("Starting the webhook...")
 	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
 		log.Fatalw("The webhook has failed", zap.Error(err))
@@ -106,5 +117,8 @@ func addAPIs(dst *runtime.Scheme, log *zap.SugaredLogger) {
 	}
 	if err := clusterv1alpha1.AddToScheme(dst); err != nil {
 		log.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := appkubermaticv1.AddToScheme(dst); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", appkubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 }
