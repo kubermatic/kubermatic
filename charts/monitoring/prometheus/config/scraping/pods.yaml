@@ -80,6 +80,12 @@ relabel_configs:
   replacement: $1:$2
   target_label: __address__
 
+# allow to override the scrape scheme with https (defaults to plain http) via prometheus.io/scheme
+- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+  action: replace
+  regex: (https?)
+  target_label: __scheme__
+
 # refine labels further
 - action: labelmap
   regex: __meta_kubernetes_pod_label_(.+)
