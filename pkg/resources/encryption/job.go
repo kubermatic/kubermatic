@@ -50,7 +50,6 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 				ClusterLabelKey:        cluster.Name,
 				SecretRevisionLabelKey: secret.ObjectMeta.ResourceVersion,
 			},
-			// TODO: add owner reference?
 		},
 		Spec: batchv1.JobSpec{
 			Parallelism:             pointer.Int32(1),

@@ -18,6 +18,7 @@ package encryption
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -88,6 +89,8 @@ func Add(
 		log:                     log.Named(ControllerName),
 		Client:                  mgr.GetClient(),
 		userClusterConnProvider: userClusterConnProvider,
+		seedGetter:              seedGetter,
+		configGetter:            configGetter,
 		workerName:              workerName,
 
 		recorder: mgr.GetEventRecorderFor(ControllerName),
@@ -119,7 +122,9 @@ func Add(
 
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		cluster := o.(*kubermaticv1.Cluster)
-		return cluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]
+		encryptionEnabled := cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled
+		encryptionActive := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
+		return cluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest] && (encryptionEnabled || encryptionActive)
 	}))
 }
 
@@ -136,12 +141,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 	log = log.With("cluster", cluster.Name)
-
-	// return early if encryption is not enabled in spec and EncryptionIntialized condition is not set
-	// TODO: make a predicate?
-	if cluster.Spec.EncryptionConfiguration == nil || !cluster.Spec.EncryptionConfiguration.Enabled || cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionFalse) {
-		return reconcile.Result{}, nil
-	}
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -175,30 +174,30 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return r.setInitializedCondition(ctx, cluster)
 	}
 
+	// this should never happen as the field should be initialized with the condition, but you never know ...
 	if cluster.Status.Encryption == nil {
-		// TODO: handle this situation differently?
-		return &reconcile.Result{}, nil
+		return &reconcile.Result{}, errors.New("expected cluster.status.encryption to exist, but is nil")
 	}
 
 	switch cluster.Status.Encryption.Phase {
 	case kubermaticv1.ClusterEncryptionPhasePending:
-		ok, err := isApiserverUpdated(ctx, r.Client, cluster)
+		isUpdated, err := isApiserverUpdated(ctx, r.Client, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
 
-		if !ok {
+		if !isUpdated {
 			log.Debug("kube-apiserver is not using updated EncryptionConfiguration yet, retrying in 10s ...")
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
-		key, err := getActiveKey(ctx, r.Client, cluster)
+		keyHint, err := getActiveKey(ctx, r.Client, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
 
 		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-			if c.Status.Encryption.ActiveKey != key {
+			if c.Status.Encryption.ActiveKey != keyHint {
 				// the active key as per the parsed EncryptionConfiguration has changed; we need to re-run encryption
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded
 			} else {
@@ -213,7 +212,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{}, nil
 
 	case kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded:
-		// transition to ClusterEncryptionPhaseActive or ClusterEncryptionPhaseFailed.
 		key, err := getActiveKey(ctx, r.Client, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
@@ -222,7 +220,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return r.encryptData(ctx, log, cluster, key)
 
 	case kubermaticv1.ClusterEncryptionPhaseActive:
-		if cluster.Status.Encryption.ActiveKey != fmt.Sprintf("secretbox/%s", cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name) {
+		// get a key hint as defined in the ClusterSpec to compare to the current status
+		configuredKey, err := getConfiguredKey(cluster)
+		if err != nil {
+			return &reconcile.Result{}, err
+		}
+
+		if cluster.Status.Encryption.ActiveKey != configuredKey {
+			log.Debugf("configured key %q != %q, moving cluster to EncryptionPhase 'Pending'", configuredKey, cluster.Status.Encryption.ActiveKey)
 			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhasePending
 			}); err != nil {
@@ -232,7 +237,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{}, nil
 
 	case kubermaticv1.ClusterEncryptionPhaseFailed:
-		// TODO: how to recover from a failed encryption? Can you even recover?
+		// TODO: how to recover from a failed encryption? Can you even recover automatically?
 		return &reconcile.Result{}, nil
 
 	default:

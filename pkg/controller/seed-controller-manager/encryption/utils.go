@@ -103,7 +103,7 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 		}
 	}
 
-	if len(config.Resources) != 1 || len(config.Resources[0].Providers) != 1 {
+	if len(config.Resources) != 1 || len(config.Resources[0].Providers) != 2 {
 		return "", errors.New("unexpected apiserverconfigv1.EncryptionConfiguration: too many items in .resources or .resources[0].providers")
 	}
 
@@ -115,4 +115,20 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 	}
 
 	return keyName, nil
+}
+
+// getConfiguredKey returns a key "hint" for the primary key as configured in a ClusterSpec. This can return a different result
+// than `getActiveKey(ctx, client, cluster)`, because we are checking the specification (i.e. the target state), not the status
+// (i.e. the current state). It does not return secret data.
+func getConfiguredKey(cluster *kubermaticv1.Cluster) (string, error) {
+	if cluster.Spec.EncryptionConfiguration == nil || !cluster.Spec.EncryptionConfiguration.Enabled {
+		return "", errors.New("EncryptionConfiguration not active or enabled")
+	}
+
+	switch {
+	case cluster.Spec.EncryptionConfiguration.Secretbox != nil:
+		return fmt.Sprintf("%s/%s", encryptionresources.SecretboxPrefix, cluster.Spec.EncryptionConfiguration.Secretbox.Keys[0].Name), nil
+	}
+
+	return "", errors.New("no supported encryption provider found")
 }
