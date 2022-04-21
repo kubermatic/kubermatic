@@ -78,7 +78,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	extendedHealth.MachineController = mcHealthStatus
 
 	applicationControllerHealthStatus := kubermaticv1.HealthStatusDown
-	if extendedHealth.ApplicationController == kubermaticv1.HealthStatusUp {
+	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
 		applicationControllerHealthStatus, err = r.applicationControllerHealthCheck(ctx, cluster, ns)
 		if err != nil {
 			return nil, fmt.Errorf("failed to evaluate application controller health: %w", err)
