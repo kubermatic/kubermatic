@@ -104,5 +104,4 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 			},
 		},
 	}
-
 }

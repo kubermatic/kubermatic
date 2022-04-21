@@ -23,6 +23,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -56,12 +57,6 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 			if data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) &&
 				data.Cluster().Status.Encryption != nil && data.Cluster().Status.Encryption.Phase == kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded {
 				return secret, nil
-			}
-
-			// encryption has been disabled but there is still active encryption;
-			// we need to decrypt all data before removing the encryption configuration
-			if !data.IsEncryptionConfigurationEnabled() && data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) {
-
 			}
 
 			var existingConfig, config apiserverconfigv1.EncryptionConfiguration
@@ -155,10 +150,14 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 			}
 
 			spec, err := json.Marshal(data.Cluster().Spec.EncryptionConfiguration)
+			if err != nil {
+				return nil, err
+			}
+
 			hash := sha1.New()
 			hash.Write(spec)
 
-			secret.ObjectMeta.Labels["kubermatic.k8c.io/encryption-spec-hash"] = hex.EncodeToString(hash.Sum(nil))
+			secret.ObjectMeta.Labels[encryptionresources.ApiserverEncryptionHashLabelKey] = hex.EncodeToString(hash.Sum(nil))
 
 			return secret, nil
 		}

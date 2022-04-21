@@ -50,7 +50,7 @@ const (
 	ControllerName = "kubermatic_encryption_controller"
 )
 
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
 type userClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
@@ -84,7 +84,6 @@ func Add(
 	versions kubermatic.Versions,
 	overwriteRegistry string,
 ) error {
-
 	reconciler := &Reconciler{
 		log:                     log.Named(ControllerName),
 		Client:                  mgr.GetClient(),
@@ -164,7 +163,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	return *result, err
-
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
@@ -267,16 +265,6 @@ func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kuber
 	}
 
 	return &reconcile.Result{}, nil
-}
-
-func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster), opts ...ctrlruntimeclient.MergeFromOption) error {
-	oldCluster := cluster.DeepCopy()
-	modify(cluster)
-	if reflect.DeepEqual(oldCluster, cluster) {
-		return nil
-	}
-
-	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...))
 }
 
 func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration) (*resources.TemplateData, error) {

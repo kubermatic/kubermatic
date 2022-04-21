@@ -102,7 +102,7 @@ const (
 	EtcdDefaultBackupConfigName = "default-backups"
 	// EtcdTLSEnabledAnnotation is the annotation assigned to etcd Pods that run with a TLS peer endpoint.
 	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
-	// EncryptionConfigurationSecretName is the name of secret storing the API server's EncryptionConfiguration
+	// EncryptionConfigurationSecretName is the name of secret storing the API server's EncryptionConfiguration.
 	EncryptionConfigurationSecretName = "apiserver-encryption-configuration"
 	// EncryptionConfigurationKeyName is the name of the secret key that is used to store the configuration file for encryption-at-rest.
 	EncryptionConfigurationKeyName = "encryption-configuration.yaml"
