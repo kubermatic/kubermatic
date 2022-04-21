@@ -140,6 +140,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 	log = log.With("cluster", cluster.Name)
 
+	// replicate the predicate from above to make sure that reconcile loops triggered by apiserver and secret
+	// do not run unexpected reconciles.
+	if !(cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled) && !(cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue)) {
+		return reconcile.Result{}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
