@@ -56,6 +56,7 @@ git clone "$URL" "$tempdir"
   helm --namespace mla upgrade --atomic --create-namespace --install minio charts/minio --values config/minio/values.yaml
   helm --namespace mla upgrade --atomic --create-namespace --install grafana charts/grafana --values config/grafana/values.yaml
   kubectl apply -f dashboards/
+  kubectl create -n mla configmap cortex-runtime-config --from-file=config/cortex/runtime-config.yaml || true
   helm --namespace mla upgrade --atomic --create-namespace --install consul charts/consul --values config/consul/values.yaml
   helm --namespace mla upgrade --atomic --create-namespace --install --debug cortex charts/cortex --values config/cortex/values.yaml --timeout 20m
   helm --namespace mla upgrade --atomic --create-namespace --install loki-distributed charts/loki-distributed --values config/loki/values.yaml --timeout 10m
