@@ -20,6 +20,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -65,71 +66,88 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 				}
 			}
 
-			resourceList := data.Cluster().Spec.EncryptionConfiguration.Resources
-			if len(resourceList) == 0 {
-				resourceList = []string{"secrets"}
-			}
+			if data.Cluster().IsEncryptionEnabled() {
+				// handle active encryption configuration
 
-			var providerList []apiserverconfigv1.ProviderConfiguration
-
-			if data.Cluster().Spec.EncryptionConfiguration.Secretbox != nil {
-				var existingKeys, secretboxKeys []apiserverconfigv1.Key
-
-				if len(existingConfig.Resources) == 1 && len(existingConfig.Resources[0].Providers) == 2 &&
-					existingConfig.Resources[0].Providers[0].Secretbox != nil {
-					existingKeys = existingConfig.Resources[0].Providers[0].Secretbox.Keys
+				resourceList := data.Cluster().Spec.EncryptionConfiguration.Resources
+				if len(resourceList) == 0 {
+					resourceList = []string{"secrets"}
 				}
 
-				for _, key := range data.Cluster().Spec.EncryptionConfiguration.Secretbox.Keys {
-					secretboxKey := apiserverconfigv1.Key{
-						Name: key.Name,
+				var providerList []apiserverconfigv1.ProviderConfiguration
+
+				if data.Cluster().Spec.EncryptionConfiguration.Secretbox != nil {
+					var existingKeys, secretboxKeys []apiserverconfigv1.Key
+
+					if len(existingConfig.Resources) == 1 && len(existingConfig.Resources[0].Providers) == 2 &&
+						existingConfig.Resources[0].Providers[0].Secretbox != nil {
+						existingKeys = existingConfig.Resources[0].Providers[0].Secretbox.Keys
 					}
 
-					// If a key with the given name exists, we will prefer the existing key value
-					// over the cluster spec. This is done to prevent changing encryption keys in
-					// place, as that is not supported and might result in unreadable resources.
-					// This is especially aimed at keys read from Secret references, as those are
-					// hard to keep track of.
-					if existingKey := getKeyByName(existingKeys, key.Name); existingKey != nil {
-						secretboxKey.Secret = existingKey.Secret
-					} else {
-						if key.SecretRef != nil {
-							val, err := data.GetSecretKeyValue(key.SecretRef)
-							if err != nil {
-								return secret, err
-							}
-							secretboxKey.Secret = string(val)
-						} else {
-							secretboxKey.Secret = key.Value
+					for _, key := range data.Cluster().Spec.EncryptionConfiguration.Secretbox.Keys {
+						secretboxKey := apiserverconfigv1.Key{
+							Name: key.Name,
 						}
+
+						// If a key with the given name exists, we will prefer the existing key value
+						// over the cluster spec. This is done to prevent changing encryption keys in
+						// place, as that is not supported and might result in unreadable resources.
+						// This is especially aimed at keys read from Secret references, as those are
+						// hard to keep track of.
+						if existingKey := getKeyByName(existingKeys, key.Name); existingKey != nil {
+							secretboxKey.Secret = existingKey.Secret
+						} else {
+							if key.SecretRef != nil {
+								val, err := data.GetSecretKeyValue(key.SecretRef)
+								if err != nil {
+									return secret, err
+								}
+								secretboxKey.Secret = string(val)
+							} else {
+								secretboxKey.Secret = key.Value
+							}
+						}
+
+						secretboxKeys = append(secretboxKeys, secretboxKey)
 					}
 
-					secretboxKeys = append(secretboxKeys, secretboxKey)
+					providerList = append(providerList, apiserverconfigv1.ProviderConfiguration{
+						Secretbox: &apiserverconfigv1.SecretboxConfiguration{
+							Keys: secretboxKeys,
+						},
+					})
 				}
 
+				// always append the "unencrypted" provider
 				providerList = append(providerList, apiserverconfigv1.ProviderConfiguration{
-					Secretbox: &apiserverconfigv1.SecretboxConfiguration{
-						Keys: secretboxKeys,
-					},
+					Identity: &apiserverconfigv1.IdentityConfiguration{},
 				})
-			}
 
-			// always append the "unencrypted" provider
-			providerList = append(providerList, apiserverconfigv1.ProviderConfiguration{
-				Identity: &apiserverconfigv1.IdentityConfiguration{},
-			})
-
-			config = apiserverconfigv1.EncryptionConfiguration{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "apiserver.config.k8s.io/v1",
-					Kind:       "EncryptionConfiguration",
-				},
-				Resources: []apiserverconfigv1.ResourceConfiguration{
-					{
-						Resources: resourceList,
-						Providers: providerList,
+				config = apiserverconfigv1.EncryptionConfiguration{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "apiserver.config.k8s.io/v1",
+						Kind:       "EncryptionConfiguration",
 					},
-				},
+					Resources: []apiserverconfigv1.ResourceConfiguration{
+						{
+							Resources: resourceList,
+							Providers: providerList,
+						},
+					},
+				}
+			} else {
+				// encryptionConfiguration is not set; this means it was disabled and we need to rotate keys
+				// to go back to 'identity', the "unencrypted" provider.
+				config = *existingConfig.DeepCopy()
+				if len(config.Resources) != 1 {
+					return nil, fmt.Errorf("malfored existing configuration, expected one entry for 'resources', got %d", len(config.Resources))
+				}
+
+				// rotate identity provider to the start of the list.
+				providers := config.Resources[0].Providers[:len(config.Resources[0].Providers)-1]
+				config.Resources[0].Providers = append([]apiserverconfigv1.ProviderConfiguration{
+					{Identity: &apiserverconfigv1.IdentityConfiguration{}},
+				}, providers...)
 			}
 
 			var err error
