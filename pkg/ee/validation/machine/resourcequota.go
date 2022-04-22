@@ -45,7 +45,7 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	}
 
 	// TODO add all providers
-	var quotaReq *ResourceQuota
+	var quotaReq *ResourceDetails
 	switch config.CloudProvider {
 	// add this fake for test and so further code is reachable until more providers are implemented
 	case types.CloudProviderFake:
@@ -59,14 +59,14 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 		return nil
 	}
 
-	// TODO Get quota and usage from ResourceQuota when its implemented
+	// TODO Get quota and usage from ResourceQuota CRD when its implemented
 	quota, currentUsage, err := getResourceQuota()
 	if err != nil {
 		return fmt.Errorf("failed to get resource quota: %w", err)
 	}
 
 	// add requested resources to current usage and compare
-	combinedUsage := NewResourceQuota(currentUsage.cpu, currentUsage.mem, currentUsage.storage)
+	combinedUsage := NewResourceDetails(currentUsage.cpu, currentUsage.mem, currentUsage.storage)
 	combinedUsage.Cpu().Add(*quotaReq.Cpu())
 	combinedUsage.Memory().Add(*quotaReq.Memory())
 	combinedUsage.Storage().Add(*quotaReq.Storage())
@@ -95,8 +95,8 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	return nil
 }
 
-// TODO we should get it from the resourceQuota CRD for the project, for now just some hardcoded values for tests.
-func getResourceQuota() (*ResourceQuota, *ResourceQuota, error) {
+// TODO we should get it from the ResourceQuota CRD for the project, for now just some hardcoded values for tests.
+func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
 	cpu, err := resource.ParseQuantity("5")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
@@ -124,32 +124,32 @@ func getResourceQuota() (*ResourceQuota, *ResourceQuota, error) {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
-	return NewResourceQuota(cpu, mem, storage),
-		NewResourceQuota(cpuUsed, memUsed, storageUsed), nil
+	return NewResourceDetails(cpu, mem, storage),
+		NewResourceDetails(cpuUsed, memUsed, storageUsed), nil
 }
 
-type ResourceQuota struct {
+type ResourceDetails struct {
 	cpu     resource.Quantity
 	mem     resource.Quantity
 	storage resource.Quantity
 }
 
-func NewResourceQuota(cpu resource.Quantity, mem resource.Quantity, storage resource.Quantity) *ResourceQuota {
-	return &ResourceQuota{
+func NewResourceDetails(cpu resource.Quantity, mem resource.Quantity, storage resource.Quantity) *ResourceDetails {
+	return &ResourceDetails{
 		cpu:     cpu,
 		mem:     mem,
 		storage: storage,
 	}
 }
 
-func (r *ResourceQuota) Cpu() *resource.Quantity {
+func (r *ResourceDetails) Cpu() *resource.Quantity {
 	return &r.cpu
 }
 
-func (r *ResourceQuota) Memory() *resource.Quantity {
+func (r *ResourceDetails) Memory() *resource.Quantity {
 	return &r.mem
 }
 
-func (r *ResourceQuota) Storage() *resource.Quantity {
+func (r *ResourceDetails) Storage() *resource.Quantity {
 	return &r.storage
 }

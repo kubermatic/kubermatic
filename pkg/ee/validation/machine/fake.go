@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func getFakeQuotaRequest(config *types.Config) (*ResourceQuota, error) {
+func getFakeQuotaRequest(config *types.Config) (*ResourceDetails, error) {
 	spec := &FakeProviderSpec{}
 	if err := json.Unmarshal(config.CloudProviderSpec.Raw, spec); err != nil {
 		return nil, fmt.Errorf("error unmarshalling fake raw config: %w", err)
@@ -53,7 +53,7 @@ func getFakeQuotaRequest(config *types.Config) (*ResourceQuota, error) {
 		return nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
-	return NewResourceQuota(cpu, mem, storage), nil
+	return NewResourceDetails(cpu, mem, storage), nil
 }
 
 type FakeProviderSpec struct {
