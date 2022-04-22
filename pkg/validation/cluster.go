@@ -354,10 +354,18 @@ func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kube
 			if oldCluster.Status.Encryption.Phase != "" && oldCluster.Status.Encryption.Phase != kubermaticv1.ClusterEncryptionPhaseActive {
 				if !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration, newCluster.Spec.EncryptionConfiguration) {
 					allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "encryptionConfiguration"),
-						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase)))
+						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase),
+					))
 				}
 			}
 		}
+	}
+
+	// prevent removing the feature flag while the cluster is still in some encryption-active configuration or state
+	if enabled, ok := newCluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]; (!ok || !enabled) && (newCluster.IsEncryptionEnabled() || newCluster.IsEncryptionActive()) {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("features"),
+			fmt.Sprintf("cannot disable %q feature flag while encryption is still configured or active", kubermaticv1.ClusterFeatureEncryptionAtRest),
+		))
 	}
 
 	return allErrs
