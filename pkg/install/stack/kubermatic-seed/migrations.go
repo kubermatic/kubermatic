@@ -133,3 +133,50 @@ func migrateUserClustersData(ctx context.Context, logger *logrus.Entry, kubeClie
 
 	return nil
 }
+
+// migrateClusterAddresses copies the `address` data from a Cluster into `status.address`.
+// It leaves the old data behind, so that the migration is safe and even if an old controller
+// tries to reconcile, it still sees valid data.
+// In KKP 2.22 we can remove the `address` field entirely.
+func migrateClusterAddresses(ctx context.Context, client ctrlruntimeclient.Client) error {
+	clusters := &kubermaticv1.ClusterList{}
+	if err := client.List(ctx, clusters); err != nil {
+		return fmt.Errorf("failed to list Clusters: %w", err)
+	}
+
+	for _, cluster := range clusters.Items {
+		oldCluster := cluster.DeepCopy()
+		newAddress := &cluster.Status.Address
+		oldAddress := cluster.Address
+
+		if newAddress.AdminToken == "" {
+			newAddress.AdminToken = oldAddress.AdminToken
+		}
+
+		if newAddress.ExternalName == "" {
+			newAddress.ExternalName = oldAddress.ExternalName
+		}
+
+		if newAddress.InternalName == "" {
+			newAddress.InternalName = oldAddress.InternalName
+		}
+
+		if newAddress.URL == "" {
+			newAddress.URL = oldAddress.URL
+		}
+
+		if newAddress.IP == "" {
+			newAddress.IP = oldAddress.IP
+		}
+
+		if newAddress.Port == 0 {
+			newAddress.Port = oldAddress.Port
+		}
+
+		if err := client.Status().Patch(ctx, &cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to update cluster %s: %w", cluster.Name, err)
+		}
+	}
+
+	return nil
+}

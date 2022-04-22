@@ -91,6 +91,7 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 
 func (s *SeedStack) deployKubermatic(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying KKP Dependencies…")
+	sublogger := log.Prefix(logger, "   ")
 
 	// The KKP Operator will not reconcile the seed cluster if the "kubermatic"
 	// namespace doesn't exist yet. This is meant as a "safety mechanism", so we
@@ -103,6 +104,11 @@ func (s *SeedStack) deployKubermatic(ctx context.Context, logger *logrus.Entry, 
 
 	if err := kubeClient.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create Namespace %s: %w", ns.Name, err)
+	}
+
+	sublogger.Info("Migrating Clusters…")
+	if err := migrateClusterAddresses(ctx, kubeClient); err != nil {
+		return fmt.Errorf("failed to migrate clusters: %w", err)
 	}
 
 	logger.Info("✅ Success.")
