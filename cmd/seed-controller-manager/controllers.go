@@ -31,7 +31,7 @@ import (
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
-	encryptioncontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/encryption"
+	encryptionatrestcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/encryption-at-rest-controller"
 	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
 	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
 	initialapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-application-installation-controller"
@@ -72,7 +72,7 @@ var AllControllers = map[string]controllerCreator{
 	projectcontroller.ControllerName:                        createProjectController,
 	clusterphasecontroller.ControllerName:                   createClusterPhaseController,
 	presetcontroller.ControllerName:                         createPresetController,
-	encryptioncontroller.ControllerName:                     createEncryptionController,
+	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -394,8 +394,8 @@ func createPresetController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func createEncryptionController(ctrlCtx *controllerContext) error {
-	return encryptioncontroller.Add(
+func createEncryptionAtRestController(ctrlCtx *controllerContext) error {
+	return encryptionatrestcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,

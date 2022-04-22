@@ -25,4 +25,4 @@ status according to changes observed in kube-apiserver and launch a re-encryptio
 job based on the observed phase of the encryption process.
 */
 
-package encryption
+package encryptionatrestcontroller

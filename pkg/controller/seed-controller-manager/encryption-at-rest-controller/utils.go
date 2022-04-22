@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package encryption
+package encryptionatrestcontroller
 
 import (
 	"context"
@@ -29,7 +29,6 @@ import (
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	apiserverconfigv1 "k8s.io/apiserver/pkg/apis/config/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,10 +41,7 @@ func isApiserverUpdated(ctx context.Context, client ctrlruntimeclient.Client, cl
 		Name:      resources.EncryptionConfigurationSecretName,
 		Namespace: cluster.Status.NamespaceName,
 	}, &secret); err != nil {
-		if kerrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
+		return false, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	spec, err := json.Marshal(cluster.Spec.EncryptionConfiguration)
@@ -62,10 +58,10 @@ func isApiserverUpdated(ctx context.Context, client ctrlruntimeclient.Client, cl
 	}
 
 	var podList corev1.PodList
-	if err := client.List(ctx, &podList, []ctrlruntimeclient.ListOption{
+	if err := client.List(ctx, &podList,
 		ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName),
 		ctrlruntimeclient.MatchingLabels{resources.AppLabelKey: "apiserver"},
-	}...); err != nil {
+	); err != nil {
 		return false, err
 	}
 
@@ -103,6 +99,9 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 		}
 	}
 
+	// we expect two providers, (1) the configured encryption provider as per the ClusterSpec (secretbox or KMS plugins)
+	// and (2) the "identity" provider, which is there for reading (and if at the top of the list, writing) resources as
+	// unencrypted.
 	if len(config.Resources) != 1 || len(config.Resources[0].Providers) != 2 {
 		return "", errors.New("unexpected apiserverconfigv1.EncryptionConfiguration: too many items in .resources or .resources[0].providers")
 	}

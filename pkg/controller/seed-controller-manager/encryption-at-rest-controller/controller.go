@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package encryption
+package encryptionatrestcontroller
 
 import (
 	"context"
@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_encryption_controller"
+	ControllerName = "kkp-encryption-at-rest-controller"
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
@@ -120,9 +120,7 @@ func Add(
 
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		cluster := o.(*kubermaticv1.Cluster)
-		encryptionEnabled := cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled
-		encryptionActive := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
-		return cluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest] && (encryptionEnabled || encryptionActive)
+		return cluster.IsEncryptionEnabled() || cluster.IsEncryptionActive()
 	}))
 }
 
@@ -138,11 +136,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, err
 	}
-	log = log.With("cluster", cluster.Name)
+
+	log = r.log.With("cluster", cluster.Name)
 
 	// replicate the predicate from above to make sure that reconcile loops triggered by apiserver and secret
 	// do not run unexpected reconciles.
-	if !(cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled) && !(cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue)) {
+	if !(cluster.IsEncryptionEnabled() || cluster.IsEncryptionActive()) {
 		return reconcile.Result{}, nil
 	}
 
@@ -172,7 +171,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// reconcile until encryption is successfully initialized
-	if cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled && !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) {
+	if cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
 		log.Debug("EncryptionInitialized is not set yet, setting initial encryption status and condition ...")
 		return r.setInitializedCondition(ctx, cluster)
 	}

@@ -402,7 +402,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		)
 	}
 
-	if data.IsEncryptionConfigurationEnabled() {
+	if data.Cluster().IsEncryptionEnabled() {
 		creators = append(creators, apiserver.EncryptionConfigurationSecretCreator(data))
 	}
 

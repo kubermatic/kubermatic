@@ -1329,3 +1329,14 @@ func (cluster *Cluster) GetUserClusterOPAResourceRequirements() map[string]*core
 		"audit":      cluster.Spec.OPAIntegration.AuditResources,
 	}
 }
+
+// IsEncryptionConfigurationEnabled returns whether encryption-at-rest is configured on this cluster.
+func (cluster *Cluster) IsEncryptionEnabled() bool {
+	return cluster.Spec.Features[ClusterFeatureEncryptionAtRest] && cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled
+}
+
+// IsEncryptionActive returns whether encryption-at-rest is active on this cluster. This can still be
+// the case when encryption configuration has been disabled, as encrypted resources require a decryption.
+func (cluster *Cluster) IsEncryptionActive() bool {
+	return cluster.Status.HasConditionValue(ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
+}

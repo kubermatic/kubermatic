@@ -34,8 +34,6 @@ import (
 
 type encryptionData interface {
 	Cluster() *kubermaticv1.Cluster
-	IsEncryptionConfigurationEnabled() bool
-	IsEncryptionActive() bool
 	GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte, error)
 }
 
@@ -45,8 +43,7 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 			secret.Name = resources.EncryptionConfigurationSecretName
 
 			// return empty secret if no config and no condition is set
-			if !data.IsEncryptionConfigurationEnabled() ||
-				data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionFalse) {
+			if !(data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()) {
 				return secret, nil
 			}
 
@@ -54,7 +51,7 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 			// we are waiting for kubermatic_encryption_controller to finish the re-encryption job. You do not want
 			// to mess with the EncryptionConfiguration at that moment as introducing different keys might make the
 			// encrypted data unreadable for kube-apiserver.
-			if data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEncryptionInitialized, corev1.ConditionTrue) &&
+			if data.Cluster().IsEncryptionActive() &&
 				data.Cluster().Status.Encryption != nil && data.Cluster().Status.Encryption.Phase == kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded {
 				return secret, nil
 			}
