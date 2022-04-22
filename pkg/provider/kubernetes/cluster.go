@@ -372,7 +372,7 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(ctx context.Context, c *kuberma
 func (p *ClusterProvider) RevokeAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) error {
 	oldCluster := c.DeepCopy()
 	c.Status.Address.AdminToken = kuberneteshelper.GenerateToken()
-	if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+	if err := p.GetSeedClusterAdminRuntimeClient().Status().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to patch cluster with new token: %w", err)
 	}
 	return nil
