@@ -633,7 +633,9 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 }
 
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{}
+	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+		applications.ApplicationInstallationValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
+	}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}

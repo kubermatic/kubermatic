@@ -55,6 +55,9 @@ const (
 	// UserAdmissionWebhookName is the name of the validating webhook for Users.
 	UserAdmissionWebhookName = "kubermatic-users"
 
+	// ApplicationDefinitionAdmissionWebhookName is the name of the validating webhook for ApplicationDefnition.
+	ApplicationDefinitionAdmissionWebhookName = "kubermatic-application-definitions"
+
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks
 	// run in the same controller manager so it's much easier if they all use the
 	// same certs.

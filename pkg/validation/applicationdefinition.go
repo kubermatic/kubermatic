@@ -21,14 +21,14 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticappsv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-func ValidateApplicationDefinition(ad *kubermaticappsv1.ApplicationDefinition) field.ErrorList {
+func ValidateApplicationDefinition(ad appkubermaticv1.ApplicationDefinition) field.ErrorList {
 	var parentFieldPath *field.Path = nil
 	allErrs := field.ErrorList{}
 
@@ -39,7 +39,7 @@ func ValidateApplicationDefinition(ad *kubermaticappsv1.ApplicationDefinition) f
 	return allErrs
 }
 
-func ValidateApplicationVersions(vs []kubermaticappsv1.ApplicationVersion, parentFieldPath *field.Path) []*field.Error {
+func ValidateApplicationVersions(vs []appkubermaticv1.ApplicationVersion, parentFieldPath *field.Path) []*field.Error {
 	allErrs := field.ErrorList{}
 
 	lookup := make(map[string]struct{}, len(vs))
@@ -69,7 +69,7 @@ func validateSemverRange(v string, f *field.Path) *field.Error {
 	return nil
 }
 
-func ValidateApplicationDefinitionWithOpenAPI(ad *kubermaticappsv1.ApplicationDefinition, parentFieldPath *field.Path) field.ErrorList {
+func ValidateApplicationDefinitionWithOpenAPI(ad appkubermaticv1.ApplicationDefinition, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	v, err := openapi.NewValidatorForType(&ad.TypeMeta)

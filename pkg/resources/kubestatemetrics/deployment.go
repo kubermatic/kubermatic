@@ -48,7 +48,7 @@ var (
 
 const (
 	name    = "kube-state-metrics"
-	version = "v2.3.0"
+	version = "v2.4.2"
 )
 
 // DeploymentCreator returns the function to create and update the kube-state-metrics deployment.
