@@ -475,7 +475,7 @@ const (
 	// KubeletClientKeySecretKey kubelet-client.key.
 	KubeletClientKeySecretKey = "kubelet-client.key"
 	// KubeletClientCertSecretKey kubelet-client.crt.
-	KubeletClientCertSecretKey = "kubelet-client.crt" // FIXME confusing naming: s/CertSecretKey/CertSecretName/
+	KubeletClientCertSecretKey = "kubelet-client.crt"
 	// ServiceAccountKeySecretKey sa.key.
 	ServiceAccountKeySecretKey = "sa.key"
 	// ServiceAccountKeyPublicKey is the public key for the service account signer key.

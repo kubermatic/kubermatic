@@ -26120,7 +26120,7 @@
       "type": "object",
       "properties": {
         "annotations": {
-          "description": "Annotations of the namespace\nMore info: http://kubernetes.io/docs/user-guide/annotations",
+          "description": "Annotations of the namespace",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -26133,7 +26133,7 @@
           "x-go-name": "Create"
         },
         "labels": {
-          "description": "Labels of the namespace\nMore info: http://kubernetes.io/docs/user-guide/labels",
+          "description": "Labels of the namespace",
           "type": "object",
           "additionalProperties": {
             "type": "string"

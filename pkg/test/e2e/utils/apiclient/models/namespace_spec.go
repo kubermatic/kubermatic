@@ -18,14 +18,12 @@ import (
 type NamespaceSpec struct {
 
 	// Annotations of the namespace
-	// More info: http://kubernetes.io/docs/user-guide/annotations
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// Create defines whether the namespace should be created if it does not exist.
 	Create bool `json:"create,omitempty"`
 
 	// Labels of the namespace
-	// More info: http://kubernetes.io/docs/user-guide/labels
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Name is the namespace to deploy the Application into

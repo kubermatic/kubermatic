@@ -2206,11 +2206,9 @@ type NamespaceSpec struct {
 	Create bool `json:"create" required:"true"`
 
 	// Labels of the namespace
-	// More info: http://kubernetes.io/docs/user-guide/labels
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Annotations of the namespace
-	// More info: http://kubernetes.io/docs/user-guide/annotations
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
