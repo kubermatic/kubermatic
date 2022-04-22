@@ -63,16 +63,22 @@ type ClusterData struct {
 // ClusterAddress stores access and address information of a cluster.
 type ClusterAddress struct {
 	// URL under which the Apiserver is available
+	// +optional
 	URL string `json:"url"`
 	// Port is the port the API server listens on
+	// +optional
 	Port int32 `json:"port"`
 	// ExternalName is the DNS name for this cluster
+	// +optional
 	ExternalName string `json:"externalName"`
 	// InternalName is the seed cluster internal absolute DNS name to the API server
+	// +optional
 	InternalName string `json:"internalURL"`
 	// AdminToken is the token for the kubeconfig, the user can download
+	// +optional
 	AdminToken string `json:"adminToken"`
 	// IP is the external IP under which the apiserver is available
+	// +optional
 	IP string `json:"ip"`
 }
 
