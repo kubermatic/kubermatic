@@ -37,7 +37,6 @@ type validator struct {
 
 // NewValidator returns a new Machine validator.
 func NewValidator(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *validator {
-	log.Named("machine-validator")
 	return &validator{
 		log:        log,
 		seedClient: seedClient,

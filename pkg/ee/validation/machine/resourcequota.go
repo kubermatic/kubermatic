@@ -72,23 +72,23 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	combinedUsage.Storage().Add(*quotaReq.Storage())
 
 	if quota.Cpu().Cmp(*combinedUsage.Cpu()) < 0 {
-		log.Debugf("requested CPU %q would exceed current quota (quota/used %q/%q)",
-			quotaReq.Cpu(), quota.Cpu(), currentUsage.Cpu())
+		log.Debugw("requested CPU would exceed current quota", "request",
+			quotaReq.Cpu(), "quota", quota.Cpu(), "used", currentUsage.Cpu())
 		return fmt.Errorf("requested CPU %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Cpu(), quota.Cpu(), currentUsage.Cpu())
 	}
 
 	if quota.Memory().Cmp(*combinedUsage.Memory()) < 0 {
-		log.Debugf("requested Memory %q would exceed current quota (quota/used %q/%q)",
-			quotaReq.Memory(), quota.Memory(), currentUsage.Memory())
+		log.Debugw("requested Memory would exceed current quota", "request",
+			quotaReq.Memory(), "quota", quota.Memory(), "used", currentUsage.Memory())
 		return fmt.Errorf("requested Memory %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Memory(), quota.Memory(), currentUsage.Memory())
 	}
 
 	if quota.Storage().Cmp(*combinedUsage.Storage()) < 0 {
-		log.Debugf("requested Storage %q would exceed current quota (quota/used %q/%q)",
-			quotaReq.Storage(), quota.Storage(), currentUsage.Storage())
-		return fmt.Errorf("requested Storage %q would exceed current quota (quota/used %q/%q)",
+		log.Debugw("requested disk size would exceed current quota", "request",
+			quotaReq.Storage(), "quota", quota.Storage(), "used", currentUsage.Storage())
+		return fmt.Errorf("requested disk size %q would exceed current quota (quota/used %q/%q)",
 			quotaReq.Storage(), quota.Storage(), currentUsage.Storage())
 	}
 
