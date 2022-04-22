@@ -71,13 +71,6 @@ spec:
               url:
                 description: URL under which the Apiserver is available
                 type: string
-            required:
-            - adminToken
-            - externalName
-            - internalURL
-            - ip
-            - port
-            - url
             type: object
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -2252,13 +2245,6 @@ spec:
                   url:
                     description: URL under which the Apiserver is available
                     type: string
-                required:
-                - adminToken
-                - externalName
-                - internalURL
-                - ip
-                - port
-                - url
                 type: object
               cloudMigrationRevision:
                 description: CloudMigrationRevision describes the latest version of
