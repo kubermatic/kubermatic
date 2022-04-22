@@ -61,7 +61,12 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, user
 	case types.CloudProviderGoogle:
 		quotaReq, err = getGCPResourceRequirements(ctx, userClient, config)
 		if err != nil {
-			return fmt.Errorf("error getting aws quota request: %w", err)
+			return fmt.Errorf("error getting gcp quota request: %w", err)
+		}
+	case types.CloudProviderAzure:
+		quotaReq, err = getAzureResourceRequirements(ctx, userClient, config)
+		if err != nil {
+			return fmt.Errorf("error getting azure quota request: %w", err)
 		}
 	default:
 		// TODO skip for now, when all providers are added, throw error

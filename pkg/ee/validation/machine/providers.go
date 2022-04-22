@@ -30,6 +30,7 @@ import (
 	"strconv"
 
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -80,7 +81,7 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := gcptypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("error getting aws raw config: %w", err)
+		return nil, fmt.Errorf("error getting GCP raw config: %w", err)
 	}
 
 	serviceAccount, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServiceAccount)
@@ -98,7 +99,7 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 
 	machineSize, err := provider.GetGCPInstanceSize(ctx, machineType, serviceAccount, zone)
 	if err != nil {
-		return nil, fmt.Errorf("error getting AWS machine size data %v", err)
+		return nil, fmt.Errorf("error getting GCP machine size data %v", err)
 	}
 
 	// parse the GCP resource requests
@@ -115,6 +116,69 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
 	}
+
+	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+}
+
+func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceQuota, error) {
+	// extract storage and image info from provider config
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	rawConfig, err := azuretypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure raw config: %w", err)
+	}
+
+	subId, err := configVarResolver.GetConfigVarStringValue(rawConfig.SubscriptionID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure subscription ID from machine config: %v", err)
+	}
+	clientId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ClientID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure client ID from machine config: %v", err)
+	}
+	clientSecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.ClientSecret)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure client secret from machine config: %v", err)
+	}
+	tenantId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure tenant ID from machine config: %v", err)
+	}
+	location, err := configVarResolver.GetConfigVarStringValue(rawConfig.Location)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure location from machine config: %v", err)
+	}
+	vmSizeName, err := configVarResolver.GetConfigVarStringValue(rawConfig.VMSize)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure vm size name from machine config: %v", err)
+	}
+
+	vmSize, err := provider.GetAzureVMSize(ctx, subId, clientId, clientSecret, tenantId, location, vmSizeName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Azure vm size data %v", err)
+	}
+
+	// parse the GCP resource requests
+	// memory is given in MB and storage in GB
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(int(vmSize.NumberOfCores)))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
+	}
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fM", vmSize.MemoryInMB))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
+	}
+
+	// Azure allows for setting os and data disk size separately
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DataDiskSize))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
+	}
+	osDiskStorageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.OSDiskSize))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
+	}
+	storageReq.Add(osDiskStorageReq)
 
 	return NewResourceQuota(cpuReq, memReq, storageReq), nil
 }

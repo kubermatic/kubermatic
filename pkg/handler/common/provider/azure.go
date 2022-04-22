@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
@@ -300,6 +301,31 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	}
 
 	return true
+}
+
+func GetAzureVMSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, vmName string) (*apiv1.AzureSize, error) {
+	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for size client: %w", err)
+	}
+
+	// get all available VM size types for given location
+	listVMSize, err := sizesClient.ListVMSize(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sizes: %w", err)
+	}
+
+	for _, vm := range listVMSize {
+		if strings.EqualFold(*vm.Name, vmName) {
+			return &apiv1.AzureSize{
+				NumberOfCores:        *vm.NumberOfCores,
+				ResourceDiskSizeInMB: *vm.ResourceDiskSizeInMB,
+				MemoryInMB:           *vm.MemoryInMB,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("could not find Azure VM Size named %q", vmName)
 }
 
 func AzureSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
