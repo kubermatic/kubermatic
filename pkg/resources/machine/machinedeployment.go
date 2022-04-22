@@ -25,6 +25,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -241,6 +242,21 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		return nil, errors.New("unknown cloud provider")
 	}
 	config.CloudProviderSpec = *cloudExt
+
+	if config.Network == nil {
+		config.Network = &providerconfig.NetworkConfig{}
+	}
+
+	switch {
+	case c.IsIPv4Only():
+		config.Network.IPFamily = util.IPv4
+	case c.IsIPv6Only():
+		config.Network.IPFamily = util.IPv6
+	case c.IsDualStack():
+		config.Network.IPFamily = util.DualStack
+	default:
+		config.Network.IPFamily = util.Unspecified
+	}
 
 	return &config, nil
 }
