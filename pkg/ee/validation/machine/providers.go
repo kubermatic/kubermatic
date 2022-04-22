@@ -30,6 +30,7 @@ import (
 	"strconv"
 
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -63,6 +64,50 @@ func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
 	}
 	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", awsSize.Memory))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
+	}
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
+	}
+
+	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+}
+
+func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceQuota, error) {
+	// extract storage and image info from provider config
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	rawConfig, err := gcptypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("error getting aws raw config: %w", err)
+	}
+
+	serviceAccount, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServiceAccount)
+	if err != nil {
+		return nil, fmt.Errorf("error getting GCP service account from machine config: %v", err)
+	}
+	machineType, err := configVarResolver.GetConfigVarStringValue(rawConfig.MachineType)
+	if err != nil {
+		return nil, fmt.Errorf("error getting GCP machine type from machine config: %v", err)
+	}
+	zone, err := configVarResolver.GetConfigVarStringValue(rawConfig.Zone)
+	if err != nil {
+		return nil, fmt.Errorf("error getting GCP zone from machine config: %v", err)
+	}
+
+	machineSize, err := provider.GetGCPInstanceSize(ctx, machineType, serviceAccount, zone)
+	if err != nil {
+		return nil, fmt.Errorf("error getting AWS machine size data %v", err)
+	}
+
+	// parse the GCP resource requests
+	// memory is given in MB and storage in GB
+	cpuReq, err := resource.ParseQuantity(strconv.FormatInt(machineSize.VCPUs, 10))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
+	}
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fM", machineSize.Memory))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
 	}
