@@ -23,6 +23,9 @@ type ClusterTemplate struct {
 	// Annotations that can be added to the resource
 	Annotations map[string]string `json:"annotations,omitempty"`
 
+	// applications
+	Applications []*Application `json:"applications"`
+
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
 	// Format: date-time
 	CreationTimestamp strfmt.DateTime `json:"creationTimestamp,omitempty"`
@@ -60,6 +63,10 @@ type ClusterTemplate struct {
 func (m *ClusterTemplate) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateApplications(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCreationTimestamp(formats); err != nil {
 		res = append(res, err)
 	}
@@ -83,6 +90,32 @@ func (m *ClusterTemplate) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterTemplate) validateApplications(formats strfmt.Registry) error {
+	if swag.IsZero(m.Applications) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Applications); i++ {
+		if swag.IsZero(m.Applications[i]) { // not required
+			continue
+		}
+
+		if m.Applications[i] != nil {
+			if err := m.Applications[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -178,6 +211,10 @@ func (m *ClusterTemplate) validateNodeDeployment(formats strfmt.Registry) error 
 func (m *ClusterTemplate) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateApplications(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateUserSSHKeys(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -193,6 +230,26 @@ func (m *ClusterTemplate) ContextValidate(ctx context.Context, formats strfmt.Re
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterTemplate) contextValidateApplications(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Applications); i++ {
+
+		if m.Applications[i] != nil {
+			if err := m.Applications[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

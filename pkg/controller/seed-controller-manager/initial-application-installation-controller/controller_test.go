@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package initialmachinedeployment
+package initialapplicationinstallationcontroller
 
 import (
 	"context"
@@ -23,10 +23,12 @@ import (
 	"fmt"
 	"testing"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -35,6 +37,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,12 +49,12 @@ const (
 	kubernetesVersion = "v1.22.5"
 	datacenterName    = "testdc"
 	projectID         = "testproject"
+	applicationName   = "katana"
 )
 
 func init() {
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		panic(fmt.Sprintf("failed to add clusterv1alpha1 to scheme: %v", err))
-	}
+	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme.Scheme))
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
@@ -73,7 +76,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
 			Annotations: map[string]string{
-				v1.InitialMachineDeploymentRequestAnnotation: annotation,
+				v1.InitialApplicationInstallationsRequestAnnotation: annotation,
 			},
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
@@ -104,7 +107,7 @@ func TestReconcile(t *testing.T) {
 			cluster: genCluster(""),
 			validate: func(cluster *kubermaticv1.Cluster, _ ctrlruntimeclient.Client, reconcileErr error) error {
 				// cluster should now have its special condition
-				name := kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess
+				name := kubermaticv1.ClusterConditionApplicationInstallationControllerReconcilingSuccess
 
 				if cond := cluster.Status.Conditions[name]; cond.Status != corev1.ConditionTrue {
 					return fmt.Errorf("cluster should have %v=%s condition, but does not", name, corev1.ConditionTrue)
@@ -117,36 +120,15 @@ func TestReconcile(t *testing.T) {
 				return nil
 			},
 		},
-
 		{
-			name: "vanilla case, create a MachineDeployment from the annotation",
+			name: "create a single ApplicationInstallation from the annotation",
 			cluster: func() *kubermaticv1.Cluster {
-				nd := v1.NodeDeployment{
-					ObjectMeta: v1.ObjectMeta{
-						Name: "test",
-					},
-					Spec: v1.NodeDeploymentSpec{
-						Replicas: 1,
-						Template: v1.NodeSpec{
-							Versions: v1.NodeVersionInfo{
-								Kubelet: kubernetesVersion,
-							},
-							OperatingSystem: v1.OperatingSystemSpec{
-								Ubuntu: &v1.UbuntuSpec{},
-							},
-							Cloud: v1.NodeCloudSpec{
-								Hetzner: &v1.HetznerNodeSpec{
-									Type:    "big",
-									Network: "test",
-								},
-							},
-						},
-					},
-				}
+				app := generateApplication(applicationName)
+				applications := []v1.Application{app}
 
-				data, err := json.Marshal(nd)
+				data, err := json.Marshal(applications)
 				if err != nil {
-					panic(fmt.Sprintf("cannot marshal initial machine deployment: %v", err))
+					panic(fmt.Sprintf("cannot marshal initial application installations: %v", err))
 				}
 
 				return genCluster(string(data))
@@ -156,32 +138,65 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
-				machineDeployments := clusterv1alpha1.MachineDeploymentList{}
-				if err := userClusterClient.List(context.Background(), &machineDeployments); err != nil {
-					return fmt.Errorf("failed to list MachineDeployments in user cluster: %w", err)
+				apps := appkubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
 				}
 
-				if len(machineDeployments.Items) == 0 {
-					return errors.New("did not find a MachineDeployment in the user cluster after the reconciler finished")
+				if len(apps.Items) != 1 {
+					return errors.New("did not find an ApplicationInstallation in the user cluster after the reconciler finished")
 				}
 
 				return nil
 			},
 		},
-
 		{
-			name:    "invalid annotations should cause errors and then be removed",
+			name: "create multiple ApplicationInstallation from the annotation",
+			cluster: func() *kubermaticv1.Cluster {
+				app := generateApplication(applicationName)
+				app2 := generateApplication("kold")
+				applications := []v1.Application{app, app2}
+
+				data, err := json.Marshal(applications)
+				if err != nil {
+					panic(fmt.Sprintf("cannot marshal initial application installations: %v", err))
+				}
+				return genCluster(string(data))
+			}(),
+			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				if ann, ok := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]; ok {
+					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
+				}
+
+				apps := appkubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return errors.New("did not find the expected ApplicationInstallations in the user cluster after the reconciler finished")
+				}
+
+				return nil
+			},
+		},
+		{
+			name:    "invalid annotation should result in error and be removed",
 			cluster: genCluster("I am not valid JSON!"),
 			validate: func(cluster *kubermaticv1.Cluster, _ ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr == nil {
 					return errors.New("reconciling a bad annotation should have produced an error, but got nil")
 				}
 
-				if ann, ok := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("bad annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -255,6 +270,33 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("Test failed: %v", err)
 			}
 		})
+	}
+}
+
+func generateApplication(name string) v1.Application {
+	var values json.RawMessage
+	_ = json.Unmarshal([]byte(`{
+		"key": "value",
+		"key2": "value2",
+	}`), &values)
+
+	return v1.Application{
+		ObjectMeta: v1.ObjectMeta{
+			Name: name,
+		},
+		Spec: v1.ApplicationSpec{
+			Namespace: v1.NamespaceSpec{
+				Name:        fmt.Sprintf("app-%s", name),
+				Create:      true,
+				Labels:      map[string]string{"key": "value"},
+				Annotations: map[string]string{"key": "value"},
+			},
+			ApplicationRef: v1.ApplicationRef{
+				Name:    name,
+				Version: appkubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+			},
+			Values: values,
+		},
 	}
 }
 

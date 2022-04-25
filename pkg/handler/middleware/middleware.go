@@ -134,7 +134,7 @@ type seedClusterGetter interface {
 func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
+			clusterProvider, ctx, err := GetClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
 			if err != nil {
 				return nil, err
 			}
@@ -149,7 +149,7 @@ func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, se
 func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
+			clusterProvider, ctx, err := GetClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
 			if err != nil {
 				return nil, err
 			}
@@ -388,7 +388,7 @@ func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID stri
 	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
 }
 
-func getClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {
+func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {
 	getter, ok := request.(seedClusterGetter)
 	if !ok {
 		return nil, nil, fmt.Errorf("request is no dcGetter")

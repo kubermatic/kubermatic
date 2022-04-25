@@ -702,6 +702,7 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 
 	apiClusterHealth := &apiv1.ClusterHealth{}
 	apiClusterHealth.Apiserver = convertHealthStatus(response.Payload.Apiserver)
+	apiClusterHealth.ApplicationController = convertHealthStatus(response.Payload.ApplicationController)
 	apiClusterHealth.Controller = convertHealthStatus(response.Payload.Controller)
 	apiClusterHealth.Etcd = convertHealthStatus(response.Payload.Etcd)
 	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
@@ -913,6 +914,7 @@ func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 		kubermaticv1.HealthStatusUp == healthStatus.UserClusterControllerManager &&
 		kubermaticv1.HealthStatusUp == healthStatus.Scheduler &&
 		kubermaticv1.HealthStatusUp == healthStatus.MachineController &&
+		kubermaticv1.HealthStatusUp == healthStatus.ApplicationController &&
 		kubermaticv1.HealthStatusUp == healthStatus.Etcd &&
 		kubermaticv1.HealthStatusUp == healthStatus.Controller &&
 		kubermaticv1.HealthStatusUp == healthStatus.Apiserver

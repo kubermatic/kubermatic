@@ -1232,7 +1232,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 1: get existing cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","applicationController":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1245,6 +1245,7 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 						Apiserver:                    kubermaticv1.HealthStatusUp,
+						ApplicationController:        kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
 						MachineController:            kubermaticv1.HealthStatusDown,
@@ -1261,7 +1262,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 2: the admin Bob can get John's cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","applicationController":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1276,6 +1277,7 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 						Apiserver:                    kubermaticv1.HealthStatusUp,
+						ApplicationController:        kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
 						MachineController:            kubermaticv1.HealthStatusDown,
@@ -1323,7 +1325,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 4: get existing cluster health status with opa integration enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","gatekeeperController":"HealthStatusUp","gatekeeperAudit":"HealthStatusUp"}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","applicationController":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","gatekeeperController":"HealthStatusUp","gatekeeperAudit":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1336,6 +1338,7 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 						Apiserver:                    kubermaticv1.HealthStatusUp,
+						ApplicationController:        kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
 						MachineController:            kubermaticv1.HealthStatusDown,
@@ -1355,7 +1358,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 5: get existing cluster health status with MLA Monitoring enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","monitoring":"HealthStatusUp"}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","applicationController":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","monitoring":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1368,6 +1371,7 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 						Apiserver:                    kubermaticv1.HealthStatusUp,
+						ApplicationController:        kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
 						MachineController:            kubermaticv1.HealthStatusDown,
@@ -1386,7 +1390,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 6: get existing cluster health status with MLA Logging enabled",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp"}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","applicationController":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1399,6 +1403,7 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 						Apiserver:                    kubermaticv1.HealthStatusUp,
+						ApplicationController:        kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
 						MachineController:            kubermaticv1.HealthStatusDown,
@@ -1417,7 +1422,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 7: get existing cluster health status with MLA Logging enabled and alertmanager config",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp","alertmanagerConfig":"HealthStatusUp"}`,
+			ExpectedResponse: `{"apiserver":"HealthStatusUp","applicationController":"HealthStatusUp","scheduler":"HealthStatusDown","controller":"HealthStatusUp","machineController":"HealthStatusDown","etcd":"HealthStatusUp","cloudProviderInfrastructure":"HealthStatusUp","userClusterControllerManager":"HealthStatusUp","logging":"HealthStatusUp","alertmanagerConfig":"HealthStatusUp"}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1430,6 +1435,7 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 						Apiserver:                    kubermaticv1.HealthStatusUp,
+						ApplicationController:        kubermaticv1.HealthStatusUp,
 						Scheduler:                    kubermaticv1.HealthStatusDown,
 						Controller:                   kubermaticv1.HealthStatusUp,
 						MachineController:            kubermaticv1.HealthStatusDown,

@@ -23,11 +23,16 @@ import (
 )
 
 type Providers struct {
-	SettingsProvider provider.SettingsProvider
-	SettingsWatcher  SettingsWatcher
-	UserProvider     provider.UserProvider
-	UserWatcher      UserWatcher
-	MemberMapper     provider.ProjectMemberMapper
+	SettingsProvider          provider.SettingsProvider
+	SettingsWatcher           SettingsWatcher
+	UserProvider              provider.UserProvider
+	UserWatcher               UserWatcher
+	MemberMapper              provider.ProjectMemberMapper
+	ProjectProvider           provider.ProjectProvider
+	PrivilegedProjectProvider provider.PrivilegedProjectProvider
+	UserInfoGetter            provider.UserInfoGetter
+	SeedsGetter               provider.SeedsGetter
+	ClusterProviderGetter     provider.ClusterProviderGetter
 }
 
 type SettingsWatcher interface {
