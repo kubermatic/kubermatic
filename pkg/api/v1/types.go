@@ -2187,7 +2187,7 @@ type NodeDeployment struct {
 // swagger:model NodeDeploymentSpec
 type NodeDeploymentSpec struct {
 	// required: true
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas"`
 	// required: true
 	Template NodeSpec `json:"template"`
 	// required: false
