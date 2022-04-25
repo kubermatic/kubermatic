@@ -21,4 +21,5 @@ const (
 	ApiserverEncryptionHashLabelKey     = "kubermatic.k8c.io/encryption-spec-hash"
 
 	SecretboxPrefix = "secretbox"
+	IdentityKey     = "identity"
 )

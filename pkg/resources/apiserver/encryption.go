@@ -30,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiserverconfigv1 "k8s.io/apiserver/pkg/apis/config/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -38,12 +39,23 @@ type encryptionData interface {
 	GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte, error)
 }
 
+func EncryptionResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
+	return []ctrlruntimeclient.Object{
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.EncryptionConfigurationKeyName,
+				Namespace: namespace,
+			},
+		},
+	}
+}
+
 func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.EncryptionConfigurationSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Name = resources.EncryptionConfigurationSecretName
 
-			// return empty secret if no config and no condition is set
+			// return empty secret if no config and no condition is set.
 			if !(data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()) {
 				return secret, nil
 			}
@@ -59,7 +71,7 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 
 			var existingConfig, config apiserverconfigv1.EncryptionConfiguration
 
-			// Unmarshal existing configuration, if there was any
+			// Unmarshal existing configuration, if there was any.
 			if val, ok := secret.Data[resources.EncryptionConfigurationKeyName]; ok {
 				if err := yaml.Unmarshal(val, &existingConfig); err != nil {
 					return secret, err
@@ -67,7 +79,7 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 			}
 
 			if data.Cluster().IsEncryptionEnabled() {
-				// handle active encryption configuration
+				// handle active encryption configuration.
 
 				resourceList := data.Cluster().Spec.EncryptionConfiguration.Resources
 				if len(resourceList) == 0 {
@@ -118,7 +130,7 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 					})
 				}
 
-				// always append the "unencrypted" provider
+				// always append the "unencrypted" provider.
 				providerList = append(providerList, apiserverconfigv1.ProviderConfiguration{
 					Identity: &apiserverconfigv1.IdentityConfiguration{},
 				})
@@ -138,6 +150,12 @@ func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.Named
 			} else {
 				// encryptionConfiguration is not set; this means it was disabled and we need to rotate keys
 				// to go back to 'identity', the "unencrypted" provider.
+
+				// if the first provider is identity already, no further changes to the config are needed.
+				if existingConfig.Resources[0].Providers[0].Identity != nil {
+					return secret, nil
+				}
+
 				config = *existingConfig.DeepCopy()
 				if len(config.Resources) != 1 {
 					return nil, fmt.Errorf("malfored existing configuration, expected one entry for 'resources', got %d", len(config.Resources))

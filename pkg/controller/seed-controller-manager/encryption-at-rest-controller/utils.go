@@ -102,7 +102,7 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 	// we expect two providers, (1) the configured encryption provider as per the ClusterSpec (secretbox or KMS plugins)
 	// and (2) the "identity" provider, which is there for reading (and if at the top of the list, writing) resources as
 	// unencrypted.
-	if len(config.Resources) != 1 || len(config.Resources[0].Providers) != 1 || len(config.Resources[0].Providers) != 2 {
+	if len(config.Resources) != 1 || (len(config.Resources[0].Providers) != 1 && len(config.Resources[0].Providers) != 2) {
 		return "", errors.New("unexpected apiserverconfigv1.EncryptionConfiguration: too many items in .resources or .resources[0].providers")
 	}
 
@@ -112,7 +112,7 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 	case providerConfig.Secretbox != nil:
 		keyName = fmt.Sprintf("%s/%s", encryptionresources.SecretboxPrefix, providerConfig.Secretbox.Keys[0].Name)
 	case providerConfig.Identity != nil:
-		keyName = "identity"
+		keyName = encryptionresources.IdentityKey
 	}
 
 	return keyName, nil
@@ -123,7 +123,7 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 // (i.e. the current state). It does not return secret data.
 func getConfiguredKey(cluster *kubermaticv1.Cluster) (string, error) {
 	if cluster.Spec.EncryptionConfiguration == nil || !cluster.Spec.EncryptionConfiguration.Enabled {
-		return "identity", nil
+		return encryptionresources.IdentityKey, nil
 	}
 
 	switch {

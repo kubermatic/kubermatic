@@ -31,6 +31,7 @@ import (
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -222,7 +223,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return r.encryptData(ctx, log, cluster, key)
 
 	case kubermaticv1.ClusterEncryptionPhaseActive:
-		// get a key hint as defined in the ClusterSpec to compare to the current status
+		// get a key hint as defined in the ClusterSpec to compare to the current status.
 		configuredKey, err := getConfiguredKey(cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
@@ -236,6 +237,25 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return &reconcile.Result{}, err
 			}
 		}
+
+		// encryption is set to "identity", thus secrets are unencrypted, and encryption is longer wished.
+		// This means we can fully reset the encryption status
+		if cluster.Status.Encryption.ActiveKey == encryptionresources.IdentityKey && !cluster.IsEncryptionEnabled() {
+			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+				c.Status.Encryption = nil
+				kubermaticv1helper.SetClusterCondition(
+					cluster,
+					r.versions,
+					kubermaticv1.ClusterConditionEncryptionInitialized,
+					corev1.ConditionFalse,
+					"",
+					"Cluster data encryption has been removed",
+				)
+			}); err != nil {
+				return &reconcile.Result{}, err
+			}
+		}
+
 		return &reconcile.Result{}, nil
 
 	case kubermaticv1.ClusterEncryptionPhaseFailed:
