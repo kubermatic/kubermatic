@@ -4,22 +4,21 @@ go 1.17
 
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20180503211407-becd51dc37cb
-	github.com/Azure/azure-sdk-for-go v62.1.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.24
+	github.com/Azure/azure-sdk-for-go v63.4.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.27
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1509
-	github.com/anexia-it/go-anxcloud v0.3.26
-	github.com/aws/aws-sdk-go v1.43.12
-	github.com/aws/aws-sdk-go-v2/service/eks v1.18.0
+	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1576
+	github.com/aws/aws-sdk-go v1.43.45
+	github.com/aws/aws-sdk-go-v2/service/eks v1.20.5
 	github.com/cert-manager/cert-manager v1.8.0
 	github.com/cilium/cilium v1.11.1
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220302182402-4b7a873a84cf
-	github.com/digitalocean/godo v1.75.0
+	github.com/digitalocean/godo v1.78.0
 	github.com/distribution/distribution/v3 v3.0.0-20220208183205-a4d9db5a884b
 	github.com/embik/nutanix-client-go v0.0.0-20220214103101-260fb79c8036
 	github.com/envoyproxy/go-control-plane v0.10.1
@@ -60,6 +59,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/vmware/govmomi v0.27.4
+	go.anx.io/go-anxcloud v0.4.2
 	go.etcd.io/etcd/api/v3 v3.5.3
 	go.etcd.io/etcd/client/pkg/v3 v3.5.3
 	go.etcd.io/etcd/client/v3 v3.5.3
@@ -139,7 +139,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/aws/smithy-go v1.10.0 // indirect
+	github.com/aws/smithy-go v1.11.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
