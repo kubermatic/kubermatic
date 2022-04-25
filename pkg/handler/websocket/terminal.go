@@ -30,9 +30,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/scheme"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 )
 
 const END_OF_TRANSMISSION = "\u0004"
@@ -137,7 +137,7 @@ func (t TerminalSession) Toast(p string) error {
 
 // startProcess is called by terminal session creation.
 // Executed cmd in the container specified in request and connects it up with the ptyHandler (a session).
-func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, podName, containerName string, cmd []string, ptyHandler PtyHandler) error {
+func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, podName string, cmd []string, ptyHandler PtyHandler) error {
 	req := k8sClient.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(podName).
@@ -145,12 +145,11 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, p
 		SubResource("exec")
 
 	req.VersionedParams(&v1.PodExecOptions{
-		Container: containerName,
-		Command:   cmd,
-		Stdin:     true,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       true,
+		Command: cmd,
+		Stdin:   true,
+		Stdout:  true,
+		Stderr:  true,
+		TTY:     true,
 	}, scheme.ParameterCodec)
 
 	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
@@ -173,33 +172,29 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, p
 }
 
 // Terminal is called for any new websocket connection.
-func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn) {
+func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, clusterName string) {
 	defer ws.Close()
 
 	terminalSession := TerminalSession{
 		websocketConn: ws,
 	}
 
-	// TODO: needs fix: it's using constant values, but should get namespace, pod and container dynamically
-	namespace := "kube-public"
-	pod := "webkubectl"
-	container := "webkubectl"
-
-	// TODO: needs fix: it's using constant kubeconfig, but should get user cluster kube config dynamically
-	cfg, err := clientcmd.BuildConfigFromFlags("", "dev.user.kubeconfig")
+	masterCfg, err := ctrlruntime.GetConfig()
 	if err != nil {
-		log.Logger.Debug(err)
+		log.Logger.Debug(fmt.Errorf("unable to build client configuration from kubeconfig: %w", err))
 		return
 	}
 
-	kubeClient, err := kubernetes.NewForConfig(cfg)
+	kubeClient, err := kubernetes.NewForConfig(masterCfg)
 	if err != nil {
 		log.Logger.Debug(fmt.Errorf("failed to create kubeClient: %w", err))
 		return
 	}
 
+	const podName = "webterminal"
+	namespace := fmt.Sprintf("cluster-%s", clusterName)
 	bashCmd := []string{"bash"}
-	err = startProcess(kubeClient, cfg, namespace, pod, container, bashCmd, terminalSession)
+	err = startProcess(kubeClient, masterCfg, namespace, podName, bashCmd, terminalSession)
 	if err != nil {
 		log.Logger.Debug(err)
 		return
