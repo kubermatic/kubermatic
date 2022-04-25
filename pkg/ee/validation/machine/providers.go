@@ -32,6 +32,7 @@ import (
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -70,7 +71,7 @@ func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 
 	return NewResourceQuota(cpuReq, memReq, storageReq), nil
@@ -114,7 +115,7 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 
 	return NewResourceQuota(cpuReq, memReq, storageReq), nil
@@ -158,7 +159,7 @@ func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.
 		return nil, fmt.Errorf("error getting Azure vm size data %v", err)
 	}
 
-	// parse the GCP resource requests
+	// parse the Azure resource requests
 	// memory is given in MB and storage in GB
 	cpuReq, err := resource.ParseQuantity(strconv.Itoa(int(vmSize.NumberOfCores)))
 	if err != nil {
@@ -172,13 +173,66 @@ func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.
 	// Azure allows for setting os and data disk size separately
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DataDiskSize))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 	osDiskStorageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.OSDiskSize))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storege request to quantity: %v", err)
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 	storageReq.Add(osDiskStorageReq)
+
+	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+}
+
+func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceQuota, error) {
+	// extract storage and image info from provider config
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	rawConfig, err := kubevirttypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("error getting kubevirt raw config: %w", err)
+	}
+
+	cpu, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.CPUs)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Kubevirt cpu request from machine config: %v", err)
+	}
+	memory, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.Memory)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Kubevirt memory request from machine config: %v", err)
+	}
+
+	storage, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.PrimaryDisk.Size)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Kubevirt primary disk size from machine config: %v", err)
+	}
+
+	// parse the KubeVirt resource requests
+	// memory is in MB and storage is given in GB
+	cpuReq, err := resource.ParseQuantity(cpu)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
+	}
+	memReq, err := resource.ParseQuantity(memory)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
+	}
+	storageReq, err := resource.ParseQuantity(storage)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
+	}
+
+	// Add all secondary disks
+	for _, d := range rawConfig.VirtualMachine.Template.SecondaryDisks {
+		secondaryStorage, err := configVarResolver.GetConfigVarStringValue(d.Size)
+		if err != nil {
+			return nil, fmt.Errorf("error getting Kubevirt secondary disk size from machine config: %v", err)
+		}
+		secondaryStorageReq, err := resource.ParseQuantity(secondaryStorage)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
+		}
+		storageReq.Add(secondaryStorageReq)
+	}
 
 	return NewResourceQuota(cpuReq, memReq, storageReq), nil
 }
