@@ -32,7 +32,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/scheme"
-	ctrlruntime "sigs.k8s.io/controller-runtime"
 )
 
 const END_OF_TRANSMISSION = "\u0004"
@@ -172,29 +171,19 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, p
 }
 
 // Terminal is called for any new websocket connection.
-func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, clusterName string) {
+func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, clusterName string) {
 	defer ws.Close()
 
-	terminalSession := TerminalSession{
-		websocketConn: ws,
-	}
-
-	masterCfg, err := ctrlruntime.GetConfig()
-	if err != nil {
-		log.Logger.Debug(fmt.Errorf("unable to build client configuration from kubeconfig: %w", err))
-		return
-	}
-
-	kubeClient, err := kubernetes.NewForConfig(masterCfg)
-	if err != nil {
-		log.Logger.Debug(fmt.Errorf("failed to create kubeClient: %w", err))
-		return
-	}
-
-	const podName = "webterminal"
-	namespace := fmt.Sprintf("cluster-%s", clusterName)
-	bashCmd := []string{"bash"}
-	err = startProcess(kubeClient, masterCfg, namespace, podName, bashCmd, terminalSession)
+	err := startProcess(
+		seedClient,
+		seedCfg,
+		fmt.Sprintf("cluster-%s", clusterName),
+		"webterminal",
+		[]string{"bash"},
+		TerminalSession{
+			websocketConn: ws,
+		},
+	)
 	if err != nil {
 		log.Logger.Debug(err)
 		return

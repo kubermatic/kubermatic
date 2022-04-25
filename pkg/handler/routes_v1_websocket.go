@@ -24,6 +24,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
@@ -33,6 +35,7 @@ import (
 	wsh "k8c.io/kubermatic/v2/pkg/handler/websocket"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
@@ -72,7 +75,7 @@ var upgrader = websocket.Upgrader{
 
 type WebsocketSettingsWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
-type WebsocketTerminalWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, clusterName string)
+type WebsocketTerminalWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, clusterName string)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
@@ -184,7 +187,9 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			return
 		}
 
-		writer(ctx, providers, ws, clusterID)
+		k8sClusterProvider := privilegedClusterProvider.(*kubernetesprovider.ClusterProvider)
+
+		writer(ctx, providers, ws, k8sClusterProvider.GetSeedClusterAdminClient(), k8sClusterProvider.SeedAdminConfig(), clusterID)
 	}
 }
 
