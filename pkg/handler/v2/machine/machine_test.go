@@ -1895,6 +1895,7 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	cluster.Status = kubermaticv1.ClusterStatus{
 		ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 			Apiserver:                    kubermaticv1.HealthStatusUp,
+			ApplicationController:        kubermaticv1.HealthStatusUp,
 			Scheduler:                    kubermaticv1.HealthStatusUp,
 			Controller:                   controllerStatus,
 			MachineController:            kubermaticv1.HealthStatusUp,

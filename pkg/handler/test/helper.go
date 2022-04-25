@@ -1011,6 +1011,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Apiserver:                    kubermaticv1.HealthStatusUp,
+				ApplicationController:        kubermaticv1.HealthStatusUp,
 				Scheduler:                    kubermaticv1.HealthStatusUp,
 				Controller:                   kubermaticv1.HealthStatusUp,
 				MachineController:            kubermaticv1.HealthStatusUp,

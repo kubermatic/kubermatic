@@ -22,6 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -76,6 +77,15 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		}
 	}
 	extendedHealth.MachineController = mcHealthStatus
+
+	applicationControllerHealthStatus := kubermaticv1.HealthStatusDown
+	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
+		applicationControllerHealthStatus, err = r.applicationControllerHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to evaluate application controller health: %w", err)
+		}
+	}
+	extendedHealth.ApplicationController = applicationControllerHealthStatus
 
 	return extendedHealth, nil
 }
@@ -151,6 +161,53 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 	case mcStatus == kubermaticv1.HealthStatusUp && mcWebhookStatus == kubermaticv1.HealthStatusUp:
 		return kubermaticv1.HealthStatusUp, nil
 	case mcStatus == kubermaticv1.HealthStatusProvisioning || mcWebhookStatus == kubermaticv1.HealthStatusProvisioning:
+		return kubermaticv1.HealthStatusProvisioning, nil
+	default:
+		return kubermaticv1.HealthStatusDown, nil
+	}
+}
+
+// applicationControllerHealthCheck will check the health of all components that are required for Application controller to work
+// We have intentionally created a dedicated health check for this as the resources are scattered through different components and the list of these required
+// resources will grow with time.
+func (r *Reconciler) applicationControllerHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	userClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, err
+	}
+
+	// Ensure that the ValidatingWebhookConfiguration for ApplicationInstallations exists in the user cluster
+	// Invalid resources can leak through if this resource doesn't exist
+	key := types.NamespacedName{Name: applications.ApplicationInstallationAdmissionWebhookName}
+	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{}
+	err = userClient.Get(ctx, key, webhook)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return kubermaticv1.HealthStatusDown, err
+	}
+	// if the ValidatingWebhookConfiguration doesn't exist yet, return StatusDown
+	if kerrors.IsNotFound(err) {
+		return kubermaticv1.HealthStatusDown, nil
+	}
+
+	// Ensure that the user-cluster-controller is healthy
+	// application-installation-controller is part of the usercluster-controller manager
+	key = types.NamespacedName{Namespace: namespace, Name: resources.UserClusterControllerDeploymentName}
+	userClusterControllerStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.UserClusterControllerDeploymentName, err)
+	}
+
+	// Ensure that the deployment for user-cluster-webhook is healthy
+	key = types.NamespacedName{Namespace: namespace, Name: resources.UserClusterWebhookDeploymentName}
+	userClusterWebhookStatus, err := resources.HealthyDeployment(ctx, r, key, 1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get dep health %q: %w", resources.UserClusterWebhookDeploymentName, err)
+	}
+
+	switch {
+	case userClusterControllerStatus == kubermaticv1.HealthStatusUp && userClusterWebhookStatus == kubermaticv1.HealthStatusUp:
+		return kubermaticv1.HealthStatusUp, nil
+	case userClusterControllerStatus == kubermaticv1.HealthStatusProvisioning || userClusterWebhookStatus == kubermaticv1.HealthStatusProvisioning:
 		return kubermaticv1.HealthStatusProvisioning, nil
 	default:
 		return kubermaticv1.HealthStatusDown, nil

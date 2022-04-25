@@ -31,11 +31,11 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-const applicationInstallationAdmissionWebhookName = "kubermatic-application-installations"
+const ApplicationInstallationAdmissionWebhookName = "kubermatic-application-installations"
 
 func ApplicationInstallationValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return applicationInstallationAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+		return ApplicationInstallationAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
