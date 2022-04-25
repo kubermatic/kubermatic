@@ -33,6 +33,7 @@ import (
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
@@ -232,6 +233,31 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 			return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 		}
 		storageReq.Add(secondaryStorageReq)
+	}
+
+	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+}
+
+func getVsphereResourceRequirements(config *types.Config) (*ResourceQuota, error) {
+	// extract storage and image info from provider config
+	rawConfig, err := vspheretypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("error getting vsphere raw config: %w", err)
+	}
+
+	// parse the vSphere resource requests
+	// memory is in MB and storage is given in GB
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(int(rawConfig.CPUs)))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
+	}
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", rawConfig.MemoryMB))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
+	}
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSizeGB))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 
 	return NewResourceQuota(cpuReq, memReq, storageReq), nil

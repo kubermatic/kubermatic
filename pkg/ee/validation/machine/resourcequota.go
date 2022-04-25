@@ -73,6 +73,11 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, user
 		if err != nil {
 			return fmt.Errorf("error getting kubevirt quota request: %w", err)
 		}
+	case types.CloudProviderVsphere:
+		quotaReq, err = getVsphereResourceRequirements(config)
+		if err != nil {
+			return fmt.Errorf("error getting vsphere quota request: %w", err)
+		}
 	default:
 		// TODO skip for now, when all providers are added, throw error
 		log.Debugf("provider %q not supported", config.CloudProvider)
