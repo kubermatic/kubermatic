@@ -32,20 +32,13 @@ stringData:
     
     clients:
       - url: http://loki:3100/loki/api/v1/push
-      |
-        # Maximum wait period before sending batch
-        batchwait: 1s
-        # Maximum batch size to accrue before sending, unit is byte
-        batchsize: 102400
-        # Maximum time to wait for server to respond to a request
-        timeout: 10s
-        backoff_config:
-          # Initial backoff time between retries
-          min_period: 100ms
-          # Maximum backoff time between retries
+      - backoff_config:
           max_period: 5s
-          # Maximum number of retries when sending batches, 0 means infinite retries
           max_retries: 20
+          min_period: 100ms
+        batchsize: 102400
+        batchwait: 1s
+        timeout: 10s
     
     positions:
       filename: /run/promtail/positions.yaml
@@ -385,7 +378,7 @@ spec:
         app.kubernetes.io/name: promtail
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: 1be12d9bac9f9fdcf9a6b43bca02e631cac85531c2adb0144fb9fd1bafb06577
+        checksum/config: 0e33e6f83fc886f1ce61c7e04800e5a15ac5fc9b646449acac8b11c301350f22
         prometheus.io/port: "3101"
         prometheus.io/scrape: "true"
     spec:
