@@ -16,9 +16,9 @@ limitations under the License.
 
 /*
 Package initialapplicationinstallationcontroller contains a controller that watches Cluster
-resources and will transform the InitialApplicationInstallations annotation into
-a list of ApplicationInstallation resource and create those resources in the
-user cluster, once the cluster has become ready.
+resources that have the InitialApplicationInstallations annotation.
+The controller creates ApplicationInstallation Resources from the annotation and reconciles them in the
+user cluster, once the cluster has become ready
 
 The annotation for the initial Applications is put there by the
 REST API's create-cluster endpoint.
