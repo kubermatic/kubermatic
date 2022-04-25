@@ -103,7 +103,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if cluster.DeletionTimestamp != nil {
 		// Cluster is queued for deletion; no action required
-		r.log.Debugf("Cluster is queued for deletion; no action required %v", cluster.Name)
+		r.log.Debugw("Cluster is queued for deletion; no action required", "cluster", cluster.Name)
 		return reconcile.Result{}, nil
 	}
 
