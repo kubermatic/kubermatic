@@ -85,12 +85,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	predicate := predicateutil.MultiFactory(predicateutil.TrueFilter, func(o ctrlruntimeclient.Object) bool {
-		_, exists := o.GetAnnotations()[v1.InitialApplicationInstallationsRequestAnnotation]
-		return exists
-	}, predicateutil.TrueFilter)
-
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(v1.InitialApplicationInstallationsRequestAnnotation, "", false)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
@@ -108,6 +103,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if cluster.DeletionTimestamp != nil {
 		// Cluster is queued for deletion; no action required
+		r.log.Debugf("Cluster is queued for deletion; no action required %v", cluster.Name)
 		return reconcile.Result{}, nil
 	}
 
@@ -142,7 +138,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Info("cluster not healthy")
+		r.log.Info("Application controller not healthy")
 		return nil, nil
 	}
 

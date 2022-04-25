@@ -86,12 +86,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	predicate := predicateutil.MultiFactory(predicateutil.TrueFilter, func(o ctrlruntimeclient.Object) bool {
-		_, exists := o.GetAnnotations()[v1.InitialMachineDeploymentRequestAnnotation]
-		return exists
-	}, predicateutil.TrueFilter)
-
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(v1.InitialMachineDeploymentRequestAnnotation, "", false)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
