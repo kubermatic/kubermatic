@@ -28,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
+func noop() {}
+
 func TestCreateUpdateHetznerCluster(t *testing.T) {
 	tests := []createCluster{
 		{
