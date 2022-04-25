@@ -710,9 +710,28 @@ type LeaderElectionSettings struct {
 	RetryPeriodSeconds *int32 `json:"retryPeriodSeconds,omitempty"`
 }
 
+// +kubebuilder:validation:Enum="";IPv4;IPv4+IPv6
+type IPFamily string
+
+const (
+	// IPFamilyUnspecified represents unspecified IP address family, which is interpreted as IPv4.
+	IPFamilyUnspecified IPFamily = ""
+	// IPFamilyIPv4 represents IPv4-only address family.
+	IPFamilyIPv4 IPFamily = "IPv4"
+	// IPFamilyDualStack represents dual-stack address family with IPv4 as the primary address family.
+	IPFamilyDualStack IPFamily = "IPv4+IPv6"
+)
+
 // ClusterNetworkingConfig specifies the different networking
 // parameters for a cluster.
 type ClusterNetworkingConfig struct {
+	// Optional: IP family used for cluster networking. Supported values are "", "IPv4" or "IPv4+IPv6".
+	// Can be omitted / empty if pods and services network ranges are specified.
+	// In that case it defaults according to the IP families of the provided network ranges.
+	// If neither ipFamily nor pods & services network ranges are specified, defaults to "IPv4".
+	// +optional
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
+
 	// The network ranges from which service VIPs are allocated.
 	// It can contain one IPv4 and/or one IPv6 CIDR.
 	// If both address families are specified, the first one defines the primary address family.

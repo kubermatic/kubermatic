@@ -21742,6 +21742,9 @@
           "type": "string",
           "x-go-name": "DNSDomain"
         },
+        "ipFamily": {
+          "$ref": "#/definitions/IPFamily"
+        },
         "ipvs": {
           "$ref": "#/definitions/IPVSConfiguration"
         },
@@ -24867,6 +24870,11 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "IPFamily": {
+      "description": "+kubebuilder:validation:Enum=\"\";IPv4;IPv4+IPv6",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "IPVSConfiguration": {
       "type": "object",
