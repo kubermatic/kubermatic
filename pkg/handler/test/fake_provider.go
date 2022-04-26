@@ -193,8 +193,8 @@ func (p *FakeExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (
 	return p.FakeClient, nil
 }
 
-func (p *FakeExternalClusterProvider) ValidateKubeconfig(ctx context.Context, kubeconfig []byte) error {
-	return p.Provider.ValidateKubeconfig(ctx, kubeconfig)
+func (p *FakeExternalClusterProvider) ValidateKubeconfig(_ context.Context, _ []byte) error {
+	return nil
 }
 
 func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig []byte) error {
