@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
@@ -610,7 +609,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 			if cloud.KubeOne != nil {
-				containerRuntime, err := CheckContainerRuntime(ctx, cluster, clusterProvider)
+				containerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, cluster, clusterProvider)
 				if err != nil {
 					return nil, err
 				}
@@ -623,26 +622,6 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		}
 		return convertClusterToAPI(cluster), nil
 	}
-}
-
-func CheckContainerRuntime(ctx context.Context,
-	externalCluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider provider.ExternalClusterProvider,
-) (string, error) {
-	nodes, err := externalClusterProvider.ListNodes(ctx, externalCluster)
-	if err != nil {
-		return "", fmt.Errorf("Failed to fetch container runtime: not able to list nodes %w", err)
-	}
-	for _, node := range nodes.Items {
-		if _, ok := node.Labels[NodeControlPlaneLabel]; ok {
-			containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
-			strSlice := strings.Split(containerRuntimeVersion, ":")
-			for _, containerRuntime := range strSlice {
-				return containerRuntime, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("Failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
 }
 
 func patchCluster(clusterToPatch, patchedCluster *apiv2.ExternalCluster, patchJson json.RawMessage) error {
