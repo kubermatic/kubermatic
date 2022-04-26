@@ -24,8 +24,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
@@ -40,6 +38,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 	"k8c.io/kubermatic/v2/pkg/watcher"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var upgrader = websocket.Upgrader{
