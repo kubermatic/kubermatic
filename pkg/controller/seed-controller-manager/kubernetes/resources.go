@@ -47,6 +47,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/user-cluster-webhook"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
+	webterminal "k8c.io/kubermatic/v2/pkg/resources/web-terminal"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -302,6 +303,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		machinecontroller.WebhookDeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
 		userclusterwebhook.DeploymentCreator(data),
+		webterminal.DeploymentCreator(data),
 	}
 
 	if data.Cluster().Spec.KubernetesDashboard.Enabled {

@@ -162,6 +162,8 @@ const (
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard.
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
+	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
+	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
