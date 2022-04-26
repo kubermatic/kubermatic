@@ -212,7 +212,10 @@ func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
 		spec.ClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider, spec.CNIPlugin.Type)
 	}
 
-	if spec.ClusterNetwork.IPVS != nil {
+	if spec.ClusterNetwork.ProxyMode == resources.IPVSProxyMode {
+		if spec.ClusterNetwork.IPVS == nil {
+			spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{}
+		}
 		if spec.ClusterNetwork.IPVS.StrictArp == nil {
 			spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
 		}

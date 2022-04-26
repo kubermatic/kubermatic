@@ -89,7 +89,7 @@ var (
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaults.DefaultSchedulerReplicas)),
 	}
 
-	defaultNetworkingPatches = []jsonpatch.JsonPatchOperation{
+	defaultNetworkingPatchesWithoutProxyMode = []jsonpatch.JsonPatchOperation{
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipFamily", string(kubermaticv1.IPFamilyIPv4)),
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{resources.DefaultClusterServicesCIDRIPv4}),
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{resources.DefaultClusterPodsCIDRIPv4}),
@@ -97,6 +97,15 @@ var (
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
 	}
+	defaultNetworkingPatches = append(
+		defaultNetworkingPatchesWithoutProxyMode,
+		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
+		jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
+	)
+	defaultNetworkingPatchesIptablesProxyMode = append(
+		defaultNetworkingPatchesWithoutProxyMode,
+		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "iptables"),
+	)
 )
 
 func init() {
@@ -355,7 +364,7 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 								DNSDomain:                "example.local",
-								ProxyMode:                resources.IPTablesProxyMode,
+								ProxyMode:                resources.IPVSProxyMode,
 								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
@@ -435,9 +444,6 @@ func TestHandle(t *testing.T) {
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
 							},
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								ProxyMode: resources.IPVSProxyMode,
-							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -451,16 +457,13 @@ func TestHandle(t *testing.T) {
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
 							},
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								ProxyMode: resources.IPVSProxyMode,
-							},
 						}.Do(),
 					},
 				},
 			},
 			wantAllowed: true,
 			wantPatches: append(
-				append(defaultPatches, defaultNetworkingPatches...),
+				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
 			),
 		},
@@ -487,9 +490,6 @@ func TestHandle(t *testing.T) {
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
 							},
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								ProxyMode: resources.IPVSProxyMode,
-							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -504,16 +504,13 @@ func TestHandle(t *testing.T) {
 								Type:    kubermaticv1.CNIPluginTypeCanal,
 								Version: "v3.19",
 							},
-							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								ProxyMode: resources.IPVSProxyMode,
-							},
 						}.Do(),
 					},
 				},
 			},
 			wantAllowed: true,
 			wantPatches: append(
-				append(defaultPatches, defaultNetworkingPatches...),
+				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
 			),
 		},
@@ -543,7 +540,7 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 								DNSDomain:                "example.local",
-								ProxyMode:                resources.IPTablesProxyMode,
+								ProxyMode:                resources.IPVSProxyMode,
 								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
@@ -591,7 +588,6 @@ func TestHandle(t *testing.T) {
 								NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
-								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							Features: map[string]bool{
@@ -614,7 +610,6 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
-								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							Features: map[string]bool{
@@ -662,7 +657,6 @@ func TestHandle(t *testing.T) {
 								NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
-								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -690,7 +684,6 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
-								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -739,7 +732,6 @@ func TestHandle(t *testing.T) {
 								NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
-								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -767,7 +759,6 @@ func TestHandle(t *testing.T) {
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "example.local",
 								ProxyMode:                resources.IPTablesProxyMode,
-								IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -821,7 +812,6 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
@@ -862,6 +852,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.241.0.0/20"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.26.0.0/16"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
@@ -870,7 +861,7 @@ func TestHandle(t *testing.T) {
 			),
 		},
 		{
-			name: "Default network configuration with IPVS Settings",
+			name: "Default network configuration with non-default IPVS Settings",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
@@ -892,7 +883,10 @@ func TestHandle(t *testing.T) {
 								Version: "v3.19",
 							},
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-								IPVS: &kubermaticv1.IPVSConfiguration{},
+								ProxyMode: resources.IPVSProxyMode,
+								IPVS: &kubermaticv1.IPVSConfiguration{
+									StrictArp: pointer.BoolPtr(false),
+								},
 							},
 							Features: map[string]bool{
 								kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -904,9 +898,46 @@ func TestHandle(t *testing.T) {
 			},
 			wantAllowed: true,
 			wantPatches: append(
-				append(defaultPatches, defaultNetworkingPatches...),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs/strictArp", true),
+				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+			),
+		},
+		{
+			name: "Default network configuration with iptables proxy mode",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								DatacenterName: "openstack-dc",
+								Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+							},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								ProxyMode: resources.IPTablesProxyMode,
+							},
+							Features: map[string]bool{
+								kubermaticv1.ApiserverNetworkPolicy:    true,
+								kubermaticv1.KubeSystemNetworkPolicies: true,
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: append(
+				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
@@ -953,6 +984,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 			),
 		},
@@ -1027,7 +1059,6 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
 				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"ccm-migration.k8c.io/migration-needed": "", "csi-migration.k8c.io/migration-needed": ""}),
 				jsonpatch.NewOperation("add", "/spec/cloud/openstack/useOctavia", true),
 			),
@@ -1076,10 +1107,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: append(
-				append(defaultPatches, defaultNetworkingPatches...),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),
-			),
+			wantPatches: append(defaultPatches, defaultNetworkingPatches...),
 		},
 		{
 			name: "Update non-OpenStack cluster to enable CCM/CSI migration",
@@ -1125,10 +1153,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			wantPatches: append(
-				append(defaultPatches, defaultNetworkingPatches...),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPTablesProxyMode),
-			),
+			wantPatches: append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
 		},
 	}
 	for _, tt := range tests {
