@@ -27,8 +27,13 @@ import (
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	wsh "k8c.io/kubermatic/v2/pkg/handler/websocket"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 	"k8c.io/kubermatic/v2/pkg/watcher"
@@ -67,21 +72,28 @@ var upgrader = websocket.Upgrader{
 
 type WebsocketSettingsWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
+type WebsocketTerminalWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
 
 	mux.HandleFunc("/ws/admin/settings", getSettingsWatchHandler(wsh.WriteSettings, providers, r))
 	mux.HandleFunc("/ws/me", getUserWatchHandler(wsh.WriteUser, providers, r))
+	mux.HandleFunc("/ws/projects/{project_id}/clusters/{cluster_id}/terminal", getTerminalWatchHandler(wsh.Terminal, providers, r))
 }
 
 func getProviders(r Routing) watcher.Providers {
 	return watcher.Providers{
-		SettingsProvider: r.settingsProvider,
-		SettingsWatcher:  r.settingsWatcher,
-		UserProvider:     r.userProvider,
-		UserWatcher:      r.userWatcher,
-		MemberMapper:     r.userProjectMapper,
+		SettingsProvider:          r.settingsProvider,
+		SettingsWatcher:           r.settingsWatcher,
+		UserProvider:              r.userProvider,
+		UserWatcher:               r.userWatcher,
+		MemberMapper:              r.userProjectMapper,
+		ProjectProvider:           r.projectProvider,
+		PrivilegedProjectProvider: r.privilegedProjectProvider,
+		UserInfoGetter:            r.userInfoGetter,
+		SeedsGetter:               r.seedsGetter,
+		ClusterProviderGetter:     r.clusterProviderGetter,
 	}
 }
 
@@ -120,6 +132,69 @@ func getUserWatchHandler(writer WebsocketUserWriter, providers watcher.Providers
 
 		go writer(req.Context(), providers, ws, user.Email)
 		requestLoggingReader(ws)
+	}
+}
+
+func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.Providers, routing Routing) func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+		authenticatedUser, err := verifyAuthorizationToken(req, routing.tokenVerifiers, routing.tokenExtractors)
+		if err != nil {
+			log.Logger.Debug(err)
+			return
+		}
+
+		clusterID, err := common.DecodeClusterID(ctx, req)
+		if err != nil {
+			return
+		}
+
+		projectReq, err := common.DecodeProjectRequest(ctx, req)
+		if err != nil {
+			return
+		}
+		projectID := projectReq.(common.ProjectReq).ProjectID
+
+		request := terminalReq{
+			ClusterID: clusterID,
+		}
+
+		clusterProvider, ctx, err := middleware.GetClusterProvider(ctx, request, providers.SeedsGetter, providers.ClusterProviderGetter)
+		if err != nil {
+			return
+		}
+		privilegedClusterProvider := clusterProvider.(provider.PrivilegedClusterProvider)
+
+		user, err := providers.UserProvider.UserByEmail(ctx, authenticatedUser.Email)
+		if err != nil {
+			return
+		}
+		ctx = context.WithValue(ctx, middleware.ClusterProviderContextKey, clusterProvider)
+		ctx = context.WithValue(ctx, middleware.PrivilegedClusterProviderContextKey, privilegedClusterProvider)
+		ctx = context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user)
+
+		_, err = handlercommon.GetCluster(ctx, providers.ProjectProvider, providers.PrivilegedProjectProvider, providers.UserInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return
+		}
+
+		ws, err := upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			log.Logger.Debug(err)
+			return
+		}
+
+		writer(ctx, providers, ws)
+	}
+}
+
+type terminalReq struct {
+	ClusterID string
+}
+
+func (req terminalReq) GetSeedCluster() v1.SeedCluster {
+	return v1.SeedCluster{
+		ClusterID: req.ClusterID,
 	}
 }
 

@@ -202,6 +202,7 @@ type ClusterTemplate struct {
 	UserSSHKeys    []ClusterTemplateSSHKey        `json:"userSshKeys,omitempty"`
 	Cluster        *ClusterTemplateInfo           `json:"cluster,omitempty"`
 	NodeDeployment *ClusterTemplateNodeDeployment `json:"nodeDeployment,omitempty"`
+	Applications   []apiv1.Application            `json:"applications,omitempty"`
 }
 
 // ClusterTemplateInfo represents a ClusterTemplateInfo object.

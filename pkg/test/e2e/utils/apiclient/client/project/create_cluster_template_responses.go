@@ -177,6 +177,9 @@ swagger:model CreateClusterTemplateBody
 */
 type CreateClusterTemplateBody struct {
 
+	// applications
+	Applications []*models.Application `json:"applications"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
@@ -197,6 +200,10 @@ type CreateClusterTemplateBody struct {
 func (o *CreateClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := o.validateApplications(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := o.validateUserSSHKeys(formats); err != nil {
 		res = append(res, err)
 	}
@@ -212,6 +219,32 @@ func (o *CreateClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (o *CreateClusterTemplateBody) validateApplications(formats strfmt.Registry) error {
+	if swag.IsZero(o.Applications) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(o.Applications); i++ {
+		if swag.IsZero(o.Applications[i]) { // not required
+			continue
+		}
+
+		if o.Applications[i] != nil {
+			if err := o.Applications[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -283,6 +316,10 @@ func (o *CreateClusterTemplateBody) validateNodeDeployment(formats strfmt.Regist
 func (o *CreateClusterTemplateBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := o.contextValidateApplications(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := o.contextValidateUserSSHKeys(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -298,6 +335,26 @@ func (o *CreateClusterTemplateBody) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (o *CreateClusterTemplateBody) contextValidateApplications(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(o.Applications); i++ {
+
+		if o.Applications[i] != nil {
+			if err := o.Applications[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

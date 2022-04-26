@@ -251,6 +251,27 @@ func GenerateCluster(
 		}
 	}
 
+	// Serialize initial applications request into an annotation.
+	// "initial-application-installation-controller" running in seed will transform this annotation, create the resultant
+	// ApplicationInstallation, and then delete this annotation from the Cluster Object.
+
+	// Ensure that application has a proper name instead of relying on the Generated Name. This makes it easier to
+	// determine if an application annotation has already been processed by the corresponding controller and all the
+	// resources(applications) created.
+	for i, app := range body.Applications {
+		if app.Name == "" {
+			body.Applications[i].Name = fmt.Sprintf("%s-instance", app.Spec.ApplicationRef.Name)
+		}
+	}
+
+	if len(body.Applications) > 0 {
+		data, err := json.Marshal(body.Applications)
+		if err != nil {
+			return nil, fmt.Errorf("cannot marshal initial applications: %w", err)
+		}
+		partialCluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation] = string(data)
+	}
+
 	// Owning project ID must be set early, because it will be inherited by some child objects,
 	// for example the credentials secret.
 	partialCluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
@@ -585,6 +606,7 @@ func HealthEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 
 	return apiv1.ClusterHealth{
 		Apiserver:                    existingCluster.Status.ExtendedHealth.Apiserver,
+		ApplicationController:        existingCluster.Status.ExtendedHealth.ApplicationController,
 		Scheduler:                    existingCluster.Status.ExtendedHealth.Scheduler,
 		Controller:                   existingCluster.Status.ExtendedHealth.Controller,
 		MachineController:            existingCluster.Status.ExtendedHealth.MachineController,

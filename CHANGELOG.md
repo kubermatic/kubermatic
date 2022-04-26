@@ -1,5 +1,19 @@
 # Kubermatic 2.20
 
+## [v2.20.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.2)
+
+With this patch release, etcd for Kubernetes 1.22+ is upgraded to etcd 3.5.3. Data consistency issues as reported in previous release notes are fixed. Warnings and recommendations related to that can be considered withdrawn for this release.
+
+- Add support for configuration annotations and loadBalancerSourceRanges for front-loadbalancer service of node port proxy ([#9486](https://github.com/kubermatic/kubermatic/issues/9486))
+- For the Seed CR, `spec.nodeportProxy.annotations` is deprecated and `spec.nodeportProxy.envoy.loadBalancerService.annotations` should be used instead ([#9486](https://github.com/kubermatic/kubermatic/issues/9486))
+- The Image-loader utility now includes all the images used by KKP, considering also the provider-specific ones (e.g., CCM, CSI) ([#9518](https://github.com/kubermatic/kubermatic/issues/9518))
+- Enable the "vsphereCSIClusterID" feature flag when running the CCM/CSI migration ([#9557](https://github.com/kubermatic/kubermatic/issues/9557))
+- For Kubernetes 1.22 and higher, etcd is updated to v3.5.3 to fix data consistency issues as reported by upstream developers ([#9606](https://github.com/kubermatic/kubermatic/issues/9606))
+- The flag `--kubelet-certificate-authority` (introduced in KKP 2.19) is not set for "kubeadm" / "bringyourown" user clusters anymore ([#9674](https://github.com/kubermatic/kubermatic/issues/9674))
+
+
+
+
 ## [v2.20.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.1)
 
 This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
@@ -87,6 +101,18 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 # Kubermatic 2.19
 
+## [v2.19.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.5)
+
+With this patch release, etcd for Kubernetes 1.22+ is upgraded to etcd 3.5.3. Data consistency issues as reported in previous release notes are fixed. Warnings and recommendations related to that can be considered withdrawn for this release.
+
+- Add `vsphereCSIClusterID` feature flag for the cluster object. This feature flag changes the cluster-id in the vSphere CSI config to the cluster name instead of the vSphere Compute Cluster name provided via Datacenter config. Migrating the cluster-id requires manual steps ([#9202](https://github.com/kubermatic/kubermatic/issues/9202))
+- Enable the "vsphereCSIClusterID" feature flag when running the CCM/CSI migration ([#9557](https://github.com/kubermatic/kubermatic/issues/9557))
+- For Kubernetes 1.22 and higher, etcd is updated to v3.5.3 to fix data consistency issues as reported by upstream developers ([#9610](https://github.com/kubermatic/kubermatic/issues/9610))
+- The flag `--kubelet-certificate-authority` (introduced in KKP 2.19) is not set for "kubeadm" / "bringyourown" user clusters anymore ([#9674](https://github.com/kubermatic/kubermatic/issues/9674))
+
+
+
+
 ## [v2.19.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.4)
 
 This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
@@ -116,7 +142,7 @@ Please be aware we do not recommend enabling `etcd-launcher` on existing Kuberne
 - Fix vSphere VolumeAttachment cleanups during cluster deletion or node draining ([#1190](https://github.com/kubermatic/machine-controller/pull/1190))
 
 ### Misc
-- Upgrade machine controller to v1.42.5 ([#9440](https://github.com/kubermatic/kubermatic/pull/9440)) 
+- Upgrade machine controller to v1.42.5 ([#9440](https://github.com/kubermatic/kubermatic/pull/9440))
 - Support for `network:ha_router_replicated_interface` ports when discovering existing subnet router in Openstack ([#9176](https://github.com/kubermatic/kubermatic/pull/9176))
 
 ## [v2.19.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.2)
@@ -442,6 +468,14 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 - Incompatibilty between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
 
 # Kubermatic 2.18
+
+## [v2.18.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.10)
+
+With this patch release, etcd for Kubernetes 1.22+ is upgraded to etcd 3.5.3. Data consistency issues as reported in previous release notes are fixed. Warnings and recommendations related to that can be considered withdrawn for this release.
+
+- Add `vsphereCSIClusterID` feature flag for the cluster object. This feature flag changes the cluster-id in the vSphere CSI config to the cluster name instead of the vSphere Compute Cluster name provided via Datacenter config. Migrating the cluster-id requires manual steps ([#9202](https://github.com/kubermatic/kubermatic/issues/9202))
+- Enable the "vsphereCSIClusterID" feature flag when running the CCM/CSI migration ([#9557](https://github.com/kubermatic/kubermatic/issues/9557))
+- For Kubernetes 1.22 and higher, etcd is updated to v3.5.3 to fix data consistency issues as reported by upstream developers ([#9611](https://github.com/kubermatic/kubermatic/issues/9611))
 
 ## [v2.18.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.18.9)
 

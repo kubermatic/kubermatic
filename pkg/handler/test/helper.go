@@ -989,6 +989,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				DNSDomain: "cluster.local",
 				ProxyMode: "ipvs",
+				IPFamily:  kubermaticv1.IPFamilyIPv4,
 				Pods: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"1.2.3.4/8"},
 				},
@@ -1011,6 +1012,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Apiserver:                    kubermaticv1.HealthStatusUp,
+				ApplicationController:        kubermaticv1.HealthStatusUp,
 				Scheduler:                    kubermaticv1.HealthStatusUp,
 				Controller:                   kubermaticv1.HealthStatusUp,
 				MachineController:            kubermaticv1.HealthStatusUp,

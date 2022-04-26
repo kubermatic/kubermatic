@@ -356,6 +356,42 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "valid ip family - IPv4",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyIPv4,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid ip family - dual stack",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid ip family",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				IPFamily:                 kubermaticv1.IPFamilyDualStack,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr: true,
+		},
+		{
 			name: "valid node CIDR mask sizes",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},

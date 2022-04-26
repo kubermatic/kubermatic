@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,28 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package initialmachinedeployment
+package initialapplicationinstallationcontroller
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-openapi/errors"
 	"go.uber.org/zap"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	machineresource "k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	ControllerName = "kkp-initial-machinedeployment-controller"
+	ControllerName = "kkp-initial-application-installation-controller"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -65,7 +65,6 @@ type Reconciler struct {
 	versions                      kubermatic.Versions
 }
 
-// Add creates a new initialmachinedeployment controller.
 func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
@@ -86,7 +85,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(v1.InitialMachineDeploymentRequestAnnotation, "", false)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(v1.InitialApplicationInstallationsRequestAnnotation, "", false)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
@@ -102,6 +101,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	if cluster.DeletionTimestamp != nil {
+		// Cluster is queued for deletion; no action required
+		r.log.Debugw("Cluster is queued for deletion; no action required", "cluster", cluster.Name)
+		return reconcile.Result{}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -109,7 +114,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.workerName,
 		cluster,
 		r.versions,
-		kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess,
+		kubermaticv1.ClusterConditionApplicationInstallationControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, cluster)
 		},
@@ -126,22 +131,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// there is no annotation anymore
-	request := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]
+	request := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]
 	if request == "" {
 		return nil, nil
 	}
 
-	// If cluster is not healthy yet there is nothing to do.
-	// If it gets healthy we'll get notified by the event. No need to requeue.
-	if !cluster.Status.ExtendedHealth.AllHealthy() {
-		r.log.Info("cluster not healthy")
+	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
+	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
+		r.log.Info("Application controller not healthy")
 		return nil, nil
 	}
 
-	nodeDeployment, err := r.parseNodeDeployment(cluster, request)
+	applications, err := r.parseApplications(cluster, request)
 	if err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
-			return nil, fmt.Errorf("failed to remove invalid (%v) initial MachineDeployment annotation: %w", err, removeErr)
+			return nil, fmt.Errorf("failed to remove invalid (%v) initial ApplicationInstallation annotation: %w", err, removeErr)
 		}
 
 		return nil, err
@@ -152,58 +156,50 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	if err := r.createInitialMachineDeployment(ctx, nodeDeployment, cluster, userClusterClient); err != nil {
-		return nil, fmt.Errorf("failed to create initial MachineDeployment: %w", err)
+	var errs []error
+	for _, app := range applications {
+		if err := r.createInitialApplicationInstallations(ctx, userClusterClient, app, cluster); err != nil {
+			errs = append(errs, err)
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallion %s", app.Name)
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, errors.CompositeValidationError(errs...)
 	}
 
 	if err := r.removeAnnotation(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to remove initial MachineDeployment annotation: %w", err)
+		return nil, fmt.Errorf("failed to remove initial ApplicationInstallation annotation: %w", err)
 	}
 
 	return nil, nil
 }
 
-func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster, request string) (*v1.NodeDeployment, error) {
-	var nodeDeployment *v1.NodeDeployment
-	if err := json.Unmarshal([]byte(request), &nodeDeployment); err != nil {
-		return nil, fmt.Errorf("cannot unmarshal initial MachineDeployment request: %w", err)
+func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, client ctrlruntimeclient.Client, application v1.Application, cluster *kubermaticv1.Cluster) error {
+	applicationInstallation := appkubermaticv1.ApplicationInstallation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        application.Name,
+			Namespace:   metav1.NamespaceSystem,
+			Annotations: application.Annotations,
+		},
+		Spec: appkubermaticv1.ApplicationInstallationSpec{
+			Namespace: appkubermaticv1.NamespaceSpec{
+				Name:        application.Spec.Namespace.Name,
+				Create:      application.Spec.Namespace.Create,
+				Labels:      application.Spec.Namespace.Labels,
+				Annotations: application.Spec.Namespace.Annotations,
+			},
+			ApplicationRef: appkubermaticv1.ApplicationRef{
+				Name:    application.Spec.ApplicationRef.Name,
+				Version: application.Spec.ApplicationRef.Version,
+			},
+			Values: application.Spec.Values,
+		},
 	}
 
-	nodeDeployment, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
+	err := client.Create(ctx, &applicationInstallation)
 	if err != nil {
-		return nil, fmt.Errorf("initial node deployment is not valid: %w", err)
-	}
-
-	return nodeDeployment, nil
-}
-
-func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDeployment *v1.NodeDeployment, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
-	datacenter, err := r.getTargetDatacenter(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get target datacenter: %w", err)
-	}
-
-	sshKeys, err := r.getSSHKeys(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get SSH keys: %w", err)
-	}
-
-	data := common.CredentialsData{
-		Ctx:               ctx,
-		KubermaticCluster: cluster,
-		Client:            r,
-	}
-
-	machineDeployment, err := machineresource.Deployment(cluster, nodeDeployment, datacenter, sshKeys, data)
-	if err != nil {
-		return fmt.Errorf("failed to assemble MachineDeployment: %w", err)
-	}
-
-	err = client.Create(ctx, machineDeployment)
-	if err != nil {
-		// in case we created the MD before but then failed to cleanup the Cluster resource's
-		// annotations, we can silently ignore AlreadyExists errors here and then re-try removing
-		// the annotation afterwards
+		// If the application already exists, we just ignore the error and move forward.
 		if kerrors.IsAlreadyExists(err) {
 			return nil
 		}
@@ -211,50 +207,21 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDep
 		return err
 	}
 
-	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeDeploymentCreated", "Initial MachineDeployment %s has been created", machineDeployment.Name)
+	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Initial ApplicationInstallion %s has been created", applicationInstallation.Name)
 
 	return nil
 }
 
-func (r *Reconciler) getTargetDatacenter(cluster *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, error) {
-	seed, err := r.seedGetter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current Seed cluster: %w", err)
+func (r *Reconciler) parseApplications(cluster *kubermaticv1.Cluster, request string) ([]v1.Application, error) {
+	var applications []v1.Application
+	if err := json.Unmarshal([]byte(request), &applications); err != nil {
+		return nil, fmt.Errorf("cannot unmarshal initial Applications request: %w", err)
 	}
-
-	for key, dc := range seed.Spec.Datacenters {
-		if key == cluster.Spec.Cloud.DatacenterName {
-			return &dc, nil
-		}
-	}
-
-	return nil, fmt.Errorf("there is no datacenter named %q in Seed %q", cluster.Spec.Cloud.DatacenterName, seed.Name)
-}
-
-func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.UserSSHKey, error) {
-	var keys []*kubermaticv1.UserSSHKey
-
-	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if projectID == "" {
-		return nil, fmt.Errorf("cluster does not have a %q label", kubermaticv1.ProjectIDLabelKey)
-	}
-
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: projectID}, project); err != nil {
-		return nil, fmt.Errorf("failed to get owning project %q: %w", projectID, err)
-	}
-
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(nil, r)
-	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get SSH keys: %w", err)
-	}
-
-	return keys, nil
+	return applications, nil
 }
 
 func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	oldCluster := cluster.DeepCopy()
-	delete(cluster.Annotations, v1.InitialMachineDeploymentRequestAnnotation)
+	delete(cluster.Annotations, v1.InitialApplicationInstallationsRequestAnnotation)
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
