@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
@@ -117,6 +118,14 @@ func Add(
 		predicateutil.ByName(resources.ApiserverDeploymentName),
 	); err != nil {
 		return fmt.Errorf("failed to create watcher for appsv1.Deployment: %w", err)
+	}
+
+	if err := c.Watch(
+		&source.Kind{Type: &batchv1.Job{}},
+		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()),
+		predicateutil.ByLabel(resources.AppLabelKey, encryptionresources.AppLabelValue),
+	); err != nil {
+		return fmt.Errorf("failed to create watcher for batchv1.Job: %w", err)
 	}
 
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {

@@ -18,6 +18,7 @@ package encryptionatrestcontroller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -26,10 +27,12 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -57,10 +60,12 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 		if err != nil {
 			return nil, err
 		}
+
 		config, err := r.configGetter(ctx)
 		if err != nil {
 			return nil, err
 		}
+
 		data, err := r.getClusterTemplateData(ctx, cluster, seed, config)
 		if err != nil {
 			return nil, err
@@ -72,8 +77,15 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 			return &reconcile.Result{}, err
 		}
 
-		// we just created the job and need to check in with it later
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		// wait for Job to appear in cache
+		waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r.Client, log, ctrlruntimeclient.ObjectKeyFromObject(&job), &job)
+		if err := wait.Poll(100*time.Millisecond, 10*time.Second, waiter); err != nil {
+			return &reconcile.Result{}, fmt.Errorf("failed waiting for the Job to appear in the cache: %w", err)
+		}
+
+		// Jobs are watched and queued by the controller, so we now wait for the reconcile loop
+		// that is triggered by the Job updating.
+		return &reconcile.Result{}, nil
 	} else {
 		job := jobList.Items[0]
 		if job.Status.Succeeded == 1 {
@@ -94,7 +106,7 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 			return &reconcile.Result{}, nil
 		}
 
-		// no job result yet, requeue to read job status again in 10 seconds
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		// no job result yet, job status will update at a later point and trigger another loop
+		return &reconcile.Result{}, nil
 	}
 }

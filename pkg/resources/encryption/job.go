@@ -33,6 +33,7 @@ const (
 	EncryptionJobPrefix    = "data-encryption"
 	ClusterLabelKey        = "kubermatic.k8c.io/cluster"
 	SecretRevisionLabelKey = "kubermatic.k8c.io/secret-revision"
+	AppLabelValue          = "encryption-runner"
 )
 
 type encryptionData interface {
@@ -47,6 +48,7 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 			GenerateName: fmt.Sprintf("%s-%s-", EncryptionJobPrefix, cluster.Name),
 			Namespace:    cluster.Status.NamespaceName,
 			Labels: map[string]string{
+				resources.AppLabelKey:  AppLabelValue,
 				ClusterLabelKey:        cluster.Name,
 				SecretRevisionLabelKey: secret.ObjectMeta.ResourceVersion,
 			},
@@ -66,9 +68,7 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 							Command: []string{"/bin/bash"},
 							Args: []string{
 								"-c",
-								// TODO: this is terribly dangerous and might result in resetting some resources to an older version of it.
-								// Replace this with something better!
-								fmt.Sprintf("kubectl get %s --all-namespaces -o json | kubectl replace -f -", resourceList),
+								fmt.Sprintf("kubectl get %s --all-namespaces --output json | jq -r '.items[] | \"\\(.metadata.namespace // \"default\") \\(.kind) \\(.metadata.name)\"' | xargs -n3 bash -c 'kubectl get $1/$2 -n $0 -o json | kubectl replace -f -'", resourceList),
 							},
 							Env: []corev1.EnvVar{
 								{
