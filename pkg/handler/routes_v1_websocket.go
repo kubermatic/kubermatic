@@ -18,6 +18,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -33,10 +34,16 @@ import (
 	wsh "k8c.io/kubermatic/v2/pkg/handler/websocket"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 	"k8c.io/kubermatic/v2/pkg/watcher"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var upgrader = websocket.Upgrader{
@@ -72,7 +79,7 @@ var upgrader = websocket.Upgrader{
 
 type WebsocketSettingsWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
 type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
-type WebsocketTerminalWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn)
+type WebsocketTerminalWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, namespace, podName string)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
@@ -184,8 +191,36 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 			return
 		}
 
-		writer(ctx, providers, ws)
+		k8sClusterProvider := privilegedClusterProvider.(*kubernetesprovider.ClusterProvider)
+
+		namespace, podName, err := getWebTerminalNamespaceAndPodName(ctx, privilegedClusterProvider, clusterID)
+		if err != nil {
+			log.Logger.Debug(err)
+			return
+		}
+
+		writer(ctx, providers, ws, k8sClusterProvider.GetSeedClusterAdminClient(), k8sClusterProvider.SeedAdminConfig(), namespace, podName)
 	}
+}
+
+func getWebTerminalNamespaceAndPodName(ctx context.Context, privilegedClusterProvider provider.PrivilegedClusterProvider, clusterName string) (string, string, error) {
+	namespace := fmt.Sprintf("cluster-%s", clusterName)
+
+	seedRuntimeClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+
+	pods := &corev1.PodList{}
+	err := seedRuntimeClient.List(ctx, pods, ctrlruntimeclient.InNamespace(namespace), ctrlruntimeclient.MatchingLabels{"app": "web-terminal"})
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(pods.Items) == 0 {
+		return "", "", fmt.Errorf("could not find the web terminal for the cluster %s", clusterName)
+	}
+
+	podName := pods.Items[0].Name
+
+	return namespace, podName, nil
 }
 
 type terminalReq struct {
