@@ -171,14 +171,14 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, namespace, p
 }
 
 // Terminal is called for any new websocket connection.
-func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, clusterName string) {
+func Terminal(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, seedClient kubernetes.Interface, seedCfg *rest.Config, namespace, podName string) {
 	defer ws.Close()
 
 	err := startProcess(
 		seedClient,
 		seedCfg,
-		fmt.Sprintf("cluster-%s", clusterName),
-		"webterminal",
+		namespace,
+		podName,
 		[]string{"bash"},
 		TerminalSession{
 			websocketConn: ws,
