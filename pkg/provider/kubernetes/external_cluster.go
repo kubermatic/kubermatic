@@ -26,6 +26,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -252,11 +253,24 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	return v, nil
 }
 
-func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, encodedKubeconfig string) error {
-	kubeconfig, err := base64.StdEncoding.DecodeString(encodedKubeconfig)
+func (p *ExternalClusterProvider) ValidateKubeconfig(ctx context.Context, kubeconfig []byte) error {
+	cfg, err := clientcmd.Load(kubeconfig)
 	if err != nil {
-		return err
+		return common.KubernetesErrorToHTTPError(err)
 	}
+
+	cli, err := p.GenerateClient(cfg)
+	if err != nil {
+		return fmt.Errorf("cannot connect to the kubernetes cluster: %w", err)
+	}
+	// check if kubeconfig can automatically authenticate and get resources.
+	if err := cli.List(ctx, &corev1.PodList{}); err != nil {
+		return fmt.Errorf("can not retrieve data, check your kubeconfig: %w", err)
+	}
+	return nil
+}
+
+func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig []byte) error {
 	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, cluster, map[string][]byte{
 		resources.ExternalClusterKubeconfig: kubeconfig,
 	})
