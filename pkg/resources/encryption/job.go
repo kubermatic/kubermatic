@@ -40,8 +40,8 @@ type encryptionData interface {
 	ImageRegistry(string) string
 }
 
-func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, secret *corev1.Secret, key string) batchv1.Job {
-	resourceList := strings.Join(cluster.Spec.EncryptionConfiguration.Resources, ",")
+func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, secret *corev1.Secret, res []string, key string) batchv1.Job {
+	resourceList := strings.Join(res, ",")
 
 	return batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{

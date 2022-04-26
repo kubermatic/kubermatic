@@ -203,17 +203,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
-		keyHint, err := getActiveKey(ctx, r.Client, cluster)
+		keyHint, resourceList, err := getActiveConfiguration(ctx, r.Client, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
 
 		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-			if c.Status.Encryption.ActiveKey != keyHint {
+			if c.Status.Encryption.ActiveKey != keyHint || !isEqualSlice(c.Status.Encryption.EncryptedResources, resourceList) {
 				// the active key as per the parsed EncryptionConfiguration has changed; we need to re-run encryption
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded
 			} else {
-				// EncryptionConfiguration was changed but the primary key did not change, so there is no need to re-run
+				// EncryptionConfiguration was changed but the primary configuration did not change, so there is no need to re-run
 				// encryption. We can skip right to ClusterEncryptionPhaseActive.
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseActive
 			}
@@ -224,12 +224,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{}, nil
 
 	case kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded:
-		key, err := getActiveKey(ctx, r.Client, cluster)
-		if err != nil {
-			return &reconcile.Result{}, err
-		}
-
-		return r.encryptData(ctx, log, cluster, key)
+		return r.encryptData(ctx, r.Client, log, cluster)
 
 	case kubermaticv1.ClusterEncryptionPhaseActive:
 		// get a key hint as defined in the ClusterSpec to compare to the current status.

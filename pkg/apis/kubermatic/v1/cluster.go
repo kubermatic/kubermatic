@@ -555,13 +555,17 @@ type ClusterEncryptionStatus struct {
 	// The current "primary" key used to encrypt data written to etcd. Secondary keys that can be used for decryption
 	// (but not encryption) might be configured in the ClusterSpec.
 	ActiveKey string `json:"activeKey"`
+
+	// List of resources currently encrypted.
+	EncryptedResources []string `json:"encryptedResources"`
+
 	// The current phase of the encryption process. Can be one of `Pending`, `Failed`, `Active` or `EncryptionNeeded`.
 	// The `encryption_controller` logic will process the cluster based on the current phase and issue necessary changes
 	// to make sure encryption on the cluster is active and updated with what the ClusterSpec defines.
 	Phase ClusterEncryptionPhase `json:"phase"`
 }
 
-// +kubebuilder:validation:Enum=Pending;Active;EncryptionNeeded
+// +kubebuilder:validation:Enum=Pending;Failed;Active;EncryptionNeeded
 type ClusterEncryptionPhase string
 
 const (

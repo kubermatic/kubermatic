@@ -37,7 +37,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, key string) (*reconcile.Result, error) {
+func (r *Reconciler) encryptData(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	key, resourceList, err := getActiveConfiguration(ctx, r.Client, cluster)
+	if err != nil {
+		return &reconcile.Result{}, err
+	}
+
 	var secret corev1.Secret
 	if err := r.Get(ctx, types.NamespacedName{
 		Name:      resources.EncryptionConfigurationSecretName,
@@ -71,7 +76,16 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 			return nil, err
 		}
 
-		job := encryptionresources.EncryptionJobCreator(data, cluster, &secret, key)
+		// generate a Job that will run re-encryption on both configured and previously encrypted resources.
+		// That is done to make sure that previously encrypted resources get re-encrypted or decrypted even
+		// if they vanished from the resource list in ClusterSpec.
+		job := encryptionresources.EncryptionJobCreator(
+			data,
+			cluster,
+			&secret,
+			mergeSlice(resourceList, cluster.Status.Encryption.EncryptedResources),
+			key,
+		)
 
 		if err := r.Create(ctx, &job); err != nil {
 			return &reconcile.Result{}, err
@@ -91,6 +105,7 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 		if job.Status.Succeeded == 1 {
 			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				cluster.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseActive
+				cluster.Status.Encryption.EncryptedResources = resourceList
 				cluster.Status.Encryption.ActiveKey = key
 			}); err != nil {
 				return &reconcile.Result{}, err

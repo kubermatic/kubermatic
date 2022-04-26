@@ -78,8 +78,8 @@ func isApiserverUpdated(ctx context.Context, client ctrlruntimeclient.Client, cl
 	return true, nil
 }
 
-// getActiveKey returns a key "hint" that is comprised of a provider-specific prefix and the key name. It does not return secret data.
-func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (string, error) {
+// getActiveConfiguration returns a key "hint" and a list of resources. It does not return secret data.
+func getActiveConfiguration(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (string, []string, error) {
 	var (
 		keyName string
 		secret  corev1.Secret
@@ -90,12 +90,12 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 		Name:      resources.EncryptionConfigurationSecretName,
 		Namespace: cluster.Status.NamespaceName,
 	}, &secret); err != nil {
-		return "", err
+		return "", []string{}, err
 	}
 
 	if data, ok := secret.Data[resources.EncryptionConfigurationKeyName]; ok {
 		if err := yaml.Unmarshal(data, &config); err != nil {
-			return "", err
+			return "", []string{}, err
 		}
 	}
 
@@ -103,7 +103,7 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 	// and (2) the "identity" provider, which is there for reading (and if at the top of the list, writing) resources as
 	// unencrypted.
 	if len(config.Resources) != 1 || (len(config.Resources[0].Providers) != 1 && len(config.Resources[0].Providers) != 2) {
-		return "", errors.New("unexpected apiserverconfigv1.EncryptionConfiguration: too many items in .resources or .resources[0].providers")
+		return "", []string{}, errors.New("unexpected apiserverconfigv1.EncryptionConfiguration: too many items in .resources or .resources[0].providers")
 	}
 
 	providerConfig := &config.Resources[0].Providers[0]
@@ -115,7 +115,7 @@ func getActiveKey(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 		keyName = encryptionresources.IdentityKey
 	}
 
-	return keyName, nil
+	return keyName, config.Resources[0].Resources, nil
 }
 
 // getConfiguredKey returns a key "hint" for the primary key as configured in a ClusterSpec. This can return a different result
@@ -132,4 +132,38 @@ func getConfiguredKey(cluster *kubermaticv1.Cluster) (string, error) {
 	}
 
 	return "", errors.New("no supported encryption provider found")
+}
+
+func isEqualSlice(a []string, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func mergeSlice(a []string, b []string) []string {
+	var result []string
+
+	for _, element := range append(a, b...) {
+		exists := false
+
+		for i := range result {
+			if result[i] == element {
+				exists = true
+			}
+		}
+
+		if !exists {
+			result = append(result, element)
+		}
+	}
+
+	return result
 }
