@@ -22,15 +22,17 @@ import (
 
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/klog/v2"
 )
 
 type appOptions struct {
-	webhook webhook.Options
-	pprof   pprof.Opts
-	log     kubermaticlog.Options
+	webhook  webhook.Options
+	pprof    pprof.Opts
+	log      kubermaticlog.Options
+	caBundle *certificates.CABundle
 }
 
 func initApplicationOptions() (appOptions, error) {
@@ -44,7 +46,16 @@ func initApplicationOptions() (appOptions, error) {
 	c.pprof.AddFlags(flag.CommandLine)
 	c.log.AddFlags(flag.CommandLine)
 
+	var caBundleFile string
+	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
+
 	flag.Parse()
+
+	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
+	if err != nil {
+		return c, fmt.Errorf("invalid CA bundle file (%q): %w", caBundleFile, err)
+	}
+	c.caBundle = caBundle
 
 	if err := c.webhook.Validate(); err != nil {
 		return c, fmt.Errorf("invalid webhook configuration: %w", err)

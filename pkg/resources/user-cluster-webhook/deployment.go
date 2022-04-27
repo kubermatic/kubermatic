@@ -80,6 +80,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 				"-webhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-webhook-cert-name=%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-webhook-key-name=%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 			}
 
 			if data.Cluster().Spec.DebugLog {
@@ -105,6 +106,16 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 						},
 					},
 				},
+				{
+					Name: "ca-bundle",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CABundleConfigMapName,
+							},
+						},
+					},
+				},
 			}
 
 			volumeMounts := []corev1.VolumeMount{
@@ -116,6 +127,11 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 				{
 					Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
 					MountPath: "/etc/kubernetes/kubeconfig",
+					ReadOnly:  true,
+				},
+				{
+					Name:      "ca-bundle",
+					MountPath: "/opt/ca-bundle/",
 					ReadOnly:  true,
 				},
 			}

@@ -32,13 +32,15 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ValidateQuota validates if the requested Machine resource consumption fits in the quota of the clusters project.
-func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine) error {
+func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client,
+	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) error {
 	config, err := types.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)

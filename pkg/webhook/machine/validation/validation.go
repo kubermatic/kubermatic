@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,14 +35,16 @@ type validator struct {
 	log        *zap.SugaredLogger
 	seedClient ctrlruntimeclient.Client
 	userClient ctrlruntimeclient.Client
+	caBundle   *certificates.CABundle
 }
 
 // NewValidator returns a new Machine validator.
-func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *validator {
+func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *certificates.CABundle) *validator {
 	return &validator{
 		log:        log,
 		seedClient: seedClient,
 		userClient: userClient,
+		caBundle:   caBundle,
 	}
 }
 
@@ -56,7 +59,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	log := v.log.With("machine", machine.Name)
 	log.Debug("validating create")
 
-	return validateQuota(ctx, log, v.seedClient, v.userClient, machine)
+	return validateQuota(ctx, log, v.seedClient, v.userClient, machine, v.caBundle)
 }
 
 // ValidateUpdate validates Machine updates. As mutating Machine spec is disallowed by the Machine Mutating webhook,
