@@ -178,7 +178,7 @@ type Seed struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   SeedSpec   `json:"spec"`
-	Status SeedStatus `json:"status,omitempty"`
+	Status SeedStatus `json:"status,omitempty,omitgenyaml"`
 }
 
 func (s *Seed) SetDefaults() {
