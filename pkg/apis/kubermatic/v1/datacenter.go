@@ -185,6 +185,16 @@ type SeedStatus struct {
 	Conditions map[SeedConditionType]SeedCondition `json:"conditions,omitempty"`
 }
 
+// HasConditionValue returns true if the seed status has the given condition with the given status.
+func (ss *SeedStatus) HasConditionValue(conditionType SeedConditionType, conditionStatus corev1.ConditionStatus) bool {
+	condition, exists := ss.Conditions[conditionType]
+	if !exists {
+		return false
+	}
+
+	return condition.Status == conditionStatus
+}
+
 // The spec for a seed cluster.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.

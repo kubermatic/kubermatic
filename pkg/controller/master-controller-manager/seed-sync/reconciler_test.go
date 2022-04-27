@@ -26,9 +26,13 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
+	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -36,6 +40,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func init() {
@@ -264,4 +269,135 @@ func TestReconcilingSeed(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdatingSeedCondition(t *testing.T) {
+	seed := &kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-seed",
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			Country: "Val Verde",
+		},
+	}
+
+	testcases := []struct {
+		name             string
+		seedClientGetter provider.SeedClientGetter
+		validate         func(t *testing.T, seed *kubermaticv1.Seed, err error)
+	}{
+		{
+			name: "no seed client available, most likely due to missing kubeconfig",
+			seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+				return nil, fmt.Errorf("i am broken")
+			},
+			validate: func(t *testing.T, seed *kubermaticv1.Seed, err error) {
+				if err == nil {
+					t.Fatal("Expected reconciling to return error, but returned nil.")
+				}
+
+				if !seed.Status.HasConditionValue(kubermaticv1.SeedConditionValidKubeconfig, v1.ConditionFalse) {
+					t.Fatalf("Expected seed to have %s=%s condition, but it doesn't.", kubermaticv1.SeedConditionValidKubeconfig, v1.ConditionFalse)
+				}
+			},
+		},
+		{
+			name: "seed client exists, but is defunct",
+			seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+				return &brokenKubernetesClient{}, nil
+			},
+			validate: func(t *testing.T, seed *kubermaticv1.Seed, err error) {
+				if err == nil {
+					t.Fatal("Expected reconciling to return error, but returned nil.")
+				}
+
+				if !seed.Status.HasConditionValue(kubermaticv1.SeedConditionValidKubeconfig, v1.ConditionFalse) {
+					t.Fatalf("Expected seed to have %s=%s condition, but it doesn't.", kubermaticv1.SeedConditionValidKubeconfig, v1.ConditionFalse)
+				}
+			},
+		},
+		{
+			name: "vanilla case",
+			seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+				return fakectrlruntimeclient.NewClientBuilder().Build(), nil
+			},
+			validate: func(t *testing.T, seed *kubermaticv1.Seed, err error) {
+				if err != nil {
+					t.Fatalf("Expected reconciling to return with no error, but got: %v", err)
+				}
+
+				if !seed.Status.HasConditionValue(kubermaticv1.SeedConditionValidKubeconfig, v1.ConditionTrue) {
+					t.Fatalf("Expected seed to have %s=%s condition, but it doesn't.", kubermaticv1.SeedConditionValidKubeconfig, v1.ConditionTrue)
+				}
+			},
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			key := ctrlruntimeclient.ObjectKeyFromObject(seed)
+
+			reconciler := Reconciler{
+				Client:           fakectrlruntimeclient.NewClientBuilder().WithObjects(seed).Build(),
+				recorder:         record.NewFakeRecorder(10),
+				log:              zap.NewNop().Sugar(),
+				seedClientGetter: tt.seedClientGetter,
+			}
+
+			_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: key})
+
+			result := &kubermaticv1.Seed{}
+			if err := reconciler.Client.Get(ctx, key, result); err != nil {
+				t.Fatalf("Failed to fetch seed: %v", err)
+			}
+
+			tt.validate(t, result, err)
+		})
+	}
+}
+
+type brokenKubernetesClient struct{}
+
+var _ ctrlruntimeclient.Client = &brokenKubernetesClient{}
+
+func (c *brokenKubernetesClient) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object) error {
+	return errors.New("i am a defunct client")
+}
+
+func (c *brokenKubernetesClient) List(ctx context.Context, list ctrlruntimeclient.ObjectList, opts ...ctrlruntimeclient.ListOption) error {
+	return errors.New("i am a defunct client")
+}
+
+func (c *brokenKubernetesClient) Create(ctx context.Context, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.CreateOption) error {
+	return errors.New("i am a defunct client")
+}
+
+func (c *brokenKubernetesClient) Delete(ctx context.Context, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.DeleteOption) error {
+	return errors.New("i am a defunct client")
+}
+
+func (c *brokenKubernetesClient) Update(ctx context.Context, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.UpdateOption) error {
+	return errors.New("i am a defunct client")
+}
+
+func (c *brokenKubernetesClient) Patch(ctx context.Context, obj ctrlruntimeclient.Object, patch ctrlruntimeclient.Patch, opts ...ctrlruntimeclient.PatchOption) error {
+	return errors.New("i am a defunct client")
+}
+
+func (c *brokenKubernetesClient) DeleteAllOf(ctx context.Context, obj ctrlruntimeclient.Object, opts ...ctrlruntimeclient.DeleteAllOfOption) error {
+	return errors.New("i am a defunct client")
+}
+
+func (c *brokenKubernetesClient) Status() ctrlruntimeclient.StatusWriter {
+	return nil
+}
+
+func (c *brokenKubernetesClient) Scheme() *runtime.Scheme {
+	return nil
+}
+
+func (c *brokenKubernetesClient) RESTMapper() meta.RESTMapper {
+	return nil
 }
