@@ -177,7 +177,9 @@ type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SeedSpec   `json:"spec"`
+	Spec SeedSpec `json:"spec"`
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
 	Status SeedStatus `json:"status,omitempty,omitgenyaml"`
 }
 
