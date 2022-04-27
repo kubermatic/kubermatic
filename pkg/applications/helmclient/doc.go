@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package applications contains logic to download the source of an application (e.g. download manifest from git) and
-install / uninstall the application into the user-cluster.
+Package helmclient contains tools to interact with Helm API for downloading, installing, upgrading, and uninstalling Helm Chart.
+If you are looking for an example, please look at pkg/applications/installer.go.
 */
-package applications
+package helmclient
