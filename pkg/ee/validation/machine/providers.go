@@ -33,10 +33,13 @@ import (
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -256,6 +259,109 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceQuota, error
 		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
 	}
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSizeGB))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
+	}
+
+	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+}
+
+func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceQuota, error) {
+	// extract storage and image info from provider config
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	rawConfig, err := openstacktypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Openstack raw config: %w", err)
+	}
+
+	identityEndpoint, err := configVarResolver.GetConfigVarStringValue(rawConfig.IdentityEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack identity endpoint from machine config: %v", err)
+	}
+	region, err := configVarResolver.GetConfigVarStringValue(rawConfig.Region)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack region from machine config: %v", err)
+	}
+	username, err := configVarResolver.GetConfigVarStringValue(rawConfig.Username)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack username from machine config: %v", err)
+	}
+	password, err := configVarResolver.GetConfigVarStringValue(rawConfig.Password)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack password from machine config: %v", err)
+	}
+	tenantId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack tenant ID from machine config: %v", err)
+	}
+	projectId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack project ID from machine config: %v", err)
+	}
+	tenantName, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack tenant name from machine config: %v", err)
+	}
+	projectName, err := configVarResolver.GetConfigVarStringValue(rawConfig.ProjectName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack tenant name from machine config: %v", err)
+	}
+	appCredId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ApplicationCredentialID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack application credential ID from machine config: %v", err)
+	}
+	appCredSecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.ApplicationCredentialSecret)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack application credential secret from machine config: %v", err)
+	}
+	tokenId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TokenID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack token ID from machine config: %v", err)
+	}
+	domainName, err := configVarResolver.GetConfigVarStringValue(rawConfig.DomainName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack domain name from machine config: %v", err)
+	}
+	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack flavor from machine config: %v", err)
+	}
+
+	creds := &resources.OpenstackCredentials{
+		Username:                    username,
+		Password:                    password,
+		Domain:                      domainName,
+		ProjectID:                   projectId,
+		Project:                     projectName,
+		ApplicationCredentialID:     appCredId,
+		ApplicationCredentialSecret: appCredSecret,
+		Token:                       tokenId,
+	}
+
+	// if projectName and projectId are empty, fallback to tenantName and tenantId
+	if len(projectId) == 0 {
+		creds.Project = tenantId
+	}
+	if len(projectName) == 0 {
+		creds.Project = tenantName
+	}
+
+	flavorSize, err := provider.GetOpenStackFlavorSize(creds, identityEndpoint, region, caBundle.CertPool(), flavor)
+	if err != nil {
+		return nil, fmt.Errorf("error getting OpenStack flavor size data %v", err)
+	}
+
+	// parse the Openstack resource requests
+	// memory and storage are in GB
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(flavorSize.VCPUs))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
+	}
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", flavorSize.Memory))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
+	}
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", flavorSize.Disk))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
