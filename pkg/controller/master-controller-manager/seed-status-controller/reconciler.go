@@ -25,11 +25,13 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/tools/record"
@@ -90,7 +92,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
-	return reconcile.Result{}, nil
+	// Requeue after a minute because we want to keep the cluster count somewhat up-to-date;
+	// it's not important enough to keep a permanent watch on Cluster objects in the seed cluster though.
+	return reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) error {
@@ -103,6 +107,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	return kubermaticv1helper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
 		r.updateValidKubeconfigCondition(ctx, log, s)
 		r.updateVersions(ctx, log, s)
+		r.updateClusters(ctx, log, s)
 
 		// make sure to update the phase last, so it can depend on the previously updated conditions
 		s.Status.Phase = getSeedPhase(seed)
@@ -166,7 +171,28 @@ func (r *Reconciler) updateVersions(ctx context.Context, log *zap.SugaredLogger,
 	seed.Status.Versions.Cluster = version.String()
 }
 
+func (r *Reconciler) updateClusters(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) {
+	client, err := r.seedClientGetter(seed)
+	if err != nil {
+		// this error is already reflected in the ValidKubeconfig condition
+		return
+	}
+
+	clusters := &metav1.PartialObjectMetadataList{}
+	clusters.SetGroupVersionKind(kubermaticv1.SchemeGroupVersion.WithKind("ClusterList"))
+	if err := client.List(ctx, clusters); err != nil {
+		log.Errorw("Failed to count users clusters", zap.Error(err))
+		return
+	}
+
+	seed.Status.Clusters = len(clusters.Items)
+}
+
 func getSeedPhase(seed *kubermaticv1.Seed) kubermaticv1.SeedPhase {
+	if _, ok := seed.Annotations[common.SkipReconcilingAnnotation]; ok {
+		return kubermaticv1.SeedPausedPhase
+	}
+
 	validKubeconfig := getConditionStatus(seed, kubermaticv1.SeedConditionValidKubeconfig)
 	resourcesReconciled := getConditionStatus(seed, kubermaticv1.SeedConditionResourcesReconciled)
 

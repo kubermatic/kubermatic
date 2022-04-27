@@ -90,11 +90,11 @@ func IsProviderSupported(name string) bool {
 	return false
 }
 
-// +kubebuilder:validation:Enum="";Healthy;Unhealthy;Invalid;Terminating
+// +kubebuilder:validation:Enum="";Healthy;Unhealthy;Invalid;Terminating;Paused
 
 type SeedPhase string
 
-// These are the valid phases of a project.
+// These are the valid phases of a seed.
 const (
 	// SeedHealthyPhase means the seed is reachable and was successfully reconciled.
 	SeedHealthyPhase SeedPhase = "Healthy"
@@ -108,6 +108,10 @@ const (
 
 	// SeedTerminatingPhase means the seed is currently being deleted.
 	SeedTerminatingPhase SeedPhase = "Terminating"
+
+	// SeedPausedPhase means the seed is not being reconciled because if SkipReconciling
+	// annotation is set.
+	SeedPausedPhase SeedPhase = "Paused"
 )
 
 // +kubebuilder:validation:Enum="";SeedConditionResourcesReconciled;SeedConditionValidKubeconfig;
@@ -161,6 +165,7 @@ type SeedList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".status.clusters",name="Clusters",type="integer"
 // +kubebuilder:printcolumn:JSONPath=".spec.location",name="Location",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.versions.kubermatic",name="KKP Version",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.versions.cluster",name="Cluster Version",type="string"
@@ -195,6 +200,12 @@ type SeedStatus struct {
 	// Phase contains a human readable text to indicate the seed cluster status. No logic should be tied
 	// to this field, as its content can change in between KKP releases.
 	Phase SeedPhase `json:"phase,omitempty"`
+
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum:=0
+
+	// Clusters is the total number of user clusters that exist on this seed.
+	Clusters int `json:"clusters"`
 
 	// Versions contains information regarding versions of components in the cluster and the cluster
 	// itself.

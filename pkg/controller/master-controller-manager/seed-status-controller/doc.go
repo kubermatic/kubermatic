@@ -22,6 +22,7 @@ for managing the basic parts of the SeedStatus:
   * status.versions.cluster
   * status.conditions.SeedConditionValidKubeconfig
   * status.phase
+  * status.clusters
 
 It does so by checking the kubeconfig for a seed and combining the other
 conditions set by other controllers to compute the current phase.
