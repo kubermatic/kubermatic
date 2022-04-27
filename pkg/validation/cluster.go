@@ -358,6 +358,18 @@ func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kube
 					))
 				}
 			}
+
+			if oldCluster.Spec.EncryptionConfiguration != nil && newCluster.Spec.EncryptionConfiguration != nil &&
+				oldCluster.Spec.EncryptionConfiguration.Enabled && newCluster.Spec.EncryptionConfiguration.Enabled &&
+				!equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration.Resources, newCluster.Spec.EncryptionConfiguration.Resources) {
+				allErrs = append(
+					allErrs,
+					field.Forbidden(
+						field.NewPath("spec", "encryptionConfiguration", "resources"),
+						"list of encrypted resources cannot be changed. Please disable encryption and re-configure",
+					),
+				)
+			}
 		}
 	}
 
