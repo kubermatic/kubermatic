@@ -147,7 +147,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 			seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
 
 			if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingSkipped", err.Error()); err != nil {
-				log.Errorw("Failed to update seed status: %w", err)
+				log.Errorw("Failed to update seed status", zap.Error(err))
 			}
 
 			return err
@@ -168,17 +168,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 
 		if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingError", err.Error()); err != nil {
-			log.Errorw("Failed to update seed status: %w", err)
+			log.Errorw("Failed to update seed status", zap.Error(err))
 		}
 
 		return err
 	}
 
-	err = kubermaticv1helper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
-		kubermaticv1helper.SetSeedCondition(s, kubermaticv1.SeedConditionResourcesReconciled, corev1.ConditionTrue, "ReconcilingSuccess", "")
-	})
-	if err != nil {
-		log.Errorw("Failed to update seed status: %w", err)
+	if err := r.setSeedCondition(ctx, seed, corev1.ConditionTrue, "ReconcilingSuccess", ""); err != nil {
+		log.Errorw("Failed to update seed status", zap.Error(err))
 	}
 
 	return nil

@@ -59,11 +59,10 @@ func Add(
 	seedsGetter provider.SeedsGetter,
 ) error {
 	reconciler := &Reconciler{
-		Client:               mgr.GetClient(),
-		recorder:             mgr.GetEventRecorderFor(ControllerName),
-		log:                  log.Named(ControllerName),
-		seedKubeconfigGetter: seedKubeconfigGetter,
-		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		Client:           mgr.GetClient(),
+		recorder:         mgr.GetEventRecorderFor(ControllerName),
+		log:              log.Named(ControllerName),
+		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

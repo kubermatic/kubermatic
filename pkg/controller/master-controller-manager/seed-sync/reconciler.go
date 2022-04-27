@@ -41,10 +41,9 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	seedKubeconfigGetter provider.SeedKubeconfigGetter
-	seedClientGetter     provider.SeedClientGetter
-	log                  *zap.SugaredLogger
-	recorder             record.EventRecorder
+	seedClientGetter provider.SeedClientGetter
+	log              *zap.SugaredLogger
+	recorder         record.EventRecorder
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
