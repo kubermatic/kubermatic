@@ -276,7 +276,8 @@ func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kuber
 	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 		if cluster.Status.Encryption == nil {
 			cluster.Status.Encryption = &kubermaticv1.ClusterEncryptionStatus{
-				Phase: kubermaticv1.ClusterEncryptionPhasePending,
+				Phase:              kubermaticv1.ClusterEncryptionPhasePending,
+				EncryptedResources: []string{},
 			}
 		}
 
