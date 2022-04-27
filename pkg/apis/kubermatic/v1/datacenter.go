@@ -140,6 +140,7 @@ type SeedList struct {
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.location",name="Location",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.kubermaticVersion",name="Version",type="string"
 // +kubebuilder:printcolumn:JSONPath=".status.status",name="Status",type="string"
