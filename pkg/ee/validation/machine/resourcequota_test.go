@@ -67,7 +67,7 @@ func TestResourceQuotaValidation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := machine.ValidateQuota(context.Background(), l, nil, tc.machine)
+			err := machine.ValidateQuota(context.Background(), l, nil, nil, tc.machine, nil)
 			if err != nil {
 				if !tc.expectedErr {
 					t.Fatalf("unexpected error: %v", err)

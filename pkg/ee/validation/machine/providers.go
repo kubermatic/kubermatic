@@ -113,7 +113,7 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
 	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fM", machineSize.Memory))
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", machineSize.Memory))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
 	}
@@ -169,7 +169,7 @@ func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %v", err)
 	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fM", vmSize.MemoryInMB))
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", vmSize.MemoryInMB))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine memory request to quantity: %v", err)
 	}
