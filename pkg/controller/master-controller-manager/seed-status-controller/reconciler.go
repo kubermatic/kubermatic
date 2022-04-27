@@ -49,7 +49,7 @@ const (
 	SeedClusterUninitializedReason = "ClusterUninitialized"
 	// SeedKubeconfigInvalidReason is the reason for the SeedConditionValidKubeconfig
 	// in case the KKP namespace could not be queried for (i.e. an error other than NotFound).
-	// If a NotFound error occured instead, SeedClusterUninitializedReason is the reason
+	// If a NotFound error occurred instead, SeedClusterUninitializedReason is the reason
 	// on the condition.
 	SeedKubeconfigInvalidReason = "KubeconfigInvalid"
 	// SeedKubeconfigValidReason is the reason for the SeedConditionValidKubeconfig

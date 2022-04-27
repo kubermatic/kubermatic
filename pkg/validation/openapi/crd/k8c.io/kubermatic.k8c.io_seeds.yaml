@@ -1309,6 +1309,7 @@ spec:
                 - Unhealthy
                 - Invalid
                 - Terminating
+                - Paused
                 type: string
               versions:
                 description: Versions contains information regarding versions of components
