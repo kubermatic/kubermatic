@@ -259,6 +259,12 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				}
 				machineDeployments = np
 			}
+			if cloud.KubeOne != nil {
+				machineDeployments, err = getKubeOneMachineDeployments(ctx, cluster, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
 		}
 
 		return machineDeployments, nil
@@ -657,7 +663,7 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 				if err != nil {
 					return nil, err
 				}
-				machineDeployment = *createAPIMachineDeployment(md)
+				machineDeployment = createAPIMachineDeployment(*md)
 			}
 		}
 
@@ -730,7 +736,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				if err != nil {
 					return nil, err
 				}
-				md := createAPIMachineDeployment(machineDeployment)
+				md := createAPIMachineDeployment(*machineDeployment)
 				mdToPatch.NodeDeployment = md.NodeDeployment
 				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 					return nil, err

@@ -233,7 +233,7 @@ func checkContainerRuntime(ctx context.Context,
 	return "", fmt.Errorf("Failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
 }
 
-func createAPIMachineDeployment(md *clusterv1alpha1.MachineDeployment) *apiv2.ExternalClusterMachineDeployment {
+func createAPIMachineDeployment(md clusterv1alpha1.MachineDeployment) apiv2.ExternalClusterMachineDeployment {
 	apimd := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
@@ -255,7 +255,7 @@ func createAPIMachineDeployment(md *clusterv1alpha1.MachineDeployment) *apiv2.Ex
 		},
 	}
 
-	return &apimd
+	return apimd
 }
 
 func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeployment, error) {
@@ -268,6 +268,18 @@ func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1
 		return nil, fmt.Errorf("failed to get MachineDeployment: %w", err)
 	}
 	return machineDeployment, nil
+}
+
+func listKubeOneMachineDeployment(ctx context.Context, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeploymentList, error) {
+	mdList := &clusterv1alpha1.MachineDeploymentList{}
+	userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+	if err := userClusterClient.List(ctx, mdList); err != nil {
+		return nil, fmt.Errorf("failed to list MachineDeployment: %w", err)
+	}
+	return mdList, nil
 }
 
 func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
@@ -286,4 +298,17 @@ func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alp
 	}
 
 	return oldmd, nil
+}
+
+func getKubeOneMachineDeployments(ctx context.Context, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
+	mdList, err := listKubeOneMachineDeployment(ctx, cluster, clusterProvider)
+	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(mdList.Items))
+	if err != nil {
+		return nil, err
+	}
+	for _, md := range mdList.Items {
+		machineDeployments = append(machineDeployments, createAPIMachineDeployment(md))
+	}
+
+	return machineDeployments, nil
 }
