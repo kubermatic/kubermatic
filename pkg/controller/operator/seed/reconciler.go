@@ -175,7 +175,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	err = kubermaticv1helper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
-		s.Status.KubermaticVersion = r.versions.Kubermatic
 		kubermaticv1helper.SetSeedCondition(s, kubermaticv1.SeedConditionResourcesReconciled, corev1.ConditionTrue, "ReconcilingSuccess", "")
 	})
 	if err != nil {

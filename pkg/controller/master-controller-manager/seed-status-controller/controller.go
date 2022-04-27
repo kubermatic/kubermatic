@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package seedsync
+package seedstatuscontroller
 
 import (
 	"context"
@@ -25,30 +25,20 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
-	// This controller is responsible for synchronizing the `Seed` custom resources across all seed clusters.
-	ControllerName = "kkp-seed-sync-controller"
-
-	// ManagedByLabel is the label used to identify the resources
-	// created by this controller.
-	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// CleanupFinalizer is put on Seed CRs to facilitate proper
-	// cleanup when a Seed is deleted.
-	CleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-sync"
+	// ControllerName is the name of this very controller.
+	ControllerName = "seed-status-controller"
 )
 
-// Add creates a new Seed-Sync controller and sets up Watches.
+// Add creates a new seed status controller and sets up watches.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -56,7 +46,7 @@ func Add(
 	log *zap.SugaredLogger,
 	namespace string,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
-	seedsGetter provider.SeedsGetter,
+	versions kubermatic.Versions,
 ) error {
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
@@ -64,6 +54,7 @@ func Add(
 		log:                  log.Named(ControllerName),
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		versions:             versions,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -76,31 +67,6 @@ func Add(
 
 	// watch all seeds in the given namespace
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher: %w", err)
-	}
-
-	// watch all KubermaticConfigurations in the given namespace
-	configHandler := func(o client.Object) []reconcile.Request {
-		seeds, err := seedsGetter()
-		if err != nil {
-			log.Errorw("Failed to retrieve seeds", zap.Error(err))
-			return nil
-		}
-
-		requests := []reconcile.Request{}
-		for _, seed := range seeds {
-			requests = append(requests, reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Namespace: seed.GetNamespace(),
-					Name:      seed.GetName(),
-				},
-			})
-		}
-
-		return requests
-	}
-
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.KubermaticConfiguration{}}, handler.EnqueueRequestsFromMapFunc(configHandler), nsPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 

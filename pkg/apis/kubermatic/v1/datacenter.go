@@ -90,6 +90,26 @@ func IsProviderSupported(name string) bool {
 	return false
 }
 
+// +kubebuilder:validation:Enum="";Healthy;Unhealthy;Invalid;Terminating
+
+type SeedPhase string
+
+// These are the valid phases of a project.
+const (
+	// SeedHealthyPhase means the seed is reachable and was successfully reconciled.
+	SeedHealthyPhase SeedPhase = "Healthy"
+
+	// SeedUnhealthyPhase means the KKP resources on the seed cluster could not be
+	// successfully reconciled.
+	SeedUnhealthyPhase SeedPhase = "Unhealthy"
+
+	// SeedInvalidPhase means the seed kubeconfig is defunct.
+	SeedInvalidPhase SeedPhase = "Invalid"
+
+	// SeedTerminatingPhase means the seed is currently being deleted.
+	SeedTerminatingPhase SeedPhase = "Terminating"
+)
+
 // +kubebuilder:validation:Enum="";SeedConditionResourcesReconciled;SeedConditionValidKubeconfig;
 
 // SeedConditionType is used to indicate the type of a seed condition. For all condition
@@ -142,8 +162,9 @@ type SeedList struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.location",name="Location",type="string"
-// +kubebuilder:printcolumn:JSONPath=".status.kubermaticVersion",name="Version",type="string"
-// +kubebuilder:printcolumn:JSONPath=".status.status",name="Status",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.versions.kubermatic",name="KKP Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.versions.cluster",name="Cluster Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Seed is the type representing a Seed cluster.
@@ -171,19 +192,30 @@ func (s *Seed) SetDefaults() {
 
 // SeedStatus contains runtime information regarding the seed.
 type SeedStatus struct {
-	// Status contains a human readable text to indicate the seed cluster status. No logic should be tied
+	// Phase contains a human readable text to indicate the seed cluster status. No logic should be tied
 	// to this field, as its content can change in between KKP releases.
-	Status string `json:"status,omitempty"`
+	Phase SeedPhase `json:"phase,omitempty"`
 
-	// KubermaticVersion is the currently active version of the CRDs and seed-controller-manager
-	// on the seed cluster. Note that a permanent version skew between master and sed is not
-	// supported and KKP setups should never run for longer times with a skew between the clusters.
-	KubermaticVersion string `json:"kubermaticVersion,omitempty"`
+	// Versions contains information regarding versions of components in the cluster and the cluster
+	// itself.
+	// +optional
+	Versions SeedVersionsStatus `json:"versions,omitempty"`
 
 	// Conditions contains conditions the seed is in, its primary use case is status signaling
 	// between controllers or between controllers and the API.
 	// +optional
 	Conditions map[SeedConditionType]SeedCondition `json:"conditions,omitempty"`
+}
+
+// SeedVersionsStatus contains information regarding versions of components in the cluster
+// and the cluster itself.
+type SeedVersionsStatus struct {
+	// Kubermatic is the version of the currently deployed KKP components. Note that a permanent
+	// version skew between master and seed is not supported and KKP setups should never run for
+	// longer times with a skew between the clusters.
+	Kubermatic string `json:"kubermatic,omitempty"`
+	// Cluster is the Kubernetes version of the cluster's control plane.
+	Cluster string `json:"cluster,omitempty"`
 }
 
 // HasConditionValue returns true if the seed status has the given condition with the given status.

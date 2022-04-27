@@ -19,11 +19,14 @@ spec:
     - jsonPath: .spec.location
       name: Location
       type: string
-    - jsonPath: .status.kubermaticVersion
-      name: Version
+    - jsonPath: .status.versions.kubermatic
+      name: KKP Version
       type: string
-    - jsonPath: .status.status
-      name: Status
+    - jsonPath: .status.versions.cluster
+      name: Cluster Version
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -1287,18 +1290,32 @@ spec:
                   use case is status signaling between controllers or between controllers
                   and the API.
                 type: object
-              kubermaticVersion:
-                description: KubermaticVersion is the currently active version of
-                  the CRDs and seed-controller-manager on the seed cluster. Note that
-                  a permanent version skew between master and sed is not supported
-                  and KKP setups should never run for longer times with a skew between
-                  the clusters.
-                type: string
-              status:
-                description: Status contains a human readable text to indicate the
+              phase:
+                description: Phase contains a human readable text to indicate the
                   seed cluster status. No logic should be tied to this field, as its
                   content can change in between KKP releases.
+                enum:
+                - ""
+                - Healthy
+                - Unhealthy
+                - Invalid
+                - Terminating
                 type: string
+              versions:
+                description: Versions contains information regarding versions of components
+                  in the cluster and the cluster itself.
+                properties:
+                  cluster:
+                    description: Cluster is the Kubernetes version of the cluster's
+                      control plane.
+                    type: string
+                  kubermatic:
+                    description: Kubermatic is the version of the currently deployed
+                      KKP components. Note that a permanent version skew between master
+                      and seed is not supported and KKP setups should never run for
+                      longer times with a skew between the clusters.
+                    type: string
+                type: object
             type: object
         required:
         - spec
