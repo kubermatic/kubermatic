@@ -24,10 +24,12 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
@@ -61,7 +63,25 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	client, err := r.seedClientGetter(seed)
 	if err != nil {
+		if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "KubeconfigUnavailable", err.Error()); err != nil {
+			logger.Errorw("failed to update seed status", zap.Error(err))
+		}
+
 		return reconcile.Result{}, fmt.Errorf("failed to create client for seed: %w", err)
+	}
+
+	// check if the seed client is actually functioning
+	if err := testSeedClient(ctx, client, seed); err != nil {
+		if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "KubeconfigInvalid", err.Error()); err != nil {
+			logger.Errorw("failed to update seed status", zap.Error(err))
+		}
+
+		return reconcile.Result{}, fmt.Errorf("invalid kubeconfig: %w", err)
+	}
+
+	// mark seed as working
+	if err := r.setSeedCondition(ctx, seed, corev1.ConditionTrue, "KubeconfigValid", ""); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to update seed status: %w", err)
 	}
 
 	config, err := r.getKubermaticConfiguration(ctx, request.Namespace)
@@ -209,4 +229,20 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *kub
 	}
 
 	return nil, nil
+}
+
+func (r *Reconciler) setSeedCondition(ctx context.Context, seed *kubermaticv1.Seed, status corev1.ConditionStatus, reason string, message string) error {
+	return kubermaticv1helper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
+		kubermaticv1helper.SetSeedCondition(s, kubermaticv1.SeedConditionValidKubeconfig, status, reason, message)
+	})
+}
+
+func testSeedClient(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) error {
+	// Do not check for KKP resources, as the operator might not yet have installed our CRDs,
+	// so this check must only ensure that we can reach the seed cluster. For now we assume that
+	// we are cluster-admin, but this check is already written to assume that there is a proper
+	// ClusterRole and that one allows, among other things, to manage Deployments (like the seed-ctrl-mgr).
+
+	depList := appsv1.DeploymentList{}
+	return client.List(ctx, &depList, ctrlruntimeclient.Limit(0), ctrlruntimeclient.InNamespace(seed.Namespace))
 }

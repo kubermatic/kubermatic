@@ -107,14 +107,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	// get pre-constructed seed client
-	seedClient, exists := r.seedClients[seedName]
+	seedClient, exists := r.seedClients[seed.Name]
 	if !exists {
 		log.Debug("ignoring request for existing but uninitialized seed; the controller will be reloaded once the kubeconfig is available")
 		return nil
 	}
 
 	// get pre-constructed seed client
-	seedRecorder := r.seedRecorders[seedName]
+	seedRecorder := r.seedRecorders[seed.Name]
 
 	// find the owning KubermaticConfiguration
 	config, err := getKubermaticConfigurationForNamespace(ctx, r.masterClient, r.namespace, log)
@@ -133,7 +133,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	// into the seed cluster.
 	seedCopy := &kubermaticv1.Seed{}
 	name := types.NamespacedName{
-		Name:      seedName,
+		Name:      seed.Name,
 		Namespace: r.namespace,
 	}
 
@@ -141,7 +141,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		if kerrors.IsNotFound(err) {
 			err = errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
 
-			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seedName, err))
+			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seed.Name, err))
 			r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
 			seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
 			return err
@@ -157,7 +157,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
 	if err := r.reconcileResources(ctx, defaulted, seedCopy, seedClient, log); err != nil {
-		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seedName, err))
+		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seed.Name, err))
 		r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return err

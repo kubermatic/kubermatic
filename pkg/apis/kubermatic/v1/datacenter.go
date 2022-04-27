@@ -90,6 +90,42 @@ func IsProviderSupported(name string) bool {
 	return false
 }
 
+// +kubebuilder:validation:Enum="";SeedConditionResourcesReconciled;SeedConditionValidKubeconfig;
+
+// SeedConditionType is used to indicate the type of a seed condition. For all condition
+// types, the `true` value must indicate success. All condition types must be registered
+// within the `AllSeedConditionTypes` variable.
+type SeedConditionType string
+
+const (
+	// SeedConditionValidKubeconfig indicates that the configured kubeconfig for the seed is valid.
+	// The seed-sync controller manages this condition.
+	SeedConditionValidKubeconfig SeedConditionType = "ValidKubeconfig"
+	// SeedConditionResourcesReconciled indicates that the KKP operator has finished setting up the
+	// resources inside the seed cluster.
+	SeedConditionResourcesReconciled SeedConditionType = "ResourcesReconciled"
+)
+
+var AllSeedConditionTypes = []SeedConditionType{
+	SeedConditionResourcesReconciled,
+}
+
+type SeedCondition struct {
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// (brief) reason for the condition's last transition.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// Human readable message indicating details about last transition.
+	// +optional
+	Message string `json:"message,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
@@ -104,14 +140,18 @@ type SeedList struct {
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=".spec.location",name="Location",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.kubermaticVersion",name="Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.status",name="Status",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a SeedDatacenter.
+// Seed is the type representing a Seed cluster.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SeedSpec `json:"spec"`
+	Spec   SeedSpec   `json:"spec"`
+	Status SeedStatus `json:"status,omitempty"`
 }
 
 func (s *Seed) SetDefaults() {
@@ -128,7 +168,24 @@ func (s *Seed) SetDefaults() {
 	}
 }
 
-// The spec for a seed data.
+// SeedStatus contains runtime information regarding the seed.
+type SeedStatus struct {
+	// Status contains a human readable text to indicate the seed cluster status. No logic should be tied
+	// to this field, as its content can change in between KKP releases.
+	Status string `json:"status,omitempty"`
+
+	// KubermaticVersion is the currently active version of the CRDs and seed-controller-manager
+	// on the seed cluster. Note that a permanent version skew between master and sed is not
+	// supported and KKP setups should never run for longer times with a skew between the clusters.
+	KubermaticVersion string `json:"kubermaticVersion,omitempty"`
+
+	// Conditions contains conditions the seed is in, its primary use case is status signaling
+	// between controllers or between controllers and the API.
+	// +optional
+	Conditions map[SeedConditionType]SeedCondition `json:"conditions,omitempty"`
+}
+
+// The spec for a seed cluster.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.

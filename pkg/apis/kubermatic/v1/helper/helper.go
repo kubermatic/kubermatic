@@ -231,3 +231,63 @@ func NeedCCMMigration(cluster *kubermaticv1.Cluster) bool {
 func CCMMigrationCompleted(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
 }
+
+type SeedPatchFunc func(seed *kubermaticv1.Seed)
+
+func UpdateSeedStatus(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, patch SeedPatchFunc) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(seed)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the seed
+		if err := client.Get(ctx, key, seed); err != nil {
+			return err
+		}
+
+		// modify it
+		original := seed.DeepCopy()
+		patch(seed)
+
+		// save some work
+		if reflect.DeepEqual(original.Status, seed.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Status().Patch(ctx, seed, ctrlruntimeclient.MergeFrom(original))
+	})
+}
+
+// SetSeedCondition sets a condition on the given seed using the provided type, status,
+// reason and message.
+func SetSeedCondition(seed *kubermaticv1.Seed, conditionType kubermaticv1.SeedConditionType, status corev1.ConditionStatus, reason string, message string) {
+	newCondition := kubermaticv1.SeedCondition{
+		Status:  status,
+		Reason:  reason,
+		Message: message,
+	}
+
+	oldCondition, hadCondition := seed.Status.Conditions[conditionType]
+	if hadCondition {
+		conditionCopy := oldCondition.DeepCopy()
+
+		// Reset the times before comparing
+		conditionCopy.LastHeartbeatTime.Reset()
+		conditionCopy.LastTransitionTime.Reset()
+
+		if apiequality.Semantic.DeepEqual(*conditionCopy, newCondition) {
+			return
+		}
+	}
+
+	now := metav1.Now()
+	newCondition.LastHeartbeatTime = now
+	newCondition.LastTransitionTime = oldCondition.LastTransitionTime
+	if hadCondition && oldCondition.Status != status {
+		newCondition.LastTransitionTime = now
+	}
+
+	if seed.Status.Conditions == nil {
+		seed.Status.Conditions = map[kubermaticv1.SeedConditionType]kubermaticv1.SeedCondition{}
+	}
+	seed.Status.Conditions[conditionType] = newCondition
+}
