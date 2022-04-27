@@ -187,7 +187,7 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 				log.Logger.Debug(err)
 				return
 			}
-			if !strings.HasPrefix(userInfo.Group, "owners") && !strings.HasPrefix(userInfo.Group, "editors") {
+			if strings.HasPrefix(userInfo.Group, "viewers") {
 				return
 			}
 		}
