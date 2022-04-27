@@ -22,6 +22,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -179,6 +180,17 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		ctx = context.WithValue(ctx, middleware.ClusterProviderContextKey, clusterProvider)
 		ctx = context.WithValue(ctx, middleware.PrivilegedClusterProviderContextKey, privilegedClusterProvider)
 		ctx = context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user)
+
+		if !authenticatedUser.IsAdmin {
+			userInfo, err := providers.UserInfoGetter(ctx, projectID)
+			if err != nil {
+				log.Logger.Debug(err)
+				return
+			}
+			if !strings.HasPrefix(userInfo.Group, "owners") && !strings.HasPrefix(userInfo.Group, "editors") {
+				return
+			}
+		}
 
 		_, err = handlercommon.GetCluster(ctx, providers.ProjectProvider, providers.PrivilegedProjectProvider, providers.UserInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
