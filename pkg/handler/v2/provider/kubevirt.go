@@ -66,7 +66,7 @@ func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInf
 				kubeconfig = credentials.Kubeconfig
 			}
 		}
-		return providercommon.KubeVirtVMIPresets(ctx, kubeconfig)
+		return providercommon.KubeVirtVMIPresets(ctx, kubeconfig, nil)
 	}
 }
 
