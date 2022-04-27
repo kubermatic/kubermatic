@@ -812,6 +812,12 @@
             "name": "report_name",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ConfigurationName",
+            "name": "configuration_name",
+            "in": "query"
           }
         ],
         "responses": {

@@ -151,6 +151,11 @@ func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.See
 		return k8cerrors.NewBadRequest("invalid request")
 	}
 
+	reportPath := request.ReportName
+	if request.ConfigurationName != "" {
+		reportPath = request.ConfigurationName + "/" + reportPath
+	}
+
 	seedsMap, err := seedsGetter()
 	if err != nil {
 		return err
@@ -167,7 +172,7 @@ func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.See
 			return err
 		}
 
-		err = mc.RemoveObject(ctx, bucket, request.ReportName, minio.RemoveObjectOptions{})
+		err = mc.RemoveObject(ctx, bucket, reportPath, minio.RemoveObjectOptions{})
 		if err != nil {
 			return err
 		}
@@ -265,6 +270,8 @@ type deleteReportReq struct {
 	// in: path
 	// required: true
 	ReportName string `json:"report_name"`
+	// in: query
+	ConfigurationName string `json:"configuration_name"`
 }
 
 func DecodeListMeteringReportReq(r *http.Request) (interface{}, error) {
@@ -309,6 +316,8 @@ func DecodeDeleteMeteringReportReq(r *http.Request) (interface{}, error) {
 	if req.ReportName == "" {
 		return nil, k8cerrors.NewBadRequest("`report_name` cannot be empty")
 	}
+
+	req.ConfigurationName = r.URL.Query().Get("configuration_name")
 
 	return req, nil
 }
