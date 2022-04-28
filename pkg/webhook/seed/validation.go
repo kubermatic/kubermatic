@@ -193,10 +193,6 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 			return errors.New("invalid etcd backup configuration: no default destination specified")
 		}
 
-		if !resourceNameValidator.MatchString(subject.Spec.EtcdBackupRestore.DefaultDestination) {
-			return fmt.Errorf("default destination name is invalid, must match %s", resourceNameValidator.String())
-		}
-
 		if _, exists := subject.Spec.EtcdBackupRestore.Destinations[subject.Spec.EtcdBackupRestore.DefaultDestination]; !exists {
 			return fmt.Errorf("invalid etcd backup configuration: default destination %q does not exist", subject.Spec.EtcdBackupRestore.DefaultDestination)
 		}
