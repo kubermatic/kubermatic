@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
+	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
 	kubeone "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
@@ -69,6 +70,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	userProjectBindingSynchronizerFactory := userProjectBindingSynchronizerFactoryCreator(ctrlCtx)
 	projectSynchronizerFactory := projectSynchronizerFactoryCreator(ctrlCtx)
 	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
+	applicationSecretSynchronizerFactor := applicationSecretSynchronizerFactoryCreator(ctrlCtx)
 	presetSynchronizerFactory := presetSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
@@ -86,6 +88,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		userProjectBindingSynchronizerFactory,
 		projectSynchronizerFactory,
 		applicationdefinitionsynchronizerFactory,
+		applicationSecretSynchronizerFactor,
 		presetSynchronizerFactory,
 	); err != nil {
 		//TODO: Find a better name
@@ -232,6 +235,17 @@ func projectSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrolle
 func applicationDefinitionSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return applicationdefinitionsynchronizer.ControllerName, applicationdefinitionsynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func applicationSecretSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return applicationsecretsynchronizer.ControllerName, applicationsecretsynchronizer.Add(
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
