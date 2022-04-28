@@ -273,7 +273,7 @@ func egressValidatorPod(ipVersion int) *v1.Pod {
 			InitContainers: nil,
 			Containers: []v1.Container{
 				{
-					Name:  fmt.Sprintf("egress-validator-%d", ipVersion),
+					Name:  fmt.Sprintf("egress-validator-%d-container", ipVersion),
 					Image: "docker.io/byrnedo/alpine-curl:0.1.8",
 					Command: []string{
 						"/bin/ash",
