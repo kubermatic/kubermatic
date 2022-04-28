@@ -45,7 +45,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceQuota, error) {
+func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := awstypes.GetConfig(*config)
@@ -78,10 +78,10 @@ func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 
-	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceQuota, error) {
+func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := gcptypes.GetConfig(*config)
@@ -122,10 +122,10 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 
-	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceQuota, error) {
+func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := azuretypes.GetConfig(*config)
@@ -185,10 +185,10 @@ func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.
 	}
 	storageReq.Add(osDiskStorageReq)
 
-	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceQuota, error) {
+func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
@@ -238,10 +238,10 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		storageReq.Add(secondaryStorageReq)
 	}
 
-	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getVsphereResourceRequirements(config *types.Config) (*ResourceQuota, error) {
+func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	rawConfig, err := vspheretypes.GetConfig(*config)
 	if err != nil {
@@ -263,10 +263,10 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceQuota, error
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 
-	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceQuota, error) {
+func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := openstacktypes.GetConfig(*config)
@@ -366,5 +366,5 @@ func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimecli
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %v", err)
 	}
 
-	return NewResourceQuota(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
