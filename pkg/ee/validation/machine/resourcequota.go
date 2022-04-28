@@ -53,37 +53,37 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, user
 	case types.CloudProviderFake:
 		quotaReq, err = getFakeQuotaRequest(config)
 		if err != nil {
-			return fmt.Errorf("error getting fake quota reqest: %w", err)
+			return fmt.Errorf("error getting fake resource requirements: %w", err)
 		}
 	case types.CloudProviderAWS:
 		quotaReq, err = getAWSResourceRequirements(ctx, userClient, config)
 		if err != nil {
-			return fmt.Errorf("error getting aws quota request: %w", err)
+			return fmt.Errorf("error getting aws resource requirements: %w", err)
 		}
 	case types.CloudProviderGoogle:
 		quotaReq, err = getGCPResourceRequirements(ctx, userClient, config)
 		if err != nil {
-			return fmt.Errorf("error getting gcp quota request: %w", err)
+			return fmt.Errorf("error getting gcp resource requirements: %w", err)
 		}
 	case types.CloudProviderAzure:
 		quotaReq, err = getAzureResourceRequirements(ctx, userClient, config)
 		if err != nil {
-			return fmt.Errorf("error getting azure quota request: %w", err)
+			return fmt.Errorf("error getting azure resource requirements: %w", err)
 		}
 	case types.CloudProviderKubeVirt:
 		quotaReq, err = getKubeVirtResourceRequirements(ctx, userClient, config)
 		if err != nil {
-			return fmt.Errorf("error getting kubevirt quota request: %w", err)
+			return fmt.Errorf("error getting kubevirt resource requirements: %w", err)
 		}
 	case types.CloudProviderVsphere:
 		quotaReq, err = getVsphereResourceRequirements(config)
 		if err != nil {
-			return fmt.Errorf("error getting vsphere quota request: %w", err)
+			return fmt.Errorf("error getting vsphere resource requirements: %w", err)
 		}
 	case types.CloudProviderOpenstack:
 		quotaReq, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
 		if err != nil {
-			return fmt.Errorf("error getting openstack quota request: %w", err)
+			return fmt.Errorf("error getting openstack resource requirements: %w", err)
 		}
 	default:
 		// TODO skip for now, when all providers are added, throw error
