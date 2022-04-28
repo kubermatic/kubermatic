@@ -31,3 +31,17 @@ hubble:
 	  >> $(OUTPUT_FILE)
 	cat hubble/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/quay.io/{{ Registry "quay.io" }}/g' $(OUTPUT_FILE)
+
+.PHONY: aws-node-termination-handler
+aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-termination-handler.yaml
+aws-node-termination-handler:
+	helm repo add eks https://aws.github.io/eks-charts/ || true
+	helm repo update
+	cat aws-node-termination-handler/_header.txt > $(OUTPUT_FILE)
+	helm template aws-node-termination-handler eks/aws-node-termination-handler \
+	  --version 0.18.2 \
+	  --namespace kube-system \
+	  --values values-aws-node-termination-handler.yaml \
+	  >> $(OUTPUT_FILE)
+	cat aws-node-termination-handler/_footer.txt >> $(OUTPUT_FILE)
+	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
