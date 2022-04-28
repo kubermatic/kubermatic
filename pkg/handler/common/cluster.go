@@ -26,6 +26,7 @@ import (
 	"time"
 
 	jsonpatch "github.com/evanphx/json-patch"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -49,6 +50,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -147,10 +149,10 @@ func CreateEndpoint(
 		return true, nil
 	}); err != nil {
 		log.Error("Timed out waiting for cluster to become ready")
-		return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), kubermaticerrors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
+		return ConvertInternalClusterToExternal(newCluster, nil, dc, true, supportManager.GetIncompatibilities()...), kubermaticerrors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
 	}
 
-	return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), nil
+	return ConvertInternalClusterToExternal(newCluster, nil, dc, true, supportManager.GetIncompatibilities()...), nil
 }
 
 func GenerateCluster(
@@ -296,7 +298,7 @@ func GenerateCluster(
 	return partialCluster, nil
 }
 
-func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID string, configGetter provider.KubermaticConfigurationGetter) ([]*apiv1.Cluster, error) {
+func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID string, configGetter provider.KubermaticConfigurationGetter, includeMachineDeploymentCount bool) ([]*apiv1.Cluster, error) {
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
 	if err != nil {
 		return nil, err
@@ -327,10 +329,32 @@ func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		apiClusters = append(apiClusters, ConvertInternalClusterToExternal(internalCluster.DeepCopy(), dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...))
+		var machineDeployments *clusterv1alpha1.MachineDeploymentList
+		if includeMachineDeploymentCount {
+			machineDeployments, err = listClusterMachineDeployments(ctx, userInfoGetter, clusterProvider, &internalCluster, projectID)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+		}
+
+		apiClusters = append(apiClusters, ConvertInternalClusterToExternal(internalCluster.DeepCopy(), machineDeployments, dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...))
 	}
 
 	return apiClusters, nil
+}
+
+func listClusterMachineDeployments(ctx context.Context, userInfoGetter func(ctx context.Context, projectID string) (*provider.UserInfo, error), clusterProvider provider.ClusterProvider, cluster *kubermaticv1.Cluster, projectID string) (*clusterv1alpha1.MachineDeploymentList, error) {
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+	if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		return nil, err
+	}
+
+	return machineDeployments, nil
 }
 
 // GetCluster returns the cluster for a given request.
@@ -366,7 +390,7 @@ func GetEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, 
 		return nil, err
 	}
 
-	return ConvertInternalClusterToExternal(cluster, dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...), nil
+	return ConvertInternalClusterToExternal(cluster, nil, dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...), nil
 }
 
 func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, deleteVolumes, deleteLoadBalancers bool, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -440,7 +464,7 @@ func PatchEndpoint(
 	versionManager := version.NewFromConfiguration(config)
 
 	// Converting to API type as it is the type exposed externally.
-	externalCluster := ConvertInternalClusterToExternal(oldInternalCluster, dc, false, versionManager.GetIncompatibilities()...)
+	externalCluster := ConvertInternalClusterToExternal(oldInternalCluster, nil, dc, false, versionManager.GetIncompatibilities()...)
 
 	// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
 	// data that is required here for validation.
@@ -553,7 +577,7 @@ func PatchEndpoint(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return ConvertInternalClusterToExternal(updatedCluster, dc, true, versionManager.GetIncompatibilities()...), nil
+	return ConvertInternalClusterToExternal(updatedCluster, nil, dc, true, versionManager.GetIncompatibilities()...), nil
 }
 
 func GetClusterEventsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID, eventType string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -1004,7 +1028,7 @@ func isStatus(err error, status int32) bool {
 	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }
 
-func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, filterSystemLabels bool, incompatibilities ...*version.ProviderIncompatibility) *apiv1.Cluster {
+func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, machineDeployments *clusterv1alpha1.MachineDeploymentList, datacenter *kubermaticv1.Datacenter, filterSystemLabels bool, incompatibilities ...*version.ProviderIncompatibility) *apiv1.Cluster {
 	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
@@ -1063,6 +1087,11 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 		if value, ok := internalCluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation]; ok {
 			cluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = value
 		}
+	}
+
+	if machineDeployments != nil {
+		machineDeploymentCount := len(machineDeployments.Items)
+		cluster.MachineDeploymentCount = &machineDeploymentCount
 	}
 
 	return cluster

@@ -823,10 +823,11 @@ type Cluster struct {
 	Labels          map[string]string `json:"labels,omitempty"`
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
 	// Type is deprecated and not used anymore.
-	Type       string        `json:"type"`
-	Credential string        `json:"credential,omitempty"`
-	Spec       ClusterSpec   `json:"spec"`
-	Status     ClusterStatus `json:"status"`
+	Type                   string        `json:"type"`
+	Credential             string        `json:"credential,omitempty"`
+	Spec                   ClusterSpec   `json:"spec"`
+	Status                 ClusterStatus `json:"status"`
+	MachineDeploymentCount *int          `json:"machine_deployment_count,omitempty"`
 }
 
 // ClusterSpec defines the cluster specification.
