@@ -113,7 +113,7 @@ func main() {
 	// setup webhooks
 
 	// Setup the validation admission handler for ApplicationInstallation CRDs
-	applicationinstallationvalidation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
+	applicationinstallationvalidation.NewAdmissionHandler(seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
 
 	// Setup Machine Webhook
 	machineValidator := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle)
