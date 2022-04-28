@@ -129,7 +129,8 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, user
 
 // TODO we should get it from the ResourceQuota CRD for the project, for now just some hardcoded values for tests.
 func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
-	cpu, err := resource.ParseQuantity("5")
+	cpu, err := resource.ParseQuantity("50")
+
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
@@ -138,7 +139,7 @@ func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
-	mem, err := resource.ParseQuantity("5G")
+	mem, err := resource.ParseQuantity("50G")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
@@ -147,7 +148,7 @@ func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
-	storage, err := resource.ParseQuantity("100G")
+	storage, err := resource.ParseQuantity("1000G")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
