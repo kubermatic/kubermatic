@@ -70,7 +70,7 @@ func deploymentCreator(seed *kubermaticv1.Seed, getRegistry registry.WithOverwri
 					Args: []string{
 						"-c",
 						`mc config host add s3 $S3_ENDPOINT $ACCESS_KEY_ID $SECRET_ACCESS_KEY
-mc mirror --newer-than "32d0h0m" s3/$S3_BUCKET /metering-data || true`,
+mc mirror --newer-than "32d0h0m" --exclude "report-*.csv" --exclude "**/report-*.csv" s3/$S3_BUCKET /metering-data || true`,
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
