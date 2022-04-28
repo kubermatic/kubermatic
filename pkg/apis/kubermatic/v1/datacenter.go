@@ -175,6 +175,9 @@ type EtcdBackupRestore struct {
 	// DefaultDestination marks the default destination that will be used for the default etcd backup config which is
 	// created for every user cluster. Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
 	DefaultDestination string `json:"defaultDestination"`
 }
 

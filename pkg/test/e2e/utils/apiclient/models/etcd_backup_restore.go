@@ -22,6 +22,7 @@ type EtcdBackupRestore struct {
 	// DefaultDestination marks the default destination that will be used for the default etcd backup config which is
 	// created for every user cluster. Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.
+	// Pattern: =`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	DefaultDestination string `json:"defaultDestination,omitempty"`
 
 	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
@@ -33,6 +34,10 @@ type EtcdBackupRestore struct {
 func (m *EtcdBackupRestore) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateDefaultDestination(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateDestinations(formats); err != nil {
 		res = append(res, err)
 	}
@@ -40,6 +45,18 @@ func (m *EtcdBackupRestore) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *EtcdBackupRestore) validateDefaultDestination(formats strfmt.Registry) error {
+	if swag.IsZero(m.DefaultDestination) { // not required
+		return nil
+	}
+
+	if err := validate.Pattern("defaultDestination", "body", m.DefaultDestination, `=`+"`"+`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`+"`"+``); err != nil {
+		return err
+	}
+
 	return nil
 }
 
