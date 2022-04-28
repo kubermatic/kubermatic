@@ -92,7 +92,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/kubevirt-cloud-controller-manager:" + KubeVirtCCMTag,
+					Image:   "docker.io/mfranczy/machine-controller:test",
 					Command: []string{"/bin/kubevirt-cloud-controller-manager"},
 					Args:    getKVFlags(data),
 					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
