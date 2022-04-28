@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	controllerName = "kubermatic-master-controller-manager"
+	controllerName = "kkp-master-controller-manager"
 )
 
 type controllerRunOptions struct {

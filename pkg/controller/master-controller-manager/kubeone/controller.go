@@ -59,8 +59,8 @@ import (
 )
 
 const (
-	// ControllerName is the name of this very controller.
-	ControllerName = "kubeone_controller"
+	// This controller is responsible for managing the lifecycle of KubeOne clusters within KKP.
+	ControllerName = "kkp-kubeone-manager"
 
 	// ImportAction is the action to import kubeone cluster.
 	ImportAction = "import"

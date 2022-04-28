@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "kubermatic_project_label_synchronizer"
+const ControllerName = "kkp-project-label-synchronizer"
 
 type reconciler struct {
 	log                     *zap.SugaredLogger

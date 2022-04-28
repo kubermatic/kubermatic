@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	controllerName = "ccm-csi-migrator"
+	controllerName = "kkp-ccm-csi-migrator"
 )
 
 type reconciler struct {

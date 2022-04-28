@@ -41,7 +41,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic cluster templates on the master cluster to the seed clusters.
-	ControllerName = "cluster_template_syncing_controller"
+	ControllerName = "kkp-cluster-template-synchronizer"
 )
 
 type reconciler struct {

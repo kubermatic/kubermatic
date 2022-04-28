@@ -50,7 +50,7 @@ import (
 )
 
 const (
-	ControllerName = "external_cluster_controller"
+	ControllerName = "kkp-external-cluster-controller"
 )
 
 // Reconciler is a controller which is responsible for managing clusters.

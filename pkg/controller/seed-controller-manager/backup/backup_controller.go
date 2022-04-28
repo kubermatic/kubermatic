@@ -76,7 +76,7 @@ const (
 	// clusterEnvVarKey defines the environment variable key for the cluster name.
 	clusterEnvVarKey = "CLUSTER"
 
-	ControllerName = "kubermatic_backup_controller"
+	ControllerName = "kkp-backup-controller"
 )
 
 type Reconciler struct {

@@ -48,7 +48,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraints to constraint on the user cluster.
-	ControllerName = "constraint_syncing_controller"
+	ControllerName = "kkp-constraint-synchronizer"
 	finalizer      = kubermaticapiv1.KubermaticUserClusterNsDefaultConstraintCleanupFinalizer
 	Key            = "default"
 	AddAction      = "add"

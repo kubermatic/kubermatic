@@ -39,7 +39,9 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_flatcar_controller"
+	// This controller is responsible for ensuring that the flatcar-linux-update-operator is installed when we have a healthy(running) flatcar
+	// node in our cluster.
+	ControllerName = "kkp-flatcar-update-operator-manager"
 )
 
 type Reconciler struct {
@@ -63,9 +65,9 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		return err
 	}
 
-	predicate := predicateutil.MultiFactory(predicateutil.TrueFilter, func(o ctrlruntimeclient.Object) bool {
+	predicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
-	}, predicateutil.TrueFilter)
+	})
 
 	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
 }
