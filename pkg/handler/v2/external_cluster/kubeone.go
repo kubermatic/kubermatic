@@ -47,6 +47,7 @@ import (
 
 const (
 	NodeControlPlaneLabel = "node-role.kubernetes.io/control-plane"
+	NodeWorkerLabel       = "workerset"
 )
 
 func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(ctx context.Context, projectID string) (*provider.UserInfo, error), project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
@@ -270,7 +271,7 @@ func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1
 	return machineDeployment, nil
 }
 
-func listKubeOneMachineDeployment(ctx context.Context, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeploymentList, error) {
+func getKubeOneMachineDeployments(ctx context.Context, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeploymentList, error) {
 	mdList := &clusterv1alpha1.MachineDeploymentList{}
 	userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
 	if err != nil {
@@ -300,8 +301,21 @@ func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alp
 	return oldmd, nil
 }
 
-func getKubeOneMachineDeployments(ctx context.Context, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
-	mdList, err := listKubeOneMachineDeployment(ctx, cluster, clusterProvider)
+func getKubeOneAPIMachineDeployment(ctx context.Context,
+	mdName string,
+	cluster *kubermaticv1.ExternalCluster,
+	clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+	md, err := getKubeOneMachineDeployment(ctx, mdName, cluster, clusterProvider)
+	if err != nil {
+		return nil, err
+	}
+	apiMD := createAPIMachineDeployment(*md)
+	return &apiMD, nil
+}
+
+func getKubeOneAPIMachineDeployments(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
+	clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
+	mdList, err := getKubeOneMachineDeployments(ctx, cluster, clusterProvider)
 	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(mdList.Items))
 	if err != nil {
 		return nil, err
@@ -311,4 +325,26 @@ func getKubeOneMachineDeployments(ctx context.Context, cluster *kubermaticv1.Ext
 	}
 
 	return machineDeployments, nil
+}
+
+func getKubeOneNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, mdName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
+	var nodesV1 []apiv2.ExternalClusterNode
+
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	for _, n := range nodes.Items {
+		if n.Labels != nil {
+			if n.Labels[NodeWorkerLabel] == mdName {
+				outNode, err := outputNode(n)
+				if err != nil {
+					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
+				}
+				nodesV1 = append(nodesV1, *outNode)
+			}
+		}
+	}
+
+	return nodesV1, err
 }
