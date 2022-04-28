@@ -89,7 +89,7 @@ func main() {
 		log.Fatalw("Failed to create the seed cluster manager", zap.Error(err))
 	}
 
-	userMgr, err := manager.New(userCfg, manager.Options{})
+	userMgr, err := manager.New(userCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
 		log.Fatalw("Failed to create the user cluster manager", zap.Error(err))
 	}
