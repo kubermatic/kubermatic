@@ -59,6 +59,8 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) validateAks(formats strfmt.R
 		if err := m.Aks.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
 			}
 			return err
 		}
@@ -76,6 +78,8 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) validateEks(formats strfmt.R
 		if err := m.Eks.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eks")
 			}
 			return err
 		}
@@ -93,6 +97,8 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) validateGke(formats strfmt.R
 		if err := m.Gke.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gke")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gke")
 			}
 			return err
 		}
@@ -129,6 +135,8 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) contextValidateAks(ctx conte
 		if err := m.Aks.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
 			}
 			return err
 		}
@@ -143,6 +151,8 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) contextValidateEks(ctx conte
 		if err := m.Eks.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eks")
 			}
 			return err
 		}
@@ -157,6 +167,8 @@ func (m *ExternalClusterMachineDeploymentCloudSpec) contextValidateGke(ctx conte
 		if err := m.Gke.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gke")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gke")
 			}
 			return err
 		}

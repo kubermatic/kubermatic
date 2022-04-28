@@ -87,7 +87,7 @@ func GetNodeUpgrades(configGetter provider.KubermaticConfigurationGetter) endpoi
 			return nil, fmt.Errorf("failed to parse control plane version: %w", err)
 		}
 
-		versions, err := version.NewFromConfiguration(config).GetVersions(req.Type)
+		versions, err := version.NewFromConfiguration(config).GetVersions()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %w", err)
 		}
@@ -161,7 +161,7 @@ func GetMasterVersionsEndpoint(configGetter provider.KubermaticConfigurationGett
 			return nil, err
 		}
 
-		versions, err := version.NewFromConfiguration(config).GetVersions(req.Type)
+		versions, err := version.NewFromConfiguration(config).GetVersions()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %w", err)
 		}
@@ -171,27 +171,18 @@ func GetMasterVersionsEndpoint(configGetter provider.KubermaticConfigurationGett
 
 // TypeReq represents a request that contains the cluster type.
 type TypeReq struct {
+	// Type is deprecated and not used anymore.
 	// in: query
 	Type string `json:"type"`
 }
 
 func (r TypeReq) Validate() error {
-	if handlercommon.ClusterTypes.Has(r.Type) {
-		return nil
-	}
-	return fmt.Errorf("invalid cluster type %s", r.Type)
+	return nil
 }
 
 // DecodeAddReq  decodes an HTTP request into TypeReq.
 func DecodeClusterTypeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req TypeReq
-
-	req.Type = r.URL.Query().Get("type")
-	if len(req.Type) == 0 {
-		req.Type = apiv1.KubernetesClusterType
-	}
-
-	return req, nil
+	return TypeReq{}, nil
 }
 
 func convertVersionsToExternal(versions []*version.Version) []*apiv1.MasterVersion {

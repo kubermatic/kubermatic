@@ -222,12 +222,7 @@ func ruleGroupCreatorGetter(ruleGroup *kubermaticv1.RuleGroup, cluster *kubermat
 			r.Spec = kubermaticv1.RuleGroupSpec{
 				RuleGroupType: ruleGroup.Spec.RuleGroupType,
 				Cluster: corev1.ObjectReference{
-					Kind:            kubermaticv1.ClusterKindName,
-					Namespace:       "",
-					Name:            cluster.Name,
-					UID:             cluster.UID,
-					APIVersion:      cluster.APIVersion,
-					ResourceVersion: cluster.ResourceVersion,
+					Name: cluster.Name,
 				},
 				Data: ruleGroup.Spec.Data,
 			}

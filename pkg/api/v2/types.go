@@ -154,6 +154,13 @@ type PresetProvider struct {
 	Enabled bool                      `json:"enabled"`
 }
 
+// PresetStats represents a preset statistics
+// swagger:model PresetStats
+type PresetStats struct {
+	AssociatedClusters         int `json:"associatedClusters"`
+	AssociatedClusterTemplates int `json:"associatedClusterTemplates"`
+}
+
 // Alertmanager represents an Alertmanager Configuration
 // swagger:model Alertmanager
 type Alertmanager struct {
@@ -195,6 +202,7 @@ type ClusterTemplate struct {
 	UserSSHKeys    []ClusterTemplateSSHKey        `json:"userSshKeys,omitempty"`
 	Cluster        *ClusterTemplateInfo           `json:"cluster,omitempty"`
 	NodeDeployment *ClusterTemplateNodeDeployment `json:"nodeDeployment,omitempty"`
+	Applications   []apiv1.Application            `json:"applications,omitempty"`
 }
 
 // ClusterTemplateInfo represents a ClusterTemplateInfo object.
@@ -389,7 +397,7 @@ type MLAAdminSetting struct {
 type ExternalCluster struct {
 	apiv1.ObjectMeta `json:",inline"`
 	Labels           map[string]string         `json:"labels,omitempty"`
-	Spec             ExternalClusterSpec       `json:"spec"`
+	Spec             ExternalClusterSpec       `json:"spec,omitempty"`
 	Cloud            *ExternalClusterCloudSpec `json:"cloud,omitempty"`
 	Status           ExternalClusterStatus     `json:"status"`
 }
@@ -398,30 +406,30 @@ type ExternalClusterState string
 
 const (
 	// PROVISIONING state indicates the cluster is being created.
-	PROVISIONING ExternalClusterState = "PROVISIONING"
+	PROVISIONING ExternalClusterState = "Provisioning"
 
 	// STOPPED state indicates the cluster is stopped, this state is specific to aks clusters.
-	STOPPED ExternalClusterState = "STOPPED"
+	STOPPED ExternalClusterState = "Stopped"
 
 	// STOPPING state indicates the cluster is stopping, this state is specific to aks clusters.
-	STOPPING ExternalClusterState = "STOPPING"
+	STOPPING ExternalClusterState = "Stopping"
 
 	// RUNNING state indicates the cluster has been created and is fully usable.
-	RUNNING ExternalClusterState = "RUNNING"
+	RUNNING ExternalClusterState = "Running"
 
 	// RECONCILING state indicates that some work is actively being done on the cluster, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
-	RECONCILING ExternalClusterState = "RECONCILING"
+	RECONCILING ExternalClusterState = "Reconciling"
 
 	// DELETING state indicates the cluster is being deleted.
-	DELETING ExternalClusterState = "DELETING"
+	DELETING ExternalClusterState = "Deleting"
 
 	// UNKNOWN Not set.
-	UNKNOWN ExternalClusterState = "UNKNOWN"
+	UNKNOWN ExternalClusterState = "Unknown"
 
 	// ERROR state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
-	ERROR ExternalClusterState = "ERROR"
+	ERROR ExternalClusterState = "Error"
 )
 
 // ExternalClusterStatus defines the external cluster status.
@@ -434,29 +442,141 @@ type ExternalClusterStatus struct {
 type ExternalClusterSpec struct {
 	// Version desired version of the kubernetes master components
 	Version ksemver.Semver `json:"version,omitempty"`
+
+	GKEClusterSpec *GKEClusterSpec `json:"gkeclusterSpec,omitempty"`
+	EKSClusterSpec *EKSClusterSpec `json:"eksclusterSpec,omitempty"`
+	AKSClusterSpec *AKSClusterSpec `json:"aksclusterSpec,omitempty"`
 }
 
 // ExternalClusterCloudSpec represents an object holding cluster cloud details
 // swagger:model ExternalClusterCloudSpec
 type ExternalClusterCloudSpec struct {
-	GKE *GKECloudSpec `json:"gke,omitempty"`
-	EKS *EKSCloudSpec `json:"eks,omitempty"`
-	AKS *AKSCloudSpec `json:"aks,omitempty"`
+	GKE     *GKECloudSpec `json:"gke,omitempty"`
+	EKS     *EKSCloudSpec `json:"eks,omitempty"`
+	AKS     *AKSCloudSpec `json:"aks,omitempty"`
+	KubeOne *KubeOneSpec  `json:"kubeOne,omitempty"`
+}
+
+type KubeOneSpec struct {
+	// Manifest Base64 encoded manifest
+	Manifest         string            `json:"manifest,omitempty"`
+	SSHKey           KubeOneSSHKey     `json:"sshKey,omitempty"`
+	ContainerRuntime string            `json:"containerRuntime,omitempty"`
+	CloudSpec        *KubeOneCloudSpec `json:"cloudSpec,omitempty"`
+}
+
+// SSHKeySpec represents the details of a ssh key.
+type KubeOneSSHKey struct {
+	// PrivateKey Base64 encoded privateKey
+	PrivateKey string `json:"privateKey,omitempty"`
+	Passphrase string `json:"passphrase,omitempty"`
+}
+
+type KubeOneCloudSpec struct {
+	AWS          *KubeOneAWSCloudSpec          `json:"aws,omitempty"`
+	GCP          *KubeOneGCPCloudSpec          `json:"gcp,omitempty"`
+	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
+	DigitalOcean *KubeOneDigitalOceanCloudSpec `json:"digitalocean,omitempty"`
+	OpenStack    *KubeOneOpenStackCloudSpec    `json:"openstack,omitempty"`
+	Equinix      *KubeOneEquinixCloudSpec      `json:"equinix,omitempty"`
+	Hetzner      *KubeOneHetznerCloudSpec      `json:"hetzner,omitempty"`
+	VSphere      *KubeOneVSphereCloudSpec      `json:"vsphere,omitempty"`
+	Nutanix      *KubeOneNutanixCloudSpec      `json:"nutanix,omitempty"`
+}
+
+// KubeOneAWSCloudSpec specifies access data to Amazon Web Services.
+type KubeOneAWSCloudSpec struct {
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+// KubeOneGCPCloudSpec specifies access data to GCP.
+type KubeOneGCPCloudSpec struct {
+	ServiceAccount string `json:"serviceAccount"`
+}
+
+// KubeOneAzureCloudSpec specifies access credentials to Azure cloud.
+type KubeOneAzureCloudSpec struct {
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
+// KubeOneDigitalOceanCloudSpec specifies access data to DigitalOcean.
+type KubeOneDigitalOceanCloudSpec struct {
+	// Token is used to authenticate with the DigitalOcean API.
+	Token string `json:"token"`
+}
+
+// KubeOneOpenStackCloudSpec specifies access data to an OpenStack cloud.
+type KubeOneOpenStackCloudSpec struct {
+	AuthURL  string `json:"authURL"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+
+	// Project, formally known as tenant.
+	Project string `json:"project"`
+	// ProjectID, formally known as tenantID.
+	ProjectID string `json:"projectID"`
+
+	Domain string `json:"domain"`
+	Region string `json:"region"`
+}
+
+// KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.
+type KubeOneVSphereCloudSpec struct {
+	Server   string `json:"server"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.
+type KubeOneEquinixCloudSpec struct {
+	APIKey    string `json:"apiKey"`
+	ProjectID string `json:"projectID"`
+}
+
+// KubeOneHetznerCloudSpec specifies access data to hetzner cloud.
+type KubeOneHetznerCloudSpec struct {
+	// Token is used to authenticate with the Hetzner cloud API.
+	Token string `json:"token"`
+}
+
+// KubeOneNutanixCloudSpec specifies the access data to Nutanix.
+type KubeOneNutanixCloudSpec struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	// Endpoint is the Nutanix API (Prism Central) endpoint
+	Endpoint string `json:"endpoint"`
+	// Port is the Nutanix API (Prism Central) port
+	Port string `json:"port"`
+
+	// PrismElementUsername to be used for the CSI driver
+	PrismElementUsername string `json:"elementUsername"`
+	// PrismElementPassword to be used for the CSI driver
+	PrismElementPassword string `json:"elementPassword"`
+	// PrismElementEndpoint to access Nutanix Prism Element for the CSI driver
+	PrismElementEndpoint string `json:"elementEndpoint"`
+
+	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
+	// +optional
+	ClusterName   string `json:"clusterName,omitempty"`
+	AllowInsecure bool   `json:"allowInsecure,omitempty"`
+	ProxyURL      string `json:"proxyURL,omitempty"`
 }
 
 type GKECloudSpec struct {
-	Name           string          `json:"name"`
-	ServiceAccount string          `json:"serviceAccount,omitempty"`
-	Zone           string          `json:"zone"`
-	ClusterSpec    *GKEClusterSpec `json:"clusterSpec,omitempty"`
+	Name           string `json:"name"`
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	Zone           string `json:"zone"`
 }
 
 type EKSCloudSpec struct {
-	Name            string          `json:"name"`
-	AccessKeyID     string          `json:"accessKeyID,omitempty" required:"true"`
-	SecretAccessKey string          `json:"secretAccessKey,omitempty" required:"true"`
-	Region          string          `json:"region" required:"true"`
-	ClusterSpec     *EKSClusterSpec `json:"clusterSpec,omitempty"`
+	Name            string `json:"name"`
+	AccessKeyID     string `json:"accessKeyID,omitempty" required:"true"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty" required:"true"`
+	Region          string `json:"region" required:"true"`
 }
 
 type EKSClusterSpec struct {
@@ -486,13 +606,12 @@ type EKSClusterSpec struct {
 }
 
 type AKSCloudSpec struct {
-	Name           string          `json:"name"`
-	TenantID       string          `json:"tenantID,omitempty" required:"true"`
-	SubscriptionID string          `json:"subscriptionID,omitempty" required:"true"`
-	ClientID       string          `json:"clientID,omitempty" required:"true"`
-	ClientSecret   string          `json:"clientSecret,omitempty" required:"true"`
-	ResourceGroup  string          `json:"resourceGroup" required:"true"`
-	ClusterSpec    *AKSClusterSpec `json:"clusterSpec,omitempty"`
+	Name           string `json:"name"`
+	TenantID       string `json:"tenantID,omitempty" required:"true"`
+	SubscriptionID string `json:"subscriptionID,omitempty" required:"true"`
+	ClientID       string `json:"clientID,omitempty" required:"true"`
+	ClientSecret   string `json:"clientSecret,omitempty" required:"true"`
+	ResourceGroup  string `json:"resourceGroup" required:"true"`
 }
 
 // AKSClusterSpec Azure Kubernetes Service cluster.
@@ -1234,4 +1353,30 @@ type CNIVersions struct {
 	CNIPluginType string `json:"cniPluginType"`
 	// Versions represents the list of the CNI Plugin versions that are supported
 	Versions []string `json:"versions"`
+}
+
+// NetworkDefaults contains cluster network default settings.
+// swagger:model NetworkDefaults
+type NetworkDefaults struct {
+	// IPv4 contains cluster network default settings for IPv4 network family.
+	IPv4 *NetworkDefaultsIPFamily `json:"ipv4,omitempty"`
+	// IPv6 contains cluster network default settings for IPv6 network family.
+	IPv6 *NetworkDefaultsIPFamily `json:"ipv6,omitempty"`
+	// ProxyMode defines the default kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	ProxyMode string `json:"proxyMode,omitempty"`
+	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
+	NodeLocalDNSCacheEnabled bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
+}
+
+// NetworkDefaultsIPFamily contains cluster network default settings for an IP family.
+// swagger:model NetworkDefaultsIPFamily
+type NetworkDefaultsIPFamily struct {
+	// PodsCIDR contains the default network range from which POD networks are allocated.
+	PodsCIDR string `json:"podsCidr,omitempty"`
+	// ServicesCIDR contains the default network range from which service VIPs are allocated.
+	ServicesCIDR string `json:"servicesCidr,omitempty"`
+	// NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.
+	NodeCIDRMaskSize int32 `json:"nodeCidrMaskSize,omitempty"`
+	// NodePortsAllowedIPRange defines the default IP range from which access to NodePort services is allowed for applicable cloud providers.
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 }

@@ -29,6 +29,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
@@ -44,8 +45,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -101,10 +105,6 @@ func main() {
 		log.Fatalw("Failed to get kubeconfig", zap.Error(err))
 	}
 
-	// get rid of warnings related to
-	// policy/v1beta1 PodDisruptionBudget is deprecated in v1.21+, unavailable in v1.25+; use policy/v1 PodDisruptionBudget
-	suppressWarnings()
-
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
 	mgr, err := manager.New(cfg, manager.Options{
@@ -112,6 +112,13 @@ func main() {
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
+		NewClient: func(c ctrlruntimecache.Cache, config *rest.Config, options ctrlruntimeclient.Options, uncachedObjects ...ctrlruntimeclient.Object) (ctrlruntimeclient.Client, error) {
+			// get rid of warnings related to
+			// policy/v1beta1 PodDisruptionBudget is deprecated in v1.21+, unavailable in v1.25+; use policy/v1 PodDisruptionBudget
+			options.Opts.SuppressWarnings = true
+
+			return ctrlruntimecluster.DefaultNewClient(c, config, options, uncachedObjects...)
+		},
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
@@ -134,6 +141,9 @@ func main() {
 	}
 	if err := osmv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := appkubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", appkubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
@@ -228,19 +238,4 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 func isInternalConfig(cfg *rest.Config) bool {
 	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
 	return cfg.Host == "https://"+net.JoinHostPort(host, port)
-}
-
-func suppressWarnings() {
-	// Set a WarningHandler, the default WarningHandler
-	// is log.KubeAPIWarningLogger with deduplication enabled.
-	// See log.KubeAPIWarningLoggerOptions for considerations
-	// regarding deduplication.
-	rest.SetDefaultWarningHandler(
-		ctrlruntimelog.NewKubeAPIWarningLogger(
-			ctrlruntimelog.Log.WithName("KubeAPIWarningLogger"),
-			ctrlruntimelog.KubeAPIWarningLoggerOptions{
-				Deduplicate: true,
-			},
-		),
-	)
 }

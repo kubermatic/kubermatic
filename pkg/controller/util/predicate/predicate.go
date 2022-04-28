@@ -91,6 +91,24 @@ func ByLabel(key, value string) predicate.Funcs {
 	})
 }
 
+// ByAnnotation returns a predicate func that only includes objects with the given annotation.
+func ByAnnotation(key, value string, checkValue bool) predicate.Funcs {
+	return Factory(func(o ctrlruntimeclient.Object) bool {
+		annotations := o.GetAnnotations()
+		if annotations != nil {
+			if existingValue, ok := annotations[key]; ok {
+				if !checkValue {
+					return true
+				}
+				if existingValue == value {
+					return true
+				}
+			}
+		}
+		return false
+	})
+}
+
 // TrueFilter is a helper filter implementation that always returns true, e.g. for use with MultiFactory.
 func TrueFilter(_ ctrlruntimeclient.Object) bool {
 	return true

@@ -78,7 +78,7 @@ spec:
   humanReadableName: stupefied-heisenberg
   oidc: {}
   pause: false
-  version: 1.15.10
+  version: 1.22.7
 status:
   cloudMigrationRevision: 2
   conditions:
@@ -142,3 +142,8 @@ status:
   lastUpdated: null
   namespaceName: cluster-bbc8sc24wb
   userEmail: user@example.com
+  versions:
+    controlPlane: 1.22.7
+    apiserver: 1.22.7
+    controllerManager: 1.22.7
+    scheduler: 1.22.7

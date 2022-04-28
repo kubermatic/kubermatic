@@ -219,6 +219,23 @@ func main() {
 				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1",
 				APIVersionPrefix:   "AppKubermaticV1",
 			},
+			{
+				ResourceName:       "VirtualMachineInstancePreset",
+				ImportAlias:        "kubevirtv1",
+				ResourceImportPath: "kubevirt.io/api/core/v1",
+				APIVersionPrefix:   "KubeVirtV1",
+			},
+			{
+				ResourceName:     "Preset",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
+				ResourceName:       "DataVolume",
+				ImportAlias:        "cdiv1beta1",
+				ResourceImportPath: "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1",
+				APIVersionPrefix:   "CDIv1beta1",
+			},
 		},
 	}
 

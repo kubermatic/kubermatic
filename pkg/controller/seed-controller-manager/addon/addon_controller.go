@@ -30,6 +30,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/addon"
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -45,7 +46,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
@@ -200,6 +200,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Skipping because the cluster has no version status yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	log = r.log.With("cluster", cluster.Name, "addon", addon.Name)
 
 	// Add a wrapping here so we can emit an event on error
@@ -278,7 +283,7 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, addon, cleanupFinalizerName)
 }
 
-func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
+func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]addon.Manifest, error) {
 	addonDir := r.kubernetesAddonDir
 	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
 	if err != nil {
@@ -349,13 +354,13 @@ func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 
 // ensureAddonLabelOnManifests adds the addonLabelKey label to all manifests.
 // For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again.
-func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []runtime.RawExtension) ([]*bytes.Buffer, error) {
+func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []addon.Manifest) ([]*bytes.Buffer, error) {
 	var rawManifests []*bytes.Buffer
 
 	wantLabels := r.getAddonLabel(addon)
 	for _, m := range manifests {
 		parsedUnstructuredObj := &metav1unstructured.Unstructured{}
-		if _, _, err := metav1unstructured.UnstructuredJSONScheme.Decode(m.Raw, nil, parsedUnstructuredObj); err != nil {
+		if _, _, err := metav1unstructured.UnstructuredJSONScheme.Decode(m.Content.Raw, nil, parsedUnstructuredObj); err != nil {
 			return nil, fmt.Errorf("parsing unstructured failed: %w", err)
 		}
 
@@ -496,7 +501,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
-	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Spec.Version.Semver())
+	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Status.Versions.ControlPlane.Semver())
 	if err != nil {
 		return fmt.Errorf("failed to create command: %w", err)
 	}
@@ -509,7 +514,8 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
-	return err
+
+	return nil
 }
 
 func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
@@ -538,7 +544,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	}
 	defer done()
 
-	binary, err := kubectl.BinaryForClusterVersion(cluster.Spec.Version.Semver())
+	binary, err := kubectl.BinaryForClusterVersion(cluster.Status.Versions.ControlPlane.Semver())
 	if err != nil {
 		return fmt.Errorf("failed to determine kubectl binary to use: %w", err)
 	}

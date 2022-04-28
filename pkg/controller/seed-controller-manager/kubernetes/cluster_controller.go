@@ -229,6 +229,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	// the update controller needs to determine the target version based on the spec
+	// before we can reconcile anything
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Cluster not yet ready for reconciling")
+
+		return reconcile.Result{}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,

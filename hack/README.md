@@ -13,10 +13,7 @@ Create a changelog since last release, commit and create a new release tag
 
 Generate test coverage statistics for Go packages.
 
-Works around the fact that `go test -coverprofile` currently does not work
-with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
-
-    Usage: cover.sh [--html]
+    Usage: coverage.sh [--html]
 
     --html      Additionally create HTML report and open it in browser
 
@@ -77,6 +74,10 @@ to prewarm a local Docker registry, for example in offline setups.
 
 TBD
 
+## run-api-tests.sh
+
+TBD
+
 ## run-ccm-migration-e2e-test-in-kind.sh
 
 This script sets up a local KKP installation in kind, deploys a
@@ -109,14 +110,6 @@ In this mode, you need to have the kube-test binaries and all other
 dependencies installed locally on your machine, but it makes testing
 against a local KKP setup much easier.
 
-## run-crd-migration-in-kind.sh
-
-This script sets up two kind clusters, places a whole lot of KKP
-resources in various states into it and then runs the crd migration
-function of the KKP installer.
-Note that this script does install KKP itself, as KKP needs to be
-completely shutdown during the migration anyway.
-
 ## run-dashboard-and-api.sh
 
 TBD
@@ -126,6 +119,10 @@ TBD
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the e2e tests for the
 nodeport-proxy.
+
+## run-integration-tests.sh
+
+TBD
 
 ## run-machine-controller.sh
 
@@ -217,6 +214,10 @@ TBD
 TBD
 
 ## verify-grafana-dashboards.sh
+
+TBD
+
+## verify-import-order.sh
 
 TBD
 

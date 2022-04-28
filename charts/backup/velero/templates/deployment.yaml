@@ -49,9 +49,6 @@ spec:
         {{- range .Values.velero.serverFlags }}
         - '{{ . }}'
         {{- end }}
-        {{- with .Values.velero.defaultBackupStorageLocation }}
-        - '--default-backup-storage-location={{ . }}'
-        {{- end }}
         {{- with .Values.velero.defaultVolumeSnapshotLocations }}
         - '--default-volume-snapshot-locations={{ . | join "," }}'
         {{- end }}

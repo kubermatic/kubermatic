@@ -54,6 +54,8 @@ func (m *ClusterStatus) validateExternalCCMMigration(formats strfmt.Registry) er
 	if err := m.ExternalCCMMigration.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("externalCCMMigration")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("externalCCMMigration")
 		}
 		return err
 	}
@@ -69,6 +71,8 @@ func (m *ClusterStatus) validateVersion(formats strfmt.Registry) error {
 	if err := m.Version.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("version")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("version")
 		}
 		return err
 	}
@@ -99,6 +103,8 @@ func (m *ClusterStatus) contextValidateExternalCCMMigration(ctx context.Context,
 	if err := m.ExternalCCMMigration.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("externalCCMMigration")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("externalCCMMigration")
 		}
 		return err
 	}
@@ -111,6 +117,8 @@ func (m *ClusterStatus) contextValidateVersion(ctx context.Context, formats strf
 	if err := m.Version.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("version")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("version")
 		}
 		return err
 	}

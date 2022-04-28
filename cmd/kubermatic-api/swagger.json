@@ -12,7 +12,7 @@
   "info": {
     "description": "This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.",
     "title": "Kubermatic Kubernetes Platform API",
-    "version": "2.20"
+    "version": "2.21"
   },
   "paths": {
     "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}": {
@@ -436,6 +436,232 @@
         }
       }
     },
+    "/api/v1/admin/metering/configurations/reports": {
+      "get": {
+        "description": "Lists report configurations for KKP metering tool. Only available in Kubermatic Enterprise Edition",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "listMeteringReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "MeteringReportConfiguration",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MeteringReportConfiguration"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metering/configurations/reports/{name}": {
+      "get": {
+        "description": "Gets report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getMeteringReportConfiguration",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MeteringReportConfiguration",
+            "schema": {
+              "$ref": "#/definitions/MeteringReportConfiguration"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Updates existing report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "updateMeteringReportConfiguration",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "interval": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Interval"
+                },
+                "schedule": {
+                  "type": "string",
+                  "x-go-name": "Schedule"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "createMeteringReportConfiguration",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "interval": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Interval"
+                },
+                "schedule": {
+                  "type": "string",
+                  "x-go-name": "Schedule"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Removes report configuration for KKP metering tool. Only available in Kubermatic Enterprise Edition",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "deleteMeteringReportConfiguration",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/metering/credentials": {
       "put": {
         "description": "Creates or updates the metering tool credentials. Only available in Kubermatic Enterprise Edition",
@@ -489,6 +715,12 @@
             "x-go-name": "MaxKeys",
             "name": "max_keys",
             "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "ConfigurationName",
+            "name": "configuration_name",
+            "in": "query"
           }
         ],
         "responses": {
@@ -534,6 +766,12 @@
             "name": "report_name",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ConfigurationName",
+            "name": "configuration_name",
+            "in": "query"
           }
         ],
         "responses": {
@@ -542,6 +780,49 @@
             "schema": {
               "$ref": "#/definitions/MeteringReportURL"
             }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Removes a specific metering report. Only available in Kubermatic Enterprise Edition",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metering",
+          "report"
+        ],
+        "operationId": "deleteMeteringReport",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ReportName",
+            "name": "report_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ConfigurationName",
+            "name": "configuration_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -8541,6 +8822,7 @@
           {
             "type": "string",
             "x-go-name": "Type",
+            "description": "Type is deprecated and not used anymore.",
             "name": "type",
             "in": "query"
           },
@@ -9471,6 +9753,50 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "404": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/presets/{preset_name}/stats": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "summary": "Gets presets stats.",
+        "operationId": "getPresetStats",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PresetStats",
+            "schema": {
+              "$ref": "#/definitions/PresetStats"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -13719,6 +14045,98 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories": {
+      "get": {
+        "description": "Lists available Nutanix categories",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoriesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values": {
+      "get": {
+        "description": "Lists available Nutanix category values for a specific category",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoryValuesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Category",
+            "description": "Category to query the available values for",
+            "name": "category",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryValueList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryValueList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets": {
       "get": {
         "description": "Lists available Nutanix Subnets",
@@ -15021,6 +15439,13 @@
             "schema": {
               "type": "object",
               "properties": {
+                "applications": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Application"
+                  },
+                  "x-go-name": "Applications"
+                },
                 "cluster": {
                   "$ref": "#/definitions/Cluster"
                 },
@@ -15102,6 +15527,13 @@
                     "type": "string"
                   },
                   "x-go-name": "Annotations"
+                },
+                "applications": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Application"
+                  },
+                  "x-go-name": "Applications"
                 },
                 "cluster": {
                   "$ref": "#/definitions/ClusterTemplateInfo"
@@ -18075,6 +18507,126 @@
         }
       }
     },
+    "/api/v2/providers/nutanix/{dc}/categories": {
+      "get": {
+        "description": "List category keys from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategories",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NutanixUsername",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixPassword",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/providers/nutanix/{dc}/categories/{category}/values": {
+      "get": {
+        "description": "List available category values for a specific category from Nutanix",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "nutanix"
+        ],
+        "operationId": "listNutanixCategoryValues",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "description": "KKP Datacenter to use for endpoint",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NutanixUsername",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixPassword",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "NutanixProxyURL",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "Category",
+            "description": "Category to query the available values for",
+            "name": "category",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NutanixCategoryValueList",
+            "schema": {
+              "$ref": "#/definitions/NutanixCategoryValueList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/nutanix/{dc}/clusters": {
       "get": {
         "description": "List clusters from Nutanix",
@@ -18533,6 +19085,7 @@
           {
             "type": "string",
             "x-go-name": "Type",
+            "description": "Type is deprecated and not used anymore.",
             "name": "type",
             "in": "query"
           }
@@ -18930,6 +19483,54 @@
           }
         }
       }
+    },
+    "/providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "networkdefaults"
+        ],
+        "summary": "Retrieves the cluster networking defaults for the given provider and CNI.",
+        "operationId": "getNetworkDefaults",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "CNIPluginType",
+            "name": "cni_plugin_type",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NetworkDefaults",
+            "schema": {
+              "$ref": "#/definitions/NetworkDefaults"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -18973,9 +19574,6 @@
         "clientSecret": {
           "type": "string",
           "x-go-name": "ClientSecret"
-        },
-        "clusterSpec": {
-          "$ref": "#/definitions/AKSClusterSpec"
         },
         "name": {
           "type": "string",
@@ -19266,8 +19864,12 @@
           "x-go-name": "InstanceProfileName"
         },
         "nodePortsAllowedIPRange": {
+          "description": "A CIDR range that will be used to allow access to the node port range in the security group to. Only applies if\nthe security group is generated by KKP and not preexisting.\nIf NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.",
           "type": "string",
           "x-go-name": "NodePortsAllowedIPRange"
+        },
+        "nodePortsAllowedIPRanges": {
+          "$ref": "#/definitions/NetworkRanges"
         },
         "roleARN": {
           "description": "The IAM role, the control plane will use. The control plane will perform an assume-role",
@@ -20305,10 +20907,84 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
-    "AuditLoggingSettings": {
+    "Application": {
+      "description": "Application represents a set of applications that are to be installed for the cluster",
       "type": "object",
       "properties": {
+        "annotations": {
+          "description": "Annotations that can be added to the resource",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ApplicationSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ApplicationRef": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the Application",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "version": {
+          "$ref": "#/definitions/Version"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ApplicationSpec": {
+      "description": "ApplicationSpec represents the specification for an application",
+      "type": "object",
+      "properties": {
+        "applicationRef": {
+          "$ref": "#/definitions/ApplicationRef"
+        },
+        "namespace": {
+          "$ref": "#/definitions/NamespaceSpec"
+        },
+        "values": {
+          "description": "Values describe overrides for manifest-rendering",
+          "type": "object",
+          "x-go-name": "Values"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AuditLoggingSettings": {
+      "type": "object",
+      "title": "AuditLoggingSettings configures audit logging functionality.",
+      "properties": {
         "enabled": {
+          "description": "Enabled will enable or disable audit logging.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
@@ -20319,6 +20995,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "AuditPolicyPreset": {
+      "description": "AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values\nare `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.",
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
@@ -20395,21 +21072,25 @@
     },
     "AzureCloudSpec": {
       "type": "object",
-      "title": "AzureCloudSpec specifies access credentials to Azure cloud.",
+      "title": "AzureCloudSpec defines cloud resource references for Microsoft Azure.",
       "properties": {
         "assignAvailabilitySet": {
+          "description": "Optional: AssignAvailabilitySet determines whether KKP creates and assigns an AvailabilitySet to machines.\nDefaults to `true` internally if not set.",
           "type": "boolean",
           "x-go-name": "AssignAvailabilitySet"
         },
         "availabilitySet": {
+          "description": "An availability set that will be associated with nodes created for this cluster. If this field is set to empty string\nat cluster creation and `AssignAvailabilitySet` is set to `true`, a new availability set will be created and this field\nwill be updated to the generated availability set's name.",
           "type": "string",
           "x-go-name": "AvailabilitySet"
         },
         "clientID": {
+          "description": "ClientID is the service principal used to access Azure.\nCan be read from `credentialsReference` instead.",
           "type": "string",
           "x-go-name": "ClientID"
         },
         "clientSecret": {
+          "description": "ClientSecret is the client secret corresponding to the given service principal.\nCan be read from `credentialsReference` instead.",
           "type": "string",
           "x-go-name": "ClientSecret"
         },
@@ -20420,38 +21101,50 @@
           "$ref": "#/definitions/LBSKU"
         },
         "nodePortsAllowedIPRange": {
+          "description": "A CIDR range that will be used to allow access to the node port range in the security group to. Only applies if\nthe security group is generated by KKP and not preexisting.\nIf NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.",
           "type": "string",
           "x-go-name": "NodePortsAllowedIPRange"
         },
+        "nodePortsAllowedIPRanges": {
+          "$ref": "#/definitions/NetworkRanges"
+        },
         "resourceGroup": {
+          "description": "The resource group that will be used to look up and create resources for the cluster in.\nIf set to empty string at cluster creation, a new resource group will be created and this field will be updated to\nthe generated resource group's name.",
           "type": "string",
           "x-go-name": "ResourceGroup"
         },
         "routeTable": {
+          "description": "The name of a route table associated with the subnet referenced by `subnet`.\nIf set to empty string at cluster creation, a new route table will be created and this field will be updated to\nthe generated route table's name. If no subnet is defined at cluster creation, this field should be empty as well.",
           "type": "string",
           "x-go-name": "RouteTableName"
         },
         "securityGroup": {
+          "description": "The name of a security group associated with the subnet referenced by `subnet`.\nIf set to empty string at cluster creation, a new security group will be created and this field will be updated to\nthe generated security group's name. If no subnet is defined at cluster creation, this field should be empty as well.",
           "type": "string",
           "x-go-name": "SecurityGroup"
         },
         "subnet": {
+          "description": "The name of a subnet in the VNet referenced by `vnet`.\nIf set to empty string at cluster creation, a new subnet will be created and this field will be updated to\nthe generated subnet's name. If no VNet is defined at cluster creation, this field should be empty as well.",
           "type": "string",
           "x-go-name": "SubnetName"
         },
         "subscriptionID": {
+          "description": "SubscriptionID is the Azure Subscription used for this cluster.\nCan be read from `credentialsReference` instead.",
           "type": "string",
           "x-go-name": "SubscriptionID"
         },
         "tenantID": {
+          "description": "TenantID is the Azure Active Directory Tenant used for this cluster.\nCan be read from `credentialsReference` instead.",
           "type": "string",
           "x-go-name": "TenantID"
         },
         "vnet": {
+          "description": "The name of the VNet resource used for setting up networking in.\nIf set to empty string at cluster creation, a new VNet will be created and this field will be updated to\nthe generated VNet's name.",
           "type": "string",
           "x-go-name": "VNetName"
         },
         "vnetResourceGroup": {
+          "description": "Optional: VNetResourceGroup optionally defines a second resource group that will be used for VNet related resources instead.\nIf left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.",
           "type": "string",
           "x-go-name": "VNetResourceGroup"
         }
@@ -20766,6 +21459,7 @@
           "$ref": "#/definitions/CNIPluginType"
         },
         "version": {
+          "description": "Version defines the CNI plugin version to be used. This varies by chosen CNI plugin type.",
           "type": "string",
           "x-go-name": "Version"
         }
@@ -20773,8 +21467,9 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "CNIPluginType": {
+      "description": "Possible values are `canal`, `cilium` or `none`.",
       "type": "string",
-      "title": "CNIPluginType define the type of CNI plugin installed. e.g. Canal.",
+      "title": "CNIPluginType defines the type of CNI plugin installed.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "CNIVersions": {
@@ -20846,7 +21541,7 @@
     },
     "CloudSpec": {
       "type": "object",
-      "title": "CloudSpec mutually stores access data to a cloud provider.",
+      "title": "CloudSpec stores configuration options for a given cloud provider. Provider specs are mutually exclusive.",
       "properties": {
         "alibaba": {
           "$ref": "#/definitions/AlibabaCloudSpec"
@@ -20864,7 +21559,7 @@
           "$ref": "#/definitions/BringYourOwnCloudSpec"
         },
         "dc": {
-          "description": "DatacenterName where the users 'cloud' lives in.",
+          "description": "DatacenterName states the name of a cloud provider \"datacenter\" (defined in `Seed` resources)\nthis cluster should be deployed into.",
           "type": "string",
           "x-go-name": "DatacenterName"
         },
@@ -20893,7 +21588,7 @@
           "$ref": "#/definitions/PacketCloudSpec"
         },
         "providerName": {
-          "description": "ProviderName is the name of the cloud provider used for this cluster.\nThis must match the given provider spec (e.g. if the providerName is\n\"aws\", then the AWSCloudSpec must be set)",
+          "description": "ProviderName is the name of the cloud provider used for this cluster.\nThis must match the given provider spec (e.g. if the providerName is\n\"aws\", then the `aws` field must be set).",
           "type": "string",
           "x-go-name": "ProviderName"
         },
@@ -20963,6 +21658,7 @@
           "$ref": "#/definitions/ClusterStatus"
         },
         "type": {
+          "description": "Type is deprecated and not used anymore.",
           "type": "string",
           "x-go-name": "Type"
         }
@@ -20977,6 +21673,9 @@
           "$ref": "#/definitions/HealthStatus"
         },
         "apiserver": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "applicationController": {
           "$ref": "#/definitions/HealthStatus"
         },
         "cloudProviderInfrastructure": {
@@ -21049,6 +21748,9 @@
           "type": "string",
           "x-go-name": "DNSDomain"
         },
+        "ipFamily": {
+          "$ref": "#/definitions/IPFamily"
+        },
         "ipvs": {
           "$ref": "#/definitions/IPVSConfiguration"
         },
@@ -21056,6 +21758,18 @@
           "description": "KonnectivityEnabled enables konnectivity for controlplane to node network communication.",
           "type": "boolean",
           "x-go-name": "KonnectivityEnabled"
+        },
+        "nodeCidrMaskSizeIPv4": {
+          "description": "NodeCIDRMaskSizeIPv4 is the mask size used to address the nodes within provided IPv4 Pods CIDR.\nIt has to be larger than the provided IPv4 Pods CIDR. Defaults to 24.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSizeIPv4"
+        },
+        "nodeCidrMaskSizeIPv6": {
+          "description": "NodeCIDRMaskSizeIPv6 is the mask size used to address the nodes within provided IPv6 Pods CIDR.\nIt has to be larger than the provided IPv6 Pods CIDR. Defaults to 64.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSizeIPv6"
         },
         "nodeLocalDNSCacheEnabled": {
           "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.\nDefaults to true.",
@@ -21209,6 +21923,9 @@
         "eventRateLimitConfig": {
           "$ref": "#/definitions/EventRateLimitConfig"
         },
+        "kubernetesDashboard": {
+          "$ref": "#/definitions/KubernetesDashboard"
+        },
         "machineNetworks": {
           "description": "MachineNetworks optionally specifies the parameters for IPAM.",
           "type": "array",
@@ -21290,6 +22007,13 @@
             "type": "string"
           },
           "x-go-name": "Annotations"
+        },
+        "applications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Application"
+          },
+          "x-go-name": "Applications"
         },
         "cluster": {
           "$ref": "#/definitions/ClusterTemplateInfo"
@@ -21653,6 +22377,13 @@
       "description": "CreateClusterSpec is the structure that is used to create cluster with its initial node deployment",
       "type": "object",
       "properties": {
+        "applications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Application"
+          },
+          "x-go-name": "Applications"
+        },
         "cluster": {
           "$ref": "#/definitions/Cluster"
         },
@@ -22315,9 +23046,6 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
-        "clusterSpec": {
-          "$ref": "#/definitions/EKSClusterSpec"
-        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -22858,7 +23586,9 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "EventRateLimitConfig": {
+      "description": "More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit",
       "type": "object",
+      "title": "EventRateLimitConfig configures the `EventRateLimit` admission plugin.",
       "properties": {
         "namespace": {
           "$ref": "#/definitions/EventRateLimitConfigItem"
@@ -22897,8 +23627,9 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "ExposeStrategy": {
+      "description": "Possible values are `NodePort`, `LoadBalancer` or `Tunneling` (requires a feature gate).",
       "type": "string",
-      "title": "ExposeStrategy is the strategy to expose the cluster with.",
+      "title": "ExposeStrategy is the strategy used to expose a cluster control plane.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "ExternalCCMMigrationStatus": {
@@ -22970,6 +23701,9 @@
         },
         "gke": {
           "$ref": "#/definitions/GKECloudSpec"
+        },
+        "kubeOne": {
+          "$ref": "#/definitions/KubeOneSpec"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -23083,6 +23817,15 @@
       "type": "object",
       "title": "ExternalClusterSpec defines the external cluster specification.",
       "properties": {
+        "aksclusterSpec": {
+          "$ref": "#/definitions/AKSClusterSpec"
+        },
+        "eksclusterSpec": {
+          "$ref": "#/definitions/EKSClusterSpec"
+        },
+        "gkeclusterSpec": {
+          "$ref": "#/definitions/GKEClusterSpec"
+        },
         "version": {
           "$ref": "#/definitions/Semver"
         }
@@ -23216,8 +23959,12 @@
           "x-go-name": "Network"
         },
         "nodePortsAllowedIPRange": {
+          "description": "A CIDR range that will be used to allow access to the node port range in the firewall rules to.\nIf NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.",
           "type": "string",
           "x-go-name": "NodePortsAllowedIPRange"
+        },
+        "nodePortsAllowedIPRanges": {
+          "$ref": "#/definitions/NetworkRanges"
         },
         "serviceAccount": {
           "type": "string",
@@ -23521,9 +24268,6 @@
     "GKECloudSpec": {
       "type": "object",
       "properties": {
-        "clusterSpec": {
-          "$ref": "#/definitions/GKEClusterSpec"
-        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -24133,6 +24877,11 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "IPFamily": {
+      "description": "+kubebuilder:validation:Enum=\"\";IPv4;IPv4+IPv6",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "IPVSConfiguration": {
       "type": "object",
       "title": "IPVSConfiguration contains ipvs-related configuration details for kube-proxy.",
@@ -24470,6 +25219,273 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
+    "KubeOneAWSCloudSpec": {
+      "type": "object",
+      "title": "KubeOneAWSCloudSpec specifies access data to Amazon Web Services.",
+      "properties": {
+        "accessKeyID": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "x-go-name": "SecretAccessKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneAzureCloudSpec": {
+      "type": "object",
+      "title": "KubeOneAzureCloudSpec specifies access credentials to Azure cloud.",
+      "properties": {
+        "clientID": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneCloudSpec": {
+      "type": "object",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/KubeOneAWSCloudSpec"
+        },
+        "azure": {
+          "$ref": "#/definitions/KubeOneAzureCloudSpec"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/KubeOneDigitalOceanCloudSpec"
+        },
+        "equinix": {
+          "$ref": "#/definitions/KubeOneEquinixCloudSpec"
+        },
+        "gcp": {
+          "$ref": "#/definitions/KubeOneGCPCloudSpec"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/KubeOneHetznerCloudSpec"
+        },
+        "nutanix": {
+          "$ref": "#/definitions/KubeOneNutanixCloudSpec"
+        },
+        "openstack": {
+          "$ref": "#/definitions/KubeOneOpenStackCloudSpec"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/KubeOneVSphereCloudSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneDigitalOceanCloudSpec": {
+      "type": "object",
+      "title": "KubeOneDigitalOceanCloudSpec specifies access data to DigitalOcean.",
+      "properties": {
+        "token": {
+          "description": "Token is used to authenticate with the DigitalOcean API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneEquinixCloudSpec": {
+      "type": "object",
+      "title": "KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "x-go-name": "APIKey"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneGCPCloudSpec": {
+      "type": "object",
+      "title": "KubeOneGCPCloudSpec specifies access data to GCP.",
+      "properties": {
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneHetznerCloudSpec": {
+      "type": "object",
+      "title": "KubeOneHetznerCloudSpec specifies access data to hetzner cloud.",
+      "properties": {
+        "token": {
+          "description": "Token is used to authenticate with the Hetzner cloud API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneNutanixCloudSpec": {
+      "type": "object",
+      "title": "KubeOneNutanixCloudSpec specifies the access data to Nutanix.",
+      "properties": {
+        "allowInsecure": {
+          "type": "boolean",
+          "x-go-name": "AllowInsecure"
+        },
+        "clusterName": {
+          "description": "ClusterName is the Nutanix cluster that this user cluster will be deployed to.\n+optional",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "elementEndpoint": {
+          "description": "PrismElementEndpoint to access Nutanix Prism Element for the CSI driver",
+          "type": "string",
+          "x-go-name": "PrismElementEndpoint"
+        },
+        "elementPassword": {
+          "description": "PrismElementPassword to be used for the CSI driver",
+          "type": "string",
+          "x-go-name": "PrismElementPassword"
+        },
+        "elementUsername": {
+          "description": "PrismElementUsername to be used for the CSI driver",
+          "type": "string",
+          "x-go-name": "PrismElementUsername"
+        },
+        "endpoint": {
+          "description": "Endpoint is the Nutanix API (Prism Central) endpoint",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "port": {
+          "description": "Port is the Nutanix API (Prism Central) port",
+          "type": "string",
+          "x-go-name": "Port"
+        },
+        "proxyURL": {
+          "type": "string",
+          "x-go-name": "ProxyURL"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneOpenStackCloudSpec": {
+      "type": "object",
+      "title": "KubeOneOpenStackCloudSpec specifies access data to an OpenStack cloud.",
+      "properties": {
+        "authURL": {
+          "type": "string",
+          "x-go-name": "AuthURL"
+        },
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "project": {
+          "description": "Project, formally known as tenant.",
+          "type": "string",
+          "x-go-name": "Project"
+        },
+        "projectID": {
+          "description": "ProjectID, formally known as tenantID.",
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneSSHKey": {
+      "type": "object",
+      "title": "SSHKeySpec represents the details of a ssh key.",
+      "properties": {
+        "passphrase": {
+          "type": "string",
+          "x-go-name": "Passphrase"
+        },
+        "privateKey": {
+          "description": "PrivateKey Base64 encoded privateKey",
+          "type": "string",
+          "x-go-name": "PrivateKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneSpec": {
+      "type": "object",
+      "properties": {
+        "cloudSpec": {
+          "$ref": "#/definitions/KubeOneCloudSpec"
+        },
+        "containerRuntime": {
+          "type": "string",
+          "x-go-name": "ContainerRuntime"
+        },
+        "manifest": {
+          "description": "Manifest Base64 encoded manifest",
+          "type": "string",
+          "x-go-name": "Manifest"
+        },
+        "sshKey": {
+          "$ref": "#/definitions/KubeOneSSHKey"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "KubeOneVSphereCloudSpec": {
+      "type": "object",
+      "title": "KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.",
+      "properties": {
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "server": {
+          "type": "string",
+          "x-go-name": "Server"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "KubermaticVersions": {
       "type": "object",
       "title": "KubermaticVersions describes the versions of running Kubermatic components.",
@@ -24481,6 +25497,18 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "KubernetesDashboard": {
+      "type": "object",
+      "title": "KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.",
+      "properties": {
+        "enabled": {
+          "description": "Controls whether kubernetes-dashboard is deployed to the user cluster or not.",
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "Kubevirt": {
       "type": "object",
@@ -24507,9 +25535,20 @@
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
+        "csiKubeconfig": {
+          "type": "string",
+          "x-go-name": "CSIKubeconfig"
+        },
         "kubeconfig": {
           "type": "string",
           "x-go-name": "Kubeconfig"
+        },
+        "preAllocatedDataVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreAllocatedDataVolume"
+          },
+          "x-go-name": "PreAllocatedDataVolumes"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -24520,10 +25559,9 @@
       "required": [
         "cpus",
         "memory",
-        "namespace",
-        "sourceURL",
-        "storageClassName",
-        "pvcSize"
+        "primaryDiskOSImage",
+        "primaryDiskStorageClassName",
+        "primaryDiskSize"
       ],
       "properties": {
         "cpus": {
@@ -24531,37 +25569,63 @@
           "type": "string",
           "x-go-name": "CPUs"
         },
+        "flavorName": {
+          "description": "FlavorName states name of the virtual-machine flavor.",
+          "type": "string",
+          "x-go-name": "FlavorName"
+        },
+        "flavorProfile": {
+          "description": "FlavorProfile states name of virtual-machine profile.",
+          "type": "string",
+          "x-go-name": "FlavorProfile"
+        },
         "memory": {
           "description": "Memory states the memory that kubevirt node will have.",
           "type": "string",
           "x-go-name": "Memory"
         },
-        "namespace": {
-          "description": "Namespace states in which namespace kubevirt node will be provisioned.",
-          "type": "string",
-          "x-go-name": "Namespace"
+        "nodeAffinityPreset": {
+          "$ref": "#/definitions/NodeAffinityPreset"
         },
-        "pvcSize": {
-          "description": "PVCSize states the size of the provisioned pvc per node.",
+        "podAffinityPreset": {
+          "description": "PodAffinityPreset describes pod affinity scheduling rules",
           "type": "string",
-          "x-go-name": "PVCSize"
+          "x-go-name": "PodAffinityPreset"
         },
-        "sourceURL": {
-          "description": "SourceURL states the url from which the imported image will be downloaded.",
+        "podAntiAffinityPreset": {
+          "description": "PodAntiAffinityPreset describes pod anti-affinity scheduling rules",
           "type": "string",
-          "x-go-name": "SourceURL"
+          "x-go-name": "PodAntiAffinityPreset"
         },
-        "storageClassName": {
-          "description": "StorageClassName states the storage class name for the provisioned PVCs.",
+        "primaryDiskOSImage": {
+          "description": "PrimaryDiskOSImage states the source from which the imported image will be downloaded.",
           "type": "string",
-          "x-go-name": "StorageClassName"
+          "x-go-name": "PrimaryDiskOSImage"
+        },
+        "primaryDiskSize": {
+          "description": "PrimaryDiskSize states the size of the provisioned pvc per node.",
+          "type": "string",
+          "x-go-name": "PrimaryDiskSize"
+        },
+        "primaryDiskStorageClassName": {
+          "description": "PrimaryDiskStorageClassName states the storage class name for the provisioned PVCs.",
+          "type": "string",
+          "x-go-name": "PrimaryDiskStorageClassName"
+        },
+        "secondaryDisks": {
+          "description": "SecondaryDisks contains list of secondary-disks",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SecondaryDisks"
+          },
+          "x-go-name": "SecondaryDisks"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "LBSKU": {
-      "description": "+kubebuilder:validation:Enum=standard;basic",
       "type": "string",
+      "title": "Azure SKU for Load Balancers. Possible values are `basic` and `standard`.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "LabelKeyList": {
@@ -24895,6 +25959,14 @@
           "type": "boolean",
           "x-go-name": "Enabled"
         },
+        "reports": {
+          "description": "ReportConfigurations is a map of report configuration definitions.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MeteringReportConfiguration"
+          },
+          "x-go-name": "ReportConfigurations"
+        },
         "storageClassName": {
           "description": "StorageClassName is the name of the storage class that the metering tool uses to save processed files before\nexporting it to s3 bucket. Default value is kubermatic-fast.",
           "type": "string",
@@ -24928,6 +26000,24 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "MeteringReportConfiguration": {
+      "description": "MeteringReportConfiguration holds report configuration",
+      "type": "object",
+      "properties": {
+        "interval": {
+          "description": "Interval defines the number of days consulted in the metering report.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Interval"
+        },
+        "schedule": {
+          "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",
+          "type": "string",
+          "x-go-name": "Schedule"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
     },
     "MeteringReportURL": {
       "description": "ReportURL represent an S3 pre signed URL to download a report",
@@ -25040,6 +26130,89 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "NamespaceSpec": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations of the namespace",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "create": {
+          "description": "Create defines whether the namespace should be created if it does not exist.",
+          "type": "boolean",
+          "x-go-name": "Create"
+        },
+        "labels": {
+          "description": "Labels of the namespace",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "name": {
+          "description": "Name is the namespace to deploy the Application into",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NetworkDefaults": {
+      "type": "object",
+      "title": "NetworkDefaults contains cluster network default settings.",
+      "properties": {
+        "ipv4": {
+          "$ref": "#/definitions/NetworkDefaultsIPFamily"
+        },
+        "ipv6": {
+          "$ref": "#/definitions/NetworkDefaultsIPFamily"
+        },
+        "nodeLocalDNSCacheEnabled": {
+          "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.",
+          "type": "boolean",
+          "x-go-name": "NodeLocalDNSCacheEnabled"
+        },
+        "proxyMode": {
+          "description": "ProxyMode defines the default kube-proxy mode (\"ipvs\" / \"iptables\" / \"ebpf\").",
+          "type": "string",
+          "x-go-name": "ProxyMode"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "NetworkDefaultsIPFamily": {
+      "type": "object",
+      "title": "NetworkDefaultsIPFamily contains cluster network default settings for an IP family.",
+      "properties": {
+        "nodeCidrMaskSize": {
+          "description": "NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NodeCIDRMaskSize"
+        },
+        "nodePortsAllowedIPRange": {
+          "description": "NodePortsAllowedIPRange defines the default IP range from which access to NodePort services is allowed for applicable cloud providers.",
+          "type": "string",
+          "x-go-name": "NodePortsAllowedIPRange"
+        },
+        "podsCidr": {
+          "description": "PodsCIDR contains the default network range from which POD networks are allocated.",
+          "type": "string",
+          "x-go-name": "PodsCIDR"
+        },
+        "servicesCidr": {
+          "description": "ServicesCIDR contains the default network range from which service VIPs are allocated.",
+          "type": "string",
+          "x-go-name": "ServicesCIDR"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "NetworkRanges": {
       "type": "object",
       "title": "NetworkRanges represents ranges of network addresses.",
@@ -25110,6 +26283,24 @@
           "type": "string",
           "x-go-name": "Type",
           "example": "ExternalIP, InternalIP, InternalDNS, ExternalDNS"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NodeAffinityPreset": {
+      "type": "object",
+      "properties": {
+        "Key": {
+          "type": "string"
+        },
+        "Type": {
+          "type": "string"
+        },
+        "Values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -25294,11 +26485,6 @@
       "properties": {
         "httpProxy": {
           "$ref": "#/definitions/ProxyValue"
-        },
-        "hyperkubeImage": {
-          "description": "Optional: The hyperkube image to use. Currently only Flatcar\nmakes use of this option.",
-          "type": "string",
-          "x-go-name": "HyperkubeImage"
         },
         "insecureRegistries": {
           "description": "Optional: These image registries will be configured as insecure\non the container runtime.",
@@ -25582,7 +26768,7 @@
           "x-go-name": "SsSegmentedIscsiNetwork"
         },
         "storageContainer": {
-          "description": "Optional: defaults to \"Default\"\n+optional",
+          "description": "Optional: defaults to \"SelfServiceContainer\"\n+optional",
           "type": "string",
           "x-go-name": "StorageContainer"
         },
@@ -25593,6 +26779,52 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "NutanixCategory": {
+      "type": "object",
+      "title": "NutanixCategory represents a Nutanix category.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "systemDefined": {
+          "type": "boolean",
+          "x-go-name": "SystemDefined"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryList": {
+      "type": "array",
+      "title": "NutanixCategoryList represents an array of Nutanix categories.",
+      "items": {
+        "$ref": "#/definitions/NutanixCategory"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryValue": {
+      "type": "object",
+      "title": "NutanixCategoryValue represents a Nutanix category value.",
+      "properties": {
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NutanixCategoryValueList": {
+      "type": "array",
+      "title": "NutanixCategoryValueList represents an array of Nutanix category values.",
+      "items": {
+        "$ref": "#/definitions/NutanixCategoryValue"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "NutanixCloudSpec": {
       "type": "object",
@@ -25796,6 +27028,7 @@
     },
     "OPAIntegrationSettings": {
       "type": "object",
+      "title": "OPAIntegrationSettings configures the usage of OPA (Open Policy Agent) Gatekeeper inside the user cluster.",
       "properties": {
         "auditResources": {
           "$ref": "#/definitions/ResourceRequirements"
@@ -25804,17 +27037,17 @@
           "$ref": "#/definitions/ResourceRequirements"
         },
         "enabled": {
-          "description": "Enabled is the flag for enabling OPA integration",
+          "description": "Enables OPA Gatekeeper integration.",
           "type": "boolean",
           "x-go-name": "Enabled"
         },
         "experimentalEnableMutation": {
-          "description": "Enable mutation",
+          "description": "Optional: Enables experimental mutation in Gatekeeper.",
           "type": "boolean",
           "x-go-name": "ExperimentalEnableMutation"
         },
         "webhookTimeoutSeconds": {
-          "description": "WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.\nBy default 10 seconds.",
+          "description": "The timeout in seconds that is set for the Gatekeeper validating webhook admission review calls.\nDefaults to `10` (seconds).",
           "type": "integer",
           "format": "int32",
           "x-go-name": "WebhookTimeoutSeconds"
@@ -26038,14 +27271,28 @@
           "type": "string",
           "x-go-name": "FloatingIPPool"
         },
+        "ipv6SubnetID": {
+          "description": "IPv6SubnetID holds the ID of the subnet used for IPv6 networking.\nIf not provided, a new subnet will be created if IPv6 is enabled.\n+optional",
+          "type": "string",
+          "x-go-name": "IPv6SubnetID"
+        },
+        "ipv6SubnetPool": {
+          "description": "IPv6SubnetPool holds the name of the subnet pool used for creating new IPv6 subnets.\nIf not provided, the default IPv6 subnet pool will be used.\n+optional",
+          "type": "string",
+          "x-go-name": "IPv6SubnetPool"
+        },
         "network": {
           "description": "Network holds the name of the internal network\nWhen specified, all worker nodes will be attached to this network. If not specified, a network, subnet \u0026 router will be created\n\nNote that the network is internal if the \"External\" field is set to false",
           "type": "string",
           "x-go-name": "Network"
         },
         "nodePortsAllowedIPRange": {
+          "description": "A CIDR range that will be used to allow access to the node port range in the security group to. Only applies if\nthe security group is generated by KKP and not preexisting.\nIf NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.",
           "type": "string",
           "x-go-name": "NodePortsAllowedIPRange"
+        },
+        "nodePortsAllowedIPRanges": {
+          "$ref": "#/definitions/NetworkRanges"
         },
         "password": {
           "type": "string",
@@ -26554,6 +27801,28 @@
       },
       "x-go-package": "k8s.io/api/rbac/v1"
     },
+    "PreAllocatedDataVolume": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "size": {
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "storageClass": {
+          "type": "string",
+          "x-go-name": "StorageClass"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
     "Preset": {
       "description": "Preset represents a preset",
       "type": "object",
@@ -26694,6 +27963,23 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+    },
+    "PresetStats": {
+      "description": "PresetStats represents a preset statistics",
+      "type": "object",
+      "properties": {
+        "associatedClusterTemplates": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "AssociatedClusterTemplates"
+        },
+        "associatedClusters": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "AssociatedClusters"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Project": {
       "description": "Project is a top-level container for a set of resources",
@@ -26998,6 +28284,11 @@
           "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
           "type": "string",
           "x-go-name": "ID"
+        },
+        "invalidated": {
+          "description": "Invalidated indicates if the token must be regenerated",
+          "type": "boolean",
+          "x-go-name": "Invalidated"
         },
         "name": {
           "description": "Name represents human readable name for the resource",
@@ -27309,6 +28600,20 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "SecondaryDisks": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "storageClassName": {
+          "type": "string",
+          "x-go-name": "StorageClassName"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "SecretReference": {
       "description": "SecretReference represents a Secret Reference. It has enough information to retrieve secret\nin any namespace\n+structType=atomic",
       "type": "object",
@@ -27568,6 +28873,11 @@
           "type": "string",
           "x-go-name": "ID"
         },
+        "invalidated": {
+          "description": "Invalidated indicates if the token must be regenerated",
+          "type": "boolean",
+          "x-go-name": "Invalidated"
+        },
         "name": {
           "description": "Name represents human readable name for the resource",
           "type": "string",
@@ -27793,13 +29103,17 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "UpdateWindow": {
+      "description": "This is only applied to cluster nodes using Flatcar Linux.\nThe reference time for this is the node system time and might differ from\nthe user's timezone, which needs to be considered when configuring a window.",
       "type": "object",
+      "title": "UpdateWindow allows defining windows for maintenance tasks related to OS updates.",
       "properties": {
         "length": {
+          "description": "Sets the length of the update window beginning with the start time. This needs to be a valid duration\nas parsed by Go's time.ParseDuration (https://pkg.go.dev/time#ParseDuration), e.g. `2h`.",
           "type": "string",
           "x-go-name": "Length"
         },
         "start": {
+          "description": "Sets the start time of the update window. This can be a time of day in 24h format, e.g. `22:30`,\nor a day of week plus a time of day, for example `Mon 21:00`. Only short names for week days are supported,\ni.e. `Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat` and `Sun`.",
           "type": "string",
           "x-go-name": "Start"
         }
@@ -27981,6 +29295,11 @@
           "type": "string",
           "x-go-name": "StoragePolicy"
         },
+        "tagCategoryID": {
+          "description": "This is category for the machine deployment tags",
+          "type": "string",
+          "x-go-name": "TagCategoryID"
+        },
         "username": {
           "description": "Username is the vSphere user name.\n+optional",
           "type": "string",
@@ -28081,9 +29400,37 @@
           "format": "int64",
           "x-go-name": "Memory"
         },
+        "tags": {
+          "description": "Additional metadata to set",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VSphereTag"
+          },
+          "x-go-name": "Tags"
+        },
         "template": {
           "type": "string",
           "x-go-name": "Template"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "VSphereTag": {
+      "type": "object",
+      "title": "VSphereTag represents vsphere tag.",
+      "properties": {
+        "categoryID": {
+          "description": "CategoryID when empty the default category will be used.",
+          "type": "string",
+          "x-go-name": "CategoryID"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -28128,9 +29475,9 @@
       "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
     },
     "Version": {
+      "description": "Version wraps semverlib.Version. It is needed because kubebuilder does not accept structs with non-tagged fields, even if they have custom marshallers\nWith this the CRD resource will have Version as string but operator code can work directly with the semverlib.Version struct\n(taken from https://github.com/kubernetes-sigs/controller-tools/blob/master/pkg/crd/testdata/cronjob_types.go#L283)",
       "type": "object",
-      "title": "Version represents a single semantic version.",
-      "x-go-package": "github.com/Masterminds/semver/v3"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
     },
     "VersionList": {
       "description": "VersionList represents a list of versions",
@@ -28241,6 +29588,9 @@
           "description": "Name is human readable name for the external cluster",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ExternalClusterSpec"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"

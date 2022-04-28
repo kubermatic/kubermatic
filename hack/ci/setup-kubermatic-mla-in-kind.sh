@@ -147,10 +147,17 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+
+nginx:
+  controller:
+    replicaCount: 1
 EOF
 
 # append custom Dex configuration
 cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
+
+# prepare CRDs
+copy_crds_to_chart
 
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \

@@ -92,6 +92,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					Name: "cluster-xyz",
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
@@ -110,6 +113,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							SecurityGroups: "kubernetes-cluster-xyz",
@@ -131,6 +137,62 @@ func TestInitializeCloudProvider(t *testing.T) {
 			},
 		},
 		{
+			name: "Create all - dual stack",
+			dc:   &kubermaticv1.DatacenterSpecOpenstack{},
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-xyz",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16", "fd00::/64"}},
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+				},
+			},
+			resources: []ostesting.Resource{&ostesting.ExternalNetwork},
+			wantCluster: kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-xyz",
+					Finalizers: []string{
+						SecurityGroupCleanupFinalizer,
+						NetworkCleanupFinalizer,
+						SubnetCleanupFinalizer,
+						IPv6SubnetCleanupFinalizer,
+						RouterCleanupFinalizer,
+						RouterSubnetLinkCleanupFinalizer,
+						RouterIPv6SubnetLinkCleanupFinalizer,
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16", "fd00::/64"}},
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{
+							SecurityGroups: "kubernetes-cluster-xyz",
+							FloatingIPPool: "external-network",
+							Network:        "kubernetes-cluster-xyz",
+							SubnetID:       ostesting.SubnetID,
+							IPv6SubnetID:   ostesting.SubnetID,
+							RouterID:       ostesting.RouterID,
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantRequests: map[ostesting.Request]int{
+				{Method: http.MethodPost, Path: ostesting.SecurityGroupsEndpoint}:                        1,
+				{Method: http.MethodPost, Path: ostesting.NetworksEndpoint}:                              1,
+				{Method: http.MethodPost, Path: ostesting.SubnetsEndpoint}:                               2,
+				{Method: http.MethodGet, Path: ostesting.SubnetPoolsEndpoint}:                            1,
+				{Method: http.MethodPost, Path: ostesting.RoutersEndpoint}:                               1,
+				{Method: http.MethodPut, Path: ostesting.AddRouterInterfaceEndpoint(ostesting.RouterID)}: 2,
+			},
+		},
+		{
 			name: "Create nothing",
 			dc:   &kubermaticv1.DatacenterSpecOpenstack{},
 			cluster: &kubermaticv1.Cluster{
@@ -138,6 +200,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					Name: "cluster-xyz",
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							SecurityGroups: "kubernetes-cluster-xyz",
@@ -166,6 +231,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					Name: "cluster-xyz",
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							SecurityGroups: "kubernetes-cluster-xyz",
@@ -199,6 +267,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					Name: "cluster-xyz",
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							Network: "kubernetes-cluster-xyz",
@@ -221,6 +292,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							SecurityGroups: "kubernetes-cluster-xyz",
@@ -249,6 +323,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					Name: "cluster-xyz",
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							Network:  "kubernetes-cluster-xyz",
@@ -271,6 +348,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							SecurityGroups: "kubernetes-cluster-xyz",
@@ -299,6 +379,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					Name: "cluster-xyz",
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							Network:  "kubernetes-cluster-xyz",
@@ -320,6 +403,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							SecurityGroups: "kubernetes-cluster-xyz",
@@ -388,7 +474,7 @@ func TestGetCredentialsForCluster(t *testing.T) {
 	}{
 		// there are 3 kinds of auth mode for openstack which are mutualy exclusive
 		//   * domain + token
-		//   * domain + ApplicationCredential (ApplicationCredentialID and ApplicationCredentialSecret)
+		//   * ApplicationCredential (ApplicationCredentialID and ApplicationCredentialSecret)
 		//   * domain + user (ie  Username, Password, (Project or Tenant) and (ProjectID or tenantID))
 		{
 			name:    "valid spec with values - auth with token",
@@ -406,15 +492,15 @@ func TestGetCredentialsForCluster(t *testing.T) {
 		},
 		{
 			name:    "valid spec with values - auth with applicationCredential",
-			spec:    &kubermaticv1.OpenstackCloudSpec{Domain: "domain", ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
+			spec:    &kubermaticv1.OpenstackCloudSpec{ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
 			mock:    test.ShouldNotBeCalled,
-			want:    &resources.OpenstackCredentials{Domain: "domain", ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
+			want:    &resources.OpenstackCredentials{ApplicationCredentialID: "app_id", ApplicationCredentialSecret: "app_secret"},
 			wantErr: false,
 		},
 		{
 			name:    "valid spec with CredentialsReference - auth with token",
 			spec:    &kubermaticv1.OpenstackCloudSpec{UseToken: false, CredentialsReference: &providerconfig.GlobalSecretKeySelector{ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"}, Key: "data"}},
-			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: "the_token"}),
+			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: "the_token", resources.OpenstackApplicationCredentialID: ""}),
 			want:    &resources.OpenstackCredentials{Domain: "domain-value", Token: "the_token"},
 			wantErr: false,
 		},
@@ -436,14 +522,14 @@ func TestGetCredentialsForCluster(t *testing.T) {
 			name:    "valid spec with CredentialsReference - auth with applicationCredential",
 			spec:    &kubermaticv1.OpenstackCloudSpec{UseToken: false, CredentialsReference: &providerconfig.GlobalSecretKeySelector{ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"}, Key: "data"}},
 			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: ""}),
-			want:    &resources.OpenstackCredentials{Domain: "domain-value", ApplicationCredentialID: "applicationCredentialID-value", ApplicationCredentialSecret: "applicationCredentialSecret-value"},
+			want:    &resources.OpenstackCredentials{ApplicationCredentialID: "applicationCredentialID-value", ApplicationCredentialSecret: "applicationCredentialSecret-value"},
 			wantErr: false,
 		},
 
 		{
 			name:    "invalid spec CredentialsReference - missing Domain",
 			spec:    &kubermaticv1.OpenstackCloudSpec{CredentialsReference: &providerconfig.GlobalSecretKeySelector{ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"}, Key: "data"}},
-			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackDomain: test.MissingKeyErr(resources.OpenstackDomain)}),
+			mock:    test.DefaultOrOverride(map[string]interface{}{resources.OpenstackToken: "", resources.OpenstackApplicationCredentialID: "", resources.OpenstackDomain: test.MissingKeyErr(resources.OpenstackDomain)}),
 			want:    &resources.OpenstackCredentials{},
 			wantErr: true,
 		},

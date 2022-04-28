@@ -11,7 +11,9 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// ExposeStrategy ExposeStrategy is the strategy to expose the cluster with.
+// ExposeStrategy ExposeStrategy is the strategy used to expose a cluster control plane.
+//
+// Possible values are `NodePort`, `LoadBalancer` or `Tunneling` (requires a feature gate).
 //
 // swagger:model ExposeStrategy
 type ExposeStrategy string

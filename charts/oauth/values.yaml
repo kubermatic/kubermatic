@@ -14,8 +14,8 @@
 
 dex:
   image:
-    repository: "docker.io/dexidp/dex"
-    tag: "v2.30.0"
+    repository: "ghcr.io/dexidp/dex"
+    tag: "v2.31.1"
   replicas: 2
   # this options allows setting custom envvars in the dex container
   # this list is directly handed to the container spec
@@ -50,7 +50,7 @@ dex:
 #    config:
 #      clientID: some-client-id
 #      clientSecret: some-client-secret
-#      redirectURI: https://dev.kubermatic.io/dex/callback
+#      redirectURI: https://kkp.example.com/dex/callback
 #      orgs:
 #      - name: kubermatic
 #
@@ -60,9 +60,9 @@ dex:
 #    secret: very-secret
 #    RedirectURIs:
 #    - http://localhost:8000
-#    - https://dev.kubermatic.io
+#    - https://kkp.example.com
 #    - http://localhost:8000/projects
-#    - https://dev.kubermatic.io/projects
+#    - https://kkp.example.com/projects
 #
 #  staticPasswords:
 #  - email: "admin@example.com"

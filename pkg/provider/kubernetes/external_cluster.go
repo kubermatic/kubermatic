@@ -26,6 +26,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -215,11 +216,7 @@ func (p *ExternalClusterProvider) GetClient(ctx context.Context, cluster *kuberm
 	if err != nil {
 		return nil, err
 	}
-	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	cfg, err := clientcmd.Load(kubeconfig)
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
 	if err != nil {
 		return nil, err
 	}
@@ -232,11 +229,7 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	if err != nil {
 		return nil, err
 	}
-	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
-	if err != nil {
-		return nil, err
-	}
-	cfg, err := clientcmd.Load(kubeconfig)
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
 	if err != nil {
 		return nil, err
 	}
@@ -260,9 +253,26 @@ func (p *ExternalClusterProvider) GetVersion(ctx context.Context, cluster *kuber
 	return v, nil
 }
 
-func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error {
+func (p *ExternalClusterProvider) ValidateKubeconfig(ctx context.Context, kubeconfig []byte) error {
+	cfg, err := clientcmd.Load(kubeconfig)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	cli, err := p.GenerateClient(cfg)
+	if err != nil {
+		return fmt.Errorf("cannot connect to the kubernetes cluster: %w", err)
+	}
+	// check if kubeconfig can automatically authenticate and get resources.
+	if err := cli.List(ctx, &corev1.PodList{}); err != nil {
+		return fmt.Errorf("can not retrieve data, check your kubeconfig: %w", err)
+	}
+	return nil
+}
+
+func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig []byte) error {
 	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, cluster, map[string][]byte{
-		resources.ExternalClusterKubeconfig: []byte(kubeconfig),
+		resources.ExternalClusterKubeconfig: kubeconfig,
 	})
 	if err != nil {
 		return err
@@ -464,4 +474,50 @@ func (p *ExternalClusterProvider) CreateOrUpdateCredentialSecretForCluster(ctx c
 
 func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
 	return p.clientPrivileged
+}
+
+func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, encodedManifest string, externalCluster *kubermaticv1.ExternalCluster) error {
+	secretName := resources.KubeOneManifestSecretName
+	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
+	if err != nil {
+		return err
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, secretName, map[string][]byte{
+		resources.KubeOneManifest: manifest,
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.ManifestReference = *credentialRef
+
+	return nil
+}
+
+func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error {
+	secretName := resources.KubeOneSSHSecretName
+	privateKey, err := base64.StdEncoding.DecodeString(sshKey.PrivateKey)
+	if err != nil {
+		return err
+	}
+	data := map[string][]byte{
+		resources.KubeOneSSHPrivateKey: privateKey,
+	}
+	if sshKey.Passphrase != "" {
+		data[resources.KubeOneSSHPassphrase] = []byte(sshKey.Passphrase)
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialKubeOneSecret(ctx, p.clientPrivileged, externalCluster, secretName, data)
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	externalCluster.Spec.CloudSpec.KubeOne.SSHReference = *credentialRef
+
+	return nil
 }

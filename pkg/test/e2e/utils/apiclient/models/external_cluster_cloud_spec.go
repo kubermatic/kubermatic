@@ -26,6 +26,9 @@ type ExternalClusterCloudSpec struct {
 
 	// gke
 	Gke *GKECloudSpec `json:"gke,omitempty"`
+
+	// kube one
+	KubeOne *KubeOneSpec `json:"kubeOne,omitempty"`
 }
 
 // Validate validates this external cluster cloud spec
@@ -44,6 +47,10 @@ func (m *ExternalClusterCloudSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateKubeOne(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -59,6 +66,8 @@ func (m *ExternalClusterCloudSpec) validateAks(formats strfmt.Registry) error {
 		if err := m.Aks.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
 			}
 			return err
 		}
@@ -76,6 +85,8 @@ func (m *ExternalClusterCloudSpec) validateEks(formats strfmt.Registry) error {
 		if err := m.Eks.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eks")
 			}
 			return err
 		}
@@ -93,6 +104,27 @@ func (m *ExternalClusterCloudSpec) validateGke(formats strfmt.Registry) error {
 		if err := m.Gke.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gke")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gke")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterCloudSpec) validateKubeOne(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubeOne) { // not required
+		return nil
+	}
+
+	if m.KubeOne != nil {
+		if err := m.KubeOne.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubeOne")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubeOne")
 			}
 			return err
 		}
@@ -117,6 +149,10 @@ func (m *ExternalClusterCloudSpec) ContextValidate(ctx context.Context, formats 
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateKubeOne(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -129,6 +165,8 @@ func (m *ExternalClusterCloudSpec) contextValidateAks(ctx context.Context, forma
 		if err := m.Aks.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
 			}
 			return err
 		}
@@ -143,6 +181,8 @@ func (m *ExternalClusterCloudSpec) contextValidateEks(ctx context.Context, forma
 		if err := m.Eks.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("eks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("eks")
 			}
 			return err
 		}
@@ -157,6 +197,24 @@ func (m *ExternalClusterCloudSpec) contextValidateGke(ctx context.Context, forma
 		if err := m.Gke.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gke")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gke")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ExternalClusterCloudSpec) contextValidateKubeOne(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.KubeOne != nil {
+		if err := m.KubeOne.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubeOne")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubeOne")
 			}
 			return err
 		}

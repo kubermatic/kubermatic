@@ -17,7 +17,13 @@ limitations under the License.
 package kubernetes
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/go-test/deep"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGenerateToken(t *testing.T) {
@@ -34,5 +40,97 @@ func TestGenerateToken(t *testing.T) {
 
 	if err := ValidateKubernetesToken(tokenA); err != nil {
 		t.Errorf("generated token is malformed: %v", err)
+	}
+}
+
+func makeRef(s string) metav1.OwnerReference {
+	parts := strings.SplitN(s, "/", 3)
+	name := ""
+	if len(parts) >= 3 {
+		name = parts[2]
+	}
+
+	return metav1.OwnerReference{
+		APIVersion: parts[0],
+		Kind:       parts[1],
+		Name:       name,
+	}
+}
+
+func makeRefs(s ...string) []metav1.OwnerReference {
+	result := []metav1.OwnerReference{}
+
+	for _, i := range s {
+		result = append(result, makeRef(i))
+	}
+
+	return result
+}
+
+func TestRemoveOwnerReferences(t *testing.T) {
+	startRefs := makeRefs("core/pod/a", "core/pod/2", "core/configmap/a", "core/configmap/x")
+
+	testcases := []struct {
+		name         string
+		toRemove     []metav1.OwnerReference
+		expectedRefs []metav1.OwnerReference
+	}{
+		{
+			name:         "nop",
+			toRemove:     makeRefs(),
+			expectedRefs: startRefs,
+		},
+		{
+			name:         "a simple test case",
+			toRemove:     makeRefs("core/pod/a", "core/configmap/x"),
+			expectedRefs: makeRefs("core/pod/2", "core/configmap/a"),
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			fakeObj := &corev1.Pod{}
+			fakeObj.SetOwnerReferences(startRefs)
+
+			RemoveOwnerReferences(fakeObj, testcase.toRemove...)
+
+			if diff := deep.Equal(fakeObj.OwnerReferences, testcase.expectedRefs); diff != nil {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestRemoveOwnerReferenceKinds(t *testing.T) {
+	startRefs := makeRefs("core/pod/a", "core/pod/2", "core/configmap/a", "core/configmap/x")
+
+	testcases := []struct {
+		name         string
+		toRemove     []metav1.OwnerReference
+		expectedRefs []metav1.OwnerReference
+	}{
+		{
+			name:         "nop",
+			toRemove:     makeRefs(),
+			expectedRefs: startRefs,
+		},
+		{
+			name:         "name should be ignored",
+			toRemove:     makeRefs("core/pod/ignoreme"),
+			expectedRefs: makeRefs("core/configmap/a", "core/configmap/x"),
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			fakeObj := &corev1.Pod{}
+			fakeObj.SetOwnerReferences(startRefs)
+
+			RemoveOwnerReferenceKinds(fakeObj, testcase.toRemove...)
+
+			if diff := deep.Equal(fakeObj.OwnerReferences, testcase.expectedRefs); diff != nil {
+				t.Fatal(diff)
+			}
+		})
 	}
 }

@@ -107,12 +107,13 @@ loki:
   replicas: 1
 
   resources:
-   limits:
-     cpu: "1"
-     memory: 700Mi
-   requests:
-     cpu: 300m
-     memory: 256Mi
+    limits:
+      cpu: "1"
+      # Increased based on real world usage where Loki crashes on longer time periods
+      memory: 1Gi
+    requests:
+      cpu: 300m
+      memory: 256Mi
 
   service:
     type: ClusterIP

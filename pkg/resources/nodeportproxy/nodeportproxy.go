@@ -17,7 +17,6 @@ limitations under the License.
 package nodeportproxy
 
 import (
-	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -32,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -153,99 +151,53 @@ type nodePortProxyData interface {
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data nodePortProxyData) error {
-	image := data.ImageRegistry(resources.RegistryQuay) + "/" + imageName + ":" + data.NodePortProxyTag()
-	namespace := data.Cluster().Status.NamespaceName
-	if namespace == "" {
-		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", data.Cluster().Name)
+func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+	return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+		return sa, nil
 	}
-
-	err := reconciling.ReconcileServiceAccounts(
-		ctx, []reconciling.NamedServiceAccountCreatorGetter{serviceAccount()}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to ensure ServiceAccount: %w", err)
-	}
-
-	err = reconciling.ReconcileRoles(
-		ctx, []reconciling.NamedRoleCreatorGetter{role()}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to ensure Role: %w", err)
-	}
-
-	err = reconciling.ReconcileRoleBindings(
-		ctx, []reconciling.NamedRoleBindingCreatorGetter{roleBinding(namespace)}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to ensure RoleBinding: %w", err)
-	}
-
-	deployments := []reconciling.NamedDeploymentCreatorGetter{deploymentEnvoy(image, data),
-		deploymentLBUpdater(image)}
-	err = reconciling.ReconcileDeployments(ctx, deployments, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to reconcile Deployments: %w", err)
-	}
-
-	err = reconciling.ReconcilePodDisruptionBudgets(
-		ctx, []reconciling.NamedPodDisruptionBudgetCreatorGetter{podDisruptionBudget()}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to reconcile PodDisruptionBudget: %w", err)
-	}
-	return nil
 }
 
-func serviceAccount() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
-		return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			return sa, nil
+func RoleCreator() (string, reconciling.RoleCreator) {
+	return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+		r.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"endpoints", "services"},
+				Verbs:     []string{"list", "get", "watch"},
+			},
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"services"},
+				ResourceNames: []string{resources.FrontLoadBalancerServiceName},
+				Verbs:         []string{"update"},
+			},
 		}
+		return r, nil
 	}
 }
 
-func role() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
-		return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Rules = []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"endpoints", "services"},
-					Verbs:     []string{"list", "get", "watch"},
-				},
-				{
-					APIGroups:     []string{""},
-					Resources:     []string{"services"},
-					ResourceNames: []string{resources.FrontLoadBalancerServiceName},
-					Verbs:         []string{"update"},
-				},
-			}
-			return r, nil
+func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
+	return name, func(r *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+		r.Subjects = []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: name,
+			},
 		}
-	}
-}
-
-func roleBinding(ns string) reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
-		return name, func(r *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			r.Subjects = []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      name,
-					Namespace: ns,
-				},
-			}
-			r.RoleRef = rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "Role",
-				Name:     name,
-			}
-			return r, nil
+		r.RoleRef = rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     name,
 		}
+		return r, nil
 	}
 }
 
-func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
 	volumeMountNameEnvoyConfig := "envoy-config"
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Name = resources.NodePortProxyEnvoyDeploymentName
 			d.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -258,7 +210,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "copy-envoy-config",
-					Image: image,
+					Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
 					Command: []string{
 						"/bin/cp",
 						"/envoy.yaml",
@@ -273,7 +225,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "envoy-manager",
-				Image: image,
+				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
 				Command: []string{"/envoy-manager",
 					"-listen-address=:8001",
 					"-envoy-node-name=$(PODNAME)",
@@ -368,15 +320,16 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 	}
 }
 
-func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter {
-	name := name + "-lb-updater"
+func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
+	deploymentName := fmt.Sprintf("%s-lb-updater", name)
 	return func() (string, reconciling.DeploymentCreator) {
-		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Labels = resources.BaseAppLabels(name, nil)
+		return deploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Name = deploymentName
+			d.Labels = resources.BaseAppLabels(deploymentName, nil)
 			d.Spec.Replicas = resources.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabels(name, nil)
+				MatchLabels: resources.BaseAppLabels(deploymentName, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabels(deploymentName, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
@@ -390,7 +343,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 					"-expose-annotation-key=" + NodePortProxyExposeNamespacedAnnotationKey,
 					"-namespaced=true",
 				},
-				Image: image,
+				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
 				Env: []corev1.EnvVar{{
 					Name: "MY_NAMESPACE",
 					ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
@@ -409,7 +362,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 	}
 }
 
-func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	maxUnavailable := intstr.FromInt(1)
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name + "-envoy", func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
@@ -441,10 +394,23 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 					},
 				}
 			}
+
+			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
+				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
+					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
+				}
+			}
+
+			// Copy custom annotations if supplied by seed spec.
+			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				s.Annotations = data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations
+			}
+
 			if data.Cluster().Spec.Cloud.AWS != nil {
 				if s.Annotations == nil {
 					s.Annotations = make(map[string]string)
 				}
+
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
 				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
 

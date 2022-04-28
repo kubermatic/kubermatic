@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -54,9 +55,10 @@ const (
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
 
-	KubermaticOperatorChartName   = "kubermatic-operator"
-	KubermaticOperatorReleaseName = KubermaticOperatorChartName
-	KubermaticOperatorNamespace   = "kubermatic"
+	KubermaticOperatorChartName      = "kubermatic-operator"
+	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
+	KubermaticOperatorReleaseName    = KubermaticOperatorChartName
+	KubermaticOperatorNamespace      = "kubermatic"
 
 	TelemetryChartName   = "telemetry"
 	TelemetryReleaseName = TelemetryChartName
@@ -200,6 +202,11 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")
 
+	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
+		sublogger.Info("Headless installation requested, skipping.")
+		return nil
+	}
+
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "oauth"))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
@@ -237,6 +244,16 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
+	sublogger.Info("Migrating UserSSHKeys…")
+	if err := s.migrateUserSSHKeyProjects(ctx, kubeClient, sublogger, opt); err != nil {
+		return fmt.Errorf("failed to migrate keys: %w", err)
+	}
+
+	sublogger.Info("Migrating Users…")
+	if err := s.migrateUserProjects(ctx, kubeClient, sublogger, opt); err != nil {
+		return fmt.Errorf("failed to migrate users: %w", err)
+	}
+
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
@@ -266,6 +283,11 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 
 	// install VPA CRDs
 	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io")); err != nil {
+		return err
+	}
+
+	// install OSM CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io")); err != nil {
 		return err
 	}
 
@@ -311,6 +333,11 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	logger.Info("📡 Determining DNS settings…")
 	sublogger := log.Prefix(logger, "   ")
+
+	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
+		sublogger.Info("Headless installation requested, skipping.")
+		return
+	}
 
 	if opt.KubermaticConfiguration.Spec.Ingress.Disable {
 		sublogger.Info("Ingress creation has been disabled in the KubermaticConfiguration, skipping.")

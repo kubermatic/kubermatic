@@ -18,11 +18,11 @@ package exposestrategy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
@@ -58,12 +58,12 @@ type AgentConfig struct {
 func (a *AgentConfig) DeployAgentPod(ctx context.Context) error {
 	agentCm := a.newAgentConfigMap(a.Namespace)
 	if err := a.Client.Create(ctx, agentCm); err != nil {
-		return errors.Wrap(err, "failed to create agent config map")
+		return fmt.Errorf("failed to create agent config map: %w", err)
 	}
 	a.AgentConfigMap = agentCm
 	agentPod := a.newAgentPod(a.Namespace)
 	if err := a.Client.Create(ctx, agentPod); err != nil {
-		return errors.Wrap(err, "failed to create agent pod")
+		return fmt.Errorf("failed to create agent pod: %w", err)
 	}
 
 	if !e2eutils.CheckPodsRunningReady(ctx, a.Client, a.Namespace, []string{agentPod.Name}, agentDeployTimeout) {
@@ -74,7 +74,7 @@ func (a *AgentConfig) DeployAgentPod(ctx context.Context) error {
 		Namespace: agentPod.Namespace,
 		Name:      agentPod.Name,
 	}, agentPod); err != nil {
-		return errors.Wrap(err, "failed to get agent pod")
+		return fmt.Errorf("failed to get agent pod: %w", err)
 	}
 	a.AgentPod = agentPod
 	return nil

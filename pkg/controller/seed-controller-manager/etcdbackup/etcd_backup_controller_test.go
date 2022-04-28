@@ -57,17 +57,23 @@ func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
 }
 
 func genTestCluster() *kubermaticv1.Cluster {
+	version := *semver.NewSemverOrDie("1.16.3")
+
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie("1.16.3"),
+			Version: version,
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "testnamespace",
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Apiserver: kubermaticv1.HealthStatusUp,
+			},
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: version,
+				Apiserver:    version,
 			},
 		},
 	}

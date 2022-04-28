@@ -100,6 +100,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
+	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryption")); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
 	return allErrs
 }
 
@@ -205,6 +209,10 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, err)
 	}
 
+	if errs := validateEncryptionUpdate(newCluster, oldCluster); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
 	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("typeMeta"), "type meta cannot be changed"))
 	}
@@ -237,47 +245,40 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 			fmt.Sprintf("%d services CIDRs must be provided", len(n.Pods.CIDRBlocks))),
 		)
 	}
+
 	// Verify that provided CIDRs are well-formed
-	for i, podsCIDR := range n.Pods.CIDRBlocks {
-		addr, _, err := net.ParseCIDR(podsCIDR)
-		if err != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), podsCIDR,
-				fmt.Sprintf("couldn't parse pod CIDR %q: %v", podsCIDR, err)))
-		}
-		// At this point, KKP only supports IPv4 as the primary CIDR and IPv6 as the secondary CIDR.
-		// The first provided CIDR has to be IPv4
-		if i == 0 && addr.To4() == nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), podsCIDR,
-				fmt.Sprintf("invalid address family for primary pod CIDR %q: has to be IPv4", podsCIDR)))
-		}
-		// The second provided CIDR has to be IPv6
-		if i == 1 && addr.To4() != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), podsCIDR,
-				fmt.Sprintf("invalid address family for secondary pod CIDR %q: has to be IPv6", podsCIDR)))
-		}
+	if err := validateClusterCIDRBlocks(n.Pods.CIDRBlocks, fldPath.Child("pods", "cidrBlocks")); err != nil {
+		allErrs = append(allErrs, err)
 	}
-	for i, servicesCIDR := range n.Services.CIDRBlocks {
-		addr, _, err := net.ParseCIDR(servicesCIDR)
-		if err != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(i), servicesCIDR,
-				fmt.Sprintf("couldn't parse service CIDR %q: %v", servicesCIDR, err)))
-		}
-		// At this point, KKP only supports IPv4 as the primary CIDR and IPv6 as the secondary CIDR.
-		// The first provided CIDR has to be IPv4
-		if i == 0 && addr.To4() == nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(i), servicesCIDR,
-				fmt.Sprintf("invalid address family for primary service CIDR %q: has to be IPv4", servicesCIDR)))
-		}
-		// The second provided CIDR has to be IPv6
-		if i == 1 && addr.To4() != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("services", "cidrBlocks").Index(i), servicesCIDR,
-				fmt.Sprintf("invalid address family for secondary service CIDR %q: has to be IPv6", servicesCIDR)))
-		}
+	if err := validateClusterCIDRBlocks(n.Services.CIDRBlocks, fldPath.Child("services", "cidrBlocks")); err != nil {
+		allErrs = append(allErrs, err)
 	}
+
+	// Verify that IP family is consistent with provided pod CIDRs
+	if (n.IPFamily == kubermaticv1.IPFamilyIPv4) && len(n.Pods.CIDRBlocks) != 1 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
+			fmt.Sprintf("IP family %q does not match with provided pods CIDRs %q", n.IPFamily, n.Pods.CIDRBlocks)),
+		)
+	}
+	if n.IPFamily == kubermaticv1.IPFamilyDualStack && len(n.Pods.CIDRBlocks) != 2 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
+			fmt.Sprintf("IP family %q does not match with provided pods CIDRs %q", n.IPFamily, n.Pods.CIDRBlocks)),
+		)
+	}
+
+	// Verify that node CIDR mask sizes are longer than the mask size of pod CIDRs
+	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv4, n.Pods.GetIPv4CIDR(), fldPath.Child("nodeCidrMaskSizeIPv4")); err != nil {
+		allErrs = append(allErrs, err)
+	}
+	if err := validateNodeCIDRMaskSize(n.NodeCIDRMaskSizeIPv6, n.Pods.GetIPv6CIDR(), fldPath.Child("nodeCidrMaskSizeIPv6")); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
 	// TODO Remove all hardcodes before allowing arbitrary domain names.
 	if n.DNSDomain != "cluster.local" {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("dnsDomain"), n.DNSDomain, "dnsDomain must be 'cluster.local'"))
 	}
+
 	if n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode && n.ProxyMode != resources.EBPFProxyMode {
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("proxyMode"), n.ProxyMode,
 			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode, resources.EBPFProxyMode}))
@@ -294,6 +295,101 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, cni *
 	}
 
 	return allErrs
+}
+
+func validateEncryptionConfiguration(spec *kubermaticv1.ClusterSpec, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if spec.EncryptionConfiguration != nil && spec.EncryptionConfiguration.Enabled {
+		if enabled, ok := spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]; !ok || !enabled {
+			allErrs = append(allErrs, field.Forbidden(fieldPath.Child("enabled"),
+				fmt.Sprintf("cannot enable encryption configuration if feature gate '%s' is not set", kubermaticv1.ClusterFeatureEncryptionAtRest)))
+		}
+
+		// TODO: Update with implementations of other encryption providers (KMS)
+
+		if spec.EncryptionConfiguration.Secretbox == nil {
+			allErrs = append(allErrs, field.Required(fieldPath.Child("secretbox"),
+				"exactly one encryption provider (secretbox, kms) needs to be configured"))
+		} else {
+			for i, key := range spec.EncryptionConfiguration.Secretbox.Keys {
+				childPath := fieldPath.Child("secretbox", "keys").Index(i)
+				if key.Name == "" {
+					allErrs = append(allErrs, field.Required(childPath.Child("name"),
+						"secretbox key name is required"))
+				}
+
+				if key.Value == "" && key.SecretRef == nil {
+					allErrs = append(allErrs, field.Required(childPath,
+						"either 'value' or 'secretRef' must be set"))
+				}
+
+				if key.Value != "" && key.SecretRef != nil {
+					allErrs = append(allErrs, field.Invalid(childPath, key,
+						"'value' and 'secretRef' cannot be set at the same time"))
+				}
+			}
+		}
+
+		// END TODO
+	}
+
+	return allErrs
+}
+
+func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kubermaticv1.Cluster) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if enabled, ok := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]; ok && enabled {
+		if oldCluster.Status.Encryption != nil {
+			if oldCluster.Status.Encryption.Phase != "" && oldCluster.Status.Encryption.Phase != kubermaticv1.ClusterEncryptionPhaseActive {
+				if !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration, newCluster.Spec.EncryptionConfiguration) {
+					allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "encryptionConfiguration"),
+						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase)))
+				}
+			}
+		}
+	}
+
+	return allErrs
+}
+
+func validateClusterCIDRBlocks(cidrBlocks []string, fldPath *field.Path) *field.Error {
+	for i, cidr := range cidrBlocks {
+		addr, _, err := net.ParseCIDR(cidr)
+		if err != nil {
+			return field.Invalid(fldPath.Index(i), cidr, fmt.Sprintf("couldn't parse CIDR %q: %v", cidr, err))
+		}
+		// At this point, KKP only supports IPv4 as the primary CIDR and IPv6 as the secondary CIDR.
+		// The first provided CIDR has to be IPv4
+		if i == 0 && addr.To4() == nil {
+			return field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), cidr,
+				fmt.Sprintf("invalid address family for primary CIDR %q: has to be IPv4", cidr))
+		}
+		// The second provided CIDR has to be IPv6
+		if i == 1 && addr.To4() != nil {
+			return field.Invalid(fldPath.Child("pods", "cidrBlocks").Index(i), cidr,
+				fmt.Sprintf("invalid address family for secondary CIDR %q: has to be IPv6", cidr))
+		}
+	}
+	return nil
+}
+
+func validateNodeCIDRMaskSize(nodeCIDRMaskSize *int32, podCIDR string, fldPath *field.Path) *field.Error {
+	if podCIDR == "" || nodeCIDRMaskSize == nil {
+		return nil
+	}
+	_, podCIDRNet, err := net.ParseCIDR(podCIDR)
+	if err != nil {
+		return field.Invalid(fldPath, podCIDR, fmt.Sprintf("couldn't parse CIDR %q: %v", podCIDR, err))
+	}
+	podCIDRMaskSize, _ := podCIDRNet.Mask.Size()
+
+	if int32(podCIDRMaskSize) >= *nodeCIDRMaskSize {
+		return field.Invalid(fldPath, nodeCIDRMaskSize,
+			fmt.Sprintf("node CIDR mask size (%d) must be longer than the mask size of the pod CIDR (%q)", *nodeCIDRMaskSize, podCIDR))
+	}
+	return nil
 }
 
 func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec, parentFieldPath *field.Path) field.ErrorList {
@@ -467,6 +563,9 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 			return err
 		}
 	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
+	}
 
 	var errs []error
 	if spec.Project == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" && spec.CredentialsReference.Namespace == "" {
@@ -502,6 +601,9 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 			return err
 		}
 	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -516,6 +618,9 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
+	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -587,6 +692,9 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
 			return err
 		}
+	}
+	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
+		return err
 	}
 
 	return nil
@@ -725,11 +833,7 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 }
 
 func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
-	supportedContainerRuntimes := map[string]struct{}{
-		"docker":     {},
-		"containerd": {},
-	}
-	if _, isSupported := supportedContainerRuntimes[spec.ContainerRuntime]; !isSupported {
+	if !sets.NewString("docker", "containerd").Has(spec.ContainerRuntime) {
 		return fmt.Errorf("container runtime not supported: %s", spec.ContainerRuntime)
 	}
 
@@ -783,6 +887,14 @@ func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) *field.Err
 
 func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
+
+	if oldC.IPFamily != "" {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.IPFamily,
+			oldC.IPFamily,
+			fldPath.Child("ipFamily"),
+		)...)
+	}
 
 	if len(oldC.Pods.CIDRBlocks) != 0 {
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(

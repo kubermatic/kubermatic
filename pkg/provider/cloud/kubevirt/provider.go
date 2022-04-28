@@ -22,6 +22,9 @@ import (
 	"errors"
 	"fmt"
 
+	kubevirtv1 "kubevirt.io/api/core/v1"
+	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -102,7 +105,13 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	return cluster, nil
+	err = reconcilePresets(ctx, cluster.Status.NamespaceName, client)
+	if err != nil {
+		return cluster, err
+	}
+	err = reconcilePreAllocatedDataVolumes(ctx, cluster, client)
+
+	return cluster, err
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -139,6 +148,13 @@ func (k *kubevirt) GetClientWithRestConfigForCluster(cluster *kubermaticv1.Clust
 
 	client, restConfig, err := NewClientWithRestConfig(kubeconfig)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := kubevirtv1.AddToScheme(client.Scheme()); err != nil {
+		return nil, nil, err
+	}
+	if err = cdiv1beta1.AddToScheme(client.Scheme()); err != nil {
 		return nil, nil, err
 	}
 

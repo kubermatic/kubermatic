@@ -213,6 +213,13 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			DiskSizeGB: config.DiskSizeGB,
 			Template:   config.TemplateVMName.Value,
 		}
+		for _, v := range config.Tags {
+			cloudSpec.VSphere.Tags = append(cloudSpec.VSphere.Tags, apiv1.VSphereTag{
+				Name:        v.Name,
+				Description: v.Description,
+				CategoryID:  v.CategoryID,
+			})
+		}
 	case providerconfig.CloudProviderEquinixMetal:
 		config := &equinixmetal.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
@@ -246,12 +253,28 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		}
 
 		cloudSpec.Kubevirt = &apiv1.KubevirtNodeSpec{
-			CPUs:             config.CPUs.Value,
-			Memory:           config.Memory.Value,
-			Namespace:        config.Namespace.Value,
-			SourceURL:        config.SourceURL.Value,
-			StorageClassName: config.StorageClassName.Value,
-			PVCSize:          config.PVCSize.Value,
+			FlavorName:                  config.VirtualMachine.Flavor.Name.Value,
+			FlavorProfile:               config.VirtualMachine.Flavor.Profile.Value,
+			CPUs:                        config.VirtualMachine.Template.CPUs.Value,
+			Memory:                      config.VirtualMachine.Template.Memory.Value,
+			PrimaryDiskOSImage:          config.VirtualMachine.Template.PrimaryDisk.OsImage.Value,
+			PrimaryDiskStorageClassName: config.VirtualMachine.Template.PrimaryDisk.StorageClassName.Value,
+			PrimaryDiskSize:             config.VirtualMachine.Template.PrimaryDisk.Size.Value,
+			PodAffinityPreset:           config.Affinity.PodAffinityPreset.Value,
+			PodAntiAffinityPreset:       config.Affinity.PodAntiAffinityPreset.Value,
+			NodeAffinityPreset: apiv1.NodeAffinityPreset{
+				Type: config.Affinity.NodeAffinityPreset.Type.Value,
+				Key:  config.Affinity.NodeAffinityPreset.Key.Value,
+			},
+		}
+		cloudSpec.Kubevirt.SecondaryDisks = make([]apiv1.SecondaryDisks, 0, len(config.VirtualMachine.Template.SecondaryDisks))
+		for _, sd := range config.VirtualMachine.Template.SecondaryDisks {
+			secondaryDisk := apiv1.SecondaryDisks{Size: sd.Size.Value, StorageClassName: sd.StorageClassName.Value}
+			cloudSpec.Kubevirt.SecondaryDisks = append(cloudSpec.Kubevirt.SecondaryDisks, secondaryDisk)
+		}
+		cloudSpec.Kubevirt.NodeAffinityPreset.Values = make([]string, 0, len(config.Affinity.NodeAffinityPreset.Values))
+		for _, np := range config.Affinity.NodeAffinityPreset.Values {
+			cloudSpec.Kubevirt.NodeAffinityPreset.Values = append(cloudSpec.Kubevirt.NodeAffinityPreset.Values, np.Value)
 		}
 	case providerconfig.CloudProviderAlibaba:
 		config := &alibaba.RawConfig{}

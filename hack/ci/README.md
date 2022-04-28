@@ -79,6 +79,11 @@ This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the e2e tests for the
 API.
 
+## run-cilium-e2e-test.sh
+
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to master.
+
 ## run-conformance-tests.sh
 
 After having set up a local KKP installation, this script is then
@@ -94,6 +99,16 @@ Kubernetes conformance.
 
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the etcd-launcher tests.
+
+## run-konnectivity-e2e-test.sh
+
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to master.
+
+## run-mla-e2e-tests.sh
+
+This script sets up a local KKP installation in kind, deploys a
+couple of test Presets and Users and then runs the MLA e2e tests.
 
 ## run-offline-test.sh
 
@@ -117,7 +132,41 @@ version for the user-ssh-key-agent.
 
 TBD
 
+## setup-kubermatic-backups-in-kind.sh
+
+This script creates a local kind cluster, compiles the KKP binaries,
+creates all Docker images and loads them into the kind cluster,
+generates a custom CA and a certificate for minio to be used as backup location,
+then installs KKP using the KKP installer + operator and sets up a
+single shared master/seed system.
+This serves as the precursor for all other tests.
+
+This script should be sourced, not called, so callers get the variables
+it sets.
+
 ## setup-kubermatic-in-kind.sh
+
+This script creates a local kind cluster, compiles the KKP binaries,
+creates all Docker images and loads them into the kind cluster,
+then installs KKP using the KKP installer + operator and sets up a
+single shared master/seed system.
+This serves as the precursor for all other tests.
+
+This script should be sourced, not called, so callers get the variables
+it sets.
+
+## setup-kubermatic-mla-in-kind.sh
+
+This script creates a local kind cluster, compiles the KKP binaries,
+creates all Docker images and loads them into the kind cluster,
+then installs KKP using the KKP installer + operator and sets up a
+single shared master/seed system.
+This serves as the precursor for all other tests.
+
+This script should be sourced, not called, so callers get the variables
+it sets.
+
+## setup-mla.sh
 
 This script creates a local kind cluster, compiles the KKP binaries,
 creates all Docker images and loads them into the kind cluster,
@@ -158,6 +207,12 @@ files, like CRD examples and the Prometheus runbook.
 Runs as a postsubmit and refreshes the gocache by downloading the
 previous version, compiling everything and then tar'ing up the
 Go cache again.
+
+## verify.sh
+
+This script is used as a presubmit to check that Helm chart versions
+have been updated if charts have been modified. Without the Prow env
+vars, this script won't run properly.
 
 ## verify-user-cluster-prometheus-configs.sh
 

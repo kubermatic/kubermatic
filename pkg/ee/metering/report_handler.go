@@ -65,10 +65,15 @@ func ListReports(ctx context.Context, req interface{}, seedsGetter provider.Seed
 		return nil, err
 	}
 
+	prefix := ReportPrefix
+	if request.ConfigurationName != "" {
+		prefix = request.ConfigurationName + "/" + prefix
+	}
+
 	listOptions := minio.ListObjectsOptions{
 		MaxKeys:    request.MaxKeys,
 		StartAfter: request.StartAfter,
-		Prefix:     ReportPrefix,
+		Prefix:     prefix,
 	}
 
 	for _, seed := range seedsMap {
@@ -98,6 +103,11 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 		return "", k8cerrors.NewBadRequest("invalid request")
 	}
 
+	reportPath := request.ReportName
+	if request.ConfigurationName != "" {
+		reportPath = request.ConfigurationName + "/" + reportPath
+	}
+
 	seedsMap, err := seedsGetter()
 	if err != nil {
 		return "", err
@@ -113,12 +123,13 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 		if err != nil {
 			return "", err
 		}
-		_, err = mc.StatObject(ctx, bucket, request.ReportName, minio.StatObjectOptions{})
+
+		_, err = mc.StatObject(ctx, bucket, reportPath, minio.StatObjectOptions{})
 		if err != nil {
 			return "", err
 		}
 
-		presignedURL, err := mc.PresignedGetObject(ctx, bucket, request.ReportName, urlValidTime, nil)
+		presignedURL, err := mc.PresignedGetObject(ctx, bucket, reportPath, urlValidTime, nil)
 		if err != nil {
 			return "", err
 		}
@@ -128,6 +139,48 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 	}
 
 	return "", k8cerrors.New(404, "report not found")
+}
+
+func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	if seedsGetter == nil || seedClientGetter == nil {
+		return errors.New("parameter seedsGetter nor seedClientGetter cannot be nil")
+	}
+
+	request, ok := req.(deleteReportReq)
+	if !ok {
+		return k8cerrors.NewBadRequest("invalid request")
+	}
+
+	reportPath := request.ReportName
+	if request.ConfigurationName != "" {
+		reportPath = request.ConfigurationName + "/" + reportPath
+	}
+
+	seedsMap, err := seedsGetter()
+	if err != nil {
+		return err
+	}
+
+	for _, seed := range seedsMap {
+		seedClient, err := seedClientGetter(seed)
+		if err != nil {
+			return err
+		}
+
+		mc, bucket, err := getS3DataFromSeed(ctx, seedClient)
+		if err != nil {
+			return err
+		}
+
+		err = mc.RemoveObject(ctx, bucket, reportPath, minio.RemoveObjectOptions{})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return k8cerrors.New(404, "report not found")
 }
 
 func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, seedClient ctrlruntimeclient.Client) ([]apiv1.MeteringReport, error) {
@@ -199,6 +252,8 @@ type listReportReq struct {
 	StartAfter string `json:"start_after"`
 	// in: query
 	MaxKeys int `json:"max_keys"`
+	// in: query
+	ConfigurationName string `json:"configuration_name"`
 }
 
 // swagger:parameters getMeteringReport
@@ -206,6 +261,17 @@ type getReportReq struct {
 	// in: path
 	// required: true
 	ReportName string `json:"report_name"`
+	// in: query
+	ConfigurationName string `json:"configuration_name"`
+}
+
+// swagger:parameters deleteMeteringReport
+type deleteReportReq struct {
+	// in: path
+	// required: true
+	ReportName string `json:"report_name"`
+	// in: query
+	ConfigurationName string `json:"configuration_name"`
 }
 
 func DecodeListMeteringReportReq(r *http.Request) (interface{}, error) {
@@ -225,6 +291,8 @@ func DecodeListMeteringReportReq(r *http.Request) (interface{}, error) {
 
 	req.StartAfter = r.URL.Query().Get("start_after")
 
+	req.ConfigurationName = r.URL.Query().Get("configuration_name")
+
 	return req, nil
 }
 
@@ -235,6 +303,21 @@ func DecodeGetMeteringReportReq(r *http.Request) (interface{}, error) {
 	if req.ReportName == "" {
 		return nil, k8cerrors.NewBadRequest("`report_name` cannot be empty")
 	}
+
+	req.ConfigurationName = r.URL.Query().Get("configuration_name")
+
+	return req, nil
+}
+
+func DecodeDeleteMeteringReportReq(r *http.Request) (interface{}, error) {
+	var req deleteReportReq
+	req.ReportName = mux.Vars(r)["report_name"]
+
+	if req.ReportName == "" {
+		return nil, k8cerrors.NewBadRequest("`report_name` cannot be empty")
+	}
+
+	req.ConfigurationName = r.URL.Query().Get("configuration_name")
 
 	return req, nil
 }

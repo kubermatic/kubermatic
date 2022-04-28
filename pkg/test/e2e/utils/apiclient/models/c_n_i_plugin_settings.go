@@ -18,7 +18,7 @@ import (
 // swagger:model CNIPluginSettings
 type CNIPluginSettings struct {
 
-	// version
+	// Version defines the CNI plugin version to be used. This varies by chosen CNI plugin type.
 	Version string `json:"version,omitempty"`
 
 	// type
@@ -47,6 +47,8 @@ func (m *CNIPluginSettings) validateType(formats strfmt.Registry) error {
 	if err := m.Type.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("type")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("type")
 		}
 		return err
 	}
@@ -73,6 +75,8 @@ func (m *CNIPluginSettings) contextValidateType(ctx context.Context, formats str
 	if err := m.Type.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("type")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("type")
 		}
 		return err
 	}

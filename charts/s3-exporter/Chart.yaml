@@ -21,7 +21,7 @@ keywords:
   - prometheus
   - s3
   - minio
-home: https://www.kubermatic.io/
+home: https://www.kubermatic.com/
 sources:
   - https://github.com/kubermatic/kubermatic
 maintainers:

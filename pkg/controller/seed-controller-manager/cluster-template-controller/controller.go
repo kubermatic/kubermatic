@@ -186,6 +186,13 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	}
 	partialCluster.Spec = template.Spec
 
+	if instance.Annotations != nil && instance.Annotations[kubermaticv1.ClusterTemplateInstanceOwnerAnnotationKey] != "" {
+		if template.Annotations == nil {
+			template.Annotations = map[string]string{}
+		}
+		template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = instance.Annotations[kubermaticv1.ClusterTemplateInstanceOwnerAnnotationKey]
+	}
+
 	newCluster := genNewCluster(template, instance, r.workerName)
 	newStatus := newCluster.Status.DeepCopy()
 

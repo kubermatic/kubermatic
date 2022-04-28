@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"syscall"
 
@@ -89,7 +91,7 @@ func availableUsersPaths() ([]string, error) {
 		}
 		fileInfo, err := os.Stat(path)
 		if err != nil {
-			if os.IsNotExist(err) {
+			if errors.Is(err, fs.ErrNotExist) {
 				continue
 			}
 
@@ -121,7 +123,7 @@ func createDirIfNotExist(path string, uid, gid int) error {
 		return nil
 	}
 
-	if !os.IsNotExist(err) {
+	if !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("failed describing file info: %w", err)
 	}
 
@@ -142,7 +144,7 @@ func createFileIfNotExist(path string, uid, gid int) error {
 		return nil
 	}
 
-	if !os.IsNotExist(err) {
+	if !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("failed describing file info: %w", err)
 	}
 

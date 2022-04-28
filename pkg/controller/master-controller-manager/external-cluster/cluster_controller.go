@@ -18,7 +18,6 @@ package externalcluster
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -75,12 +74,9 @@ func Add(
 	if err != nil {
 		return err
 	}
+
 	// Watch for changes to ExternalCluster
-	err = c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -266,11 +262,8 @@ func (r *Reconciler) createOrUpdateGKEKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	err = r.updateKubeconfigSecret(ctx, config, cluster)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return r.updateKubeconfigSecret(ctx, config, cluster)
 }
 
 func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
@@ -283,11 +276,8 @@ func (r *Reconciler) createOrUpdateEKSKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	err = r.updateKubeconfigSecret(ctx, config, cluster)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return r.updateKubeconfigSecret(ctx, config, cluster)
 }
 
 func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
@@ -300,11 +290,8 @@ func (r *Reconciler) createOrUpdateAKSKubeconfig(ctx context.Context, cluster *k
 	if err != nil {
 		return err
 	}
-	err = r.updateKubeconfigSecret(ctx, config, cluster)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return r.updateKubeconfigSecret(ctx, config, cluster)
 }
 
 func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Config, cluster *kubermaticv1.ExternalCluster) error {
@@ -327,7 +314,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 	}
 
 	secretData := map[string][]byte{
-		resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
+		resources.ExternalClusterKubeconfig: kubeconfig,
 	}
 
 	// update if already exists

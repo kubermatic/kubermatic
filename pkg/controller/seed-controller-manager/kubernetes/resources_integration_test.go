@@ -85,7 +85,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	crdInstallOpts := envtest.CRDInstallOptions{
 		Paths: []string{
 			"../../../../charts/kubermatic-operator/crd/k8s.io",
-			"../../../../charts/kubermatic-operator/crd/k8c.io",
+			"../../../../charts/kubermatic-operator/crd/operatingsystemmanager.k8c.io",
+			"../../../validation/openapi/crd/k8c.io",
 		},
 		ErrorIfPathMissing: true,
 	}
@@ -193,6 +194,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			OpenVPN:                      kubermaticv1.HealthStatusUp,
 			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+		},
+		Versions: kubermaticv1.ClusterVersionsStatus{
+			ControlPlane:      *semver.NewSemverOrDie("1.22.5"),
+			Apiserver:         *semver.NewSemverOrDie("1.22.5"),
+			ControllerManager: *semver.NewSemverOrDie("1.22.5"),
+			Scheduler:         *semver.NewSemverOrDie("1.22.5"),
 		},
 	}
 

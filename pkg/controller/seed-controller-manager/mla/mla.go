@@ -57,6 +57,40 @@ var (
 	}
 )
 
+type grafanaClientProvider func(ctx context.Context) (*grafanasdk.Client, error)
+
+func newGrafanaClientProvider(client ctrlruntimeclient.Client, httpClient *http.Client, secretName string, grafanaURL string, enabled bool) (grafanaClientProvider, error) {
+	split := strings.Split(secretName, "/")
+	if n := len(split); n != 2 {
+		return nil, fmt.Errorf("splitting value of %q didn't yield two but %d results", secretName, n)
+	}
+
+	return func(ctx context.Context) (*grafanasdk.Client, error) {
+		secret := corev1.Secret{}
+		if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
+			if !enabled {
+				return nil, nil
+			}
+
+			return nil, fmt.Errorf("failed to get Grafana Secret: %w", err)
+		}
+
+		adminName, ok := secret.Data[GrafanaUserKey]
+		if !ok {
+			return nil, fmt.Errorf("Grafana Secret %q does not contain %s key", secretName, GrafanaUserKey)
+		}
+
+		adminPass, ok := secret.Data[GrafanaPasswordKey]
+		if !ok {
+			return nil, fmt.Errorf("Grafana Secret %q does not contain %s key", secretName, GrafanaPasswordKey)
+		}
+
+		grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
+
+		return grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
+	}, nil
+}
+
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
 // * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
@@ -87,44 +121,19 @@ func Add(
 ) error {
 	log = log.Named(ControllerName)
 
-	split := strings.Split(grafanaSecret, "/")
-	if n := len(split); n != 2 {
-		return fmt.Errorf("splitting value of %q didn't yield two but %d results",
-			grafanaSecret, n)
-	}
-	secret := corev1.Secret{}
-	client, err := ctrlruntimeclient.New(mgr.GetConfig(), ctrlruntimeclient.Options{})
-	if err != nil {
-		return err
-	}
-	if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
-		if !mlaEnabled {
-			return nil // do not return an error if MLA is disabled (e.g. if MLA is not installed in Seed)
-		}
-		return fmt.Errorf("failed to get Grafana Secret: %w", err)
-	}
-	adminName, ok := secret.Data[GrafanaUserKey]
-	if !ok {
-		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, GrafanaUserKey)
-	}
-	adminPass, ok := secret.Data[GrafanaPasswordKey]
-	if !ok {
-		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, GrafanaPasswordKey)
-	}
-	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
 	httpClient := &http.Client{Timeout: 15 * time.Second}
-	grafanaClient, err := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
+	clientProvider, err := newGrafanaClientProvider(mgr.GetClient(), httpClient, grafanaSecret, grafanaURL, mlaEnabled)
 	if err != nil {
-		return fmt.Errorf("unable to initialize grafana client")
+		return fmt.Errorf("failed to prepare Grafana client: %w", err)
 	}
 
-	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
-	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, mlaNamespace, grafanaClient)
+	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, clientProvider)
+	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
-	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
-	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
+	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), clientProvider, mlaNamespace, log, overwriteRegistry)
+	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, clientProvider, httpClient, grafanaURL, grafanaHeader)
 	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL, mlaNamespace)
-	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, grafanaClient)
+	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
 	ratelimitCortexController := newRatelimitCortexController(mgr.GetClient(), log, mlaNamespace)
 	ruleGroupSyncController := newRuleGroupSyncController(mgr.GetClient(), log, mlaNamespace)
 	if mlaEnabled {

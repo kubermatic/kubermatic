@@ -366,7 +366,7 @@ func (r addReq) Validate() error {
 	return fmt.Errorf("invalid group name %s", r.Body.Group)
 }
 
-// DecodeAddReq  decodes an HTTP request into addReq.
+// DecodeAddReq decodes an HTTP request into addReq.
 func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req addReq
 
@@ -383,7 +383,7 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeUpdateReq  decodes an HTTP request into updateReq.
+// DecodeUpdateReq decodes an HTTP request into updateReq.
 func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req updateReq
 
@@ -406,7 +406,7 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeDeleteeReq  decodes an HTTP request into deleteReq.
+// DecodeDeleteeReq decodes an HTTP request into deleteReq.
 func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteReq
 

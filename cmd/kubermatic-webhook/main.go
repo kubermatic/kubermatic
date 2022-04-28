@@ -25,18 +25,24 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
+	applicationdefinitionvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/validation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
+	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
 	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
+	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
 	usersshkeymutation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/mutation"
+	usersshkeyvalidation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/validation"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -131,6 +137,14 @@ func main() {
 	}
 
 	// /////////////////////////////////////////
+	// setup KubermaticConfiguration webhooks
+
+	configValidator := kubermaticconfigurationvalidation.NewValidator()
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.KubermaticConfiguration{}).WithValidator(configValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup KubermaticConfiguration validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
 	// setup Cluster webhooks
 
 	// validation webhook can already use ctrl-runtime boilerplate
@@ -148,9 +162,27 @@ func main() {
 	addonmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
+	// setup MLAAdminSetting webhooks
+
+	mlaadminsettingmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup User webhooks
+
+	userValidator := uservalidation.NewValidator(mgr.GetClient())
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.User{}).WithValidator(userValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup user validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks
 
-	usersshkeymutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+	usersshkeymutation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
+
+	userSSHKeyValidator := usersshkeyvalidation.NewValidator(mgr.GetClient())
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.UserSSHKey{}).WithValidator(userSSHKeyValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup user SSH key validation webhook", zap.Error(err))
+	}
 
 	// /////////////////////////////////////////
 	// setup OSM webhooks
@@ -160,6 +192,9 @@ func main() {
 
 	// Setup the validation admission handler for OperatingSystemProfile CRDs
 	ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+
+	// Setup the validation admission handler for ApplicationDefinition CRDs
+	applicationdefinitionvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// Here we go!
@@ -179,6 +214,9 @@ func addAPIs(dst *runtime.Scheme, log *zap.SugaredLogger) {
 	}
 	if err := osmv1alpha1.AddToScheme(dst); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := appkubermaticv1.AddToScheme(dst); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", appkubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 }
 

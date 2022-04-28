@@ -22,6 +22,8 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	kubevirtv1 "kubevirt.io/api/core/v1"
+	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
 
 // NamespaceCreator defines an interface to create/update Namespaces
@@ -1317,6 +1319,117 @@ func ReconcileAppKubermaticV1ApplicationDefinitions(ctx context.Context, namedGe
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appkubermaticv1.ApplicationDefinition{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ApplicationDefinition %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubeVirtV1VirtualMachineInstancePresetCreator defines an interface to create/update VirtualMachineInstancePresets
+type KubeVirtV1VirtualMachineInstancePresetCreator = func(existing *kubevirtv1.VirtualMachineInstancePreset) (*kubevirtv1.VirtualMachineInstancePreset, error)
+
+// NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter = func() (name string, create KubeVirtV1VirtualMachineInstancePresetCreator)
+
+// KubeVirtV1VirtualMachineInstancePresetObjectWrapper adds a wrapper so the KubeVirtV1VirtualMachineInstancePresetCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubeVirtV1VirtualMachineInstancePresetObjectWrapper(create KubeVirtV1VirtualMachineInstancePresetCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubevirtv1.VirtualMachineInstancePreset))
+		}
+		return create(&kubevirtv1.VirtualMachineInstancePreset{})
+	}
+}
+
+// ReconcileKubeVirtV1VirtualMachineInstancePresets will create and update the KubeVirtV1VirtualMachineInstancePresets coming from the passed KubeVirtV1VirtualMachineInstancePresetCreator slice
+func ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx context.Context, namedGetters []NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubeVirtV1VirtualMachineInstancePresetObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubevirtv1.VirtualMachineInstancePreset{}, false); err != nil {
+			return fmt.Errorf("failed to ensure VirtualMachineInstancePreset %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticV1PresetCreator defines an interface to create/update Presets
+type KubermaticV1PresetCreator = func(existing *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+
+// NamedKubermaticV1PresetCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1PresetCreatorGetter = func() (name string, create KubermaticV1PresetCreator)
+
+// KubermaticV1PresetObjectWrapper adds a wrapper so the KubermaticV1PresetCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1PresetObjectWrapper(create KubermaticV1PresetCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.Preset))
+		}
+		return create(&kubermaticv1.Preset{})
+	}
+}
+
+// ReconcileKubermaticV1Presets will create and update the KubermaticV1Presets coming from the passed KubermaticV1PresetCreator slice
+func ReconcileKubermaticV1Presets(ctx context.Context, namedGetters []NamedKubermaticV1PresetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1PresetObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Preset{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Preset %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// CDIv1beta1DataVolumeCreator defines an interface to create/update DataVolumes
+type CDIv1beta1DataVolumeCreator = func(existing *cdiv1beta1.DataVolume) (*cdiv1beta1.DataVolume, error)
+
+// NamedCDIv1beta1DataVolumeCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedCDIv1beta1DataVolumeCreatorGetter = func() (name string, create CDIv1beta1DataVolumeCreator)
+
+// CDIv1beta1DataVolumeObjectWrapper adds a wrapper so the CDIv1beta1DataVolumeCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func CDIv1beta1DataVolumeObjectWrapper(create CDIv1beta1DataVolumeCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*cdiv1beta1.DataVolume))
+		}
+		return create(&cdiv1beta1.DataVolume{})
+	}
+}
+
+// ReconcileCDIv1beta1DataVolumes will create and update the CDIv1beta1DataVolumes coming from the passed CDIv1beta1DataVolumeCreator slice
+func ReconcileCDIv1beta1DataVolumes(ctx context.Context, namedGetters []NamedCDIv1beta1DataVolumeCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := CDIv1beta1DataVolumeObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &cdiv1beta1.DataVolume{}, false); err != nil {
+			return fmt.Errorf("failed to ensure DataVolume %s/%s: %w", namespace, name, err)
 		}
 	}
 

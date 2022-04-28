@@ -20,6 +20,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/anexia-it/go-anxcloud/pkg/client"
+	"github.com/anexia-it/go-anxcloud/pkg/vsphere/provisioning/templates"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -48,10 +51,8 @@ func (a *Anexia) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) 
 
 func (a *Anexia) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	_, err := GetCredentialsForCluster(spec, a.secretKeySelector)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
 
 func (a *Anexia) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -81,4 +82,19 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return accessToken, nil
+}
+
+func ValidateCredentials(ctx context.Context, accessToken, locationID string) error {
+	cli, err := getClient(accessToken)
+	if err != nil {
+		return err
+	}
+	t := templates.NewAPI(cli)
+	_, err = t.List(ctx, locationID, "templates", 1, 1)
+	return err
+}
+
+func getClient(token string) (client.Client, error) {
+	tokenOpt := client.TokenFromString(token)
+	return client.New(tokenOpt)
 }

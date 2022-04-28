@@ -123,7 +123,7 @@ func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimecl
 			return "", errors.New("configVar.Name is empty")
 		}
 		if configVar.Namespace == "" {
-			return "", errors.New("configVar.Namspace is empty")
+			return "", errors.New("configVar.Namespace is empty")
 		}
 		if key == "" {
 			return "", errors.New("key is empty")
@@ -154,9 +154,6 @@ type ProjectGetOptions struct {
 type ProjectListOptions struct {
 	// ProjectName list only projects with the given name
 	ProjectName string
-
-	// OwnerUID list only project that belong to this user
-	OwnerUID types.UID
 }
 
 // ClusterProvider declares the set of methods for interacting with clusters
@@ -174,7 +171,7 @@ type ClusterProvider interface {
 	List(ctx context.Context, project *kubermaticv1.Project, options *ClusterListOptions) (*kubermaticv1.ClusterList, error)
 
 	// ListAll gets all clusters for the seed
-	ListAll(ctx context.Context) (*kubermaticv1.ClusterList, error)
+	ListAll(ctx context.Context, labelSelector labels.Selector) (*kubermaticv1.ClusterList, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
 	Get(ctx context.Context, userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
@@ -332,7 +329,7 @@ type PrivilegedProjectProvider interface {
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
-	New(ctx context.Context, users []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
+	New(ctx context.Context, name string, labels map[string]string) (*kubermaticv1.Project, error)
 
 	// Delete deletes the given project as the given user
 	//
@@ -776,9 +773,19 @@ type ExternalClusterProvider interface {
 
 	GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
 
-	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error
+	ValidateKubeconfig(ctx context.Context, kubeconfig []byte) error
+
+	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig []byte) error
 
 	CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error)
+
+	CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error
+
+	CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error
+
+	CreateOrUpdateKubeOneManifestSecret(ctx context.Context, manifest string, externalCluster *kubermaticv1.ExternalCluster) error
+
+	CreateOrUpdateKubeOneCredentialSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error
 
 	GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 
@@ -940,6 +947,7 @@ type PrivilegedAlertmanagerProvider interface {
 type ClusterTemplateProvider interface {
 	New(ctx context.Context, userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
 	List(ctx context.Context, userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
+	ListALL(ctx context.Context, labelSelector labels.Selector) ([]kubermaticv1.ClusterTemplate, error)
 	Get(ctx context.Context, userInfo *UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error)
 	Delete(ctx context.Context, userInfo *UserInfo, projectID, templateID string) error
 }
@@ -959,7 +967,7 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	CreateUnsecured(ctx context.Context, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	CreateUnsecured(ctx context.Context, userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 
 	// GetUnsecured gets cluster template instance
 	//

@@ -74,8 +74,42 @@ type ExternalClusterCloudSpec struct {
 	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
 }
 
+type Status string
+
+const (
+	// StatusProvisioning status indicates the cluster is being imported.
+	StatusProvisioning Status = "Provisioning"
+
+	// StatusRunning status indicates the cluster is fully usable.
+	StatusRunning Status = "Running"
+
+	// StatusReconciling status indicates that some work is actively being done on the cluster, such as upgrading the master or
+	// node software. Details can be found in the `StatusMessage` field.
+	StatusReconciling Status = "Reconciling"
+
+	// StatusDeleting status indicates the cluster is being deleted.
+	StatusDeleting Status = "Deleting"
+
+	// StatusUnknown Not set.
+	StatusUnknown Status = "Unknown"
+
+	// StatusError status indicates the cluster is unusable. Details can be found in the
+	// `statusMessage` field.
+	StatusError Status = "Error"
+)
+
+// KubeOneExternalClusterStatus defines the kubeone external cluster status.
+type KubeOneExternalClusterStatus struct {
+	Status        Status `json:"status"`
+	StatusMessage string `json:"statusMessage,omitempty"`
+}
+
 type ExternalClusterKubeOneCloudSpec struct {
-	Name                 string                                 `json:"name"`
+	ClusterStatus KubeOneExternalClusterStatus `json:"clusterStatus"`
+	// ProviderName is the name of the cloud provider used, one of
+	// "aws", "azure", "digitalocean", "gcp",
+	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
+	ProviderName         string                                 `json:"providerName"`
 	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
 	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
@@ -130,6 +164,9 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 	}
 	if cloud.EKS != nil {
 		cluster.Spec.Cloud.AWS = &AWSCloudSpec{}
+	}
+	if cloud.AKS != nil {
+		cluster.Spec.Cloud.Azure = &AzureCloudSpec{}
 	}
 	return cluster.GetSecretName()
 }

@@ -26,6 +26,7 @@ import (
 	"strings"
 	"testing"
 
+	"k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -149,12 +150,14 @@ func TestController_combineManifests(t *testing.T) {
 }
 
 func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
+	version := *semver.NewSemverOrDie("v1.11.1")
+
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie("v1.11.1"),
+			Version: version,
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{
@@ -179,6 +182,11 @@ func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 					Token: "1234567890",
 				},
 				DatacenterName: "us-central1a",
+			},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: version,
 			},
 		},
 	}
@@ -228,12 +236,12 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	}
 
 	expectedIP := "10.240.16.10"
-	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
-		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
+	if !strings.Contains(string(manifests[0].Content.Raw), expectedIP) {
+		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].Content.String())
 	}
 	expectedCIDR := "172.25.0.0/16"
-	if !strings.Contains(string(manifests[0].Raw), expectedCIDR) {
-		t.Fatalf("invalid CIDR returned. Expected \n%s, Got \n%s", expectedCIDR, manifests[0].String())
+	if !strings.Contains(string(manifests[0].Content.Raw), expectedCIDR) {
+		t.Fatalf("invalid CIDR returned. Expected \n%s, Got \n%s", expectedCIDR, manifests[0].Content.String())
 	}
 
 	cluster = setupTestCluster("172.25.0.0/16")
@@ -245,8 +253,8 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
 	}
 	expectedIP = "172.25.0.10"
-	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
-		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
+	if !strings.Contains(string(manifests[0].Content.Raw), expectedIP) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].Content.String())
 	}
 }
 
@@ -284,8 +292,8 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	}
 
 	expectedRegURL := "bar.io/test:1.2.3"
-	if !strings.Contains(string(manifests[0].Raw), expectedRegURL) {
-		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
+	if !strings.Contains(string(manifests[0].Content.Raw), expectedRegURL) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].Content.String())
 	}
 }
 
@@ -322,8 +330,8 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	}
 
 	expectedRegURL := "foo.io/test:1.2.3"
-	if !strings.Contains(string(manifests[0].Raw), expectedRegURL) {
-		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
+	if !strings.Contains(string(manifests[0].Content.Raw), expectedRegURL) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].Content.String())
 	}
 }
 
@@ -372,8 +380,8 @@ func TestController_getAddonManifests(t *testing.T) {
 			t.Fatalf("decoding of test manifest failed: %v", err)
 		}
 
-		if string(expected.Raw) != string(manifests[idx].Raw) {
-			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Raw))
+		if string(expected.Raw) != string(manifests[idx].Content.Raw) {
+			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Content.Raw))
 		}
 	}
 }
@@ -389,7 +397,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 		t.Fatalf("decoding failed: %v", err)
 	}
 
-	addon := &kubermaticv1.Addon{
+	a := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-addon",
 		},
@@ -397,7 +405,9 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 			Name: "test",
 		},
 	}
-	labeledManifests, err := controller.ensureAddonLabelOnManifests(addon, []runtime.RawExtension{manifest})
+	labeledManifests, err := controller.ensureAddonLabelOnManifests(a, []addon.Manifest{{
+		Content: manifest,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}

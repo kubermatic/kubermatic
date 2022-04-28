@@ -180,6 +180,14 @@ func GenerateCluster(
 		return nil, err
 	}
 
+	// Start filling cluster object.
+	partialCluster := &kubermaticv1.Cluster{}
+	partialCluster.Labels = body.Cluster.Labels
+	if partialCluster.Labels == nil {
+		partialCluster.Labels = make(map[string]string)
+	}
+	partialCluster.Annotations = make(map[string]string)
+
 	credentialName := body.Cluster.Credential
 	if len(credentialName) > 0 {
 		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
@@ -187,6 +195,8 @@ func GenerateCluster(
 			return nil, kubermaticerrors.NewBadRequest("invalid credentials: %v", err)
 		}
 		body.Cluster.Spec.Cloud = *cloudSpec
+		partialCluster.Labels[kubermaticv1.IsCredentialPresetLabelKey] = "true"
+		partialCluster.Annotations[kubermaticv1.PresetNameAnnotation] = credentialName
 	}
 
 	// Fetch the defaulting ClusterTemplate.
@@ -215,19 +225,14 @@ func GenerateCluster(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	// Start filling cluster object.
-	partialCluster := &kubermaticv1.Cluster{}
-	partialCluster.Labels = body.Cluster.Labels
-	if partialCluster.Labels == nil {
-		partialCluster.Labels = make(map[string]string)
-	}
+	// Generate the name here so that it can be used below.
+	partialCluster.Name = rand.String(10)
 
 	// Serialize initial machine deployment request into annotation if it is in the body and provider different than
 	// BringYourOwn was selected. The request will be transformed into machine deployment by the controller once cluster
 	// will be ready. To make it easier to determine if a machine deployment annotation has already been applied to
 	// the user cluster (in case errors happen and the controller needs to re-reconcile), we ensure that the MD
 	// has a proper name instead of relying on the GenerateName.
-	partialCluster.Annotations = make(map[string]string)
 	if body.NodeDeployment != nil {
 		isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
 		if err != nil {
@@ -235,7 +240,7 @@ func GenerateCluster(
 		}
 		if !isBYO {
 			if body.NodeDeployment.Name == "" {
-				body.NodeDeployment.Name = fmt.Sprintf("%s-worker-%s", body.Cluster.Name, rand.String(6))
+				body.NodeDeployment.Name = fmt.Sprintf("%s-worker-%s", partialCluster.Name, rand.String(6))
 			}
 
 			data, err := json.Marshal(body.NodeDeployment)
@@ -244,6 +249,27 @@ func GenerateCluster(
 			}
 			partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = string(data)
 		}
+	}
+
+	// Serialize initial applications request into an annotation.
+	// "initial-application-installation-controller" running in seed will transform this annotation, create the resultant
+	// ApplicationInstallation, and then delete this annotation from the Cluster Object.
+
+	// Ensure that application has a proper name instead of relying on the Generated Name. This makes it easier to
+	// determine if an application annotation has already been processed by the corresponding controller and all the
+	// resources(applications) created.
+	for i, app := range body.Applications {
+		if app.Name == "" {
+			body.Applications[i].Name = fmt.Sprintf("%s-instance", app.Spec.ApplicationRef.Name)
+		}
+	}
+
+	if len(body.Applications) > 0 {
+		data, err := json.Marshal(body.Applications)
+		if err != nil {
+			return nil, fmt.Errorf("cannot marshal initial applications: %w", err)
+		}
+		partialCluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation] = string(data)
 	}
 
 	// Owning project ID must be set early, because it will be inherited by some child objects,
@@ -256,9 +282,6 @@ func GenerateCluster(
 	} else {
 		partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
 	}
-
-	// Generate the name here so that it can be used in the secretName below.
-	partialCluster.Name = rand.String(10)
 
 	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
 		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
@@ -448,6 +471,7 @@ func PatchEndpoint(
 	newInternalCluster := oldInternalCluster.DeepCopy()
 	newInternalCluster.Spec.HumanReadableName = patchedCluster.Name
 	newInternalCluster.Labels = patchedCluster.Labels
+	newInternalCluster.Annotations = patchedCluster.Annotations
 	newInternalCluster.Spec.Cloud = patchedCluster.Spec.Cloud
 	newInternalCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
 	newInternalCluster.Spec.Version = patchedCluster.Spec.Version
@@ -500,8 +524,19 @@ func PatchEndpoint(
 		CABundle:   caBundle,
 	}
 
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForClusterWithValidation(ctx, seedClient, newInternalCluster, validate); err != nil {
+	changed, err := kubernetesprovider.CreateOrUpdateCredentialSecretForClusterWithValidation(ctx, seedClient, newInternalCluster, validate)
+	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	// the credentials were changed during the update. Remove link to credential preset if exists.
+	if changed {
+		if newInternalCluster.Labels != nil {
+			delete(newInternalCluster.Labels, kubermaticv1.IsCredentialPresetLabelKey)
+		}
+		if newInternalCluster.Annotations != nil {
+			delete(newInternalCluster.Annotations, kubermaticv1.PresetNameAnnotation)
+			delete(newInternalCluster.Annotations, kubermaticv1.PresetInvalidatedAnnotation)
+		}
 	}
 
 	// validate the new cluster
@@ -571,6 +606,7 @@ func HealthEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 
 	return apiv1.ClusterHealth{
 		Apiserver:                    existingCluster.Status.ExtendedHealth.Apiserver,
+		ApplicationController:        existingCluster.Status.ExtendedHealth.ApplicationController,
 		Scheduler:                    existingCluster.Status.ExtendedHealth.Scheduler,
 		Controller:                   existingCluster.Status.ExtendedHealth.Controller,
 		MachineController:            existingCluster.Status.ExtendedHealth.MachineController,
@@ -672,6 +708,9 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 		newCluster.Spec.Features = make(map[string]bool)
 	}
 	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	if oldCluster.Spec.Cloud.VSphere != nil {
+		newCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
+	}
 
 	seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 	if err := seedAdminClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
@@ -993,6 +1032,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			UseEventRateLimitAdmissionPlugin:     internalCluster.Spec.UseEventRateLimitAdmissionPlugin,
 			EnableUserSSHKeyAgent:                internalCluster.Spec.EnableUserSSHKeyAgent,
 			EnableOperatingSystemManager:         internalCluster.Spec.EnableOperatingSystemManager,
+			KubernetesDashboard:                  &internalCluster.Spec.KubernetesDashboard,
 			AdmissionPlugins:                     internalCluster.Spec.AdmissionPlugins,
 			OPAIntegration:                       internalCluster.Spec.OPAIntegration,
 			PodNodeSelectorAdmissionPluginConfig: internalCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
@@ -1004,7 +1044,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			CNIPlugin:                            internalCluster.Spec.CNIPlugin,
 		},
 		Status: apiv1.ClusterStatus{
-			Version:              internalCluster.Spec.Version,
+			Version:              internalCluster.Status.Versions.ControlPlane,
 			URL:                  internalCluster.Address.URL,
 			ExternalCCMMigration: convertInternalCCMStatusToExternal(internalCluster, datacenter, incompatibilities...),
 		},
@@ -1014,29 +1054,42 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 	if filterSystemLabels {
 		cluster.Labels = label.FilterLabels(label.ClusterResourceType, internalCluster.Labels)
 	}
+	// Add preset annotations
+	cluster.Annotations = make(map[string]string)
+	if internalCluster.Annotations != nil {
+		if value, ok := internalCluster.Annotations[kubermaticv1.PresetNameAnnotation]; ok {
+			cluster.Annotations[kubermaticv1.PresetNameAnnotation] = value
+		}
+		if value, ok := internalCluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation]; ok {
+			cluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = value
+		}
+	}
 
 	return cluster
 }
 
 func ValidateClusterSpec(updateManager common.UpdateManager, body apiv1.CreateClusterSpec) error {
 	if body.Cluster.Spec.Cloud.DatacenterName == "" {
-		return fmt.Errorf("cluster datacenter name is empty")
+		return errors.New("cluster datacenter name is empty")
 	}
 	if body.Cluster.ID != "" {
-		return fmt.Errorf("cluster.ID is read-only")
+		return errors.New("cluster.ID is read-only")
 	}
 	if !ClusterTypes.Has(body.Cluster.Type) {
 		return fmt.Errorf("invalid cluster type %s", body.Cluster.Type)
 	}
 	if body.Cluster.Spec.Version.Semver() == nil {
-		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
+		return errors.New("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
+	}
+	if len(body.Cluster.Name) > 100 {
+		return errors.New("invalid cluster name: too long (greater than 100 characters)")
 	}
 
 	providerName, err := provider.ClusterCloudProviderName(body.Cluster.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}
-	versions, err := updateManager.GetVersionsV2(body.Cluster.Type, kubermaticv1.ProviderType(providerName))
+	versions, err := updateManager.GetVersionsForProvider(kubermaticv1.ProviderType(providerName))
 	if err != nil {
 		return fmt.Errorf("failed to get available cluster versions: %w", err)
 	}

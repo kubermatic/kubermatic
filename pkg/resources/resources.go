@@ -38,6 +38,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -161,6 +162,8 @@ const (
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard.
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
+	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
+	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -337,6 +340,8 @@ const (
 
 	// KubermaticNamespace is the main kubermatic namespace.
 	KubermaticNamespace = "kubermatic"
+	// KubermaticWebhookServiceName is the name of the kuberamtic webhook service in seed cluster.
+	KubermaticWebhookServiceName = "kubermatic-webhook"
 	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment.
 	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
 	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment.
@@ -377,6 +382,8 @@ const (
 	AppLabelKey = "app"
 	// ClusterLabelKey defines the label key for the cluster name.
 	ClusterLabelKey = "cluster"
+	// VersionLabel is the label containing the application's version.
+	VersionLabel = "app.kubernetes.io/version"
 
 	// EtcdClusterSize defines the size of the etcd to use.
 	EtcdClusterSize = 3
@@ -428,6 +435,9 @@ const (
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
 
+	// MachineValidatingWebhookConfigurationName is the name for the machine validating webhook.
+	MachineValidatingWebhookConfigurationName = "machine.kubermatic.k8c.io"
+
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
 	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
@@ -445,14 +455,17 @@ const (
 	// EBPFProxyMode defines the eBPF proxy mode (disables kube-proxy and requires CNI support).
 	EBPFProxyMode = "ebpf"
 
-	// IPVSStrictArp defines IPVS configuration strictArp setting.
-	IPVSStrictArp = true
-
 	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin.
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 
 	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
+
+	// ApplicationInstallationCRDName defines the CRD name for application installation objects.
+	ApplicationInstallationCRDName = "applicationinstallations.apps.kubermatic.k8c.io"
+
+	// ApplicationInstallationCRDFilePath is the path of the crd in openapi.Efs.
+	ApplicationInstallationCRDFilePath = openapi.CRDRootFolder + "apps.kubermatic.k8c.io_applicationinstallations.yaml"
 )
 
 const (
@@ -467,7 +480,7 @@ const (
 	// KubeletClientKeySecretKey kubelet-client.key.
 	KubeletClientKeySecretKey = "kubelet-client.key"
 	// KubeletClientCertSecretKey kubelet-client.crt.
-	KubeletClientCertSecretKey = "kubelet-client.crt" // FIXME confusing naming: s/CertSecretKey/CertSecretName/
+	KubeletClientCertSecretKey = "kubelet-client.crt"
 	// ServiceAccountKeySecretKey sa.key.
 	ServiceAccountKeySecretKey = "sa.key"
 	// ServiceAccountKeyPublicKey is the public key for the service account signer key.
@@ -545,6 +558,43 @@ const (
 )
 
 const (
+	// KubeOneNamespacePrefix is the kubeone namespace prefix.
+	KubeOneNamespacePrefix = "kubeone-"
+	// KubeOne secret names.
+	KubeOneSSHSecretName        = "ssh"
+	KubeOneManifestSecretName   = "manifest"
+	KubeOneKubeconfigSecretName = "kubeconfig"
+	// KubOne ConfigMap name.
+	KubeOneScriptConfigMapName = "kubeone"
+	// KubeOne secret keys.
+	KubeOneManifest            = "manifest"
+	KubeOneSSHPrivateKey       = "id_rsa"
+	KubeOneSSHPassphrase       = "passphrase"
+	ContainerRuntimeDocker     = "docker"
+	ContainerRuntimeContainerd = "containerd"
+	// KubeOne natively-supported providers.
+	KubeOneAWS          = "aws"
+	KubeOneGCP          = "gcp"
+	KubeOneAzure        = "azure"
+	KubeOneDigitalOcean = "digitalocean"
+	KubeOneHetzner      = "hetzner"
+	KubeOneNutanix      = "nutanix"
+	KubeOneOpenStack    = "openstack"
+	KubeOneEquinix      = "equinix"
+	KubeOneVSphere      = "vsphere"
+	KubeOneImage        = "quay.io/kubermatic/kubeone"
+	KubeOneScript       = `
+#!/usr/bin/env bash
+
+eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
+printf "#!/bin/sh\necho $PASSPHRASE" > script_returning_pass
+chmod +x script_returning_pass
+DISPLAY=1 SSH_ASKPASS="./script_returning_pass" ssh-add ~/.ssh/id_rsa > /dev/null 2> /dev/null
+rm ${SSH_ASKPASS} -f
+			`
+)
+
+const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
 
@@ -569,6 +619,9 @@ const (
 	OpenstackApplicationCredentialID     = "applicationCredentialID"
 	OpenstackApplicationCredentialSecret = "applicationCredentialSecret"
 	OpenstackToken                       = "token"
+	// Below OpenStack constant is added for KubeOne Clusters.
+	OpenstackAuthURL = "authURL"
+	OpenstackRegion  = "region"
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
@@ -580,6 +633,8 @@ const (
 	VspherePassword                    = "password"
 	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
 	VsphereInfraManagementUserPassword = "infraManagementUserPassword"
+	// Below VSphere constant is added for KubeOne Clusters.
+	VsphereServer = "server"
 
 	AlibabaAccessKeyID     = "accessKeyId"
 	AlibabaAccessKeySecret = "accessKeySecret"
@@ -591,6 +646,12 @@ const (
 	NutanixCSIUsername = "csiUsername"
 	NutanixCSIPassword = "csiPassword"
 	NutanixProxyURL    = "proxyURL"
+	// Below Nutanix constant are added for KubeOne Clusters.
+	NutanixCSIEndpoint   = "csiEndpoint"
+	NutanixClusterName   = "clusterName"
+	NutanixAllowInsecure = "allowInsecure"
+	NutanixEndpoint      = "endpoint"
+	NutanixPort          = "port"
 
 	UserSSHKeys = "usersshkeys"
 )
@@ -615,9 +676,10 @@ const (
 )
 
 const (
-	NodeLocalDNSServiceAccountName = "node-local-dns"
-	NodeLocalDNSConfigMapName      = "node-local-dns"
-	NodeLocalDNSDaemonSetName      = "node-local-dns"
+	NodeLocalDNSServiceAccountName  = "node-local-dns"
+	NodeLocalDNSConfigMapName       = "node-local-dns"
+	NodeLocalDNSDaemonSetName       = "node-local-dns"
+	DefaultNodeLocalDNSCacheEnabled = true
 )
 
 const (
@@ -660,15 +722,16 @@ const (
 	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration.
 	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
 
-	NutanixCSIValidatingWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
+	// CSISnapshotValidationWebhookConfigurationName part of kubernetes-csi external-snapshotter validation webhook.
+	CSISnapshotValidationWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
+	// CSISnapshotValidationWebhookName part of kubernetes-csi external-snapshotter validation webhook.
+	CSISnapshotValidationWebhookName = "snapshot-validation-service"
 
 	CSISnapshotWebhookSecretName = "csi-snapshot-webhook-certs"
 	// CSIWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	CSIWebhookServingCertCertKeyName = "cert.pem"
 	// CSIWebhookServingCertKeyKeyName is the name for the key that contains the key.
 	CSIWebhookServingCertKeyKeyName = "key.pem"
-
-	NutanixCSIWebhookName = "snapshot-validation-service"
 )
 
 const (
@@ -757,6 +820,40 @@ const (
 	NetworkPolicyMetricsServerAllow            = "metrics-server-allow"
 	NetworkPolicyClusterExternalAddrAllow      = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
+)
+
+const (
+	UserClusterWebhookDeploymentName        = "user-cluster-webhook"
+	UserClusterWebhookServiceName           = "user-cluster-webhook"
+	UserClusterWebhookServingCertSecretName = "user-cluster-webhook-serving-cert"
+)
+
+const (
+	// DefaultClusterPodsCIDRIPv4 is the default network range from which IPv4 POD networks are allocated.
+	DefaultClusterPodsCIDRIPv4 = "172.25.0.0/16"
+	// DefaultClusterPodsCIDRIPv4KubeVirt is the default network range from which IPv4 POD networks are allocated for KubeVirt clusters.
+	DefaultClusterPodsCIDRIPv4KubeVirt = "172.26.0.0/16"
+	// DefaultClusterPodsCIDRIPv6 is the default network range from which IPv6 POD networks are allocated.
+	DefaultClusterPodsCIDRIPv6 = "fd01::/48"
+
+	// DefaultClusterServicesCIDRIPv4 is the default network range from which IPv4 service VIPs are allocated.
+	DefaultClusterServicesCIDRIPv4 = "10.240.16.0/20"
+	// DefaultClusterServicesCIDRIPv4KubeVirt is the default network range from which IPv4 service VIPs are allocated for KubeVirt clusters.
+	DefaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
+	// DefaultClusterServicesCIDRIPv6 is the default network range from which IPv6 service VIPs are allocated.
+	DefaultClusterServicesCIDRIPv6 = "fd02::/120"
+
+	// DefaultNodeCIDRMaskSizeIPv4 is the default mask size used to address the nodes within provided IPv4 Pods CIDR.
+	DefaultNodeCIDRMaskSizeIPv4 = 24
+	// DefaultNodeCIDRMaskSizeIPv6 is the default mask size used to address the nodes within provided IPv6 Pods CIDR.
+	DefaultNodeCIDRMaskSizeIPv6 = 64
+)
+
+const (
+	// IPv4MatchAnyCIDR is the CIDR used for matching with any IPv4 address.
+	IPv4MatchAnyCIDR = "0.0.0.0/0"
+	// IPv6MatchAnyCIDR is the CIDR used for matching with any IPv6 address.
+	IPv6MatchAnyCIDR = "::/0"
 )
 
 // List of allowed TLS cipher suites.
@@ -1428,4 +1525,72 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 	s3Client.SetAppInfo("kubermatic", "v0.2")
 
 	return s3Client, bucketName, nil
+}
+
+// GetClusterNodeCIDRMaskSizeIPv4 returns effective mask size used to address the nodes within provided IPv4 Pods CIDR.
+func GetClusterNodeCIDRMaskSizeIPv4(cluster *kubermaticv1.Cluster) int32 {
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+		return *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4
+	}
+	return DefaultNodeCIDRMaskSizeIPv4
+}
+
+// GetClusterNodeCIDRMaskSizeIPv6 returns effective mask size used to address the nodes within provided IPv6 Pods CIDR.
+func GetClusterNodeCIDRMaskSizeIPv6(cluster *kubermaticv1.Cluster) int32 {
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+		return *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+	}
+	return DefaultNodeCIDRMaskSizeIPv6
+}
+
+// GetNodePortsAllowedIPRanges returns effective CIDR range to be used for NodePort services for the given cluster
+// and provided allowed IP ranges coming from provider-specific API.
+func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges *kubermaticv1.NetworkRanges, allowedIPRange string) (res kubermaticv1.NetworkRanges) {
+	if allowedIPRanges != nil {
+		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRanges.CIDRBlocks...)
+	}
+	if allowedIPRange != "" {
+		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRange)
+	}
+	if len(res.CIDRBlocks) == 0 {
+		if cluster.IsIPv4Only() || cluster.IsDualStack() {
+			res.CIDRBlocks = append(res.CIDRBlocks, IPv4MatchAnyCIDR)
+		}
+		if cluster.IsIPv6Only() || cluster.IsDualStack() {
+			res.CIDRBlocks = append(res.CIDRBlocks, IPv6MatchAnyCIDR)
+		}
+	}
+	return
+}
+
+// GetDefaultPodCIDRIPv4 returns the default IPv4 pod CIDR for the given provider.
+func GetDefaultPodCIDRIPv4(provider kubermaticv1.ProviderType) string {
+	if provider == kubermaticv1.KubevirtCloudProvider {
+		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+		// thus we have to avoid network collision
+		return DefaultClusterPodsCIDRIPv4KubeVirt
+	}
+	return DefaultClusterPodsCIDRIPv4
+}
+
+// GetDefaultServicesCIDRIPv4 returns the default IPv4 services CIDR for the given provider.
+func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
+	if provider == kubermaticv1.KubevirtCloudProvider {
+		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+		// thus we have to avoid network collision
+		return DefaultClusterServicesCIDRIPv4KubeVirt
+	}
+	return DefaultClusterServicesCIDRIPv4
+}
+
+// GetDefaultProxyMode returns the default proxy mode for the given provider.
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType, cni kubermaticv1.CNIPluginType) string {
+	// TODO: (rastislavs) make ebpf the default proxy mode for Cilium CNI after Konenctivity is GA
+
+	if provider == kubermaticv1.HetznerCloudProvider {
+		// IPVS causes issues with Hetzner's LoadBalancers, which should
+		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
+		return IPTablesProxyMode
+	}
+	return IPVSProxyMode
 }

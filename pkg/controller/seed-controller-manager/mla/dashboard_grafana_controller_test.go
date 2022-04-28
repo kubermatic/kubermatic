@@ -52,7 +52,9 @@ func newTestDashboardGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient
 	grafanaClient, err := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
 	assert.Nil(t, err)
 
-	dashboardGrafanaController := newDashboardGrafanaController(dynamicClient, kubermaticlog.Logger, "mla", grafanaClient)
+	dashboardGrafanaController := newDashboardGrafanaController(dynamicClient, kubermaticlog.Logger, "mla", func(ctx context.Context) (*grafanasdk.Client, error) {
+		return grafanaClient, nil
+	})
 	reconciler := dashboardGrafanaReconciler{
 		Client:                     dynamicClient,
 		log:                        kubermaticlog.Logger,

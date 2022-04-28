@@ -15,10 +15,11 @@
 kubeStateMetrics:
   image:
     repository: k8s.gcr.io/kube-state-metrics/kube-state-metrics
-    tag: v2.2.3
+    tag: v2.4.2
   resources:
     requests:
-      cpu: 250m
+      # Rationalized based on real world usage
+      cpu: 3m
       memory: 128Mi
     limits:
       cpu: 2

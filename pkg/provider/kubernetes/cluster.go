@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
+
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -29,6 +32,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +41,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -126,6 +132,10 @@ func (p *ClusterProvider) New(ctx context.Context, project *kubermaticv1.Project
 		return nil, err
 	}
 
+	if err := p.waitForCluster(ctx, seedImpersonatedClient, newCluster); err != nil {
+		return nil, fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
+	}
+
 	// regular users are not allowed to update the status subresource, so we use the admin client
 	err = kubermaticv1helper.UpdateClusterStatus(ctx, p.client, newCluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = userInfo.Email
@@ -156,6 +166,10 @@ func (p *ClusterProvider) NewUnsecured(ctx context.Context, project *kubermaticv
 		return nil, err
 	}
 
+	if err := p.waitForCluster(ctx, p.client, newCluster); err != nil {
+		return nil, fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
+	}
+
 	err = kubermaticv1helper.UpdateClusterStatus(ctx, p.client, newCluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = userEmail
 	})
@@ -164,6 +178,15 @@ func (p *ClusterProvider) NewUnsecured(ctx context.Context, project *kubermaticv
 	}
 
 	return newCluster, nil
+}
+
+func (p *ClusterProvider) waitForCluster(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, client, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
+	if err := wait.Poll(100*time.Millisecond, 5*time.Second, waiter); err != nil {
+		return fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
+	}
+
+	return nil
 }
 
 func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, workerName string, versions kubermatic.Versions) *kubermaticv1.Cluster {
@@ -219,6 +242,10 @@ func (p *ClusterProvider) List(ctx context.Context, project *kubermaticv1.Projec
 	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 	if err := p.client.List(ctx, projectClusters, listOpts); err != nil {
+		// ignore error if cluster is unreachable
+		if kubenetutil.IsConnectionRefused(err) {
+			return projectClusters, nil
+		}
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
@@ -476,9 +503,16 @@ func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
 // ListAll gets all clusters
 //
 // Note that the admin privileges are used to list all clusters.
-func (p *ClusterProvider) ListAll(ctx context.Context) (*kubermaticv1.ClusterList, error) {
+func (p *ClusterProvider) ListAll(ctx context.Context, labelSelector labels.Selector) (*kubermaticv1.ClusterList, error) {
+	optionsLabelSelector := labels.Everything()
+	if labelSelector != nil {
+		optionsLabelSelector = labelSelector
+	}
+
 	projectClusters := &kubermaticv1.ClusterList{}
-	if err := p.client.List(ctx, projectClusters); err != nil {
+	if err := p.client.List(ctx, projectClusters, ctrlruntimeclient.MatchingLabelsSelector{
+		Selector: optionsLabelSelector,
+	}); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %w", err)
 	}
 

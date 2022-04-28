@@ -145,6 +145,10 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 		return errors.New("Addons can only be created in cluster namespaces, but no matching Cluster was found")
 	}
 
+	if cluster.DeletionTimestamp != nil {
+		return fmt.Errorf("Cluster %s is in deletion already, cannot create a new addon", cluster.Name)
+	}
+
 	addon.Spec.Cluster = v1.ObjectReference{
 		Name:       cluster.Name,
 		Namespace:  "",

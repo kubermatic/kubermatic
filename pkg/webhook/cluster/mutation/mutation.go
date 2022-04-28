@@ -188,6 +188,13 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		}
 	}
 
+	// just because spec.Version might say 1.23 doesn't say that the cluster is already on 1.23,
+	// so for all feature toggles and migrations we should base this on the actual, current apiserver
+	curVersion := newCluster.Status.Versions.ControlPlane
+	if curVersion == "" {
+		curVersion = newCluster.Spec.Version
+	}
+
 	// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
 	// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
 	// are not supported anymore.
@@ -197,7 +204,7 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		if err != nil {
 			return fmt.Errorf("parsing CNI upgrade constraint failed: %w", err)
 		}
-		if newCluster.Spec.Version.String() != "" && upgradeConstraint.Check(newCluster.Spec.Version.Semver()) {
+		if curVersion.String() != "" && upgradeConstraint.Check(curVersion.Semver()) {
 			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
 				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
@@ -220,7 +227,7 @@ func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Clu
 		return fmt.Errorf("semver constraint parsing failed: %w", err)
 	}
 	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal && lowerThan322.Check(cniVersion) &&
-		newCluster.Spec.Version.String() != "" && equalOrHigherThan123.Check(newCluster.Spec.Version.Semver()) {
+		curVersion.String() != "" && equalOrHigherThan123.Check(curVersion.Semver()) {
 		newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCanal,
 			Version: "v3.22",

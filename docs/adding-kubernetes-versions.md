@@ -4,8 +4,21 @@ This document describes the process of adding support for a new Kubernetes minor
 to KKP.
 
 The single source of truth for the set of Kubernetes versions we ship is defined in
-`pkg/controller/operator/defaults/defaults.go`. From there, the `kubermatic` Helm chart and the
-example documentation are generated.
+`pkg/controller/operator/defaults/defaults.go`. From there the example documentation is generated.
+
+## Version Skews
+
+When removing support for a Kubernetes release, care must be taken because of existing userclusters.
+If for example Kubernetes 1.20 is removed, that KKP version must still be able to reconcile 1.20
+clusters while the upgrades are running (KKP potentially doesn't reconcile all userclusters at
+the same time).
+
+So removing support for a Kubernetes release is a 2-step process:
+
+1. Remove it from the list of supported versions (in `pkg/controller/operator/defaults/defaults.go`)
+   and release this as a new KKP minor version.
+2. In the next KKP minor version, all the reconciling code for the removed Kubernetes version
+   can be deleted.
 
 ## Adding/Removig Patch Releases
 
@@ -22,11 +35,14 @@ patch versions for all support minor versions.
 
 ## Adding/Removing Minor Releases
 
-Support for minor releases is a bit more involved to add. There are a coulple of places that
+Support for minor releases is a bit more involved to add. There are a couple of places that
 need to be updated.
 
-Before a new minor can be added to KKP, the test binaries need to be included in the e2e Docker
-image. Bump the `build` Docker image and push new images to quay before continuing.
+Before a new minor can be added to KKP, the `build` Docker image must be updated to:
+- include test binaries for the new Kubernetes version
+- include the appropriate kubectl versions
+
+Bump the `build` Docker image and push new images to quay before continuing.
 
 Once new Docker images are ready, KKP can be updated as well.
 
@@ -36,11 +52,16 @@ Once new Docker images are ready, KKP can be updated as well.
 - Update the CSI addon manifests (`addon/csi/*.yaml`) to include the new minor version.
 - Ensure a kubelet ConfigMap for the new minor exists in `addons/kubelet-configmap/kubelet-configmap.yaml`.
 - Update `addons/rbac/allow-kubeadm-join-configmap.yaml` to include the new ConfigMap.
-- Update the OpenStack CCM manifest (`pkg/resources/cloudcontroller/openstack.go`) to
+- Update the CCM manifests located in `pkg/resources/cloudcontroller`) to
   include the new minor version.
   - The latest OpenStack CCM version can be found in the
   [`kubernetes/cloud-provider-openstack` repository](https://github.com/kubernetes/cloud-provider-openstack).
-- The conformance-tests runner (`cmd/conformance-tests/runner.go`) has a list of
+  - The latest vSphere CCM version can be found in the
+  [`kubernetes/cloud-provider-vsphere` repository](https://github.com/kubernetes/cloud-provider-vsphere)
+  - The latest Hetzner CCM version can be found in the
+  [`hetznercloud/hcloud-cloud-controller-manager` repository](https://github.com/hetznercloud/hcloud-cloud-controller-manager)
+- Update the cluster-autoscaler addon manifests (`addon/cluster-autoscaler`) to include the new minor version.
+- The conformance-tests runner (`cmd/conformance-tester/pkg/tests/conformance.go`) has a list of
   exclusion filters to skip tests that cannot work in the CI environment. Make sure to
   update said list, or else you will be greeted by lots of NodePort Service related
   errors.
@@ -50,6 +71,10 @@ Once new Docker images are ready, KKP can be updated as well.
   for previous Kubernetes versions as well.
 - Update `pkg/resources/test/load_files_test.go` `TestLoadFiles()` to make it generate
   manifests for the new minor version.
+- Update `pkg/util/kubectl/kubectl.go` to use the appropriate kubectl version for the
+  new minor version
+  - Update the Dockerfile to include used kubectl versions.
+  - Update the `util` image (`hack/images/util/Dockerfile`) to use a newer kubectl version if needed.
 
 Lastly, re-generate the Helm chart and documentation:
 

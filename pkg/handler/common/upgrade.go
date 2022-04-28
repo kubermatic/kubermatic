@@ -29,10 +29,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,6 +73,22 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
 	}
 
+	nodes := &corev1.NodeList{}
+	if err := client.List(ctx, nodes); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	var nonAMD64Nodes bool
+	for _, node := range nodes.Items {
+		if node.Status.NodeInfo.Architecture != "amd64" {
+			nonAMD64Nodes = true
+		}
+	}
+	if nonAMD64Nodes &&
+		cluster.Spec.CNIPlugin != nil && cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal &&
+		cluster.Spec.ClusterNetwork.ProxyMode == "ipvs" {
+		updateConditions = append(updateConditions, kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition)
+	}
+
 	config, err := configGetter(ctx)
 	if err != nil {
 		return nil, err
@@ -77,7 +96,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 
 	versionManager := version.NewFromConfiguration(config)
 
-	versions, err := versionManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType, kubermaticv1.ProviderType(providerName), updateConditions...)
+	versions, err := versionManager.GetPossibleUpdates(cluster.Spec.Version.String(), kubermaticv1.ProviderType(providerName), updateConditions...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,4 +170,32 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []c
 		}
 	}
 	return false, nil
+}
+
+func GetKubeOneUpgradesEndpoint(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster, currentVersion *ksemver.Semver, configGetter provider.KubermaticConfigurationGetter) (interface{}, error) {
+	providerName := externalCluster.Spec.CloudSpec.KubeOne.ProviderName
+	providerType := kubermaticv1.ProviderType(providerName)
+	if providerName == resources.KubeOneEquinix {
+		providerType = kubermaticv1.PacketCloudProvider
+	}
+
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	versionManager := version.NewFromConfiguration(config)
+
+	versions, err := versionManager.GetKubeOnePossibleUpdates(currentVersion.String(), providerType)
+	if err != nil {
+		return nil, err
+	}
+	upgrades := make([]*apiv1.MasterVersion, 0)
+	for _, v := range versions {
+		upgrades = append(upgrades, &apiv1.MasterVersion{
+			Version: v.Version,
+		})
+	}
+
+	return upgrades, nil
 }

@@ -110,10 +110,19 @@ func (r *dashboardGrafanaReconciler) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
+	grafanaClient, err := r.dashboardGrafanaController.clientProvider(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+
 	if !configMap.DeletionTimestamp.IsZero() {
-		if err := r.dashboardGrafanaController.handleDeletion(ctx, log, configMap); err != nil {
+		if err := r.dashboardGrafanaController.handleDeletion(ctx, log, configMap, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
+		return reconcile.Result{}, nil
+	}
+
+	if grafanaClient == nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -121,7 +130,7 @@ func (r *dashboardGrafanaReconciler) Reconcile(ctx context.Context, request reco
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if err := r.dashboardGrafanaController.ensureDashboards(ctx, log, configMap); err != nil {
+	if err := r.dashboardGrafanaController.ensureDashboards(ctx, log, configMap, grafanaClient); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Dashboards: %w", err)
 	}
 
@@ -130,8 +139,8 @@ func (r *dashboardGrafanaReconciler) Reconcile(ctx context.Context, request reco
 
 type dashboardGrafanaController struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
-	mlaNamespace  string
+	clientProvider grafanaClientProvider
+	mlaNamespace   string
 
 	log *zap.SugaredLogger
 }
@@ -140,12 +149,12 @@ func newDashboardGrafanaController(
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,
 	mlaNamespace string,
-	grafanaClient *grafanasdk.Client,
+	clientProvider grafanaClientProvider,
 ) *dashboardGrafanaController {
 	return &dashboardGrafanaController{
-		Client:        client,
-		grafanaClient: grafanaClient,
-		mlaNamespace:  mlaNamespace,
+		Client:         client,
+		clientProvider: clientProvider,
+		mlaNamespace:   mlaNamespace,
 
 		log: log,
 	}
@@ -156,42 +165,48 @@ func (r *dashboardGrafanaController) CleanUp(ctx context.Context) error {
 	if err := r.List(ctx, configMapList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return fmt.Errorf("Failed to list configmaps: %w", err)
 	}
+	grafanaClient, err := r.clientProvider(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create Grafana client: %w", err)
+	}
 	for _, configMap := range configMapList.Items {
 		if !strings.HasPrefix(configMap.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			continue
 		}
-		if err := r.handleDeletion(ctx, r.log, &configMap); err != nil {
+		if err := r.handleDeletion(ctx, r.log, &configMap, grafanaClient); err != nil {
 			return fmt.Errorf("handling deletion: %w", err)
 		}
 	}
 	return nil
 }
 
-func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap) error {
-	projectList := &kubermaticv1.ProjectList{}
-	if err := r.List(ctx, projectList); err != nil {
-		return fmt.Errorf("failed to list Projects: %w", err)
-	}
-	for _, project := range projectList.Items {
-		orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
-		if !ok {
-			// looks like corresponding Grafana Org already remove, so we can skip this project
-			log.Debugf("project %+v doesn't have grafana org annotation, skipping", project)
-			continue
+func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap, grafanaClient *grafanasdk.Client) error {
+	if grafanaClient != nil {
+		projectList := &kubermaticv1.ProjectList{}
+		if err := r.List(ctx, projectList); err != nil {
+			return fmt.Errorf("failed to list Projects: %w", err)
 		}
-		id, err := strconv.ParseUint(orgID, 10, 32)
-		if err != nil {
-			return fmt.Errorf("unable to parse grafana org annotation %s: %w", orgID, err)
-		}
-		if err := deleteDashboards(ctx, log, r.grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
-			return err
+		for _, project := range projectList.Items {
+			orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
+			if !ok {
+				// looks like corresponding Grafana Org already remove, so we can skip this project
+				log.Debugf("project %+v doesn't have grafana org annotation, skipping", project)
+				continue
+			}
+			id, err := strconv.ParseUint(orgID, 10, 32)
+			if err != nil {
+				return fmt.Errorf("unable to parse grafana org annotation %s: %w", orgID, err)
+			}
+			if err := deleteDashboards(ctx, log, grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
+				return err
+			}
 		}
 	}
 
 	return kubernetes.TryRemoveFinalizer(ctx, r, configMap, mlaFinalizer)
 }
 
-func (r *dashboardGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap) error {
+func (r *dashboardGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap, grafanaClient *grafanasdk.Client) error {
 	projectList := &kubermaticv1.ProjectList{}
 	if err := r.List(ctx, projectList); err != nil {
 		return fmt.Errorf("failed to list Projects: %w", err)
@@ -208,7 +223,7 @@ func (r *dashboardGrafanaController) ensureDashboards(ctx context.Context, log *
 		if err != nil {
 			return fmt.Errorf("unable to parse grafana org annotation %s: %w", orgID, err)
 		}
-		if err := addDashboards(ctx, log, r.grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
+		if err := addDashboards(ctx, log, grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
 			return err
 		}
 	}

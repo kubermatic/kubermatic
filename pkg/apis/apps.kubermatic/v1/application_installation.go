@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
@@ -49,12 +48,8 @@ type ApplicationInstallationList struct {
 }
 
 type ApplicationInstallationSpec struct {
-	// TargetNamespace is the namespace to deploy the Application into
-	TargetNamespace string `json:"targetNamespace"`
-
-	// +kubebuilder:default:=true
-	// CreateNamespace defines whether the namespace should be created if it does not exist. Defaults to true
-	CreateNamespace bool `json:"createNamespace"`
+	// Namespace describe the desired state of the namespace where application will be created.
+	Namespace NamespaceSpec `json:"namespace"`
 
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
@@ -64,9 +59,37 @@ type ApplicationInstallationSpec struct {
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
 }
 
+// NamespaceSpec describe the desired state of the namespace where application will be created.
+type NamespaceSpec struct {
+	// Name is the namespace to deploy the Application into.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
+	Name string `json:"name"`
+
+	// +kubebuilder:default:=true
+	// Create defines whether the namespace should be created if it does not exist. Defaults to true
+	Create bool `json:"create"`
+
+	// Labels of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
 // ApplicationRef describes a KKP-wide, unique reference to an Application.
 type ApplicationRef struct {
-	// Name of the Application
+	// Name of the Application.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`
 
 	// +kubebuilder:validation:Pattern:=v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
@@ -91,6 +114,9 @@ type ApplicationInstallationStatus struct {
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
 	Conditions []ApplicationInstallationCondition `json:"conditions,omitempty"`
+
+	// ApplicationVersion contains information installing / removing application
+	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
 }
 
 type ApplicationInstallationCondition struct {

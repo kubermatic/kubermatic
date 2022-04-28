@@ -121,6 +121,8 @@ func (m *EKSMachineDeploymentCloudSpec) validateScalingConfig(formats strfmt.Reg
 		if err := m.ScalingConfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("scalingConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("scalingConfig")
 			}
 			return err
 		}
@@ -149,6 +151,8 @@ func (m *EKSMachineDeploymentCloudSpec) contextValidateScalingConfig(ctx context
 		if err := m.ScalingConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("scalingConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("scalingConfig")
 			}
 			return err
 		}

@@ -18,6 +18,7 @@ package kubernetes_test
 
 import (
 	"context"
+	"encoding/base64"
 	"reflect"
 	"testing"
 
@@ -73,12 +74,12 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Namespace:       resources.KubermaticNamespace,
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
-				Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte(defaultKubeconfig)},
 				Type: corev1.SecretTypeOpaque,
 			},
 		},
 		{
-			name: "test: update existing secret",
+			name:       "test: update existing secret",
+			kubeconfig: defaultKubeconfig,
 			existingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
@@ -95,7 +96,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 				},
 			},
 			externalCluster: genExternalCluster(defaultClusterName, defaultProjectID),
-			kubeconfig:      defaultKubeconfig,
 			expectedSecret: &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Secret",
@@ -107,7 +107,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Namespace:       resources.KubermaticNamespace,
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
-				Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte(defaultKubeconfig)},
 				Type: corev1.SecretTypeOpaque,
 			},
 		},
@@ -130,8 +129,11 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			if err := provider.CreateOrUpdateKubeconfigSecretForCluster(context.Background(), tc.externalCluster, tc.kubeconfig); err != nil {
+			kubeconfig, err := base64.StdEncoding.DecodeString(tc.kubeconfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := provider.CreateOrUpdateKubeconfigSecretForCluster(context.Background(), tc.externalCluster, kubeconfig); err != nil {
 				t.Fatal(err)
 			}
 
@@ -139,6 +141,7 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 			if err := client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.externalCluster.GetKubeconfigSecretName(), Namespace: resources.KubermaticNamespace}, secret); err != nil {
 				t.Fatal(err)
 			}
+			tc.expectedSecret.Data = map[string][]byte{resources.ExternalClusterKubeconfig: kubeconfig}
 			if !reflect.DeepEqual(secret, tc.expectedSecret) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedSecret, secret))
 			}

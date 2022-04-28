@@ -621,12 +621,6 @@ func convertInternalTokenToPublicExternal(internal *corev1.Secret, authenticator
 		return nil, fmt.Errorf("can not find token data")
 	}
 
-	publicClaim, _, err := authenticator.Authenticate(string(token))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create a token for %s: %w", internal.Name, err)
-	}
-
-	externalToken.Expiry = apiv1.NewTime(publicClaim.Expiry.Time())
 	externalToken.ID = internal.Name
 	name, ok := internal.Labels["name"]
 	if !ok {
@@ -635,5 +629,16 @@ func convertInternalTokenToPublicExternal(internal *corev1.Secret, authenticator
 	externalToken.Name = name
 
 	externalToken.CreationTimestamp = apiv1.NewTime(internal.CreationTimestamp.Time)
+
+	publicClaim, _, err := authenticator.Authenticate(string(token))
+	// set invalidated flag to true if you can't authenticate token
+	// It will force the user to regenerate token
+	if err != nil {
+		externalToken.Invalidated = true
+		return externalToken, nil
+	}
+
+	externalToken.Expiry = apiv1.NewTime(publicClaim.Expiry.Time())
+
 	return externalToken, nil
 }

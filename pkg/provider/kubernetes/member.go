@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,11 +34,10 @@ import (
 )
 
 // NewProjectMemberProvider returns a project members provider.
-func NewProjectMemberProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
+func NewProjectMemberProvider(createMasterImpersonatedClient ImpersonationClient, clientPrivileged ctrlruntimeclient.Client) *ProjectMemberProvider {
 	return &ProjectMemberProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               clientPrivileged,
-		isServiceAccountFunc:           isServiceAccountFunc,
 	}
 }
 
@@ -52,17 +51,13 @@ type ProjectMemberProvider struct {
 
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client
-
-	// since service account are special type of user this functions
-	// helps to determine if the given email address belongs to a service account
-	isServiceAccountFunc func(email string) bool
 }
 
 var _ provider.ProjectMemberProvider = &ProjectMemberProvider{}
 
 // Create creates a binding for the given member and the given project.
 func (p *ProjectMemberProvider) Create(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
-	if p.isServiceAccountFunc(memberEmail) {
+	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
@@ -90,7 +85,7 @@ func (p *ProjectMemberProvider) List(ctx context.Context, userInfo *provider.Use
 		if member.Spec.ProjectID == project.Name {
 			// The provider should serve only regular users as a members.
 			// The ServiceAccount is another type of the user and should not be append to project members.
-			if p.isServiceAccountFunc(member.Spec.UserEmail) {
+			if kubermaticv1helper.IsProjectServiceAccount(member.Spec.UserEmail) {
 				continue
 			}
 			projectMembers = append(projectMembers, member.DeepCopy())
@@ -148,9 +143,6 @@ func (p *ProjectMemberProvider) Delete(ctx context.Context, userInfo *provider.U
 
 // Update updates the given binding.
 func (p *ProjectMemberProvider) Update(ctx context.Context, userInfo *provider.UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
-	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
-		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
-	}
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -199,7 +191,7 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 // CreateUnsecured creates a binding for the given member and the given project
 // This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
-	if p.isServiceAccountFunc(memberEmail) {
+	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
@@ -214,7 +206,7 @@ func (p *ProjectMemberProvider) CreateUnsecured(ctx context.Context, project *ku
 // CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
 // This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecuredForServiceAccount(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
-	if p.isServiceAccountFunc(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
+	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
@@ -237,33 +229,15 @@ func (p *ProjectMemberProvider) DeleteUnsecured(ctx context.Context, bindingName
 // UpdateUnsecured updates the given binding
 // This function is unsafe in a sense that it uses privileged account to update the resource.
 func (p *ProjectMemberProvider) UpdateUnsecured(ctx context.Context, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
-	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
-		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
-	}
+	err := p.clientPrivileged.Update(ctx, binding)
 
-	if err := p.clientPrivileged.Update(ctx, binding); err != nil {
-		return nil, err
-	}
-	return binding, nil
+	return binding, err
 }
 
 func genBinding(project *kubermaticv1.Project, memberEmail, group string) *kubermaticv1.UserProjectBinding {
-	finalizers := []string{}
-	if rbac.ExtractGroupPrefix(group) == rbac.OwnerGroupNamePrefix {
-		finalizers = append(finalizers, rbac.CleanupFinalizerName)
-	}
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
-			Name:       rand.String(10),
-			Finalizers: finalizers,
+			Name: rand.String(10),
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			ProjectID: project.Name,

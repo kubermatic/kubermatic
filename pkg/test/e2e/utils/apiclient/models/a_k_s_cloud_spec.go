@@ -8,7 +8,6 @@ package models
 import (
 	"context"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -35,67 +34,15 @@ type AKSCloudSpec struct {
 
 	// tenant ID
 	TenantID string `json:"tenantID,omitempty"`
-
-	// cluster spec
-	ClusterSpec *AKSClusterSpec `json:"clusterSpec,omitempty"`
 }
 
 // Validate validates this a k s cloud spec
 func (m *AKSCloudSpec) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateClusterSpec(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
 	return nil
 }
 
-func (m *AKSCloudSpec) validateClusterSpec(formats strfmt.Registry) error {
-	if swag.IsZero(m.ClusterSpec) { // not required
-		return nil
-	}
-
-	if m.ClusterSpec != nil {
-		if err := m.ClusterSpec.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("clusterSpec")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ContextValidate validate this a k s cloud spec based on the context it is used
+// ContextValidate validates this a k s cloud spec based on context it is used
 func (m *AKSCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateClusterSpec(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *AKSCloudSpec) contextValidateClusterSpec(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.ClusterSpec != nil {
-		if err := m.ClusterSpec.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("clusterSpec")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 

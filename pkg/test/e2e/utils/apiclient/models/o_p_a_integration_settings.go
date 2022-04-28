@@ -13,19 +13,19 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// OPAIntegrationSettings o p a integration settings
+// OPAIntegrationSettings OPAIntegrationSettings configures the usage of OPA (Open Policy Agent) Gatekeeper inside the user cluster.
 //
 // swagger:model OPAIntegrationSettings
 type OPAIntegrationSettings struct {
 
-	// Enabled is the flag for enabling OPA integration
+	// Enables OPA Gatekeeper integration.
 	Enabled bool `json:"enabled,omitempty"`
 
-	// Enable mutation
+	// Optional: Enables experimental mutation in Gatekeeper.
 	ExperimentalEnableMutation bool `json:"experimentalEnableMutation,omitempty"`
 
-	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
-	// By default 10 seconds.
+	// The timeout in seconds that is set for the Gatekeeper validating webhook admission review calls.
+	// Defaults to `10` (seconds).
 	WebhookTimeoutSeconds int32 `json:"webhookTimeoutSeconds,omitempty"`
 
 	// audit resources
@@ -62,6 +62,8 @@ func (m *OPAIntegrationSettings) validateAuditResources(formats strfmt.Registry)
 		if err := m.AuditResources.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("auditResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("auditResources")
 			}
 			return err
 		}
@@ -79,6 +81,8 @@ func (m *OPAIntegrationSettings) validateControllerResources(formats strfmt.Regi
 		if err := m.ControllerResources.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("controllerResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("controllerResources")
 			}
 			return err
 		}
@@ -111,6 +115,8 @@ func (m *OPAIntegrationSettings) contextValidateAuditResources(ctx context.Conte
 		if err := m.AuditResources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("auditResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("auditResources")
 			}
 			return err
 		}
@@ -125,6 +131,8 @@ func (m *OPAIntegrationSettings) contextValidateControllerResources(ctx context.
 		if err := m.ControllerResources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("controllerResources")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("controllerResources")
 			}
 			return err
 		}

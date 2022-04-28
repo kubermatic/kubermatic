@@ -18,12 +18,12 @@ package etcdrestore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -171,6 +171,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster,
 	seed *kubermaticv1.Seed) (*reconcile.Result, error) {
+	if !cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
+		return nil, fmt.Errorf("etcdLauncher not enabled on cluster: %q", cluster.Name)
+	}
+
 	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseCompleted {
 		return nil, nil
 	}
@@ -186,15 +190,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	var destination *kubermaticv1.BackupDestination
 	if restore.Spec.Destination != "" {
 		if seed.Spec.EtcdBackupRestore == nil {
-			return nil, errors.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+			return nil, fmt.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
 		}
 		var ok bool
 		destination, ok = seed.Spec.EtcdBackupRestore.Destinations[restore.Spec.Destination]
 		if !ok {
-			return nil, errors.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+			return nil, fmt.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
 		}
 		if destination.Credentials == nil {
-			return nil, errors.Errorf("credentials not set for backup destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+			return nil, fmt.Errorf("credentials not set for backup destination %q in Seed %q", restore.Spec.Destination, seed.Name)
 		}
 	}
 

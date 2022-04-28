@@ -123,6 +123,11 @@ func TestNewTemplateData(t *testing.T) {
 				feature: true,
 			},
 		},
+		Status: kubermaticv1.ClusterStatus{
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: *version,
+			},
+		},
 	}
 
 	credentials := resources.Credentials{}

@@ -63,7 +63,10 @@ func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {
 			},
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				Pods: kubermaticv1.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16"},
+					CIDRBlocks: []string{"172.25.0.0/16", "fd00::/56"},
+				},
+				Services: kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{"10.240.16.0/20", "fd03::/120"},
 				},
 			},
 		},

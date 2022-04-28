@@ -18,13 +18,19 @@ package kubevirt
 
 import (
 	"context"
+	"fmt"
 
+	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
+	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -106,4 +112,58 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 	}
 
 	return nil
+}
+
+func dataVolumeCreator(datavolume *cdiv1beta1.DataVolume) reconciling.NamedCDIv1beta1DataVolumeCreatorGetter {
+	return func() (name string, create reconciling.CDIv1beta1DataVolumeCreator) {
+		return datavolume.Name, func(dv *cdiv1beta1.DataVolume) (*cdiv1beta1.DataVolume, error) {
+			dv.Spec = datavolume.Spec
+			return dv, nil
+		}
+	}
+}
+
+func reconcilePreAllocatedDataVolumes(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
+	for _, d := range cluster.Spec.Cloud.Kubevirt.PreAllocatedDataVolumes {
+		dv, err := createPreAllocatedDataVolume(d, cluster.Status.NamespaceName)
+		if err != nil {
+			return err
+		}
+		dvCreator := []reconciling.NamedCDIv1beta1DataVolumeCreatorGetter{
+			dataVolumeCreator(dv),
+		}
+		if err := reconciling.ReconcileCDIv1beta1DataVolumes(ctx, dvCreator, cluster.Status.NamespaceName, client); err != nil {
+			return fmt.Errorf("failed to reconcile Allocated DataVolume: %w", err)
+		}
+	}
+	return nil
+}
+
+func createPreAllocatedDataVolume(dv kubermaticv1.PreAllocatedDataVolume, namespace string) (*cdiv1beta1.DataVolume, error) {
+	dvSize, err := resource.ParseQuantity(dv.Size)
+	if err != nil {
+		return nil, err
+	}
+	return &cdiv1beta1.DataVolume{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dv.Name,
+			Namespace: namespace,
+		},
+		Spec: cdiv1beta1.DataVolumeSpec{
+			Source: &cdiv1beta1.DataVolumeSource{
+				HTTP: &cdiv1beta1.DataVolumeSourceHTTP{
+					URL: dv.URL,
+				},
+			},
+			PVC: &corev1.PersistentVolumeClaimSpec{
+				StorageClassName: utilpointer.StringPtr(dv.StorageClass),
+				AccessModes: []corev1.PersistentVolumeAccessMode{
+					"ReadWriteOnce",
+				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceStorage: dvSize},
+				},
+			},
+		},
+	}, nil
 }

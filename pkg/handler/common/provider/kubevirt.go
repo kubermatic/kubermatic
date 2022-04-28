@@ -25,11 +25,13 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	storagev1 "k8s.io/api/storage/v1"
@@ -88,16 +90,19 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 	return base64.StdEncoding.EncodeToString([]byte(kvKubeconfig)), nil
 }
 
-func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetList, error) {
+func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster) (apiv2.VirtualMachineInstancePresetList, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 
 	vmiPresets := kubevirtv1.VirtualMachineInstancePresetList{}
-	if err := client.List(context.TODO(), &vmiPresets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
+	if err := client.List(ctx, &vmiPresets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
 		return nil, err
 	}
+
+	// Add a standard preset to the list
+	vmiPresets.Items = append(vmiPresets.Items, *kubevirt.GetKubermaticStandardPreset())
 
 	res := apiv2.VirtualMachineInstancePresetList{}
 	for _, vmiPreset := range vmiPresets.Items {
@@ -106,9 +111,31 @@ func KubeVirtVMIPresets(kubeconfig string) (apiv2.VirtualMachineInstancePresetLi
 			return nil, err
 		}
 		res = append(res, *preset)
+
+		// Reconcile each Preset in the dedicated Namespace.
+		// Update flow: cluster is not nil, reconciliation of Presets is done here.
+		// Creation flow: cluster is nil, reconciliation in then done by the ReconcileCluster.
+		if cluster != nil {
+			presetCreators := []reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter{
+				presetCreator(&vmiPreset),
+			}
+			if err := reconciling.ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx, presetCreators, cluster.Status.NamespaceName, client); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return res, nil
+}
+
+func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter {
+	return func() (string, reconciling.KubeVirtV1VirtualMachineInstancePresetCreator) {
+		return preset.Name, func(p *kubevirtv1.VirtualMachineInstancePreset) (*kubevirtv1.VirtualMachineInstancePreset, error) {
+			p.Labels = preset.Labels
+			p.Spec = preset.Spec
+			return p, nil
+		}
+	}
 }
 
 func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -118,7 +145,12 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 		return nil, err
 	}
 
-	return KubeVirtVMIPresets(kvKubeconfig)
+	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	if err != nil {
+		return nil, err
+	}
+
+	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster)
 }
 
 func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) (*apiv2.VirtualMachineInstancePreset, error) {
@@ -140,14 +172,14 @@ func newAPIStorageClass(sc *storagev1.StorageClass) *apiv2.StorageClass {
 	}
 }
 
-func KubeVirtStorageClasses(kubeconfig string) (apiv2.StorageClassList, error) {
+func KubeVirtStorageClasses(ctx context.Context, kubeconfig string) (apiv2.StorageClassList, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
 
 	storageClassList := storagev1.StorageClassList{}
-	if err := client.List(context.TODO(), &storageClassList); err != nil {
+	if err := client.List(ctx, &storageClassList); err != nil {
 		return nil, err
 	}
 
@@ -166,5 +198,5 @@ func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, u
 		return nil, err
 	}
 
-	return KubeVirtStorageClasses(kvKubeconfig)
+	return KubeVirtStorageClasses(ctx, kvKubeconfig)
 }

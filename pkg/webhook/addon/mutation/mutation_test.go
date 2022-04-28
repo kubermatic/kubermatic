@@ -162,7 +162,36 @@ func TestHandle(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name:     "Allow updating addons whenn the Cluster is already gone (to allow cleanups to complete)",
+			name: "Reject new addons in deleted clusters",
+			clusters: []ctrlruntimeclient.Object{
+				(func(c *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+					cluster := c.DeepCopy()
+					now := metav1.Now()
+					cluster.DeletionTimestamp = &now
+					return cluster
+				}(cluster)),
+			},
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "MLAAdminSetting",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawAddonGen{
+							Name:      "my-setting",
+							Namespace: cluster.Status.NamespaceName,
+						}.Do(),
+					},
+				},
+			},
+			wantError: true,
+		},
+		{
+			name:     "Allow updating addons when the Cluster is already gone (to allow cleanups to complete)",
 			clusters: []ctrlruntimeclient.Object{},
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{

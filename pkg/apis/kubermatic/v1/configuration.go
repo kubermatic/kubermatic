@@ -33,6 +33,9 @@ const (
 	AlwaysCondition ConditionType = "always"
 	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
 	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
+	// NonAMD64WithCanalAndIPVSClusterCondition is an incompatibility condition that represents the usage of non-amd64 nodes in the cluster
+	// running Canal and kube-proxy in the IPVS mode.
+	NonAMD64WithCanalAndIPVSClusterCondition ConditionType = "nonAMD64WithCanalAndIPVS"
 )
 
 // +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
@@ -70,7 +73,9 @@ type KubermaticConfigurationSpec struct {
 	CABundle corev1.TypedLocalObjectReference `json:"caBundle,omitempty"`
 	// ImagePullSecret is used to authenticate against Docker registries.
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
-	// Auth defines keys and URLs for Dex.
+	// Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
+	// feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
+	// +optional
 	Auth KubermaticAuthConfiguration `json:"auth"`
 	// FeatureGates are used to optionally enable certain features.
 	FeatureGates map[string]bool `json:"featureGates,omitempty"`
@@ -365,7 +370,8 @@ type Update struct {
 
 // Incompatibility represents a version incompatibility for a user cluster.
 type Incompatibility struct {
-	// Provider to which to apply the compatibility check
+	// Provider to which to apply the compatibility check.
+	// Empty string matches all providers
 	Provider ProviderType `json:"provider,omitempty"`
 	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
 	Version string `json:"version,omitempty"`

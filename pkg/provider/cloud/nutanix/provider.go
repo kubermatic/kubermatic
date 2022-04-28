@@ -39,6 +39,8 @@ const (
 	categoryDescription = "automatically created by KKP"
 	categoryValuePrefix = "kubernetes-"
 
+	DefaultProject = "default"
+
 	categoryCleanupFinalizer = "kubermatic.k8c.io/cleanup-nutanix-categories"
 )
 
@@ -340,4 +342,14 @@ func reconcileCategoryAndValue(ctx context.Context, client *ClientSet, cluster *
 
 func CategoryValue(clusterName string) string {
 	return categoryValuePrefix + clusterName
+}
+
+func ValidateCredentials(ctx context.Context, endpoint string, port *int32, allowInsecure *bool, proxyURL, username, password string) error {
+	cli, err := GetClientSetWithCreds(endpoint, port, allowInsecure, proxyURL, username, password)
+	if err != nil {
+		return err
+	}
+	_, err = cli.Prism.V3.ListAllImage(ctx, "")
+
+	return err
 }

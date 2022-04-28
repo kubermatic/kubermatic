@@ -28,13 +28,16 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	applicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/application-installation-controller"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
+	nodeversioncontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-version-controller"
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
 	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
@@ -53,7 +56,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -156,9 +159,6 @@ func main() {
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
 
-	if runOp.ownerEmail == "" {
-		log.Fatal("-owner-email must be set")
-	}
 	if runOp.namespace == "" {
 		log.Fatal("-namespace must be set")
 	}
@@ -344,6 +344,11 @@ func main() {
 	}
 	log.Info("Registered nodelabel controller")
 
+	if err := nodeversioncontroller.Add(rootCtx, log, seedMgr, mgr, runOp.clusterName); err != nil {
+		log.Fatalw("Failed to register node-version controller", zap.Error(err))
+	}
+	log.Info("Registered node-version controller")
+
 	if err := clusterrolelabeler.Add(rootCtx, log, mgr, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))
 	}
@@ -354,10 +359,14 @@ func main() {
 	}
 	log.Info("Registered role-cloner controller")
 
-	if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
-		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))
+	if runOp.ownerEmail != "" {
+		if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
+			log.Fatalw("Failed to register owner-binding-creator controller", zap.Error(err))
+		}
+		log.Info("Registered owner-binding-creator controller")
+	} else {
+		log.Info("No -owner-email given, skipping owner-binding-creator controller")
 	}
-	log.Info("Registered ownerbindingcreator controller")
 
 	if runOp.ccmMigration {
 		if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName, isPausedChecker); err != nil {
@@ -372,6 +381,11 @@ func main() {
 		}
 		log.Info("Registered constraintsyncer controller")
 	}
+
+	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, &applications.ApplicationManager{}); err != nil {
+		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
+	}
+	log.Info("Registered Application Installation controller")
 
 	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("Failed running manager", zap.Error(err))

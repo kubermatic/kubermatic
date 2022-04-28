@@ -52,6 +52,8 @@ func (m *ResourceRequirements) validateLimits(formats strfmt.Registry) error {
 		if err := m.Limits.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("limits")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("limits")
 			}
 			return err
 		}
@@ -69,6 +71,8 @@ func (m *ResourceRequirements) validateRequests(formats strfmt.Registry) error {
 		if err := m.Requests.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("requests")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("requests")
 			}
 			return err
 		}
@@ -100,6 +104,8 @@ func (m *ResourceRequirements) contextValidateLimits(ctx context.Context, format
 	if err := m.Limits.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("limits")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("limits")
 		}
 		return err
 	}
@@ -112,6 +118,8 @@ func (m *ResourceRequirements) contextValidateRequests(ctx context.Context, form
 	if err := m.Requests.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("requests")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("requests")
 		}
 		return err
 	}

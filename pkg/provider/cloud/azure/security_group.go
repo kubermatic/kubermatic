@@ -56,13 +56,9 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		WithCluster(cluster).
 		Build().
 		NodePorts()
+	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange)
 
-	nodePortsAllowedIPRange := cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange
-	if nodePortsAllowedIPRange == "" {
-		nodePortsAllowedIPRange = "0.0.0.0/0"
-	}
-
-	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsAllowedIPRange)
+	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsAllowedIPRanges.GetIPv4CIDRs(), nodePortsAllowedIPRanges.GetIPv6CIDRs())
 
 	// check for attributes of the existing security group and return early if all values are already
 	// as expected. Since there are a lot of pointers in the network.SecurityGroup struct, we need to
@@ -83,7 +79,8 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	})
 }
 
-func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int, nodePortsAllowedRange string) *network.SecurityGroup {
+func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string, portRangeLow int, portRangeHigh int,
+	nodePortsIPv4CIDRs []string, nodePortsIPv6CIDRs []string) *network.SecurityGroup {
 	securityGroup := &network.SecurityGroup{
 		Name:     to.StringPtr(cloud.Azure.SecurityGroup),
 		Location: to.StringPtr(location),
@@ -138,20 +135,6 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						Priority:                 to.Int32Ptr(300),
 					},
 				},
-				{
-					// Allow access to node ports from everywhere
-					Name: to.StringPtr("node_ports_ingress"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 network.SecurityRuleProtocolAsterisk,
-						SourceAddressPrefix:      to.StringPtr(nodePortsAllowedRange),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),
-						Access:                   network.SecurityRuleAccessAllow,
-						Priority:                 to.Int32Ptr(400),
-					},
-				},
 				// outbound
 				{
 					Name: to.StringPtr("outbound_allow_all"),
@@ -168,6 +151,15 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 				},
 			},
 		},
+	}
+
+	if len(nodePortsIPv4CIDRs) > 0 {
+		updatedRules := append(*securityGroup.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress", 400, portRangeLow, portRangeHigh, nodePortsIPv4CIDRs))
+		securityGroup.SecurityRules = &updatedRules
+	}
+	if len(nodePortsIPv6CIDRs) > 0 {
+		updatedRules := append(*securityGroup.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress_ipv6", 401, portRangeLow, portRangeHigh, nodePortsIPv6CIDRs))
+		securityGroup.SecurityRules = &updatedRules
 	}
 
 	updatedRules := append(*securityGroup.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
@@ -195,6 +187,16 @@ func ensureSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 }
 
 func deleteSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
+	// We first do Get to check existence of the security group to see if its already gone or not.
+	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
+	res, err := clients.SecurityGroups.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, "")
+	if err != nil {
+		if isNotFound(res.Response) {
+			return nil
+		}
+		return err
+	}
+
 	future, err := clients.SecurityGroups.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
 	if err != nil {
 		return err
@@ -205,6 +207,28 @@ func deleteSecurityGroup(ctx context.Context, clients *ClientSet, cloud kubermat
 	}
 
 	return nil
+}
+
+// nodePortsAllowedIPRangesRule returns a security rule to allow access to node ports from provided IP ranges.
+func nodePortsAllowedIPRangesRule(name string, priority int32, portRangeLow int, portRangeHigh int, nodePortsAllowedIPRanges []string) network.SecurityRule {
+	rule := network.SecurityRule{
+		Name: to.StringPtr(name),
+		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+			Direction:                network.SecurityRuleDirectionInbound,
+			Protocol:                 network.SecurityRuleProtocolAsterisk,
+			SourcePortRange:          to.StringPtr("*"),
+			DestinationAddressPrefix: to.StringPtr("*"),
+			DestinationPortRange:     to.StringPtr(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),
+			Access:                   network.SecurityRuleAccessAllow,
+			Priority:                 to.Int32Ptr(priority),
+		},
+	}
+	if len(nodePortsAllowedIPRanges) == 1 {
+		rule.SecurityRulePropertiesFormat.SourceAddressPrefix = to.StringPtr(nodePortsAllowedIPRanges[0])
+	} else {
+		rule.SecurityRulePropertiesFormat.SourceAddressPrefixes = &nodePortsAllowedIPRanges
+	}
+	return rule
 }
 
 func tcpDenyAllRule() network.SecurityRule {

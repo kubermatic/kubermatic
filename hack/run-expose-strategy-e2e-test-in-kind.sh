@@ -44,7 +44,7 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.14}"
+USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.7}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
 REPOSUFFIX=""
@@ -157,6 +157,9 @@ kubermaticOperator:
     repository: "quay.io/kubermatic/kubermatic${REPOSUFFIX}"
     tag: "${TAG}"
 EOF
+
+# prepare CRDs
+copy_crds_to_chart
 
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \

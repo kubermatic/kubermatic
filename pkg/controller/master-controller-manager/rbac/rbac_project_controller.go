@@ -19,6 +19,8 @@ package rbac
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -41,6 +43,7 @@ type projectController struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
 
+	log              *zap.SugaredLogger
 	projectResources []projectResource
 	client           ctrlruntimeclient.Client
 	restMapper       meta.RESTMapper
@@ -52,7 +55,7 @@ type projectController struct {
 
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependent object will be garbage collected.
-func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, resources []projectResource, workerPredicate predicate.Predicate) error {
+func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, log *zap.SugaredLogger, resources []projectResource, workerPredicate predicate.Predicate) error {
 	seedClientMap := make(map[string]ctrlruntimeclient.Client)
 	for k, v := range seedManagerMap {
 		seedClientMap[k] = v.GetClient()
@@ -60,6 +63,7 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 
 	c := &projectController{
 		projectQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_for_project"),
+		log:              log,
 		metrics:          metrics,
 		projectResources: resources,
 		client:           mgr.GetClient(),
@@ -74,19 +78,9 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 	}
 
 	// Watch for changes to Projects
-	err = cc.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, workerPredicate)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cc.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, workerPredicate)
 }
 
 func (c *projectController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	err := c.sync(ctx, req.NamespacedName)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, c.sync(ctx, req.NamespacedName)
 }

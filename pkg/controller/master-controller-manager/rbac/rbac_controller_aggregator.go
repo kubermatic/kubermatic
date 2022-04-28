@@ -21,8 +21,10 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,7 +73,7 @@ type projectResource struct {
 }
 
 // New creates a new controller aggregator for managing RBAC for resources.
-func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
+func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, log *zap.SugaredLogger, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
 	projectResources := []projectResource{
 		{
 			object: &kubermaticv1.Cluster{
@@ -122,8 +124,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 				},
 			},
 			predicate: func(o ctrlruntimeclient.Object) bool {
-				// do not reconcile resources without "serviceaccount" prefix
-				return strings.HasPrefix(o.GetName(), "serviceaccount")
+				return kubermaticv1helper.IsProjectServiceAccount(o.GetName())
 			},
 		},
 
@@ -147,11 +148,11 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 		},
 	}
 
-	if err := newProjectRBACController(ctx, metrics, mgr, seedManagerMap, projectResources, workerPredicate); err != nil {
+	if err := newProjectRBACController(ctx, metrics, mgr, seedManagerMap, log, projectResources, workerPredicate); err != nil {
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesControllers(ctx, metrics, mgr, seedManagerMap, projectResources)
+	resourcesRBACCtrl, err := newResourcesControllers(ctx, metrics, mgr, log, seedManagerMap, projectResources)
 	if err != nil {
 		return nil, err
 	}

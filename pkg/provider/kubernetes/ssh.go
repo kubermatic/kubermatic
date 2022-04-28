@@ -114,18 +114,11 @@ func genUserSSHKey(project *kubermaticv1.Project, keyName, pubKey string) (*kube
 	return &kubermaticv1.UserSSHKey{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("key-%s", rand.String(10)),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
 		},
 		Spec: kubermaticv1.SSHKeySpec{
 			PublicKey: pubKey,
 			Name:      keyName,
+			Project:   project.Name,
 			Clusters:  []string{},
 		},
 	}, nil
@@ -149,11 +142,8 @@ func (p *SSHKeyProvider) List(ctx context.Context, project *kubermaticv1.Project
 
 	projectKeys := []*kubermaticv1.UserSSHKey{}
 	for _, key := range allKeys.Items {
-		owners := key.GetOwnerReferences()
-		for _, owner := range owners {
-			if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == project.Name {
-				projectKeys = append(projectKeys, key.DeepCopy())
-			}
+		if key.Spec.Project == project.Name {
+			projectKeys = append(projectKeys, key.DeepCopy())
 		}
 	}
 

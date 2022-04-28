@@ -207,7 +207,7 @@ func CloudConfig(
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
 				UseOctavia:           useOctavia,
 			},
-			Version: cluster.Spec.Version.String(),
+			Version: cluster.Status.Versions.ControlPlane.String(),
 		}
 		cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
 		if err != nil {
@@ -293,6 +293,7 @@ func CloudConfig(
 	case cloud.Kubevirt != nil:
 		cc := kubevirt.CloudConfig{
 			Kubeconfig: credentials.Kubevirt.KubeConfig,
+			Namespace:  cluster.Status.NamespaceName,
 		}
 		return cc.String()
 	}

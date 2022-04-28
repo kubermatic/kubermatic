@@ -528,7 +528,6 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 	if replicas > 0 {
 		cpu := "1"
 		memory := "2Gi"
-		namespace := "default"
 		pvcSize := "20Gi"
 		sourceURL := "http://vm-repo.default.svc.cluster.local/CentOS-7-x86_64-GenericCloud.qcow2"
 		storageClassName := "standard"
@@ -539,12 +538,11 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 				Template: &models.NodeSpec{
 					Cloud: &models.NodeCloudSpec{
 						Kubevirt: &models.KubevirtNodeSpec{
-							CPUs:             &cpu,
-							Memory:           &memory,
-							Namespace:        &namespace,
-							PVCSize:          &pvcSize,
-							SourceURL:        &sourceURL,
-							StorageClassName: &storageClassName,
+							CPUs:                        &cpu,
+							Memory:                      &memory,
+							PrimaryDiskOSImage:          &sourceURL,
+							PrimaryDiskSize:             &pvcSize,
+							PrimaryDiskStorageClassName: &storageClassName,
 						},
 					},
 					OperatingSystem: &models.OperatingSystemSpec{
@@ -704,6 +702,7 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 
 	apiClusterHealth := &apiv1.ClusterHealth{}
 	apiClusterHealth.Apiserver = convertHealthStatus(response.Payload.Apiserver)
+	apiClusterHealth.ApplicationController = convertHealthStatus(response.Payload.ApplicationController)
 	apiClusterHealth.Controller = convertHealthStatus(response.Payload.Controller)
 	apiClusterHealth.Etcd = convertHealthStatus(response.Payload.Etcd)
 	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
@@ -915,6 +914,7 @@ func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 		kubermaticv1.HealthStatusUp == healthStatus.UserClusterControllerManager &&
 		kubermaticv1.HealthStatusUp == healthStatus.Scheduler &&
 		kubermaticv1.HealthStatusUp == healthStatus.MachineController &&
+		kubermaticv1.HealthStatusUp == healthStatus.ApplicationController &&
 		kubermaticv1.HealthStatusUp == healthStatus.Etcd &&
 		kubermaticv1.HealthStatusUp == healthStatus.Controller &&
 		kubermaticv1.HealthStatusUp == healthStatus.Apiserver

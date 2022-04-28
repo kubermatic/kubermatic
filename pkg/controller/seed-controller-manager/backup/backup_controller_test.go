@@ -67,17 +67,22 @@ func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
 }
 
 func TestEnsureBackupCronJob(t *testing.T) {
+	version := *semver.NewSemverOrDie("1.22.5")
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie("1.22.5"),
+			Version: version,
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "testnamespace",
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Etcd: kubermaticv1.HealthStatusUp,
+			},
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: version,
+				Apiserver:    version,
 			},
 		},
 	}

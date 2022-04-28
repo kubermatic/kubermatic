@@ -24,9 +24,6 @@ spec:
       node:
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
-        # Optional: The hyperkube image to use. Currently only Flatcar
-        # makes use of this option.
-        hyperkubeImage: ""
         # Optional: These image registries will be configured as insecure
         # on the container runtime.
         insecureRegistries: []
@@ -62,6 +59,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
           # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
@@ -140,6 +138,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
           # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
@@ -161,6 +160,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
@@ -232,6 +232,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
   # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
@@ -337,6 +338,14 @@ spec:
   # Metering configures the metering tool on user clusters across the seed.
   metering:
     enabled: false
+    # ReportConfigurations is a map of report configuration definitions.
+    reports:
+      weekly:
+        # Interval defines the number of days consulted in the metering report.
+        interval: 7
+        # Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
+        # only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
+        schedule: 0 1 * * 6
     # StorageClassName is the name of the storage class that the metering tool uses to save processed files before
     # exporting it to s3 bucket. Default value is kubermatic-fast.
     storageClassName: kubermatic-fast
@@ -351,9 +360,8 @@ spec:
   nodeportProxy:
     # Annotations are used to further tweak the LoadBalancer integration with the
     # cloud provider where the seed cluster is running.
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
-      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    # Deprecated: Use .envoy.loadBalancerService.annotations instead.
+    annotations: {}
     # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
     # setup on the seed cluster. This should only be used if a suitable replacement
     # is installed (like the nodeport-proxy Helm chart).
@@ -362,6 +370,16 @@ spec:
     envoy:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: docker.io/envoyproxy/envoy-alpine
+      loadBalancerService:
+        # Annotations are used to further tweak the LoadBalancer integration with the
+        # cloud provider.
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+        # SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
+        # This field will be ignored if the cloud-provider does not support the feature.
+        # More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+        sourceRanges: []
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.

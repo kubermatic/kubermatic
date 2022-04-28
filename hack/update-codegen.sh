@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.17.5 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=golang:1.18.1 containerize ./hack/update-codegen.sh
 
 echodate "Running go generate"
 go generate ./pkg/...
@@ -29,4 +29,4 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen \
   crd \
   object:headerFile=./hack/boilerplate/ce/boilerplate.go.txt \
   paths=./pkg/apis/... \
-  output:crd:dir=./charts/kubermatic-operator/crd/k8c.io
+  output:crd:dir=./pkg/validation/openapi/crd/k8c.io

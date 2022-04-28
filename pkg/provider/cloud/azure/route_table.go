@@ -104,6 +104,16 @@ func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv
 }
 
 func deleteRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
+	// We first do Get to check existence of the route table to see if its already gone or not.
+	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
+	res, err := clients.RouteTables.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, "")
+	if err != nil {
+		if isNotFound(res.Response) {
+			return nil
+		}
+		return err
+	}
+
 	future, err := clients.RouteTables.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName)
 	if err != nil {
 		return err

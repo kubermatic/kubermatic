@@ -73,16 +73,8 @@ Thanks for taking the time to join our community and start contributing!
 ### Development environment
 
 ```bash
-mkdir -p $(go env GOPATH)/src/k8c.io
-cd $(go env GOPATH)/src/k8c.io
-git clone git@github.com:kubermatic/kubermatic
+git clone git@github.com:kubermatic/kubermatic.git
 cd kubermatic
-```
-
-Or alternatively:
-
-```bash
-go get k8c.io/kubermatic
 ```
 
 There are a couple of scripts in the `hacks` directory to aid in running the components locally

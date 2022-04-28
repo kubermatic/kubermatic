@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -72,7 +73,7 @@ func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"clustertemplates"},
+					Resources: []string{"clustertemplates", "projects"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 			}
@@ -328,7 +329,7 @@ func WebhookServingCASecretCreator(cfg *kubermaticv1.KubermaticConfiguration) re
 	}
 }
 
-func WebhookServingCertSecretCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
+func WebhookServingCertSecretCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
 	altNames := []string{
 		fmt.Sprintf("%s.%s", WebhookServiceName, cfg.Namespace),
 		fmt.Sprintf("%s.%s.svc", WebhookServiceName, cfg.Namespace),
@@ -341,7 +342,7 @@ func WebhookServingCertSecretCreator(cfg *kubermaticv1.KubermaticConfiguration, 
 			Name:      WebhookServingCASecretName,
 		}
 
-		if err := client.Get(context.Background(), key, &se); err != nil {
+		if err := client.Get(ctx, key, &se); err != nil {
 			return nil, fmt.Errorf("CA certificate could not be retrieved: %w", err)
 		}
 
@@ -360,7 +361,7 @@ func SeedAdmissionWebhookName(cfg *kubermaticv1.KubermaticConfiguration) string 
 	return fmt.Sprintf("kubermatic-seeds-%s", cfg.Namespace)
 }
 
-func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func SeedAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -368,7 +369,7 @@ func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, clie
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.AllScopes
 
-			ca, err := WebhookCABundle(cfg, client)
+			ca, err := WebhookCABundle(ctx, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find webhhook CA bundle: %w", err)
 			}
@@ -417,6 +418,121 @@ func SeedAdmissionWebhookCreator(cfg *kubermaticv1.KubermaticConfiguration, clie
 	}
 }
 
+func KubermaticConfigurationAdmissionWebhookName(cfg *kubermaticv1.KubermaticConfiguration) string {
+	return fmt.Sprintf("kubermatic-configuration-%s", cfg.Namespace)
+}
+
+func KubermaticConfigurationAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+		return KubermaticConfigurationAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.AllScopes
+
+			ca, err := WebhookCABundle(ctx, cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find webhhook CA bundle: %w", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    "kubermaticconfigurations.kubermatic.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32Ptr(30),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: ca,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      WebhookServiceName,
+							Namespace: cfg.Namespace,
+							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-kubermaticconfiguration"),
+							Port:      pointer.Int32Ptr(443),
+						},
+					},
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							NameLabel: cfg.Namespace,
+						},
+					},
+					ObjectSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{kubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"kubermaticconfigurations"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.OperationAll,
+							},
+						},
+					},
+				},
+			}
+
+			return hook, nil
+		}
+	}
+}
+
+func ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+		return ApplicationDefinitionAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.AllScopes
+
+			ca, err := WebhookCABundle(ctx, cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    "applicationdefinitions.apps.kubermatic.k8c.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32Ptr(30),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: ca,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      WebhookServiceName,
+							Namespace: cfg.Namespace,
+							Path:      pointer.StringPtr("/validate-application-definition"),
+							Port:      pointer.Int32Ptr(443),
+						},
+					},
+					ObjectSelector:    &metav1.LabelSelector{},
+					NamespaceSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{appkubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"applicationdefinitions"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+					},
+				},
+			}
+
+			return hook, nil
+		}
+	}
+}
+
 // WebhookServiceCreator creates the Service for all KKP webhooks.
 func WebhookServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
@@ -438,14 +554,14 @@ func WebhookServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctr
 	}
 }
 
-func WebhookCABundle(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
+func WebhookCABundle(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
 	secret := corev1.Secret{}
 	key := types.NamespacedName{
 		Name:      WebhookServingCASecretName,
 		Namespace: cfg.Namespace,
 	}
 
-	err := client.Get(context.Background(), key, &secret)
+	err := client.Get(ctx, key, &secret)
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve admission webhook CA Secret %s: %w", WebhookServingCASecretName, err)
 	}

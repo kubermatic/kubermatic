@@ -46,6 +46,9 @@ type VSphereCloudSpec struct {
 	// StoragePolicy to be used for storage provisioning
 	StoragePolicy string `json:"storagePolicy,omitempty"`
 
+	// This is category for the machine deployment tags
+	TagCategoryID string `json:"tagCategoryID,omitempty"`
+
 	// Username is the vSphere user name.
 	// +optional
 	Username string `json:"username,omitempty"`
@@ -87,6 +90,8 @@ func (m *VSphereCloudSpec) validateCredentialsReference(formats strfmt.Registry)
 		if err := m.CredentialsReference.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -104,6 +109,8 @@ func (m *VSphereCloudSpec) validateInfraManagementUser(formats strfmt.Registry) 
 		if err := m.InfraManagementUser.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}
@@ -136,6 +143,8 @@ func (m *VSphereCloudSpec) contextValidateCredentialsReference(ctx context.Conte
 		if err := m.CredentialsReference.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("credentialsReference")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("credentialsReference")
 			}
 			return err
 		}
@@ -150,6 +159,8 @@ func (m *VSphereCloudSpec) contextValidateInfraManagementUser(ctx context.Contex
 		if err := m.InfraManagementUser.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}

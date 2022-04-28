@@ -36,6 +36,8 @@ type ClientService interface {
 
 	DeleteProviderPreset(params *DeleteProviderPresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProviderPresetOK, error)
 
+	GetPresetStats(params *GetPresetStatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPresetStatsOK, error)
+
 	ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error)
 
 	ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error)
@@ -198,6 +200,44 @@ func (a *Client) DeleteProviderPreset(params *DeleteProviderPresetParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteProviderPresetDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetPresetStats gets presets stats
+*/
+func (a *Client) GetPresetStats(params *GetPresetStatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPresetStatsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetPresetStatsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getPresetStats",
+		Method:             "GET",
+		PathPattern:        "/api/v2/presets/{preset_name}/stats",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPresetStatsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetPresetStatsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetPresetStatsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

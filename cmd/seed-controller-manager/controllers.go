@@ -24,21 +24,25 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
+	autoupdatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/auto-update-controller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
+	clusterphasecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-phase-controller"
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
 	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
 	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
+	initialapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-application-installation-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initialmachinedeployment"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	presetcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/preset-controller"
 	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
-	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
+	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
 	"k8c.io/kubermatic/v2/pkg/features"
 )
 
@@ -46,23 +50,27 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller.
 var AllControllers = map[string]controllerCreator{
-	kubernetescontroller.ControllerName:           createKubernetesController,
-	updatecontroller.ControllerName:               createUpdateController,
-	addon.ControllerName:                          createAddonController,
-	addoninstaller.ControllerName:                 createAddonInstallerController,
-	etcdbackupcontroller.ControllerName:           createEtcdBackupController,
-	backupcontroller.ControllerName:               createBackupController,
-	etcdrestorecontroller.ControllerName:          createEtcdRestoreController,
-	monitoring.ControllerName:                     createMonitoringController,
-	cloudcontroller.ControllerName:                createCloudController,
-	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
-	pvwatcher.ControllerName:                      createPvWatcherController,
-	seedconstraintsynchronizer.ControllerName:     createConstraintController,
-	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
-	initialmachinedeployment.ControllerName:       createInitialMachineDeploymentController,
-	mla.ControllerName:                            createMLAController,
-	clustertemplatecontroller.ControllerName:      createClusterTemplateController,
-	projectcontroller.ControllerName:              createProjectController,
+	kubernetescontroller.ControllerName:                     createKubernetesController,
+	autoupdatecontroller.ControllerName:                     createAutoUpdateController,
+	updatecontroller.ControllerName:                         createUpdateController,
+	addon.ControllerName:                                    createAddonController,
+	addoninstaller.ControllerName:                           createAddonInstallerController,
+	etcdbackupcontroller.ControllerName:                     createEtcdBackupController,
+	backupcontroller.ControllerName:                         createBackupController,
+	etcdrestorecontroller.ControllerName:                    createEtcdRestoreController,
+	monitoring.ControllerName:                               createMonitoringController,
+	cloudcontroller.ControllerName:                          createCloudController,
+	seedresourcesuptodatecondition.ControllerName:           createSeedConditionUpToDateController,
+	pvwatcher.ControllerName:                                createPvWatcherController,
+	seedconstraintsynchronizer.ControllerName:               createConstraintController,
+	constrainttemplatecontroller.ControllerName:             createConstraintTemplateController,
+	initialmachinedeployment.ControllerName:                 createInitialMachineDeploymentController,
+	initialapplicationinstallationcontroller.ControllerName: createInitialApplicationInstallationController,
+	mla.ControllerName:                                      createMLAController,
+	clustertemplatecontroller.ControllerName:                createClusterTemplateController,
+	projectcontroller.ControllerName:                        createProjectController,
+	clusterphasecontroller.ControllerName:                   createClusterPhaseController,
+	presetcontroller.ControllerName:                         createPresetController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -219,13 +227,33 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 	)
 }
 
+func createAutoUpdateController(ctrlCtx *controllerContext) error {
+	return autoupdatecontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.configGetter,
+		ctrlCtx.clientProvider,
+		ctrlCtx.log,
+		ctrlCtx.versions,
+	)
+}
+
 func createUpdateController(ctrlCtx *controllerContext) error {
 	return updatecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.configGetter,
-		ctrlCtx.clientProvider,
+		ctrlCtx.log,
+		ctrlCtx.versions,
+	)
+}
+
+func createClusterPhaseController(ctrlCtx *controllerContext) error {
+	return clusterphasecontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.log,
 		ctrlCtx.versions,
 	)
@@ -257,6 +285,19 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.configGetter,
+		ctrlCtx.versions,
+	)
+}
+
+func createInitialApplicationInstallationController(ctrlCtx *controllerContext) error {
+	return initialapplicationinstallationcontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.seedGetter,
+		ctrlCtx.clientProvider,
+		ctrlCtx.log,
 		ctrlCtx.versions,
 	)
 }
@@ -338,6 +379,15 @@ func createClusterTemplateController(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.namespace,
+		ctrlCtx.runOptions.workerCount,
+	)
+}
+
+func createPresetController(ctrlCtx *controllerContext) error {
+	return presetcontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.workerCount,
 	)
 }

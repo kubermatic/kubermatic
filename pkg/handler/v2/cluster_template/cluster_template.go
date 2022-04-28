@@ -310,6 +310,9 @@ func ImportEndpoint(
 				Spec: req.Body.NodeDeployment.Spec,
 			}
 		}
+
+		apps := req.getApplicationsFromRequest()
+
 		createCluster := apiv1.CreateClusterSpec{
 			Cluster: apiv1.Cluster{
 				ObjectMeta: apiv1.ObjectMeta{
@@ -322,6 +325,7 @@ func ImportEndpoint(
 				Spec:            req.Body.Cluster.Spec,
 			},
 			NodeDeployment: nd,
+			Applications:   apps,
 		}
 
 		return createClusterTemplate(ctx, userInfoGetter, seedsGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, credentialManager, exposeStrategy, caBundle, configGetter, features, clusterTemplateProvider, createCluster, req.ProjectID, req.Body.Name, req.Body.Scope, req.Body.UserSSHKeys)
@@ -369,12 +373,21 @@ func createClusterTemplate(ctx context.Context, userInfoGetter provider.UserInfo
 		kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
 	}
 
+	// copy preset annotations
+	if partialCluster.Annotations != nil {
+		newClusterTemplate.Annotations = partialCluster.Annotations
+	}
+
 	newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
 
 	newClusterTemplate.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = adminUserInfo.Email
 	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateProjectLabelKey] = project.Name
 	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] = scope
 	newClusterTemplate.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey] = name
+	if val, ok := partialCluster.Labels[kubermaticv1.IsCredentialPresetLabelKey]; ok {
+		newClusterTemplate.Labels[kubermaticv1.IsCredentialPresetLabelKey] = val
+		newClusterTemplate.Annotations[kubermaticv1.PresetNameAnnotation] = partialCluster.Annotations[kubermaticv1.PresetNameAnnotation]
+	}
 
 	// SSH check
 	if len(userSSHKeys) > 0 && scope == kubermaticv1.ProjectClusterTemplateScope {
@@ -464,7 +477,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 
 		if adminUserInfo.IsAdmin {
 			privilegedclusterTemplateInstanceProvider := clusterTemplateInstanceProvider.(provider.PrivilegedClusterTemplateInstanceProvider)
-			instance, err := privilegedclusterTemplateInstanceProvider.CreateUnsecured(ctx, ct, project, req.Body.Replicas)
+			instance, err := privilegedclusterTemplateInstanceProvider.CreateUnsecured(ctx, adminUserInfo, ct, project, req.Body.Replicas)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -627,6 +640,15 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 		}
 	}
 
+	var apps []apiv1.Application
+	rawApplicationsRequest, ok := template.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]
+	if ok && rawApplicationsRequest != "" {
+		err := json.Unmarshal([]byte(rawApplicationsRequest), &apps)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	ct := &apiv2.ClusterTemplate{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                template.Name,
@@ -660,6 +682,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 				UsePodNodeSelectorAdmissionPlugin:    template.Spec.UsePodNodeSelectorAdmissionPlugin,
 				EnableUserSSHKeyAgent:                template.Spec.EnableUserSSHKeyAgent,
 				EnableOperatingSystemManager:         template.Spec.EnableOperatingSystemManager,
+				KubernetesDashboard:                  &template.Spec.KubernetesDashboard,
 				AdmissionPlugins:                     template.Spec.AdmissionPlugins,
 				OPAIntegration:                       template.Spec.OPAIntegration,
 				PodNodeSelectorAdmissionPluginConfig: template.Spec.PodNodeSelectorAdmissionPluginConfig,
@@ -671,6 +694,18 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 		NodeDeployment: &apiv2.ClusterTemplateNodeDeployment{
 			Spec: md.Spec,
 		},
+		Applications: apps,
+	}
+
+	// Add preset annotations
+	ct.Annotations = make(map[string]string)
+	if template.Annotations != nil {
+		if value, ok := template.Annotations[kubermaticv1.PresetNameAnnotation]; ok {
+			ct.Annotations[kubermaticv1.PresetNameAnnotation] = value
+		}
+		if value, ok := template.Annotations[kubermaticv1.PresetInvalidatedAnnotation]; ok {
+			ct.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = value
+		}
 	}
 
 	if len(template.UserSSHKeys) > 0 {
@@ -721,12 +756,15 @@ func (req importClusterTemplateReq) Validate(updateManager common.UpdateManager)
 		}
 	}
 
+	apps := req.getApplicationsFromRequest()
+
 	if err := handlercommon.ValidateClusterSpec(updateManager, apiv1.CreateClusterSpec{
 		Cluster: apiv1.Cluster{
 			Type: apiv1.KubernetesClusterType,
 			Spec: req.Body.Cluster.Spec,
 		},
 		NodeDeployment: nd,
+		Applications:   apps,
 	}); err != nil {
 		return err
 	}
@@ -737,6 +775,18 @@ func (req importClusterTemplateReq) Validate(updateManager common.UpdateManager)
 		}
 	}
 	return fmt.Errorf("invalid scope name %s", req.Body.Scope)
+}
+
+func (req importClusterTemplateReq) getApplicationsFromRequest() []apiv1.Application {
+	var applications []apiv1.Application
+	for _, app := range req.Body.Applications {
+		newApp := apiv1.Application{
+			Spec: app.Spec,
+		}
+
+		applications = append(applications, newApp)
+	}
+	return applications
 }
 
 func DecodeImportReq(c context.Context, r *http.Request) (interface{}, error) {

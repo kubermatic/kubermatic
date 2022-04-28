@@ -95,6 +95,8 @@ func (m *GKEAutoprovisioningNodePoolDefaults) validateManagement(formats strfmt.
 		if err := m.Management.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("management")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("management")
 			}
 			return err
 		}
@@ -112,6 +114,8 @@ func (m *GKEAutoprovisioningNodePoolDefaults) validateShieldedInstanceConfig(for
 		if err := m.ShieldedInstanceConfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("shieldedInstanceConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("shieldedInstanceConfig")
 			}
 			return err
 		}
@@ -129,6 +133,8 @@ func (m *GKEAutoprovisioningNodePoolDefaults) validateUpgradeSettings(formats st
 		if err := m.UpgradeSettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("upgradeSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("upgradeSettings")
 			}
 			return err
 		}
@@ -165,6 +171,8 @@ func (m *GKEAutoprovisioningNodePoolDefaults) contextValidateManagement(ctx cont
 		if err := m.Management.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("management")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("management")
 			}
 			return err
 		}
@@ -179,6 +187,8 @@ func (m *GKEAutoprovisioningNodePoolDefaults) contextValidateShieldedInstanceCon
 		if err := m.ShieldedInstanceConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("shieldedInstanceConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("shieldedInstanceConfig")
 			}
 			return err
 		}
@@ -193,6 +203,8 @@ func (m *GKEAutoprovisioningNodePoolDefaults) contextValidateUpgradeSettings(ctx
 		if err := m.UpgradeSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("upgradeSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("upgradeSettings")
 			}
 			return err
 		}

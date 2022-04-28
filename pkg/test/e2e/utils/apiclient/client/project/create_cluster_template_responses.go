@@ -177,6 +177,9 @@ swagger:model CreateClusterTemplateBody
 */
 type CreateClusterTemplateBody struct {
 
+	// applications
+	Applications []*models.Application `json:"applications"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
@@ -197,6 +200,10 @@ type CreateClusterTemplateBody struct {
 func (o *CreateClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := o.validateApplications(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := o.validateUserSSHKeys(formats); err != nil {
 		res = append(res, err)
 	}
@@ -215,6 +222,32 @@ func (o *CreateClusterTemplateBody) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (o *CreateClusterTemplateBody) validateApplications(formats strfmt.Registry) error {
+	if swag.IsZero(o.Applications) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(o.Applications); i++ {
+		if swag.IsZero(o.Applications[i]) { // not required
+			continue
+		}
+
+		if o.Applications[i] != nil {
+			if err := o.Applications[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (o *CreateClusterTemplateBody) validateUserSSHKeys(formats strfmt.Registry) error {
 	if swag.IsZero(o.UserSSHKeys) { // not required
 		return nil
@@ -229,6 +262,8 @@ func (o *CreateClusterTemplateBody) validateUserSSHKeys(formats strfmt.Registry)
 			if err := o.UserSSHKeys[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -248,6 +283,8 @@ func (o *CreateClusterTemplateBody) validateCluster(formats strfmt.Registry) err
 		if err := o.Cluster.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "cluster")
 			}
 			return err
 		}
@@ -265,6 +302,8 @@ func (o *CreateClusterTemplateBody) validateNodeDeployment(formats strfmt.Regist
 		if err := o.NodeDeployment.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "nodeDeployment")
 			}
 			return err
 		}
@@ -276,6 +315,10 @@ func (o *CreateClusterTemplateBody) validateNodeDeployment(formats strfmt.Regist
 // ContextValidate validate this create cluster template body based on the context it is used
 func (o *CreateClusterTemplateBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
+
+	if err := o.contextValidateApplications(ctx, formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := o.contextValidateUserSSHKeys(ctx, formats); err != nil {
 		res = append(res, err)
@@ -295,6 +338,26 @@ func (o *CreateClusterTemplateBody) ContextValidate(ctx context.Context, formats
 	return nil
 }
 
+func (o *CreateClusterTemplateBody) contextValidateApplications(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(o.Applications); i++ {
+
+		if o.Applications[i] != nil {
+			if err := o.Applications[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "applications" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (o *CreateClusterTemplateBody) contextValidateUserSSHKeys(ctx context.Context, formats strfmt.Registry) error {
 
 	for i := 0; i < len(o.UserSSHKeys); i++ {
@@ -303,6 +366,8 @@ func (o *CreateClusterTemplateBody) contextValidateUserSSHKeys(ctx context.Conte
 			if err := o.UserSSHKeys[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("Body" + "." + "userSshKeys" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -319,6 +384,8 @@ func (o *CreateClusterTemplateBody) contextValidateCluster(ctx context.Context, 
 		if err := o.Cluster.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "cluster")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "cluster")
 			}
 			return err
 		}
@@ -333,6 +400,8 @@ func (o *CreateClusterTemplateBody) contextValidateNodeDeployment(ctx context.Co
 		if err := o.NodeDeployment.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Body" + "." + "nodeDeployment")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Body" + "." + "nodeDeployment")
 			}
 			return err
 		}

@@ -13,7 +13,9 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// EventRateLimitConfig event rate limit config
+// EventRateLimitConfig EventRateLimitConfig configures the `EventRateLimit` admission plugin.
+//
+// More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 //
 // swagger:model EventRateLimitConfig
 type EventRateLimitConfig struct {
@@ -66,6 +68,8 @@ func (m *EventRateLimitConfig) validateNamespace(formats strfmt.Registry) error 
 		if err := m.Namespace.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("namespace")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("namespace")
 			}
 			return err
 		}
@@ -83,6 +87,8 @@ func (m *EventRateLimitConfig) validateServer(formats strfmt.Registry) error {
 		if err := m.Server.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("server")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("server")
 			}
 			return err
 		}
@@ -100,6 +106,8 @@ func (m *EventRateLimitConfig) validateSourceAndObject(formats strfmt.Registry) 
 		if err := m.SourceAndObject.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sourceAndObject")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sourceAndObject")
 			}
 			return err
 		}
@@ -117,6 +125,8 @@ func (m *EventRateLimitConfig) validateUser(formats strfmt.Registry) error {
 		if err := m.User.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("user")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("user")
 			}
 			return err
 		}
@@ -157,6 +167,8 @@ func (m *EventRateLimitConfig) contextValidateNamespace(ctx context.Context, for
 		if err := m.Namespace.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("namespace")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("namespace")
 			}
 			return err
 		}
@@ -171,6 +183,8 @@ func (m *EventRateLimitConfig) contextValidateServer(ctx context.Context, format
 		if err := m.Server.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("server")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("server")
 			}
 			return err
 		}
@@ -185,6 +199,8 @@ func (m *EventRateLimitConfig) contextValidateSourceAndObject(ctx context.Contex
 		if err := m.SourceAndObject.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sourceAndObject")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sourceAndObject")
 			}
 			return err
 		}
@@ -199,6 +215,8 @@ func (m *EventRateLimitConfig) contextValidateUser(ctx context.Context, formats 
 		if err := m.User.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("user")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("user")
 			}
 			return err
 		}

@@ -61,9 +61,9 @@ func TestReconcile(t *testing.T) {
 				Name: "my-first-project-ID-ctID2",
 			},
 			expectedClusters: []*kubermaticv1.Cluster{
-				genCluster("ct2-0", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
-				genCluster("ct2-1", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
-				genCluster("ct2-2", "john@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", 3)),
+				genCluster("ct2-0", "bob@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-1", "bob@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-2", "bob@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
 			},
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -73,9 +73,9 @@ func TestReconcile(t *testing.T) {
 					test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
 					test.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
 					test.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplateInstance(projectName, "ctID1", 2),
-					test.GenClusterTemplateInstance(projectName, "ctID2", 3),
-					test.GenClusterTemplateInstance(projectName, "ctID3", 10),
+					test.GenClusterTemplateInstance(projectName, "ctID1", "bob@acme.com", 2),
+					test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3),
+					test.GenClusterTemplateInstance(projectName, "ctID3", "bob@acme.com", 10),
 				).
 				Build(),
 		},

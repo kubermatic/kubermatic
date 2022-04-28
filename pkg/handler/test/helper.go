@@ -39,6 +39,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -128,8 +129,8 @@ const (
 	TestSeedDatacenter = "us-central1"
 	// TestServiceAccountHashKey authenticates the service account's token value using HMAC.
 	TestServiceAccountHashKey = "eyJhbGciOiJIUzI1NeyJhbGciOiJIUzI1N"
-	// TestFakeToken signed JWT token with fake data.
-	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
+	// TestFakeToken signed JWT token with fake data. It will expire after 3 years from 12-04-2022. To generate new token use kubermatic/pkg/serviceaccount/jwt_test.go.
+	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NDQ0NjQ1OTYsImlhdCI6MTY0OTc3MDE5NiwibmJmIjoxNjQ5NzcwMTk2LCJwcm9qZWN0X2lkIjoidGVzdFByb2plY3QiLCJ0b2tlbl9pZCI6InRlc3RUb2tlbiJ9.IGcnVhrTGeemEZ_dOGCRE1JXwpSMWJEbrG8hylpTEUY"
 	// TestOSdomain OpenStack domain.
 	TestOSdomain = "OSdomain"
 	// TestOSuserPass OpenStack user password.
@@ -276,7 +277,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount)
+	userProvider := kubernetes.NewUserProvider(fakeClient)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
 	settingsProvider := kubernetes.NewSettingsProvider(fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
@@ -290,7 +291,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
 		return nil, nil, err
@@ -300,7 +301,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	{
 		// if the API users is actually a service account use JWTTokenAuthentication
 		// that knows how to extract and verify the token
-		if strings.HasPrefix(user.Email, "serviceaccount-") {
+		if kubermaticv1helper.IsProjectServiceAccount(user.Email) {
 			saExtractorVerifier := auth.NewServiceAccountAuthClient(
 				auth.NewHeaderBearerTokenExtractor("Authorization"),
 				serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)),
@@ -697,7 +698,6 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 						InsecureRegistries: []string{"incsecure-registry"},
 						RegistryMirrors:    []string{"http://127.0.0.1:5001"},
 						PauseImage:         "pause-image",
-						HyperkubeImage:     "hyperkube-image",
 					},
 				},
 			},
@@ -837,19 +837,14 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 
 // GenInactiveProjectServiceAccount generates a Service Account resource.
 func GenInactiveProjectServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
-	user := GenUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
-	user.OwnerReferences = []metav1.OwnerReference{
-		{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.ProjectKindName,
-			Name:       projectName,
-			UID:        types.UID(id),
-		},
-	}
-	user.Spec.ID = id
-	user.Name = fmt.Sprintf("serviceaccount-%s", id)
+	userName := kubermaticv1helper.EnsureProjectServiceAccountPrefix(id)
+
+	user := GenUser(id, name, fmt.Sprintf("%s@sa.kubermatic.io", userName))
+	user.Name = userName
 	user.UID = ""
+	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
+	user.Spec.ID = id
+	user.Spec.Project = projectName
 
 	return user
 }
@@ -858,17 +853,6 @@ func GenProjectServiceAccount(id, name, group, projectName string) *kubermaticv1
 	sa := GenInactiveProjectServiceAccount(id, name, group, projectName)
 	sa.Labels = map[string]string{}
 	return sa
-}
-
-func GenMainServiceAccount(id, name, group, ownerEmail string) *kubermaticv1.User {
-	user := GenUser(id, name, fmt.Sprintf("main-serviceaccount-%s@sa.kubermatic.io", id))
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: group}
-	user.Annotations = map[string]string{kubernetes.ServiceAccountAnnotationOwner: ownerEmail}
-
-	user.Spec.ID = id
-	user.Name = fmt.Sprintf("main-serviceaccount-%s", id)
-	user.UID = ""
-	return user
 }
 
 // GenAPIUser generates a API user.
@@ -928,14 +912,15 @@ func GenDefaultAdminUser() *kubermaticv1.User {
 }
 
 // GenProject generates new empty project.
-func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
+func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),
 			CreationTimestamp: metav1.NewTime(creationTime),
-			OwnerReferences:   oRef,
 		},
-		Spec: kubermaticv1.ProjectSpec{Name: name},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: name,
+		},
 		Status: kubermaticv1.ProjectStatus{
 			Phase: phase,
 		},
@@ -944,14 +929,7 @@ func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.
 
 // GenDefaultProject generates a default project.
 func GenDefaultProject() *kubermaticv1.Project {
-	user := GenDefaultUser()
-	oRef := metav1.OwnerReference{
-		APIVersion: "kubermatic.k8c.io/v1",
-		Kind:       "User",
-		UID:        user.UID,
-		Name:       user.Name,
-	}
-	return GenProject("my-first-project", kubermaticv1.ProjectActive, DefaultCreationTimestamp(), oRef)
+	return GenProject("my-first-project", kubermaticv1.ProjectActive, DefaultCreationTimestamp())
 }
 
 // GenBinding generates a binding.
@@ -959,13 +937,6 @@ func GenBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					Name:       projectID,
-				},
-			},
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: email,
@@ -997,6 +968,7 @@ func GenDefaultKubermaticObjects(objs ...ctrlruntimeclient.Object) []ctrlruntime
 }
 
 func GenCluster(id string, name string, projectID string, creationTime time.Time, modifiers ...func(*kubermaticv1.Cluster)) *kubermaticv1.Cluster {
+	version := *semver.NewSemverOrDie("9.9.9") // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   id,
@@ -1010,19 +982,24 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				DatacenterName: "private-do1",
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
-			Version:               *semver.NewSemverOrDie("9.9.9"), // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
+			Version:               version,
 			HumanReadableName:     name,
 			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 			ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				DNSDomain: "cluster.local",
 				ProxyMode: "ipvs",
+				IPVS: &kubermaticv1.IPVSConfiguration{
+					StrictArp: pointer.BoolPtr(true),
+				},
+				IPFamily: kubermaticv1.IPFamilyIPv4,
 				Pods: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"1.2.3.4/8"},
 				},
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"5.6.7.8/8"},
 				},
+				NodeCIDRMaskSizeIPv4: pointer.Int32(24),
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1038,6 +1015,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Apiserver:                    kubermaticv1.HealthStatusUp,
+				ApplicationController:        kubermaticv1.HealthStatusUp,
 				Scheduler:                    kubermaticv1.HealthStatusUp,
 				Controller:                   kubermaticv1.HealthStatusUp,
 				MachineController:            kubermaticv1.HealthStatusUp,
@@ -1046,6 +1024,12 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			},
 			NamespaceName: kubernetes.NamespaceName(id),
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane:      version,
+				Apiserver:         version,
+				ControllerManager: version,
+				Scheduler:         version,
+			},
 		},
 	}
 
@@ -1275,7 +1259,6 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 
 func GenDefaultVersions() []semver.Semver {
 	return []semver.Semver{
-		*semver.NewSemverOrDie("1.20.14"),
 		*semver.NewSemverOrDie("1.21.8"),
 		*semver.NewSemverOrDie("1.22.5"),
 	}
@@ -1853,11 +1836,12 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 	}
 }
 
-func GenClusterTemplateInstance(projectID, templateID string, replicas int64) *kubermaticv1.ClusterTemplateInstance {
+func GenClusterTemplateInstance(projectID, templateID, owner string, replicas int64) *kubermaticv1.ClusterTemplateInstance {
 	return &kubermaticv1.ClusterTemplateInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("%s-%s", projectID, templateID),
-			Labels: map[string]string{kubernetes.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
+			Name:        fmt.Sprintf("%s-%s", projectID, templateID),
+			Labels:      map[string]string{kubernetes.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
+			Annotations: map[string]string{kubermaticv1.ClusterTemplateInstanceOwnerAnnotationKey: owner},
 		},
 		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
 			ProjectID:         projectID,
@@ -1881,10 +1865,7 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 			RuleGroupType: ruleGroupType,
 			IsDefault:     isDefault,
 			Cluster: corev1.ObjectReference{
-				Kind:       kubermaticv1.ClusterKindName,
-				Namespace:  "",
-				Name:       clusterName,
-				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Name: clusterName,
 			},
 			Data: GenerateTestRuleGroupData(name),
 		},
@@ -1903,10 +1884,8 @@ func GenAdminRuleGroup(name, namespace string, ruleGroupType kubermaticv1.RuleGr
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroupType,
-			Cluster: corev1.ObjectReference{
-				Kind: kubermaticv1.ClusterKindName,
-			},
-			Data: GenerateTestRuleGroupData(name),
+			Cluster:       corev1.ObjectReference{},
+			Data:          GenerateTestRuleGroupData(name),
 		},
 	}
 }

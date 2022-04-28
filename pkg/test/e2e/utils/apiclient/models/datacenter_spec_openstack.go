@@ -88,6 +88,8 @@ func (m *DatacenterSpecOpenstack) validateImages(formats strfmt.Registry) error 
 		if err := m.Images.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("images")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("images")
 			}
 			return err
 		}
@@ -105,6 +107,8 @@ func (m *DatacenterSpecOpenstack) validateNodeSizeRequirements(formats strfmt.Re
 		if err := m.NodeSizeRequirements.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeSizeRequirements")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeSizeRequirements")
 			}
 			return err
 		}
@@ -136,6 +140,8 @@ func (m *DatacenterSpecOpenstack) contextValidateImages(ctx context.Context, for
 	if err := m.Images.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("images")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("images")
 		}
 		return err
 	}
@@ -149,6 +155,8 @@ func (m *DatacenterSpecOpenstack) contextValidateNodeSizeRequirements(ctx contex
 		if err := m.NodeSizeRequirements.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("nodeSizeRequirements")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nodeSizeRequirements")
 			}
 			return err
 		}

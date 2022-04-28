@@ -74,11 +74,10 @@ type OIDCConfiguration struct {
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates.
 type UpdateManager interface {
-	GetVersions(string) ([]*version.Version, error)
-	// TODO: GetVersionsV2 is a temporary function that will replace GetVersions once the new handler will be used by the UI (https://github.com/kubermatic/kubermatic/pull/7590)
-	GetVersionsV2(string, kubermaticv1.ProviderType, ...kubermaticv1.ConditionType) ([]*version.Version, error)
+	GetVersions() ([]*version.Version, error)
+	GetVersionsForProvider(kubermaticv1.ProviderType, ...kubermaticv1.ConditionType) ([]*version.Version, error)
 	GetDefault() (*version.Version, error)
-	GetPossibleUpdates(from, clusterType string, provider kubermaticv1.ProviderType, condition ...kubermaticv1.ConditionType) ([]*version.Version, error)
+	GetPossibleUpdates(from string, provider kubermaticv1.ProviderType, condition ...kubermaticv1.ConditionType) ([]*version.Version, error)
 }
 
 type SupportManager interface {

@@ -26,6 +26,9 @@ const (
 	ClusterTemplateInstanceKindName = "ClusterTemplateInstance"
 )
 
+// ClusterTemplateInstanceOwnerAnnotationKey represents the user cluster owner.
+const ClusterTemplateInstanceOwnerAnnotationKey = "owner"
+
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true

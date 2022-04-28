@@ -87,6 +87,7 @@ function deploy {
 chmod 600 "$KUBECONFIG"
 
 set_helm_charts_version "v9.9.9-${GIT_HEAD_HASH}" "${GIT_HEAD_HASH}"
+copy_crds_to_chart
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
@@ -116,9 +117,8 @@ logging)
   ;;
 
 kubermatic)
-
-  if [ -n "${DOCKER_CONFIG:-}" ]; then
-    yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $DOCKER_CONFIG)"
+  if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
+    yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $IMAGE_PULL_SECRET)"
   fi
 
   # Kubermatic

@@ -44,6 +44,7 @@ import (
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	mlaadminsetting "k8c.io/kubermatic/v2/pkg/handler/v2/mla_admin_setting"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/networkdefaults"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
@@ -614,6 +615,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/subnets").
 		Handler(r.listNutanixSubnetsNoCredentials())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories").
+		Handler(r.listNutanixCategoriesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values").
+		Handler(r.listNutanixCategoryValuesNoCredentials())
+
 	// Defines a set of kubernetes-dashboard-specific endpoints
 	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
 		Handler(r.kubernetesDashboardProxy())
@@ -656,6 +665,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/nutanix/{dc}/subnets").
 		Handler(r.listNutanixSubnets())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/categories").
+		Handler(r.listNutanixCategories())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/nutanix/{dc}/categories/{category}/values").
+		Handler(r.listNutanixCategoryValues())
+
 	// Define a set of endpoints for preset management
 	mux.Methods(http.MethodGet).
 		Path("/presets").
@@ -664,6 +681,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/presets/{preset_name}").
 		Handler(r.deletePreset())
+
+	mux.Methods(http.MethodGet).
+		Path("/presets/{preset_name}/stats").
+		Handler(r.getPresetStats())
 
 	mux.Methods(http.MethodPut).
 		Path("/presets/{preset_name}/status").
@@ -910,6 +931,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/vpcs").
 		Handler(r.listEKSVPCsNoCredentials())
+
+	// Defines an endpoint to retrieve the cluster networking defaults for the given provider and CNI.
+	mux.Methods(http.MethodGet).
+		Path("/providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults").
+		Handler(r.getNetworkDefaults())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -1540,7 +1566,7 @@ func (r Routing) getExternalClusterUpgrades() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(externalcluster.GetUpgradesEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
+		)(externalcluster.GetUpgradesEndpoint(r.kubermaticConfigGetter, r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider, r.settingsProvider)),
 		externalcluster.DecodeGetReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3726,6 +3752,54 @@ func (r Routing) listNutanixSubnetsNoCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories nutanix listNutanixCategoriesNoCredentials
+//
+// Lists available Nutanix categories
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NutanixCategoryList
+func (r Routing) listNutanixCategoriesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.NutanixCategoriesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories/{category}/values nutanix listNutanixCategoryValuesNoCredentials
+//
+// Lists available Nutanix category values for a specific category
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NutanixCategoryValueList
+func (r Routing) listNutanixCategoryValuesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.NutanixCategoryValuesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCategoryValuesNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy
 //
 //    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
@@ -3950,6 +4024,50 @@ func (r Routing) listNutanixSubnets() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/providers/nutanix/{dc}/categories nutanix listNutanixCategories
+//
+// List category keys from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixCategoryList
+func (r Routing) listNutanixCategories() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixCategoryEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCommonReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/nutanix/{dc}/categories/{category}/values nutanix listNutanixCategoryValues
+//
+// List available category values for a specific category from Nutanix
+//
+//      Produces:
+//      - application/json
+//
+//      Responses:
+//      default: errorResponse
+//      200: NutanixCategoryValueList
+func (r Routing) listNutanixCategoryValues() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.NutanixCategoryValuesEndpoint(r.presetProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeNutanixCategoryValueReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/presets preset listPresets
 //
 //     Lists presets
@@ -4164,6 +4282,31 @@ func (r Routing) deleteProviderPreset() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.DeleteProviderPreset(r.presetProvider, r.userInfoGetter)),
 		preset.DecodeDeleteProviderPreset,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/presets/{preset_name}/stats preset getPresetStats
+//
+//     Gets presets stats.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: PresetStats
+//       401: empty
+//       403: empty
+//       404: empty
+func (r Routing) getPresetStats() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.GetPresetStats(r.presetProvider, r.userInfoGetter, r.clusterProviderGetter, r.seedsGetter, r.clusterTemplateProvider)),
+		preset.DecodeGetPresetStats,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -6259,6 +6402,30 @@ func (r Routing) listCNIPluginVersionsForCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cniversion.ListVersionsForCluster(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		cniversion.DecodeListCNIPluginVersionsForClusterReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults networkdefaults getNetworkDefaults
+//
+//     Retrieves the cluster networking defaults for the given provider and CNI.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NetworkDefaults
+//       401: empty
+//       403: empty
+func (r Routing) getNetworkDefaults() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(networkdefaults.GetNetworkDefaultsEndpoint()),
+		networkdefaults.DecodeGetNetworkDefaultsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

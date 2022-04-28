@@ -45,7 +45,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
+	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/user-cluster-webhook"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
+	webterminal "k8c.io/kubermatic/v2/pkg/resources/web-terminal"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -151,12 +153,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
-			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %w", err)
-		}
-	}
-
 	// Remove possible leftovers of older version of Gatekeeper, remove this in 1.19
 	if err := r.ensureOldOPAIntegrationIsRemoved(ctx, data); err != nil {
 		return nil, err
@@ -179,6 +175,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// Ensure that OSM is completely removed, when disabled
 	if !cluster.Spec.EnableOperatingSystemManager {
 		if err := r.ensureOSMResourcesAreRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	}
+
+	// Ensure that kubernetes-dashboard is completely removed, when disabled
+	if !cluster.Spec.KubernetesDashboard.Enabled {
+		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
 	}
@@ -265,6 +268,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
 		etcd.ServiceCreator(data),
 		machinecontroller.ServiceCreator(),
+		userclusterwebhook.ServiceCreator(),
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -298,7 +302,12 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
-		kubernetesdashboard.DeploymentCreator(data),
+		userclusterwebhook.DeploymentCreator(data),
+		webterminal.DeploymentCreator(data),
+	}
+
+	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+		deployments = append(deployments, kubernetesdashboard.DeploymentCreator(data))
 	}
 
 	if !data.IsKonnectivityEnabled() {
@@ -325,6 +334,13 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		deployments = append(deployments, operatingsystemmanager.DeploymentCreator(data))
 	}
 
+	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		deployments = append(deployments,
+			nodeportproxy.DeploymentEnvoyCreator(data),
+			nodeportproxy.DeploymentLBUpdaterCreator(data),
+		)
+	}
+
 	return deployments
 }
 
@@ -348,6 +364,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.KubeletClientCertificateCreator(data),
 		apiserver.ServiceAccountKeyCreator(),
 		machinecontroller.TLSServingCertificateCreator(data),
+		userclusterwebhook.TLSServingCertificateCreator(data),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(namespace, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data, r.log),
@@ -356,12 +373,17 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.GetInternalKubeconfigCreator(namespace, resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data, r.log),
 		resources.GetInternalKubeconfigCreator(namespace, resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data, r.log),
 		resources.GetInternalKubeconfigCreator(namespace, resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data, r.log),
-		resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
 		resources.GetInternalKubeconfigCreator(namespace, resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data, r.log),
 		resources.AdminKubeconfigCreator(data),
 		apiserver.TokenViewerCreator(),
 		apiserver.TokenUsersCreator(data),
 		resources.ViewerKubeconfigCreator(data),
+	}
+
+	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+		creators = append(creators,
+			resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
+		)
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -409,10 +431,15 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		usercluster.ServiceAccountCreator,
 		machinecontroller.ServiceAccountCreator,
 		machinecontroller.WebhookServiceAccountCreator,
+		userclusterwebhook.ServiceAccountCreator,
 	}
 
 	if c.Spec.EnableOperatingSystemManager {
 		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, operatingsystemmanager.ServiceAccountCreator)
+	}
+
+	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, nodeportproxy.ServiceAccountCreator)
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
@@ -432,6 +459,10 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 		namedRoleCreatorGetters = append(namedRoleCreatorGetters, operatingsystemmanager.RoleCreator)
 	}
 
+	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		namedRoleCreatorGetters = append(namedRoleCreatorGetters, nodeportproxy.RoleCreator)
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Roles: %w", err)
 	}
@@ -449,6 +480,10 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, operatingsystemmanager.RoleBindingCreator)
 	}
 
+	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, nodeportproxy.RoleBindingCreator)
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %w", err)
 	}
@@ -458,6 +493,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
 	namedClusterRoleCreatorGetters := []reconciling.NamedClusterRoleCreatorGetter{
 		usercluster.ClusterRole(),
+		userclusterwebhook.ClusterRole(),
 	}
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
@@ -469,6 +505,7 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
 func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
 	namedClusterRoleBindingsCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		usercluster.ClusterRoleBinding(namespace),
+		userclusterwebhook.ClusterRoleBinding(namespace),
 	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Role Bindings: %w", err)
@@ -599,6 +636,11 @@ func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.
 			dns.PodDisruptionBudgetCreator(),
 		)
 	}
+
+	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		creators = append(creators, nodeportproxy.PodDisruptionBudgetCreator())
+	}
+
 	return creators
 }
 
@@ -689,6 +731,16 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 		}
 	}
 
+	return nil
+}
+
+func (r *Reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range kubernetesdashboard.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure kubernetes-dashboard resources are removed/not present: %w", err)
+		}
+	}
 	return nil
 }
 

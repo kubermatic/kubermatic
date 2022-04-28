@@ -23,8 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/robfig/cron"
+	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -38,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	errors2 "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -216,6 +215,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Skipping because the cluster has no version status yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	log = r.log.With("cluster", cluster.Name, "backupConfig", backupConfig.Name)
 
 	var suppressedError error
@@ -269,65 +273,65 @@ func (r *Reconciler) reconcile(
 ) (*reconcile.Result, error) {
 	destination := seed.GetEtcdBackupDestination(backupConfig.Spec.Destination)
 	if destination == nil {
-		return nil, errors.Errorf("cannot find backup destination %q", backupConfig.Spec.Destination)
+		return nil, fmt.Errorf("cannot find backup destination %q", backupConfig.Spec.Destination)
 	}
 	if destination.Credentials == nil {
-		return nil, errors.Errorf("credentials not set for backup destination %q", backupConfig.Spec.Destination)
+		return nil, fmt.Errorf("credentials not set for backup destination %q", backupConfig.Spec.Destination)
 	}
 
 	if err := r.ensureSecrets(ctx, cluster); err != nil {
-		return nil, errors.Wrap(err, "failed to create backup secrets")
+		return nil, fmt.Errorf("failed to create backup secrets: %w", err)
 	}
 
 	if err := r.ensureConfigMaps(ctx, cluster); err != nil {
-		return nil, errors.Wrap(err, "failed to create backup configmaps")
+		return nil, fmt.Errorf("failed to create backup configmaps: %w", err)
 	}
 
 	backupStoreContainer, err := getBackupStoreContainer(config, seed)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create backup store container")
+		return nil, fmt.Errorf("failed to create backup store container: %w", err)
 	}
 
 	backupDeleteContainer, err := getBackupDeleteContainer(config, seed)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create backup delete container")
+		return nil, fmt.Errorf("failed to create backup delete container: %w", err)
 	}
 
 	var nextReconcile, totalReconcile *reconcile.Result
 	errorReconcile := &reconcile.Result{RequeueAfter: 1 * time.Minute}
 
 	if nextReconcile, err = r.ensurePendingBackupIsScheduled(ctx, backupConfig, cluster); err != nil {
-		return errorReconcile, errors.Wrap(err, "failed to ensure next backup is scheduled")
+		return errorReconcile, fmt.Errorf("failed to ensure next backup is scheduled: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.startPendingBackupJobs(ctx, backupConfig, cluster, destination, backupStoreContainer); err != nil {
-		return errorReconcile, errors.Wrap(err, "failed to start pending and update running backups")
+		return errorReconcile, fmt.Errorf("failed to start pending and update running backups: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.startPendingBackupDeleteJobs(ctx, backupConfig, cluster, destination, backupDeleteContainer); err != nil {
-		return errorReconcile, errors.Wrap(err, "failed to start pending backup delete jobs")
+		return errorReconcile, fmt.Errorf("failed to start pending backup delete jobs: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.updateRunningBackupDeleteJobs(ctx, backupConfig, cluster, destination, backupDeleteContainer); err != nil {
-		return errorReconcile, errors.Wrap(err, "failed to update running backup delete jobs")
+		return errorReconcile, fmt.Errorf("failed to update running backup delete jobs: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.deleteFinishedBackupJobs(ctx, log, backupConfig, cluster); err != nil {
-		return errorReconcile, errors.Wrap(err, "failed to delete finished backup jobs")
+		return errorReconcile, fmt.Errorf("failed to delete finished backup jobs: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.handleFinalization(ctx, backupConfig); err != nil {
-		return errorReconcile, errors.Wrap(err, "failed to clean up EtcdBackupConfig")
+		return errorReconcile, fmt.Errorf("failed to clean up EtcdBackupConfig: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
@@ -383,7 +387,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 			"tracking too many backups; not scheduling new ones") {
 			// condition changed, need to persist and generate an event
 			if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-				return nil, errors.Wrap(err, "failed to update backup config")
+				return nil, fmt.Errorf("failed to update backup config: %w", err)
 			}
 			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "TooManyBackups", "tracking too many backups; not scheduling new ones")
 		}
@@ -397,7 +401,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		"") {
 		// condition changed, need to persist and generate an event
 		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-			return nil, errors.Wrap(err, "failed to update backup config")
+			return nil, fmt.Errorf("failed to update backup config: %w", err)
 		}
 		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NormalBackupCount", "backup count low enough; scheduling new backups")
 	}
@@ -433,7 +437,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 
 		schedule, err := parseCronSchedule(backupConfig.Spec.Schedule)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to Parse Schedule %v", backupConfig.Spec.Schedule)
+			return nil, fmt.Errorf("Failed to Parse Schedule %v: %w", backupConfig.Spec.Schedule, err)
 		}
 
 		now := r.clock.Now()
@@ -461,13 +465,13 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 	status := backupConfig.Status.DeepCopy()
 
 	if err := r.Update(ctx, backupConfig); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup config")
+		return nil, fmt.Errorf("failed to update backup config: %w", err)
 	}
 
 	oldBackupConfig = backupConfig.DeepCopy()
 	backupConfig.Status = *status
 	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup status")
+		return nil, fmt.Errorf("failed to update backup status: %w", err)
 	}
 
 	return &reconcile.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
@@ -519,7 +523,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.JobName}, job)
 				if err != nil {
 					if !kerrors.IsNotFound(err) {
-						return nil, errors.Wrapf(err, "error getting job for backup %s", backup.BackupName)
+						return nil, fmt.Errorf("error getting job for backup %s: %w", backup.BackupName, err)
 					}
 					// job not found. Apparently deleted externally.
 					backup.BackupPhase = kubermaticv1.BackupStatusPhaseFailed
@@ -542,7 +546,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 			} else if backup.BackupPhase == "" && r.clock.Now().Sub(backup.ScheduledTime.Time) >= 0 && backupConfig.DeletionTimestamp == nil {
 				job := r.backupJob(backupConfig, cluster, backup, destination, storeContainer)
 				if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
-					return nil, errors.Wrapf(err, "error creating job for backup %s", backup.BackupName)
+					return nil, fmt.Errorf("error creating job for backup %s: %w", backup.BackupName, err)
 				}
 				backup.BackupPhase = kubermaticv1.BackupStatusPhaseRunning
 				kuberneteshelper.AddFinalizer(backupConfig, DeleteAllBackupsFinalizer)
@@ -554,13 +558,13 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 	status := backupConfig.Status.DeepCopy()
 
 	if err := r.Update(ctx, backupConfig); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup config")
+		return nil, fmt.Errorf("failed to update backup config: %w", err)
 	}
 
 	oldBackupConfig := backupConfig.DeepCopy()
 	backupConfig.Status = *status
 	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup status")
+		return nil, fmt.Errorf("failed to update backup status: %w", err)
 	}
 
 	return returnReconcile, nil
@@ -611,7 +615,7 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 
 	if modified {
 		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-			return nil, errors.Wrap(err, "failed to update backup status")
+			return nil, fmt.Errorf("failed to update backup status: %w", err)
 		}
 
 		return &reconcile.Result{RequeueAfter: assumedJobRuntime}, nil
@@ -625,7 +629,7 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 	if deleteContainer != nil {
 		job := r.backupDeleteJob(backupConfig, cluster, backup, destination, deleteContainer)
 		if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
-			return errors.Wrapf(err, "error creating delete job for backup %s", backup.BackupName)
+			return fmt.Errorf("error creating delete job for backup %s: %w", backup.BackupName, err)
 		}
 		backup.DeletePhase = kubermaticv1.BackupStatusPhaseRunning
 	} else {
@@ -657,7 +661,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 			err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.DeleteJobName}, job)
 			if err != nil {
 				if !kerrors.IsNotFound(err) {
-					return nil, errors.Wrapf(err, "error getting delete job for backup %s", backup.BackupName)
+					return nil, fmt.Errorf("error getting delete job for backup %s: %w", backup.BackupName, err)
 				}
 				// job not found. Apparently deleted, either externally or by us in a previous cycle.
 				// recreate it. We want to see a finished delete job.
@@ -674,7 +678,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 					// Ideally jobs would support recreating failed or hanging pods themselves, but
 					// they don't under all circumstances -- see https://github.com/kubernetes/kubernetes/issues/95431
 					if err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
-						return nil, errors.Wrapf(err, "backup %s: failed to delete failed delete job %s", backup.BackupName, backup.JobName)
+						return nil, fmt.Errorf("backup %s: failed to delete failed delete job %s: %w", backup.BackupName, backup.JobName, err)
 					}
 					deleteJobsToRestart = append(deleteJobsToRestart, DeleteJobToRestart{backup, fmt.Sprintf("Job failed: %s. Restarted.", cond.Message)})
 				} else {
@@ -698,7 +702,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 	}
 
 	if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup status")
+		return nil, fmt.Errorf("failed to update backup status: %w", err)
 	}
 
 	return returnReconcile, nil
@@ -750,11 +754,11 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 				case err == nil:
 					err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground))
 					if err != nil && !kerrors.IsNotFound(err) {
-						return nil, errors.Wrapf(err, "backup %s: failed to delete backup job %s", backup.BackupName, backup.JobName)
+						return nil, fmt.Errorf("backup %s: failed to delete backup job %s: %w", backup.BackupName, backup.JobName, err)
 					}
 					backupJobDeleted = true
 				case !kerrors.IsNotFound(err):
-					return nil, errors.Wrapf(err, "backup %s: failed to get backup job %s", backup.BackupName, backup.JobName)
+					return nil, fmt.Errorf("backup %s: failed to get backup job %s: %w", backup.BackupName, backup.JobName, err)
 				}
 			}
 		}
@@ -784,11 +788,11 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 				case err == nil:
 					err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground))
 					if err != nil && !kerrors.IsNotFound(err) {
-						return nil, errors.Wrapf(err, "backup %s: failed to delete job %s", backup.BackupName, backup.DeleteJobName)
+						return nil, fmt.Errorf("backup %s: failed to delete job %s: %w", backup.BackupName, backup.DeleteJobName, err)
 					}
 					deleteJobDeleted = true
 				case !kerrors.IsNotFound(err):
-					return nil, errors.Wrapf(err, "backup %s: failed to get job %s", backup.BackupName, backup.DeleteJobName)
+					return nil, fmt.Errorf("backup %s: failed to get job %s: %w", backup.BackupName, backup.DeleteJobName, err)
 				}
 			}
 		}
@@ -805,7 +809,7 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 	if modified {
 		backupConfig.Status.CurrentBackups = newBackups
 		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-			return nil, errors.Wrap(err, "failed to update backup status")
+			return nil, fmt.Errorf("failed to update backup status: %w", err)
 		}
 	}
 
@@ -1158,7 +1162,8 @@ func parseCronSchedule(scheduleString string) (cron.Schedule, error) {
 			}
 		}()
 
-		if res, err := cron.ParseStandard(scheduleString); err != nil {
+		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+		if res, err := parser.Parse(scheduleString); err != nil {
 			validationErrors = append(validationErrors, fmt.Errorf("invalid schedule: %w", err))
 		} else {
 			schedule = res
@@ -1166,7 +1171,7 @@ func parseCronSchedule(scheduleString string) (cron.Schedule, error) {
 	}()
 
 	if len(validationErrors) > 0 {
-		return nil, errors2.NewAggregate(validationErrors)
+		return nil, utilerrors.NewAggregate(validationErrors)
 	}
 
 	return schedule, nil

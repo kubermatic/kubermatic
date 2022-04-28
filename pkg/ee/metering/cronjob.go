@@ -25,6 +25,9 @@
 package metering
 
 import (
+	"strconv"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -34,11 +37,18 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// cronJobCreator returns the func to create/update the etcd defragger cronjob.
-func cronJobCreator(seedName string, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
+// cronJobCreator returns the func to create/update the metering report cronjob.
+func cronJobCreator(seedName, reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return meteringCronJobWeeklyName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
-			job.Spec.Schedule = "0 6 * * 1"
+		return reportName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+			labels := job.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			labels[MeteringLabelKey] = reportName
+			job.SetLabels(labels)
+
+			job.Spec.Schedule = mrc.Schedule
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = meteringToolName
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
@@ -117,17 +127,17 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 					Name:            "kubermatic-metering-report",
 					Image:           getMeteringImage(getRegistry),
 					ImagePullPolicy: corev1.PullAlways,
-					Command: []string{
-						"/bin/sh",
-					},
+					Command:         []string{"/bin/sh"},
 					Args: []string{
 						"-c",
-						`/usr/local/bin/kubermatic-metering-report -workdir=/metering-data \
-                                                          -reportdir=/report \
-                                                          -last-week \
-                                                          -seed=` + seedName + ` \
-                                                          -scrape-interval=300
-                        touch /report/finished`,
+						`mkdir -p /report/` + reportName + `
+kubermatic-metering-report \
+  -workdir=/metering-data \
+  -reportdir=/report/` + reportName + ` \
+  -last-number-of-days=` + strconv.Itoa(mrc.Interval) + ` \
+  -seed=` + seedName + ` \
+  -scrape-interval=300
+touch /report/finished`,
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{

@@ -33,30 +33,74 @@ func createOrUpdateMeteringCredentials(ctx context.Context, request interface{},
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return metering.DecodeMeteringSecretReq(r)
-}
-
 func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
 }
 
-func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return metering.DecodeMeteringConfigurationsReq(r)
+func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*v1.MeteringReportConfiguration, error) {
+	return metering.GetMeteringReportConfiguration(seedsGetter, request)
+}
+
+func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]v1.MeteringReportConfiguration, error) {
+	return metering.ListMeteringReportConfigurations(seedsGetter)
+}
+
+func createMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return metering.CreateMeteringReportConfiguration(ctx, request, masterClient)
+}
+
+func updateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return metering.UpdateMeteringReportConfiguration(ctx, request, masterClient)
+}
+
+func deleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+	return metering.DeleteMeteringReportConfiguration(ctx, request, masterClient)
 }
 
 func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
 	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func DecodeListMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
-	return metering.DecodeListMeteringReportReq(r)
-}
-
 func getMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) (string, error) {
 	return metering.GetReport(ctx, request, seedsGetter, seedClientGetter)
 }
 
+func deleteMeteringReport(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
+	return metering.DeleteReport(ctx, request, seedsGetter, seedClientGetter)
+}
+
+func DecodeGetMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeGetMeteringReportConfigurationReq(r)
+}
+
+func DecodeCreateMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeCreateMeteringReportConfigurationReq(r)
+}
+
+func DecodeUpdateMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeUpdateMeteringReportConfigurationReq(r)
+}
+
+func DecodeDeleteMeteringReportConfigurationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeDeleteMeteringReportConfigurationReq(r)
+}
+
+func DecodeMeteringSecretReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeMeteringSecretReq(r)
+}
+
+func DecodeListMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeListMeteringReportReq(r)
+}
+
 func DecodeGetMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return metering.DecodeGetMeteringReportReq(r)
+}
+
+func DecodeMeteringConfigurationsReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeMeteringConfigurationsReq(r)
+}
+
+func DecodeDeleteMeteringReportReq(_ context.Context, r *http.Request) (interface{}, error) {
+	return metering.DecodeDeleteMeteringReportReq(r)
 }

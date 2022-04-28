@@ -100,7 +100,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 			return fmt.Errorf("failed to create %T '%s': %w", obj, namespacedName.String(), err)
 		}
 		// Wait until the object exists in the cache
-		createdObjectIsInCache := waitUntilObjectExistsInCacheConditionFunc(ctx, client, objectLogger(obj), namespacedName, obj)
+		createdObjectIsInCache := WaitUntilObjectExistsInCacheConditionFunc(ctx, client, objectLogger(obj), namespacedName, obj)
 		err = wait.PollImmediate(10*time.Millisecond, 10*time.Second, createdObjectIsInCache)
 		if err != nil {
 			return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
@@ -187,7 +187,7 @@ func waitUntilUpdateIsInCacheConditionFunc(
 	}
 }
 
-func waitUntilObjectExistsInCacheConditionFunc(
+func WaitUntilObjectExistsInCacheConditionFunc(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,

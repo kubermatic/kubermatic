@@ -78,6 +78,8 @@ func (m *DatacenterSpecVSphere) validateInfraManagementUser(formats strfmt.Regis
 		if err := m.InfraManagementUser.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}
@@ -95,6 +97,8 @@ func (m *DatacenterSpecVSphere) validateTemplates(formats strfmt.Registry) error
 		if err := m.Templates.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("templates")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("templates")
 			}
 			return err
 		}
@@ -127,6 +131,8 @@ func (m *DatacenterSpecVSphere) contextValidateInfraManagementUser(ctx context.C
 		if err := m.InfraManagementUser.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}
@@ -140,6 +146,8 @@ func (m *DatacenterSpecVSphere) contextValidateTemplates(ctx context.Context, fo
 	if err := m.Templates.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("templates")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("templates")
 		}
 		return err
 	}

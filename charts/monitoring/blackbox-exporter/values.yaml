@@ -14,8 +14,8 @@
 
 blackboxExporter:
   image:
-    repository: docker.io/prom/blackbox-exporter
-    tag: v0.18.0
+    repository: quay.io/prometheus/blackbox-exporter
+    tag: v0.20.0
     pullPolicy: IfNotPresent
 
   containers:

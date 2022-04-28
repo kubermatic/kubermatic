@@ -19,6 +19,7 @@ package usercluster
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -135,13 +136,16 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
 				"-overwrite-registry", data.ImageRegistry(""),
-				"-version", data.Cluster().Spec.Version.String(),
-				"-owner-email", data.Cluster().Status.UserEmail,
+				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
 			}, getNetworkArgs(data)...)
+
+			if email := data.Cluster().Status.UserEmail; email != "" {
+				args = append(args, "-owner-email", email)
+			}
 
 			if data.Cluster().Spec.DebugLog {
 				args = append(args, "-log-debug=true")
@@ -208,7 +212,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					if err != nil {
 						return nil, err
 					}
-					mlaEndpoint := fmt.Sprintf("%s:%d", data.Cluster().Address.ExternalName, mlaGatewayPort)
+					mlaEndpoint := net.JoinHostPort(data.Cluster().Address.ExternalName, fmt.Sprintf("%d", mlaGatewayPort))
 					if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 						mlaEndpoint = resources.MLAGatewaySNIPrefix + mlaEndpoint
 					}

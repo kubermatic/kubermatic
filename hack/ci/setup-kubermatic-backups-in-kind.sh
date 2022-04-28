@@ -148,12 +148,17 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+
 minio:
   storageClass: 'kubermatic-fast'
   certificateSecret: 'minio-tls-cert'
   credentials:
     accessKey: "FXcD7s0tFOPuTv6jaZARJDouc2Hal8E0"
     secretKey: "wdEZGTnhkgBDTDetaHFuizs3pwXHvWTs"
+
+nginx:
+  controller:
+    replicaCount: 1
 EOF
 
 # append custom Dex configuration
@@ -197,6 +202,9 @@ EOF
 
 kubectl create namespace kubermatic
 kubectl create -f $CA_BUNDLE_CM
+
+# prepare CRDs
+copy_crds_to_chart
 
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \
