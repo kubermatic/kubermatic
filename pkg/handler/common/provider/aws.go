@@ -232,8 +232,7 @@ func AWSSizes(region, architecture string, quota kubermaticv1.MachineDeploymentV
 	}
 
 	sizes := apiv1.AWSSizeList{}
-	for a, i := range *data {
-		fmt.Println(fmt.Sprintf("%d type: %s, CPU: %d, MEM: %f", a, i.InstanceType, i.VCPU, i.Memory))
+	for _, i := range *data {
 		pricing, ok := i.Pricing[region]
 		if !ok {
 			continue

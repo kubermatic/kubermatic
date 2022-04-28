@@ -302,7 +302,6 @@ func GetOpenstackSizes(credentials *resources.OpenstackCredentials, datacenter *
 
 func GetOpenStackFlavorSize(credentials *resources.OpenstackCredentials, authURL, region string,
 	caBundle *x509.CertPool, flavorName string) (*apiv1.OpenstackSize, error) {
-
 	flavors, err := openstack.GetFlavors(authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, err
