@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package dualstack_test
+package dualstack
 
 import (
 	"context"
@@ -90,6 +90,7 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 		for _, node := range nodes.Items {
 			var addrs []string
 			for _, addr := range node.Status.Addresses {
+				fmt.Println(addr)
 				if addr.Type == v1.NodeHostName {
 					continue
 				}
@@ -273,7 +274,7 @@ func egressValidatorPod(ipVersion int) *v1.Pod {
 			InitContainers: nil,
 			Containers: []v1.Container{
 				{
-					Name:  fmt.Sprintf("egress-validator-%d", ipVersion),
+					Name:  fmt.Sprintf("egress-validator-%d-container", ipVersion),
 					Image: "docker.io/byrnedo/alpine-curl:0.1.8",
 					Command: []string{
 						"/bin/ash",
