@@ -56,6 +56,9 @@ spec:
         - -log-debug=true
         - -v=8
         {{- end }}
+        {{- if .Values.kubermaticOperator.leaderElection }}
+        - -enable-leader-election
+        {{- end }}
         env:
         - name: POD_NAMESPACE
           valueFrom:
