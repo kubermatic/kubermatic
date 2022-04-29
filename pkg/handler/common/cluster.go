@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -149,10 +150,10 @@ func CreateEndpoint(
 		return true, nil
 	}); err != nil {
 		log.Error("Timed out waiting for cluster to become ready")
-		return ConvertInternalClusterToExternal(newCluster, nil, dc, true, supportManager.GetIncompatibilities()...), kubermaticerrors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
+		return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), kubermaticerrors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
 	}
 
-	return ConvertInternalClusterToExternal(newCluster, nil, dc, true, supportManager.GetIncompatibilities()...), nil
+	return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), nil
 }
 
 func GenerateCluster(
@@ -329,15 +330,37 @@ func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		var machineDeployments *clusterv1alpha1.MachineDeploymentList
-		if includeMachineDeploymentCount {
-			machineDeployments, err = listClusterMachineDeployments(ctx, userInfoGetter, clusterProvider, &internalCluster, projectID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+		apiClusters = append(apiClusters, ConvertInternalClusterToExternal(internalCluster.DeepCopy(), dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...))
+	}
+
+	if includeMachineDeploymentCount {
+		var wg sync.WaitGroup
+
+		listErrs := make([]error, len(clusters.Items))
+
+		for i, internalCluster := range clusters.Items {
+			wg.Add(1)
+
+			go func(pos int, cl kubermaticv1.Cluster) {
+				defer wg.Done()
+
+				machineDeployment, er := listClusterMachineDeployments(ctx, userInfoGetter, clusterProvider, &cl, projectID)
+				if er != nil {
+					listErrs[pos] = er
+					return
+				}
+
+				apiClusters[pos].MachineDeploymentCount = pointer.Int(len(machineDeployment.Items))
+			}(i, internalCluster)
 		}
 
-		apiClusters = append(apiClusters, ConvertInternalClusterToExternal(internalCluster.DeepCopy(), machineDeployments, dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...))
+		wg.Wait()
+
+		for _, er := range listErrs {
+			if er != nil {
+				return nil, er
+			}
+		}
 	}
 
 	return apiClusters, nil
@@ -390,7 +413,7 @@ func GetEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, 
 		return nil, err
 	}
 
-	return ConvertInternalClusterToExternal(cluster, nil, dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...), nil
+	return ConvertInternalClusterToExternal(cluster, dc, true, version.NewFromConfiguration(config).GetIncompatibilities()...), nil
 }
 
 func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, deleteVolumes, deleteLoadBalancers bool, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -464,7 +487,7 @@ func PatchEndpoint(
 	versionManager := version.NewFromConfiguration(config)
 
 	// Converting to API type as it is the type exposed externally.
-	externalCluster := ConvertInternalClusterToExternal(oldInternalCluster, nil, dc, false, versionManager.GetIncompatibilities()...)
+	externalCluster := ConvertInternalClusterToExternal(oldInternalCluster, dc, false, versionManager.GetIncompatibilities()...)
 
 	// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
 	// data that is required here for validation.
@@ -577,7 +600,7 @@ func PatchEndpoint(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return ConvertInternalClusterToExternal(updatedCluster, nil, dc, true, versionManager.GetIncompatibilities()...), nil
+	return ConvertInternalClusterToExternal(updatedCluster, dc, true, versionManager.GetIncompatibilities()...), nil
 }
 
 func GetClusterEventsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID, eventType string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -1028,7 +1051,7 @@ func isStatus(err error, status int32) bool {
 	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }
 
-func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, machineDeployments *clusterv1alpha1.MachineDeploymentList, datacenter *kubermaticv1.Datacenter, filterSystemLabels bool, incompatibilities ...*version.ProviderIncompatibility) *apiv1.Cluster {
+func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, filterSystemLabels bool, incompatibilities ...*version.ProviderIncompatibility) *apiv1.Cluster {
 	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
@@ -1087,11 +1110,6 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, mac
 		if value, ok := internalCluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation]; ok {
 			cluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = value
 		}
-	}
-
-	if machineDeployments != nil {
-		machineDeploymentCount := len(machineDeployments.Items)
-		cluster.MachineDeploymentCount = &machineDeploymentCount
 	}
 
 	return cluster
