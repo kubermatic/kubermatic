@@ -352,12 +352,12 @@ func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimecli
 	}
 
 	// parse the Openstack resource requests
-	// memory and storage are in GB
+	// memory is in MB and storage is in GB
 	cpuReq, err := resource.ParseQuantity(strconv.Itoa(flavorSize.VCPUs))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
 	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", flavorSize.Memory))
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", flavorSize.Memory))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
 	}
