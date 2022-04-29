@@ -77,6 +77,15 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		} else if versions, err := cni.GetAllowedCNIPluginVersions(spec.CNIPlugin.Type); err != nil || !versions.Has(spec.CNIPlugin.Version) {
 			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "version"), spec.CNIPlugin.Version, versions.List()))
 		}
+
+		// Dual-stack is not supported on Canal < v3.22
+		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack && spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
+			gte322Constraint, _ := semver.NewConstraint(">= 3.22")
+			cniVer, _ := semver.NewVersion(spec.CNIPlugin.Version)
+			if cniVer != nil && !gte322Constraint.Check(cniVer) {
+				allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("cniPlugin"), "dual-stack not allowed on Canal CNI version lower than 3.22"))
+			}
+		}
 	}
 
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)

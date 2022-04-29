@@ -14,7 +14,8 @@
 
 # Source: https://projectcalico.docs.tigera.io/v3.22/manifests/canal.yaml
 # Modifications:
-#   - templated net-conf.json Network & CALICO_IPV4POOL_CIDR
+#   - templated cni_network_config ipam for dual-stack
+#   - templated net-conf.json Network & CALICO_IPV4POOL_CIDR + CALICO_IPV6POOL_CIDR
 #   - CALICO_IPV4POOL_NAT_OUTGOING set to false (this NAT is already performed by flannel)
 #   - templated container image registry in all containers
 #   - removed the flexvolume installation as it does not work on Flatcar Linux & is only required for application policies
@@ -69,7 +70,14 @@ data:
           "mtu": __CNI_MTU__,
           "ipam": {
               "type": "host-local",
+              {{ if .Cluster.Network.DualStack }}
+              "ranges": [
+                  [{"subnet": "usePodCidr"}],
+                  [{"subnet": "usePodCidrIPv6"}]
+              ]
+              {{ else }}
               "subnet": "usePodCidr"
+              {{ end }}
           },
           "policy": {
               "type": "k8s"
@@ -93,7 +101,11 @@ data:
   # Flannel network configuration. Mounted into the flannel container.
   net-conf.json: |
     {
-      "Network": "{{ first .Cluster.Network.PodCIDRBlocks }}",
+      "Network": "{{ .Cluster.Network.PodCIDRIPv4 }}",
+      {{ if .Cluster.Network.DualStack }}
+      "EnableIPv6": true,
+      "IPv6Network": "{{ .Cluster.Network.PodCIDRIPv6 }}",
+      {{ end }}
       "Backend": {
         "Type": "vxlan"
       }
@@ -4225,9 +4237,19 @@ spec:
             # Set Felix endpoint to host default action to ACCEPT.
             - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
               value: "ACCEPT"
-            # Disable IPv6 on Kubernetes.
+            {{ if .Cluster.Network.DualStack }}
+            - name: FELIX_IPV6SUPPORT
+              value: "true"
+            - name: IP6
+              value: "autodetect"
+            - name: IP6_AUTODETECTION_METHOD
+              value: "skip-interface=envoyagent"
+            - name: CALICO_IPV6POOL_CIDR
+              value: "{{ .Cluster.Network.PodCIDRIPv6 }}"
+            {{ else }}
             - name: FELIX_IPV6SUPPORT
               value: "false"
+            {{ end }}
             - name: FELIX_HEALTHENABLED
               value: "true"
             # Skips envoyagent interface created in scope of Tunneling expose
