@@ -928,6 +928,8 @@ spec:
                       created for every user cluster. Has to correspond to a destination
                       in Destinations. If removed, it removes the related default
                       etcd backup configs.
+                    maxLength: 63
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
                   destinations:
                     additionalProperties:
