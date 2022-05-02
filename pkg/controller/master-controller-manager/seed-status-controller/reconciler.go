@@ -40,25 +40,25 @@ import (
 )
 
 const (
-	// SeedKubeconfigUnavailableReason is the reason for the SeedConditionValidKubeconfig
+	// SeedKubeconfigUnavailableReason is the reason for the SeedConditionKubeconfigValid
 	// in case the kubeconfig does not exist and not client can be constructed.
 	SeedKubeconfigUnavailableReason = "KubeconfigUnavailable"
-	// SeedKubeconfigUnavailableReason is the reason for the SeedConditionValidKubeconfig
+	// SeedKubeconfigUnavailableReason is the reason for the SeedConditionKubeconfigValid
 	// in case the seed cluster was not yet prepared by the admin to be a seed (i.e. a
 	// manual step is missing).
 	SeedClusterUninitializedReason = "ClusterUninitialized"
-	// SeedKubeconfigInvalidReason is the reason for the SeedConditionValidKubeconfig
+	// SeedKubeconfigInvalidReason is the reason for the SeedConditionKubeconfigValid
 	// in case the KKP namespace could not be queried for (i.e. an error other than NotFound).
 	// If a NotFound error occurred instead, SeedClusterUninitializedReason is the reason
 	// on the condition.
 	SeedKubeconfigInvalidReason = "KubeconfigInvalid"
-	// SeedKubeconfigValidReason is the reason for the SeedConditionValidKubeconfig
+	// SeedKubeconfigValidReason is the reason for the SeedConditionKubeconfigValid
 	// in case everything is OK.
 	SeedKubeconfigValidReason = "KubeconfigValid"
 )
 
 // Reconciler watches the seed status and updates the phase, versions
-// and the SeedConditionValidKubeconfig condition.
+// and the SeedConditionKubeconfigValid condition.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
@@ -88,7 +88,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// if the seed kubeconfig is invalid, try again later in case a temporary problem occurred
-	if seed.Status.HasConditionValue(kubermaticv1.SeedConditionValidKubeconfig, corev1.ConditionFalse) {
+	if seed.Status.HasConditionValue(kubermaticv1.SeedConditionKubeconfigValid, corev1.ConditionFalse) {
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
@@ -105,7 +105,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	return kubermaticv1helper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
-		r.updateValidKubeconfigCondition(ctx, log, s)
+		r.updateKubeconfigValidCondition(ctx, log, s)
 		r.updateVersions(ctx, log, s)
 		r.updateClusters(ctx, log, s)
 
@@ -114,8 +114,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	})
 }
 
-func (r *Reconciler) updateValidKubeconfigCondition(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) {
-	cond := kubermaticv1.SeedConditionValidKubeconfig
+func (r *Reconciler) updateKubeconfigValidCondition(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) {
+	cond := kubermaticv1.SeedConditionKubeconfigValid
 
 	// check that we have a kubeconfig
 	client, err := r.seedClientGetter(seed)
@@ -152,7 +152,7 @@ func (r *Reconciler) updateVersions(ctx context.Context, log *zap.SugaredLogger,
 
 	kubeconfig, err := r.seedKubeconfigGetter(seed)
 	if err != nil {
-		// this error is already reflected in the ValidKubeconfig condition
+		// this error is already reflected in the KubeconfigValid condition
 		return
 	}
 
@@ -174,7 +174,7 @@ func (r *Reconciler) updateVersions(ctx context.Context, log *zap.SugaredLogger,
 func (r *Reconciler) updateClusters(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) {
 	client, err := r.seedClientGetter(seed)
 	if err != nil {
-		// this error is already reflected in the ValidKubeconfig condition
+		// this error is already reflected in the KubeconfigValid condition
 		return
 	}
 
@@ -193,18 +193,18 @@ func getSeedPhase(seed *kubermaticv1.Seed) kubermaticv1.SeedPhase {
 		return kubermaticv1.SeedPausedPhase
 	}
 
-	validKubeconfig := getConditionStatus(seed, kubermaticv1.SeedConditionValidKubeconfig)
+	KubeconfigValid := getConditionStatus(seed, kubermaticv1.SeedConditionKubeconfigValid)
 	resourcesReconciled := getConditionStatus(seed, kubermaticv1.SeedConditionResourcesReconciled)
 
-	if validKubeconfig == corev1.ConditionTrue && resourcesReconciled == corev1.ConditionTrue {
+	if KubeconfigValid == corev1.ConditionTrue && resourcesReconciled == corev1.ConditionTrue {
 		return kubermaticv1.SeedHealthyPhase
 	}
 
-	if validKubeconfig == corev1.ConditionFalse {
+	if KubeconfigValid == corev1.ConditionFalse {
 		return kubermaticv1.SeedInvalidPhase
 	}
 
-	// validKubeconfig=Unknown should never happen, as this controller just set it earlier
+	// KubeconfigValid=Unknown should never happen, as this controller just set it earlier
 
 	if resourcesReconciled == corev1.ConditionFalse {
 		return kubermaticv1.SeedUnhealthyPhase

@@ -20,7 +20,7 @@ for managing the basic parts of the SeedStatus:
 
   * status.versions.kubermatic
   * status.versions.cluster
-  * status.conditions.SeedConditionValidKubeconfig
+  * status.conditions.SeedConditionKubeconfigValid
   * status.phase
   * status.clusters
 

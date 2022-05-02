@@ -109,12 +109,12 @@ const (
 	// SeedTerminatingPhase means the seed is currently being deleted.
 	SeedTerminatingPhase SeedPhase = "Terminating"
 
-	// SeedPausedPhase means the seed is not being reconciled because if SkipReconciling
+	// SeedPausedPhase means the seed is not being reconciled because the SkipReconciling
 	// annotation is set.
 	SeedPausedPhase SeedPhase = "Paused"
 )
 
-// +kubebuilder:validation:Enum="";SeedConditionResourcesReconciled;SeedConditionValidKubeconfig;
+// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled
 
 // SeedConditionType is used to indicate the type of a seed condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered
@@ -122,9 +122,9 @@ const (
 type SeedConditionType string
 
 const (
-	// SeedConditionValidKubeconfig indicates that the configured kubeconfig for the seed is valid.
+	// SeedConditionKubeconfigValid indicates that the configured kubeconfig for the seed is valid.
 	// The seed-sync controller manages this condition.
-	SeedConditionValidKubeconfig SeedConditionType = "ValidKubeconfig"
+	SeedConditionKubeconfigValid SeedConditionType = "KubeconfigValid"
 	// SeedConditionResourcesReconciled indicates that the KKP operator has finished setting up the
 	// resources inside the seed cluster.
 	SeedConditionResourcesReconciled SeedConditionType = "ResourcesReconciled"

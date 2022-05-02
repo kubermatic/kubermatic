@@ -35,7 +35,7 @@ import (
 
 const (
 	// ControllerName is the name of this very controller.
-	ControllerName = "seed-status-controller"
+	ControllerName = "kkp-seed-status-controller"
 )
 
 // Add creates a new seed status controller and sets up watches.
