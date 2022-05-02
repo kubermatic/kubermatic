@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	ControllerName = "user-synchronizer"
+	ControllerName = "kkp-user-synchronizer"
 )
 
 type reconciler struct {

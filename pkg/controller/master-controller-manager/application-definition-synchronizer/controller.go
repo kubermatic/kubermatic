@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	ControllerName = "application_definition_syncing_controller"
+	ControllerName = "kkp-application-definition-synchronizer"
 )
 
 type reconciler struct {

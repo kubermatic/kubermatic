@@ -55,7 +55,7 @@ import (
 )
 
 const (
-	controllerName = "seed-controller-manager"
+	controllerName = "kkp-seed-controller-manager"
 )
 
 //nolint:gocritic

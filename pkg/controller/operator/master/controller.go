@@ -45,8 +45,8 @@ import (
 )
 
 const (
-	// ControllerName is the name of this very controller.
-	ControllerName = "kubermatic-master-operator"
+	// This controller is responsible for creating/updating/deleting all the required resources on the master clusters.
+	ControllerName = "kkp-master-operator"
 )
 
 func Add(

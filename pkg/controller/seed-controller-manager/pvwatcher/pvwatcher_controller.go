@@ -45,7 +45,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_volume_watcher_controller"
+	ControllerName = "kkp-persistent-volume-watcher"
 )
 
 type Reconciler struct {
