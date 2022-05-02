@@ -1155,6 +1155,52 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
 		},
+		{
+			name: "Update cluster with CNI none",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							ExternalCloudProvider: true,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeNone,
+								Version: "",
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name: "foo",
+							CloudSpec: kubermaticv1.CloudSpec{
+								ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+								DatacenterName: "hetzner-dc",
+								Hetzner:        &kubermaticv1.HetznerCloudSpec{},
+							},
+							ExternalCloudProvider: false,
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeNone,
+								Version: "",
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
+		},
 	}
 	for _, tt := range tests {
 		d, err := admission.NewDecoder(testScheme)
