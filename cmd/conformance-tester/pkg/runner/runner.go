@@ -361,8 +361,20 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed to get cloud config: %w", err)
 	}
 
-	userClusterClient, err := r.opts.ClusterClientProvider.GetClient(ctx, cluster)
-	if err != nil {
+	var userClusterClient ctrlruntimeclient.Client
+
+	// This can randomly fail if the apiserver is not 100% fully ready yet:
+	//   failed to get the client for the cluster:
+	//     failed to create restMapper:
+	//       Get "https://<clustername>.kubermatic.worker.ci.k8c.io:<port>/api?timeout=32s":
+	//         dial tcp <ciclusternodeip>:<port>:
+	//           connect: connection refused
+	// To prevent this from stopping a conformance test, we simply retry a couple of times.
+	if err := wait.PollImmediate(1*time.Second, 15*time.Second, func() (done bool, err error) {
+		userClusterClient, err = r.opts.ClusterClientProvider.GetClient(ctx, cluster)
+
+		return err == nil, nil
+	}); err != nil {
 		return fmt.Errorf("failed to get the client for the cluster: %w", err)
 	}
 
