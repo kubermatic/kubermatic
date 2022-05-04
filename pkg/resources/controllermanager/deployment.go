@@ -288,8 +288,12 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
 	flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 	flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
-	// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
-	flags = append(flags, "--port", "0")
+
+	if version.LessThan(semver.MustParse("1.24.0")) {
+		// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
+		// Not supported (and needed) in Kubernetes 1.24 anymore
+		flags = append(flags, "--port", "0")
+	}
 
 	// Apply leader election settings
 	if lds := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
