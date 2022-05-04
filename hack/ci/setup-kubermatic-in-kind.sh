@@ -170,8 +170,8 @@ telemetry:
   # and later check if telemetry pods exist and if they output something
   reporterArgs:
     - stdout
-    - --client-uuid=$(CLIENT_UUID)
-    - --record-dir=$(RECORD_DIR)
+    - --client-uuid=\$(CLIENT_UUID)
+    - --record-dir=\$(RECORD_DIR)
 EOF
 
 # append custom Dex configuration
