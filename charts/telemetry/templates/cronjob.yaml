@@ -16,9 +16,9 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: {{ .Release.Name }}-job
-  namespace:  {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
-  schedule:  {{ .Values.telemetry.schedule }}
+  schedule: {{ .Values.telemetry.schedule | quote }}
   jobTemplate:
     spec:
       template:
