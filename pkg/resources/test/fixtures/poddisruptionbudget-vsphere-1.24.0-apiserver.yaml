@@ -1,0 +1,14 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: apiserver
+status:
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0
