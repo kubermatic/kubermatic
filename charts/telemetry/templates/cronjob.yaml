@@ -31,6 +31,8 @@ spec:
             - name: kubernetes-agent
               image: "{{ .Values.telemetry.kubernetesAgent.image.repository }}:{{ .Values.telemetry.kubernetesAgent.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.telemetry.kubernetesAgent.image.pullPolicy }}
+              command:
+                - kubernetes-agent
               args:
                 - "--record-dir=$(RECORD_DIR)"
               env:
@@ -44,6 +46,8 @@ spec:
             - name: kubermatic-agent
               image: "{{ .Values.telemetry.kubermaticAgent.image.repository }}:{{ .Values.telemetry.kubermaticAgent.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.telemetry.kubermaticAgent.image.pullPolicy }}
+              command:
+                - kubermatic-agent
               args:
                 - "--record-dir=$(RECORD_DIR)"
               env:
@@ -58,6 +62,8 @@ spec:
             - name: reporter
               image: "{{ .Values.telemetry.reporter.image.repository }}:{{ .Values.telemetry.reporter.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.telemetry.reporter.image.pullPolicy }}
+              command:
+                - reporter
               args:
                 - "http"
                 - "--client-uuid=$(CLIENT_UUID)"
