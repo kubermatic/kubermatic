@@ -13,6 +13,10 @@
 # limitations under the License.
 
 loki:
+  image:
+    repository: docker.io/grafana/loki
+  fullnameOverride: loki
+
   affinity: {}
   # podAntiAffinity:
   #   requiredDuringSchedulingIgnoredDuringExecution:
@@ -80,11 +84,6 @@ loki:
       working_directory: /data/loki/boltdb-shipper-compactor
       shared_store: filesystem
 
-  image:
-    repository: docker.io/grafana/loki
-    tag: 2.1.0
-    pullPolicy: IfNotPresent
-
   ## The app name of loki clients
   client: {}
     # name:
@@ -92,20 +91,29 @@ loki:
   nodeSelector: {}
 
   persistence:
+    enabled: true
     size: 15Gi
     storageClassName: kubermatic-fast
 
   podLabels: {}
 
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3100"
+
+  rbac:
+    pspEnabled: false
+
   replicas: 1
 
   resources:
-   limits:
-     cpu: "1"
-     memory: 700Mi
-   requests:
-     cpu: 300m
-     memory: 256Mi
+    limits:
+      cpu: "1"
+      # Increased based on real world usage where Loki crashes on longer time periods
+      memory: 1Gi
+    requests:
+      cpu: 300m
+      memory: 256Mi
 
   service:
     type: ClusterIP

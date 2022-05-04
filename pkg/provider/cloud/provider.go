@@ -20,7 +20,7 @@ import (
 	"crypto/x509"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/vsphere"
@@ -80,6 +81,9 @@ func Provider(
 	}
 	if datacenter.Spec.Anexia != nil {
 		return anexia.NewCloudProvider(datacenter, secretKeyGetter)
+	}
+	if datacenter.Spec.Nutanix != nil {
+		return nutanix.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	return nil, errors.New("no cloudprovider found")
 }

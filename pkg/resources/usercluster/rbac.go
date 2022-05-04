@@ -19,11 +19,13 @@ package usercluster
 import (
 	"fmt"
 
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -69,7 +71,7 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 				Verbs: []string{"update"},
 			},
 			{
-				APIGroups: []string{"kubermatic.k8s.io"},
+				APIGroups: []string{"kubermatic.k8c.io"},
 				Resources: []string{"constraints"},
 				Verbs: []string{
 					"get",
@@ -101,28 +103,40 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 	}
 }
 
-func ClusterRoleCreator() (string, reconciling.ClusterRoleCreator) {
-	return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-		r.Rules = []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"kubermatic.k8s.io"},
-				Resources: []string{"clusters"},
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-					"patch",
-					"update",
+func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
+	return func() (string, reconciling.ClusterRoleCreator) {
+		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"clusters", "clusters/status"},
+					Verbs: []string{
+						"get",
+						"list",
+						"watch",
+						"patch",
+						"update",
+					},
 				},
-			},
+				{
+					APIGroups: []string{appkubermaticv1.GroupName},
+					Resources: []string{appkubermaticv1.ApplicationDefinitionResourceName},
+					Verbs: []string{
+						"get",
+						"list",
+						"watch",
+					},
+				},
+			}
+			return r, nil
 		}
-		return r, nil
 	}
 }
 
-func ClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBinding(namespace *corev1.Namespace) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return GenClusterRoleBindingName(namespace), func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+			rb.OwnerReferences = []metav1.OwnerReference{genOwnerReference(namespace)}
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     roleName,
 				Kind:     "ClusterRole",
@@ -132,7 +146,7 @@ func ClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCre
 				{
 					Kind:      rbacv1.ServiceAccountKind,
 					Name:      serviceAccountName,
-					Namespace: namespace,
+					Namespace: namespace.Name,
 				},
 			}
 			return rb, nil
@@ -140,6 +154,20 @@ func ClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCre
 	}
 }
 
-func GenClusterRoleBindingName(targetNamespace string) string {
-	return fmt.Sprintf("%s-%s", roleBindingName, targetNamespace)
+// genOwnerReference returns an owner ref pointing to the cluster namespace. This
+// ensures that when a cluster is deleted, the ClusterRole/Binding are deleted automatically
+// *after* the cluster namespace is gone. Previously, we manually deleted them, but
+// this could lead to cases where the usercluster-ctrl-mgr is still running and
+// producing errors because it cannot access Cluster objects anymore.
+func genOwnerReference(namespace *corev1.Namespace) metav1.OwnerReference {
+	return metav1.OwnerReference{
+		APIVersion: namespace.APIVersion,
+		Kind:       namespace.Kind,
+		Name:       namespace.Name,
+		UID:        namespace.UID,
+	}
+}
+
+func GenClusterRoleBindingName(targetNamespace *corev1.Namespace) string {
+	return fmt.Sprintf("%s-%s", roleBindingName, targetNamespace.Name)
 }

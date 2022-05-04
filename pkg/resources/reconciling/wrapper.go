@@ -29,7 +29,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// OwnerRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object
+// OwnerRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object.
 func OwnerRefWrapper(ref metav1.OwnerReference) ObjectModifier {
 	return func(create ObjectCreator) ObjectCreator {
 		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
@@ -47,7 +47,7 @@ func OwnerRefWrapper(ref metav1.OwnerReference) ObjectModifier {
 // ImagePullSecretsWrapper is generating a new ObjectModifier that wraps an ObjectCreator
 // and takes care of adding the secret names provided to the ImagePullSecrets.
 //
-// TODO(irozzo) At the moment only Deployments are supported, but
+// TODO At the moment only Deployments are supported, but
 // this can be extended to whatever Object carrying a PodSpec.
 func ImagePullSecretsWrapper(secretNames ...string) ObjectModifier {
 	return func(create ObjectCreator) ObjectCreator {
@@ -83,7 +83,7 @@ func configureImagePullSecrets(podSpec *corev1.PodSpec, secretNames []string) {
 	}
 }
 
-// DefaultContainer defaults all Container attributes to the same values as they would get from the Kubernetes API
+// DefaultContainer defaults all Container attributes to the same values as they would get from the Kubernetes API.
 func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) {
 	if c.ImagePullPolicy == "" {
 		c.ImagePullPolicy = corev1.PullIfNotPresent
@@ -109,43 +109,59 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 	}
 }
 
-// DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API
-func DefaultPodSpec(old, new corev1.PodSpec) (corev1.PodSpec, error) {
+// DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API.
+// In addition, it sets default PodSpec values that KKP requires in all workloads, for example appropriate security settings.
+// The following KKP-specific defaults are applied:
+// - SecurityContext.SeccompProfile is set to be of type `RuntimeDefault` to enable seccomp isolation if not set.
+func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, error) {
 	// make sure to keep the old procmount types in case a creator overrides the entire PodSpec
 	initContainerProcMountType := map[string]*corev1.ProcMountType{}
 	containerProcMountType := map[string]*corev1.ProcMountType{}
-	for _, container := range old.InitContainers {
+	for _, container := range oldPodSpec.InitContainers {
 		if container.SecurityContext != nil {
 			initContainerProcMountType[container.Name] = container.SecurityContext.ProcMount
 		}
 	}
-	for _, container := range old.Containers {
+	for _, container := range oldPodSpec.Containers {
 		if container.SecurityContext != nil {
 			containerProcMountType[container.Name] = container.SecurityContext.ProcMount
 		}
 	}
 
-	for idx, container := range new.InitContainers {
-		DefaultContainer(&new.InitContainers[idx], initContainerProcMountType[container.Name])
+	for idx, container := range newPodSpec.InitContainers {
+		DefaultContainer(&newPodSpec.InitContainers[idx], initContainerProcMountType[container.Name])
 	}
 
-	for idx, container := range new.Containers {
-		DefaultContainer(&new.Containers[idx], containerProcMountType[container.Name])
+	for idx, container := range newPodSpec.Containers {
+		DefaultContainer(&newPodSpec.Containers[idx], containerProcMountType[container.Name])
 	}
 
-	for idx, vol := range new.Volumes {
+	for idx, vol := range newPodSpec.Volumes {
 		if vol.VolumeSource.Secret != nil && vol.VolumeSource.Secret.DefaultMode == nil {
-			new.Volumes[idx].Secret.DefaultMode = utilpointer.Int32Ptr(corev1.SecretVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].Secret.DefaultMode = utilpointer.Int32Ptr(corev1.SecretVolumeSourceDefaultMode)
 		}
 		if vol.VolumeSource.ConfigMap != nil && vol.VolumeSource.ConfigMap.DefaultMode == nil {
-			new.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
 		}
 	}
 
-	return new, nil
+	// set KKP specific defaults for every Pod created by it
+
+	if newPodSpec.SecurityContext == nil {
+		newPodSpec.SecurityContext = &corev1.PodSecurityContext{}
+	}
+
+	if newPodSpec.SecurityContext.SeccompProfile == nil {
+		newPodSpec.SecurityContext.SeccompProfile = &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		}
+	}
+
+	return newPodSpec, nil
 }
 
-// DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API
+// DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API.
+// In addition, the Deployment's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 	return func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 		old := d.DeepCopy()
@@ -181,7 +197,8 @@ func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 	}
 }
 
-// DefaultStatefulSet defaults all StatefulSet attributes to the same values as they would get from the Kubernetes API
+// DefaultStatefulSet defaults all StatefulSet attributes to the same values as they would get from the Kubernetes API.
+// In addition, the StatefulSet's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
 	return func(ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 		old := ss.DeepCopy()
@@ -200,7 +217,8 @@ func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
 	}
 }
 
-// DefaultDaemonSet defaults all DaemonSet attributes to the same values as they would get from the Kubernetes API
+// DefaultDaemonSet defaults all DaemonSet attributes to the same values as they would get from the Kubernetes API.
+// In addition, the DaemonSet's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
 	return func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 		old := ds.DeepCopy()
@@ -219,7 +237,8 @@ func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
 	}
 }
 
-// DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API
+// DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API.
+// In addition, the CronJob's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultCronJob(creator CronJobCreator) CronJobCreator {
 	return func(cj *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 		old := cj.DeepCopy()

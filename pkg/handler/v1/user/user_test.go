@@ -26,15 +26,21 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
 
 func TestGetUsersForProject(t *testing.T) {
 	t.Parallel()
@@ -43,7 +49,7 @@ func TestGetUsersForProject(t *testing.T) {
 		ExpectedResponse            []apiv1.User
 		ExpectedResponseString      string
 		ExpectedActions             int
-		ExpectedUserAfterInvitation *kubermaticapiv1.User
+		ExpectedUserAfterInvitation *kubermaticv1.User
 		ProjectToGet                string
 		HTTPStatus                  int
 		ExistingAPIUser             apiv1.User
@@ -55,9 +61,9 @@ func TestGetUsersForProject(t *testing.T) {
 			ProjectToGet: "foo-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("bar", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("zorg", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("bar", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("zorg", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 				test.GenBinding("bar-ID", "john@acme.com", "editors"),
@@ -66,17 +72,17 @@ func TestGetUsersForProject(t *testing.T) {
 				test.GenBinding("bar-ID", "bob@acme.com", "editors"),
 				test.GenBinding("zorg-ID", "bob@acme.com", "editors"),
 				/*add users*/
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "john", "john@acme.com")
 					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					return user
 				}(),
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "alice", "alice@acme.com")
 					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC))
 					return user
 				}(),
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "bob", "bob@acme.com")
 					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC))
 					return user
@@ -90,7 +96,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "john",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
-					Email: "john@acme.com",
+					Email:    "john@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "owners",
@@ -105,7 +112,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "alice",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
-					Email: "alice@acme.com",
+					Email:    "alice@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "viewers",
@@ -120,7 +128,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "bob",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
-					Email: "bob@acme.com",
+					Email:    "bob@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "editors",
@@ -136,8 +145,8 @@ func TestGetUsersForProject(t *testing.T) {
 			ProjectToGet: "foo2-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("foo2", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("bar2", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo2", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("bar2", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("bar-ID", "alice2@acme.com", "viewers"),
 				test.GenBinding("foo2-ID", "bob@acme.com", "editors"),
@@ -147,7 +156,7 @@ func TestGetUsersForProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:        *genAPIUser("alice2", "alice2@acme.com"),
-			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"alice2@acme.com\" doesn't belong to the given project = foo2-ID"}}`,
+			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"alice2@acme.com\" doesn't belong to project foo2-ID"}}`,
 		},
 		{
 			Name:         "scenario 3: the admin can get a list of user for any project",
@@ -155,9 +164,9 @@ func TestGetUsersForProject(t *testing.T) {
 			ProjectToGet: "foo-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("bar", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("zorg", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("bar", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("zorg", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 				test.GenBinding("bar-ID", "john@acme.com", "editors"),
@@ -166,17 +175,17 @@ func TestGetUsersForProject(t *testing.T) {
 				test.GenBinding("bar-ID", "bob@acme.com", "editors"),
 				test.GenBinding("zorg-ID", "bob@acme.com", "editors"),
 				/*add users*/
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "john", "john@acme.com")
 					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					return user
 				}(),
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "alice", "alice@acme.com")
 					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC))
 					return user
 				}(),
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "bob", "bob@acme.com")
 					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC))
 					return user
@@ -191,7 +200,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "john",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
-					Email: "john@acme.com",
+					Email:    "john@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "owners",
@@ -206,7 +216,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "alice",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
-					Email: "alice@acme.com",
+					Email:    "alice@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "viewers",
@@ -221,7 +232,8 @@ func TestGetUsersForProject(t *testing.T) {
 						Name:              "bob",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
-					Email: "bob@acme.com",
+					Email:    "bob@acme.com",
+					LastSeen: &[]apiv1.Time{apiv1.NewTime(test.UserLastSeen)}[0],
 					Projects: []apiv1.ProjectGroup{
 						{
 							GroupPrefix: "editors",
@@ -239,9 +251,9 @@ func TestGetUsersForProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -265,7 +277,6 @@ func TestGetUsersForProject(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestDeleteUserFromProject(t *testing.T) {
@@ -288,9 +299,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -312,9 +323,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("planX-ID", "bob@acme.com", "viewers"),
@@ -324,7 +335,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 			},
 			UserIDToDelete:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot delete the user = bob@acme.com from the project plan9-ID because the user is not a member of the project"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot delete the user bob@acme.com from the project plan9-ID because the user is not a member of the project"}}`,
 		},
 
 		// scenario 3
@@ -335,9 +346,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				/*add users*/
@@ -356,9 +367,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -380,9 +391,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -403,9 +414,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, nil, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, nil, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -433,14 +444,14 @@ func TestEditUserInProject(t *testing.T) {
 		// scenario 1
 		{
 			Name:          "scenario 1: john the owner of the plan9 project changes the group for bob from viewers to editors",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -451,20 +462,20 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		// scenario 2
 		{
 			Name:          "scenario 2: john the owner of the plan9 project changes the group for bob, but bob is not a member of the project",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "bob@acme.com", "viewers"),
@@ -474,20 +485,20 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot change the membership of the user = bob@acme.com for the project plan9-ID because the user is not a member of the project"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot change the membership of the user bob@acme.com for the project plan9-ID because the user is not a member of the project"}}`,
 		},
 
 		// scenario 3
 		{
 			Name:          "scenario 3: john the owner of the plan9 project changes the group for bob from viewers to owners",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -497,20 +508,20 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		// scenario 4
 		{
 			Name:          "scenario 4: john the owner of the plan9 project changes the group for bob from viewers to admins(wrong name)",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"admins"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"admins"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -526,14 +537,14 @@ func TestEditUserInProject(t *testing.T) {
 		// scenario 5
 		{
 			Name:          "scenario 5: email case insensitive. Changes the group for bob from viewers to editors where email is BOB@ACME.COM instead bob@acme.com",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"BOB@ACME.COM", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"BOB@ACME.COM", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -544,19 +555,19 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 		// scenario 6
 		{
 			Name:          "scenario 6: the admin changes the group for bob from viewers to editors",
-			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -568,7 +579,7 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 	}
 	for _, tc := range testcases {
@@ -577,9 +588,9 @@ func TestEditUserInProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -610,9 +621,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -622,7 +633,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
@@ -632,9 +643,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/* add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -654,9 +665,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -676,9 +687,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -688,7 +699,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
@@ -698,9 +709,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -710,7 +721,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = bob@acme.com to the project plan9-ID because user is already in the project"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user bob@acme.com to the project plan9-ID because user is already in the project"}}`,
 		},
 
 		{
@@ -720,9 +731,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -732,7 +743,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = Bob@acme.com to the project plan9-ID because user is already in the project"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user Bob@acme.com to the project plan9-ID because user is already in the project"}}`,
 		},
 
 		{
@@ -742,9 +753,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -754,7 +765,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
@@ -767,8 +778,8 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/* add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -786,9 +797,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -799,7 +810,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultAdminUser(),
 			},
 			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 	}
 
@@ -809,9 +820,9 @@ func TestAddUserToProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -840,15 +851,15 @@ func TestGetCurrentUser(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}`,
+			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 
 		{
 			Name: "scenario 2: get john's profile (one project assigned)",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
-				test.GenProject("moby", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
-				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("moby", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				/*add users*/
@@ -856,7 +867,7 @@ func TestGetCurrentUser(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
+			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9-ID","group":"owners"}],"lastSeen":"2020-12-31T23:00:00Z"}`,
 		},
 	}
 
@@ -864,9 +875,9 @@ func TestGetCurrentUser(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			req := httptest.NewRequest("GET", "/api/v1/me", nil)
@@ -887,15 +898,15 @@ func TestNewUser(t *testing.T) {
 		Name                      string
 		HTTPStatus                int
 		ExpectedResponse          string
-		ExpectedKubermaticUser    *kubermaticapiv1.User
+		ExpectedKubermaticUser    *kubermaticv1.User
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
 	}{
 		{
-			Name:             "scenario 1: successfully creates a new user resource",
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
+			Name:             "scenario 1: successfully creates the initial new user resource",
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","isAdmin":true,"lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:       http.StatusOK,
-			ExpectedKubermaticUser: func() *kubermaticapiv1.User {
+			ExpectedKubermaticUser: func() *kubermaticv1.User {
 				expectedKubermaticUser := test.GenDefaultUser()
 				expectedKubermaticUser.UID = ""
 				return expectedKubermaticUser
@@ -916,7 +927,7 @@ func TestNewUser(t *testing.T) {
 
 		{
 			Name:             "scenario 3: creating a user if already exists doesn't have effect",
-			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","lastSeen":"2020-12-31T23:00:00Z"}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				genDefaultUser(),
@@ -927,10 +938,9 @@ func TestNewUser(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			// act
@@ -970,11 +980,11 @@ func TestLogoutCurrentUser(t *testing.T) {
 			Name: "scenario 2: logout user with empty blacklist token secret",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add users*/
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "john", "john@acme.com")
-					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
-							Name:      user.GetTokenBlackListSecretName(),
+							Name:      user.GetInvalidTokensReferenceSecretName(),
 							Namespace: resources.KubermaticNamespace,
 						},
 					}
@@ -985,7 +995,7 @@ func TestLogoutCurrentUser(t *testing.T) {
 			ExistingKubernetesObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
-					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte{})
+					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte{})
 				}(),
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
@@ -996,11 +1006,11 @@ func TestLogoutCurrentUser(t *testing.T) {
 			Name: "scenario 2: logout user when token is on blacklist",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add users*/
-				func() *kubermaticapiv1.User {
+				func() *kubermaticv1.User {
 					user := genUser("", "john", "john@acme.com")
-					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+					user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
-							Name:      user.GetTokenBlackListSecretName(),
+							Name:      user.GetInvalidTokensReferenceSecretName(),
 							Namespace: resources.KubermaticNamespace,
 						},
 					}
@@ -1011,7 +1021,7 @@ func TestLogoutCurrentUser(t *testing.T) {
 			ExistingKubernetesObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
-					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte(`[{"token":"fakeTokenId","expiry":"2222-06-20T12:04:00Z"}]`))
+					return test.GenBlacklistTokenSecret(user.GetInvalidTokensReferenceSecretName(), []byte(`[{"token":"fakeTokenId","expiry":"2222-06-20T12:04:00Z"}]`))
 				}(),
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
@@ -1026,9 +1036,9 @@ func TestLogoutCurrentUser(t *testing.T) {
 			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			kubernetesObj = append(kubernetesObj, tc.ExistingKubernetesObjs...)
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			req := httptest.NewRequest("POST", "/api/v1/me/logout", nil)
@@ -1044,12 +1054,12 @@ func TestLogoutCurrentUser(t *testing.T) {
 }
 
 // genUser generates a User resource
-// note if the id is empty then it will be auto generated
-func genUser(id, name, email string) *kubermaticapiv1.User {
+// note if the id is empty then it will be auto generated.
+func genUser(id, name, email string) *kubermaticv1.User {
 	return test.GenUser(id, name, email)
 }
 
-func genDefaultUser() *kubermaticapiv1.User {
+func genDefaultUser() *kubermaticv1.User {
 	return test.GenDefaultUser()
 }
 
@@ -1061,7 +1071,7 @@ func genDefaultAPIUser() *apiv1.User {
 	return test.GenDefaultAPIUser()
 }
 
-func genDefaultAdminUser() *kubermaticapiv1.User {
+func genDefaultAdminUser() *kubermaticv1.User {
 	user := test.GenUser("", "admin", "admin@acme.com")
 	user.Spec.IsAdmin = true
 	return user

@@ -202,12 +202,15 @@ spec:
                     operator: NotIn
                     values:
                       - fargate
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: aws-node-termination-handler
       hostNetwork: true
       dnsPolicy: "ClusterFirstWithHostNet"
       containers:
         - name: aws-node-termination-handler
-          image: public.ecr.aws/aws-ec2/aws-node-termination-handler:v1.13.0
+          image: '{{ Registry "public.ecr.aws" }}/aws-ec2/aws-node-termination-handler:v1.13.0'
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true

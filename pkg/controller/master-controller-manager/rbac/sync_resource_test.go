@@ -23,9 +23,10 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -132,6 +133,29 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources:     []string{kubermaticv1.ClusterResourceName},
 							ResourceNames: []string{"abcd"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ClusterKindName,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{""},
+							Resources:     []string{"configmaps"},
+							ResourceNames: []string{"cluster-abcd-ca-bundle"},
 							Verbs:         []string{"get"},
 						},
 					},
@@ -243,6 +267,33 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
 						Name:     "kubermatic:cluster-abcd:viewers-thunderball",
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:etcd-launcher",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ClusterKindName,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							Namespace: "cluster-abcd",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
 					},
 				},
 			},
@@ -815,6 +866,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -1041,6 +1093,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -1118,7 +1171,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: desired RBAC Role Bindings for a project resource are created",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
@@ -1231,7 +1284,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 2
 		{
 			name:          "scenario 2: no op when desicred RBAC Role Bindings exist",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball"),
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1423,7 +1476,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 3
 		{
 			name:            "scenario 3: update when existing binding doesn't match desired ones",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"update", "update", "update"},
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
@@ -1681,7 +1734,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
-			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{
@@ -1721,7 +1774,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: desired RBAC Roles for a project resource are created",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
@@ -1820,7 +1873,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 2
 		{
 			name:          "scenario 2: no op when desicred RBAC Roles exist",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball"),
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1980,7 +2033,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 3
 		{
 			name:            "scenario 3: update when desired are not the same as expected RBAC Roles",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball"),
 			expectedActions: []string{"update", "update"},
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				{
@@ -2210,7 +2263,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
-			err := ensureClusterRBACRoleForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{
@@ -2491,6 +2544,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -2547,7 +2601,6 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }
@@ -2900,6 +2953,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 				client:     fakeSeedClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -2956,7 +3010,6 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }
@@ -3208,6 +3261,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 				client:     fakeSeedClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -3264,7 +3318,6 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
-
 		})
 	}
 }

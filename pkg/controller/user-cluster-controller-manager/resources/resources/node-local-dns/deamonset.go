@@ -19,8 +19,10 @@ package nodelocaldns
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +31,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			maxUnvailable := intstr.FromString("10%")
@@ -60,9 +62,24 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 
 			ds.Spec.Template.Spec.ServiceAccountName = resources.NodeLocalDNSServiceAccountName
 			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
 			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)
+			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoExecute,
+					Operator: corev1.TolerationOpExists,
+				},
+			}
 
 			patchTolerations(&ds.Spec.Template.Spec)
 
@@ -70,11 +87,11 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "node-cache",
+					Image:           fmt.Sprintf("%s/k8s-dns-node-cache:1.15.7", registryWithOverwrite(resources.RegistryK8SGCR)),
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           fmt.Sprintf("%s/k8s-dns-node-cache:1.15.7", resources.RegistryK8SGCR),
 					Args: []string{
 						"-localip",
-						"169.254.20.10",
+						kubesystem.NodeLocalDNSCacheAddress,
 						"-conf",
 						"/etc/coredns/Corefile",
 					},
@@ -112,9 +129,9 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					},
 
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Host:   "169.254.20.10",
+								Host:   kubesystem.NodeLocalDNSCacheAddress,
 								Scheme: corev1.URISchemeHTTP,
 								Path:   "/health",
 								Port:   intstr.FromInt(8080),

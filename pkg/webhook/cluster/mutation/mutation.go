@@ -18,18 +18,26 @@ package mutation
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -39,14 +47,28 @@ type AdmissionHandler struct {
 	log     logr.Logger
 	decoder *admission.Decoder
 
-	defaultComponentSettings kubermaticv1.ComponentSettings
+	client       ctrlruntimeclient.Client
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
+	caBundle     *x509.CertPool
+
+	// disableProviderMutation is only for unit tests, to ensure no
+	// provide would phone home to validate dummy test credentials
+	disableProviderMutation bool
 }
 
-// NewAdmissionHandler returns a new cluster mutation AdmissionHandler.
-func NewAdmissionHandler(defaults kubermaticv1.ComponentSettings) *AdmissionHandler {
+// NewAdmissionHandler returns a new cluster AdmissionHandler.
+func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *AdmissionHandler {
 	return &AdmissionHandler{
-		defaultComponentSettings: defaults,
+		client:       client,
+		configGetter: configGetter,
+		seedGetter:   seedGetter,
+		caBundle:     caBundle,
 	}
+}
+
+func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
+	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-cluster", &webhook.Admission{Handler: h})
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
@@ -68,7 +90,18 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		h.applyDefaults(cluster)
+
+		err := h.applyDefaults(ctx, cluster)
+		if err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+		}
+
+		if err := h.mutateCreate(cluster); err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+		}
+
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -77,182 +110,164 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		if err := h.mutateUpdate(ctx, oldCluster, cluster); err != nil {
+		// apply defaults to the existing clusters
+		err := h.applyDefaults(ctx, cluster)
+		if err != nil {
 			h.log.Info("cluster mutation failed", "error", err)
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
 		}
+
+		if err := h.mutateUpdate(oldCluster, cluster); err != nil {
+			h.log.Info("cluster mutation failed", "error", err)
+			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %w", req.UID, err))
+		}
+
 	case admissionv1.Delete:
 		return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
+
 	default:
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
 	}
 
 	mutatedCluster, err := json.Marshal(cluster)
 	if err != nil {
-		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %v", err))
+		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %w", err))
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
 }
 
-func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
-	// Add default CNI plugin settings if not present.
-	if c.Spec.CNIPlugin == nil {
-		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-			Type:    kubermaticv1.CNIPluginTypeCanal,
-			Version: "v3.19",
-		}
+func (h *AdmissionHandler) applyDefaults(ctx context.Context, c *kubermaticv1.Cluster) error {
+	seed, provider, fieldErr := h.buildDefaultingDependencies(ctx, c)
+	if fieldErr != nil {
+		return fieldErr
 	}
 
-	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		if c.Spec.Cloud.Kubevirt != nil {
-			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
-			// thus we have to avoid network collision
-			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.241.0.0/20"}
-		} else {
-			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
-		}
+	config, err := h.configGetter(ctx)
+	if err != nil {
+		return err
 	}
 
-	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		if c.Spec.Cloud.Kubevirt != nil {
-			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.26.0.0/16"}
-		} else {
-			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
-		}
+	defaultTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, h.client, seed)
+	if err != nil {
+		return err
 	}
 
-	if c.Spec.ClusterNetwork.DNSDomain == "" {
-		c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-	}
+	return defaulting.DefaultClusterSpec(ctx, &c.Spec, defaultTemplate, seed, config, provider)
+}
 
-	if c.Spec.ClusterNetwork.ProxyMode == "" {
-		// IPVS causes issues with Hetzner's LoadBalancers, which should
-		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
-		if c.Spec.Cloud.Hetzner != nil {
-			c.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
-		} else {
-			c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
-		}
-	}
-
-	if c.Spec.ClusterNetwork.IPVS != nil {
-		if c.Spec.ClusterNetwork.IPVS.StrictArp == nil {
-			c.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
-		}
+// mutateCreate is an addition to regular defaulting for new clusters.
+// at the time of writing it handles features that should only be enabled for new clusters.
+func (h *AdmissionHandler) mutateCreate(newCluster *kubermaticv1.Cluster) error {
+	if newCluster.Spec.Features == nil {
+		newCluster.Spec.Features = map[string]bool{}
 	}
 
 	// Network policies for Apiserver are deployed by default
-	if _, ok := c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
-		if c.Spec.Features == nil {
-			c.Spec.Features = map[string]bool{}
-		}
-		c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
-	}
-
-	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
-	}
-
-	// Default component settings
-	h.defaultClusterComponentSettings(c)
-}
-
-func (h *AdmissionHandler) defaultClusterComponentSettings(c *kubermaticv1.Cluster) {
-	if c.Spec.ComponentsOverride.Apiserver.Replicas == nil {
-		c.Spec.ComponentsOverride.Apiserver.Replicas = h.defaultComponentSettings.Apiserver.Replicas
-	}
-	if c.Spec.ComponentsOverride.Apiserver.Resources == nil {
-		c.Spec.ComponentsOverride.Apiserver.Resources = h.defaultComponentSettings.Apiserver.Resources
-	}
-	if c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled == nil {
-		c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = h.defaultComponentSettings.Apiserver.EndpointReconcilingDisabled
-	}
-	if c.Spec.ComponentsOverride.Apiserver.NodePortRange == "" {
-		c.Spec.ComponentsOverride.Apiserver.NodePortRange = h.defaultComponentSettings.Apiserver.NodePortRange
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.Replicas == nil {
-		c.Spec.ComponentsOverride.ControllerManager.Replicas = h.defaultComponentSettings.ControllerManager.Replicas
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.Resources == nil {
-		c.Spec.ComponentsOverride.ControllerManager.Resources = h.defaultComponentSettings.ControllerManager.Resources
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.Tolerations == nil {
-		c.Spec.ComponentsOverride.ControllerManager.Tolerations = h.defaultComponentSettings.ControllerManager.Tolerations
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.LeaseDurationSeconds == nil {
-		c.Spec.ComponentsOverride.ControllerManager.LeaseDurationSeconds = h.defaultComponentSettings.ControllerManager.LeaseDurationSeconds
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.RenewDeadlineSeconds == nil {
-		c.Spec.ComponentsOverride.ControllerManager.RenewDeadlineSeconds = h.defaultComponentSettings.ControllerManager.RenewDeadlineSeconds
-	}
-	if c.Spec.ComponentsOverride.ControllerManager.RetryPeriodSeconds == nil {
-		c.Spec.ComponentsOverride.ControllerManager.RetryPeriodSeconds = h.defaultComponentSettings.ControllerManager.RetryPeriodSeconds
-	}
-	if c.Spec.ComponentsOverride.Scheduler.Replicas == nil {
-		c.Spec.ComponentsOverride.Scheduler.Replicas = h.defaultComponentSettings.Scheduler.Replicas
-	}
-	if c.Spec.ComponentsOverride.Scheduler.Resources == nil {
-		c.Spec.ComponentsOverride.Scheduler.Resources = h.defaultComponentSettings.Scheduler.Resources
-	}
-	if c.Spec.ComponentsOverride.Scheduler.Tolerations == nil {
-		c.Spec.ComponentsOverride.Scheduler.Tolerations = h.defaultComponentSettings.Scheduler.Tolerations
-	}
-	if c.Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds == nil {
-		c.Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds = h.defaultComponentSettings.Scheduler.LeaseDurationSeconds
-	}
-	if c.Spec.ComponentsOverride.Scheduler.RenewDeadlineSeconds == nil {
-		c.Spec.ComponentsOverride.Scheduler.RenewDeadlineSeconds = h.defaultComponentSettings.Scheduler.RenewDeadlineSeconds
-	}
-	if c.Spec.ComponentsOverride.Scheduler.RetryPeriodSeconds == nil {
-		c.Spec.ComponentsOverride.Scheduler.RetryPeriodSeconds = h.defaultComponentSettings.Scheduler.RetryPeriodSeconds
-	}
-	if c.Spec.ComponentsOverride.Etcd.ClusterSize == nil {
-		c.Spec.ComponentsOverride.Etcd.ClusterSize = h.defaultComponentSettings.Etcd.ClusterSize
-	}
-	if c.Spec.ComponentsOverride.Etcd.Resources == nil {
-		c.Spec.ComponentsOverride.Etcd.Resources = h.defaultComponentSettings.Etcd.Resources
-	}
-	if c.Spec.ComponentsOverride.Etcd.Tolerations == nil {
-		c.Spec.ComponentsOverride.Etcd.Tolerations = h.defaultComponentSettings.Etcd.Tolerations
-	}
-	if c.Spec.ComponentsOverride.Etcd.DiskSize == nil {
-		c.Spec.ComponentsOverride.Etcd.DiskSize = h.defaultComponentSettings.Etcd.DiskSize
-	}
-	if c.Spec.ComponentsOverride.Etcd.StorageClass == "" {
-		c.Spec.ComponentsOverride.Etcd.StorageClass = h.defaultComponentSettings.Etcd.StorageClass
-	}
-	if c.Spec.ComponentsOverride.Prometheus.Resources == nil {
-		c.Spec.ComponentsOverride.Prometheus.Resources = h.defaultComponentSettings.Prometheus.Resources
-	}
-	if c.Spec.Cloud.Anexia != nil {
-		// Always enable external CCM for Anexia clusters
-		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
-	}
-}
-
-func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newCluster *kubermaticv1.Cluster) error {
-	// This part of the code handles the CCM/CSI migration. It currently works
-	// only for OpenStack clusters, in the following way:
-	//   * Add the CCM/CSI migration annotations
-	//   * Enable the UseOctaiva flag
-	switch {
-	case newCluster.Spec.Cloud.Openstack != nil:
-		if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
-			oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
-			if newCluster.ObjectMeta.Annotations == nil {
-				newCluster.ObjectMeta.Annotations = map[string]string{}
-			}
-
-			newCluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
-			newCluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
-			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.BoolPtr(true)
-		}
+	if _, ok := newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
+		newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
 	}
 
 	return nil
 }
 
-func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
+func (h *AdmissionHandler) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster) error {
+	// This part of the code handles the CCM/CSI migration. It currently works
+	// only for OpenStack clusters, in the following way:
+	//   * Add the CCM/CSI migration annotations
+	//   * Enable the UseOctaiva flag
+	if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
+		oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
+		switch {
+		case newCluster.Spec.Cloud.Openstack != nil:
+			addCCMCSIMigrationAnnotations(newCluster)
+			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.BoolPtr(true)
+
+		case newCluster.Spec.Cloud.VSphere != nil:
+			addCCMCSIMigrationAnnotations(newCluster)
+		}
+	}
+
+	// just because spec.Version might say 1.23 doesn't say that the cluster is already on 1.23,
+	// so for all feature toggles and migrations we should base this on the actual, current apiserver
+	curVersion := newCluster.Status.Versions.ControlPlane
+	if curVersion == "" {
+		curVersion = newCluster.Spec.Version
+	}
+
+	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
+		// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
+		// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
+		// are not supported anymore.
+		if newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
+			upgradeConstraint, err := semver.NewConstraint(">= 1.22")
+			if err != nil {
+				return fmt.Errorf("parsing CNI upgrade constraint failed: %w", err)
+			}
+			if curVersion.String() != "" && upgradeConstraint.Check(curVersion.Semver()) {
+				newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+				}
+			}
+		}
+
+		// This part handles Canal version upgrade for clusters with Kubernetes version 1.23 and higher,
+		// where the minimal Canal version is v3.22.
+		cniVersion, err := semver.NewVersion(newCluster.Spec.CNIPlugin.Version)
+		if err != nil {
+			return fmt.Errorf("CNI plugin version parsing failed: %w", err)
+		}
+		lowerThan322, err := semver.NewConstraint("< 3.22")
+		if err != nil {
+			return fmt.Errorf("semver constraint parsing failed: %w", err)
+		}
+		equalOrHigherThan123, err := semver.NewConstraint(">= 1.23")
+		if err != nil {
+			return fmt.Errorf("semver constraint parsing failed: %w", err)
+		}
+		if lowerThan322.Check(cniVersion) && curVersion.String() != "" && equalOrHigherThan123.Check(curVersion.Semver()) {
+			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: "v3.22",
+			}
+		}
+	}
+	return nil
+}
+
+func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
+	if cluster.ObjectMeta.Annotations == nil {
+		cluster.ObjectMeta.Annotations = map[string]string{}
+	}
+
+	cluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
+	cluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
+}
+
+func (h *AdmissionHandler) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
+	seed, err := h.seedGetter()
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+	if seed == nil {
+		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
+	}
+
+	if h.disableProviderMutation {
+		return seed, nil, nil
+	}
+
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
+	if fieldErr != nil {
+		return nil, nil, fieldErr
+	}
+
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, h.client)
+	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, h.caBundle)
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+
+	return seed, cloudProvider, nil
 }

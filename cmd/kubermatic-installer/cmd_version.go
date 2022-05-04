@@ -24,43 +24,49 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
-var (
-	versionShortFlag = cli.BoolFlag{
-		Name:  "short",
-		Usage: "Omit git and chart information",
-	}
-)
+type VersionOptions struct {
+	Options
 
-func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
-	return cli.Command{
-		Name:   "version",
-		Usage:  "Prints the installer's version",
-		Action: VersionAction(logger, versions),
-		Flags: []cli.Flag{
-			versionShortFlag,
-		},
-	}
+	Short bool
 }
 
-func VersionAction(logger *logrus.Logger, versions kubermaticversion.Versions) cli.ActionFunc {
-	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
+func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
+	opt := VersionOptions{}
+
+	cmd := &cobra.Command{
+		Use:   "version",
+		Short: "prints the installer's version",
+		RunE:  VersionFunc(logger, versions, &opt),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			options.CopyInto(&opt.Options)
+		},
+		SilenceUsage: true,
+	}
+
+	cmd.PersistentFlags().BoolVarP(&opt.Short, "short", "s", false, "omit git and chart information")
+
+	return cmd
+}
+
+func VersionFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt *VersionOptions) cobraFuncE {
+	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		name := fmt.Sprintf("Kubermatic %s Installer", edition.KubermaticEdition)
 
-		if ctx.Bool(versionShortFlag.Name) {
+		if opt.Short {
 			fmt.Printf("%s %s\n", name, versions.Kubermatic)
 			return nil
 		}
 
-		charts, err := loadCharts(ctx.GlobalString(chartsDirectoryFlag.Name))
+		charts, err := loadCharts(opt.ChartsDirectory)
 		if err != nil {
-			return fmt.Errorf("failed to determine installer chart state: %v", err)
+			return fmt.Errorf("failed to determine installer chart state: %w", err)
 		}
 
 		nameWidth := len(name)
@@ -100,7 +106,7 @@ func VersionAction(logger *logrus.Logger, versions kubermaticversion.Versions) c
 		}
 
 		return nil
-	}))
+	})
 }
 
 // HelmCharts is used to sort Helm charts by their name.
@@ -126,7 +132,7 @@ func loadCharts(chartDirectory string) ([]helm.Chart, error) {
 			if _, err := os.Stat(chartFile); err == nil {
 				chart, err := helm.LoadChart(path)
 				if err != nil {
-					return fmt.Errorf("failed to read %s: %v", chartFile, err)
+					return fmt.Errorf("failed to read %s: %w", chartFile, err)
 				}
 
 				charts = append(charts, *chart)

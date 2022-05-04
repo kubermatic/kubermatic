@@ -31,12 +31,12 @@ function generate_secret {
 # We replace the domain with a dns name relying on nip.io poining to the
 # nodeport-proxy service. This makes the testing of expose strategies relying
 # on nodeport-proxy very easy from within the kind cluster.
-# TODO(irozzo) Find another solution in case nip.io does not result to be
+# TODO Find another solution in case nip.io does not result to be
 # available enough for our own CI usage.
 function patch_kubermatic_domain {
   local ip="$(kubectl get service nodeport-proxy -n kubermatic -otemplate --template='{{ .spec.clusterIP }}')"
   [ -z "${ip}" ] && return 1
-  kubectl patch kubermaticconfigurations.operator.kubermatic.io -n kubermatic e2e \
+  kubectl patch kubermaticconfigurations.kubermatic.k8c.io -n kubermatic e2e \
     --type="json" -p='[{"op": "replace", "path": "/spec/ingress/domain", "value": "'${ip}.nip.io'"}]'
 }
 
@@ -44,10 +44,8 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.21.1}"
-USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
+USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.22.7}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
-HELM_BINARY="${HELM_BINARY:-helm}" # This works when helm 3 is in path
 
 REPOSUFFIX=""
 if [ "${KUBERMATIC_EDITION:-}" == "ee" ]; then
@@ -65,7 +63,7 @@ appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-  start_docker_daemon
+  start_docker_daemon_ci
 fi
 
 # build Docker images
@@ -94,9 +92,7 @@ rm _build/kubermatic-installer
 make _build/kubermatic-installer
 
 # setup Kind cluster
-time retry 5 kind create cluster \
-  --name="${KIND_CLUSTER_NAME}" \
-  --image=kindest/node:"${KIND_NODE_VERSION}"
+time retry 5 kind create cluster --name="${KIND_CLUSTER_NAME}"
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
 # load nodeport-proxy image
@@ -111,7 +107,7 @@ time retry 5 kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" 
 export SEED_NAME=kubermatic
 
 # Tell the conformance tester what dummy account we configure for the e2e tests.
-export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
 # Build binaries and load the Docker images into the kind cluster
@@ -126,7 +122,7 @@ echo "Config dir: ${TMPDIR}"
 KUBERMATIC_CONFIG="${TMPDIR}/kubermatic.yaml"
 
 cat << EOF > ${KUBERMATIC_CONFIG}
-apiVersion: operator.kubermatic.io/v1alpha1
+apiVersion: kubermatic.k8c.io/v1
 kind: KubermaticConfiguration
 metadata:
   name: e2e
@@ -141,7 +137,7 @@ spec:
     replicas: 0
     debugLog: true
   featureGates:
-    TunnelingExposeStrategy: {}
+    TunnelingExposeStrategy: true
   ui:
     replicas: 0
   # Dex integration
@@ -162,13 +158,15 @@ kubermaticOperator:
     tag: "${TAG}"
 EOF
 
+# prepare CRDs
+copy_crds_to_chart
+
 # install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy \
+./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \
   --config "${KUBERMATIC_CONFIG}" \
   --kubeconfig "${KUBECONFIG}" \
-  --helm-values "${HELM_VALUES_FILE}" \
-  --helm-binary "${HELM_BINARY}"
+  --helm-values "${HELM_VALUES_FILE}"
 
 # TODO: The installer should wait for everything to finish reconciling.
 #echodate "Waiting for Kubermatic Operator to deploy Master components..."
@@ -195,12 +193,10 @@ data:
 
 ---
 kind: Seed
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 metadata:
   name: "${SEED_NAME}"
   namespace: kubermatic
-  labels:
-    worker-name: ""
 spec:
   country: Germany
   location: Hamburg
@@ -214,7 +210,7 @@ spec:
       country: DE
       spec:
         bringyourown: {}
-  expose_strategy: Tunneling
+  exposeStrategy: Tunneling
 EOF
 
 retry 3 kubectl apply -f $SEED_MANIFEST
@@ -242,6 +238,7 @@ if type ginkgo > /dev/null; then
     --trace \
     --race \
     --progress \
+    -v \
     -- --kubeconfig "${HOME}/.kube/config" \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
@@ -253,6 +250,7 @@ else
     --ginkgo.failOnPending \
     --ginkgo.trace \
     --ginkgo.progress \
+    --ginkgo.v \
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --datacenter byo-kubernetes \

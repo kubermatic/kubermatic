@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -34,8 +34,10 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -46,13 +48,18 @@ import (
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+type KubermaticEdition string
+
 const (
 	imagePullSecret = `{"auths":{"your.private.registry.example.com":{"username":"janedoe","password":"xxxxxxxxxxx","email":"jdoe@example.com","auth":"c3R...zE2"}}}`
+
+	enterpriseEdition KubermaticEdition = "ee"
+	communityEdition  KubermaticEdition = "ce"
 )
 
 func init() {
 	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
 }
 
 func must(t *testing.T, err error) {
@@ -61,7 +68,8 @@ func must(t *testing.T, err error) {
 	}
 }
 
-func TestBasicReconciling(t *testing.T) {
+// nolint:gocyclo
+func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 	now := metav1.NewTime(time.Now())
 
 	allSeeds := map[string]*kubermaticv1.Seed{
@@ -103,12 +111,43 @@ func TestBasicReconciling(t *testing.T) {
 				},
 			},
 		},
+		"seed-with-metering-config": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "seed-with-metering-config",
+				Namespace: "kubermatic",
+			},
+			Spec: kubermaticv1.SeedSpec{
+				Metering: &kubermaticv1.MeteringConfiguration{
+					Enabled:          true,
+					StorageSize:      "10Gi",
+					StorageClassName: "test",
+					ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
+						"weekly-test": {
+							Schedule: "0 1 * * 6",
+							Interval: 7,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	k8cConfig := kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "example.com",
+			},
+		},
 	}
 
 	type testcase struct {
 		name            string
 		seedToReconcile string
-		configuration   *operatorv1alpha1.KubermaticConfiguration
+		configuration   *kubermaticv1.KubermaticConfiguration
 		seedsOnMaster   []string
 		syncedSeeds     sets.String // seeds where the seed-sync-controller copied the Seed CR over already
 		assertion       func(test *testcase, reconciler *Reconciler) error
@@ -118,24 +157,14 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "finalizer is set on Seed copy",
 			seedToReconcile: "europe",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "kubermatic",
-				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
-						Domain: "example.com",
-					},
-				},
-			},
-			seedsOnMaster: []string{"europe"},
-			syncedSeeds:   sets.NewString("europe"),
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"europe"},
+			syncedSeeds:     sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seed := kubermaticv1.Seed{}
@@ -143,7 +172,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      "europe",
 				}, &seed); err != nil {
-					return fmt.Errorf("failed to retrieve Seed: %v", err)
+					return fmt.Errorf("failed to retrieve Seed: %w", err)
 				}
 
 				if !kubernetes.HasFinalizer(&seed, common.CleanupFinalizer) {
@@ -157,24 +186,14 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "finalizer triggers cleanup",
 			seedToReconcile: "goner",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "kubermatic",
-				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
-						Domain: "example.com",
-					},
-				},
-			},
-			seedsOnMaster: []string{"goner"},
-			syncedSeeds:   sets.NewString("goner"),
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"goner"},
+			syncedSeeds:     sets.NewString("goner"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seed := kubermaticv1.Seed{}
@@ -182,7 +201,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      "goner",
 				}, &seed); err != nil {
-					return fmt.Errorf("failed to retrieve Seed: %v", err)
+					return fmt.Errorf("failed to retrieve Seed: %w", err)
 				}
 
 				if kubernetes.HasFinalizer(&seed, common.CleanupFinalizer) {
@@ -196,24 +215,14 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "all cluster-wide resources are cleaned up when deleting a seed",
 			seedToReconcile: "europe",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "kubermatic",
-				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
-						Domain: "example.com",
-					},
-				},
-			},
-			seedsOnMaster: []string{"europe"},
-			syncedSeeds:   sets.NewString("europe"),
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"europe"},
+			syncedSeeds:     sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seedClient := reconciler.seedClients["europe"]
@@ -241,7 +250,7 @@ func TestBasicReconciling(t *testing.T) {
 
 				// let the controller clean up
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				// all global resources should be gone
@@ -264,26 +273,16 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "seeds in other namespaces are ignored",
 			seedToReconcile: "other",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "kubermatic",
-				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
-						Domain: "example.com",
-					},
-				},
-			},
-			seedsOnMaster: []string{"other"},
-			syncedSeeds:   sets.NewString("other"),
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"other"},
+			syncedSeeds:     sets.NewString("other"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				// The controller should never attempt to reconcile the Seed, so removing the
 				// seed client should not hurt it.
 				reconciler.seedClients = map[string]ctrlruntimeclient.Client{}
 
 				if err := reconciler.reconcile(context.Background(), reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				return nil
@@ -298,7 +297,7 @@ func TestBasicReconciling(t *testing.T) {
 			syncedSeeds:     sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				if err := reconciler.reconcile(context.Background(), reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				return nil
@@ -308,24 +307,14 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "nodeport-proxy annotations are carried over to the loadbalancer service",
 			seedToReconcile: "seed-with-nodeport-proxy-annotations",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "kubermatic",
-				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-					Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
-						Domain: "example.com",
-					},
-				},
-			},
-			seedsOnMaster: []string{"seed-with-nodeport-proxy-annotations"},
-			syncedSeeds:   sets.NewString("seed-with-nodeport-proxy-annotations"),
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"seed-with-nodeport-proxy-annotations"},
+			syncedSeeds:     sets.NewString("seed-with-nodeport-proxy-annotations"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seedClient := reconciler.seedClients["seed-with-nodeport-proxy-annotations"]
@@ -335,7 +324,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      "nodeport-proxy",
 				}, &svc); err != nil {
-					return fmt.Errorf("failed to retrieve nodeport-proxy Service: %v", err)
+					return fmt.Errorf("failed to retrieve nodeport-proxy Service: %w", err)
 				}
 
 				if svc.Annotations == nil {
@@ -355,12 +344,12 @@ func TestBasicReconciling(t *testing.T) {
 		{
 			name:            "when imagePullSecret is given secret should be provisioned",
 			seedToReconcile: "europe",
-			configuration: &operatorv1alpha1.KubermaticConfiguration{
+			configuration: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "kubermatic",
 				},
-				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					ImagePullSecret: imagePullSecret,
 				},
 			},
@@ -370,7 +359,7 @@ func TestBasicReconciling(t *testing.T) {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %v", err)
+					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
 				seedClient := reconciler.seedClients["europe"]
@@ -381,7 +370,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      common.DockercfgSecretName,
 				}, &secret); err != nil {
-					return fmt.Errorf("failed to retrieve dockercfg Secret: %v", err)
+					return fmt.Errorf("failed to retrieve dockercfg Secret: %w", err)
 				}
 
 				// secret data is not base64 encoded with fake client
@@ -396,7 +385,7 @@ func TestBasicReconciling(t *testing.T) {
 					Namespace: "kubermatic",
 					Name:      common.SeedControllerManagerDeploymentName,
 				}, &scm); err != nil {
-					return fmt.Errorf("failed to retrieve seed controller manager deployment: %v", err)
+					return fmt.Errorf("failed to retrieve seed controller manager deployment: %w", err)
 				}
 
 				var foundImagePullSecret bool
@@ -410,7 +399,152 @@ func TestBasicReconciling(t *testing.T) {
 				}
 
 				return nil
+			},
+		},
 
+		{
+			name:            "when given metering configuration",
+			seedToReconcile: "seed-with-metering-config",
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"seed-with-metering-config"},
+			syncedSeeds:     sets.NewString("seed-with-metering-config"),
+			assertion: func(test *testcase, reconciler *Reconciler) error {
+				ctx := context.Background()
+
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+					return fmt.Errorf("reconciliation failed: %w", err)
+				}
+
+				seedClient := reconciler.seedClients[test.seedToReconcile]
+
+				cronJob := batchv1beta.CronJob{}
+				err := seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob)
+				if err != nil {
+					// cron jobs should be created only when running enterprise edition
+					if edition == communityEdition && kerrors.IsNotFound(err) {
+						return nil
+					}
+					return fmt.Errorf("failed to find reporting cronjob: %w", err)
+				}
+				return nil
+			},
+		},
+
+		{
+			name:            "when removing metering configuration report",
+			seedToReconcile: "seed-with-metering-config",
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"seed-with-metering-config"},
+			syncedSeeds:     sets.NewString("seed-with-metering-config"),
+			assertion: func(test *testcase, reconciler *Reconciler) error {
+				// this test is supported only for enterprise edition of Kubermatic
+				if edition == communityEdition {
+					return nil
+				}
+
+				ctx := context.Background()
+
+				// reconciling to the initial state
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+					return fmt.Errorf("reconciliation failed: %w", err)
+				}
+
+				seedClient := reconciler.seedClients[test.seedToReconcile]
+
+				// asserting that reporting cron job exists
+				cronJob := batchv1beta.CronJob{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
+
+				seed := &kubermaticv1.Seed{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: test.seedToReconcile}, seed))
+
+				// removing reports from metering configuration
+				seed.Spec.Metering.ReportConfigurations = map[string]*kubermaticv1.MeteringReportConfiguration{}
+				must(t, seedClient.Update(ctx, seed))
+
+				// letting the controller clean up
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+					return fmt.Errorf("reconciliation failed: %w", err)
+				}
+
+				// asserting that reporting cron job is gone
+				if err := seedClient.Get(ctx, types.NamespacedName{
+					Namespace: "kubermatic",
+					Name:      "weekly-test",
+				}, &cronJob); err != nil {
+					if kerrors.IsNotFound(err) {
+						return nil
+					}
+				}
+
+				return fmt.Errorf("failed to remove an orpahned reporting cron job")
+			},
+		},
+
+		{
+			name:            "when disabling metering configuration",
+			seedToReconcile: "seed-with-metering-config",
+			configuration:   &k8cConfig,
+			seedsOnMaster:   []string{"seed-with-metering-config"},
+			syncedSeeds:     sets.NewString("seed-with-metering-config"),
+			assertion: func(test *testcase, reconciler *Reconciler) error {
+				// this test is supported only for enterprise edition of Kubermatic
+				if edition == communityEdition {
+					return nil
+				}
+
+				ctx := context.Background()
+
+				// reconciling to the initial state
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+					return fmt.Errorf("reconciliation failed: %w", err)
+				}
+
+				seedClient := reconciler.seedClients[test.seedToReconcile]
+
+				// asserting that reporting cron job exists
+				cronJob := batchv1beta.CronJob{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
+
+				// asserting that metering deployment exists
+				deployment := appsv1.Deployment{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{
+					Namespace: "kubermatic",
+					Name:      "kubermatic-metering",
+				}, &deployment))
+
+				seed := &kubermaticv1.Seed{}
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: test.seedToReconcile}, seed))
+
+				// removing reports from metering configuration
+				seed.Spec.Metering.Enabled = false
+				must(t, seedClient.Update(ctx, seed))
+
+				// letting the controller clean up
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+					return fmt.Errorf("reconciliation failed: %w", err)
+				}
+
+				// asserting that reporting cron job is gone
+				if err := seedClient.Get(ctx, types.NamespacedName{
+					Namespace: "kubermatic",
+					Name:      "weekly-test",
+				}, &cronJob); err != nil {
+					if !kerrors.IsNotFound(err) {
+						return fmt.Errorf("failed to remove reporting cron jobs")
+					}
+				}
+
+				if err := seedClient.Get(ctx, types.NamespacedName{
+					Namespace: "kubermatic",
+					Name:      "kubermatic-metering",
+				}, &deployment); err != nil {
+					if !kerrors.IsNotFound(err) {
+						return fmt.Errorf("failed to remove metering deployment")
+					}
+				}
+
+				return nil
 			},
 		},
 	}
@@ -426,11 +560,11 @@ func TestBasicReconciling(t *testing.T) {
 	}
 }
 
-func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv1alpha1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
+func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermaticv1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
 	masterObjects := []ctrlruntimeclient.Object{}
 	if cfg != nil {
 		// CABundle is defaulted in reallife scenarios
-		defaulted, err := common.DefaultConfiguration(cfg, kubermaticlog.NewDefault().Sugar())
+		defaulted, err := defaults.DefaultConfiguration(cfg, kubermaticlog.NewDefault().Sugar())
 		if err != nil {
 			panic(err)
 		}

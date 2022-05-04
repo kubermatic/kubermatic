@@ -37,10 +37,10 @@ type Release struct {
 }
 
 func (r *Release) Clone() Release {
-	copy := *r
-	copy.Version = semver.MustParse(r.Version.Original())
+	releaseCopy := *r
+	releaseCopy.Version = semver.MustParse(r.Version.Original())
 
-	return copy
+	return releaseCopy
 }
 
 type Chart struct {
@@ -48,36 +48,48 @@ type Chart struct {
 	Version    *semver.Version `yaml:"-"`
 	VersionRaw string          `yaml:"version"`
 	// AppVersion is not a semver, for example Minio has date-based versions.
-	AppVersion string `yaml:"appVersion"`
-	Directory  string
+	AppVersion   string `yaml:"appVersion"`
+	Directory    string
+	Dependencies []Dependency `yaml:"dependencies,omitempty"`
 }
 
 func (c *Chart) Clone() Chart {
-	copy := *c
-	copy.Version = semver.MustParse(c.Version.Original())
+	chartCopy := *c
+	chartCopy.Version = semver.MustParse(c.Version.Original())
 
-	return copy
+	return chartCopy
 }
 
 func LoadChart(directory string) (*Chart, error) {
 	f, err := os.Open(filepath.Join(directory, "Chart.yaml"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to open Chart.yaml: %v", err)
+		return nil, fmt.Errorf("failed to open Chart.yaml: %w", err)
 	}
 	defer f.Close()
 
 	chart := &Chart{}
 	if err := yaml.NewDecoder(f).Decode(chart); err != nil {
-		return nil, fmt.Errorf("failed to read Chart.yaml: %v", err)
+		return nil, fmt.Errorf("failed to read Chart.yaml: %w", err)
 	}
 
 	version, err := semver.NewVersion(chart.VersionRaw)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %q: %v", chart.VersionRaw, err)
+		return nil, fmt.Errorf("failed to parse version %q: %w", chart.VersionRaw, err)
 	}
 
 	chart.Version = version
 	chart.Directory = directory
 
 	return chart, nil
+}
+
+type Dependency struct {
+	Name         string        `yaml:"name"`
+	Version      string        `yaml:"version,omitempty"`
+	Repository   string        `yaml:"repository"`
+	Condition    string        `yaml:"condition,omitempty"`
+	Tags         []string      `yaml:"tags,omitempty"`
+	Enabled      bool          `yaml:"enabled,omitempty"`
+	ImportValues []interface{} `json:"import-values,omitempty"`
+	Alias        string        `yaml:"alias,omitempty"`
 }

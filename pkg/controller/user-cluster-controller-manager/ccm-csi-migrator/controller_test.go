@@ -23,8 +23,7 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -39,6 +38,7 @@ import (
 const defaultNamespace = "default"
 
 func TestReconcile(t *testing.T) {
+	conditionType := kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted
 	testCases := []struct {
 		name                     string
 		clusterName              string
@@ -63,7 +63,6 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			expectedClusterCondition: &kubermaticv1.ClusterCondition{
-				Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
 				Status: "False",
 			},
 		},
@@ -93,7 +92,6 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			expectedClusterCondition: &kubermaticv1.ClusterCondition{
-				Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
 				Status: "False",
 			},
 		},
@@ -126,7 +124,6 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			expectedClusterCondition: &kubermaticv1.ClusterCondition{
-				Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
 				Status: "True",
 			},
 		},
@@ -176,7 +173,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get cluster: %v", err)
 			}
 
-			if !helper.ClusterConditionHasStatus(cluster, tc.expectedClusterCondition.Type, tc.expectedClusterCondition.Status) {
+			if cluster.Status.Conditions[conditionType].Status != tc.expectedClusterCondition.Status {
 				t.Errorf("cluster doesn't have the expected status %v", tc.expectedClusterCondition.Status)
 			}
 		})

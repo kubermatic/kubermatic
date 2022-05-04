@@ -1,4 +1,4 @@
-// +build integration
+//go:build integration
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -21,7 +21,7 @@ package vsphere
 import (
 	"os"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 var (

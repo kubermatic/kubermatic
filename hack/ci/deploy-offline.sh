@@ -109,7 +109,6 @@ _build/image-loader \
   -configuration-file /dev/null \
   -addons-path addons \
   -charts-path charts \
-  -helm-binary helm3 \
   -helm-values-file "${LOADER_VALUES_FILE}" \
   -registry "${REGISTRY}" \
   -log-format=JSON
@@ -120,25 +119,17 @@ docker tag gcr.io/kubernetes-helm/tiller:${HELM_VERSION} ${REGISTRY}/kubernetes-
 docker push ${REGISTRY}/kubernetes-helm/tiller:${HELM_VERSION}
 
 # Deploy
-HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
-  DEPLOY_STACK=kubermatic \
-  DEPLOY_NODEPORT_PROXY=false \
-  TILLER_NAMESPACE="kube-system" \
+DEPLOY_STACK=kubermatic \
   ./hack/ci/deploy.sh \
   master \
   ${VALUES_FILE}
 
-HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
-  DEPLOY_STACK=monitoring \
-  DEPLOY_ALERTMANAGER=false \
-  TILLER_NAMESPACE="kube-system" \
+DEPLOY_STACK=monitoring \
   ./hack/ci/deploy.sh \
   master \
   ${VALUES_FILE}
 
-HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
-  DEPLOY_STACK=logging \
-  TILLER_NAMESPACE="kube-system" \
+DEPLOY_STACK=logging \
   ./hack/ci/deploy.sh \
   master \
   ${VALUES_FILE}

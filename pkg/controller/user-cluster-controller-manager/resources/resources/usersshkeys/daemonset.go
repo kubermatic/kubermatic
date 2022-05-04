@@ -19,7 +19,9 @@ package usersshkeys
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,7 +32,7 @@ import (
 
 const (
 	daemonSetName = "user-ssh-keys-agent"
-	dockerImage   = "quay.io/kubermatic/user-ssh-keys-agent"
+	dockerImage   = "kubermatic/user-ssh-keys-agent"
 )
 
 var (
@@ -38,7 +40,7 @@ var (
 	hostPathType            = corev1.HostPathDirectoryOrCreate
 )
 
-func DaemonSetCreator(versions kubermatic.Versions) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(versions kubermatic.Versions, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return daemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
@@ -60,7 +62,7 @@ func DaemonSetCreator(versions kubermatic.Versions) reconciling.NamedDaemonSetCr
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           fmt.Sprintf("%s:%s", dockerImage, versions.Kubermatic),
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), dockerImage, versions.Kubermatic),
 					Command:         []string{fmt.Sprintf("/usr/local/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -104,6 +106,12 @@ func DaemonSetCreator(versions kubermatic.Versions) reconciling.NamedDaemonSetCr
 							Type: &hostPathType,
 						},
 					},
+				},
+			}
+
+			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
 			}
 

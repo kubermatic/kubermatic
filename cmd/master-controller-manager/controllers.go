@@ -21,24 +21,27 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
-	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/allowed-registry-controller"
+	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
+	kubeone "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
+	presetsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/preset-synchronizer"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
-	projectsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-sync"
+	projectsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
 	seedsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-sync"
-	serviceaccount "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/service-account"
+	serviceaccount "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/serviceaccount-projectbinding-controller"
 	userprojectbinding "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding"
-	userprojectbindingsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding-sync"
+	userprojectbindingsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding-synchronizer"
 	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkeyssynchronizer"
+	usersshkeyprojectownershipcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-project-ownership"
+	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,6 +53,7 @@ import (
 func createAllControllers(ctrlCtx *controllerContext) error {
 	rbacControllerFactory := rbacControllerFactoryCreator(
 		ctrlCtx.mgr.GetConfig(),
+		ctrlCtx.log,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
 		ctrlCtx.workerCount,
@@ -57,52 +61,63 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.workerNamePredicate,
 	)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
-	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
+	userSSHKeySynchronizerFactory := userSSHKeySynchronizerFactoryCreator(ctrlCtx)
 	masterconstraintSynchronizerFactory := masterconstraintSynchronizerFactoryCreator(ctrlCtx)
 	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
 	clusterTemplateSynchronizerFactory := clusterTemplateSynchronizerFactoryCreator(ctrlCtx)
+	userProjectBindingSynchronizerFactory := userProjectBindingSynchronizerFactoryCreator(ctrlCtx)
+	projectSynchronizerFactory := projectSynchronizerFactoryCreator(ctrlCtx)
+	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
+	presetSynchronizerFactory := presetSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
-		kubermaticlog.Logger,
+		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.namespace,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory,
-		userSSHKeysSynchronizerFactory,
+		userSSHKeySynchronizerFactory,
 		masterconstraintSynchronizerFactory,
 		userSynchronizerFactory,
-		clusterTemplateSynchronizerFactory); err != nil {
+		clusterTemplateSynchronizerFactory,
+		userProjectBindingSynchronizerFactory,
+		projectSynchronizerFactory,
+		applicationdefinitionsynchronizerFactory,
+		presetSynchronizerFactory,
+	); err != nil {
 		//TODO: Find a better name
-		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
+		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)
 	}
-	if err := userprojectbinding.Add(ctrlCtx.mgr); err != nil {
-		return fmt.Errorf("failed to create userprojectbinding controller: %v", err)
+	if err := userprojectbinding.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create user-project-binding controller: %w", err)
 	}
-	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
-		return fmt.Errorf("failed to create serviceaccount controller: %v", err)
+	if err := usersshkeyprojectownershipcontroller.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create usersshkey-project-ownership controller: %w", err)
 	}
-	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create seedsync controller: %v", err)
+	if err := serviceaccount.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
 	}
-	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create seedproxy controller: %v", err)
+	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
+		return fmt.Errorf("failed to create seedsync controller: %w", err)
+	}
+	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.configGetter); err != nil {
+		return fmt.Errorf("failed to create seedproxy controller: %w", err)
+	}
+	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
+		return fmt.Errorf("failed to create master constraint template controller: %w", err)
 	}
 	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
-		return fmt.Errorf("failed to create external cluster controller: %v", err)
+		return fmt.Errorf("failed to create external cluster controller: %w", err)
 	}
-	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create master constraint template controller: %v", err)
+	if err := kubeone.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create kubeone controller: %w", err)
 	}
-	if err := projectsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create projectsync controller: %v", err)
-	}
-	if err := userprojectbindingsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create userprojectbindingsync controller: %v", err)
-	}
-	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
-		return fmt.Errorf("failed to create allowedregistry controller: %v", err)
+
+	// init CE/EE-only controllers
+	if err := setupControllers(ctrlCtx); err != nil {
+		return err
 	}
 
 	return nil
@@ -110,6 +125,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 
 func rbacControllerFactoryCreator(
 	mastercfg *rest.Config,
+	log *zap.SugaredLogger,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	workerCount int,
@@ -120,9 +136,9 @@ func rbacControllerFactoryCreator(
 	prometheus.MustRegister(rbacMetrics.Workers)
 
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		_, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
+		_, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, log, selectorOps, workerNamePredicate, workerCount)
 		if err != nil {
-			return "", fmt.Errorf("failed to create rbac controller: %v", err)
+			return "", fmt.Errorf("failed to create rbac controller: %w", err)
 		}
 		return "rbac-controller", nil
 	}
@@ -141,9 +157,9 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 	}
 }
 
-func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+func userSSHKeySynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		return usersshkeyssynchronizer.ControllerName, usersshkeyssynchronizer.Add(
+		return usersshkeysynchronizer.ControllerName, usersshkeysynchronizer.Add(
 			ctx,
 			mgr,
 			seedManagerMap,
@@ -180,6 +196,49 @@ func userSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerli
 func clusterTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return clustertemplatesynchronizer.ControllerName, clustertemplatesynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+		)
+	}
+}
+
+func userProjectBindingSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return userprojectbindingsynchronizer.ControllerName, userprojectbindingsynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func projectSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return projectsynchronizer.ControllerName, projectsynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func applicationDefinitionSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return applicationdefinitionsynchronizer.ControllerName, applicationdefinitionsynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func presetSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return presetsynchronizer.ControllerName, presetsynchronizer.Add(
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,

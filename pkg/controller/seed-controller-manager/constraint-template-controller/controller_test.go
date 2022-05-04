@@ -22,12 +22,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -45,7 +46,7 @@ import (
 const ctName = "requiredlabels"
 
 func TestReconcile(t *testing.T) {
-	sch, err := v1beta1.SchemeBuilder.Build()
+	sch, err := constrainttemplatev1.SchemeBuilder.Build()
 	if err != nil {
 		t.Fatalf("building gatekeeper scheme failed: %v", err)
 	}
@@ -119,7 +120,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			ct := &v1beta1.ConstraintTemplate{}
+			ct := &constrainttemplatev1.ConstraintTemplate{}
 			err := tc.userClient.Get(ctx, request.NamespacedName, ct)
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
@@ -151,7 +152,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
-	sch, err := v1beta1.SchemeBuilder.Build()
+	sch, err := constrainttemplatev1.SchemeBuilder.Build()
 	if err != nil {
 		t.Fatalf("building gatekeeper scheme failed: %v", err)
 	}
@@ -187,7 +188,7 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 		t.Fatalf("reconciling failed: %v", err)
 	}
 
-	err = userClient.Get(ctx, request.NamespacedName, &v1beta1.ConstraintTemplate{})
+	err = userClient.Get(ctx, request.NamespacedName, &constrainttemplatev1.ConstraintTemplate{})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -196,12 +197,12 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 	}
 }
 
-func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTemplate {
+func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
 
 	ct.Spec = genCTSpec()
-	if delete {
+	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
 		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperConstraintTemplateCleanupFinalizer)
@@ -210,10 +211,10 @@ func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTem
 	return ct
 }
 
-func genGKConstraintTemplate(name string) *v1beta1.ConstraintTemplate {
-	ct := &v1beta1.ConstraintTemplate{}
+func genGKConstraintTemplate(name string) *constrainttemplatev1.ConstraintTemplate {
+	ct := &constrainttemplatev1.ConstraintTemplate{}
 	ct.Name = name
-	ct.Spec = v1beta1.ConstraintTemplateSpec{
+	ct.Spec = constrainttemplatev1.ConstraintTemplateSpec{
 		CRD:     genCTSpec().CRD,
 		Targets: genCTSpec().Targets,
 	}
@@ -223,13 +224,13 @@ func genGKConstraintTemplate(name string) *v1beta1.ConstraintTemplate {
 
 func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 	return kubermaticv1.ConstraintTemplateSpec{
-		CRD: v1beta1.CRD{
-			Spec: v1beta1.CRDSpec{
-				Names: v1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &v1beta1.Validation{
+				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
 						Properties: map[string]apiextensionv1.JSONSchemaProps{
 							"labels": {
@@ -245,7 +246,7 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 				},
 			},
 		},
-		Targets: []v1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `
@@ -273,6 +274,15 @@ func genCluster(name string, opaEnabled bool) *kubermaticv1.Cluster {
 				Enabled: opaEnabled,
 			},
 			HumanReadableName: name,
+		},
+		Status: kubermaticv1.ClusterStatus{
+			NamespaceName: kubernetes.NamespaceName(name),
+			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+				Etcd:       kubermaticv1.HealthStatusUp,
+				Apiserver:  kubermaticv1.HealthStatusUp,
+				Controller: kubermaticv1.HealthStatusUp,
+				Scheduler:  kubermaticv1.HealthStatusUp,
+			},
 		},
 	}
 }

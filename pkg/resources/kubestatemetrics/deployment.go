@@ -48,10 +48,10 @@ var (
 
 const (
 	name    = "kube-state-metrics"
-	version = "v2.1.1"
+	version = "v2.4.2"
 )
 
-// DeploymentCreator returns the function to create and update the kube-state-metrics deployment
+// DeploymentCreator returns the function to create and update the kube-state-metrics deployment.
 func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.KubeStateMetricsDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -67,7 +67,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -112,7 +112,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(8080),
@@ -128,12 +128,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 

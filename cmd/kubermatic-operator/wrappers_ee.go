@@ -1,4 +1,4 @@
-// +build ee
+//go:build ee
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -28,5 +28,5 @@ import (
 )
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt *controllerRunOptions) (provider.SeedsGetter, error) {
-	return eeprovider.SeedsGetterFactory(ctx, client, "", opt.namespace, true)
+	return eeprovider.SeedsGetterFactory(ctx, client, opt.namespace)
 }

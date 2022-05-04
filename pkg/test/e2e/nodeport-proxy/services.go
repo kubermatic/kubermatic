@@ -18,10 +18,10 @@ package nodeportproxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/onsi/gomega"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -47,7 +47,7 @@ type ServiceJig struct {
 }
 
 // CreateServiceWithPods deploys a service and the associated pods.
-func (n *ServiceJig) CreateServiceWithPods(svc *corev1.Service, numPods int32, https bool) (*corev1.Service, error) {
+func (n *ServiceJig) CreateServiceWithPods(ctx context.Context, svc *corev1.Service, numPods int32, https bool) (*corev1.Service, error) {
 	if len(svc.Spec.Ports) == 0 {
 		return nil, errors.New("failed to create service: at least one port is required")
 	}
@@ -58,7 +58,7 @@ func (n *ServiceJig) CreateServiceWithPods(svc *corev1.Service, numPods int32, h
 	// Create the namespace to host the service
 	ns := n.newNamespaceTemplate()
 	n.Log.Debugw("Creating namespace", "service", ns)
-	if err := n.Client.Create(context.TODO(), ns); err != nil {
+	if err := n.Client.Create(ctx, ns); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
 			return nil, err
 		}
@@ -70,24 +70,24 @@ func (n *ServiceJig) CreateServiceWithPods(svc *corev1.Service, numPods int32, h
 
 	svc.Namespace = n.Namespace
 	n.Log.Debugw("Creating nodeport service", "service", svc)
-	if err := n.Client.Create(context.TODO(), svc); err != nil {
-		return nil, errors.Wrap(err, "failed to create service of type nodeport")
+	if err := n.Client.Create(ctx, svc); err != nil {
+		return nil, fmt.Errorf("failed to create service of type nodeport: %w", err)
 	}
 	gomega.Expect(svc).NotTo(gomega.BeNil())
 
 	// Create service pods
 	rc := n.newRCFromService(svc, https, numPods)
 	n.Log.Debugw("Creating replication controller", "rc", rc)
-	if err := n.Client.Create(context.TODO(), rc); err != nil {
+	if err := n.Client.Create(ctx, rc); err != nil {
 		return nil, err
 	}
 
 	// Wait for the pod to be ready
-	pods, err := e2eutils.WaitForPodsCreated(n.Client, int(*rc.Spec.Replicas), rc.Namespace, svc.Spec.Selector)
+	pods, err := e2eutils.WaitForPodsCreated(ctx, n.Client, int(*rc.Spec.Replicas), rc.Namespace, svc.Spec.Selector)
 	if err != nil {
-		return svc, errors.Wrap(err, "error occurred while waiting for pods to be ready")
+		return svc, fmt.Errorf("error occurred while waiting for pods to be ready: %w", err)
 	}
-	if !e2eutils.CheckPodsRunningReady(n.Client, n.Namespace, pods, podReadinessTimeout) {
+	if !e2eutils.CheckPodsRunningReady(ctx, n.Client, n.Namespace, pods, podReadinessTimeout) {
 		return svc, fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
 	}
 	if n.ServicePods == nil {
@@ -146,7 +146,7 @@ func (n *ServiceJig) newRCFromService(svc *corev1.Service, https bool, replicas 
 							Args:  args,
 							ReadinessProbe: &corev1.Probe{
 								PeriodSeconds: 3,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Port:   port,
 										Path:   "/",
@@ -165,11 +165,11 @@ func (n *ServiceJig) newRCFromService(svc *corev1.Service, https bool, replicas 
 }
 
 // CleanUp removes the resources.
-func (n *ServiceJig) CleanUp() error {
+func (n *ServiceJig) CleanUp(ctx context.Context) error {
 	ns := corev1.Namespace{}
-	if err := n.Client.Get(context.TODO(), types.NamespacedName{Name: n.Namespace}, &ns); err != nil {
+	if err := n.Client.Get(ctx, types.NamespacedName{Name: n.Namespace}, &ns); err != nil {
 		return err
 	}
 	n.Log.Infow("deleting test namespace", "namespace", ns)
-	return n.Client.Delete(context.TODO(), &ns)
+	return n.Client.Delete(ctx, &ns)
 }

@@ -54,7 +54,7 @@ type KeyPair struct {
 func NewCA(name string) (*KeyPair, error) {
 	key, err := newPrivateKey()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a private key for a new CA: %v", err)
+		return nil, fmt.Errorf("unable to create a private key for a new CA: %w", err)
 	}
 
 	config := certutil.Config{
@@ -63,7 +63,7 @@ func NewCA(name string) (*KeyPair, error) {
 
 	cert, err := certutil.NewSelfSignedCACert(config, key)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a self-signed certificate for a new CA: %v", err)
+		return nil, fmt.Errorf("unable to create a self-signed certificate for a new CA: %w", err)
 	}
 
 	return &KeyPair{
@@ -75,7 +75,7 @@ func NewCA(name string) (*KeyPair, error) {
 func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) (*KeyPair, error) {
 	key, err := newPrivateKey()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a server private key: %v", err)
+		return nil, fmt.Errorf("unable to create a server private key: %w", err)
 	}
 
 	namespacedName := fmt.Sprintf("%s.%s", svcName, svcNamespace)
@@ -103,7 +103,7 @@ func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain 
 	}
 	cert, err := newSignedCert(config, key, ca.Cert, ca.Key)
 	if err != nil {
-		return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+		return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 	}
 
 	return &KeyPair{
@@ -115,7 +115,7 @@ func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain 
 func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*KeyPair, error) {
 	key, err := newPrivateKey()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a client private key: %v", err)
+		return nil, fmt.Errorf("unable to create a client private key: %w", err)
 	}
 
 	config := certutil.Config{
@@ -125,7 +125,7 @@ func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*
 	}
 	cert, err := newSignedCert(config, key, ca.Cert, ca.Key)
 	if err != nil {
-		return nil, fmt.Errorf("unable to sign the client certificate: %v", err)
+		return nil, fmt.Errorf("unable to sign the client certificate: %w", err)
 	}
 
 	return &KeyPair{
@@ -134,12 +134,12 @@ func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*
 	}, nil
 }
 
-// newPrivateKey creates an RSA private key
+// newPrivateKey creates an RSA private key.
 func newPrivateKey() (*rsa.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, rsaKeySize)
 }
 
-// newSignedCert creates a signed certificate using the given CA certificate and key
+// newSignedCert creates a signed certificate using the given CA certificate and key.
 func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
 	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
 	if err != nil {
@@ -175,7 +175,7 @@ func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certific
 func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 	certs, err := certutil.ParseCertsPEM(certPEM)
 	if err != nil {
-		return nil, fmt.Errorf("certificate is not valid PEM: %v", err)
+		return nil, fmt.Errorf("certificate is not valid PEM: %w", err)
 	}
 
 	if len(certs) != 1 {
@@ -184,7 +184,7 @@ func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 
 	key, err := ParsePrivateKeyPEM(keyPEM)
 	if err != nil {
-		return nil, fmt.Errorf("private key is not valid PEM: %v", err)
+		return nil, fmt.Errorf("private key is not valid PEM: %w", err)
 	}
 
 	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
@@ -195,7 +195,7 @@ func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
 	return &KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
-// EncodeCertPEM returns PEM-endcoded certificate data
+// EncodeCertPEM returns PEM-endcoded certificate data.
 func EncodeCertPEM(cert *x509.Certificate) []byte {
 	block := pem.Block{
 		Type:  certificateBlockType,
@@ -204,7 +204,7 @@ func EncodeCertPEM(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&block)
 }
 
-// EncodePrivateKeyPEM returns PEM-encoded private key data
+// EncodePrivateKeyPEM returns PEM-encoded private key data.
 func EncodePrivateKeyPEM(key *rsa.PrivateKey) []byte {
 	block := pem.Block{
 		Type:  RSAPrivateKeyBlockType,
@@ -214,7 +214,7 @@ func EncodePrivateKeyPEM(key *rsa.PrivateKey) []byte {
 }
 
 // ParsePrivateKeyPEM returns a private key parsed from a PEM block in the supplied data.
-// Recognizes PEM blocks for "EC PRIVATE KEY", "RSA PRIVATE KEY", or "PRIVATE KEY"
+// Recognizes PEM blocks for "EC PRIVATE KEY", "RSA PRIVATE KEY", or "PRIVATE KEY".
 func ParsePrivateKeyPEM(keyData []byte) (interface{}, error) {
 	var privateKeyPemBlock *pem.Block
 	for {
@@ -250,7 +250,7 @@ func ParsePrivateKeyPEM(keyData []byte) (interface{}, error) {
 }
 
 // ParseCertsPEM returns the x509.Certificates contained in the given PEM-encoded byte array
-// Returns an error if a certificate could not be parsed, or if the data does not contain any certificates
+// Returns an error if a certificate could not be parsed, or if the data does not contain any certificates.
 func ParseCertsPEM(pemCerts []byte) ([]*x509.Certificate, error) {
 	ok := false
 	certs := []*x509.Certificate{}
@@ -280,12 +280,12 @@ func ParseCertsPEM(pemCerts []byte) ([]*x509.Certificate, error) {
 	return certs, nil
 }
 
-// NewPrivateKey creates an RSA private key
+// NewPrivateKey creates an RSA private key.
 func NewPrivateKey() (*rsa.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, rsaKeySize)
 }
 
-// NewSignedCert creates a signed certificate using the given CA certificate and key
+// NewSignedCert creates a signed certificate using the given CA certificate and key.
 func NewSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
 	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
 	if err != nil {

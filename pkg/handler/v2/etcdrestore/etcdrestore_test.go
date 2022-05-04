@@ -27,7 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -104,6 +104,18 @@ func TestCreateEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusBadRequest,
 			ExpectedResponse:       nil,
 		},
+		{
+			Name:      "create etcd restore with generated name",
+			ProjectID: test.GenDefaultProject().Name,
+			ClusterID: test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			EtcdRestore:            test.GenAPIEtcdRestore("", test.GenDefaultCluster().Name),
+			ExpectedHTTPStatusCode: http.StatusCreated,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -116,16 +128,17 @@ func TestCreateEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(body))
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
 			if resp.Code != tc.ExpectedHTTPStatusCode {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, resp.Code, resp.Body.String())
 			}
-			if resp.Code == http.StatusCreated {
+			// skip the comparison for error codes and when the name is generated
+			if resp.Code == http.StatusCreated && tc.EtcdRestore.Name != "" {
 				b, err := json.Marshal(tc.ExpectedResponse)
 				if err != nil {
 					t.Fatalf("failed to marshal expected response %v", err)
@@ -211,9 +224,9 @@ func TestGetEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -228,7 +241,6 @@ func TestGetEndpoint(t *testing.T) {
 
 				test.CompareWithResult(t, resp, string(b))
 			}
-
 		})
 	}
 }
@@ -301,9 +313,9 @@ func TestListEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -319,7 +331,6 @@ func TestListEndpoint(t *testing.T) {
 
 				etcdRestores.EqualOrDie(expectedEtcdRestores, t)
 			}
-
 		})
 	}
 }
@@ -413,9 +424,9 @@ func TestDeleteEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -492,9 +503,9 @@ func TestProjectListEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -510,7 +521,6 @@ func TestProjectListEndpoint(t *testing.T) {
 
 				etcdRestores.EqualOrDie(expectedEtcdRestores, t)
 			}
-
 		})
 	}
 }

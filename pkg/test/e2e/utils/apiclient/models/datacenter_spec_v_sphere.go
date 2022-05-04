@@ -13,19 +13,15 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecVSphere DatacenterSpecVSphere describes a vSphere datacenter
+// DatacenterSpecVSphere DatacenterSpecVSphere describes a vSphere datacenter.
 //
 // swagger:model DatacenterSpecVSphere
 type DatacenterSpecVSphere struct {
 
 	// If set to true, disables the TLS certificate check against the endpoint.
-	AllowInsecure bool `json:"allow_insecure,omitempty"`
+	AllowInsecure bool `json:"allowInsecure,omitempty"`
 
-	// Optional: The name of the vSphere cluster to use.
-	// Cluster is deprecated and may be removed in future releases as it is
-	// currently ignored.
-	// The cluster hosting the VMs will be the same VM used as a template is
-	// located.
+	// The name of the vSphere cluster to use. Used for out-of-tree CSI Driver.
 	Cluster string `json:"cluster,omitempty"`
 
 	// The name of the datacenter to use.
@@ -37,7 +33,7 @@ type DatacenterSpecVSphere struct {
 	DefaultDatastore string `json:"datastore,omitempty"`
 
 	// The name of the storage policy to use for the storage class created in the user cluster.
-	DefaultStoragePolicy string `json:"storage_policy,omitempty"`
+	DefaultStoragePolicy string `json:"storagePolicy,omitempty"`
 
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint,omitempty"`
@@ -46,10 +42,10 @@ type DatacenterSpecVSphere struct {
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
 	// folder: "/datacenter-1/vm"
-	RootPath string `json:"root_path,omitempty"`
+	RootPath string `json:"rootPath,omitempty"`
 
 	// infra management user
-	InfraManagementUser *VSphereCredentials `json:"infra_management_user,omitempty"`
+	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
 
 	// templates
 	Templates ImageList `json:"templates,omitempty"`
@@ -81,7 +77,9 @@ func (m *DatacenterSpecVSphere) validateInfraManagementUser(formats strfmt.Regis
 	if m.InfraManagementUser != nil {
 		if err := m.InfraManagementUser.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("infra_management_user")
+				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}
@@ -99,6 +97,8 @@ func (m *DatacenterSpecVSphere) validateTemplates(formats strfmt.Registry) error
 		if err := m.Templates.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("templates")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("templates")
 			}
 			return err
 		}
@@ -130,7 +130,9 @@ func (m *DatacenterSpecVSphere) contextValidateInfraManagementUser(ctx context.C
 	if m.InfraManagementUser != nil {
 		if err := m.InfraManagementUser.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("infra_management_user")
+				return ve.ValidateName("infraManagementUser")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("infraManagementUser")
 			}
 			return err
 		}
@@ -144,6 +146,8 @@ func (m *DatacenterSpecVSphere) contextValidateTemplates(ctx context.Context, fo
 	if err := m.Templates.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("templates")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("templates")
 		}
 		return err
 	}

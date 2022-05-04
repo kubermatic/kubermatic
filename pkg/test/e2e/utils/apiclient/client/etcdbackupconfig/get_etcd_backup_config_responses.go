@@ -67,7 +67,7 @@ type GetEtcdBackupConfigOK struct {
 }
 
 func (o *GetEtcdBackupConfigOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] getEtcdBackupConfigOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigOK  %+v", 200, o.Payload)
 }
 func (o *GetEtcdBackupConfigOK) GetPayload() *models.EtcdBackupConfig {
 	return o.Payload
@@ -98,7 +98,7 @@ type GetEtcdBackupConfigUnauthorized struct {
 }
 
 func (o *GetEtcdBackupConfigUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] getEtcdBackupConfigUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigUnauthorized ", 401)
 }
 
 func (o *GetEtcdBackupConfigUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type GetEtcdBackupConfigForbidden struct {
 }
 
 func (o *GetEtcdBackupConfigForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] getEtcdBackupConfigForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigForbidden ", 403)
 }
 
 func (o *GetEtcdBackupConfigForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *GetEtcdBackupConfigDefault) Code() int {
 }
 
 func (o *GetEtcdBackupConfigDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] getEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
 func (o *GetEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

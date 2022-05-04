@@ -22,8 +22,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"text/template"
 
@@ -59,6 +59,17 @@ func main() {
 				ResourceName: "ServiceAccount",
 				ImportAlias:  "corev1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
+				ResourceName:       "Endpoints",
+				ResourceNamePlural: "Endpoints",
+				ImportAlias:        "corev1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
+				ResourceName:       "EndpointSlice",
+				ImportAlias:        "discovery",
+				ResourceImportPath: "k8s.io/api/discovery/v1",
 			},
 			{
 				ResourceName:       "StatefulSet",
@@ -142,19 +153,24 @@ func main() {
 				ResourceImportPath: "k8s.io/api/networking/v1",
 			},
 			{
+				ResourceName:       "KubermaticConfiguration",
+				ImportAlias:        "kubermaticv1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1",
+			},
+			{
 				ResourceName:       "Seed",
 				ImportAlias:        "kubermaticv1",
-				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1",
 			},
 			{
 				ResourceName:       "EtcdBackupConfig",
 				ImportAlias:        "kubermaticv1",
-				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1",
 			},
 			{
 				ResourceName:       "ConstraintTemplate",
-				ImportAlias:        "gatekeeperv1beta1",
-				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1",
+				ImportAlias:        "gatekeeperv1",
+				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1",
 			},
 			{
 				ResourceName:     "ConstraintTemplate",
@@ -192,6 +208,34 @@ func main() {
 				ImportAlias:        "networkingv1",
 				ResourceImportPath: "k8s.io/api/networking/v1",
 			},
+			{
+				ResourceName:     "RuleGroup",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
+				ResourceName:       "ApplicationDefinition",
+				ImportAlias:        "appkubermaticv1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1",
+				APIVersionPrefix:   "AppKubermaticV1",
+			},
+			{
+				ResourceName:       "VirtualMachineInstancePreset",
+				ImportAlias:        "kubevirtv1",
+				ResourceImportPath: "kubevirt.io/api/core/v1",
+				APIVersionPrefix:   "KubeVirtV1",
+			},
+			{
+				ResourceName:     "Preset",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
+				ResourceName:       "DataVolume",
+				ImportAlias:        "cdiv1beta1",
+				ResourceImportPath: "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1",
+				APIVersionPrefix:   "CDIv1beta1",
+			},
 		},
 	}
 
@@ -205,7 +249,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile("zz_generated_reconcile.go", fmtB, 0644); err != nil {
+	if err := os.WriteFile("zz_generated_reconcile.go", fmtB, 0644); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -325,7 +369,7 @@ func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Conte
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
-			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %v", namespace, name, err)
+			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %w", namespace, name, err)
 		}
 	}
 

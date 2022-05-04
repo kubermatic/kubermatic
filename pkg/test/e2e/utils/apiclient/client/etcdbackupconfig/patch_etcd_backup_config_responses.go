@@ -67,7 +67,7 @@ type PatchEtcdBackupConfigOK struct {
 }
 
 func (o *PatchEtcdBackupConfigOK) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] patchEtcdBackupConfigOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigOK  %+v", 200, o.Payload)
 }
 func (o *PatchEtcdBackupConfigOK) GetPayload() *models.EtcdBackupConfig {
 	return o.Payload
@@ -98,7 +98,7 @@ type PatchEtcdBackupConfigUnauthorized struct {
 }
 
 func (o *PatchEtcdBackupConfigUnauthorized) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] patchEtcdBackupConfigUnauthorized ", 401)
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigUnauthorized ", 401)
 }
 
 func (o *PatchEtcdBackupConfigUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type PatchEtcdBackupConfigForbidden struct {
 }
 
 func (o *PatchEtcdBackupConfigForbidden) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] patchEtcdBackupConfigForbidden ", 403)
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfigForbidden ", 403)
 }
 
 func (o *PatchEtcdBackupConfigForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *PatchEtcdBackupConfigDefault) Code() int {
 }
 
 func (o *PatchEtcdBackupConfigDefault) Error() string {
-	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] patchEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] patchEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
 func (o *PatchEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

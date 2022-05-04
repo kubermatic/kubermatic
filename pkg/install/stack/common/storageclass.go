@@ -45,7 +45,7 @@ var (
 
 			classes := storagev1.StorageClassList{}
 			if err := kubeClient.List(ctx, &classes); err != nil {
-				return *s, fmt.Errorf("cannot list existing StorageClasses: %v", err)
+				return *s, fmt.Errorf("cannot list existing StorageClasses: %w", err)
 			}
 
 			for _, class := range classes.Items {

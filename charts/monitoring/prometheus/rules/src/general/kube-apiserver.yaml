@@ -40,38 +40,18 @@ groups:
   - alert: KubernetesApiserverDown
     annotations:
       message: KubernetesApiserver has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubernetesapiserverdown
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubernetesapiserverdown
     expr: absent(up{job="apiserver"} == 1)
     for: 15m
     labels:
       severity: critical
-
-  - alert: KubeAPILatencyHigh
-    annotations:
-      message:
-        The API server has a 99th percentile latency of {{ $value }} seconds
-        for {{ $labels.verb }} {{ $labels.resource }}.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
-    expr: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
-    for: 10m
-    labels:
-      severity: warning
-
-  - alert: KubeAPILatencyHigh
-    annotations:
-      message:
-        The API server has a 99th percentile latency of {{ $value }} seconds
-        for {{ $labels.verb }} {{ $labels.resource }}.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
-    expr: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
-    for: 10m
-    labels:
-      severity: critical
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeAPIErrorsHigh
     annotations:
       message: API server is returning errors for {{ $value }}% of requests.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapierrorshigh
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapierrorshigh
     expr: |
       sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
         /
@@ -79,11 +59,41 @@ groups:
     for: 10m
     labels:
       severity: critical
+      resource: apiserver
+      service: kubernetes
+
+  - alert: KubeAPITerminatedRequests
+    annotations:
+      message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapiterminatedrequests
+    expr: |
+      sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
+        /
+      (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+    for: 5m
+    labels:
+      severity: warning
+      resource: apiserver
+      service: kubernetes
+
+  - alert: KubeAPITerminatedRequests
+    annotations:
+      message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapiterminatedrequests
+    expr: |
+      sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
+        /
+      (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+    for: 10m
+    labels:
+      severity: critical
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeAPIErrorsHigh
     annotations:
       message: API server is returning errors for {{ $value }}% of requests.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeapierrorshigh
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapierrorshigh
     expr: |
       sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
         /
@@ -91,17 +101,21 @@ groups:
     for: 10m
     labels:
       severity: warning
+      resource: apiserver
+      service: kubernetes
 
   - alert: KubeClientCertificateExpiration
     annotations:
       message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeclientcertificateexpiration
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeclientcertificateexpiration
     expr: |
       apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
       and
       histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
     labels:
       severity: warning
+      resource: apiserver
+      service: kubernetes
     runbook:
       steps:
       - Check the [Kubernetes documentation](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/) on how to renew certificates.
@@ -111,13 +125,15 @@ groups:
   - alert: KubeClientCertificateExpiration
     annotations:
       message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeclientcertificateexpiration
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeclientcertificateexpiration
     expr: |
       apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
       and
       histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
     labels:
       severity: critical
+      resource: apiserver
+      service: kubernetes
     runbook:
       steps:
       - Urgently renew your certificates. Expired certificates can make fixing the cluster difficult to begin with.

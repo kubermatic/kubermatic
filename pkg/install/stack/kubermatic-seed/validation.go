@@ -17,16 +17,22 @@ limitations under the License.
 package kubermaticseed
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func (*SeedStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
+func (m *SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+	return nil
+}
+
+func (*SeedStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
 	helmFailures := validateHelmValues(helmValues)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)
@@ -54,5 +60,5 @@ func validateHelmValues(helmValues *yamled.Document) []error {
 }
 
 func prefixError(prefix string, e error) error {
-	return fmt.Errorf("%s%v", prefix, e)
+	return fmt.Errorf("%s%w", prefix, e)
 }

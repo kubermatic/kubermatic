@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ConstraintStatus ConstraintStatus represents a constraint status which holds audit info
+// ConstraintStatus ConstraintStatus represents a constraint status which holds audit info.
 //
 // swagger:model ConstraintStatus
 type ConstraintStatus struct {
@@ -60,6 +60,8 @@ func (m *ConstraintStatus) validateViolations(formats strfmt.Registry) error {
 			if err := m.Violations[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("violations" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("violations" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -92,6 +94,8 @@ func (m *ConstraintStatus) contextValidateViolations(ctx context.Context, format
 			if err := m.Violations[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("violations" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("violations" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

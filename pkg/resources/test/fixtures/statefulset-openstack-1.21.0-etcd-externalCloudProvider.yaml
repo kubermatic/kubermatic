@@ -85,8 +85,6 @@ spec:
               fieldPath: metadata.namespace
         - name: TOKEN
           value: de-test-01
-        - name: ETCD_CLUSTER_SIZE
-          value: "3"
         - name: ENABLE_CORRUPTION_CHECK
           value: "false"
         - name: ETCDCTL_API
@@ -173,13 +171,6 @@ spec:
   - metadata:
       creationTimestamp: null
       name: data
-      ownerReferences:
-      - apiVersion: kubermatic.k8s.io/v1
-        blockOwnerDeletion: true
-        controller: true
-        kind: Cluster
-        name: de-test-01
-        uid: "1234567890"
     spec:
       accessModes:
       - ReadWriteOnce
@@ -189,4 +180,5 @@ spec:
       storageClassName: kubermatic-fast
     status: {}
 status:
+  availableReplicas: 0
   replicas: 0

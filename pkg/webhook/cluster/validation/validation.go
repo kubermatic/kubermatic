@@ -18,233 +18,165 @@ package validation
 
 import (
 	"context"
+	"crypto/x509"
+	"errors"
 	"fmt"
-	"net/http"
 
-	"github.com/go-logr/logr"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
-	admissionv1 "k8s.io/api/admission/v1"
-	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/util/sets"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrlruntime "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var (
-	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String())
-	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
-		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.8", "v3.19"),
-	}
-)
+// validator for validating Kubermatic Cluster CRD.
+type validator struct {
+	features   features.FeatureGate
+	client     ctrlruntimeclient.Client
+	seedGetter provider.SeedGetter
+	caBundle   *x509.CertPool
 
-// AdmissionHandler for validating Kubermatic Cluster CRD.
-type AdmissionHandler struct {
-	log      logr.Logger
-	decoder  *admission.Decoder
-	features features.FeatureGate
+	// disableProviderValidation is only for unit tests, to ensure no
+	// provide would phone home to validate dummy test credentials
+	disableProviderValidation bool
 }
 
-// NewAdmissionHandler returns a new cluster validation AdmissionHandler.
-func NewAdmissionHandler(features features.FeatureGate) *AdmissionHandler {
-	return &AdmissionHandler{
-		features: features,
+// NewValidator returns a new cluster validator.
+func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
+	return &validator{
+		client:     client,
+		features:   features,
+		seedGetter: seedGetter,
+		caBundle:   caBundle,
 	}
 }
 
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("cluster-validation-handler")
+var _ admission.CustomValidator = &validator{}
+
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	cluster, ok := obj.(*kubermaticv1.Cluster)
+	if !ok {
+		return errors.New("object is not a Cluster")
+	}
+
+	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)
+	if err != nil {
+		return err
+	}
+
+	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, v.features, nil)
+
+	if err := v.validateProjectRelation(ctx, cluster, nil); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errs.ToAggregate()
+}
+
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	oldCluster, ok := oldObj.(*kubermaticv1.Cluster)
+	if !ok {
+		return errors.New("old object is not a Cluster")
+	}
+
+	newCluster, ok := newObj.(*kubermaticv1.Cluster)
+	if !ok {
+		return errors.New("new object is not a Cluster")
+	}
+
+	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, newCluster)
+	if err != nil {
+		return err
+	}
+
+	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, v.features)
+
+	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errs.ToAggregate()
+}
+
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
+func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
+	seed, err := v.seedGetter()
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+	if seed == nil {
+		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
+	}
+
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
+	if fieldErr != nil {
+		return nil, nil, fieldErr
+	}
+
+	if v.disableProviderValidation {
+		return datacenter, nil, nil
+	}
+
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.client)
+	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, v.caBundle)
+	if err != nil {
+		return nil, nil, field.InternalError(nil, err)
+	}
+
+	return datacenter, cloudProvider, nil
+}
+
+func (v *validator) validateProjectRelation(ctx context.Context, cluster *kubermaticv1.Cluster, oldCluster *kubermaticv1.Cluster) *field.Error {
+	label := kubermaticv1.ProjectIDLabelKey
+	fieldPath := field.NewPath("metadata", "labels")
+	isUpdate := oldCluster != nil
+
+	if isUpdate && cluster.Labels[label] != oldCluster.Labels[label] {
+		return field.Invalid(fieldPath, cluster.Labels[label], fmt.Sprintf("the %s label is immutable", label))
+	}
+
+	projectID := cluster.Labels[label]
+	if projectID == "" {
+		return field.Required(fieldPath, fmt.Sprintf("Cluster resources must have a %q label", label))
+	}
+
+	project := &kubermaticv1.Project{}
+	if err := v.client.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
+		if kerrors.IsNotFound(err) {
+			// during cluster creation, we enforce the project label;
+			// during updates we are more relaxed and only require that the label isn't changed,
+			// so that if a project gets removed before the cluster (for whatever reason), then
+			// the cluster cleanup can still progress and is not blocked by the webhook rejecting
+			// the stale label
+			if isUpdate {
+				return nil
+			}
+
+			return field.Invalid(fieldPath, projectID, "no such project exists")
+		}
+
+		return field.InternalError(fieldPath, fmt.Errorf("failed to get project: %w", err))
+	}
+
+	// Do not check the project phase, as projects only get Active after being successfully
+	// reconciled. This requires the owner user to be setup properly as well, which in turn
+	// requires owner references to be setup. All of this is super annoying when doing
+	// GitOps. Instead we rely on _eventual_ consistency and only check that the project
+	// exists and is not being deleted.
+	if !isUpdate && project.DeletionTimestamp != nil {
+		return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
+	}
+
 	return nil
-}
-
-func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
-	allErrs := field.ErrorList{}
-	cluster := &kubermaticv1.Cluster{}
-	oldCluster := &kubermaticv1.Cluster{}
-	switch req.Operation {
-	case admissionv1.Create:
-		if err := h.decoder.Decode(req, cluster); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		allErrs = append(allErrs, h.validateCreate(cluster)...)
-	case admissionv1.Update:
-		if err := h.decoder.Decode(req, cluster); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding cluster: %w", err))
-		}
-		if err := h.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding old cluster: %w", err))
-		}
-		allErrs = append(allErrs, h.validateUpdate(cluster, oldCluster)...)
-	case admissionv1.Delete:
-		// NOP we always allow delete operarions at the moment
-	default:
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
-	}
-	if len(allErrs) > 0 {
-		return webhook.Denied(fmt.Sprintf("cluster validation request %s denied: %v", req.UID, allErrs))
-	}
-	return webhook.Allowed(fmt.Sprintf("cluster validation request %s allowed", req.UID))
-}
-
-func (h *AdmissionHandler) validateCreate(c *kubermaticv1.Cluster) field.ErrorList {
-	allErrs := field.ErrorList{}
-	specFldPath := field.NewPath("spec")
-
-	if !kubermaticv1.AllExposeStrategies.Has(c.Spec.ExposeStrategy) {
-		allErrs = append(allErrs, field.NotSupported(specFldPath.Child("exposeStrategy"), c.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
-	}
-	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
-		!h.features.Enabled(features.TunnelingExposeStrategy) {
-		allErrs = append(allErrs, field.Forbidden(specFldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
-	}
-	if c.Spec.CNIPlugin != nil {
-		if !supportedCNIPlugins.Has(c.Spec.CNIPlugin.Type.String()) {
-			allErrs = append(allErrs, field.NotSupported(specFldPath.Child("cniPlugin", "type"), c.Spec.CNIPlugin.Type.String(), supportedCNIPlugins.List()))
-		} else if !supportedCNIPluginVersions[c.Spec.CNIPlugin.Type].Has(c.Spec.CNIPlugin.Version) {
-			allErrs = append(allErrs, field.NotSupported(specFldPath.Child("cniPlugin", "version"), c.Spec.CNIPlugin.Version, supportedCNIPluginVersions[c.Spec.CNIPlugin.Type].List()))
-		}
-	}
-	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
-
-	allErrs = append(allErrs, validation.ValidateNodePortRange(
-		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
-		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"), true)...)
-
-	return allErrs
-}
-
-func (h *AdmissionHandler) validateUpdate(c, oldC *kubermaticv1.Cluster) field.ErrorList {
-	allErrs := field.ErrorList{}
-	specFldPath := field.NewPath("spec")
-
-	if !kubermaticv1.AllExposeStrategies.Has(c.Spec.ExposeStrategy) {
-		allErrs = append(allErrs, field.NotSupported(specFldPath.Child("exposeStrategy"), c.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
-	}
-	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
-		!h.features.Enabled(features.TunnelingExposeStrategy) {
-		allErrs = append(allErrs, field.Forbidden(specFldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
-	}
-	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
-
-	allErrs = append(allErrs, validation.ValidateNodePortRange(
-		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
-		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"), false)...)
-
-	allErrs = append(allErrs, validateUpdateImmutability(c, oldC)...)
-
-	return allErrs
-}
-
-func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
-	// Immutability should be validated only for update requests
-	allErrs := field.ErrorList{}
-	specFldPath := field.NewPath("spec")
-
-	// Validate ExternalCloudProvider feature flag immutability.
-	// Once the feature flag is enabled, it must not be disabled.
-	if vOld, v := oldC.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
-		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
-		allErrs = append(allErrs, field.Invalid(specFldPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
-	}
-	if c.Spec.CNIPlugin != nil && oldC.Spec.CNIPlugin != nil {
-		// Immutable fields
-		// TODO(irozzo): this constraint should be relaxed to provide the
-		// possibility to upgrade CNI plugin version.
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			*c.Spec.CNIPlugin,
-			*oldC.Spec.CNIPlugin,
-			specFldPath.Child("cniPlugin"),
-		)...)
-	} else {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			c.Spec.CNIPlugin,
-			oldC.Spec.CNIPlugin,
-			specFldPath.Child("cniPlugin"),
-		)...)
-	}
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.Spec.ExposeStrategy,
-		oldC.Spec.ExposeStrategy,
-		specFldPath.Child("exposeStrategy"),
-	)...)
-
-	if oldC.Spec.EnableUserSSHKeyAgent != nil {
-		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-			c.Spec.EnableUserSSHKeyAgent,
-			oldC.Spec.EnableUserSSHKeyAgent,
-			specFldPath.Child("enableUserSSHKeyAgent"),
-		)...)
-	} else if c.Spec.EnableUserSSHKeyAgent != nil && !*c.Spec.EnableUserSSHKeyAgent {
-		path := field.NewPath("cluster", "spec", "enableUserSSHKeyAgent")
-		allErrs = append(allErrs, field.Invalid(path, *c.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default "+
-			"for user clusters created prior KKP 2.16 version"))
-
-	}
-
-	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&c.Spec.ClusterNetwork, &oldC.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"))...)
-	allErrs = append(allErrs, validateComponentSettingsImmutability(&c.Spec.ComponentsOverride, &oldC.Spec.ComponentsOverride, specFldPath.Child("componentsOverride"))...)
-
-	return allErrs
-}
-
-func validateComponentSettingsImmutability(c, oldC *kubermaticv1.ComponentSettings, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.Apiserver.NodePortRange,
-		oldC.Apiserver.NodePortRange,
-		fldPath.Child("apiserver", "nodePortRange"),
-	)...)
-
-	return allErrs
-}
-
-func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.Pods.CIDRBlocks,
-		oldC.Pods.CIDRBlocks,
-		fldPath.Child("pods", "cidrBlocks"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.Services.CIDRBlocks,
-		oldC.Services.CIDRBlocks,
-		fldPath.Child("services", "cidrBlocks"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.ProxyMode,
-		oldC.ProxyMode,
-		fldPath.Child("proxyMode"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.DNSDomain,
-		oldC.DNSDomain,
-		fldPath.Child("dnsDomain"),
-	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.NodeLocalDNSCacheEnabled,
-		oldC.NodeLocalDNSCacheEnabled,
-		fldPath.Child("nodeLocalDNSCacheEnabled"),
-	)...)
-
-	return allErrs
-}
-
-func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
-	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
 }

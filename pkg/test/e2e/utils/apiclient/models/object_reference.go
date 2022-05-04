@@ -29,6 +29,7 @@ import (
 // Instead of using this type, create a locally provided and used type that is well-focused on your reference.
 // For example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +structType=atomic
 //
 // swagger:model ObjectReference
 type ObjectReference struct {
@@ -94,6 +95,8 @@ func (m *ObjectReference) validateUID(formats strfmt.Registry) error {
 	if err := m.UID.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("uid")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("uid")
 		}
 		return err
 	}
@@ -120,6 +123,8 @@ func (m *ObjectReference) contextValidateUID(ctx context.Context, formats strfmt
 	if err := m.UID.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("uid")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("uid")
 		}
 		return err
 	}

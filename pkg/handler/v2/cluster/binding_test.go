@@ -236,7 +236,7 @@ func TestBindUserToRole(t *testing.T) {
 			roleName:         "role-1",
 			namespace:        "default",
 			body:             `{"userEmail":"test@example.com"}`,
-			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusForbidden,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -262,9 +262,9 @@ func TestBindUserToRole(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -353,7 +353,7 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 			roleName:         "role-1",
 			namespace:        "default",
 			body:             `{"userEmail":"bob@acme.com"}`,
-			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusForbidden,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -378,9 +378,9 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -590,7 +590,7 @@ func TestBindUserToClusterRole(t *testing.T) {
 			name:             "scenario 11: user John can not update existing binding for the new user for Bob's cluster",
 			roleName:         "role-1",
 			body:             `{"userEmail":"test@example.com"}`,
-			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusForbidden,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -617,9 +617,9 @@ func TestBindUserToClusterRole(t *testing.T) {
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -707,7 +707,7 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 			name:             "scenario 4: the user can not remove user from existing cluster role binding for Bob's cluster",
 			roleName:         "role-1",
 			body:             `{"userEmail":"bob@acme.com"}`,
-			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusForbidden,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -734,9 +734,9 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -806,7 +806,7 @@ func TestListRoleBinding(t *testing.T) {
 		},
 		{
 			name:             "scenario 3: the user John can not list Bob's bindings",
-			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusForbidden,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -838,9 +838,9 @@ func TestListRoleBinding(t *testing.T) {
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -910,7 +910,7 @@ func TestListClusterRoleBinding(t *testing.T) {
 		// scenario 3
 		{
 			name:             "scenario 3: the user John can not list Bob's cluster role bindings",
-			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusForbidden,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -940,9 +940,9 @@ func TestListClusterRoleBinding(t *testing.T) {
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

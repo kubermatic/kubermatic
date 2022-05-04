@@ -34,4 +34,4 @@ data:
 metadata:
   creationTimestamp: null
   labels:
-    app: cloud-config
+    app: cloud-config-csi

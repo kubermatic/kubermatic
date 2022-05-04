@@ -27,7 +27,7 @@ const (
 	Name = "kube-state-metrics"
 )
 
-// ClusterRoleCreator returns the func to create/update the ClusterRole for kube-state-metrics
+// ClusterRoleCreator returns the func to create/update the ClusterRole for kube-state-metrics.
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.KubeStateMetricsClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
@@ -49,16 +49,6 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 						"persistentvolumes",
 						"namespaces",
 						"endpoints",
-					},
-					Verbs: []string{"list", "watch"},
-				},
-				{
-					APIGroups: []string{"extensions"},
-					Resources: []string{
-						"daemonsets",
-						"deployments",
-						"replicasets",
-						"ingresses",
 					},
 					Verbs: []string{"list", "watch"},
 				},
@@ -127,6 +117,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					APIGroups: []string{"networking.k8s.io"},
 					Resources: []string{
 						"networkpolicies",
+						"ingresses",
 					},
 					Verbs: []string{"list", "watch"},
 				},

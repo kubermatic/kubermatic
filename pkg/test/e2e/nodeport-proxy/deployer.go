@@ -21,13 +21,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	features "k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -37,7 +35,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -58,7 +55,7 @@ type Deployer struct {
 	resources []ctrlruntimeclient.Object
 }
 
-func (d *Deployer) SetUp() error {
+func (d *Deployer) SetUp(ctx context.Context) error {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: d.Namespace,
@@ -68,19 +65,24 @@ func (d *Deployer) SetUp() error {
 		ns.ObjectMeta.GenerateName = "nodeport-proxy-"
 	}
 	d.Log.Debugw("Creating namespace", "service", ns)
-	if err := d.Client.Create(context.TODO(), ns); err != nil {
-		return errors.Wrap(err, "failed to create namespace")
+	if err := d.Client.Create(ctx, ns); err != nil {
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 	d.Namespace = ns.Name
 	d.resources = append(d.resources, ns)
 
-	cfg := &operatorv1alpha1.KubermaticConfiguration{
+	cfg := &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: d.Namespace,
 		},
-		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			FeatureGates: sets.NewString(features.TunnelingExposeStrategy),
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			FeatureGates: map[string]bool{
+				features.TunnelingExposeStrategy: true,
+			},
+			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+				EtcdVolumeSize: "500Mi",
+			},
 		},
 	}
 
@@ -96,64 +98,64 @@ func (d *Deployer) SetUp() error {
 		}
 	}
 
-	seed, err := common.DefaultSeed(&kubermaticv1.Seed{}, d.Log)
+	seed, err := defaults.DefaultSeed(&kubermaticv1.Seed{}, cfg, d.Log)
 	if err != nil {
-		return errors.Wrap(err, "failed to default seed")
+		return fmt.Errorf("failed to default seed: %w", err)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(context.TODO(),
+	if err := reconciling.ReconcileServiceAccounts(ctx,
 		[]reconciling.NamedServiceAccountCreatorGetter{
 			nodeportproxy.ServiceAccountCreator(cfg),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
-		return errors.Wrap(err, "failed to reconcile ServiceAcconts")
+		return fmt.Errorf("failed to reconcile ServiceAcconts: %w", err)
 	}
-	if err := reconciling.ReconcileRoles(context.TODO(),
+	if err := reconciling.ReconcileRoles(ctx,
 		[]reconciling.NamedRoleCreatorGetter{
 			nodeportproxy.RoleCreator(),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
-		return errors.Wrap(err, "failed to reconcile Role")
+		return fmt.Errorf("failed to reconcile Role: %w", err)
 	}
-	if err := reconciling.ReconcileRoleBindings(context.TODO(),
+	if err := reconciling.ReconcileRoleBindings(ctx,
 		[]reconciling.NamedRoleBindingCreatorGetter{
 			nodeportproxy.RoleBindingCreator(cfg),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
-		return errors.Wrap(err, "failed to reconcile RoleBinding")
+		return fmt.Errorf("failed to reconcile RoleBinding: %w", err)
 	}
-	if err := reconciling.ReconcileClusterRoles(context.TODO(),
+	if err := reconciling.ReconcileClusterRoles(ctx,
 		[]reconciling.NamedClusterRoleCreatorGetter{
 			nodeportproxy.ClusterRoleCreator(cfg),
 		}, "", d.Client, recorderFunc); err != nil {
-		return errors.Wrap(err, "failed to reconcile ClusterRole")
+		return fmt.Errorf("failed to reconcile ClusterRole: %w", err)
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(context.TODO(),
+	if err := reconciling.ReconcileClusterRoleBindings(ctx,
 		[]reconciling.NamedClusterRoleBindingCreatorGetter{
 			nodeportproxy.ClusterRoleBindingCreator(cfg),
 		}, "", d.Client, recorderFunc); err != nil {
-		return errors.Wrap(err, "failed to reconcile ClusterRoleBinding")
+		return fmt.Errorf("failed to reconcile ClusterRoleBinding: %w", err)
 	}
-	if err := reconciling.ReconcileServices(context.TODO(),
+	if err := reconciling.ReconcileServices(ctx,
 		[]reconciling.NamedServiceCreatorGetter{
 			nodeportproxy.ServiceCreator(seed)},
 		d.Namespace, d.Client, recorderFunc); err != nil {
-		return errors.Wrap(err, "failed to reconcile Services")
+		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
-	if err := reconciling.ReconcileDeployments(context.TODO(),
+	if err := reconciling.ReconcileDeployments(ctx,
 		[]reconciling.NamedDeploymentCreatorGetter{
-			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, d.Versions),
+			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, false, d.Versions),
 			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, d.Versions),
 		}, d.Namespace, d.Client, recorderFunc); err != nil {
-		return errors.Wrap(err, "failed to reconcile Kubermatic Deployments")
+		return fmt.Errorf("failed to reconcile Kubermatic Deployments: %w", err)
 	}
 
 	// Wait for pods to be ready
 	for _, o := range d.resources {
 		if dep, ok := o.(*appsv1.Deployment); ok {
-			pods, err := d.waitForPodsCreated(dep)
+			pods, err := d.waitForPodsCreated(ctx, dep)
 			if err != nil {
-				return errors.Wrap(err, "failed to create pods")
+				return fmt.Errorf("failed to create pods: %w", err)
 			}
-			if err := d.waitForPodsReady(pods...); err != nil {
-				return errors.Wrap(err, "failed waiting for pods to be running")
+			if err := d.waitForPodsReady(ctx, pods...); err != nil {
+				return fmt.Errorf("failed waiting for pods to be running: %w", err)
 			}
 		}
 	}
@@ -162,29 +164,29 @@ func (d *Deployer) SetUp() error {
 }
 
 // CleanUp deletes the resources.
-func (d *Deployer) CleanUp() error {
+func (d *Deployer) CleanUp(ctx context.Context) error {
 	for _, o := range d.resources {
-		// TODO(irozzo) handle better errors
-		_ = d.Client.Delete(context.TODO(), o)
+		// TODO handle better errors
+		_ = d.Client.Delete(ctx, o)
 	}
 	return nil
 }
 
 // GetLbService returns the service used to expose the nodeport proxy pods.
-func (d *Deployer) GetLbService() *corev1.Service {
+func (d *Deployer) GetLbService(ctx context.Context) *corev1.Service {
 	svc := corev1.Service{}
-	if err := d.Client.Get(context.TODO(), types.NamespacedName{Name: nodeportproxy.ServiceName, Namespace: d.Namespace}, &svc); err != nil {
+	if err := d.Client.Get(ctx, types.NamespacedName{Name: nodeportproxy.ServiceName, Namespace: d.Namespace}, &svc); err != nil {
 		return nil
 	}
 	return &svc
 }
 
-func (d *Deployer) waitForPodsCreated(dep *appsv1.Deployment) ([]string, error) {
-	return e2eutils.WaitForPodsCreated(d.Client, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
+func (d *Deployer) waitForPodsCreated(ctx context.Context, dep *appsv1.Deployment) ([]string, error) {
+	return e2eutils.WaitForPodsCreated(ctx, d.Client, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
 }
 
-func (d *Deployer) waitForPodsReady(pods ...string) error {
-	if !e2eutils.CheckPodsRunningReady(d.Client, d.Namespace, pods, podReadinessTimeout) {
+func (d *Deployer) waitForPodsReady(ctx context.Context, pods ...string) error {
+	if !e2eutils.CheckPodsRunningReady(ctx, d.Client, d.Namespace, pods, podReadinessTimeout) {
 		return fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
 	}
 	return nil

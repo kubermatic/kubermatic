@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	// This allows instances to perform the assume role
+	// This allows instances to perform the assume role.
 	assumeRolePolicy = `{
   "Version": "2012-10-17",
   "Statement": [
@@ -64,7 +64,7 @@ var (
 	// - EC2 create actions with the RequestTag filter
 	// - EC2 modify actions with the ResourceTag filter
 	// - ELB create actions with the RequestTag filter
-	// - ELB modify actions with the ResourceTag filter
+	// - ELB modify actions with the ResourceTag filter.
 	controlPlanePolicyTpl = template.Must(template.New("worker-policy").Parse(`{
   "Version": "2012-10-17",
   "Statement": [
@@ -185,7 +185,7 @@ var (
 )
 
 func getControlPlanePolicy(clusterName string) (string, error) {
-	tag := clusterTag(clusterName)
+	tag := ec2ClusterTag(clusterName)
 
 	buf := &bytes.Buffer{}
 	err := controlPlanePolicyTpl.Execute(buf, policyTplData{ClusterTag: *tag.Key})

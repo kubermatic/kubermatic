@@ -1,4 +1,4 @@
-// +build !ee
+//go:build !ee
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -23,7 +23,6 @@ import (
 	"flag"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
-	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,19 +31,15 @@ func addFlags(fs *flag.FlagSet) {
 	// NOP
 }
 
+func setupControllers(ctrlCtx *controllerContext) error {
+	// NOP, no CE-only controllers exist
+	return nil
+}
+
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
 	return provider.SeedsGetterFactory(ctx, client, namespace)
 }
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt controllerRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return provider.SeedKubeconfigGetterFactory(ctx, client)
-}
-
-func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedwebhook.AdmissionHandler, error) {
-	return (&seedwebhook.ValidationHandlerBuilder{}).
-		Client(client).
-		WorkerName(options.workerName).
-		AllowedSeed(options.namespace, provider.DefaultSeedName).
-		FeatureGates(options.featureGates).
-		Build(ctx)
 }

@@ -26,6 +26,14 @@ type AWSNodeSpec struct {
 	// assigned during launch overriding a possible setting in the used AWS subnet.
 	AssignPublicIP bool `json:"assignPublicIP,omitempty"`
 
+	// AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
+	AssumeRoleARN string `json:"assumeRoleARN,omitempty"`
+
+	// AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// Using an external ID can help to prevent the "confused deputy problem".
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
+
 	// Availability zone in which to place the node. It is coupled with the subnet to which the node will belong.
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
 

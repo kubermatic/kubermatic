@@ -17,11 +17,11 @@ limitations under the License.
 package webhook
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"net"
+	"os"
 	"path/filepath"
-	"strconv"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -32,60 +32,55 @@ type Options struct {
 	certDir    string
 	certName   string
 	keyName    string
-	// Deprecated fields to be removed
-	ListenAddress string
-	CertFile      string
-	KeyFile       string
 }
 
-func (opts *Options) AddFlags(fs *flag.FlagSet, includeDeprecatedFlags bool) {
-	if includeDeprecatedFlags {
-		fs.StringVar(&opts.ListenAddress, "seed-admissionwebhook-listen-address", ":8100", "The listen address for the seed amission webhook (Deprecated)")
-		fs.StringVar(&opts.CertFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file (Deprecated)")
-		fs.StringVar(&opts.KeyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file (Deprecated)")
+func (opts *Options) AddFlags(fs *flag.FlagSet) {
+	fs.StringVar(&opts.listenHost, "webhook-listen-host", "", "The listen host for the admission/mutation webhooks.")
+	fs.IntVar(&opts.listenPort, "webhook-listen-port", 9443, "The listen port for the admission/mutation webhooks.")
+	fs.StringVar(&opts.certDir, "webhook-cert-dir", "", "The directory containing the webhook serving certificate files.")
+	fs.StringVar(&opts.certName, "webhook-cert-name", "", "The certificate file name.")
+	fs.StringVar(&opts.keyName, "webhook-key-name", "", "The key file name.")
+}
+
+func checkValidFile(directory, filename string) error {
+	if filename == "" {
+		return errors.New("no filename configured")
 	}
-	fs.StringVar(&opts.listenHost, "admissionwebhook-listen-host", "", "The listen host for the seed amission webhook")
-	fs.IntVar(&opts.listenPort, "admissionwebhook-listen-port", 8100, "The listen port for the seed amission webhook")
-	fs.StringVar(&opts.certDir, "admissionwebhook-cert-dir", "", "The directory containing certificate files")
-	fs.StringVar(&opts.certName, "admissionwebhook-cert-name", "", "The certificate file name")
-	fs.StringVar(&opts.keyName, "admissionwebhook-key-name", "", "The key file name")
-}
 
-// Configured() must be called after the Validate() function has normalized the
-// deprecated flags.
-func (opts *Options) Configured() bool {
-	return opts.certName != "" && opts.keyName != ""
+	fullPath := filepath.Join(directory, filename)
+
+	stat, err := os.Stat(fullPath)
+	if err != nil {
+		return fmt.Errorf("failed to stat %q: %w", fullPath, err)
+	}
+
+	if stat.IsDir() {
+		return fmt.Errorf("%q is not a file", fullPath)
+	}
+
+	return nil
 }
 
 func (opts *Options) Validate() error {
-	// translate deprecated flag into new structure
-	if opts.ListenAddress != "" {
-		host, port, err := net.SplitHostPort(opts.ListenAddress)
-		if err != nil {
-			return fmt.Errorf("failed to parse admission webhook listen address: %v", err)
-		}
-
-		opts.listenHost = host
-		opts.listenPort, _ = strconv.Atoi(port)
-		opts.ListenAddress = ""
+	if opts.certDir == "" {
+		return errors.New("no -webhook-cert-dir configured")
 	}
 
-	// controller-runtime server do not support cert file and key file being in
-	// different directories; this is not fully backward compatible
-	if opts.CertFile != "" && opts.KeyFile != "" && filepath.Dir(opts.CertFile) != filepath.Dir(opts.KeyFile) {
-		return fmt.Errorf("certificate file %q and key file %q must be located in the same directory", opts.CertFile, opts.certDir)
+	stat, err := os.Stat(opts.certDir)
+	if err != nil {
+		return fmt.Errorf("%q is not a valid directory: %w", opts.certDir, err)
 	}
 
-	if opts.CertFile != "" {
-		opts.certDir = filepath.Dir(opts.CertFile)
-		opts.certName = filepath.Base(opts.CertFile)
-		opts.CertFile = ""
+	if !stat.IsDir() {
+		return fmt.Errorf("%q is not a directory", opts.certDir)
 	}
 
-	if opts.KeyFile != "" {
-		opts.certDir = filepath.Dir(opts.KeyFile)
-		opts.keyName = filepath.Base(opts.KeyFile)
-		opts.KeyFile = ""
+	if err := checkValidFile(opts.certDir, opts.certName); err != nil {
+		return fmt.Errorf("invalid certificate file: %w", err)
+	}
+
+	if err := checkValidFile(opts.certDir, opts.keyName); err != nil {
+		return fmt.Errorf("invalid private key file: %w", err)
 	}
 
 	return nil

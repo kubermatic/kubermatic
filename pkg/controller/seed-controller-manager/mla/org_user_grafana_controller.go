@@ -24,9 +24,9 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -84,7 +84,7 @@ func newOrgUserGrafanaReconciler(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for UserProjectBinding of service account.
 		userProjectBinding := object.(*kubermaticv1.UserProjectBinding)
-		return !kubernetesprovider.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail)
+		return !kubermaticv1helper.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail)
 	})
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
@@ -102,25 +102,32 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
+	grafanaClient, err := r.orgUserGrafanaController.clientProvider(ctx)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+
 	if !userProjectBinding.DeletionTimestamp.IsZero() {
-		if err := r.orgUserGrafanaController.handleDeletion(ctx, userProjectBinding); err != nil {
+		if err := r.orgUserGrafanaController.handleDeletion(ctx, userProjectBinding, grafanaClient); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
-		kubernetes.AddFinalizer(userProjectBinding, mlaFinalizer)
-		if err := r.Update(ctx, userProjectBinding); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if grafanaClient == nil {
+		return reconcile.Result{}, nil
+	}
+
+	if err := kubernetes.TryAddFinalizer(ctx, r, userProjectBinding, mlaFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	project := &kubermaticv1.Project{}
 	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to get project: %w", err)
 	}
-	if err := ensureOrgUser(ctx, r.orgUserGrafanaController.grafanaClient, project, userProjectBinding); err != nil {
+
+	if err := ensureOrgUser(ctx, grafanaClient, project, userProjectBinding); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to ensure Grafana Org/User: %w", err)
 	}
 
@@ -129,57 +136,56 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 
 type orgUserGrafanaController struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
-	log           *zap.SugaredLogger
+	clientProvider grafanaClientProvider
+	log            *zap.SugaredLogger
 }
 
-func newOrgUserGrafanaController(client ctrlruntimeclient.Client, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client,
+func newOrgUserGrafanaController(client ctrlruntimeclient.Client, log *zap.SugaredLogger, clientProvider grafanaClientProvider,
 ) *orgUserGrafanaController {
 	return &orgUserGrafanaController{
-		Client:        client,
-		grafanaClient: grafanaClient,
-		log:           log,
+		Client:         client,
+		clientProvider: clientProvider,
+		log:            log,
 	}
 }
 
-func (r *orgUserGrafanaController) cleanUp(ctx context.Context) error {
+func (r *orgUserGrafanaController) CleanUp(ctx context.Context) error {
 	userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
 	if err := r.List(ctx, userProjectBindingList); err != nil {
 		return err
 	}
+	grafanaClient, err := r.clientProvider(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create Grafana client: %w", err)
+	}
 	for _, userProjectBinding := range userProjectBindingList.Items {
-		if err := r.handleDeletion(ctx, &userProjectBinding); err != nil {
+		if err := r.handleDeletion(ctx, &userProjectBinding, grafanaClient); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get project: %w", err)
-	}
-	org, err := getOrgByProject(ctx, r.grafanaClient, project)
-	if err == nil {
-		user, err := r.grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
-		if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
-			return err
+func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding, grafanaClient *grafanasdk.Client) error {
+	if grafanaClient != nil {
+		project := &kubermaticv1.Project{}
+		if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get project: %w", err)
 		}
+		org, err := getOrgByProject(ctx, grafanaClient, project)
 		if err == nil {
-			status, err := r.grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
-			if err != nil {
-				return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			user, err := grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
+			if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
+				return err
+			}
+			if err == nil {
+				status, err := grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
+				if err != nil {
+					return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				}
 			}
 		}
 	}
 
-	if kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
-		kubernetes.RemoveFinalizer(userProjectBinding, mlaFinalizer)
-		if err := r.Update(ctx, userProjectBinding); err != nil {
-			return fmt.Errorf("updating UserProjectBinding: %w", err)
-		}
-	}
-
-	return nil
+	return kubernetes.TryRemoveFinalizer(ctx, r, userProjectBinding, mlaFinalizer)
 }

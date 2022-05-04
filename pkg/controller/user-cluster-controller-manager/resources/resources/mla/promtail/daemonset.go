@@ -19,8 +19,10 @@ package promtail
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,9 +33,12 @@ import (
 )
 
 const (
-	imageName = "grafana/promtail"
-	tag       = "2.1.0"
-	appName   = "mla-promtail"
+	imageName     = "grafana/promtail"
+	imageTag      = "2.4.1"
+	initImageName = "busybox"
+	initImageTag  = "1.34"
+	appName       = "mla-promtail"
+	containerName = "promtail"
 
 	configVolumeName         = "config"
 	configVolumeMountPath    = "/etc/promtail"
@@ -46,18 +51,28 @@ const (
 	podVolumeMountPath       = "/var/log/pods"
 	metricsPortName          = "http-metrics"
 
-	promtailNameKey     = "app.kubernetes.io/name"
-	promtailInstanceKey = "app.kubernetes.io/instance"
+	inotifyMaxUserInstances = 256
 )
 
 var (
 	controllerLabels = map[string]string{
-		promtailNameKey:     resources.PromtailDaemonSetName,
-		promtailInstanceKey: resources.PromtailDaemonSetName,
+		common.NameLabel:      resources.PromtailDaemonSetName,
+		common.InstanceLabel:  resources.PromtailDaemonSetName,
+		common.ComponentLabel: resources.MLAComponentName,
+	}
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+		},
 	}
 )
 
-func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.PromtailDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Labels = resources.BaseAppLabels(appName, nil)
@@ -71,11 +86,29 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:  pointer.Int64Ptr(0),
 				RunAsGroup: pointer.Int64Ptr(0),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
+				{
+					Name:            "init-inotify",
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), initImageName, initImageTag),
+					ImagePullPolicy: corev1.PullAlways,
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf("sysctl -w fs.inotify.max_user_instances=%d", inotifyMaxUserInstances),
+					},
+					SecurityContext: &corev1.SecurityContext{
+						Privileged: pointer.BoolPtr(true),
+					},
+				},
 			}
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "promtail",
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
+					Name:            containerName,
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, imageTag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-config.file=/etc/promtail/promtail.yaml",
@@ -131,7 +164,7 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 						ReadOnlyRootFilesystem: pointer.BoolPtr(true),
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/ready",
 								Port:   intstr.FromString(metricsPortName),
@@ -144,22 +177,20 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 						SuccessThreshold:    1,
 						TimeoutSeconds:      1,
 					},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("64Mi"),
-							corev1.ResourceCPU:    resource.MustParse("50m"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
-							corev1.ResourceCPU:    resource.MustParse("200m"),
-						},
-					},
 				},
 			}
 			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
 				{
 					Effect:   corev1.TaintEffectNoSchedule,
 					Key:      "node-role.kubernetes.io/master",
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoExecute,
 					Operator: corev1.TolerationOpExists,
 				},
 			}
@@ -209,6 +240,19 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 						},
 					},
 				},
+			}
+
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				containerName: defaultResourceRequirements.DeepCopy(),
+			}
+			var overridesRequirements map[string]*corev1.ResourceRequirements
+			if overrides != nil {
+				overridesRequirements = map[string]*corev1.ResourceRequirements{
+					containerName: overrides.DeepCopy(),
+				}
+			}
+			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, overridesRequirements, ds.Annotations); err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			return ds, nil
 		}

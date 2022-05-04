@@ -26,20 +26,20 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// ListAdmissionPluginEndpoint returns admission plugin list
+// ListAdmissionPluginEndpoint returns admission plugin list.
 func ListAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		admissionPluginList, err := admissionPluginProvider.List(userInfo)
+		admissionPluginList, err := admissionPluginProvider.List(ctx, userInfo)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -52,7 +52,7 @@ func ListAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissi
 	}
 }
 
-// GetAdmissionPluginEndpoint returns the admission plugin
+// GetAdmissionPluginEndpoint returns the admission plugin.
 func GetAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(admissionPluginReq)
@@ -63,7 +63,7 @@ func GetAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissio
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		admissionPlugin, err := admissionPluginProvider.Get(userInfo, req.Name)
+		admissionPlugin, err := admissionPluginProvider.Get(ctx, userInfo, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -72,7 +72,7 @@ func GetAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissio
 	}
 }
 
-// DeleteAdmissionPluginEndpoint deletes the admission plugin
+// DeleteAdmissionPluginEndpoint deletes the admission plugin.
 func DeleteAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(admissionPluginReq)
@@ -83,7 +83,7 @@ func DeleteAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		err = admissionPluginProvider.Delete(userInfo, req.Name)
+		err = admissionPluginProvider.Delete(ctx, userInfo, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -92,7 +92,7 @@ func DeleteAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 	}
 }
 
-// UpdateAdmissionPluginEndpoint updates the admission plugin
+// UpdateAdmissionPluginEndpoint updates the admission plugin.
 func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateAdmissionPluginReq)
@@ -108,7 +108,7 @@ func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		currentPlugin, err := admissionPluginProvider.Get(userInfo, req.Name)
+		currentPlugin, err := admissionPluginProvider.Get(ctx, userInfo, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -116,7 +116,7 @@ func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 		currentPlugin.Spec.PluginName = req.Body.Plugin
 		currentPlugin.Spec.FromVersion = req.Body.FromVersion
 
-		editedAdmissionPlugin, err := admissionPluginProvider.Update(userInfo, currentPlugin)
+		editedAdmissionPlugin, err := admissionPluginProvider.Update(ctx, userInfo, currentPlugin)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -141,10 +141,10 @@ type updateAdmissionPluginReq struct {
 	Body apiv1.AdmissionPlugin
 }
 
-// Validate validates UpdateAdmissionPluginEndpoint request
+// Validate validates UpdateAdmissionPluginEndpoint request.
 func (r updateAdmissionPluginReq) Validate() error {
 	if r.Name != r.Body.Name {
-		return fmt.Errorf("admission plugin name mismatch, you requested to update AdmissionPlugin = %s but body contains AdmissionPlugin = %s", r.Name, r.Body.Name)
+		return fmt.Errorf("admission plugin name mismatch, you requested to update AdmissionPlugin %q but body contains AdmissionPlugin %q", r.Name, r.Body.Name)
 	}
 	return nil
 }

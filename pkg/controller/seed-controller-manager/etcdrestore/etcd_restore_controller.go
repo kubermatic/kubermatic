@@ -18,20 +18,22 @@ package etcdrestore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,34 +51,36 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_etcd_restore_controller"
+	ControllerName = "kkp-etcd-restore-controller"
 
-	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset
-	FinishRestoreFinalizer = "kubermatic.io/finish-restore"
+	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset.
+	FinishRestoreFinalizer = "kubermatic.k8c.io/finish-restore"
 
 	// ActiveRestoreAnnotationName is the cluster annotation that records the EtcdRestore resource that's currently
 	// being restored into the cluster, if any. This is also used for mutual exclusion, i.e. to make sure that not
 	// more than one EtcdRestore resource is active for the cluster at the same time.
-	ActiveRestoreAnnotationName = "kubermatic.io/active-restore"
+	ActiveRestoreAnnotationName = "kubermatic.k8c.io/active-restore"
 )
 
-// Reconciler stores necessary components that are required to restore etcd backups
+// Reconciler stores necessary components that are required to restore etcd backups.
 type Reconciler struct {
 	log        *zap.SugaredLogger
 	workerName string
 	ctrlruntimeclient.Client
-	recorder record.EventRecorder
-	versions kubermatic.Versions
+	recorder   record.EventRecorder
+	versions   kubermatic.Versions
+	seedGetter provider.SeedGetter
 }
 
 // Add creates a new etcd restore controller that is responsible for
-// managing cluster etcd restores
+// managing cluster etcd restores.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
+	seedGetter provider.SeedGetter,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -87,6 +91,7 @@ func Add(
 		workerName: workerName,
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		versions:   versions,
+		seedGetter: seedGetter,
 	}
 
 	ctrlOptions := controller.Options{
@@ -113,6 +118,16 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// this feature is not enabled for this seed, do nothing
+	if !seed.IsDefaultEtcdAutomaticBackupEnabled() {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -129,13 +144,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	if cluster.Status.NamespaceName == "" {
+		log.Debug("Cluster has no namespace name yet, skipping")
+		return reconcile.Result{}, nil
+	}
+
 	log = r.log.With("cluster", cluster.Name, "restore", restore.Name)
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		return reconcile.Result{}, nil
 	}
 
-	result, err := r.reconcile(ctx, log, restore, cluster)
+	result, err := r.reconcile(ctx, log, restore, cluster, seed)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(restore, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -149,7 +169,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster,
+	seed *kubermaticv1.Seed) (*reconcile.Result, error) {
+	if !cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
+		return nil, fmt.Errorf("etcdLauncher not enabled on cluster: %q", cluster.Name)
+	}
+
 	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseCompleted {
 		return nil, nil
 	}
@@ -157,11 +182,35 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	log.Infof("performing etcd restore from backup %v", restore.Spec.BackupName)
 
 	if restore.DeletionTimestamp == nil {
-		if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
-			kuberneteshelper.AddFinalizer(restore, FinishRestoreFinalizer)
-		}); err != nil {
-			return nil, fmt.Errorf("failed to add finalizer: %v", err)
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, restore, FinishRestoreFinalizer); err != nil {
+			return nil, fmt.Errorf("failed to add finalizer: %w", err)
 		}
+	}
+
+	var destination *kubermaticv1.BackupDestination
+	if restore.Spec.Destination != "" {
+		if seed.Spec.EtcdBackupRestore == nil {
+			return nil, fmt.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+		}
+		var ok bool
+		destination, ok = seed.Spec.EtcdBackupRestore.Destinations[restore.Spec.Destination]
+		if !ok {
+			return nil, fmt.Errorf("can't find backup restore destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+		}
+		if destination.Credentials == nil {
+			return nil, fmt.Errorf("credentials not set for backup destination %q in Seed %q", restore.Spec.Destination, seed.Name)
+		}
+	}
+
+	// check that the backup to restore from exists and is accessible
+	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r.Client, cluster, destination)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain S3 client: %w", err)
+	}
+
+	objectName := fmt.Sprintf("%s-%s", cluster.GetName(), restore.Spec.BackupName)
+	if _, err := s3Client.StatObject(ctx, bucketName, objectName, minio.StatObjectOptions{}); err != nil {
+		return nil, fmt.Errorf("could not access backup object %s: %w", objectName, err)
 	}
 
 	// before proceeding, ensure restore's namespace/name is stored in the ActiveRestoreAnnotationName cluster annotation
@@ -181,7 +230,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 			if kerrors.IsConflict(err) {
 				return &reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 			}
-			return nil, fmt.Errorf("error updating cluster active restore annotation: %v", err)
+			return nil, fmt.Errorf("error updating cluster active restore annotation: %w", err)
 		}
 	}
 
@@ -189,50 +238,39 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 		return r.rebuildEtcdStatefulset(ctx, log, restore, cluster)
 	}
 
-	// check that the backup to restore from exists and is accessible
-	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r.Client, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to obtain S3 client: %w", err)
-	}
-
-	objectName := fmt.Sprintf("%s-%s", cluster.GetName(), restore.Spec.BackupName)
-	if _, err := s3Client.StatObject(bucketName, objectName, minio.StatObjectOptions{}); err != nil {
-		return nil, fmt.Errorf("could not access backup object %s: %w", objectName, err)
-	}
-
 	// pause cluster
 	if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Pause = true
 	}); err != nil {
-		return nil, fmt.Errorf("failed to pause cluster: %v", err)
+		return nil, fmt.Errorf("failed to pause cluster: %w", err)
 	}
 
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseStarted
 	}); err != nil {
-		return nil, fmt.Errorf("failed to set EtcdRestore started phase: %v", err)
+		return nil, fmt.Errorf("failed to set EtcdRestore started phase: %w", err)
 	}
 
 	// delete etcd sts
-	sts := &v1.StatefulSet{}
+	sts := &appsv1.StatefulSet{}
 	err = r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, sts)
 	if err == nil {
 		if err := r.Delete(ctx, sts); err != nil && !kerrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to delete etcd statefulset: %v", err)
+			return nil, fmt.Errorf("failed to delete etcd statefulset: %w", err)
 		}
 	} else if !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to get etcd statefulset: %v", err)
+		return nil, fmt.Errorf("failed to get etcd statefulset: %w", err)
 	}
 
 	// delete PVCs
 	pvcSelector, err := labels.Parse(fmt.Sprintf("%s=%s", resources.AppLabelKey, resources.EtcdStatefulSetName))
 	if err != nil {
-		return nil, fmt.Errorf("software bug: failed to parse etcd pvc selector: %v", err)
+		return nil, fmt.Errorf("software bug: failed to parse etcd pvc selector: %w", err)
 	}
 
 	pvcs := &corev1.PersistentVolumeClaimList{}
 	if err := r.List(ctx, pvcs, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName, LabelSelector: pvcSelector}); err != nil {
-		return nil, fmt.Errorf("failed to list pvcs (%v): %v", pvcSelector.String(), err)
+		return nil, fmt.Errorf("failed to list pvcs (%v): %w", pvcSelector.String(), err)
 	}
 
 	for _, pvc := range pvcs.Items {
@@ -241,7 +279,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 			PropagationPolicy: &deletePropagationForeground,
 		}
 		if err := r.Delete(ctx, &pvc, delOpts); err != nil {
-			return nil, fmt.Errorf("failed to delete pvc %v: %v", pvc.GetName(), err)
+			return nil, fmt.Errorf("failed to delete pvc %v: %w", pvc.GetName(), err)
 		}
 	}
 
@@ -253,7 +291,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseStsRebuilding
 	}); err != nil {
-		return nil, fmt.Errorf("failed to proceed to sts rebuilding phase: %v", err)
+		return nil, fmt.Errorf("failed to proceed to sts rebuilding phase: %w", err)
 	}
 
 	return r.rebuildEtcdStatefulset(ctx, log, restore, cluster)
@@ -263,18 +301,23 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	log.Infof("rebuildEtcdStatefulset")
 
 	if cluster.Spec.Pause {
-		if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
-				cluster,
+				c,
 				r.versions,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,
 				corev1.ConditionFalse,
 				"",
 				fmt.Sprintf("Etcd Cluster is being restored from backup %v", restore.Spec.BackupName),
 			)
+		}); err != nil {
+			return nil, fmt.Errorf("failed to reset etcd initialized status: %w", err)
+		}
+
+		if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Pause = false
 		}); err != nil {
-			return nil, fmt.Errorf("failed to reset etcd initialized status and unpause cluster: %v", err)
+			return nil, fmt.Errorf("failed to unpause cluster: %w", err)
 		}
 	}
 
@@ -286,14 +329,14 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 		delete(cluster.Annotations, ActiveRestoreAnnotationName)
 	}); err != nil {
-		return nil, fmt.Errorf("failed to clear cluster active restore annotation: %v", err)
+		return nil, fmt.Errorf("failed to clear cluster active restore annotation: %w", err)
 	}
 
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseCompleted
 		kuberneteshelper.RemoveFinalizer(restore, FinishRestoreFinalizer)
 	}); err != nil {
-		return nil, fmt.Errorf("failed to mark restore completed: %v", err)
+		return nil, fmt.Errorf("failed to mark restore completed: %w", err)
 	}
 
 	return nil, nil
@@ -305,7 +348,16 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return nil
 	}
-	return r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		return errors.New("updateCluster must not change cluster status")
+	}
+
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.EtcdRestore, modify func(*kubermaticv1.EtcdRestore)) error {
@@ -314,5 +366,22 @@ func (r *Reconciler) updateRestore(ctx context.Context, restore *kubermaticv1.Et
 	if reflect.DeepEqual(oldRestore, restore) {
 		return nil
 	}
-	return r.Client.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore))
+
+	// make sure the first patch doesn't override the status
+	status := restore.Status.DeepCopy()
+
+	if err := r.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
+		return err
+	}
+
+	oldRestore = restore.DeepCopy()
+	restore.Status = *status
+
+	if !reflect.DeepEqual(oldRestore, restore) {
+		if err := r.Status().Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

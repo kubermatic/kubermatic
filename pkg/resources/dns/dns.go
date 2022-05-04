@@ -21,7 +21,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -50,8 +50,6 @@ var (
 // source: https://github.com/kubernetes/kubernetes/blob/vX.YY.0/cmd/kubeadm/app/constants/constants.go
 func GetCoreDNSImage(kubernetesVersion *semver.Version) string {
 	switch fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor()) {
-	case "1.19":
-		return "coredns/coredns:v1.7.0"
 	case "1.20":
 		return "coredns/coredns:v1.7.0"
 	case "1.21":
@@ -63,7 +61,7 @@ func GetCoreDNSImage(kubernetesVersion *semver.Version) string {
 	}
 }
 
-// ServiceCreator returns the function to reconcile the DNS service
+// ServiceCreator returns the function to reconcile the DNS service.
 func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.DNSResolverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
@@ -87,9 +85,10 @@ type deploymentCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
+	IsKonnectivityEnabled() bool
 }
 
-// DeploymentCreator returns the function to create and update the DNS resolver deployment
+// DeploymentCreator returns the function to create and update the DNS resolver deployment.
 func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -102,10 +101,10 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
 			podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get pod labels: %v", err)
+				return nil, fmt.Errorf("failed to get pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta.Labels = podLabels
@@ -118,16 +117,11 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/path"] = "/metrics"
 			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] = "9253"
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
-			}
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
-					Name:  resources.DNSResolverDeploymentName,
-					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/" + GetCoreDNSImage(data.Cluster().Spec.Version.Version),
+					Name: resources.DNSResolverDeploymentName,
+					// like etcd, this component follows the apiserver version and not the controller-manager version
+					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/" + GetCoreDNSImage(data.Cluster().Status.Versions.Apiserver.Semver()),
 					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -137,7 +131,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/health",
 								Port:   intstr.FromInt(8080),
@@ -154,11 +148,20 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			}
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				resources.DNSResolverDeploymentName: defaultResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:                 openvpnSidecar.Resources.DeepCopy(),
+			}
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %w", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
+					*openvpnSidecar,
+				)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
@@ -170,8 +173,8 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.DNSResolverConfigMapName,
 			VolumeSource: corev1.VolumeSource{
@@ -179,14 +182,6 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.DNSResolverConfigMapName,
 					},
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
 				},
 			},
 		},
@@ -205,13 +200,24 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		})
+	}
+	return vs
 }
 
 type configMapCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data
+// ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data.
 func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.DNSResolverConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -247,7 +253,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.DNSResolverPodDisruptionBudetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

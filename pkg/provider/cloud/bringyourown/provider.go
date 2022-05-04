@@ -17,7 +17,9 @@ limitations under the License.
 package bringyourown
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"context"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
@@ -28,23 +30,29 @@ func NewCloudProvider() provider.CloudProvider {
 	return &bringyourown{}
 }
 
-func (b *bringyourown) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+var _ provider.ReconcilingCloudProvider = &bringyourown{}
+
+func (b *bringyourown) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (b *bringyourown) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (b *bringyourown) ValidateCloudSpec(_ context.Context, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (b *bringyourown) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (b *bringyourown) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-func (b *bringyourown) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (b *bringyourown) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
-func (b *bringyourown) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (b *bringyourown) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
+}
+
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
+func (b *bringyourown) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }

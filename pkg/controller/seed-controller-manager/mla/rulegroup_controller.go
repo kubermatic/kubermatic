@@ -20,15 +20,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -48,10 +49,10 @@ import (
 )
 
 const (
-	ruleGroupFinalizer             = "kubermatic.io/rule-group"
-	metricsRuleGroupConfigEndpoint = "/api/v1/rules"
-	logRuleGroupConfigEndpoint     = "/loki/api/v1/rules"
-	ruleGroupTenantHeaderName      = "X-Scope-OrgID"
+	ruleGroupFinalizer             = "kubermatic.k8c.io/rule-group"
+	MetricsRuleGroupConfigEndpoint = "/api/v1/rules"
+	LogRuleGroupConfigEndpoint     = "/loki/api/v1/rules"
+	RuleGroupTenantHeaderName      = "X-Scope-OrgID"
 	defaultNamespace               = "/default"
 )
 
@@ -93,7 +94,18 @@ func newRuleGroupReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	ruleGroupPredicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
+		// We don't want to enqueue RuleGroup objects in mla namespace since those are regarded as rulegroup template,
+		// and will be rollout to cluster namespaces in rulegroup_sync_controller.
+		if o.GetNamespace() == ruleGroupController.mlaNamespace {
+			return false
+		}
+		// If the cluster name in empty, we just ignore the ruleGroup.
+		ruleGroup := o.(*kubermaticv1.RuleGroup)
+		return ruleGroup.Spec.Cluster.Name != ""
+	})
+
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, &handler.EnqueueRequestForObject{}, ruleGroupPredicate); err != nil {
 		return fmt.Errorf("failed to watch RuleGroup: %w", err)
 	}
 
@@ -184,7 +196,6 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 		result = &reconcile.Result{}
 	}
 	return *result, err
-
 }
 
 type ruleGroupController struct {
@@ -194,6 +205,7 @@ type ruleGroupController struct {
 	log            *zap.SugaredLogger
 	cortexRulerURL string
 	lokiRulerURL   string
+	mlaNamespace   string
 }
 
 func newRuleGroupController(
@@ -202,6 +214,7 @@ func newRuleGroupController(
 	httpClient *http.Client,
 	cortexRulerURL string,
 	lokiRulerURL string,
+	mlaNamespace string,
 ) *ruleGroupController {
 	return &ruleGroupController{
 		Client:         client,
@@ -209,6 +222,7 @@ func newRuleGroupController(
 		log:            log,
 		cortexRulerURL: cortexRulerURL,
 		lokiRulerURL:   lokiRulerURL,
+		mlaNamespace:   mlaNamespace,
 	}
 }
 
@@ -235,20 +249,17 @@ func (r *ruleGroupController) reconcile(ctx context.Context, cluster *kubermatic
 		return nil, nil
 	}
 
-	if !kubernetes.HasFinalizer(ruleGroup, ruleGroupFinalizer) {
-		kubernetes.AddFinalizer(ruleGroup, ruleGroupFinalizer)
-		if err := r.Update(ctx, ruleGroup); err != nil {
-			return nil, fmt.Errorf("updating finalizers for ruleGroup object: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, ruleGroup, ruleGroupFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if err := r.ensureRuleGroup(ruleGroup, requestURL); err != nil {
+	if err := r.ensureRuleGroup(ctx, ruleGroup, requestURL); err != nil {
 		return nil, fmt.Errorf("failed to create rule group: %w", err)
 	}
 	return nil, nil
 }
 
-func (r *ruleGroupController) cleanUp(ctx context.Context) error {
+func (r *ruleGroupController) CleanUp(ctx context.Context) error {
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
 	if err := r.List(ctx, ruleGroupList); err != nil {
 		return err
@@ -270,21 +281,21 @@ func (r *ruleGroupController) cleanUp(ctx context.Context) error {
 
 func (r *ruleGroupController) getRequestURL(ruleGroup *kubermaticv1.RuleGroup) (string, error) {
 	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeMetrics {
-		return fmt.Sprintf("%s%s%s", r.cortexRulerURL, metricsRuleGroupConfigEndpoint, defaultNamespace), nil
+		return fmt.Sprintf("%s%s%s", r.cortexRulerURL, MetricsRuleGroupConfigEndpoint, defaultNamespace), nil
 	}
 	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeLogs {
-		return fmt.Sprintf("%s%s%s", r.lokiRulerURL, logRuleGroupConfigEndpoint, defaultNamespace), nil
+		return fmt.Sprintf("%s%s%s", r.lokiRulerURL, LogRuleGroupConfigEndpoint, defaultNamespace), nil
 	}
 	return "", fmt.Errorf("unknown rule group type: %s", ruleGroup.Spec.RuleGroupType)
 }
 
 func (r *ruleGroupController) handleDeletion(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
-	req, err := http.NewRequest(http.MethodDelete,
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete,
 		fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add(ruleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
+	req.Header.Add(RuleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -292,41 +303,36 @@ func (r *ruleGroupController) handleDeletion(ctx context.Context, ruleGroup *kub
 	// https://cortexmetrics.io/docs/api/#delete-rule-group
 	if resp.StatusCode != http.StatusAccepted {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
 		return fmt.Errorf("status code: %d, response body: %s", resp.StatusCode, string(body))
 	}
-	if kubernetes.HasFinalizer(ruleGroup, ruleGroupFinalizer) {
-		kubernetes.RemoveFinalizer(ruleGroup, ruleGroupFinalizer)
-		if err := r.Update(ctx, ruleGroup); err != nil {
-			return fmt.Errorf("updating ruleGroup finalizer: %w", err)
-		}
-	}
-	return nil
+
+	return kubernetes.TryRemoveFinalizer(ctx, r, ruleGroup, ruleGroupFinalizer)
 }
 
-func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
-	currentRuleGroup, err := r.getCurrentRuleGroup(ruleGroup, requestURL)
+func (r *ruleGroupController) ensureRuleGroup(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
+	currentRuleGroup, err := r.getCurrentRuleGroup(ctx, ruleGroup, requestURL)
 	if err != nil {
 		return err
 	}
 	expectedRuleGroup := map[string]interface{}{}
-	if err := yaml.Unmarshal(ruleGroup.Spec.Data, &expectedRuleGroup); err != nil {
+	if err := yaml.UnmarshalStrict(ruleGroup.Spec.Data, &expectedRuleGroup); err != nil {
 		return fmt.Errorf("unable to unmarshal expected rule group: %w", err)
 	}
 	if reflect.DeepEqual(currentRuleGroup, expectedRuleGroup) {
 		return nil
 	}
 
-	req, err := http.NewRequest(http.MethodPost,
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		requestURL,
 		bytes.NewBuffer(ruleGroup.Spec.Data))
 	if err != nil {
 		return err
 	}
-	req.Header.Add(ruleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
+	req.Header.Add(RuleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -335,7 +341,7 @@ func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 	// https://cortexmetrics.io/docs/api/#set-rule-group
 	if resp.StatusCode != http.StatusAccepted {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
@@ -344,12 +350,12 @@ func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 	return nil
 }
 
-func (r *ruleGroupController) getCurrentRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) (map[string]interface{}, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
+func (r *ruleGroupController) getCurrentRuleGroup(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup, requestURL string) (map[string]interface{}, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add(ruleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
+	req.Header.Add(RuleGroupTenantHeaderName, ruleGroup.Spec.Cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -360,7 +366,7 @@ func (r *ruleGroupController) getCurrentRuleGroup(ruleGroup *kubermaticv1.RuleGr
 		return nil, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}

@@ -1,4 +1,4 @@
-// +build integration
+//go:build integration
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -19,6 +19,7 @@ limitations under the License.
 package vsphere
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -33,16 +34,10 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			name: "get all networks",
 			expectedNetworkInfos: []NetworkInfo{
 				{
-					AbsolutePath: "/kubermatic-e2e/network/e2e-networks/subfolder/e2e-distributed-port-group",
-					RelativePath: "e2e-networks/subfolder/e2e-distributed-port-group",
-					Type:         "DistributedVirtualPortgroup",
-					Name:         "e2e-distributed-port-group",
-				},
-				{
-					AbsolutePath: "/kubermatic-e2e/network/e2e-networks/subfolder/e2e-distributed-switch-uplinks",
-					RelativePath: "e2e-networks/subfolder/e2e-distributed-switch-uplinks",
-					Type:         "DistributedVirtualPortgroup",
-					Name:         "e2e-distributed-switch-uplinks",
+					AbsolutePath: "/dc-1/network/VM Network",
+					RelativePath: "VM Network",
+					Type:         "Network",
+					Name:         "VM Network",
 				},
 			},
 		},
@@ -50,7 +45,7 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword, nil)
+			networkInfos, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

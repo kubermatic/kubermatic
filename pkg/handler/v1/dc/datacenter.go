@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 	"strings"
@@ -30,14 +30,17 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/email"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter
+// ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter.
 func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		seeds, err := seedsGetter()
@@ -69,7 +72,7 @@ func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.User
 	}
 }
 
-// ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter for a specified provider
+// ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter for a specified provider.
 func ListEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(forProviderDCListReq)
@@ -119,7 +122,7 @@ func filterDCsByProvider(providerName string, list []apiv1.Datacenter) []apiv1.D
 	return dcList
 }
 
-// GetEndpoint an HTTP endpoint that returns a single apiv1.Datacenter object
+// GetEndpoint an HTTP endpoint that returns a single apiv1.Datacenter object.
 func GetEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyDCReq)
@@ -133,7 +136,7 @@ func GetEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserI
 	}
 }
 
-// GetDatacenter a function that gives you a single apiv1.Datacenter object
+// GetDatacenter a function that gives you a single apiv1.Datacenter object.
 func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, datacenterToGet string) (apiv1.Datacenter, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
@@ -153,7 +156,7 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 	return filterDCsByName(dcs, datacenterToGet)
 }
 
-// GetEndpointForProvider an HTTP endpoint that returns a specified apiv1.Datacenter for a specified provider
+// GetEndpointForProvider an HTTP endpoint that returns a specified apiv1.Datacenter for a specified provider.
 func GetEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(forProviderDCGetReq)
@@ -206,38 +209,20 @@ func filterDCsByName(dcs []apiv1.Datacenter, dcName string) (apiv1.Datacenter, e
 }
 
 func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]apiv1.Datacenter, error) {
-	var dcList []apiv1.Datacenter
+	var result []apiv1.Datacenter
 
-iterateOverDCs:
 	for _, dc := range list {
-		requiredEmailDomain := dc.Spec.RequiredEmailDomain
-		requiredEmailDomainsList := dc.Spec.RequiredEmailDomains
+		matches, err := email.MatchesRequirements(userInfo.Email, dc.Spec.RequiredEmails)
+		if err != nil {
+			return nil, err
+		}
 
-		if requiredEmailDomain == "" && len(requiredEmailDomainsList) == 0 {
-			// find datacenter for "all" without RequiredEmailDomain(s) field
-			dcList = append(dcList, dc)
-		} else {
-			// find datacenter for specific email domain
-			split := strings.Split(userInfo.Email, "@")
-			if len(split) != 2 {
-				return nil, fmt.Errorf("invalid email address")
-			}
-			userDomain := split[1]
-
-			if requiredEmailDomain != "" && strings.EqualFold(userDomain, requiredEmailDomain) {
-				dcList = append(dcList, dc)
-				continue iterateOverDCs
-			}
-
-			for _, whitelistedDomain := range requiredEmailDomainsList {
-				if whitelistedDomain != "" && strings.EqualFold(userDomain, whitelistedDomain) {
-					dcList = append(dcList, dc)
-					continue iterateOverDCs
-				}
-			}
+		if matches {
+			result = append(result, dc)
 		}
 	}
-	return dcList, nil
+
+	return result, nil
 }
 
 func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacenter {
@@ -248,7 +233,7 @@ func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacente
 	return foundDCs
 }
 
-// TODO(lsviben) - check if a "seed" dc is needed + if whole metadata is needed for DC, maybe we only need the name
+// TODO(lsviben) - check if a "seed" dc is needed + if whole metadata is needed for DC, maybe we only need the name.
 func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 	var foundDCs []apiv1.Datacenter
 	for datacenterName, datacenter := range seed.Spec.Datacenters {
@@ -267,8 +252,8 @@ func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 	return foundDCs
 }
 
-// CreateEndpoint an HTTP endpoint that creates the specified apiv1.Datacenter
-func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+// CreateEndpoint an HTTP endpoint that creates the specified apiv1.Datacenter.
+func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createDCReq)
 		if !ok {
@@ -304,12 +289,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		// Add DC, update seed
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.Body.Name, err))
 		}
@@ -323,9 +303,9 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	}
 }
 
-// UpdateEndpoint an HTTP endpoint that updates the specified apiv1.Datacenter
+// UpdateEndpoint an HTTP endpoint that updates the specified apiv1.Datacenter.
 func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateDCReq)
 		if !ok {
@@ -369,12 +349,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToUpdate, err))
 		}
@@ -388,9 +363,9 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	}
 }
 
-// PatchEndpoint an HTTP endpoint that patches the specified apiv1.Datacenter
+// PatchEndpoint an HTTP endpoint that patches the specified apiv1.Datacenter.
 func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(patchDCReq)
 		if !ok {
@@ -472,12 +447,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 
 		seed.Spec.Datacenters[dcName] = kubermaticPatched
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToPatch, err))
 		}
@@ -486,9 +456,9 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 	}
 }
 
-// DeleteEndpoint an HTTP endpoint that deletes the specified apiv1.Datacenter
+// DeleteEndpoint an HTTP endpoint that deletes the specified apiv1.Datacenter.
 func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteDCReq)
 		if !ok {
@@ -517,12 +487,7 @@ func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 		delete(seed.Spec.Datacenters, req.DC)
 
-		seedClient, err := seedsClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
-		}
-
-		if err = seedClient.Update(ctx, seed); err != nil {
+		if err = masterClient.Update(ctx, seed); err != nil {
 			return nil, errors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to delete seed %q datacenter %q: %v", seed.Name, req.DC, err))
 		}
@@ -531,7 +496,7 @@ func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	}
 }
 
-// ListEndpointForSeed an HTTP endpoint that returns a list of apiv1.Datacenter for the specified seed
+// ListEndpointForSeed an HTTP endpoint that returns a list of apiv1.Datacenter for the specified seed.
 func ListEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listDCForSeedReq)
@@ -573,7 +538,7 @@ func ListEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provid
 	}
 }
 
-// GetEndpointForSeed an HTTP endpoint that returns a specified apiv1.Datacenter in the specified seed
+// GetEndpointForSeed an HTTP endpoint that returns a specified apiv1.Datacenter in the specified seed.
 func GetEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(getDCForSeedReq)
@@ -666,9 +631,9 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		Kubevirt:                 dc.Spec.Kubevirt,
 		Alibaba:                  dc.Spec.Alibaba,
 		Anexia:                   dc.Spec.Anexia,
+		Nutanix:                  dc.Spec.Nutanix,
 		Fake:                     dc.Spec.Fake,
-		RequiredEmailDomain:      dc.Spec.RequiredEmailDomain,
-		RequiredEmailDomains:     dc.Spec.RequiredEmailDomains,
+		RequiredEmails:           dc.Spec.RequiredEmails,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
 		EnforcePodSecurityPolicy: dc.Spec.EnforcePodSecurityPolicy,
 	}, nil
@@ -692,9 +657,9 @@ func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.
 			Kubevirt:                 datacenter.Kubevirt,
 			Alibaba:                  datacenter.Alibaba,
 			Anexia:                   datacenter.Anexia,
+			Nutanix:                  datacenter.Nutanix,
 			Fake:                     datacenter.Fake,
-			RequiredEmailDomain:      datacenter.RequiredEmailDomain,
-			RequiredEmailDomains:     datacenter.RequiredEmailDomains,
+			RequiredEmails:           datacenter.RequiredEmails,
 			EnforceAuditLogging:      datacenter.EnforceAuditLogging,
 			EnforcePodSecurityPolicy: datacenter.EnforcePodSecurityPolicy,
 		},
@@ -709,12 +674,12 @@ type LegacyDCReq struct {
 	DC string `json:"dc"`
 }
 
-// GetDC returns the name of the datacenter in the request
+// GetDC returns the name of the datacenter in the request.
 func (req LegacyDCReq) GetDC() string {
 	return req.DC
 }
 
-// DecodeLegacyDcReq decodes http request into LegacyDCReq
+// DecodeLegacyDcReq decodes http request into LegacyDCReq.
 func DecodeLegacyDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req LegacyDCReq
 
@@ -730,7 +695,7 @@ type listDCForSeedReq struct {
 	Seed string `json:"seed_name"`
 }
 
-// DecodeListDCForSeedReq decodes http request into listDCForSeedReq
+// DecodeListDCForSeedReq decodes http request into listDCForSeedReq.
 func DecodeListDCForSeedReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req listDCForSeedReq
 
@@ -752,7 +717,7 @@ type getDCForSeedReq struct {
 	DC string `json:"dc"`
 }
 
-// DecodeGetDCForSeedReq decodes http request into getDCForSeedReq
+// DecodeGetDCForSeedReq decodes http request into getDCForSeedReq.
 func DecodeGetDCForSeedReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req getDCForSeedReq
 
@@ -776,7 +741,7 @@ type forProviderDCListReq struct {
 	Provider string `json:"provider_name"`
 }
 
-// DecodeForProviderDCListReq decodes http request into forProviderDCListReq
+// DecodeForProviderDCListReq decodes http request into forProviderDCListReq.
 func DecodeForProviderDCListReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req forProviderDCListReq
 
@@ -798,7 +763,7 @@ type forProviderDCGetReq struct {
 	Datacenter string `json:"dc"`
 }
 
-// DecodeForProviderDCGetReq decodes http request into forProviderDCGetReq
+// DecodeForProviderDCGetReq decodes http request into forProviderDCGetReq.
 func DecodeForProviderDCGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req forProviderDCGetReq
 
@@ -839,7 +804,7 @@ func (req createDCReq) validate() error {
 	return nil
 }
 
-// DecodeCreateDCReq decodes http request into createDCReq
+// DecodeCreateDCReq decodes http request into createDCReq.
 func DecodeCreateDCReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createDCReq
 
@@ -863,7 +828,7 @@ type updateDCReq struct {
 	DCToUpdate string `json:"dc"`
 }
 
-// DecodeUpdateDCReq decodes http request into updateDCReq
+// DecodeUpdateDCReq decodes http request into updateDCReq.
 func DecodeUpdateDCReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req updateDCReq
 
@@ -914,12 +879,12 @@ func (req patchDCReq) validate() error {
 	return nil
 }
 
-// DecodePatchDCReq decodes http request into patchDCReq
+// DecodePatchDCReq decodes http request into patchDCReq.
 func DecodePatchDCReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchDCReq
 
 	var err error
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
@@ -937,43 +902,46 @@ func DecodePatchDCReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 func validateProvider(dcSpec *apiv1.DatacenterSpec) error {
-	var providerNames []string
+	var providerNames []kubermaticv1.ProviderType
 
 	if dcSpec.Alibaba != nil {
-		providerNames = append(providerNames, provider.AlibabaCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AlibabaCloudProvider)
 	}
 	if dcSpec.BringYourOwn != nil {
-		providerNames = append(providerNames, provider.BringYourOwnCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.BringYourOwnCloudProvider)
 	}
 	if dcSpec.Digitalocean != nil {
-		providerNames = append(providerNames, provider.DigitaloceanCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.DigitaloceanCloudProvider)
 	}
 	if dcSpec.AWS != nil {
-		providerNames = append(providerNames, provider.AWSCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AWSCloudProvider)
 	}
 	if dcSpec.Openstack != nil {
-		providerNames = append(providerNames, provider.OpenstackCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.OpenstackCloudProvider)
 	}
 	if dcSpec.Packet != nil {
-		providerNames = append(providerNames, provider.PacketCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.PacketCloudProvider)
 	}
 	if dcSpec.Hetzner != nil {
-		providerNames = append(providerNames, provider.HetznerCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.HetznerCloudProvider)
 	}
 	if dcSpec.VSphere != nil {
-		providerNames = append(providerNames, provider.VSphereCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.VSphereCloudProvider)
 	}
 	if dcSpec.Azure != nil {
-		providerNames = append(providerNames, provider.AzureCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AzureCloudProvider)
 	}
 	if dcSpec.GCP != nil {
-		providerNames = append(providerNames, provider.GCPCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.GCPCloudProvider)
 	}
 	if dcSpec.Kubevirt != nil {
-		providerNames = append(providerNames, provider.KubevirtCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.KubevirtCloudProvider)
 	}
 	if dcSpec.Anexia != nil {
-		providerNames = append(providerNames, provider.AnexiaCloudProvider)
+		providerNames = append(providerNames, kubermaticv1.AnexiaCloudProvider)
+	}
+	if dcSpec.Nutanix != nil {
+		providerNames = append(providerNames, kubermaticv1.NutanixCloudProvider)
 	}
 
 	if len(providerNames) != 1 {
@@ -993,7 +961,7 @@ type deleteDCReq struct {
 	DC string `json:"dc"`
 }
 
-// DecodeDeleteDCReq decodes http request into deleteDCReq
+// DecodeDeleteDCReq decodes http request into deleteDCReq.
 func DecodeDeleteDCReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteDCReq
 

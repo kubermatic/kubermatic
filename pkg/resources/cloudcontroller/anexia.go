@@ -32,7 +32,6 @@ import (
 const AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
 
 func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
-
 	return func() (name string, create reconciling.DeploymentCreator) {
 		return AnexiaCCMDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(AnexiaCCMDeploymentName, nil)
@@ -54,20 +53,14 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 			f := false
 			deployment.Spec.Template.Spec.AutomountServiceAccountToken = &f
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
-
 			credentials, err := resources.GetCredentials(data)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %v", err)
+				return nil, fmt.Errorf("failed to get credentials: %w", err)
 			}
 
-			deployment.Spec.Template.Spec.Volumes = getVolumes()
+			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:  ccmContainerName,
 					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:0.1.0",
@@ -90,7 +83,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						},
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromString("http"),
@@ -104,7 +97,7 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						FailureThreshold:    3,
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromString("http"),
@@ -119,6 +112,14 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 					},
 					VolumeMounts: getVolumeMounts(),
 				},
+			}
+
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+				}
+				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, *openvpnSidecar)
 			}
 
 			if err != nil {

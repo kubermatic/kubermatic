@@ -25,13 +25,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/distribution/reference"
+	"github.com/Masterminds/semver/v3"
+	"github.com/distribution/distribution/v3/reference"
+	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -43,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,13 +58,14 @@ type CABundle interface {
 	String() string
 }
 
-// TemplateData is a group of data required for template generation
+// TemplateData is a group of data required for template generation.
 type TemplateData struct {
 	ctx                              context.Context
 	client                           ctrlruntimeclient.Client
 	cluster                          *kubermaticv1.Cluster
 	dc                               *kubermaticv1.Datacenter
 	seed                             *kubermaticv1.Seed
+	config                           *kubermaticv1.KubermaticConfiguration
 	OverwriteRegistry                string
 	nodePortRange                    string
 	nodeAccessNetwork                string
@@ -80,13 +83,8 @@ type TemplateData struct {
 
 	supportsFailureDomainZoneAntiAffinity bool
 
-	monitoringScrapeAnnotationPrefix                 string
-	inClusterPrometheusRulesFile                     string
-	inClusterPrometheusDisableDefaultRules           bool
-	inClusterPrometheusDisableDefaultScrapingConfigs bool
-	inClusterPrometheusScrapingConfigsFile           string
-
 	userClusterMLAEnabled bool
+	isKonnectivityEnabled bool
 }
 
 type TemplateDataBuilder struct {
@@ -122,6 +120,11 @@ func (td *TemplateDataBuilder) WithSeed(s *kubermaticv1.Seed) *TemplateDataBuild
 	return td
 }
 
+func (td *TemplateDataBuilder) WithKubermaticConfiguration(cfg *kubermaticv1.KubermaticConfiguration) *TemplateDataBuilder {
+	td.data.config = cfg
+	return td
+}
+
 func (td *TemplateDataBuilder) WithOverwriteRegistry(overwriteRegistry string) *TemplateDataBuilder {
 	td.data.OverwriteRegistry = overwriteRegistry
 	return td
@@ -142,33 +145,13 @@ func (td *TemplateDataBuilder) WithEtcdDiskSize(etcdDiskSize resource.Quantity) 
 	return td
 }
 
-func (td *TemplateDataBuilder) WithMonitoringScrapeAnnotationPrefix(prefix string) *TemplateDataBuilder {
-	td.data.monitoringScrapeAnnotationPrefix = prefix
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusRulesFile(file string) *TemplateDataBuilder {
-	td.data.inClusterPrometheusRulesFile = file
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusDefaultRulesDisabled(disabled bool) *TemplateDataBuilder {
-	td.data.inClusterPrometheusDisableDefaultRules = disabled
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusDefaultScrapingConfigsDisabled(disabled bool) *TemplateDataBuilder {
-	td.data.inClusterPrometheusDisableDefaultScrapingConfigs = disabled
-	return td
-}
-
-func (td *TemplateDataBuilder) WithInClusterPrometheusScrapingConfigsFile(file string) *TemplateDataBuilder {
-	td.data.inClusterPrometheusScrapingConfigsFile = file
-	return td
-}
-
 func (td *TemplateDataBuilder) WithUserClusterMLAEnabled(enabled bool) *TemplateDataBuilder {
 	td.data.userClusterMLAEnabled = enabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithKonnectivityEnabled(enabled bool) *TemplateDataBuilder {
+	td.data.isKonnectivityEnabled = enabled
 	return td
 }
 
@@ -228,11 +211,11 @@ func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository s
 }
 
 func (td TemplateDataBuilder) Build() *TemplateData {
-	// TODO(irozzo): Add validation
+	// TODO: Add validation
 	return &td.data
 }
 
-// GetViewerToken returns the viewer token
+// GetViewerToken returns the viewer token.
 func (d *TemplateData) GetViewerToken() (string, error) {
 	viewerTokenSecret := &corev1.Secret{}
 	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ViewerTokenSecretName, Namespace: d.cluster.Status.NamespaceName}, viewerTokenSecret); err != nil {
@@ -247,32 +230,27 @@ func (d *TemplateData) CABundle() CABundle {
 	return d.caBundle
 }
 
-// OIDCIssuerURL returns URL of the OpenID token issuer
+// OIDCIssuerURL returns URL of the OpenID token issuer.
 func (d *TemplateData) OIDCIssuerURL() string {
 	return d.oidcIssuerURL
 }
 
-// OIDCIssuerClientID return the issuer client ID
+// OIDCIssuerClientID return the issuer client ID.
 func (d *TemplateData) OIDCIssuerClientID() string {
 	return d.oidcIssuerClientID
 }
 
-// Cluster returns the cluster
+// Cluster returns the cluster.
 func (d *TemplateData) Cluster() *kubermaticv1.Cluster {
 	return d.cluster
 }
 
-// ClusterVersion returns version of the cluster
-func (d *TemplateData) ClusterVersion() string {
-	return d.cluster.Spec.Version.String()
-}
-
-// DC returns the dc
+// DC returns the dc.
 func (d *TemplateData) DC() *kubermaticv1.Datacenter {
 	return d.dc
 }
 
-// EtcdDiskSize returns the etcd disk size
+// EtcdDiskSize returns the etcd disk size.
 func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 	return d.etcdDiskSize
 }
@@ -289,62 +267,42 @@ func (d *TemplateData) NodePortProxyTag() string {
 	return d.versions.Kubermatic
 }
 
-// MonitoringScrapeAnnotationPrefix returns the scrape annotation prefix
-func (d *TemplateData) MonitoringScrapeAnnotationPrefix() string {
-	return strings.NewReplacer(".", "_", "/", "").Replace(d.monitoringScrapeAnnotationPrefix)
-}
-
-// InClusterPrometheusRulesFile returns inClusterPrometheusRulesFile
-func (d *TemplateData) InClusterPrometheusRulesFile() string {
-	return d.inClusterPrometheusRulesFile
-}
-
-// InClusterPrometheusDisableDefaultRules returns whether to disable default rules
-func (d *TemplateData) InClusterPrometheusDisableDefaultRules() bool {
-	return d.inClusterPrometheusDisableDefaultRules
-}
-
-// InClusterPrometheusDisableDefaultScrapingConfigs returns whether to disable default scrape configs
-func (d *TemplateData) InClusterPrometheusDisableDefaultScrapingConfigs() bool {
-	return d.inClusterPrometheusDisableDefaultScrapingConfigs
-}
-
-// InClusterPrometheusScrapingConfigsFile returns inClusterPrometheusScrapingConfigsFile
-func (d *TemplateData) InClusterPrometheusScrapingConfigsFile() string {
-	return d.inClusterPrometheusScrapingConfigsFile
-}
-
-// UserClusterMLAEnabled returns userClusterMLAEnabled
+// UserClusterMLAEnabled returns userClusterMLAEnabled.
 func (d *TemplateData) UserClusterMLAEnabled() bool {
 	return d.userClusterMLAEnabled
 }
 
-// NodeAccessNetwork returns the node access network
+// IsKonnectivityEnabled returns isKonnectivityEnabled.
+func (d *TemplateData) IsKonnectivityEnabled() bool {
+	return d.isKonnectivityEnabled
+}
+
+// NodeAccessNetwork returns the node access network.
 func (d *TemplateData) NodeAccessNetwork() string {
 	return d.nodeAccessNetwork
 }
 
-// NodePortRange returns the node access network
+// NodePortRange returns the node access network.
 func (d *TemplateData) NodePortRange() string {
 	return d.nodePortRange
 }
 
-// NodePorts returns low and high NodePorts from NodePortRange()
+// NodePorts returns low and high NodePorts from NodePortRange().
 func (d *TemplateData) NodePorts() (int, int) {
 	portrange, err := kubenetutil.ParsePortRange(d.ComputedNodePortRange())
 	if err != nil {
-		portrange, _ = kubenetutil.ParsePortRange(DefaultNodePortRange)
+		portrange, _ = kubenetutil.ParsePortRange(defaults.DefaultNodePortRange)
 	}
 
 	return portrange.Base, portrange.Base + portrange.Size - 1
 }
 
-// ComputedNodePortRange is NodePortRange() with defaulting and ComponentsOverride logic
+// ComputedNodePortRange is NodePortRange() with defaulting and ComponentsOverride logic.
 func (d *TemplateData) ComputedNodePortRange() string {
 	nodePortRange := d.NodePortRange()
 
 	if nodePortRange == "" {
-		nodePortRange = DefaultNodePortRange
+		nodePortRange = defaults.DefaultNodePortRange
 	}
 
 	if cluster := d.Cluster(); cluster != nil {
@@ -356,12 +314,12 @@ func (d *TemplateData) ComputedNodePortRange() string {
 	return nodePortRange
 }
 
-// GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
+// GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData.
 func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 	return GetClusterRef(d.cluster)
 }
 
-// ExternalIP returns the external facing IP or an error if no IP exists
+// ExternalIP returns the external facing IP or an error if no IP exists.
 func (d *TemplateData) ExternalIP() (*net.IP, error) {
 	return GetClusterExternalIP(d.cluster)
 }
@@ -382,7 +340,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: name}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return "", fmt.Errorf("could not get service %s: %v", key, err)
+		return "", fmt.Errorf("could not get service %s: %w", key, err)
 	}
 
 	if net.ParseIP(service.Spec.ClusterIP) == nil {
@@ -391,16 +349,16 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 	return service.Spec.ClusterIP, nil
 }
 
-// ProviderName returns the name of the clusters providerName
+// ProviderName returns the name of the clusters providerName.
 func (d *TemplateData) ProviderName() string {
 	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
-		klog.Errorf("could not identify cloud provider: %v", err)
+		kubermaticlog.Logger.Errorw("could not identify cloud provider", zap.Error(err))
 	}
 	return p
 }
 
-// ImageRegistry returns the image registry to use or the passed in default if no override is specified
+// ImageRegistry returns the image registry to use or the passed in default if no override is specified.
 func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 	if d.OverwriteRegistry != "" {
 		return d.OverwriteRegistry
@@ -408,22 +366,22 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 	return defaultRegistry
 }
 
-// GetRootCA returns the root CA of the cluster
+// GetRootCA returns the root CA of the cluster.
 func (d *TemplateData) GetRootCA() (*triple.KeyPair, error) {
 	return GetClusterRootCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
-// GetFrontProxyCA returns the root CA for the front proxy
+// GetFrontProxyCA returns the root CA for the front proxy.
 func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
 	return GetClusterFrontProxyCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
-// GetOpenVPNCA returns the root ca for the OpenVPN
+// GetOpenVPNCA returns the root ca for the OpenVPN.
 func (d *TemplateData) GetOpenVPNCA() (*ECDSAKeyPair, error) {
 	return GetOpenVPNCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
-// GetMLAGatewayCA returns the root CA for the MLA Gateway
+// GetMLAGatewayCA returns the root CA for the MLA Gateway.
 func (d *TemplateData) GetMLAGatewayCA() (*ECDSAKeyPair, error) {
 	return GetMLAGatewayCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
@@ -434,7 +392,7 @@ func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Vol
 	return GetPodTemplateLabels(d.ctx, d.client, appName, d.cluster.Name, d.cluster.Status.NamespaceName, volumes, additionalLabels)
 }
 
-// GetOpenVPNServerPort returns the nodeport of the external apiserver service
+// GetOpenVPNServerPort returns the nodeport of the external apiserver service.
 func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
@@ -443,13 +401,28 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: OpenVPNServerServiceName}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %v", err)
+		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %w", err)
 	}
 
 	return service.Spec.Ports[0].NodePort, nil
 }
 
-// GetMLAGatewayPort returns the NodePort of the external MLA Gateway service
+// GetKonnectivityServerPort returns the nodeport of the external Konnectivity Server service.
+func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
+	// When using tunneling expose strategy the port is fixed and equal to apiserver port
+	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		return d.Cluster().Address.Port, nil
+	}
+	service := &corev1.Service{}
+	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: KonnectivityProxyServiceName}
+	if err := d.client.Get(d.ctx, key, service); err != nil {
+		return 0, fmt.Errorf("failed to get NodePort for Konnectivity Server service: %w", err)
+	}
+
+	return service.Spec.Ports[0].NodePort, nil
+}
+
+// GetMLAGatewayPort returns the NodePort of the external MLA Gateway service.
 func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
@@ -458,7 +431,7 @@ func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: MLAGatewayExternalServiceName}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("failed to get NodePort for MLA Gateway service: %v", err)
+		return 0, fmt.Errorf("failed to get NodePort for MLA Gateway service: %w", err)
 	}
 
 	return service.Spec.Ports[0].NodePort, nil
@@ -476,7 +449,7 @@ func (d *TemplateData) KubermaticAPIImage() string {
 func (d *TemplateData) parseImage(image string) string {
 	named, _ := reference.ParseNormalizedNamed(image)
 	domain := reference.Domain(named)
-	reminder := reference.Path(named)
+	remainder := reference.Path(named)
 
 	if d.OverwriteRegistry != "" {
 		domain = d.OverwriteRegistry
@@ -485,7 +458,7 @@ func (d *TemplateData) parseImage(image string) string {
 		domain = RegistryDocker
 	}
 
-	return domain + "/" + reminder
+	return domain + "/" + remainder
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {
@@ -513,7 +486,7 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
-	return GetCloudProviderName(d.Cluster())
+	return provider.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
@@ -527,27 +500,31 @@ func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 // This is used to avoid deploying the CCM before the in-tree cloud controllers
 // have been deactivated.
 func (d *TemplateData) KCMCloudControllersDeactivated() bool {
+	logger := kubermaticlog.Logger
+
 	kcm := appsv1.Deployment{}
 	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ControllerManagerDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kcm); err != nil {
-		klog.Errorf("could not get kcm deployment: %v", err)
+		logger.Errorw("could not get kcm deployment", zap.Error(err))
 		return false
 	}
+
 	ready, _ := kubernetes.IsDeploymentRolloutComplete(&kcm, 0)
-	klog.V(4).Infof("controller-manager deployment rollout complete: %t", ready)
+	logger.Debugw("controller-manager deployment rollout status", "ready", ready)
+
 	if c := getContainer(&kcm, ControllerManagerDeploymentName); c != nil {
 		if ok, cmd := UnwrapCommand(*c); ok {
-			klog.V(4).Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
-			// If no --cloud-provider flag is provided in-tree cloud provider
-			// is disabled.
+			logger.Debugw("controller-manager command", "args", cmd.Args)
+
+			// If no --cloud-provider flag is provided in-tree cloud provider is disabled.
 			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternalFlag {
-				klog.V(4).Info("in-tree cloud provider disabled in controller-manager deployment")
+				logger.Debug("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
 
 			// Otherwise cloud countrollers could have been explicitly disabled
 			if ok, val := getArgValue(cmd.Args, "--controllers"); ok {
 				controllers := strings.Split(val, ",")
-				klog.V(4).Infof("cloud controllers disabled in controller-manager deployment %s", controllers)
+				logger.Debugw("cloud controllers disabled in controller-manager deployment", "controllers", controllers)
 				return ready && sets.NewString(controllers...).HasAll("-cloud-node-lifecycle", "-route", "-service")
 			}
 		}
@@ -558,7 +535,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 
 func UnwrapCommand(container corev1.Container) (found bool, command httpproberapi.Command) {
 	for i, arg := range container.Args {
-		klog.V(4).Infof("unwrap command processing arg: %s", arg)
+		kubermaticlog.Logger.Debugw("unwrap command processing argument", "arg", arg)
 		if arg == "-command" && i < len(container.Args)-1 {
 			if err := json.Unmarshal([]byte(container.Args[i+1]), &command); err != nil {
 				return
@@ -571,9 +548,9 @@ func UnwrapCommand(container corev1.Container) (found bool, command httpproberap
 
 func getArgValue(args []string, argName string) (bool, string) {
 	for i, arg := range args {
-		klog.V(4).Infof("processing arg %s", arg)
+		kubermaticlog.Logger.Debugw("processing argument", "arg", arg)
 		if arg == argName {
-			klog.V(4).Infof("found argument %s", argName)
+			kubermaticlog.Logger.Debugw("found argument", "name", argName)
 			if i >= len(args)-1 {
 				return false, ""
 			}
@@ -620,60 +597,26 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 	}
 }
 
-func GetCloudProviderName(cluster *kubermaticv1.Cluster) (string, error) {
-	if cluster.Spec.Cloud.VSphere != nil {
-		return provider.VSphereCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.AWS != nil {
-		return provider.AWSCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		return provider.OpenstackCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.GCP != nil {
-		return provider.GCPCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Alibaba != nil {
-		return provider.AlibabaCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Anexia != nil {
-		return provider.AnexiaCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Azure != nil {
-		return provider.AzureCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Digitalocean != nil {
-		return provider.DigitaloceanCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Hetzner != nil {
-		return provider.HetznerCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Kubevirt != nil {
-		return provider.KubevirtCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Packet != nil {
-		return provider.PacketCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.BringYourOwn != nil {
-		return provider.BringYourOwnCloudProvider, nil
-	}
-	if cluster.Spec.Cloud.Fake != nil {
-		return provider.FakeCloudProvider, nil
-	}
-	return "", fmt.Errorf("provider unknown")
-}
-
 func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 	// If we are migrating from in-tree cloud provider to CSI driver, we
 	// should not disable the in-tree cloud provider until all kubelets are
 	// migrated, otherwise we won't be able to use the volume API.
+	hasCSIMigrationCompletedCond := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue
+
 	return cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
-		(kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) ||
-			!metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation))
+		(hasCSIMigrationCompletedCond || !metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation))
 }
 
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 	var featureFlags []string
+	gte23, _ := semver.NewConstraint(">= 1.23.0")
+	ccm := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
+
+	curVersion := cluster.Status.Versions.ControlPlane
+	if curVersion == "" {
+		curVersion = cluster.Spec.Version
+	}
+
 	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
 		// The following feature gates are always enabled when the
 		// 'externalCloudProvider' feature is activated.
@@ -686,17 +629,42 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Spec.Cloud.VSphere != nil {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
+
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
-		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-			// TODO: This feature flag was removed in k8s 1.22
+		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
+			lessThan21, _ := semver.NewConstraint("< 1.21.0")
 			if cluster.Spec.Cloud.Openstack != nil {
-				featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+				if lessThan21.Check(curVersion.Semver()) {
+					featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+				} else {
+					featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
+				}
 			}
-			// TODO: This feature flag was removed in k8s 1.22
 			if cluster.Spec.Cloud.VSphere != nil {
-				featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
+				if lessThan21.Check(curVersion.Semver()) {
+					featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
+				} else {
+					featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")
+				}
 			}
+		}
+	} else if !ccm && gte23.Check(curVersion.Semver()) {
+		// We disable CSIMigration only if Kubernetes version is >= 1.23 and
+		// there's no external CCM.
+		// If there's external CCM, in-tree volumes plugin is not enabled
+		// anyways, so CSIMigration doesn't affect existing volumes.
+		// OpenStack is known to have working fallback, so we don't disable
+		// CSIMigrationOpenStack
+		switch {
+		case cluster.Spec.Cloud.AWS != nil:
+			featureFlags = append(featureFlags, "CSIMigrationAWS=false")
+		case cluster.Spec.Cloud.Azure != nil:
+			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=false", "CSIMigrationAzureFile=false")
+		case cluster.Spec.Cloud.GCP != nil:
+			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
+		case cluster.Spec.Cloud.VSphere != nil:
+			featureFlags = append(featureFlags, "CSIMigrationvSphere=false")
 		}
 	}
 	return featureFlags
@@ -704,4 +672,8 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 
 func (d *TemplateData) Seed() *kubermaticv1.Seed {
 	return d.seed
+}
+
+func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration {
+	return d.config
 }

@@ -26,7 +26,7 @@ import (
 const (
 	UserClusterAPIServerServiceSuffixLength = 6
 
-	// Amount of time to wait until at least one pod is running
+	// Amount of time to wait until at least one pod is running.
 	DefaultPodPortForwardWaitTimeout = 60 * time.Second
 )
 

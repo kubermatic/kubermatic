@@ -12,20 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: "v1"
+apiVersion: v2
 name: loki
-version: 0.1.2
-appVersion: v2.1.0
+version: v9.9.9-dev
+appVersion: v2.5.0
 description: "Loki: like Prometheus, but for logs."
 keywords:
-- kubermatic
-- logging
-- grafana
-- loki
-- promtail
+  - kubermatic
+  - logging
+  - grafana
+  - loki
+  - promtail
 home: https://grafana.com/loki
 sources:
   - https://github.com/grafana/loki
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
+dependencies:
+  - name: loki
+    repository: https://grafana.github.io/helm-charts
+    version: 2.11.0

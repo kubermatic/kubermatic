@@ -26,7 +26,7 @@ import (
 )
 
 // KubeSystemRoleCreator returns the func to create/update the Role for the machine controller
-// to allow reading secrets/confirmaps/leases for the leaderelection
+// to allow reading secrets/configmaps/leases for the leaderelection.
 func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -67,7 +67,7 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-// EndpointReaderRoleCreator returns the func to create/update the Role for the machine controller to allow reading the kubernetes api endpoints
+// EndpointReaderRoleCreator returns the func to create/update the Role for the machine controller to allow reading the kubernetes api endpoints.
 func EndpointReaderRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -134,7 +134,6 @@ func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
 				},
 			}
 			return r, nil
-
 		}
 	}
 }

@@ -39,6 +39,7 @@ fi
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way
 export SEED_NAME=kubermatic
+export KUBERMATIC_YAML="${KUBERMATIC_YAML:-hack/ci/testdata/kubermatic.yaml}"
 
 # This defines the Kubermatic API endpoint the e2e tests will communicate with.
 # The api service is kubectl-proxied later on.
@@ -46,7 +47,7 @@ export KUBERMATIC_API_ENDPOINT="http://localhost:8080"
 
 # Tell the conformance tester what dummy account we configure for the e2e tests.
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
-export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
 # Set docker config
@@ -135,7 +136,7 @@ KUBERMATIC_CONFIG="$(mktemp)"
 IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | base64 --decode | jq --compact-output --monochrome-output '.')"
 KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
-cp hack/ci/testdata/kubermatic.yaml $KUBERMATIC_CONFIG
+cp $KUBERMATIC_YAML $KUBERMATIC_CONFIG
 
 sed -i "s;__SERVICE_ACCOUNT_KEY__;$SERVICE_ACCOUNT_KEY;g" $KUBERMATIC_CONFIG
 sed -i "s;__IMAGE_PULL_SECRET__;$IMAGE_PULL_SECRET_INLINE;g" $KUBERMATIC_CONFIG
@@ -147,17 +148,28 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
+
+minio:
+  credentials:
+    accessKey: test
+    secretKey: testtest
+
+nginx:
+  controller:
+    replicaCount: 1
 EOF
 
 # append custom Dex configuration
 cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
+# prepare CRDs
+copy_crds_to_chart
+
 # install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy \
+./_build/kubermatic-installer deploy kubermatic-master --disable-telemetry \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$HELM_VALUES_FILE" \
-  --helm-binary "helm3"
+  --helm-values "$HELM_VALUES_FILE"
 
 # TODO: The installer should wait for everything to finish reconciling.
 echodate "Waiting for Kubermatic Operator to deploy Master components..."
@@ -169,6 +181,15 @@ retry 10 check_all_deployments_ready kubermatic
 echodate "Finished installing Kubermatic"
 
 echodate "Installing Seed..."
+
+# master&seed are the same cluster, but we still want to test that the
+# installer can setup the seed components. Effectively, in these tests
+# this is a NOP.
+./_build/kubermatic-installer deploy kubermatic-seed \
+  --storageclass copy-default \
+  --config "$KUBERMATIC_CONFIG" \
+  --helm-values "$HELM_VALUES_FILE"
+
 SEED_MANIFEST="$(mktemp)"
 SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
 
@@ -177,6 +198,10 @@ cp hack/ci/testdata/seed.yaml $SEED_MANIFEST
 sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
 sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
 sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
+
+if [[ ! -z "${NUTANIX_E2E_ENDPOINT:-}" ]]; then
+  sed -i "s/__NUTANIX_ENDPOINT__/$NUTANIX_E2E_ENDPOINT/g" $SEED_MANIFEST
+fi
 
 retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"

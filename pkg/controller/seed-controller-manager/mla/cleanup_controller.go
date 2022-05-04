@@ -90,7 +90,7 @@ func (r *cleanupReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	if err := r.cleanupController.cleanup(ctx); err != nil {
+	if err := r.cleanupController.Cleanup(ctx); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to cleanup: %w", err)
 	}
 
@@ -115,9 +115,9 @@ func newCleanupController(
 	}
 }
 
-func (r *cleanupController) cleanup(ctx context.Context) error {
+func (r *cleanupController) Cleanup(ctx context.Context) error {
 	for _, cleaner := range r.cleaners {
-		if err := cleaner.cleanUp(ctx); err != nil {
+		if err := cleaner.CleanUp(ctx); err != nil {
 			return err
 		}
 	}

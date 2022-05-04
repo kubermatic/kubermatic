@@ -40,7 +40,7 @@ export GIT_TAG="${GIT_TAG:-$(git describe --tags --exact-match)}"
 export GIT_BRANCH="${GIT_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
 export GIT_HEAD="${GIT_HEAD:-$(git rev-parse HEAD)}"
 export GIT_REPO="${GIT_REPO:-kubermatic/kubermatic}"
-export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 windows-amd64}"
+export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 darwin-arm64 windows-amd64}"
 
 # By default, this script is used to released tagged revisions,
 # for which a matching tag must exist in the dashboard repository.
@@ -177,7 +177,8 @@ if [[ "$RELEASE_NAME" =~ "-" ]]; then
 fi
 
 # create a nice-sounding release name
-name=$(echo "$RELEASE_NAME" | sed --regexp-extended 's/-beta\.([0-9]+)/ (Beta \1)/')
+name=$(echo "$RELEASE_NAME" | sed --regexp-extended 's/-alpha\.([0-9]+)/ (Alpha \1)/')
+name=$(echo "$name" | sed --regexp-extended 's/-beta\.([0-9]+)/ (Beta \1)/')
 name=$(echo "$name" | sed --regexp-extended 's/-rc\.([0-9]+)/ (Release Candidate \1)/')
 
 echodate "Release name : $name"
@@ -213,11 +214,21 @@ if ! $DRY_RUN; then
   releaseID=$(echo "$releasedata" | jq -r '.id')
 fi
 
-# prepare source for archiving
-sed --in-place "s/__KUBERMATIC_TAG__/$GIT_TAG/g" charts/*/*.yaml
-sed --in-place "s/__DASHBOARD_TAG__/$DASHBOARD_GIT_TAG/g" charts/*/*.yaml
+# prepare source for archiving (prepend "v9.9.9" if GIT_TAG is only
+# a hash, because Helm requires a semver version)
+CHART_TAG="$GIT_TAG"
+if [[ "$CHART_TAG" != v* ]]; then
+  CHART_TAG="v9.9.9-$CHART_TAG"
+fi
+
+set_helm_charts_version "$CHART_TAG" "$GIT_TAG"
 
 mkdir -p _dist
+
+# CRDs since KKP 2.21 are not directly put into the charts/ directory
+# anymore, but into pkg/ so they can be embedded. In our Github archives
+# we still want and need them to be part of the operator chart.
+copy_crds_to_chart
 
 for buildTarget in $RELEASE_PLATFORMS; do
   rm -rf _build
@@ -249,9 +260,9 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/minio \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/nodeport-proxy \
     charts/oauth \
     charts/s3-exporter \
+    charts/telemetry \
     charts/values.example.ce.yaml \
     charts/kubermatic.example.ce.yaml \
     charts/seed.example.yaml \
@@ -281,14 +292,13 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/cert-manager \
     charts/iap \
     charts/kubermatic-operator \
-    charts/kubermatic \
     charts/logging \
     charts/minio \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/nodeport-proxy \
     charts/oauth \
     charts/s3-exporter \
+    charts/telemetry \
     charts/values.example.ee.yaml \
     charts/kubermatic.example.ee.yaml \
     charts/seed.example.yaml \

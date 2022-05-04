@@ -25,13 +25,14 @@ grafana:
     tag: 8.1.2
   utilImage:
     repository: quay.io/kubermatic/util
-    tag: 1.5.0
+    tag: 2.0.0
   pluginImage:
     repository: quay.io/kubermatic/grafana-plugins
     tag: 1.3.1
   resources:
     requests:
-      cpu: 250m
+      # Rationalized based on real world usage
+      cpu: 10m
       memory: 48Mi
     limits:
       cpu: 1
@@ -118,6 +119,12 @@ grafana:
       # but they will be able to see other metrics than exposed by
       # the dashboards.
       viewers_can_edit: false
+
+      # Change this to the URL that will be used to expose 
+      # your Grafana installation. This is needed for Grafana to be aware
+      # where it is hosted. This address is used in some redirects 
+      # or for sharing dashboards. 
+      root_url: ""
 
   # If you manage your dashboards via your own configmaps,
   # you can add them here to have them automatically be

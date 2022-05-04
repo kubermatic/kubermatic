@@ -14,11 +14,11 @@
 
 apiVersion: v1
 name: telemetry
-description: A Helm chart to install agents
-version: v0.1.0
+description: A Helm chart to install Kubermatic telemetry agents
+version: v9.9.9-dev
 appVersion: v0.1.0
 keywords:
-- telemetry
+  - telemetry
 maintainers:
-- name: Loodse GmbH
-  email: support@kubermatic.com
+  - name: Kubermatic GmbH
+    email: support@kubermatic.com

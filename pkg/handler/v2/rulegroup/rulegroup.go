@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -109,6 +109,9 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		if currentRuleGroup.Spec.IsDefault {
+			return nil, utilerrors.NewBadRequest("only Admin can update default rule group")
+		}
 		ruleGroup, err := convertAPIToInternalRuleGroup(c, &req.Body, req.RuleGroupID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -131,6 +134,13 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if err != nil {
 			return nil, err
 		}
+		currentRuleGroup, err := getRuleGroup(ctx, userInfoGetter, c, req.ProjectID, req.RuleGroupID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if currentRuleGroup.Spec.IsDefault {
+			return nil, utilerrors.NewBadRequest("only Admin can delete default rule group")
+		}
 		if err = deleteRuleGroup(ctx, userInfoGetter, c, req.ProjectID, req.RuleGroupID); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -144,13 +154,13 @@ func getRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, c
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.GetUnsecured(cluster, ruleGroupID)
+		return privilegedRuleGroupProvider.GetUnsecured(ctx, ruleGroupID, cluster.Status.NamespaceName)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.Get(userInfo, cluster, ruleGroupID)
+	return alertmanagerProvider.Get(ctx, userInfo, cluster, ruleGroupID)
 }
 
 func listRuleGroups(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
@@ -159,13 +169,13 @@ func listRuleGroups(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.ListUnsecured(cluster, options)
+		return privilegedRuleGroupProvider.ListUnsecured(ctx, cluster.Status.NamespaceName, options)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.List(userInfo, cluster, options)
+	return alertmanagerProvider.List(ctx, userInfo, cluster, options)
 }
 
 func createRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
@@ -174,13 +184,13 @@ func createRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.CreateUnsecured(ruleGroup)
+		return privilegedRuleGroupProvider.CreateUnsecured(ctx, ruleGroup)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.Create(userInfo, ruleGroup)
+	return alertmanagerProvider.Create(ctx, userInfo, ruleGroup)
 }
 
 func updateRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
@@ -189,13 +199,13 @@ func updateRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.UpdateUnsecured(ruleGroup)
+		return privilegedRuleGroupProvider.UpdateUnsecured(ctx, ruleGroup)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return alertmanagerProvider.Update(userInfo, ruleGroup)
+	return alertmanagerProvider.Update(ctx, userInfo, ruleGroup)
 }
 
 func deleteRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, ruleGroupID string) error {
@@ -204,13 +214,13 @@ func deleteRuleGroup(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedRuleGroupProvider.DeleteUnsecured(cluster, ruleGroupID)
+		return privilegedRuleGroupProvider.DeleteUnsecured(ctx, ruleGroupID, cluster.Status.NamespaceName)
 	}
 	userInfo, alertmanagerProvider, err := getUserInfoRuleGroupProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return err
 	}
-	return alertmanagerProvider.Delete(userInfo, cluster, ruleGroupID)
+	return alertmanagerProvider.Delete(ctx, userInfo, cluster, ruleGroupID)
 }
 
 func convertAPIToInternalRuleGroup(cluster *kubermaticv1.Cluster, ruleGroup *apiv2.RuleGroup, ruleGroupID string) (*kubermaticv1.RuleGroup, error) {
@@ -222,14 +232,10 @@ func convertAPIToInternalRuleGroup(cluster *kubermaticv1.Cluster, ruleGroup *api
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroup.Type,
 			Cluster: corev1.ObjectReference{
-				Kind:            kubermaticv1.ClusterKindName,
-				Namespace:       "",
-				Name:            cluster.Name,
-				UID:             cluster.UID,
-				APIVersion:      cluster.APIVersion,
-				ResourceVersion: cluster.ResourceVersion,
+				Name: cluster.Name,
 			},
-			Data: ruleGroup.Data,
+			Data:      ruleGroup.Data,
+			IsDefault: ruleGroup.IsDefault,
 		},
 	}
 	return internalRuleGroup, nil
@@ -245,8 +251,10 @@ func convertInternalToAPIRuleGroups(ruleGroups []*kubermaticv1.RuleGroup) []*api
 
 func convertInternalToAPIRuleGroup(ruleGroup *kubermaticv1.RuleGroup) *apiv2.RuleGroup {
 	return &apiv2.RuleGroup{
-		Data: ruleGroup.Spec.Data,
-		Type: ruleGroup.Spec.RuleGroupType,
+		Name:      ruleGroup.ObjectMeta.Name,
+		Data:      ruleGroup.Spec.Data,
+		Type:      ruleGroup.Spec.RuleGroupType,
+		IsDefault: ruleGroup.Spec.IsDefault,
 	}
 }
 
@@ -263,7 +271,6 @@ func getAdminUserInfoPrivilegedRuleGroupProvider(ctx context.Context, userInfoGe
 }
 
 func getUserInfoRuleGroupProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.RuleGroupProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err

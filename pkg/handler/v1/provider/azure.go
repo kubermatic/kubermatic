@@ -36,7 +36,7 @@ func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 	}
 }
 
-func AzureSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func AzureSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 
@@ -51,7 +51,7 @@ func AzureSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter p
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -62,7 +62,7 @@ func AzureSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter p
 				tenantID = credentials.TenantID
 			}
 		}
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -77,7 +77,7 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(projectProvider provid
 	}
 }
 
-func AzureAvailabilityZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureAvailabilityZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AvailabilityZonesReq)
 
@@ -94,7 +94,7 @@ func AzureAvailabilityZonesEndpoint(presetsProvider provider.PresetProvider, use
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

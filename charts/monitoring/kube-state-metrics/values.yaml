@@ -15,19 +15,20 @@
 kubeStateMetrics:
   image:
     repository: k8s.gcr.io/kube-state-metrics/kube-state-metrics
-    tag: v2.1.1
+    tag: v2.4.2
   resources:
     requests:
-      cpu: 50m
-      memory: 32Mi
-    limits:
-      cpu: 250m
+      # Rationalized based on real world usage
+      cpu: 3m
       memory: 128Mi
+    limits:
+      cpu: 2
+      memory: 384Mi
 
   resizer:
     image:
-      repository: gcr.io/google_containers/addon-resizer
-      tag: '1.8.4' # is still the recommended version
+      repository: k8s.gcr.io/autoscaling/addon-resizer
+      tag: '1.8.14'
     resources:
       requests:
         cpu: 50m

@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// DatacenterSpecAWS DatacenterSpecAWS describes an AWS datacenter
+// DatacenterSpecAWS DatacenterSpecAWS describes an AWS datacenter.
 //
 // swagger:model DatacenterSpecAWS
 type DatacenterSpecAWS struct {
@@ -49,6 +49,8 @@ func (m *DatacenterSpecAWS) validateImages(formats strfmt.Registry) error {
 		if err := m.Images.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("images")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("images")
 			}
 			return err
 		}
@@ -76,6 +78,8 @@ func (m *DatacenterSpecAWS) contextValidateImages(ctx context.Context, formats s
 	if err := m.Images.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("images")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("images")
 		}
 		return err
 	}

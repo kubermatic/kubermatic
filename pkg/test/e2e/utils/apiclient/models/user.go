@@ -47,6 +47,10 @@ type User struct {
 	// along with the group names
 	Projects []*ProjectGroup `json:"projects"`
 
+	// last seen
+	// Format: date-time
+	LastSeen Time `json:"lastSeen,omitempty"`
+
 	// user settings
 	UserSettings *UserSettings `json:"userSettings,omitempty"`
 }
@@ -64,6 +68,10 @@ func (m *User) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateProjects(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastSeen(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -115,11 +123,30 @@ func (m *User) validateProjects(formats strfmt.Registry) error {
 			if err := m.Projects[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("projects" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("projects" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *User) validateLastSeen(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastSeen) { // not required
+		return nil
+	}
+
+	if err := m.LastSeen.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastSeen")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastSeen")
+		}
+		return err
 	}
 
 	return nil
@@ -134,6 +161,8 @@ func (m *User) validateUserSettings(formats strfmt.Registry) error {
 		if err := m.UserSettings.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("userSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("userSettings")
 			}
 			return err
 		}
@@ -147,6 +176,10 @@ func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 	var res []error
 
 	if err := m.contextValidateProjects(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLastSeen(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -168,11 +201,27 @@ func (m *User) contextValidateProjects(ctx context.Context, formats strfmt.Regis
 			if err := m.Projects[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("projects" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("projects" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *User) contextValidateLastSeen(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.LastSeen.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("lastSeen")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("lastSeen")
+		}
+		return err
 	}
 
 	return nil
@@ -184,6 +233,8 @@ func (m *User) contextValidateUserSettings(ctx context.Context, formats strfmt.R
 		if err := m.UserSettings.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("userSettings")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("userSettings")
 			}
 			return err
 		}

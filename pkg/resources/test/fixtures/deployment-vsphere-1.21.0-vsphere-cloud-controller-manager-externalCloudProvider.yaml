@@ -35,7 +35,10 @@ spec:
         - '{"command":"/bin/vsphere-cloud-controller-manager","args":["--v=2","--cloud-provider=vsphere","--cloud-config=/etc/cloud/config","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig"]}'
         command:
         - /http-prober-bin/http-prober
-        image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.21.0
+        env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubermatic/certs/ca-bundle.pem
+        image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.21.1
         name: cloud-controller-manager
         resources:
           limits:
@@ -44,12 +47,17 @@ spec:
           requests:
             cpu: 200m
             memory: 100Mi
+        securityContext:
+          runAsUser: 1001
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: cloud-controller-manager-kubeconfig
           readOnly: true
         - mountPath: /etc/cloud
           name: cloud-config
+        - mountPath: /etc/kubermatic/certs
+          name: ca-bundle
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       - args:
@@ -70,7 +78,7 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 100m
+            cpu: "1"
             memory: 32Mi
           requests:
             cpu: 5m
@@ -99,22 +107,25 @@ spec:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.3.2
+        image: quay.io/kubermatic/http-prober:v0.3.3
         name: copy-http-prober
         resources: {}
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
       volumes:
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
       - name: cloud-controller-manager-kubeconfig
         secret:
           secretName: cloud-controller-manager-kubeconfig
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
       - configMap:
           name: cloud-config
         name: cloud-config
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - emptyDir: {}
         name: http-prober-bin
 status: {}

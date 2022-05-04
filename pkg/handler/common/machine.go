@@ -30,7 +30,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
@@ -81,7 +81,7 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, k8cerrors.NewBadRequest("You cannot create a node deployment for KubeAdm provider")
 	}
 
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: clusterID})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -97,7 +97,7 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 	}
 	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("error getting dc: %v", err)
+		return nil, fmt.Errorf("error getting dc: %w", err)
 	}
 
 	nd, err := machineresource.Validate(&machineDeployment, cluster.Spec.Version.Semver())
@@ -118,11 +118,11 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 
 	md, err := machineresource.Deployment(cluster, nd, dc, keys, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		return nil, fmt.Errorf("failed to create machine deployment from template: %w", err)
 	}
 
 	if err := client.Create(ctx, md); err != nil {
-		return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+		return nil, fmt.Errorf("failed to create machine deployment: %w", err)
 	}
 
 	return outputMachineDeployment(md)
@@ -140,12 +140,12 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 
 	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get operating system spec from machine deployment: %v", err)
+		return nil, fmt.Errorf("failed to get operating system spec from machine deployment: %w", err)
 	}
 
 	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
+		return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %w", err)
 	}
 
 	taints := make([]apiv1.TaintSpec, len(md.Spec.Template.Spec.Taints))
@@ -211,7 +211,6 @@ func DeleteMachineNode(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, node))
 	}
 	return nil, nil
-
 }
 
 func ListMachineDeployments(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
@@ -236,7 +235,7 @@ func ListMachineDeployments(ctx context.Context, userInfoGetter provider.UserInf
 	for i := range machineDeployments.Items {
 		nd, err := outputMachineDeployment(&machineDeployments.Items[i])
 		if err != nil {
-			return nil, fmt.Errorf("failed to output machine deployment %s: %v", machineDeployments.Items[i].Name, err)
+			return nil, fmt.Errorf("failed to output machine deployment %s: %w", machineDeployments.Items[i].Name, err)
 		}
 
 		nodeDeployments = append(nodeDeployments, nd)
@@ -288,7 +287,7 @@ func ListMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.Use
 		node := getNodeForMachine(&machines.Items[i], nodeList.Items)
 		outNode, err := outputMachine(&machines.Items[i], node, hideInitialConditions)
 		if err != nil {
-			return nil, fmt.Errorf("failed to output machine %s: %v", machines.Items[i].Name, err)
+			return nil, fmt.Errorf("failed to output machine %s: %w", machines.Items[i].Name, err)
 		}
 
 		nodesV1 = append(nodesV1, outNode)
@@ -312,7 +311,7 @@ func ListNodesForCluster(ctx context.Context, userInfoGetter provider.UserInfoGe
 
 	machineList := &clusterv1alpha1.MachineList{}
 	if err := client.List(ctx, machineList, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
-		return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
+		return nil, fmt.Errorf("failed to load machines from cluster: %w", err)
 	}
 
 	nodeList, err := getNodeList(ctx, cluster, clusterProvider)
@@ -338,7 +337,7 @@ func ListNodesForCluster(ctx context.Context, userInfoGetter provider.UserInfoGe
 
 		outNode, err := outputMachine(&machineList.Items[i], node, hideInitialConditions)
 		if err != nil {
-			return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
+			return nil, fmt.Errorf("failed to output machine %s: %w", machineList.Items[i].Name, err)
 		}
 
 		nodesV1 = append(nodesV1, outNode)
@@ -415,7 +414,7 @@ func ListMachineDeploymentMetrics(ctx context.Context, userInfoGetter provider.U
 	allNodeMetricsList := &v1beta1.NodeMetricsList{}
 	if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
 		// Happens during cluster creation when the CRD is not setup yet
-		if _, ok := err.(*meta.NoKindMatchError); !ok {
+		if !meta.IsNoMatchError(err) {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 	}
@@ -460,22 +459,22 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 
 	nodeDeployment, err := outputMachineDeployment(machineDeployment)
 	if err != nil {
-		return nil, fmt.Errorf("cannot output existing node deployment: %v", err)
+		return nil, fmt.Errorf("cannot output existing node deployment: %w", err)
 	}
 
 	nodeDeploymentJSON, err := json.Marshal(nodeDeployment)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode existing node deployment: %v", err)
+		return nil, fmt.Errorf("cannot decode existing node deployment: %w", err)
 	}
 
 	patchedNodeDeploymentJSON, err := jsonpatch.MergePatch(nodeDeploymentJSON, patch)
 	if err != nil {
-		return nil, fmt.Errorf("cannot patch node deployment: %v", err)
+		return nil, fmt.Errorf("cannot patch node deployment: %w", err)
 	}
 
 	var patchedNodeDeployment *apiv1.NodeDeployment
 	if err := json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment); err != nil {
-		return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
+		return nil, fmt.Errorf("cannot decode patched cluster: %w", err)
 	}
 
 	kversion, err := semver.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
@@ -488,10 +487,10 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 
 	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("error getting dc: %v", err)
+		return nil, fmt.Errorf("error getting dc: %w", err)
 	}
 
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: clusterID})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -507,7 +506,7 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 	}
 	patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		return nil, fmt.Errorf("failed to create machine deployment from template: %w", err)
 	}
 
 	// Only the fields from NodeDeploymentSpec will be updated by a patch.
@@ -517,7 +516,7 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 	machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
 
 	if err := client.Update(ctx, machineDeployment); err != nil {
-		return nil, fmt.Errorf("failed to update machine deployment: %v", err)
+		return nil, fmt.Errorf("failed to update machine deployment: %w", err)
 	}
 
 	return outputMachineDeployment(machineDeployment)
@@ -546,7 +545,7 @@ func RestartMachineDeployment(ctx context.Context, userInfoGetter provider.UserI
 	machineDeployment.Spec.Template.Annotations[kubermaticv1.ForceRestartAnnotation] = strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	if err := client.Update(ctx, machineDeployment); err != nil {
-		return nil, fmt.Errorf("failed to update machine deployment: %v", err)
+		return nil, fmt.Errorf("failed to update machine deployment: %w", err)
 	}
 
 	return outputMachineDeployment(machineDeployment)
@@ -687,12 +686,12 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 
 	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
+		return nil, fmt.Errorf("failed to get operating system spec from machine: %w", err)
 	}
 
 	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
+		return nil, fmt.Errorf("failed to get node cloud spec from machine: %w", err)
 	}
 
 	if node != nil {
@@ -707,7 +706,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 
 	sshUserName, err := machineconversions.GetSSHUserName(operatingSystemSpec, cloudSpec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ssh login name: %v", err)
+		return nil, fmt.Errorf("failed to get ssh login name: %w", err)
 	}
 
 	return &apiv1.Node{
@@ -785,7 +784,6 @@ func getNodeList(ctx context.Context, cluster *kubermaticv1.Cluster, clusterProv
 }
 
 func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
-
 	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, err
@@ -806,12 +804,12 @@ func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.
 func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {
 	machineList := &clusterv1alpha1.MachineList{}
 	if err := client.List(ctx, machineList, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
-		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
+		return nil, nil, fmt.Errorf("failed to load machines from cluster: %w", err)
 	}
 
 	nodeList := &corev1.NodeList{}
 	if err := client.List(ctx, nodeList); err != nil {
-		return nil, nil, fmt.Errorf("failed to load nodes from cluster: %v", err)
+		return nil, nil, fmt.Errorf("failed to load nodes from cluster: %w", err)
 	}
 
 	var node *corev1.Node

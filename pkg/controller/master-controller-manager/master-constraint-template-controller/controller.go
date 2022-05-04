@@ -19,14 +19,12 @@ package masterconstrainttemplatecontroller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -47,7 +45,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint templates on the master cluster to the seed clusters.
-	ControllerName = "master_constraint_template_controller"
+	ControllerName = "kkp-master-constraint-template-controller"
 )
 
 type reconciler struct {
@@ -55,6 +53,7 @@ type reconciler struct {
 	recorder         record.EventRecorder
 	masterClient     ctrlruntimeclient.Client
 	namespace        string
+	seedsGetter      provider.SeedsGetter
 	seedClientGetter provider.SeedClientGetter
 }
 
@@ -63,26 +62,28 @@ func Add(ctx context.Context,
 	log *zap.SugaredLogger,
 	numWorkers int,
 	namespace string,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter) error {
-
+	seedsGetter provider.SeedsGetter,
+	seedKubeconfigGetter provider.SeedKubeconfigGetter,
+) error {
 	reconciler := &reconciler{
 		log:              log.Named(ControllerName),
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		masterClient:     mgr.GetClient(),
 		namespace:        namespace,
+		seedsGetter:      seedsGetter,
 		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.ConstraintTemplate{}},
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
-		return fmt.Errorf("failed to create watch for constraintTemplates: %v", err)
+		return fmt.Errorf("failed to create watch for constraintTemplates: %w", err)
 	}
 
 	if err := c.Watch(
@@ -90,13 +91,13 @@ func Add(ctx context.Context,
 		enqueueAllConstraintTemplates(reconciler.masterClient, reconciler.log),
 		predicate.ByNamespace(namespace),
 	); err != nil {
-		return fmt.Errorf("failed to create seed watcher: %v", err)
+		return fmt.Errorf("failed to create seed watcher: %w", err)
 	}
 
 	return nil
 }
 
-// Reconcile reconciles the kubermatic constraint template on the master cluster to all seed clusters
+// Reconcile reconciles the kubermatic constraint template on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")
@@ -107,11 +108,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("constraint template not found, returning")
 			return reconcile.Result{}, nil
 		}
-		if controllerutil.IsCacheNotStarted(err) {
-			return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-		}
-
-		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %v", constraintTemplate.Name, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %w", constraintTemplate.Name, err)
 	}
 
 	err := r.reconcile(ctx, log, constraintTemplate)
@@ -146,20 +143,11 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return err
 		}
 
-		oldConstraintTemplate := constraintTemplate.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
-			return fmt.Errorf("failed to remove constraint template finalizer %s: %v", constraintTemplate.Name, err)
-		}
-		return nil
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
 	}
 
-	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
-		oldConstraintTemplate := constraintTemplate.DeepCopy()
-		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
-			return fmt.Errorf("failed to set constraint template finalizer %s: %v", constraintTemplate.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	ctCreatorGetters := []reconciling.NamedKubermaticV1ConstraintTemplateCreatorGetter{
@@ -175,15 +163,15 @@ func (r *reconciler) syncAllSeeds(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	constraintTemplate *kubermaticv1.ConstraintTemplate,
-	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
-
-	seedList := &kubermaticv1.SeedList{}
-	if err := r.masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}); err != nil {
+	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error,
+) error {
+	seeds, err := r.seedsGetter()
+	if err != nil {
 		return fmt.Errorf("failed listing seeds: %w", err)
 	}
 
-	for _, seed := range seedList.Items {
-		seedClient, err := r.seedClientGetter(&seed)
+	for _, seed := range seeds {
+		seedClient, err := r.seedClientGetter(seed)
 		if err != nil {
 			return fmt.Errorf("failed getting seed client for seed %s: %w", seed.Name, err)
 		}
@@ -216,7 +204,7 @@ func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.Sug
 		ctList := &kubermaticv1.ConstraintTemplateList{}
 		if err := client.List(context.Background(), ctList); err != nil {
 			log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list constraint templates: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list constraint templates: %w", err))
 		}
 		for _, ct := range ctList.Items {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{

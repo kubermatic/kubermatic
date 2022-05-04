@@ -51,6 +51,8 @@ func (m *Trace) validateKind(formats strfmt.Registry) error {
 		if err := m.Kind.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kind")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kind")
 			}
 			return err
 		}
@@ -79,6 +81,8 @@ func (m *Trace) contextValidateKind(ctx context.Context, formats strfmt.Registry
 		if err := m.Kind.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kind")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kind")
 			}
 			return err
 		}

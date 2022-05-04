@@ -66,6 +66,8 @@ spec:
               --client-cert-auth \
               --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
               --key-file /etc/etcd/pki/tls/etcd-tls.key \
+              --experimental-initial-corrupt-check=true \
+              --experimental-corrupt-check-time=240m \
               --auto-compaction-retention=8
         env:
         - name: POD_NAME
@@ -85,10 +87,8 @@ spec:
               fieldPath: metadata.namespace
         - name: TOKEN
           value: de-test-01
-        - name: ETCD_CLUSTER_SIZE
-          value: "3"
         - name: ENABLE_CORRUPTION_CHECK
-          value: "false"
+          value: "true"
         - name: ETCDCTL_API
           value: "3"
         - name: ETCDCTL_CACERT
@@ -97,7 +97,7 @@ spec:
           value: /etc/etcd/pki/client/apiserver-etcd-client.crt
         - name: ETCDCTL_KEY
           value: /etc/etcd/pki/client/apiserver-etcd-client.key
-        image: gcr.io/etcd-development/etcd:v3.5.0
+        image: gcr.io/etcd-development/etcd:v3.5.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -173,13 +173,6 @@ spec:
   - metadata:
       creationTimestamp: null
       name: data
-      ownerReferences:
-      - apiVersion: kubermatic.k8s.io/v1
-        blockOwnerDeletion: true
-        controller: true
-        kind: Cluster
-        name: de-test-01
-        uid: "1234567890"
     spec:
       accessModes:
       - ReadWriteOnce
@@ -189,4 +182,5 @@ spec:
       storageClassName: kubermatic-fast
     status: {}
 status:
+  availableReplicas: 0
   replicas: 0

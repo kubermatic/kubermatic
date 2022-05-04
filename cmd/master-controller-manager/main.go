@@ -20,10 +20,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
@@ -32,11 +36,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
-	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -46,15 +49,15 @@ import (
 )
 
 const (
-	controllerName = "kubermatic-master-controller-manager"
+	controllerName = "kkp-master-controller-manager"
 )
 
 type controllerRunOptions struct {
 	internalAddr            string
-	admissionWebhook        webhook.Options
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 	featureGates            features.FeatureGate
+	configFile              string
 
 	workerName string
 	namespace  string
@@ -72,6 +75,8 @@ type controllerContext struct {
 	seedKubeconfigGetter    provider.SeedKubeconfigGetter
 	labelSelectorFunc       func(*metav1.ListOptions)
 	namespace               string
+
+	configGetter provider.KubermaticConfigurationGetter
 }
 
 func main() {
@@ -82,7 +87,6 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
-	runOpts.admissionWebhook.AddFlags(flag.CommandLine, true)
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
@@ -91,6 +95,7 @@ func main() {
 		"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.Var(&runOpts.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
+	flag.StringVar(&runOpts.configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -109,10 +114,6 @@ func main() {
 
 	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
 
-	if err := runOpts.admissionWebhook.Validate(); err != nil {
-		log.Fatalw("invalid admission webhook configuration", zap.Error(err))
-	}
-
 	// TODO remove label selector when everything is migrated to controller-runtime
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
@@ -121,6 +122,15 @@ func main() {
 	ctrlCtx.workerNameLabelSelector = selector
 
 	ctrlCtx.workerNamePredicate = workerlabel.Predicates(runOpts.workerName)
+
+	// for development purposes, a local configuration file
+	// can be used to provide the KubermaticConfiguration
+	var config *kubermaticv1.KubermaticConfiguration
+	if runOpts.configFile != "" {
+		if config, err = loadKubermaticConfiguration(runOpts.configFile); err != nil {
+			log.Fatalw("invalid KubermaticConfiguration", zap.Error(err))
+		}
+	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
@@ -148,8 +158,21 @@ func main() {
 	}
 	ctrlCtx.mgr = mgr
 
+	if config != nil {
+		ctrlCtx.configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(config)
+	} else {
+		ctrlCtx.configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), runOpts.namespace)
+	}
+	if err != nil {
+		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
+	}
+
 	if err := mgr.Add(pprofOpts); err != nil {
 		log.Fatalw("failed to add pprof endpoint", zap.Error(err))
+	}
+
+	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// these two getters rely on the ctrlruntime manager being started; they
@@ -161,21 +184,6 @@ func main() {
 	ctrlCtx.seedKubeconfigGetter, err = seedKubeconfigGetterFactory(ctx, mgr.GetClient(), runOpts)
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
-	}
-
-	if runOpts.admissionWebhook.Configured() {
-		if err := runOpts.admissionWebhook.Configure(mgr.GetWebhookServer()); err != nil {
-			log.Fatalw("failed to configure admission webhook server", zap.Error(err))
-		}
-
-		// Register Seed validation handler
-		h, err := seedValidationHandler(ctx, mgr.GetClient(), runOpts)
-		if err != nil {
-			log.Fatalw("failed to build Seed validation handler", zap.Error(err))
-		}
-		h.SetupWebhookWithManager(mgr)
-	} else {
-		log.Info("the validatingAdmissionWebhook server cannot be started because certificate was not configured")
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
@@ -190,4 +198,23 @@ func main() {
 	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
+}
+
+func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	config := &kubermaticv1.KubermaticConfiguration{}
+	if err := yaml.UnmarshalStrict(content, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
+	}
+
+	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		return nil, fmt.Errorf("failed to process: %w", err)
+	}
+
+	return defaulted, nil
 }

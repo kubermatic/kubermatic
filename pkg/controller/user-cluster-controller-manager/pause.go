@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,6 +40,6 @@ func NewClusterPausedChecker(seedClient client.Client, clusterName string) IsPau
 			return false, fmt.Errorf("failed to get cluster %q: %w", clusterName, err)
 		}
 
-		return cluster.Spec.Pause, nil
+		return cluster.Spec.Pause || cluster.Status.NamespaceName == "", nil
 	}
 }

@@ -1,0 +1,378 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: applicationinstallations.apps.kubermatic.k8c.io
+spec:
+  group: apps.kubermatic.k8c.io
+  names:
+    kind: ApplicationInstallation
+    listKind: ApplicationInstallationList
+    plural: applicationinstallations
+    singular: applicationinstallation
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: ApplicationInstallation describes a single installation of an
+          Application.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              applicationRef:
+                description: ApplicationRef is a reference to identify which Application
+                  should be deployed
+                properties:
+                  name:
+                    description: Name of the Application. Should be a valid lowercase
+                      RFC1123 domain name
+                    maxLength: 63
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                    type: string
+                  version:
+                    description: Version of the Application. Must be a valid SemVer
+                      version
+                    pattern: v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
+                    type: string
+                required:
+                - name
+                - version
+                type: object
+              namespace:
+                description: Namespace describe the desired state of the namespace
+                  where application will be created.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Annotations of the namespace More info: http://kubernetes.io/docs/user-guide/annotations'
+                    type: object
+                  create:
+                    default: true
+                    description: Create defines whether the namespace should be created
+                      if it does not exist. Defaults to true
+                    type: boolean
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: 'Labels of the namespace More info: http://kubernetes.io/docs/user-guide/labels'
+                    type: object
+                  name:
+                    description: Name is the namespace to deploy the Application into.
+                      Should be a valid lowercase RFC1123 domain name
+                    maxLength: 63
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                    type: string
+                required:
+                - create
+                - name
+                type: object
+              values:
+                description: Values describe overrides for manifest-rendering
+                format: byte
+                type: string
+            required:
+            - applicationRef
+            - namespace
+            type: object
+          status:
+            description: ApplicationInstallationStatus denotes status information
+              about an ApplicationInstallation.
+            properties:
+              applicationVersion:
+                description: ApplicationVersion contains information installing /
+                  removing application
+                properties:
+                  constraints:
+                    description: Constraints defined criteria that a user cluster
+                      must satisfy for the application to be installed
+                    properties:
+                      k8sVersion:
+                        description: Version of K8s version that a user cluster must
+                          satisfy for the application to be installed. Wildcards are
+                          allowed  e.g. "1.18.*" Range are allowed e.g." >= 1.19.0,
+                          < 1.19.15"
+                        type: string
+                      kkpVersion:
+                        description: Version of KKP version that a user cluster must
+                          satisfy for the application to be installed. Wildcards are
+                          allowed  e.g. "2.18.*" Range are allowed e.g.">= 2.16, <
+                          2.18.0"
+                        type: string
+                    type: object
+                  template:
+                    description: Template defines how application is installed (source
+                      provenance, Method...)
+                    properties:
+                      formSpec:
+                        description: Define the valued that can be override for the
+                          installation
+                        items:
+                          properties:
+                            displayName:
+                              description: DisplayName is visible in the UI
+                              type: string
+                            helpText:
+                              description: HelpText is visible in the UI next to the
+                                field
+                              type: string
+                            internalName:
+                              description: InternalName is used internally to save
+                                in the ApplicationInstallation object
+                              type: string
+                            required:
+                              description: Required indicates if the control has to
+                                be set
+                              type: boolean
+                            type:
+                              description: Type of displayed control
+                              enum:
+                              - number
+                              - boolean
+                              - text
+                              - text-area
+                              type: string
+                          required:
+                          - displayName
+                          - internalName
+                          - type
+                          type: object
+                        type: array
+                      method:
+                        description: Method used to install the application
+                        enum:
+                        - helm
+                        type: string
+                      source:
+                        description: Defined how the source of the application (e.g
+                          Helm chart) is retrieved
+                        properties:
+                          git:
+                            description: Get application to install from a Git repository
+                            properties:
+                              credentials:
+                                description: Credentials holds the git credentials
+                                properties:
+                                  method:
+                                    description: Authentication method
+                                    enum:
+                                    - password
+                                    - token
+                                    - ssh-key
+                                    type: string
+                                  password:
+                                    description: Password holds the ref and key in
+                                      the secret for the Password credential
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        description: Name is unique within a namespace
+                                          to reference a secret resource.
+                                        type: string
+                                      namespace:
+                                        description: Namespace defines the space within
+                                          which the secret name must be unique.
+                                        type: string
+                                    required:
+                                    - key
+                                    type: object
+                                  sshKey:
+                                    description: SSHKey holds the ref and key in the
+                                      secret for the SshKey credential
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        description: Name is unique within a namespace
+                                          to reference a secret resource.
+                                        type: string
+                                      namespace:
+                                        description: Namespace defines the space within
+                                          which the secret name must be unique.
+                                        type: string
+                                    required:
+                                    - key
+                                    type: object
+                                  token:
+                                    description: Token holds the ref and key in the
+                                      secret for the token credential
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        description: Name is unique within a namespace
+                                          to reference a secret resource.
+                                        type: string
+                                      namespace:
+                                        description: Namespace defines the space within
+                                          which the secret name must be unique.
+                                        type: string
+                                    required:
+                                    - key
+                                    type: object
+                                  username:
+                                    description: Username holds the ref and key in
+                                      the secret for the username credential
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        description: Name is unique within a namespace
+                                          to reference a secret resource.
+                                        type: string
+                                      namespace:
+                                        description: Namespace defines the space within
+                                          which the secret name must be unique.
+                                        type: string
+                                    required:
+                                    - key
+                                    type: object
+                                required:
+                                - method
+                                type: object
+                              path:
+                                description: Path of the "source" in the repository.
+                                  default is repository root
+                                type: string
+                              ref:
+                                description: 'Git reference to check out: can be a
+                                  branch, tag, or sha1'
+                                type: string
+                              remote:
+                                description: URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
+                                type: string
+                            required:
+                            - ref
+                            - remote
+                            type: object
+                          helm:
+                            description: Get application to install from a Helm repository
+                            properties:
+                              chartName:
+                                description: Name of the Chart
+                                type: string
+                              chartVersion:
+                                description: Version of the Chart
+                                type: string
+                              credentials:
+                                description: Credentials hold the ref to the secret
+                                  with helm credentials
+                                properties:
+                                  password:
+                                    description: Password holds the ref and key in
+                                      the secret for the Password credential
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        description: Name is unique within a namespace
+                                          to reference a secret resource.
+                                        type: string
+                                      namespace:
+                                        description: Namespace defines the space within
+                                          which the secret name must be unique.
+                                        type: string
+                                    required:
+                                    - key
+                                    type: object
+                                  username:
+                                    description: Username holds the ref and key in
+                                      the secret for the username credential
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        description: Name is unique within a namespace
+                                          to reference a secret resource.
+                                        type: string
+                                      namespace:
+                                        description: Namespace defines the space within
+                                          which the secret name must be unique.
+                                        type: string
+                                    required:
+                                    - key
+                                    type: object
+                                required:
+                                - password
+                                - username
+                                type: object
+                              url:
+                                description: URl of the helm repository
+                                type: string
+                            required:
+                            - chartName
+                            - chartVersion
+                            - url
+                            type: object
+                        type: object
+                    required:
+                    - method
+                    - source
+                    type: object
+                  version:
+                    description: Version of the application (eg v1.2.3)
+                    type: string
+                required:
+                - template
+                - version
+                type: object
+              conditions:
+                description: Conditions contains conditions an installation is in,
+                  its primary use case is status signaling between controllers or
+                  between controllers and the API
+                items:
+                  properties:
+                    message:
+                      description: Human readable message indicating details about
+                        last transition.
+                      type: string
+                    reason:
+                      description: (brief) reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of cluster condition.
+                      enum:
+                      - ManifestsRetrieved
+                      - ManifestsApplied
+                      - Ready
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              lastUpdated:
+                format: date-time
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	// OIDCKubeCfgEndpoint if enabled exposes an HTTP endpoint for generating kubeconfig for a cluster that will contain OIDC tokens
+	// OIDCKubeCfgEndpoint if enabled exposes an HTTP endpoint for generating kubeconfig for a cluster that will contain OIDC tokens.
 	OIDCKubeCfgEndpoint = "OIDCKubeCfgEndpoint"
 
-	// PrometheusEndpoint if enabled exposes cluster's metrics HTTP endpoint
+	// PrometheusEndpoint if enabled exposes cluster's metrics HTTP endpoint.
 	PrometheusEndpoint = "PrometheusEndpoint"
 
 	// OpenIDAuthPlugin if enabled configures the flags on the API server to use
@@ -34,30 +34,42 @@ const (
 	OpenIDAuthPlugin = "OpenIDAuthPlugin"
 
 	// VerticalPodAutoscaler if enabled the cluster-controller will enable the
-	// VerticalPodAutoscaler for all control plane components
+	// VerticalPodAutoscaler for all control plane components.
 	VerticalPodAutoscaler = "VerticalPodAutoscaler"
 
 	// EtcdDataCorruptionChecks if enabled etcd will be started with
 	// --experimental-initial-corrupt-check=true +
-	// --experimental-corrupt-check-time=10m
+	// --experimental-corrupt-check-time=10m.
 	EtcdDataCorruptionChecks = "EtcdDataCorruptionChecks"
 
 	// EtcdLauncher if enabled will apply the cluster level etcd-launcher feature flag on all clusters,
-	// unless it's explicitly disabled at the cluster level
+	// unless it's explicitly disabled at the cluster level.
 	EtcdLauncher = "EtcdLauncher"
 
-	// Tunneling expose strategy enables the expose strategy based on usage of
+	// TunnelingExposeStrategy expose strategy enables the expose strategy based on usage of
 	// HTTP/2 CONNECT for tunneling traffic from the worker nodes to the
 	// control plane.
 	TunnelingExposeStrategy = "TunnelingExposeStrategy"
 
-	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller
+	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller.
 	UserClusterMLA = "UserClusterMLA"
 
 	// KonnectivityService enables the deployment of Konnectivity proxy for the
 	// control plane to cluster communication, instead of relying on the legacy
 	// solution based on OpenVPN.
 	KonnectivityService = "KonnectivityService"
+
+	// OperatingSystemManager feature create the required resources for the deployment of OperatingSystemManager(OSM)
+	// across KKP seeds. However, this won't enable the deployment of OSM controllers on user clusters by default. To
+	// enable OSM to be used as a provisioning tool, is via the enabling of the EnableOperatingSystemManager field in
+	// user cluster.
+	OperatingSystemManager = "OperatingSystemManager"
+
+	// HeadlessInstallation feature makes the KKP installer not install nginx and Dex. This is useful to create
+	// a KKP system without UI/API deployments, that will only be interacted with using kubectl or similar means.
+	// Setting this feature flag will make KKP ignore any UI/API/Ingress configuration.
+	// This feature is in preview and not yet ready for production.
+	HeadlessInstallation = "HeadlessInstallation"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.
@@ -88,7 +100,7 @@ func (f FeatureGate) Set(s string) error {
 
 		arr := strings.SplitN(s, "=", 2)
 		if len(arr) != 2 {
-			return fmt.Errorf("missing bool value for feature gate key = %s", s)
+			return fmt.Errorf("missing bool value for feature gate %s", s)
 		}
 
 		k := strings.TrimSpace(arr[0])
@@ -96,7 +108,7 @@ func (f FeatureGate) Set(s string) error {
 
 		boolValue, err := strconv.ParseBool(v)
 		if err != nil {
-			return fmt.Errorf("invalid value %v for feature gate key = %s, use true|false instead", v, k)
+			return fmt.Errorf("invalid value %v for feature gate %s, use true|false instead", v, k)
 		}
 		f[k] = boolValue
 	}

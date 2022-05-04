@@ -24,6 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,8 +50,8 @@ var (
 	}
 )
 
-// DeploymentCreator returns the function to create and update the CoreDNS deployment
-func DeploymentCreator(kubernetesVersion *semver.Version) reconciling.NamedDeploymentCreatorGetter {
+// DeploymentCreator returns the function to create and update the CoreDNS deployment.
+func DeploymentCreator(kubernetesVersion *semver.Version, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.CoreDNSDeploymentName
@@ -86,14 +87,19 @@ func DeploymentCreator(kubernetesVersion *semver.Version) reconciling.NamedDeplo
 
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion)
+			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion, registryWithOverwrite)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.CoreDNSServiceAccountName
@@ -117,11 +123,14 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 	}
 }
 
-func getContainers(clusterVersion *semver.Version) []corev1.Container {
+func getContainers(
+	clusterVersion *semver.Version,
+	registryWithOverwrite registry.WithOverwriteFunc,
+) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            resources.CoreDNSDeploymentName,
-			Image:           fmt.Sprintf("%s/%s", resources.RegistryK8SGCR, dns.GetCoreDNSImage(clusterVersion)),
+			Image:           fmt.Sprintf("%s/%s", registryWithOverwrite(resources.RegistryK8SGCR), dns.GetCoreDNSImage(clusterVersion)),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			Args: []string{"-conf", "/etc/coredns/Corefile"},
@@ -155,7 +164,7 @@ func getContainers(clusterVersion *semver.Version) []corev1.Container {
 			},
 
 			LivenessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/health",
 						Port:   intstr.FromInt(8080),
@@ -170,7 +179,7 @@ func getContainers(clusterVersion *semver.Version) []corev1.Container {
 			},
 
 			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/health",
 						Port:   intstr.FromInt(8080),

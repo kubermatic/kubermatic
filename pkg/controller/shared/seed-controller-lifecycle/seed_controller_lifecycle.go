@@ -25,9 +25,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
@@ -43,9 +43,9 @@ import (
 )
 
 const (
-	ControllerName = "seedcontroller_lifecycle_manager"
+	ControllerName = "kp-seed-lifecycle-controller"
 
-	// We must only enqueue this one key
+	// We must only enqueue this one key.
 	queueKey = ControllerName
 )
 
@@ -74,7 +74,7 @@ type Reconciler struct {
 	activeManager        *managerInstance
 }
 
-// managerInstance represents an instance of controllerManager
+// managerInstance represents an instance of controllerManager.
 type managerInstance struct {
 	config    map[string]rest.Config
 	mgr       manager.Manager
@@ -82,7 +82,7 @@ type managerInstance struct {
 	cancelCtx context.CancelFunc
 }
 
-// ControllerFactory is a function to create a new controller instance
+// ControllerFactory is a function to create a new controller instance.
 type ControllerFactory func(context.Context, manager.Manager, map[string]manager.Manager) (controllerName string, err error)
 
 func Add(
@@ -129,7 +129,7 @@ func Add(
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	for _, t := range []ctrlruntimeclient.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
@@ -138,7 +138,7 @@ func Add(
 			controllerutil.EnqueueConst(queueKey),
 			predicateutil.ByNamespace(namespace),
 		); err != nil {
-			return fmt.Errorf("failed to create watch for type %T: %v", t, err)
+			return fmt.Errorf("failed to create watch for type %T: %w", t, err)
 		}
 	}
 
@@ -150,7 +150,7 @@ func Add(
 		}
 	}
 	if err := c.Watch(&source.Channel{Source: sourceChannel}, controllerutil.EnqueueConst(queueKey)); err != nil {
-		return fmt.Errorf("failed to create watch for channelSource: %v", err)
+		return fmt.Errorf("failed to create watch for channelSource: %w", err)
 	}
 
 	return nil
@@ -167,7 +167,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 func (r *Reconciler) reconcile(ctx context.Context) error {
 	seeds, err := r.seedsGetter()
 	if err != nil {
-		return fmt.Errorf("failed to get seeds: %v", err)
+		return fmt.Errorf("failed to get seeds: %w", err)
 	}
 
 	seedKubeconfigMap := map[string]rest.Config{}
@@ -210,13 +210,13 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create master controller manager: %v", err)
+		return fmt.Errorf("failed to create master controller manager: %w", err)
 	}
 
 	// create one manager per seed, so that all controllers share the same caches
 	seedManagers, err := r.createSeedManagers(mgr, seeds, seedKubeconfigMap)
 	if err != nil {
-		return fmt.Errorf("failed to create managers for all seeds: %v", err)
+		return fmt.Errorf("failed to create managers for all seeds: %w", err)
 	}
 
 	// create a new, independent context, as the one given to reconcile() can possibly
@@ -228,7 +228,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		controllerName, err := factory(ctrlCtx, mgr, seedManagers)
 		if err != nil {
 			cancelCtrlCtx()
-			return fmt.Errorf("failed to construct controller %s: %v", controllerName, err)
+			return fmt.Errorf("failed to construct controller %s: %w", controllerName, err)
 		}
 	}
 
@@ -279,7 +279,7 @@ func (r *Reconciler) createSeedManagers(masterMgr manager.Manager, seeds map[str
 
 		seedManagers[seedName] = seedMgr
 		if err := masterMgr.Add(seedMgr); err != nil {
-			return nil, fmt.Errorf("failed to add controller manager for seed %q to master manager: %v", seedName, err)
+			return nil, fmt.Errorf("failed to add controller manager for seed %q to master manager: %w", seedName, err)
 		}
 	}
 

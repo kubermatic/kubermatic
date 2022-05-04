@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -euo pipefail
 
 cd $(dirname $0)/..
-. hack/lib.sh
+source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.16-node-14-0 containerize ./hack/verify-spelling.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.18-node-16-0 containerize ./hack/verify-spelling.sh
 
 echodate "Running codespell..."
 

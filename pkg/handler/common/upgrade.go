@@ -18,25 +18,30 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, updateManager common.UpdateManager) (interface{}, error) {
+func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, configGetter provider.KubermaticConfigurationGetter) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
@@ -52,21 +57,53 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 		// Happens during cluster creation when the CRD is not setup yet
-		if _, ok := err.(*meta.NoKindMatchError); ok {
+		if meta.IsNoMatchError(err) {
 			return nil, nil
 		}
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType)
+	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the cloud provider name: %w", err)
+	}
+	var updateConditions []kubermaticv1.ConditionType
+	externalCloudProvider := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
+	if externalCloudProvider {
+		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
+	}
+
+	nodes := &corev1.NodeList{}
+	if err := client.List(ctx, nodes); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	var nonAMD64Nodes bool
+	for _, node := range nodes.Items {
+		if node.Status.NodeInfo.Architecture != "amd64" {
+			nonAMD64Nodes = true
+		}
+	}
+	if nonAMD64Nodes &&
+		cluster.Spec.CNIPlugin != nil && cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal &&
+		cluster.Spec.ClusterNetwork.ProxyMode == "ipvs" {
+		updateConditions = append(updateConditions, kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition)
+	}
+
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	versionManager := version.NewFromConfiguration(config)
+
+	versions, err := versionManager.GetPossibleUpdates(cluster.Spec.Version.String(), kubermaticv1.ProviderType(providerName), updateConditions...)
 	if err != nil {
 		return nil, err
 	}
 
 	upgrades := make([]*apiv1.MasterVersion, 0)
 	for _, v := range versions {
-		isRestricted := false
-		isRestricted, err = isRestrictedByKubeletVersions(v, machineDeployments.Items)
+		isRestricted, err := isRestrictedByKubeletVersions(v, machineDeployments.Items)
 		if err != nil {
 			return nil, err
 		}
@@ -89,11 +126,11 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 
 	requestedKubeletVersion, err := semver.NewVersion(version.Version.String())
 	if err != nil {
-		return nil, errors.NewBadRequest(err.Error())
+		return nil, kubermaticerrors.NewBadRequest(err.Error())
 	}
 
-	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
-		return nil, errors.NewBadRequest(err.Error())
+	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), requestedKubeletVersion); err != nil {
+		return nil, kubermaticerrors.NewBadRequest(err.Error())
 	}
 
 	client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
@@ -115,7 +152,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 
 	if len(updateErrors) > 0 {
-		return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
+		return nil, kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
 	}
 
 	return nil, nil
@@ -133,4 +170,32 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []c
 		}
 	}
 	return false, nil
+}
+
+func GetKubeOneUpgradesEndpoint(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster, currentVersion *ksemver.Semver, configGetter provider.KubermaticConfigurationGetter) (interface{}, error) {
+	providerName := externalCluster.Spec.CloudSpec.KubeOne.ProviderName
+	providerType := kubermaticv1.ProviderType(providerName)
+	if providerName == resources.KubeOneEquinix {
+		providerType = kubermaticv1.PacketCloudProvider
+	}
+
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	versionManager := version.NewFromConfiguration(config)
+
+	versions, err := versionManager.GetKubeOnePossibleUpdates(currentVersion.String(), providerType)
+	if err != nil {
+		return nil, err
+	}
+	upgrades := make([]*apiv1.MasterVersion, 0)
+	for _, v := range versions {
+		upgrades = append(upgrades, &apiv1.MasterVersion{
+			Version: v.Version,
+		})
+	}
+
+	return upgrades, nil
 }

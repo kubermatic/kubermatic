@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.16.1
+FROM quay.io/kubermatic/build:go-1.17-node-16-kind-0.11-7
 LABEL maintainer="support@kubermatic.com"
 
-ENV KUBEBUILDER_VERSION=2.3.1 \
-    KUBE_VERSION=v1.18.10
+# envtest binaries are not available for all k8s patch releases, so beware when updating
+ENV KUBE_VERSION=1.23.3
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \
-    curl --fail -sL https://go.kubebuilder.io/dl/${KUBEBUILDER_VERSION}/${os}/${arch} | tar -xz -C /tmp/ && \
-    mv /tmp/kubebuilder_${KUBEBUILDER_VERSION}_${os}_${arch} /usr/local/kubebuilder && \
-    curl --fail https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/$os/${arch}/kube-apiserver -L -o /tmp/kube-apiserver && \
+    mkdir -p /usr/local/kubebuilder/ && \
+    curl --fail -sL "https://go.kubebuilder.io/test-tools/${KUBE_VERSION}/$os/$arch" | tar -xz --strip-components=1 -C /usr/local/kubebuilder/ && \
+    curl --fail https://storage.googleapis.com/kubernetes-release/release/v$KUBE_VERSION/bin/$os/${arch}/kube-apiserver -L -o /tmp/kube-apiserver && \
     chmod +x /tmp/kube-apiserver && \
     mv /tmp/kube-apiserver /usr/local/kubebuilder/bin/kube-apiserver && \
     echo 'export PATH=$PATH:/usr/local/kubebuilder/bin' >> ~/.bashrc

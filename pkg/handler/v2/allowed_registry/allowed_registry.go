@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -28,7 +28,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -56,7 +56,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvi
 			Spec: req.Body.AllowedRegistrySpec,
 		}
 
-		wr, err = allowedRegistryProvider.CreateUnsecured(wr)
+		wr, err = allowedRegistryProvider.CreateUnsecured(ctx, wr)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -102,7 +102,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvider
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		wr, err := allowedRegistryProvider.GetUnsecured(req.AllowedRegistryName)
+		wr, err := allowedRegistryProvider.GetUnsecured(ctx, req.AllowedRegistryName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -142,7 +142,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvide
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		allowedRegistryList, err := allowedRegistryProvider.ListUnsecured()
+		allowedRegistryList, err := allowedRegistryProvider.ListUnsecured(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -176,7 +176,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvi
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		err = allowedRegistryProvider.DeleteUnsecured(req.AllowedRegistryName)
+		err = allowedRegistryProvider.DeleteUnsecured(ctx, req.AllowedRegistryName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -193,7 +193,7 @@ type patchAllowedRegistryReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchAllowedRegistryReq decodes http request into patchAllowedRegistryReq
+// DecodePatchAllowedRegistryReq decodes http request into patchAllowedRegistryReq.
 func DecodePatchAllowedRegistryReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchAllowedRegistryReq
 
@@ -203,7 +203,7 @@ func DecodePatchAllowedRegistryReq(c context.Context, r *http.Request) (interfac
 	}
 	req.getAllowedRegistryReq = wrReq.(getAllowedRegistryReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
@@ -224,15 +224,15 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 		}
 
 		// get WR
-		originalWR, err := allowedRegistryProvider.GetUnsecured(req.AllowedRegistryName)
+		allowedRegistry, err := allowedRegistryProvider.GetUnsecured(ctx, req.AllowedRegistryName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		originalAPIWR := convertInternalAllowedRegistryToExternal(originalWR)
+		originalAPIAR := convertInternalAllowedRegistryToExternal(allowedRegistry)
 
 		// patch
-		originalJSON, err := json.Marshal(originalAPIWR)
+		originalJSON, err := json.Marshal(originalAPIAR)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current allowedRegistry: %v", err))
 		}
@@ -249,24 +249,18 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 		}
 
 		// validate
-		if patched.Name != originalWR.Name {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing allowedRegistry name is not allowed: %q to %q", originalWR.Name, patched.Name))
+		if patched.Name != allowedRegistry.Name {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing allowedRegistry name is not allowed: %q to %q", allowedRegistry.Name, patched.Name))
 		}
 
-		patchedCT := &kubermaticv1.AllowedRegistry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            patched.Name,
-				ResourceVersion: originalWR.ResourceVersion,
-			},
-			Spec: patched.Spec,
-		}
+		allowedRegistry.Spec = patched.Spec
 
 		// apply patch
-		patchedCT, err = allowedRegistryProvider.PatchUnsecured(patchedCT)
+		allowedRegistry, err = allowedRegistryProvider.UpdateUnsecured(ctx, allowedRegistry)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalAllowedRegistryToExternal(patchedCT), nil
+		return convertInternalAllowedRegistryToExternal(allowedRegistry), nil
 	}
 }

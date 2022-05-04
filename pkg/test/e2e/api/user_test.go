@@ -1,4 +1,4 @@
-// +build e2e
+//go:build e2e
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -34,7 +34,7 @@ func TestDeleteProjectOwner(t *testing.T) {
 	}{
 		{
 			name:          "test, delete project owner",
-			expectedUsers: []string{"roxy@loodse.com"},
+			expectedUsers: []string{"roxy@kubermatic.com"},
 		},
 	}
 
@@ -87,10 +87,10 @@ func TestAddUserToProject(t *testing.T) {
 	}{
 		{
 			name:          "test, add user to project",
-			newUserEmail:  "roxy2@loodse.com",
+			newUserEmail:  "roxy2@kubermatic.com",
 			newUserName:   "roxy2",
 			newUserGroup:  "viewers",
-			expectedUsers: []string{"roxy@loodse.com", "roxy2@loodse.com"},
+			expectedUsers: []string{"roxy@kubermatic.com", "roxy2@kubermatic.com"},
 		},
 	}
 

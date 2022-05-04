@@ -62,8 +62,8 @@ type GetEtcdBackupConfigParams struct {
 	// ClusterID.
 	ClusterID string
 
-	// EbcName.
-	EtcdBackupConfigName string
+	// EbcID.
+	EtcdBackupConfigID string
 
 	// ProjectID.
 	ProjectID string
@@ -132,15 +132,15 @@ func (o *GetEtcdBackupConfigParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithEtcdBackupConfigName adds the ebcName to the get etcd backup config params
-func (o *GetEtcdBackupConfigParams) WithEtcdBackupConfigName(ebcName string) *GetEtcdBackupConfigParams {
-	o.SetEtcdBackupConfigName(ebcName)
+// WithEtcdBackupConfigID adds the ebcID to the get etcd backup config params
+func (o *GetEtcdBackupConfigParams) WithEtcdBackupConfigID(ebcID string) *GetEtcdBackupConfigParams {
+	o.SetEtcdBackupConfigID(ebcID)
 	return o
 }
 
-// SetEtcdBackupConfigName adds the ebcName to the get etcd backup config params
-func (o *GetEtcdBackupConfigParams) SetEtcdBackupConfigName(ebcName string) {
-	o.EtcdBackupConfigName = ebcName
+// SetEtcdBackupConfigID adds the ebcId to the get etcd backup config params
+func (o *GetEtcdBackupConfigParams) SetEtcdBackupConfigID(ebcID string) {
+	o.EtcdBackupConfigID = ebcID
 }
 
 // WithProjectID adds the projectID to the get etcd backup config params
@@ -167,8 +167,8 @@ func (o *GetEtcdBackupConfigParams) WriteToRequest(r runtime.ClientRequest, reg 
 		return err
 	}
 
-	// path param ebc_name
-	if err := r.SetPathParam("ebc_name", o.EtcdBackupConfigName); err != nil {
+	// path param ebc_id
+	if err := r.SetPathParam("ebc_id", o.EtcdBackupConfigID); err != nil {
 		return err
 	}
 

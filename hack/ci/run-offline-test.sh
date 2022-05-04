@@ -91,7 +91,7 @@ function finish {
     # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
     # Except for vSphere
     TMP_KUBECONFIG=$(mktemp)
-    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} | sed 's#.kubermatic.k8s.io/#-#g')
+    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} | sed 's#.kubermatic.k8c.io/#-#g')
     kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > ${TMP_KUBECONFIG}
     kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system | egrep -vi 'password|user'
   fi
@@ -132,8 +132,7 @@ retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Building and pushing Docker images"
 
 # prepare Helm charts
-sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/*/*.yaml
-sed -i "s/__DASHBOARD_TAG__/latest/g" charts/*/*.yaml
+set_helm_charts_version "v9.9.9-${GIT_HEAD_HASH}"
 
 retry 5 ./../release-docker-images.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
 echodate "Successfully finished building and pushing quay images"
@@ -254,18 +253,18 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --namespace ${NAMESPACE} \
   kubermatic-${BUILD_ID} charts/kubermatic/
 
-go build --tags "$KUBERMATIC_EDITION" ./cmd/conformance-tests
+go build --tags "$KUBERMATIC_EDITION" ./cmd/conformance-tester
 
 cp ${KUBECONFIG} /tmp/kubeconfig-remote
 kubectl --kubeconfig /tmp/kubeconfig-remote config set-cluster kubernetes --server=https://${KUBERNETES_CONTROLLER_ADDR}:6443
 
 SSH_OPTS="-i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} "mkdir -p /tmp/${BUILD_ID}/reports"
-scp ${SSH_OPTS} ./conformance-tests root@${PROXY_EXTERNAL_ADDR}:/tmp/${BUILD_ID}/conformance-tests
+scp ${SSH_OPTS} ./conformance-tester root@${PROXY_EXTERNAL_ADDR}:/tmp/${BUILD_ID}/conformance-tester
 scp ${SSH_OPTS} /tmp/kubeconfig-remote root@${PROXY_EXTERNAL_ADDR}:/tmp/${BUILD_ID}/kubeconfig
 scp ${SSH_OPTS} /tmp/id_rsa.pub root@${PROXY_EXTERNAL_ADDR}:/tmp/id_rsa.pub
 ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} << EOF
-  /tmp/${BUILD_ID}/conformance-tests \
+  /tmp/${BUILD_ID}/conformance-tester \
     -worker-name=${BUILD_ID} \
     -kubeconfig=/tmp/${BUILD_ID}/kubeconfig \
     -node-ssh-pub-key=/tmp/id_rsa.pub \

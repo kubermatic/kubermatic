@@ -77,7 +77,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not get bobs gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
@@ -107,19 +107,18 @@ func TestGetConfigEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 
@@ -173,7 +172,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not delete bobs gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
@@ -203,19 +202,18 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 
@@ -271,7 +269,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not create bob cluster gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			ToCreateConfig:   genAPIGatekeeperConfig(),
@@ -301,7 +299,6 @@ func TestCreateConfigEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			body, err := json.Marshal(tc.ToCreateConfig)
 			if err != nil {
 				t.Fatalf("error marshalling body into json: %v", err)
@@ -310,15 +307,15 @@ func TestCreateConfigEndpoint(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 
@@ -375,7 +372,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 3: user john can not patch bobs gatekeeper config",
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
@@ -407,19 +404,18 @@ func TestPatchConfigEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/gatekeeper/config", tc.ProjectID, tc.ClusterID), strings.NewReader(tc.Patch))
 			res := httptest.NewRecorder()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
 				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 

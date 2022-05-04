@@ -27,7 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -63,9 +63,9 @@ func TestListConstraintTemplates(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v2/constrainttemplates", strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -109,7 +109,7 @@ func TestGetConstraintTemplates(t *testing.T) {
 		{
 			Name:             "scenario 2: get non-existing constraint template",
 			CTName:           "missing",
-			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"missing\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8c.io \"missing\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenConstraintTemplate("ct1"),
@@ -123,9 +123,9 @@ func TestGetConstraintTemplates(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -219,9 +219,9 @@ func TestCreateConstraintTemplates(t *testing.T) {
 			}
 			req := httptest.NewRequest("POST", "/api/v2/constrainttemplates", bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -286,7 +286,7 @@ func TestPatchConstraintTemplates(t *testing.T) {
 			Name:             "scenario 5: cannot patch non-existing constraint template",
 			RawPatch:         `{"spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc", "lcon"]}}}}}`,
 			CTName:           "doesnotexist",
-			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"doesnotexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8c.io \"doesnotexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
@@ -308,9 +308,9 @@ func TestPatchConstraintTemplates(t *testing.T) {
 
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(tc.RawPatch))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -353,7 +353,7 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: delete non-existing ct should fail",
 			CTToDeleteName:   "idontexist",
-			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8c.io \"idontexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("labelconstraint")},
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
@@ -365,9 +365,9 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTToDeleteName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

@@ -17,14 +17,28 @@ limitations under the License.
 package kubevirt
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubevirtv1 "kubevirt.io/api/core/v1"
+	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// FinalizerNamespace will ensure the deletion of the dedicated namespace.
+	FinalizerNamespace = "kubermatic.k8c.io/cleanup-kubevirt-namespace"
 )
 
 type kubevirt struct {
@@ -37,11 +51,13 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
-func (k *kubevirt) DefaultCloudSpec(spec *v1.CloudSpec) error {
+var _ provider.ReconcilingCloudProvider = &kubevirt{}
+
+func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
+func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
 	kubeconfig, err := GetCredentialsForCluster(spec, k.secretKeySelector)
 	if err != nil {
 		return err
@@ -64,20 +80,89 @@ func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) InitializeCloudProvider(c *v1.Cluster, p provider.ClusterUpdater) (*v1.Cluster, error) {
-	return c, nil
+func (k *kubevirt) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return k.reconcileCluster(ctx, cluster, update)
 }
 
-func (k *kubevirt) CleanUpCloudProvider(c *v1.Cluster, p provider.ClusterUpdater) (*v1.Cluster, error) {
-	return c, nil
+func (k *kubevirt) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return k.reconcileCluster(ctx, cluster, update)
 }
 
-func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec v1.CloudSpec, newSpec v1.CloudSpec) error {
+func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	// Reconcile CSI access: Role and Rolebinding
+	client, restConfig, err := k.GetClientWithRestConfigForCluster(cluster)
+	if err != nil {
+		return cluster, err
+	}
+
+	cluster, err = reconcileNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
+	if err != nil {
+		return cluster, err
+	}
+
+	err = reconcileCSIRoleRoleBinding(ctx, cluster.Status.NamespaceName, client, restConfig)
+	if err != nil {
+		return cluster, err
+	}
+
+	err = reconcilePresets(ctx, cluster.Status.NamespaceName, client)
+	if err != nil {
+		return cluster, err
+	}
+	err = reconcilePreAllocatedDataVolumes(ctx, cluster, client)
+
+	return cluster, err
+}
+
+func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	client, _, err := k.GetClientWithRestConfigForCluster(cluster)
+	if err != nil {
+		return cluster, err
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
+		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !kerrors.IsNotFound(err) {
+			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
+		}
+		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
+		})
+	}
+
+	return cluster, nil
+}
+
+func (k *kubevirt) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
-func GetCredentialsForCluster(cloud v1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (kubeconfig string, err error) {
+// GetClientWithRestConfigForCluster returns the kubernetes client and the rest config for the KubeVirt underlying cluster.
+func (k *kubevirt) GetClientWithRestConfigForCluster(cluster *kubermaticv1.Cluster) (ctrlruntimeclient.Client, *restclient.Config, error) {
+	if cluster.Spec.Cloud.Kubevirt == nil {
+		return nil, nil, errors.New("No KubeVirt provider spec")
+	}
+	kubeconfig, err := GetCredentialsForCluster(cluster.Spec.Cloud, k.secretKeySelector)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, restConfig, err := NewClientWithRestConfig(kubeconfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := kubevirtv1.AddToScheme(client.Scheme()); err != nil {
+		return nil, nil, err
+	}
+	if err = cdiv1beta1.AddToScheme(client.Scheme()); err != nil {
+		return nil, nil, err
+	}
+
+	return client, restConfig, nil
+}
+
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (kubeconfig string, err error) {
 	kubeconfig = cloud.Kubevirt.Kubeconfig
 
 	if kubeconfig == "" {

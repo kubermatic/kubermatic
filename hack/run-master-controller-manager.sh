@@ -27,9 +27,6 @@ echodate "Compiling master-controller-manager..."
 make master-controller-manager
 
 CTRL_EXTRA_ARGS=""
-if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-  CTRL_EXTRA_ARGS="-dynamic-datacenters"
-fi
 
 if [ -z "${VAULT_ADDR:-}" ]; then
   export VAULT_ADDR=https://vault.kubermatic.com/

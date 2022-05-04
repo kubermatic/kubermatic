@@ -25,7 +25,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -72,15 +72,49 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "scenario 3: user can get seed settings with metering enabled",
+			seedName: "us-central1",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultUser(),
+				genMeteringSeed(true),
+			},
+			existingAPIUser:    test.GenDefaultAPIUser(),
+			expectedHTTPStatus: http.StatusOK,
+			expectedResponse: apiv2.SeedSettings{
+				Metering: kubermaticv1.MeteringConfiguration{
+					Enabled:          true,
+					StorageClassName: "fast",
+					StorageSize:      "100Gi",
+				},
+			},
+		},
+		{
+			name:     "scenario 4: user can get seed settings without metering",
+			seedName: "us-central1",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultUser(),
+				test.GenTestSeed(),
+			},
+			existingAPIUser:    test.GenDefaultAPIUser(),
+			expectedHTTPStatus: http.StatusOK,
+			expectedResponse: apiv2.SeedSettings{
+				Metering: kubermaticv1.MeteringConfiguration{
+					Enabled:          false,
+					StorageClassName: "",
+					StorageSize:      "",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL(tc.seedName), nil)
 			resp := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, nil, tc.existingKubermaticObjs, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -104,6 +138,16 @@ func genMLASeed(mlaEnabled bool) *kubermaticv1.Seed {
 	seed := test.GenTestSeed()
 	seed.Spec.MLA = &kubermaticv1.SeedMLASettings{
 		UserClusterMLAEnabled: mlaEnabled,
+	}
+	return seed
+}
+
+func genMeteringSeed(enabled bool) *kubermaticv1.Seed {
+	seed := test.GenTestSeed()
+	seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
+		Enabled:          enabled,
+		StorageClassName: "fast",
+		StorageSize:      "100Gi",
 	}
 	return seed
 }

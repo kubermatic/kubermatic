@@ -64,7 +64,6 @@ func TestCredentialEndpoint(t *testing.T) {
 			if tc.expectedResult != resultLoginName {
 				t.Fatalf("expected %s got %s", tc.expectedResult, resultLoginName)
 			}
-
 		})
 	}
 }

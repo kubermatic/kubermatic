@@ -32,23 +32,19 @@ type ClusterData struct {
 	// inside the user-cluster. The kubeconfig uses the external URL to reach
 	// the apiserver.
 	Kubeconfig string
-	// ApiserverExternalURL is the full URL to the apiserver service from the
-	// outside, including protocol and port number. It does not contain any
-	// trailing slashes.
-	ApiserverExternalURL string
-	// ApiserverExternalURL is the full URL to the apiserver from within the
-	// seed cluster itself. It does not contain any trailing slashes.
-	ApiserverInternalURL string
-	// AdminToken is the cluster's admin token.
-	AdminToken string
+
+	// ClusterAddress stores access and address information of a cluster.
+	Address kubermaticv1.ClusterAddress
+
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
 	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
 	// the configured datacenters.
 	CloudProviderName string
-	// Version is the exact cluster version.
+	// Version is the exact current cluster version.
 	Version *semver.Version
-	// MajorMinorVersion is a shortcut for common testing on "Major.Minor".
+	// MajorMinorVersion is a shortcut for common testing on "Major.Minor" on the
+	// current cluster version.
 	MajorMinorVersion string
 	// Network contains DNS and CIDR settings for the cluster.
 	Network ClusterNetwork
@@ -56,25 +52,60 @@ type ClusterData struct {
 	Features sets.String
 	// CNIPlugin contains the CNIPlugin settings
 	CNIPlugin CNIPlugin
+	// CSI specific options, dependent on provider
+	CSI CSIOptions
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA MLASettings
-	// StoragePolicy is the storage policy to use for vsphere csi addon
-	StoragePolicy string
+	// CSIMigration indicates if the cluster needed the CSIMigration
+	CSIMigration bool
+}
+
+// ClusterAddress stores access and address information of a cluster.
+type ClusterAddress struct {
+	// URL under which the Apiserver is available
+	URL string `json:"url"`
+	// Port is the port the API server listens on
+	Port int32 `json:"port"`
+	// ExternalName is the DNS name for this cluster
+	ExternalName string `json:"externalName"`
+	// InternalName is the seed cluster internal absolute DNS name to the API server
+	InternalName string `json:"internalURL"`
+	// AdminToken is the token for the kubeconfig, the user can download
+	AdminToken string `json:"adminToken"`
+	// IP is the external IP under which the apiserver is available
+	IP string `json:"ip"`
 }
 
 type ClusterNetwork struct {
-	DNSDomain         string
-	DNSClusterIP      string
-	DNSResolverIP     string
-	PodCIDRBlocks     []string
-	ServiceCIDRBlocks []string
-	ProxyMode         string
-	StrictArp         bool
+	DNSDomain            string
+	DNSClusterIP         string
+	DNSResolverIP        string
+	PodCIDRBlocks        []string
+	ServiceCIDRBlocks    []string
+	ProxyMode            string
+	StrictArp            *bool
+	DualStack            bool
+	PodCIDRIPv4          string
+	PodCIDRIPv6          string
+	NodeCIDRMaskSizeIPv4 int32
+	NodeCIDRMaskSizeIPv6 int32
 }
 
 type CNIPlugin struct {
 	Type    string
 	Version string
+}
+
+type CSIOptions struct {
+
+	// vsphere
+	// StoragePolicy is the storage policy to use for vsphere csi addon
+	StoragePolicy string
+
+	// nutanix
+	StorageContainer        string
+	Fstype                  string
+	SsSegmentedIscsiNetwork *bool
 }
 
 type MLASettings struct {
@@ -96,11 +127,14 @@ type Credentials struct {
 	VSphere      VSphereCredentials
 	Alibaba      AlibabaCredentials
 	Anexia       AnexiaCredentials
+	Nutanix      NutanixCredentials
 }
 
 type AWSCredentials struct {
-	AccessKeyID     string
-	SecretAccessKey string
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }
 
 type AzureCredentials struct {
@@ -125,8 +159,8 @@ type HetznerCredentials struct {
 type OpenstackCredentials struct {
 	Username                    string
 	Password                    string
-	Tenant                      string
-	TenantID                    string
+	Project                     string
+	ProjectID                   string
 	Domain                      string
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
@@ -139,7 +173,10 @@ type PacketCredentials struct {
 }
 
 type KubevirtCredentials struct {
+	// Admin kubeconfig for KubeVirt cluster
 	KubeConfig string
+	// CSI driver kubeconfig for user cluster to provision storage on KubeVirt cluster
+	CSIKubeConfig string
 }
 
 type VSphereCredentials struct {
@@ -154,4 +191,12 @@ type AlibabaCredentials struct {
 
 type AnexiaCredentials struct {
 	Token string
+}
+
+type NutanixCredentials struct {
+	Username    string
+	Password    string
+	CSIUsername string
+	CSIPassword string
+	ProxyURL    string
 }

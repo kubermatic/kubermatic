@@ -19,15 +19,24 @@ package cloudcontroller
 import (
 	"net/url"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // ExternalCloudControllerFeatureSupported checks if the cloud provider supports
 // external CCM.
-func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster) bool {
+func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster, incompatibilities ...*version.ProviderIncompatibility) bool {
+	// This function is called during cluster creation and at that time, the
+	// cluster status might not have been initially set yet, so we must ensure
+	// to fallback to the spec version.
+	v := cluster.Status.Versions.ControlPlane
+	if v == "" {
+		v = cluster.Spec.Version
+	}
+
 	switch {
 	case cluster.Spec.Cloud.Openstack != nil:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
@@ -39,19 +48,64 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		// https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 		// for more details).
 		//
-		// TODO(irozzo) This is a dirty hack to temporarily support OTC using
+		// TODO This is a dirty hack to temporarily support OTC using
 		// Openstack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
+		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(v)
 
 	case cluster.Spec.Cloud.Hetzner != nil:
-		return dc.Spec.Hetzner.Network != ""
+		return cluster.Spec.Cloud.Hetzner.Network != "" || dc.Spec.Hetzner.Network != ""
 
 	case cluster.Spec.Cloud.VSphere != nil:
-		return VsphereCloudControllerSupported(cluster.Spec.Version)
+		supported, err := version.IsSupported(v.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		if err != nil {
+			return false
+		}
+		return supported
 
-	case dc.Spec.Anexia != nil:
+	case cluster.Spec.Cloud.Anexia != nil:
 		return true
+
+	case cluster.Spec.Cloud.Kubevirt != nil:
+		return true
+
+	default:
+		return false
+	}
+}
+
+// MigrationToExternalCloudControllerSupported checks if the cloud provider supports the migration to the
+// external CCM.
+func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster, incompatibilities ...*version.ProviderIncompatibility) bool {
+	// This function is called during cluster creation and at that time, the
+	// cluster status might not have been initially set yet, so we must ensure
+	// to fallback to the spec version.
+	v := cluster.Status.Versions.ControlPlane
+	if v == "" {
+		v = cluster.Spec.Version
+	}
+	switch {
+	case cluster.Spec.Cloud.Openstack != nil:
+		// When using OpenStack external CCM with Open Telekom Cloud the creation
+		// of LBs fail as documented in the issue below:
+		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
+		// Falling back to the in-tree CloudProvider mitigates the problem, even if
+		// not all features are expected to work properly (e.g.
+		// `manage-security-groups` should be set to false in cloud config, see
+		// https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
+		// for more details).
+		//
+		// TODO This is a dirty hack to temporarily support OTC using
+		// Openstack provider, remove this when dedicated OTC support is
+		// introduced in Kubermatic.
+		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(v)
+
+	case cluster.Spec.Cloud.VSphere != nil:
+		supported, err := version.IsSupported(v.Semver(), kubermaticv1.VSphereCloudProvider, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+		if err != nil {
+			return false
+		}
+		return supported
 
 	default:
 		return false
@@ -79,16 +133,8 @@ func isOTC(dc *kubermaticv1.DatacenterSpecOpenstack) bool {
 	return u.Host == "iam.eu-de.otc.t-systems.com"
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.CloudControllerManagerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -98,6 +144,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		})
+	}
+	return vs
 }
 
 func getVolumeMounts() []corev1.VolumeMount {

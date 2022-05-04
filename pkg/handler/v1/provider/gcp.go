@@ -173,7 +173,7 @@ func DecodeGCPSubnetworksNoCredentialReq(c context.Context, r *http.Request) (in
 	return req, nil
 }
 
-func GCPDiskTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPDiskTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
@@ -184,7 +184,7 @@ func GCPDiskTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGette
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -203,7 +203,7 @@ func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.Project
 	}
 }
 
-func GCPSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func GCPSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
@@ -215,7 +215,7 @@ func GCPSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -223,7 +223,7 @@ func GCPSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter pro
 				sa = credentials.ServiceAccount
 			}
 		}
-		settings, err := settingsProvider.GetGlobalSettings()
+		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -239,7 +239,7 @@ func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 	}
 }
 
-func GCPZoneEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPZoneEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
 		sa := req.ServiceAccount
@@ -249,7 +249,7 @@ func GCPZoneEndpoint(presetsProvider provider.PresetProvider, seedsGetter provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -269,7 +269,7 @@ func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 	}
 }
 
-func GCPNetworkEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPNetworkEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPCommonReq)
 		sa := req.ServiceAccount
@@ -279,7 +279,7 @@ func GCPNetworkEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -299,7 +299,7 @@ func GCPNetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectPr
 	}
 }
 
-func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPSubnetworkEndpoint(presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPSubnetworksReq)
 		sa := req.ServiceAccount
@@ -309,7 +309,7 @@ func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, seedsGetter 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

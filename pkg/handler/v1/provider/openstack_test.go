@@ -20,14 +20,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
@@ -143,7 +143,6 @@ func SetupOpenstackServer(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TeardownOpenstackServer() {
@@ -290,7 +289,6 @@ func TestOpenstackEndpoints(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", tc.URL, strings.NewReader(""))
 			if tc.QueryParams != nil {
 				q := req.URL.Query()
@@ -316,9 +314,9 @@ func TestOpenstackEndpoints(t *testing.T) {
 			if tc.Credentials != nil {
 				credentials = tc.Credentials
 			}
-			router, _, err := test.CreateTestEndpointAndGetClients(*apiUser, buildOpenstackDatacenter(), []ctrlruntimeclient.Object{}, credentials, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*apiUser)}, nil, nil, hack.NewTestRouting)
+			router, _, err := test.CreateTestEndpointAndGetClients(*apiUser, buildOpenstackDatacenter(), []ctrlruntimeclient.Object{}, credentials, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*apiUser)}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v\n", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			router.ServeHTTP(res, req)
@@ -464,7 +462,7 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 	var expectedResponse interface{}
 
 	// var err error
-	bBytes, err := ioutil.ReadAll(res.Body)
+	bBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
 	}

@@ -27,7 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
@@ -54,6 +55,11 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 
+		// generate name if not set
+		if req.Body.Name == "" {
+			req.Body.Name = rand.String(10)
+		}
+
 		er, err := convertAPIToInternalEtcdRestore(req.Body.Name, &req.Body.Spec, c)
 		if err != nil {
 			return nil, err
@@ -61,7 +67,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		// set projectID label
 		er.Labels = map[string]string{
-			provider.ProjectLabelKey: req.ProjectID,
+			kubermaticv1.ProjectIDLabelKey: req.ProjectID,
 		}
 
 		er, err = createEtcdRestore(ctx, userInfoGetter, req.ProjectID, er)
@@ -82,8 +88,8 @@ type createEtcdRestoreReq struct {
 }
 
 type erBody struct {
-	// Name of the etcd backup restore
-	Name string `json:"name"`
+	// Name of the etcd backup restore. If not set, it will be generated
+	Name string `json:"name,omitempty"`
 	// EtcdRestoreSpec Spec of the etcd backup restore
 	Spec apiv2.EtcdRestoreSpec `json:"spec"`
 }
@@ -225,11 +231,18 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	}
 }
 
-func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ProjectListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listProjectEtcdRestoreReq)
 
-		erLists, err := listProjectEtcdRestore(ctx, userInfoGetter, req.ProjectID)
+		// check if user has access to the project
+		_, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		erLists, err := listProjectEtcdRestore(ctx, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -265,17 +278,30 @@ func DecodeListProjectEtcdRestoreReq(c context.Context, r *http.Request) (interf
 
 func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRestore {
 	etcdRestore := &apiv2.EtcdRestore{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name:              er.Spec.Name,
+			Annotations:       er.Annotations,
+			CreationTimestamp: apiv1.NewTime(er.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if er.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(er.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
+		},
 		Name: er.Name,
 		Spec: apiv2.EtcdRestoreSpec{
 			ClusterID:                       er.Spec.Cluster.Name,
 			BackupName:                      er.Spec.BackupName,
 			BackupDownloadCredentialsSecret: er.Spec.BackupDownloadCredentialsSecret,
+			Destination:                     er.Spec.Destination,
 		},
 		Status: apiv2.EtcdRestoreStatus{
 			Phase: er.Status.Phase,
 		},
 	}
-	if er.Status.RestoreTime != nil {
+	if !er.Status.RestoreTime.IsZero() {
 		restoreTime := apiv1.NewTime(er.Status.RestoreTime.Time)
 		etcdRestore.Status.RestoreTime = &restoreTime
 	}
@@ -283,7 +309,6 @@ func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRe
 }
 
 func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestore, error) {
-
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
@@ -293,15 +318,13 @@ func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
-			},
 		},
 		Spec: kubermaticv1.EtcdRestoreSpec{
 			Name:                            name,
 			Cluster:                         *clusterObjectRef,
 			BackupName:                      erSpec.BackupName,
 			BackupDownloadCredentialsSecret: erSpec.BackupDownloadCredentialsSecret,
+			Destination:                     erSpec.Destination,
 		},
 	}, nil
 }
@@ -312,13 +335,13 @@ func createEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.CreateUnsecured(etcdRestore)
+		return privilegedEtcdRestoreProvider.CreateUnsecured(ctx, etcdRestore)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdRestoreProvider.Create(userInfo, etcdRestore)
+	return etcdRestoreProvider.Create(ctx, userInfo, etcdRestore)
 }
 
 func getEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdRestoreName string) (*kubermaticv1.EtcdRestore, error) {
@@ -327,13 +350,13 @@ func getEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.GetUnsecured(cluster, etcdRestoreName)
+		return privilegedEtcdRestoreProvider.GetUnsecured(ctx, cluster, etcdRestoreName)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdRestoreProvider.Get(userInfo, cluster, etcdRestoreName)
+	return etcdRestoreProvider.Get(ctx, userInfo, cluster, etcdRestoreName)
 }
 
 func listEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) (*kubermaticv1.EtcdRestoreList, error) {
@@ -342,28 +365,21 @@ func listEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.ListUnsecured(cluster)
+		return privilegedEtcdRestoreProvider.ListUnsecured(ctx, cluster)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return etcdRestoreProvider.List(userInfo, cluster)
+	return etcdRestoreProvider.List(ctx, userInfo, cluster)
 }
 
-func listProjectEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
-	adminUserInfo, privilegedEtcdRestoreProjectProvider, err := getAdminUserInfoPrivilegedEtcdRestoreProjectProvider(ctx, userInfoGetter)
-	if err != nil {
-		return nil, err
+func listProjectEtcdRestore(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
+	privilegedEtcdRestoreProjectProvider := ctx.Value(middleware.PrivilegedEtcdRestoreProjectProviderContextKey).(provider.PrivilegedEtcdRestoreProjectProvider)
+	if privilegedEtcdRestoreProjectProvider == nil {
+		return nil, errors.New(http.StatusInternalServerError, "error getting privileged provider")
 	}
-	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProjectProvider.ListUnsecured(projectID)
-	}
-	userInfo, etcdRestoreProjectProvider, err := getUserInfoEtcdRestoreProjectProvider(ctx, userInfoGetter, projectID)
-	if err != nil {
-		return nil, err
-	}
-	return etcdRestoreProjectProvider.List(userInfo, projectID)
+	return privilegedEtcdRestoreProjectProvider.ListUnsecured(ctx, projectID)
 }
 
 func deleteEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdRestoreName string) error {
@@ -372,13 +388,13 @@ func deleteEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return err
 	}
 	if adminUserInfo.IsAdmin {
-		return privilegedEtcdRestoreProvider.DeleteUnsecured(cluster, etcdRestoreName)
+		return privilegedEtcdRestoreProvider.DeleteUnsecured(ctx, cluster, etcdRestoreName)
 	}
 	userInfo, etcdRestoreProvider, err := getUserInfoEtcdRestoreProvider(ctx, userInfoGetter, projectID)
 	if err != nil {
 		return err
 	}
-	return etcdRestoreProvider.Delete(userInfo, cluster, etcdRestoreName)
+	return etcdRestoreProvider.Delete(ctx, userInfo, cluster, etcdRestoreName)
 }
 
 func getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdRestoreProvider, error) {
@@ -394,7 +410,6 @@ func getAdminUserInfoPrivilegedEtcdRestoreProvider(ctx context.Context, userInfo
 }
 
 func getUserInfoEtcdRestoreProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdRestoreProvider, error) {
-
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, err
@@ -402,27 +417,4 @@ func getUserInfoEtcdRestoreProvider(ctx context.Context, userInfoGetter provider
 
 	etcdRestoreProvider := ctx.Value(middleware.EtcdRestoreProviderContextKey).(provider.EtcdRestoreProvider)
 	return userInfo, etcdRestoreProvider, nil
-}
-
-func getAdminUserInfoPrivilegedEtcdRestoreProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdRestoreProjectProvider, error) {
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, nil, err
-	}
-	if !userInfo.IsAdmin {
-		return userInfo, nil, nil
-	}
-	privilegedEtcdRestoreProjectProvider := ctx.Value(middleware.PrivilegedEtcdRestoreProjectProviderContextKey).(provider.PrivilegedEtcdRestoreProjectProvider)
-	return userInfo, privilegedEtcdRestoreProjectProvider, nil
-}
-
-func getUserInfoEtcdRestoreProjectProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string) (*provider.UserInfo, provider.EtcdRestoreProjectProvider, error) {
-
-	userInfo, err := userInfoGetter(ctx, projectID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	etcdRestoreProjectProvider := ctx.Value(middleware.EtcdRestoreProjectProviderContextKey).(provider.EtcdRestoreProjectProvider)
-	return userInfo, etcdRestoreProjectProvider, nil
 }

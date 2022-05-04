@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/robfig/cron"
+	cron "github.com/robfig/cron/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -35,12 +35,19 @@ type etcdBackupConfigCreatorData interface {
 }
 
 // BackupConfigCreator returns the function to reconcile the EtcdBackupConfigs.
-func BackupConfigCreator(data etcdBackupConfigCreatorData) reconciling.NamedEtcdBackupConfigCreatorGetter {
+func BackupConfigCreator(data etcdBackupConfigCreatorData, seed *kubermaticv1.Seed) reconciling.NamedEtcdBackupConfigCreatorGetter {
 	return func() (string, reconciling.EtcdBackupConfigCreator) {
 		return resources.EtcdDefaultBackupConfigName, func(config *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+			if config.Labels == nil {
+				config.Labels = make(map[string]string)
+			}
+			if data.Cluster().Labels != nil {
+				config.Labels[kubermaticv1.ProjectIDLabelKey] = data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]
+			}
+
 			backupScheduleString, err := parseDuration(data.BackupSchedule())
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse backup duration: %v", err)
+				return nil, fmt.Errorf("failed to parse backup duration: %w", err)
 			}
 			config.Spec.Name = resources.EtcdDefaultBackupConfigName
 			config.Spec.Schedule = backupScheduleString
@@ -50,7 +57,11 @@ func BackupConfigCreator(data etcdBackupConfigCreatorData) reconciling.NamedEtcd
 				Kind:       kubermaticv1.ClusterKindName,
 				Name:       data.Cluster().Name,
 				UID:        data.Cluster().UID,
-				APIVersion: "kubermatic.k8s.io/v1",
+				APIVersion: "kubermatic.k8c.io/v1",
+			}
+
+			if seed.IsDefaultEtcdAutomaticBackupEnabled() {
+				config.Spec.Destination = seed.Spec.EtcdBackupRestore.DefaultDestination
 			}
 
 			return config, nil
@@ -63,7 +74,9 @@ func parseDuration(interval time.Duration) (string, error) {
 	// We verify the validity of the scheduleString here, because the etcd_backup_controller
 	// only does that inside its sync loop, which means it is entirely possible to create
 	// an EtcdBackupConfig with an invalid Spec.Schedule
-	_, err := cron.ParseStandard(scheduleString)
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+
+	_, err := parser.Parse(scheduleString)
 	if err != nil {
 		return "", err
 	}

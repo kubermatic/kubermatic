@@ -24,8 +24,9 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutils "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_volume_watcher_controller"
+	ControllerName = "kkp-persistent-volume-watcher"
 )
 
 type Reconciler struct {
@@ -54,9 +55,8 @@ type Reconciler struct {
 	recorder record.EventRecorder
 }
 
-// add the controller
+// add the controller.
 func Add(
-
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
@@ -75,20 +75,20 @@ func Add(
 		MaxConcurrentReconciles: numWorkers,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 	// reconcile PVCs in ClaimLost phase only
 	LostClaimPredicates := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			new := e.ObjectNew.(*corev1.PersistentVolumeClaim)
-			return new.Status.Phase == corev1.ClaimLost
+			newObj := e.ObjectNew.(*corev1.PersistentVolumeClaim)
+			return newObj.Status.Phase == corev1.ClaimLost
 		},
 	}
 
 	if err := c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForObject{},
 		LostClaimPredicates,
 		predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName)); err != nil {
-		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %v", err)
+		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %w", err)
 	}
 	return nil
 }
@@ -98,7 +98,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
-	clusterName := strings.ReplaceAll(request.Namespace, "cluster-", "")
+	clusterName := kubernetes.ClusterNameFromNamespace(request.Namespace)
 	if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("Skipping because the cluster is already gone")

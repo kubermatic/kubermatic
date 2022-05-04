@@ -23,7 +23,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -113,9 +113,9 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 					Name:      metav1Object.GetName(),
 				}
 
-				copy := object.DeepCopyObject().(ctrlruntimeclient.Object)
+				objCopy := object.DeepCopyObject().(ctrlruntimeclient.Object)
 
-				err := client.Get(ctx, nn, copy)
+				err := client.Get(ctx, nn, objCopy)
 				if kerrors.IsNotFound(err) != tc.objDeletionExpected {
 					t.Errorf("Expected object %q to be deleted=%t", nn.String(), tc.objDeletionExpected)
 				}

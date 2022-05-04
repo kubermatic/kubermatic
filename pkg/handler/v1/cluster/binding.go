@@ -126,7 +126,7 @@ func ListClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, pr
 	}
 }
 
-// Validate validates roleUserReq request
+// Validate validates roleUserReq request.
 func (r roleUserReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
@@ -151,7 +151,7 @@ type roleUserReq struct {
 	Body apiv1.RoleUser
 }
 
-// Validate validates clusterRoleUserReq request
+// Validate validates clusterRoleUserReq request.
 func (r clusterRoleUserReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")

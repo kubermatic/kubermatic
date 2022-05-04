@@ -21,6 +21,8 @@ metadata:
     app.kubernetes.io/version: '{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: kubermatic-operator
@@ -53,6 +55,9 @@ spec:
         {{- if .Values.kubermaticOperator.debug }}
         - -log-debug=true
         - -v=8
+        {{- end }}
+        {{- if .Values.kubermaticOperator.leaderElection }}
+        - -enable-leader-election
         {{- end }}
         env:
         - name: POD_NAMESPACE

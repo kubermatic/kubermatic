@@ -81,7 +81,7 @@ func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntim
 
 		err := client.Get(ctx, key, obj)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get object '%s' from store: %v", key, err)
+			return nil, fmt.Errorf("failed to get object '%s' from store: %w", key, err)
 		}
 
 		gv := appsv1.SchemeGroupVersion
@@ -114,12 +114,12 @@ func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntim
 func GetVerticalPodAutoscalersForAll(ctx context.Context, client ctrlruntimeclient.Client, deploymentNames, statefulSetNames []string, namespace string, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
 	deploymentVPACreators, err := getVerticalPodAutoscalersForResource(ctx, client, deploymentNames, namespace, &appsv1.Deployment{}, enabled)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create VPA creator functions for Deployments: %v", err)
+		return nil, fmt.Errorf("failed to create VPA creator functions for Deployments: %w", err)
 	}
 
 	statefulSetVPACreators, err := getVerticalPodAutoscalersForResource(ctx, client, statefulSetNames, namespace, &appsv1.StatefulSet{}, enabled)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create VPA creator functions for StatefulSets: %v", err)
+		return nil, fmt.Errorf("failed to create VPA creator functions for StatefulSets: %w", err)
 	}
 
 	return append(deploymentVPACreators, statefulSetVPACreators...), nil

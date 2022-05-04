@@ -48,7 +48,6 @@ const (
 )
 
 type reconciler struct {
-	ctx            context.Context
 	log            *zap.SugaredLogger
 	innerClient    ctrlruntimeclient.Client
 	outerClient    ctrlruntimeclient.Client
@@ -60,7 +59,6 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		ctx:            context.Background(),
 		log:            log,
 		innerClient:    inner.GetClient(),
 		outerClient:    outer.GetClient(),
@@ -71,7 +69,7 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	if err := c.Watch(
@@ -86,12 +84,12 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 			},
 		),
 	); err != nil {
-		return fmt.Errorf("failed to create watch for services in the inner cluster: %v", err)
+		return fmt.Errorf("failed to create watch for services in the inner cluster: %w", err)
 	}
 
 	outerServiceWatch := &source.Kind{Type: &corev1.Service{}}
 	if err := outerServiceWatch.InjectCache(outer.GetCache()); err != nil {
-		return fmt.Errorf("failed to inject cache into outer service watch: %v", err)
+		return fmt.Errorf("failed to inject cache into outer service watch: %w", err)
 	}
 	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
@@ -112,7 +110,7 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		return o.GetLabels()[labelKey] == jobID
 	})
 	if err := c.Watch(outerServiceWatch, outererServiceMapper, outerServicePredicate); err != nil {
-		return fmt.Errorf("failed to create watch for services in outer cluster: %v", err)
+		return fmt.Errorf("failed to create watch for services in outer cluster: %w", err)
 	}
 
 	return nil
@@ -133,23 +131,23 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	innerService := &corev1.Service{}
 	if err := r.innerClient.Get(ctx, request.NamespacedName, innerService); err != nil {
 		if kerrors.IsNotFound(err) {
-			log.Info("Got request for service that doesn't exist, returning")
+			log.Debug("Got request for service that doesn't exist, returning")
 			return nil
 		}
-		return fmt.Errorf("failed to get inner service: %v", err)
+		return fmt.Errorf("failed to get inner service: %w", err)
 	}
 
 	outerServices := &corev1.ServiceList{}
 	labelSelector := ctrlruntimeclient.MatchingLabels(map[string]string{labelKey: r.jobID})
 	if err := r.outerClient.List(ctx, outerServices, labelSelector); err != nil {
-		return fmt.Errorf("failed to list service in outer cluster: %v", err)
+		return fmt.Errorf("failed to list service in outer cluster: %w", err)
 	}
 	outerService := getServiceFromServiceList(outerServices, request.NamespacedName)
 	if outerService == nil {
 		var err error
-		outerService, err = r.createOuterService(request.NamespacedName.String())
+		outerService, err = r.createOuterService(ctx, request.NamespacedName.String())
 		if err != nil {
-			return fmt.Errorf("failed to create service in outer cluster: %v", err)
+			return fmt.Errorf("failed to create service in outer cluster: %w", err)
 		}
 		log = log.With("outer-cluster-service-name", outerService.Name)
 		log.Info("Successfully created service in outer cluster")
@@ -176,7 +174,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	oldInnerService := innerService.DeepCopy()
 	innerService.Spec.Ports[0].NodePort = outerService.Spec.Ports[0].NodePort
 	if err := r.innerClient.Patch(ctx, innerService, ctrlruntimeclient.MergeFrom(oldInnerService)); err != nil {
-		return fmt.Errorf("failed to update nodeport of service %s/%s to %d: %v", innerService.Namespace, innerService.Name, outerService.Spec.Ports[0].NodePort, err)
+		return fmt.Errorf("failed to update nodeport of service %s/%s to %d: %w", innerService.Namespace, innerService.Name, outerService.Spec.Ports[0].NodePort, err)
 	}
 
 	log.Info("Successfully updated nodeport of inner service")
@@ -184,7 +182,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	return nil
 }
 
-func (r *reconciler) createOuterService(targetServiceName string) (*corev1.Service, error) {
+func (r *reconciler) createOuterService(ctx context.Context, targetServiceName string) (*corev1.Service, error) {
 	newService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "cluster-exposer-",
@@ -207,20 +205,20 @@ func (r *reconciler) createOuterService(targetServiceName string) (*corev1.Servi
 	myself := &corev1.Pod{}
 	myselfName := types.NamespacedName{Namespace: "default", Name: r.jobID}
 	// Use APIreader so we don't create a pod cache
-	if err := r.outerAPIReader.Get(r.ctx, myselfName, myself); err != nil {
-		return nil, fmt.Errorf("failed to get pod for self from outer cluster: %v", err)
+	if err := r.outerAPIReader.Get(ctx, myselfName, myself); err != nil {
+		return nil, fmt.Errorf("failed to get pod for self from outer cluster: %w", err)
 	}
 	if err := controllerutil.SetControllerReference(myself, newService, scheme.Scheme); err != nil {
-		return nil, fmt.Errorf("failed to set owner ref for pod on outer service: %v", err)
+		return nil, fmt.Errorf("failed to set owner ref for pod on outer service: %w", err)
 	}
-	if err := r.outerClient.Create(r.ctx, newService); err != nil {
-		return nil, fmt.Errorf("failed to create outer service: %v", err)
+	if err := r.outerClient.Create(ctx, newService); err != nil {
+		return nil, fmt.Errorf("failed to create outer service: %w", err)
 	}
 	// We must set our TargetPort to the same port as our NodePort
 	oldSvc := newService.DeepCopy()
 	newService.Spec.Ports[0].TargetPort = intstr.FromInt(int(newService.Spec.Ports[0].NodePort))
-	if err := r.outerClient.Patch(r.ctx, newService, ctrlruntimeclient.MergeFrom(oldSvc)); err != nil {
-		return nil, fmt.Errorf("failed to set target port to nodeport: %v", err)
+	if err := r.outerClient.Patch(ctx, newService, ctrlruntimeclient.MergeFrom(oldSvc)); err != nil {
+		return nil, fmt.Errorf("failed to set target port to nodeport: %w", err)
 	}
 	return newService, nil
 }

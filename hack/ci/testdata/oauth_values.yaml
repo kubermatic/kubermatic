@@ -36,6 +36,16 @@ dex:
     # used by the dashboard
     - http://localhost:8000/projects
   staticPasswords:
+  - email: "roxy@kubermatic.com"
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "roxy"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5468"
+  - email: "roxy2@kubermatic.com"
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "roxy2"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5469"
+
+  # legacy dummy accounts, remove once we're sure no e2e test uses them anymore
   - email: "roxy@loodse.com"
     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
     username: "roxy"

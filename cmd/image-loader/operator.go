@@ -18,50 +18,46 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
-	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
+
+	"sigs.k8s.io/yaml"
 )
 
-func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*kubermaticv1.KubermaticConfiguration, error) {
 	log.Infow("Loading KubermaticConfiguration", "file", filename)
 
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	config := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := yaml.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+	config := &kubermaticv1.KubermaticConfiguration{}
+	if err := yaml.UnmarshalStrict(content, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
-	defaulted, err := common.DefaultConfiguration(config, log)
+	defaulted, err := defaults.DefaultConfiguration(config, log)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process: %v", err)
+		return nil, fmt.Errorf("failed to process: %w", err)
 	}
 
 	return defaulted, nil
 }
 
-func getVersionsFromKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfiguration) []*kubermaticversion.Version {
+func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []*kubermaticversion.Version {
 	versions := []*kubermaticversion.Version{}
 
-	assembleVersions := func(kind string, configuredVersions []*semver.Version) {
-		for i := range configuredVersions {
-			versions = append(versions, &kubermaticversion.Version{
-				Version: configuredVersions[i],
-				Type:    kind,
-			})
-		}
+	for _, v := range config.Spec.Versions.Versions {
+		versions = append(versions, &kubermaticversion.Version{
+			Version: v.Semver(),
+		})
 	}
 
-	assembleVersions("kubernetes", config.Spec.Versions.Kubernetes.Versions)
 	return versions
 }

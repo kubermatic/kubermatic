@@ -26,17 +26,15 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,38 +43,33 @@ type blacklistToken struct {
 	Expiry apiv1.Time `json:"expiry"`
 }
 
-// NewUserProvider returns a user provider
-func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool,
-	client kubermaticclientset.Interface) *UserProvider {
+// NewUserProvider returns a user provider.
+func NewUserProvider(runtimeClient ctrlruntimeclient.Client) *UserProvider {
 	return &UserProvider{
-		runtimeClient:        runtimeClient,
-		client:               client,
-		isServiceAccountFunc: isServiceAccountFunc,
+		runtimeClient: runtimeClient,
 	}
 }
 
-// UserProvider manages user resources
+// UserProvider manages user resources.
 type UserProvider struct {
 	runtimeClient ctrlruntimeclient.Client
-	client        kubermaticclientset.Interface
-	// since service account are special type of user this functions
-	// helps to determine if the given email address belongs to a service account
-	isServiceAccountFunc func(email string) bool
 }
 
-// UserByID returns a user by the given ID
-func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
+var _ provider.UserProvider = &UserProvider{}
+
+// UserByID returns a user by the given ID.
+func (p *UserProvider) UserByID(ctx context.Context, id string) (*kubermaticv1.User, error) {
 	user := &kubermaticv1.User{}
-	if err := p.runtimeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
+	if err := p.runtimeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-// UserByEmail returns a user by the given email
-func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
+// UserByEmail returns a user by the given email.
+func (p *UserProvider) UserByEmail(ctx context.Context, email string) (*kubermaticv1.User, error) {
 	users := &kubermaticv1.UserList{}
-	if err := p.runtimeClient.List(context.Background(), users); err != nil {
+	if err := p.runtimeClient.List(ctx, users); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +82,7 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	return nil, provider.ErrNotFound
 }
 
-// CreateUser creates a new user.
+// CreateUser creates a new user. If no user is found at all the created user is elected as the first admin.
 //
 // Note that:
 // The name of the newly created resource will be unique and it is derived from the user's email address (sha256(email)
@@ -98,17 +91,17 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 // In the beginning I was considering to hex-encode the email address as it will produce a unique output because the email address in unique.
 // The only issue I have found with this approach is that the length can get quite long quite fast.
 // Thus decided to use sha256 as it produces fixed output and the hash collisions are very, very, very, very rare.
-func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, error) {
+func (p *UserProvider) CreateUser(ctx context.Context, id, name, email string) (*kubermaticv1.User, error) {
 	if len(id) == 0 || len(name) == 0 || len(email) == 0 {
 		return nil, kerrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
 	}
 
-	if p.isServiceAccountFunc(email) {
+	if kubermaticv1helper.IsProjectServiceAccount(email) {
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
 	}
 
 	user := &kubermaticv1.User{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(email))),
 		},
 		Spec: kubermaticv1.UserSpec{
@@ -118,21 +111,41 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 		},
 	}
 
-	if err := p.runtimeClient.Create(context.Background(), user); err != nil {
+	var userList kubermaticv1.UserList
+	if err := p.runtimeClient.List(ctx, &userList); err != nil {
+		return nil, err
+	}
+
+	// Elect the first user as admin
+	if len(userList.Items) == 0 {
+		user.Spec.IsAdmin = true
+	}
+
+	if err := p.runtimeClient.Create(ctx, user); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 // UpdateUser updates user.
-func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error) {
-	if err := p.runtimeClient.Update(context.Background(), user); err != nil {
+func (p *UserProvider) UpdateUser(ctx context.Context, user *kubermaticv1.User) (*kubermaticv1.User, error) {
+	// make sure the first patch doesn't override the status
+	status := user.Status.DeepCopy()
+
+	if err := p.runtimeClient.Update(ctx, user); err != nil {
 		return nil, err
 	}
+
+	oldUser := user.DeepCopy()
+	user.Status = *status
+	if err := p.runtimeClient.Status().Patch(ctx, user, ctrlruntimeclient.MergeFrom(oldUser)); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
-func (p *UserProvider) AddUserTokenToBlacklist(user *kubermaticv1.User, token string, expiry apiv1.Time) error {
+func (p *UserProvider) InvalidateToken(ctx context.Context, user *kubermaticv1.User, token string, expiry apiv1.Time) error {
 	if user == nil {
 		return kerrors.NewBadRequest("user cannot be nil")
 	}
@@ -140,7 +153,6 @@ func (p *UserProvider) AddUserTokenToBlacklist(user *kubermaticv1.User, token st
 		return kerrors.NewBadRequest("token cannot be empty")
 	}
 
-	ctx := context.Background()
 	secret, err := ensureTokenBlacklistSecret(ctx, p.runtimeClient, user)
 	if err != nil {
 		return err
@@ -180,20 +192,16 @@ func (p *UserProvider) AddUserTokenToBlacklist(user *kubermaticv1.User, token st
 	return nil
 }
 
-func (p *UserProvider) WatchUser() (watch.Interface, error) {
-	return p.client.KubermaticV1().Users().Watch(context.Background(), v1.ListOptions{})
-}
-
-func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error) {
+func (p *UserProvider) GetInvalidatedTokens(ctx context.Context, user *kubermaticv1.User) ([]string, error) {
 	result := make([]string, 0)
 	if user == nil {
 		return nil, kerrors.NewBadRequest("user cannot be nil")
 	}
-	if user.Spec.TokenBlackListReference == nil {
+	if user.Spec.InvalidTokensReference == nil {
 		return result, nil
 	}
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.runtimeClient)
-	tokenList, err := secretKeyGetter(user.Spec.TokenBlackListReference, resources.TokenBlacklist)
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, p.runtimeClient)
+	tokenList, err := secretKeyGetter(user.Spec.InvalidTokensReference, resources.TokenBlacklist)
 	if err != nil {
 		return nil, err
 	}
@@ -209,16 +217,24 @@ func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string
 	}
 
 	return result, nil
+}
 
+func (p *UserProvider) List(ctx context.Context) ([]kubermaticv1.User, error) {
+	ul := kubermaticv1.UserList{}
+	if err := p.runtimeClient.List(ctx, &ul); err != nil {
+		return nil, err
+	}
+
+	return ul.Items, nil
 }
 
 func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Client, user *kubermaticv1.User) (*corev1.Secret, error) {
-	name := user.GetTokenBlackListSecretName()
+	name := user.GetInvalidTokensReferenceSecretName()
 
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
 	if err := client.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 	}
 
 	if existingSecret.Name == "" {
@@ -234,19 +250,19 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 		}
 
 		if err := client.Create(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to create token blacklist secret: %v", err)
+			return nil, fmt.Errorf("failed to create token blacklist secret: %w", err)
 		}
 	}
 
-	if user.Spec.TokenBlackListReference == nil {
-		user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+	if user.Spec.InvalidTokensReference == nil {
+		user.Spec.InvalidTokensReference = &providerconfig.GlobalSecretKeySelector{
 			ObjectReference: corev1.ObjectReference{
 				Name:      name,
 				Namespace: resources.KubermaticNamespace,
 			},
 		}
 		if err := client.Update(ctx, user); err != nil {
-			return nil, fmt.Errorf("failed to update user: %v", err)
+			return nil, fmt.Errorf("failed to update user: %w", err)
 		}
 	}
 

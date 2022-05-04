@@ -24,10 +24,11 @@ import (
 
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -165,6 +166,74 @@ func TestVSphereCloudConfig(t *testing.T) {
 	}
 }
 
+func TestVSphereCloudConfigClusterID(t *testing.T) {
+	testCases := []struct {
+		name              string
+		cluster           *kubermaticv1.Cluster
+		dc                *kubermaticv1.Datacenter
+		expectedClusterID string
+	}{
+		{
+			name: "vsphereCSIClusterID feature flag disabled",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						VSphere: &kubermaticv1.VSphereCloudSpec{},
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					VSphere: &kubermaticv1.DatacenterSpecVSphere{
+						Endpoint: "https://vsphere.com",
+						Cluster:  "cl-1",
+					},
+				},
+			},
+			expectedClusterID: "cl-1",
+		},
+		{
+			name: "vsphereCSIClusterID feature flag enabled",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-cluster",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+
+					Cloud: kubermaticv1.CloudSpec{
+						VSphere: &kubermaticv1.VSphereCloudSpec{},
+					},
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureVsphereCSIClusterID: true,
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					VSphere: &kubermaticv1.DatacenterSpecVSphere{
+						Endpoint: "https://vsphere.com",
+						Cluster:  "cl-1",
+					},
+				},
+			},
+			expectedClusterID: "test-cluster",
+		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			cloudConfig, err := getVsphereCloudConfig(tc.cluster, tc.dc, resources.Credentials{})
+			if err != nil {
+				t.Fatalf("Error trying to get cloud-config: %v", err)
+			}
+			if cloudConfig.Global.ClusterID != tc.expectedClusterID {
+				t.Errorf("expected cluster-id %q, but got: %q", tc.expectedClusterID, cloudConfig.Global.ClusterID)
+			}
+		})
+	}
+}
+
 func TestOpenStackCloudConfig(t *testing.T) {
 	testCases := []struct {
 		name       string
@@ -181,6 +250,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
 							UseOctavia: pointer.BoolPtr(true),
 						},
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -207,6 +281,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},
@@ -239,6 +318,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 						},
 					},
 				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
+					},
+				},
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
@@ -265,6 +349,11 @@ func TestOpenStackCloudConfig(t *testing.T) {
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie("v1.1.1"),
 					},
 				},
 			},

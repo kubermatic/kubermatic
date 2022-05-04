@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
@@ -61,7 +61,7 @@ func TestGetPreset(t *testing.T) {
 						Name: "test-2",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "test.com",
+						RequiredEmails: []string{"test.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "bbbbb",
 						},
@@ -72,7 +72,7 @@ func TestGetPreset(t *testing.T) {
 						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abc",
 						},
@@ -84,7 +84,7 @@ func TestGetPreset(t *testing.T) {
 					Name: "test-3",
 				},
 				Spec: kubermaticv1.PresetSpec{
-					RequiredEmailDomain: "example.com",
+					RequiredEmails: []string{"example.com"},
 					Fake: &kubermaticv1.Fake{
 						Token: "abc",
 					},
@@ -111,7 +111,7 @@ func TestGetPreset(t *testing.T) {
 						Name: "test-2",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "test.com",
+						RequiredEmails: []string{"test.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "bbbbb",
 						},
@@ -122,7 +122,7 @@ func TestGetPreset(t *testing.T) {
 						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abc",
 						},
@@ -159,7 +159,7 @@ func TestGetPreset(t *testing.T) {
 						Name: "test-2",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "acme.com",
+						RequiredEmails: []string{"acme.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "bbbbb",
 						},
@@ -170,14 +170,14 @@ func TestGetPreset(t *testing.T) {
 						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "test.com",
+						RequiredEmails: []string{"test.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abc",
 						},
 					},
 				},
 			},
-			expectedError: "preset.kubermatic.k8s.io \"test-2\" not found",
+			expectedError: "preset.kubermatic.k8c.io \"test-2\" not found",
 		},
 	}
 	for _, tc := range testcases {
@@ -188,11 +188,11 @@ func TestGetPreset(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
+			provider, err := kubernetes.NewPresetProvider(fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
-			preset, err := provider.GetPreset(&tc.userInfo, tc.presetName)
+			preset, err := provider.GetPreset(context.Background(), &tc.userInfo, tc.presetName)
 			if len(tc.expectedError) > 0 {
 				if err == nil {
 					t.Fatalf("expected error")
@@ -237,7 +237,7 @@ func TestGetPresets(t *testing.T) {
 						Name: "test-2",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "com",
+						RequiredEmails: []string{"com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "bbbbb",
 						},
@@ -248,7 +248,7 @@ func TestGetPresets(t *testing.T) {
 						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abc",
 						},
@@ -271,7 +271,7 @@ func TestGetPresets(t *testing.T) {
 						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abc",
 						},
@@ -308,7 +308,7 @@ func TestGetPresets(t *testing.T) {
 						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "test.com",
+						RequiredEmails: []string{"test.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abc",
 						},
@@ -514,70 +514,6 @@ func TestGetPresets(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:     "test 6: get Presets for a specific user - RequiredEmailDomain and RequiredEmails defined",
-			userInfo: provider.UserInfo{Email: "test@foobar.com"},
-			presets: []ctrlruntimeclient.Object{
-				&kubermaticv1.Preset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-1",
-					},
-					Spec: kubermaticv1.PresetSpec{
-						// RequiredEmailDomain has precedence, such that this will be filtered.
-						RequiredEmailDomain: "foobar.com",
-						RequiredEmails:      []string{"test@example.com"},
-						Fake: &kubermaticv1.Fake{
-							Token: "aaaaa",
-						},
-					},
-				},
-				&kubermaticv1.Preset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-2",
-					},
-					Spec: kubermaticv1.PresetSpec{
-						RequiredEmails: []string{"foo@bar.com"},
-						Fake: &kubermaticv1.Fake{
-							Token: "bbbbb",
-						},
-					},
-				},
-				&kubermaticv1.Preset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-3",
-					},
-					Spec: kubermaticv1.PresetSpec{
-						Fake: &kubermaticv1.Fake{
-							Token: "abc",
-						},
-					},
-				},
-			},
-			expected: []kubermaticv1.Preset{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-1",
-					},
-					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "foobar.com",
-						RequiredEmails:      []string{"test@example.com"},
-						Fake: &kubermaticv1.Fake{
-							Token: "aaaaa",
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-3",
-					},
-					Spec: kubermaticv1.PresetSpec{
-						Fake: &kubermaticv1.Fake{
-							Token: "abc",
-						},
-					},
-				},
-			},
-		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -587,11 +523,11 @@ func TestGetPresets(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
+			provider, err := kubernetes.NewPresetProvider(fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
-			presets, err := provider.GetPresets(&tc.userInfo)
+			presets, err := provider.GetPresets(context.Background(), &tc.userInfo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -629,7 +565,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "fake",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "com",
+						RequiredEmails: []string{"com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abcd",
 						},
@@ -640,7 +576,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Fake: &kubermaticv1.Fake{
 							Token: "abc",
 						},
@@ -660,7 +596,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						GCP: &kubermaticv1.GCP{
 							ServiceAccount: "test_service_accouont",
 						},
@@ -681,7 +617,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						AWS: &kubermaticv1.AWS{
 							SecretAccessKey: "secret", AccessKeyID: "key",
 						},
@@ -702,7 +638,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Hetzner: &kubermaticv1.Hetzner{
 							Token:   "secret",
 							Network: "test",
@@ -723,7 +659,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Packet: &kubermaticv1.Packet{
 							APIKey: "secret", ProjectID: "project",
 						},
@@ -743,7 +679,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "fake",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example",
+						RequiredEmails: []string{"example"},
 						Digitalocean: &kubermaticv1.Digitalocean{
 							Token: "abcdefg",
 						},
@@ -754,7 +690,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Digitalocean: &kubermaticv1.Digitalocean{
 							Token: "abcd",
 						},
@@ -774,16 +710,16 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Openstack: &kubermaticv1.Openstack{
-							Tenant: "a", Domain: "b", Password: "c", Username: "d",
+							Project: "a", Domain: "b", Password: "c", Username: "d",
 						},
 					},
 				},
 			},
 			dc:                &kubermaticv1.Datacenter{Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false}}},
 			cloudSpec:         kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
-			expectedCloudSpec: &kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{Project: "a", Domain: "b", Password: "c", Username: "d"}},
 		},
 		{
 			name:       "test 8: set credentials for Vsphere provider",
@@ -795,7 +731,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						VSphere: &kubermaticv1.VSphere{
 							Username: "bob", Password: "secret",
 						},
@@ -816,7 +752,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Azure: &kubermaticv1.Azure{
 							SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d",
 						},
@@ -836,7 +772,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 					},
 				},
 			},
@@ -853,7 +789,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Azure: &kubermaticv1.Azure{
 							SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d",
 						},
@@ -873,7 +809,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Kubevirt: &kubermaticv1.Kubevirt{
 							Kubeconfig: "test",
 						},
@@ -893,7 +829,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "test.com",
+						RequiredEmails: []string{"test.com"},
 						Azure: &kubermaticv1.Azure{
 							SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d",
 						},
@@ -902,7 +838,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			},
 
 			cloudSpec:     kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{}},
-			expectedError: "preset.kubermatic.k8s.io \"test\" not found",
+			expectedError: "preset.kubermatic.k8c.io \"test\" not found",
 		},
 		{
 			name:       "test 14: set credentials for Alibaba provider",
@@ -914,7 +850,7 @@ func TestCredentialEndpoint(t *testing.T) {
 						Name: "test",
 					},
 					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "example.com",
+						RequiredEmails: []string{"example.com"},
 						Alibaba: &kubermaticv1.Alibaba{
 							AccessKeySecret: "secret", AccessKeyID: "key",
 						},
@@ -935,11 +871,11 @@ func TestCredentialEndpoint(t *testing.T) {
 				WithObjects(tc.presets...).
 				Build()
 
-			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
+			provider, err := kubernetes.NewPresetProvider(fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
-			cloudResult, err := provider.SetCloudCredentials(&tc.userInfo, tc.presetName, tc.cloudSpec, tc.dc)
+			cloudResult, err := provider.SetCloudCredentials(context.Background(), &tc.userInfo, tc.presetName, tc.cloudSpec, tc.dc)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {
@@ -948,7 +884,6 @@ func TestCredentialEndpoint(t *testing.T) {
 				if err.Error() != tc.expectedError {
 					t.Fatalf("expected: %s, got %v", tc.expectedError, err)
 				}
-
 			} else if !equality.Semantic.DeepEqual(cloudResult, tc.expectedCloudSpec) {
 				t.Fatalf("expected: %v, got %v", tc.expectedCloudSpec, cloudResult)
 			}

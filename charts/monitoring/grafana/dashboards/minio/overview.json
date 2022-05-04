@@ -68,7 +68,7 @@
       "pluginVersion": "6.5.2",
       "targets": [
         {
-          "expr": "minio_disk_storage_used_bytes / minio_disk_storage_total_bytes * 100",
+          "expr": "disk_storage_used{app=\"minio\"} / disk_storage_total{app=\"minio\"} * 100",
           "instant": true,
           "refId": "A"
         }
@@ -122,7 +122,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "minio_disk_storage_available_bytes",
+          "expr": "disk_storage_available{app=\"minio\"}",
           "interval": "$interval",
           "legendFormat": "available",
           "refId": "A"
@@ -232,12 +232,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(minio_network_sent_bytes_total[$interval])",
+          "expr": "rate(s3_tx_bytes_total{app=\"minio\"}[$interval])",
           "legendFormat": "sent",
           "refId": "A"
         },
         {
-          "expr": "rate(minio_network_received_bytes_total[$interval])",
+          "expr": "rate(s3_rx_bytes_total{app=\"minio\"}[$interval])",
           "legendFormat": "received",
           "refId": "B"
         }

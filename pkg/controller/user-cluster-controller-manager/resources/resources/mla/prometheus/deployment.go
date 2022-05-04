@@ -19,8 +19,10 @@ package prometheus
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,12 +33,13 @@ import (
 )
 
 const (
-	imageName = "prometheus/prometheus"
-	tag       = "v2.26.0"
-	appName   = "mla-prometheus"
+	imageName     = "prometheus/prometheus"
+	tag           = "v2.31.1"
+	appName       = "mla-prometheus"
+	containerName = "prometheus"
 
 	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
-	reloaderTag       = "v0.49.0"
+	reloaderTag       = "v0.52.0"
 
 	configVolumeName       = "config-volume"
 	configPath             = "/etc/config"
@@ -44,28 +47,40 @@ const (
 	storagePath            = "/data"
 	certificatesVolumeName = "certificates"
 
-	prometheusNameKey     = "app.kubernetes.io/name"
-	prometheusInstanceKey = "app.kubernetes.io/instance"
-
 	containerPort = 9090
 )
 
 var (
 	controllerLabels = map[string]string{
-		prometheusNameKey:     resources.UserClusterPrometheusDeploymentName,
-		prometheusInstanceKey: resources.UserClusterPrometheusDeploymentName,
+		common.NameLabel:      resources.UserClusterPrometheusDeploymentName,
+		common.InstanceLabel:  resources.UserClusterPrometheusDeploymentName,
+		common.ComponentLabel: resources.MLAComponentName,
+	}
+
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("4Gi"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
+		},
 	}
 )
 
-func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-			deployment.Labels = resources.BaseAppLabels(appName, nil)
+			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
 
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
 			}
-			deployment.Spec.Replicas = pointer.Int32Ptr(1)
+			deployment.Spec.Replicas = pointer.Int32Ptr(2)
+			if replicas != nil {
+				deployment.Spec.Replicas = replicas
+			}
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
 			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterPrometheusServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
@@ -73,11 +88,14 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 				RunAsGroup:   pointer.Int64Ptr(65534),
 				FSGroup:      pointer.Int64Ptr(65534),
 				RunAsNonRoot: pointer.BoolPtr(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			}
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "prometheus",
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, tag),
+					Name:            containerName,
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), imageName, tag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						fmt.Sprintf("--config.file=%s/prometheus.yaml", configPath),
@@ -86,6 +104,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 						"--web.console.libraries=/etc/prometheus/console_libraries",
 						"--web.console.templates=/etc/prometheus/consoles",
 						"--web.enable-lifecycle",
+						"--enable-feature=expand-external-labels",
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -114,7 +133,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 						FailureThreshold:    3,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/healthy",
 								Port:   intstr.FromInt(containerPort),
@@ -128,7 +147,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 						FailureThreshold:    3,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/ready",
 								Port:   intstr.FromInt(containerPort),
@@ -136,20 +155,10 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 							},
 						},
 					},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("256Mi"),
-							corev1.ResourceCPU:    resource.MustParse("100m"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("4Gi"),
-							corev1.ResourceCPU:    resource.MustParse("1"),
-						},
-					},
 				},
 				{
 					Name:            "prometheus-config-reloader",
-					Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, reloaderImageName, reloaderTag),
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), reloaderImageName, reloaderTag),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						// Full usage of prometheus-config-reloader:
@@ -217,6 +226,21 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				containerName: defaultResourceRequirements.DeepCopy(),
+			}
+			var err error
+			if overrides == nil {
+				err = resources.SetResourceRequirements(deployment.Spec.Template.Spec.Containers, defResourceRequirements, nil, deployment.Annotations)
+			} else {
+				overridesRequirements := map[string]*corev1.ResourceRequirements{
+					containerName: overrides.DeepCopy(),
+				}
+				err = resources.SetResourceRequirements(deployment.Spec.Template.Spec.Containers, defResourceRequirements, overridesRequirements, deployment.Annotations)
+			}
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			return deployment, nil
 		}

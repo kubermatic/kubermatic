@@ -23,7 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRoleCreator returns the func to create/update the ClusterRole for CoreDNS
+// ClusterRoleCreator returns the func to create/update the ClusterRole for CoreDNS.
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.CoreDNSClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {

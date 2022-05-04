@@ -25,7 +25,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -61,13 +61,12 @@ func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 		return nil, err
 	}
 
-	settings, err := settingsProvider.GetGlobalSettings()
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	return HetznerSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, hetznerToken)
-
 }
 
 func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.HetznerSizeList, error) {
@@ -82,7 +81,7 @@ func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMReso
 
 	sizes, _, err := client.ServerType.List(ctx, listOptions)
 	if err != nil {
-		return apiv1.HetznerSizeList{}, fmt.Errorf("failed to list sizes: %v", err)
+		return apiv1.HetznerSizeList{}, fmt.Errorf("failed to list sizes: %w", err)
 	}
 
 	sizeList := apiv1.HetznerSizeList{}

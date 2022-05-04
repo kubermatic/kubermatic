@@ -21,6 +21,13 @@ relabel_configs:
   regex: '{{ .Release.Namespace }};node-exporter'
   action: drop
 
+# drop minio, if it's running with TLS
+{{ if .Values.prometheus.scraping.minio.tls.enabled }}
+- source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app]
+  regex: '{{ .Values.prometheus.scraping.minio.namespace | default "minio" }};{{ .Values.prometheus.scraping.minio.appLabel | default "minio" }}'
+  action: drop
+{{ end }}
+
 # drop kube-state-metrics, as we have dedicated rules to properly map all the labels
 # to their original pods
 - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app]
@@ -40,6 +47,10 @@ relabel_configs:
 
 # allow to overwrite the metrics URL
 - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_metrics_path]
+  action: replace
+  target_label: __metrics_path__
+  regex: (.+)
+- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]   # standard source label is prometheus.io/path
   action: replace
   target_label: __metrics_path__
   regex: (.+)
@@ -68,6 +79,12 @@ relabel_configs:
   regex: '^([^:]+)(?::\d+)?;(\d+)$'
   replacement: $1:$2
   target_label: __address__
+
+# allow to override the scrape scheme with https (defaults to plain http) via prometheus.io/scheme
+- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+  action: replace
+  regex: (https?)
+  target_label: __scheme__
 
 # refine labels further
 - action: labelmap

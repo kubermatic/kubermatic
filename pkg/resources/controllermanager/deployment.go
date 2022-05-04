@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"github.com/Masterminds/semver/v3"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
@@ -54,14 +55,16 @@ const (
 	name = "controller-manager"
 )
 
-// DeploymentCreator returns the function to create and update the controller manager deployment
+// DeploymentCreator returns the function to create and update the controller manager deployment.
 func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ControllerManagerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
-			flags, err := getFlags(data)
+			version := data.Cluster().Status.Versions.ControllerManager.Semver()
+
+			flags, err := getFlags(data, version)
 			if err != nil {
 				return nil, err
 			}
@@ -76,7 +79,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
 			volumeMounts := getVolumeMounts()
 
 			if data.Cluster().Spec.Cloud.GCP != nil {
@@ -91,7 +94,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				volumes = append(volumes, serviceAccountVolume)
 			}
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -105,18 +110,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				},
 			}
 
-			// Configure user cluster DNS resolver for this pod.
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
-
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
 
 			if data.Cluster().Spec.Cloud.VSphere != nil {
 				fakeVMWareUUIDMount := corev1.VolumeMount{
@@ -150,15 +149,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + version.String(),
 					Command: []string{"/usr/local/bin/kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: healthAction,
 						},
 						FailureThreshold: 3,
@@ -168,7 +166,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 8,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: healthAction,
 						},
 						InitialDelaySeconds: 15,
@@ -180,19 +178,28 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				},
 			}
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				name:                defaultResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+				name: defaultResourceRequirements.DeepCopy(),
 			}
+
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -201,30 +208,58 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
-func getFlags(data *resources.TemplateData) ([]string, error) {
+func getFlags(data *resources.TemplateData, version *semver.Version) ([]string, error) {
+	cluster := data.Cluster()
 	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
+
 	// If CCM migration is enabled and all kubeletes have not been migrated yet
 	// disable the cloud controllers.
-	if metav1.HasAnnotation(data.Cluster().ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) &&
-		!kubermaticv1helper.ClusterConditionHasStatus(data.Cluster(), kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+	hasCSIMigrationCompleted := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue
+
+	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) && !hasCSIMigrationCompleted {
 		controllers = append(controllers, "-cloud-node-lifecycle", "-route", "-service")
 	}
+
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
-		"--cluster-cidr", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-		"--allocate-node-cidrs",
 		"--controllers", strings.Join(controllers, ","),
 		"--use-service-account-credentials",
+		// this can't be passed as two strings as the other parameters
+		"--profiling=false",
+	}
+
+	// Cilium uses its own node IPAM, use --allocate-node-cidrs and related flags only for other CNIs
+	if cluster.Spec.CNIPlugin.Type != kubermaticv1.CNIPluginTypeCilium {
+		flags = append(flags, "--allocate-node-cidrs")
+		flags = append(flags, "--cluster-cidr", strings.Join(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks, ","))
+		flags = append(flags, "--service-cluster-ip-range", strings.Join(cluster.Spec.ClusterNetwork.Services.CIDRBlocks, ","))
+		if cluster.IsDualStack() {
+			if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv4=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
+			}
+			if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv6=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
+			}
+		} else {
+			if cluster.IsIPv4Only() && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
+			}
+			if cluster.IsIPv6Only() && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
+			}
+		}
+		if val := CloudRoutesFlagVal(cluster.Spec.Cloud); val != nil {
+			flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
+		}
 	}
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
-
 	// starting with k8s 1.21, this is always true and cannot be toggled anymore
-	if data.Cluster().Spec.Version.Minor() < 21 {
+	if version.LessThan(semver.MustParse("1.21.0")) {
 		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
 	}
 
@@ -233,20 +268,16 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	flags = append(flags, "--feature-gates")
 	flags = append(flags, strings.Join(featureGates, ","))
 
-	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(),
-		resources.ExternalCloudProviderEnabled(data.Cluster()))
+	cloudProviderName := resources.GetKubernetesCloudProviderName(cluster,
+		resources.ExternalCloudProviderEnabled(cluster))
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		if cloudProviderName == "azure" && data.Cluster().Spec.Version.Semver().Minor() >= 15 {
+		if cloudProviderName == "azure" && version.Minor() >= 15 {
 			// Required so multiple clusters using the same resource group can allocate public IPs.
 			// Ref: https://github.com/kubernetes/kubernetes/pull/77630
-			flags = append(flags, "--cluster-name", data.Cluster().Name)
+			flags = append(flags, "--cluster-name", cluster.Name)
 		}
-	}
-
-	if val := CloudRoutesFlagVal(data.Cluster().Spec.Cloud); val != nil {
-		flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 	}
 
 	// New flag in v1.12 which gets used to perform permission checks for tokens
@@ -261,13 +292,13 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	flags = append(flags, "--port", "0")
 
 	// Apply leader election settings
-	if lds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+	if lds := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
 		flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
 	}
-	if rds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {
+	if rds := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {
 		flags = append(flags, "--leader-elect-renew-deadline", fmt.Sprintf("%ds", *rds))
 	}
-	if rps := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RetryPeriodSeconds; rps != nil {
+	if rps := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RetryPeriodSeconds; rps != nil {
 		flags = append(flags, "--leader-elect-retry-period", fmt.Sprintf("%ds", *rps))
 	}
 
@@ -304,8 +335,8 @@ func getVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -343,14 +374,6 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
-		{
 			Name: resources.ControllerManagerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
@@ -359,6 +382,17 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		})
+	}
+	return vs
 }
 
 type kubeControllerManagerEnvData interface {
@@ -384,6 +418,8 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: cluster.Spec.Cloud.AWS.AssumeRoleARN})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
 
 	if cluster.Spec.Cloud.GCP != nil {

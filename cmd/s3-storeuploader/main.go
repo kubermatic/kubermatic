@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -29,219 +29,130 @@ import (
 	"k8c.io/kubermatic/v2/pkg/storeuploader"
 )
 
-var logger *zap.SugaredLogger
+type options struct {
+	Endpoint string
+	Secure   bool
+	CABundle string
+
+	AccessKeyID     string
+	SecretAccessKey string
+
+	Bucket       string
+	CreateBucket bool
+	Prefix       string
+	File         string
+	MaxRevisions int
+
+	LogOptions log.Options
+}
 
 func main() {
-	app := cli.NewApp()
-	app.Name = "S3 storer"
-	app.Usage = ""
-	app.Version = "v0.1.6"
-	app.Description = "Helper tool to backup files to S3 and maintain a given number of revisions"
-
-	endpointFlag := cli.StringFlag{
-		Name:  "endpoint, e",
-		Value: "",
-		Usage: "S3 endpoint",
-	}
-	accessKeyIDFlag := cli.StringFlag{
-		Name:   "access-key-id",
-		Value:  "",
-		EnvVar: "ACCESS_KEY_ID",
-		Usage:  "S3 AccessKeyID",
-	}
-	secretAccessKeyFlag := cli.StringFlag{
-		Name:   "secret-access-key",
-		Value:  "",
-		EnvVar: "SECRET_ACCESS_KEY",
-		Usage:  "S3 SecretAccessKey",
-	}
-	bucketFlag := cli.StringFlag{
-		Name:  "bucket, b",
-		Value: "kubermatic-backups",
-		Usage: "S3 bucket in which to store the snapshots",
-	}
-	prefixFlag := cli.StringFlag{
-		Name:  "prefix, p",
-		Value: "",
-		Usage: "Prefix to use for all objects stored in S3",
-	}
-	fileFlag := cli.StringFlag{
-		Name:  "file, f",
-		Value: "/backup/snapshot.db",
-		Usage: "Path to the file to store in S3",
-	}
-	secureFlag := cli.BoolFlag{
-		Name:  "secure",
-		Usage: "Enable tls validation",
-	}
-	caBundleFlag := cli.StringFlag{
-		Name:  "ca-bundle",
-		Usage: "Filename of the CA bundle to use (if not given, default system certificates are used)",
-	}
-	createBucketFlag := cli.BoolFlag{
-		Name:  "create-bucket",
-		Usage: "creates the bucket if it does not exist yet",
-	}
-	maxRevisionsFlag := cli.IntFlag{
-		Name:  "max-revisions",
-		Value: 20,
-		Usage: "Maximum number of revisions of the file to keep in S3. Older ones will be deleted",
+	opt := options{
+		Bucket:       "kubermatic-backups",
+		File:         "/backup/snapshot.db",
+		MaxRevisions: 20,
+		LogOptions:   log.NewDefaultOptions(),
 	}
 
-	logDebugFlag := cli.BoolFlag{
-		Name:  "log-debug",
-		Usage: "Enables more verbose logging",
-	}
+	var (
+		logger   *zap.SugaredLogger
+		uploader *storeuploader.StoreUploader
+	)
 
-	defaultLogFormat := log.FormatJSON
-	logFormatFlag := cli.GenericFlag{
-		Name:  "log-format",
-		Value: &defaultLogFormat,
-		Usage: fmt.Sprintf("Use one of [%v] to change the log output", log.AvailableFormats),
-	}
-
-	app.Flags = []cli.Flag{
-		logDebugFlag,
-		logFormatFlag,
-	}
-
-	app.Commands = []cli.Command{
-		{
-			Name:   "store",
-			Usage:  "Stores the given file on S3",
-			Action: store,
-			Flags: []cli.Flag{
-				endpointFlag,
-				secureFlag,
-				caBundleFlag,
-				accessKeyIDFlag,
-				secretAccessKeyFlag,
-				bucketFlag,
-				prefixFlag,
-				fileFlag,
-				createBucketFlag,
-			},
-		},
-		{
-			Name:   "delete-old-revisions",
-			Usage:  "Deletes backups which are older than max-revisions",
-			Action: deleteOldRevisions,
-			Flags: []cli.Flag{
-				endpointFlag,
-				secureFlag,
-				caBundleFlag,
-				accessKeyIDFlag,
-				secretAccessKeyFlag,
-				bucketFlag,
-				prefixFlag,
-				maxRevisionsFlag,
-				fileFlag, // unused but kept for BC compatibility with old cleanup scripts
-			},
-		},
-		{
-			Name:   "delete-all",
-			Usage:  "deletes all backups of the filename",
-			Action: deleteAll,
-			Flags: []cli.Flag{
-				endpointFlag,
-				secureFlag,
-				caBundleFlag,
-				accessKeyIDFlag,
-				secretAccessKeyFlag,
-				bucketFlag,
-				prefixFlag,
-			},
-		},
-	}
-
-	// setup logging
-	app.Before = func(c *cli.Context) error {
-		format := c.GlobalGeneric("log-format").(*log.Format)
-		rawLog := log.New(c.GlobalBool("log-debug"), *format)
-		logger = rawLog.Sugar()
-
-		return nil
-	}
-
-	defer func() {
-		if logger != nil {
-			if err := logger.Sync(); err != nil {
-				fmt.Println(err)
+	rootCmd := &cobra.Command{
+		Use:           "s3-storeuploader",
+		Short:         "Helper tool to backup files to S3 and maintain a given number of revisions",
+		Version:       "v0.2.0",
+		SilenceErrors: true,
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) (err error) {
+			if opt.AccessKeyID == "" {
+				opt.AccessKeyID = os.Getenv("ACCESS_KEY_ID")
 			}
-		}
-	}()
 
-	err := app.Run(os.Args)
-	// Only log failures when the logger has been setup, otherwise
-	// we know it's been a CLI parsing failure and the cli package
-	// has already output the error and printed the usage hints.
-	if err != nil && logger != nil {
+			if opt.SecretAccessKey == "" {
+				opt.SecretAccessKey = os.Getenv("SECRET_ACCESS_KEY")
+			}
+
+			logger = log.New(opt.LogOptions.Debug, opt.LogOptions.Format).Sugar()
+			uploader, err = getUploaderFromCtx(logger, opt)
+			return
+		},
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			if logger != nil {
+				return logger.Sync()
+			}
+
+			return nil
+		},
+	}
+
+	pFlags := rootCmd.PersistentFlags()
+	pFlags.StringVarP(&opt.Endpoint, "endpoint", "e", opt.Endpoint, "S3 endpoint")
+	pFlags.StringVar(&opt.AccessKeyID, "access-key-id", "", "S3 access key ID ($ACCESS_KEY_ID)")
+	pFlags.StringVar(&opt.SecretAccessKey, "secret-access-key", "", "S3 secret access key ($SECRET_ACCESS_KEY)")
+	pFlags.StringVarP(&opt.Bucket, "bucket", "b", opt.Bucket, "S3 bucket in which to store the snapshots")
+	pFlags.StringVarP(&opt.Prefix, "prefix", "p", opt.Prefix, "Prefix to use for all objects stored in S3")
+	pFlags.StringVarP(&opt.File, "file", "f", opt.File, "Path to the file to store in S3")
+	pFlags.BoolVar(&opt.Secure, "secure", opt.Secure, "Enable TLS validation")
+	pFlags.BoolVar(&opt.CreateBucket, "create-bucket", opt.CreateBucket, "Create the bucket if it does not exist yet")
+	pFlags.IntVar(&opt.MaxRevisions, "max-revisions", opt.MaxRevisions, "Maximum number of revisions of the file to keep in S3. Older ones will be deleted")
+	pFlags.StringVar(&opt.CABundle, "ca-bundle", opt.CABundle, "Filename of the CA bundle to use (if not given, default system certificates are used)")
+	opt.LogOptions.AddPFlags(pFlags)
+
+	rootCmd.AddCommand(
+		&cobra.Command{
+			Use:   "store",
+			Short: "Stores the given file on S3",
+			RunE: func(c *cobra.Command, args []string) error {
+				return uploader.Store(c.Context(), opt.File, opt.Bucket, opt.Prefix, opt.CreateBucket)
+			},
+		},
+
+		&cobra.Command{
+			Use:   "delete-old-revisions",
+			Short: "Deletes backups which are older than max-revisions",
+			RunE: func(c *cobra.Command, args []string) error {
+				return uploader.DeleteOldBackups(c.Context(), opt.Bucket, opt.Prefix, opt.MaxRevisions)
+			},
+		},
+
+		&cobra.Command{
+			Use:   "delete-all",
+			Short: "Deletes all backups of the filename",
+			RunE: func(c *cobra.Command, args []string) error {
+				return uploader.DeleteAll(c.Context(), opt.Bucket, opt.Prefix)
+			},
+		},
+	)
+
+	if err := rootCmd.Execute(); err != nil {
 		logger.Fatalw("Failed to run command", zap.Error(err))
 	}
 }
 
-func getUploaderFromCtx(c *cli.Context) (*storeuploader.StoreUploader, error) {
+func getUploaderFromCtx(log *zap.SugaredLogger, opt options) (*storeuploader.StoreUploader, error) {
 	var rootCAs *x509.CertPool
 
-	if caBundleFile := c.String("ca-bundle"); caBundleFile != "" {
-		bundle, err := certificates.NewCABundleFromFile(caBundleFile)
+	if opt.CABundle != "" {
+		bundle, err := certificates.NewCABundleFromFile(opt.CABundle)
 		if err != nil {
-			return nil, fmt.Errorf("cannot open CA bundle: %v", err)
+			return nil, fmt.Errorf("cannot open CA bundle: %w", err)
 		}
 
 		rootCAs = bundle.CertPool()
 	}
 
 	uploader, err := storeuploader.New(
-		c.String("endpoint"),
-		c.Bool("secure"),
-		c.String("access-key-id"),
-		c.String("secret-access-key"),
-		logger,
+		opt.Endpoint,
+		opt.Secure,
+		opt.AccessKeyID,
+		opt.SecretAccessKey,
+		log,
 		rootCAs,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create store uploader: %v", err)
+		return nil, fmt.Errorf("failed to create store uploader: %w", err)
 	}
 
 	return uploader, nil
-}
-
-func store(c *cli.Context) error {
-	uploader, err := getUploaderFromCtx(c)
-	if err != nil {
-		return err
-	}
-
-	return uploader.Store(
-		c.String("file"),
-		c.String("bucket"),
-		c.String("prefix"),
-		c.Bool("create-bucket"),
-	)
-}
-
-func deleteOldRevisions(c *cli.Context) error {
-	uploader, err := getUploaderFromCtx(c)
-	if err != nil {
-		return err
-	}
-
-	return uploader.DeleteOldBackups(
-		c.String("bucket"),
-		c.String("prefix"),
-		c.Int("max-revisions"),
-	)
-}
-
-func deleteAll(c *cli.Context) error {
-	uploader, err := getUploaderFromCtx(c)
-	if err != nil {
-		return err
-	}
-
-	return uploader.DeleteAll(
-		c.String("bucket"),
-		c.String("prefix"),
-	)
 }

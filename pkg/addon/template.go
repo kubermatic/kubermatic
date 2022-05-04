@@ -20,7 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"text/template"
@@ -29,14 +29,14 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -45,13 +45,8 @@ const (
 
 func txtFuncMap(overwriteRegistry string) template.FuncMap {
 	funcs := sprig.TxtFuncMap()
-	funcs["Registry"] = func(registry string) string {
-		if overwriteRegistry != "" {
-			return overwriteRegistry
-		}
-		return registry
-	}
-
+	funcs["Registry"] = registry.GetOverwriteFunc(overwriteRegistry)
+	funcs["join"] = strings.Join
 	return funcs
 }
 
@@ -78,38 +73,33 @@ func NewTemplateData(
 ) (*TemplateData, error) {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
-	}
-
-	// Ensure IPVS configuration is set
-	if cluster.Spec.ClusterNetwork.IPVS == nil {
-		cluster.Spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(resources.IPVSStrictArp)}
-	} else if cluster.Spec.ClusterNetwork.IPVS.StrictArp == nil {
-		cluster.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(resources.IPVSStrictArp)
+		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}
 
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
 
-	var cniPlugin CNIPlugin
 	if cluster.Spec.CNIPlugin == nil {
-		cniPlugin = CNIPlugin{
-			Type: kubermaticv1.CNIPluginTypeCanal.String(),
-			// This is to keep backward compatibility with clusters created before
-			// those settings were introduced.
-			Version: "v3.8",
-		}
-	} else {
-		cniPlugin = CNIPlugin{
-			Type:    cluster.Spec.CNIPlugin.Type.String(),
-			Version: cluster.Spec.CNIPlugin.Version,
-		}
+		return nil, fmt.Errorf("cniPlugin must not be nil")
 	}
 
-	var storagePolicy string
+	var csiOptions CSIOptions
 	if cluster.Spec.Cloud.VSphere != nil {
-		storagePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
+		csiOptions.StoragePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
+	}
+
+	if cluster.Spec.Cloud.Nutanix != nil && cluster.Spec.Cloud.Nutanix.CSI != nil {
+		csiOptions.StorageContainer = cluster.Spec.Cloud.Nutanix.CSI.StorageContainer
+		csiOptions.Fstype = cluster.Spec.Cloud.Nutanix.CSI.Fstype
+		csiOptions.SsSegmentedIscsiNetwork = cluster.Spec.Cloud.Nutanix.CSI.SsSegmentedIscsiNetwork
+	}
+
+	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+
+	var ipvs kubermaticv1.IPVSConfiguration
+	if cluster.Spec.ClusterNetwork.IPVS != nil {
+		ipvs = *cluster.Spec.ClusterNetwork.IPVS
 	}
 
 	return &TemplateData{
@@ -117,37 +107,45 @@ func NewTemplateData(
 		Variables:      variables,
 		Credentials:    credentials,
 		Cluster: ClusterData{
-			Type:                 ClusterTypeKubernetes,
-			Name:                 cluster.Name,
-			HumanReadableName:    cluster.Spec.HumanReadableName,
-			Namespace:            cluster.Status.NamespaceName,
-			Labels:               cluster.Labels,
-			Annotations:          cluster.Annotations,
-			Kubeconfig:           kubeconfig,
-			OwnerName:            cluster.Status.UserName,
-			OwnerEmail:           cluster.Status.UserEmail,
-			ApiserverExternalURL: cluster.Address.URL,
-			ApiserverInternalURL: fmt.Sprintf("https://%s:%d", cluster.Address.InternalName, cluster.Address.Port),
-			AdminToken:           cluster.Address.AdminToken,
-			CloudProviderName:    providerName,
-			Version:              semver.MustParse(cluster.Spec.Version.String()),
-			MajorMinorVersion:    cluster.Spec.Version.MajorMinor(),
-			Features:             sets.StringKeySet(cluster.Spec.Features),
+			Type:              ClusterTypeKubernetes,
+			Name:              cluster.Name,
+			HumanReadableName: cluster.Spec.HumanReadableName,
+			Namespace:         cluster.Status.NamespaceName,
+			Labels:            cluster.Labels,
+			Annotations:       cluster.Annotations,
+			Kubeconfig:        kubeconfig,
+			// nolint:staticcheck
+			OwnerName:         cluster.Status.UserName,
+			OwnerEmail:        cluster.Status.UserEmail,
+			Address:           cluster.Address,
+			CloudProviderName: providerName,
+			Version:           semver.MustParse(cluster.Status.Versions.ControlPlane.String()),
+			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),
+			Features:          sets.StringKeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
-				DNSDomain:         cluster.Spec.ClusterNetwork.DNSDomain,
-				DNSClusterIP:      dnsClusterIP,
-				DNSResolverIP:     dnsResolverIP,
-				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
-				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
-				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
-				StrictArp:         *cluster.Spec.ClusterNetwork.IPVS.StrictArp,
+				DNSDomain:            cluster.Spec.ClusterNetwork.DNSDomain,
+				DNSClusterIP:         dnsClusterIP,
+				DNSResolverIP:        dnsResolverIP,
+				PodCIDRBlocks:        cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
+				ServiceCIDRBlocks:    cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
+				ProxyMode:            cluster.Spec.ClusterNetwork.ProxyMode,
+				StrictArp:            ipvs.StrictArp,
+				DualStack:            cluster.IsDualStack(),
+				PodCIDRIPv4:          cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(),
+				PodCIDRIPv6:          cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR(),
+				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),
+				NodeCIDRMaskSizeIPv6: resources.GetClusterNodeCIDRMaskSizeIPv6(cluster),
 			},
-			CNIPlugin: cniPlugin,
+			CNIPlugin: CNIPlugin{
+				Type:    cluster.Spec.CNIPlugin.Type.String(),
+				Version: cluster.Spec.CNIPlugin.Version,
+			},
+			CSI: csiOptions,
 			MLA: MLASettings{
 				MonitoringEnabled: cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled,
 				LoggingEnabled:    cluster.Spec.MLA != nil && cluster.Spec.MLA.LoggingEnabled,
 			},
-			StoragePolicy: storagePolicy,
+			CSIMigration: csiMigration,
 		},
 	}, nil
 }
@@ -177,23 +175,19 @@ type ClusterData struct {
 	// inside the user-cluster. The kubeconfig uses the external URL to reach
 	// the apiserver.
 	Kubeconfig string
-	// ApiserverExternalURL is the full URL to the apiserver service from the
-	// outside, including protocol and port number. It does not contain any
-	// trailing slashes.
-	ApiserverExternalURL string
-	// ApiserverExternalURL is the full URL to the apiserver from within the
-	// seed cluster itself. It does not contain any trailing slashes.
-	ApiserverInternalURL string
-	// AdminToken is the cluster's admin token.
-	AdminToken string
+
+	// ClusterAddress stores access and address information of a cluster.
+	Address kubermaticv1.ClusterAddress
+
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
 	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
 	// the configured datacenters.
 	CloudProviderName string
-	// Version is the exact cluster version.
+	// Version is the exact current cluster version.
 	Version *semver.Version
-	// MajorMinorVersion is a shortcut for common testing on "Major.Minor".
+	// MajorMinorVersion is a shortcut for common testing on "Major.Minor" on the
+	// current cluster version.
 	MajorMinorVersion string
 	// Network contains DNS and CIDR settings for the cluster.
 	Network ClusterNetwork
@@ -201,20 +195,27 @@ type ClusterData struct {
 	Features sets.String
 	// CNIPlugin contains the CNIPlugin settings
 	CNIPlugin CNIPlugin
+	// CSI specific options, dependent on provider
+	CSI CSIOptions
 	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA MLASettings
-	// StoragePolicy is the storage policy to use for vsphere csi addon
-	StoragePolicy string
+	// CSIMigration indicates if the cluster needed the CSIMigration
+	CSIMigration bool
 }
 
 type ClusterNetwork struct {
-	DNSDomain         string
-	DNSClusterIP      string
-	DNSResolverIP     string
-	PodCIDRBlocks     []string
-	ServiceCIDRBlocks []string
-	ProxyMode         string
-	StrictArp         bool
+	DNSDomain            string
+	DNSClusterIP         string
+	DNSResolverIP        string
+	PodCIDRBlocks        []string
+	ServiceCIDRBlocks    []string
+	ProxyMode            string
+	StrictArp            *bool
+	DualStack            bool
+	PodCIDRIPv4          string
+	PodCIDRIPv6          string
+	NodeCIDRMaskSizeIPv4 int32
+	NodeCIDRMaskSizeIPv6 int32
 }
 
 type CNIPlugin struct {
@@ -229,10 +230,27 @@ type MLASettings struct {
 	LoggingEnabled bool
 }
 
-func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {
-	var allManifests []runtime.RawExtension
+type CSIOptions struct {
 
-	infos, err := ioutil.ReadDir(manifestPath)
+	// vsphere
+	// StoragePolicy is the storage policy to use for vsphere csi addon
+	StoragePolicy string
+
+	// nutanix
+	StorageContainer        string
+	Fstype                  string
+	SsSegmentedIscsiNetwork *bool
+}
+
+type Manifest struct {
+	Content    runtime.RawExtension
+	SourceFile string
+}
+
+func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]Manifest, error) {
+	var allManifests []Manifest
+
+	infos, err := os.ReadDir(manifestPath)
 	if err != nil {
 		return nil, err
 	}
@@ -251,21 +269,26 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 			continue
 		}
 
+		if !strings.HasSuffix(filename, ".yaml") {
+			infoLog.Debug("Ignoring non-YAML file")
+			continue
+		}
+
 		infoLog.Debug("Processing file")
 
-		fbytes, err := ioutil.ReadFile(filename)
+		fbytes, err := os.ReadFile(filename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 		}
 
 		tpl, err := template.New(info.Name()).Funcs(txtFuncMap(overwriteRegistry)).Parse(string(fbytes))
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to parse file %s: %w", filename, err)
 		}
 
 		bufferAll := bytes.NewBuffer([]byte{})
 		if err := tpl.Execute(bufferAll, data); err != nil {
-			return nil, fmt.Errorf("failed to execute templating on file %s: %v", filename, err)
+			return nil, fmt.Errorf("failed to execute templating on file %s: %w", filename, err)
 		}
 
 		sd := strings.TrimSpace(bufferAll.String())
@@ -276,9 +299,15 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 
 		addonManifests, err := yaml.ParseMultipleDocuments(bufio.NewReader(bufferAll))
 		if err != nil {
-			return nil, fmt.Errorf("decoding failed for file %s: %v", filename, err)
+			return nil, fmt.Errorf("decoding failed for file %s: %w", filename, err)
 		}
-		allManifests = append(allManifests, addonManifests...)
+
+		for _, m := range addonManifests {
+			allManifests = append(allManifests, Manifest{
+				Content:    m,
+				SourceFile: filename,
+			})
+		}
 	}
 
 	return allManifests, nil

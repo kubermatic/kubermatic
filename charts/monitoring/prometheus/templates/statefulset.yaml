@@ -84,10 +84,10 @@ spec:
             {{- end }}
             --web.enable-lifecycle \
             --web.external-url=https://{{ .Values.prometheus.host | trim }} \
-            --web.enable-admin-api
+            --web.enable-admin-api \
           {{- range $key, $value := .Values.prometheus.extraArgs }}
-            - --{{ $key }}={{ $value }}
-          {{- end }}
+            --{{ $key }}={{ $value }} \
+          {{ end }}
           {{- else }}
           echo "Starting Prometheus..."
           exec /bin/prometheus \
@@ -102,10 +102,10 @@ spec:
             {{- if .Values.prometheus.backup.enabled }}
             --web.enable-admin-api \
             {{- end }}
-            --web.external-url=https://{{ .Values.prometheus.host | trim }}
+            --web.external-url=https://{{ .Values.prometheus.host | trim }} \
             {{- range $key, $value := .Values.prometheus.extraArgs }}
-            --{{ $key }}={{ $value }}
-            {{- end }}
+            --{{ $key }}={{ $value }} \
+            {{ end }}
           {{- end }}
         ports:
         - containerPort: 9090

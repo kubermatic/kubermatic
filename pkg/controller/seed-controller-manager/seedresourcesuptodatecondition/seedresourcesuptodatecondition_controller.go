@@ -19,13 +19,12 @@ package seedresourcesuptodatecondition
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,7 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "seed_resources_up_to_date_condition_controller"
+const ControllerName = "kkp-seed-up-to-date-synchronizer"
 
 type reconciler struct {
 	log        *zap.SugaredLogger
@@ -81,7 +80,7 @@ func Add(
 	}
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watch for %T: %v", t, err)
+			return fmt.Errorf("failed to create watch for %T: %w", t, err)
 		}
 	}
 
@@ -94,7 +93,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster %q: %v", request.Name, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster %q: %w", request.Name, err)
 	}
 
 	// Add a wrapping here so we can emit an event on error
@@ -111,7 +110,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil
 	}
 
-	if cluster.Spec.Pause {
+	if cluster.Spec.Pause || cluster.Status.NamespaceName == "" {
 		return nil
 	}
 
@@ -120,31 +119,18 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return err
 	}
 
-	oldCluster := cluster.DeepCopy()
-	if !upToDate {
-		kubermaticv1helper.SetClusterCondition(
-			cluster,
-			r.versions,
-			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			corev1.ConditionFalse,
-			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"Some control plane components did not finish updating",
-		)
-	} else {
-		kubermaticv1helper.SetClusterCondition(
-			cluster,
-			r.versions,
-			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			corev1.ConditionTrue,
-			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"All control plane components are up to date",
-		)
-	}
-	if reflect.DeepEqual(oldCluster, cluster) {
-		return nil
-	}
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r.client, cluster, func(c *kubermaticv1.Cluster) {
+		conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
+		value := corev1.ConditionFalse
+		message := "Some control plane components did not finish updating"
 
-	return r.client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+		if upToDate {
+			value = corev1.ConditionTrue
+			message = "All control plane components are up to date"
+		}
+
+		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, value, kubermaticv1.ReasonClusterUpdateSuccessful, message)
+	})
 }
 
 func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
@@ -152,7 +138,7 @@ func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kuberma
 
 	statefulSets := &appsv1.StatefulSetList{}
 	if err := r.client.List(ctx, statefulSets, listOpts); err != nil {
-		return false, fmt.Errorf("failed to list statefulSets: %v", err)
+		return false, fmt.Errorf("failed to list statefulSets: %w", err)
 	}
 	for _, statefulSet := range statefulSets.Items {
 		if statefulSet.Spec.Replicas == nil {
@@ -167,7 +153,7 @@ func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kuberma
 
 	deployments := &appsv1.DeploymentList{}
 	if err := r.client.List(ctx, deployments, listOpts); err != nil {
-		return false, fmt.Errorf("failed to list deployments: %v", err)
+		return false, fmt.Errorf("failed to list deployments: %w", err)
 	}
 
 	for _, deployment := range deployments.Items {
@@ -183,7 +169,7 @@ func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kuberma
 
 	// This is to avoid setting the resource up-to-date condition in the
 	// initial stage when deploymens and statefulsets are not yet deployed.
-	// TODO(irozzo) This is not perfect as we may endup in a situation where
+	// TODO This is not perfect as we may endup in a situation where
 	// the available control plane components are ready, but not all components have
 	// been deployed yet. This scenario is quite unlikely to happen though and
 	// the impact of having the condition set is not big.

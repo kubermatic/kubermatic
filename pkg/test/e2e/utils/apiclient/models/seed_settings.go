@@ -18,6 +18,12 @@ import (
 // swagger:model SeedSettings
 type SeedSettings struct {
 
+	// the Seed level seed dns overwrite
+	SeedDNSOverwrite string `json:"seedDNSOverwrite,omitempty"`
+
+	// metering
+	Metering *MeteringConfiguration `json:"metering,omitempty"`
+
 	// mla
 	Mla *MLA `json:"mla,omitempty"`
 }
@@ -26,6 +32,10 @@ type SeedSettings struct {
 func (m *SeedSettings) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateMetering(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMla(formats); err != nil {
 		res = append(res, err)
 	}
@@ -33,6 +43,25 @@ func (m *SeedSettings) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *SeedSettings) validateMetering(formats strfmt.Registry) error {
+	if swag.IsZero(m.Metering) { // not required
+		return nil
+	}
+
+	if m.Metering != nil {
+		if err := m.Metering.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("metering")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("metering")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -45,6 +74,8 @@ func (m *SeedSettings) validateMla(formats strfmt.Registry) error {
 		if err := m.Mla.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}
@@ -57,6 +88,10 @@ func (m *SeedSettings) validateMla(formats strfmt.Registry) error {
 func (m *SeedSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateMetering(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMla(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -67,12 +102,30 @@ func (m *SeedSettings) ContextValidate(ctx context.Context, formats strfmt.Regis
 	return nil
 }
 
+func (m *SeedSettings) contextValidateMetering(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Metering != nil {
+		if err := m.Metering.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("metering")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("metering")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *SeedSettings) contextValidateMla(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Mla != nil {
 		if err := m.Mla.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mla")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mla")
 			}
 			return err
 		}

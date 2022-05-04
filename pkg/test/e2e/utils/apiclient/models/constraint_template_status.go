@@ -54,6 +54,8 @@ func (m *ConstraintTemplateStatus) validateByPod(formats strfmt.Registry) error 
 			if err := m.ByPod[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("byPod" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("byPod" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -86,6 +88,8 @@ func (m *ConstraintTemplateStatus) contextValidateByPod(ctx context.Context, for
 			if err := m.ByPod[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("byPod" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("byPod" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

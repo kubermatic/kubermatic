@@ -21,10 +21,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	semver "github.com/Masterminds/semver/v3"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
+	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
@@ -53,23 +56,7 @@ const (
 	name = "apiserver"
 )
 
-func AuditConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{
-					"policy.yaml": `apiVersion: audit.k8s.io/v1
-kind: Policy
-rules:
-- level: Metadata
-`}
-			}
-			return cm, nil
-		}
-	}
-}
-
-// DeploymentCreator returns the function to create and update the API server deployment
+// DeploymentCreator returns the function to create and update the API server deployment.
 func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -86,10 +73,14 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
-			volumeMounts := getVolumeMounts()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
+			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled())
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			version := data.Cluster().Status.Versions.Apiserver.Semver()
+
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -105,31 +96,43 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
 
-			// Configure user cluster DNS resolver for this pod.
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
+
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				etcdrunning.Container(etcdEndpoints, data),
 			}
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+			var konnectivityProxySidecar *corev1.Container
+			var openvpnSidecar *corev1.Container
+			var dnatControllerSidecar *corev1.Container
+
+			if data.IsKonnectivityEnabled() {
+				konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
+				}
+			} else {
+				openvpnSidecar, err = vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
+				}
+
+				dnatControllerSidecar, err = vpnsidecar.DnatControllerContainer(
+					data,
+					"dnat-controller",
+					fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
+				)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
+				}
 			}
 
-			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(
-				data,
-				"dnat-controller",
-				fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-			}
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, version)
 			if err != nil {
 				return nil, err
 			}
@@ -139,67 +142,82 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
-				*dnatControllerSidecar,
-				{
-					Name:    resources.ApiserverDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + data.Cluster().Spec.Version.String(),
-					Command: []string{"/usr/local/bin/kube-apiserver"},
-					Env:     envVars,
-					Args:    flags,
-					Ports: []corev1.ContainerPort{
-						{
-							ContainerPort: data.Cluster().Address.Port,
-							Protocol:      corev1.ProtocolTCP,
-						},
+			apiserverContainer := &corev1.Container{
+				Name:    resources.ApiserverDeploymentName,
+				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + version.String(),
+				Command: []string{"/usr/local/bin/kube-apiserver"},
+				Env:     envVars,
+				Args:    flags,
+				Ports: []corev1.ContainerPort{
+					{
+						ContainerPort: data.Cluster().Address.Port,
+						Protocol:      corev1.ProtocolTCP,
 					},
-					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
-							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/healthz",
-								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
-								Scheme: "HTTPS",
-							},
-						},
-						FailureThreshold: 3,
-						PeriodSeconds:    5,
-						SuccessThreshold: 1,
-						TimeoutSeconds:   15,
-					},
-					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
-							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/healthz",
-								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
-								Scheme: "HTTPS",
-							},
-						},
-						InitialDelaySeconds: 15,
-						FailureThreshold:    8,
-						PeriodSeconds:       10,
-						SuccessThreshold:    1,
-						TimeoutSeconds:      15,
-					},
-					VolumeMounts: volumeMounts,
 				},
+				ReadinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
+							Scheme: "HTTPS",
+						},
+					},
+					FailureThreshold: 3,
+					PeriodSeconds:    5,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   15,
+				},
+				LivenessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
+							Scheme: "HTTPS",
+						},
+					},
+					InitialDelaySeconds: 15,
+					FailureThreshold:    8,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      15,
+				},
+				VolumeMounts: volumeMounts,
 			}
 
-			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				name:                       defaultResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
-				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+			var defResourceRequirements map[string]*corev1.ResourceRequirements
+			if data.IsKonnectivityEnabled() {
+				dep.Spec.Template.Spec.Containers = []corev1.Container{
+					*konnectivityProxySidecar,
+					*apiserverContainer,
+				}
+				defResourceRequirements = map[string]*corev1.ResourceRequirements{
+					name:                          defaultResourceRequirements.DeepCopy(),
+					konnectivityProxySidecar.Name: konnectivityProxySidecar.Resources.DeepCopy(),
+				}
+			} else {
+				dep.Spec.Template.Spec.Containers = []corev1.Container{
+					*openvpnSidecar,
+					*dnatControllerSidecar,
+					*apiserverContainer,
+				}
+
+				defResourceRequirements = map[string]*corev1.ResourceRequirements{
+					name:                       defaultResourceRequirements.DeepCopy(),
+					openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
+					dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+				}
 			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled {
+			if auditLogEnabled {
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
 						Name:    "audit-logs",
-						Image:   "docker.io/fluent/fluent-bit:1.2.2",
+						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.2.2",
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
 						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
 						VolumeMounts: []corev1.VolumeMount{
@@ -230,16 +248,17 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool, version *semver.Version) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
-		return nil, fmt.Errorf("could not get components override flags: %v", err)
+		return nil, fmt.Errorf("could not get components override flags: %w", err)
 	}
 
 	cluster := data.Cluster()
 
 	admissionPlugins := sets.NewString(
 		"NamespaceLifecycle",
+		"NodeRestriction",
 		"LimitRanger",
 		"ServiceAccount",
 		"DefaultStorageClass",
@@ -254,6 +273,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 	if cluster.Spec.UsePodNodeSelectorAdmissionPlugin {
 		admissionPlugins.Insert(resources.PodNodeSelectorAdmissionPlugin)
+	}
+
+	if useEventRateLimitAdmissionPlugin(data) {
+		admissionPlugins.Insert(resources.EventRateLimitAdmissionPlugin)
 	}
 
 	admissionPlugins.Insert(cluster.Spec.AdmissionPlugins...)
@@ -272,8 +295,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth",
 		"--service-account-key-file", serviceAccountKeyFile,
-		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
-		"--service-cluster-ip-range", cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0],
+		"--service-cluster-ip-range", strings.Join(cluster.Spec.ClusterNetwork.Services.CIDRBlocks, ","),
 		"--service-node-port-range", overrideFlags.NodePortRange,
 		"--allow-privileged",
 		"--audit-log-maxage", "30",
@@ -281,83 +303,95 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--audit-log-maxsize", "100",
 		"--audit-log-path", "/var/log/kubernetes/audit/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
+		"--tls-cipher-suites", strings.Join(resources.GetAllowedTLSCipherSuites(), ","),
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
 		"--proxy-client-cert-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
 		"--proxy-client-key-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
 		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
+	}
+
+	// the "bring-your-own" provider does not support automatic TLS rotation in kubelets yet,
+	// and because of that certs might expire and kube-apiserver cannot validate the connection anymore.
+	if cluster.Spec.Cloud.BringYourOwn == nil {
+		flags = append(flags, "--kubelet-certificate-authority", "/etc/kubernetes/pki/ca/ca.crt")
+	}
+
+	flags = append(flags,
 		"--requestheader-client-ca-file", "/etc/kubernetes/pki/front-proxy/ca/ca.crt",
 		"--requestheader-allowed-names", "apiserver-aggregator",
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
-	}
+		// this can't be passed as two strings as the other parameters
+		"--profiling=false",
+	)
 
-	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		flags = append(flags,
-			// The advertise address is used as endpoint address for the kubernetes
-			// service in the default namespace of the user cluster.
-			"--advertise-address", cluster.Address.IP,
-			// The secure port is used as target port for the kubernetes service in
-			// the default namespace of the user cluster, we use the NodePort value
-			// for being able to access the apiserver from the usercluster side.
-			"--secure-port", fmt.Sprint(cluster.Address.Port))
-	} else {
-		// pre-pend to have advertise-address as first argument and avoid
-		// triggering unneeded redeployments.
-		flags = append([]string{
-			// The advertise address is used as endpoint address for the kubernetes
-			// service in the default namespace of the user cluster.
-			"--advertise-address", cluster.Address.IP,
-			// The secure port is used as target port for the kubernetes service in
-			// the default namespace of the user cluster, we use the NodePort value
-			// for being able to access the apiserver from the usercluster side.
-			"--secure-port", fmt.Sprint(cluster.Address.Port),
-			"--kubernetes-service-node-port", fmt.Sprint(cluster.Address.Port),
-		}, flags...)
-	}
+	// pre-pend to have advertise-address as first argument and avoid
+	// triggering unneeded redeployments.
+	flags = append([]string{
+		// advertise-address is the external IP under which the apiserver is available.
+		// The same address is used for all apiserver replicas.
+		"--advertise-address", cluster.Address.IP,
+		// The port on which apiserver is serving.
+		// For Nodeport / LoadBalancer expose strategies we use the apiserver-external service NodePort value.
+		// For Tunneling expose strategy we use a fixed port.
+		"--secure-port", fmt.Sprint(cluster.Address.Port),
+	}, flags...)
 
 	if auditLogEnabled {
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
 	}
 
-	if *overrideFlags.EndpointReconcilingDisabled {
-		flags = append(flags, "--endpoint-reconciler-type=none")
+	// kubernetes service endpoints are reconciled by KKP user-cluster-controller for kubernetes versions v1.21+
+	// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
+	if (version.Major() >= 1 && version.Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
+		flags = append(flags, "--endpoint-reconciler-type", "none")
 	}
 
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
 	// explicitly enabled in the cluster object
-	saConfig := cluster.Spec.ServiceAccount
-	if cluster.Spec.Version.Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
-		var audiences []string
+	var audiences []string
 
-		issuer := cluster.Address.URL
-		if saConfig != nil {
-			if saConfig.Issuer != "" {
-				issuer = saConfig.Issuer
-			}
-
-			if len(saConfig.APIAudiences) > 0 {
-				audiences = saConfig.APIAudiences
-			}
+	issuer := cluster.Address.URL
+	if saConfig := cluster.Spec.ServiceAccount; saConfig != nil {
+		if saConfig.Issuer != "" {
+			issuer = saConfig.Issuer
 		}
 
-		if len(audiences) == 0 {
-			audiences = []string{issuer}
+		if len(saConfig.APIAudiences) > 0 {
+			audiences = saConfig.APIAudiences
 		}
-
-		flags = append(flags,
-			"--service-account-issuer", issuer,
-			"--service-account-signing-key-file", serviceAccountKeyFile,
-			"--api-audiences", strings.Join(audiences, ","),
-		)
 	}
+
+	if len(audiences) == 0 {
+		audiences = []string{issuer}
+	}
+
+	if data.IsKonnectivityEnabled() {
+		audiences = append(audiences, "system:konnectivity-server")
+	}
+
+	flags = append(flags,
+		"--service-account-issuer", issuer,
+		"--service-account-signing-key-file", serviceAccountKeyFile,
+		"--api-audiences", strings.Join(audiences, ","),
+	)
 
 	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
 	} else {
-		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
+		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
+		// This request fails because of security policies disallow external traffic to the node.
+		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
+		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
+		// and https://kubermatic.slack.com/archives/C01EWQZEW69/p1628769575001400
+		if data.IsKonnectivityEnabled() {
+			flags = append(flags, "--kubelet-preferred-address-types", "InternalIP,ExternalIP")
+		} else {
+			flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
+		}
 	}
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
@@ -399,11 +433,16 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, strings.Join(fg, ","))
 	}
 
+	if data.IsKonnectivityEnabled() {
+		flags = append(flags, "--egress-selector-config-file",
+			"/etc/kubernetes/konnectivity/egress-selector-configuration.yaml")
+	}
+
 	return flags, nil
 }
 
 // getApiserverOverrideFlags creates all settings that may be overridden by cluster specific componentsOverrideSettings
-// otherwise global overrides or defaults will be set
+// otherwise global overrides or defaults will be set.
 func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APIServerSettings, error) {
 	settings := kubermaticv1.APIServerSettings{
 		NodePortRange: data.ComputedNodePortRange(),
@@ -418,8 +457,8 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+func getVolumeMounts(isKonnectivityEnabled bool) []corev1.VolumeMount {
+	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
 			Name:      resources.ApiserverTLSSecretName,
@@ -486,10 +525,26 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 	}
+
+	if isKonnectivityEnabled {
+		vms = append(vms, []corev1.VolumeMount{
+			{
+				Name:      resources.KonnectivityUDS,
+				MountPath: "/etc/kubernetes/konnectivity-server",
+			},
+			{
+				Name:      resources.KonnectivityKubeApiserverEgress,
+				MountPath: "/etc/kubernetes/konnectivity",
+				ReadOnly:  true,
+			},
+		}...)
+	}
+
+	return vms
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -503,14 +558,6 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.TokensSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
 				},
 			},
 		},
@@ -589,14 +636,6 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.KubeletDnatControllerKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
-				},
-			},
-		},
-		{
 			Name: resources.AuditConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -624,6 +663,67 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+
+	if isKonnectivityEnabled {
+		vs = append(vs, []corev1.Volume{
+			{
+				Name: resources.KonnectivityKubeconfigSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  resources.KonnectivityKubeconfigSecretName,
+						DefaultMode: intPtr(420),
+					},
+				},
+			},
+			{
+				Name: resources.KonnectivityProxyTLSSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  resources.KonnectivityProxyTLSSecretName,
+						DefaultMode: intPtr(420),
+					},
+				},
+			},
+			{
+				Name: resources.KonnectivityUDS,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: resources.KonnectivityKubeApiserverEgress,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: resources.KonnectivityKubeApiserverEgress,
+						},
+						DefaultMode: intPtr(420),
+					},
+				},
+			},
+		}...)
+	} else {
+		vs = append(vs, []corev1.Volume{
+			{
+				Name: resources.OpenVPNClientCertificatesSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.OpenVPNClientCertificatesSecretName,
+					},
+				},
+			},
+			{
+				Name: resources.KubeletDnatControllerKubeconfigSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
+					},
+				},
+			},
+		}...)
+	}
+
+	return vs
 }
 
 type kubeAPIServerEnvData interface {
@@ -649,7 +749,13 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: cluster.Spec.Cloud.AWS.AssumeRoleARN})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
 
 	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil
+}
+
+func intPtr(n int32) *int32 {
+	return &n
 }

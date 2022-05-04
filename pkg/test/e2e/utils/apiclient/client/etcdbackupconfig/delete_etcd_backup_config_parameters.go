@@ -62,8 +62,8 @@ type DeleteEtcdBackupConfigParams struct {
 	// ClusterID.
 	ClusterID string
 
-	// EbcName.
-	EtcdBackupConfigName string
+	// EbcID.
+	EtcdBackupConfigID string
 
 	// ProjectID.
 	ProjectID string
@@ -132,15 +132,15 @@ func (o *DeleteEtcdBackupConfigParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithEtcdBackupConfigName adds the ebcName to the delete etcd backup config params
-func (o *DeleteEtcdBackupConfigParams) WithEtcdBackupConfigName(ebcName string) *DeleteEtcdBackupConfigParams {
-	o.SetEtcdBackupConfigName(ebcName)
+// WithEtcdBackupConfigID adds the ebcID to the delete etcd backup config params
+func (o *DeleteEtcdBackupConfigParams) WithEtcdBackupConfigID(ebcID string) *DeleteEtcdBackupConfigParams {
+	o.SetEtcdBackupConfigID(ebcID)
 	return o
 }
 
-// SetEtcdBackupConfigName adds the ebcName to the delete etcd backup config params
-func (o *DeleteEtcdBackupConfigParams) SetEtcdBackupConfigName(ebcName string) {
-	o.EtcdBackupConfigName = ebcName
+// SetEtcdBackupConfigID adds the ebcId to the delete etcd backup config params
+func (o *DeleteEtcdBackupConfigParams) SetEtcdBackupConfigID(ebcID string) {
+	o.EtcdBackupConfigID = ebcID
 }
 
 // WithProjectID adds the projectID to the delete etcd backup config params
@@ -167,8 +167,8 @@ func (o *DeleteEtcdBackupConfigParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 
-	// path param ebc_name
-	if err := r.SetPathParam("ebc_name", o.EtcdBackupConfigName); err != nil {
+	// path param ebc_id
+	if err := r.SetPathParam("ebc_id", o.EtcdBackupConfigID); err != nil {
 		return err
 	}
 

@@ -17,36 +17,39 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v2/docs"
 )
 
-func PrintCommand() cli.Command {
-	return cli.Command{
-		Name:        "print",
-		Usage:       "Prints example configuration manifest",
-		UsageText:   "kubermatic-installer print <resource>",
-		Description: "Print an example configuration manifest with defaults for the given resource.\n   Supported resources are \"seed\" and \"kubermaticconfiguration\".",
-		ArgsUsage:   "Supported resources are \"seed\" and \"kubermaticconfiguration\".",
-		Action:      PrintAction(),
+func PrintCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "print [config | kubermaticconfiguration]",
+		Short: "prints example configuration manifest",
+		Long:  "Print an example configuration manifest with defaults for the given resource.\n   Supported resources are \"seed\" and \"kubermaticconfiguration\".",
+		RunE:  PrintFunc(),
 	}
+
+	return cmd
 }
 
-func PrintAction() cli.ActionFunc {
-	return func(ctx *cli.Context) error {
-
-		arg := strings.ToLower(ctx.Args().First())
+func PrintFunc() cobraFuncE {
+	return func(cmd *cobra.Command, args []string) error {
+		arg := ""
+		if len(args) > 0 {
+			arg = strings.ToLower(args[0])
+		}
 
 		switch arg {
 		case "", "config", "kubermaticconfiguration":
-			println(docs.ExampleKubermaticConfiguration)
+			fmt.Println(docs.ExampleKubermaticConfiguration)
 		case "seed":
-			println(docs.ExampleSeedConfiguration)
+			fmt.Println(docs.ExampleSeedConfiguration)
 		default:
-			println(ctx.Command.ArgsUsage)
+			return cmd.Usage()
 		}
 
 		return nil

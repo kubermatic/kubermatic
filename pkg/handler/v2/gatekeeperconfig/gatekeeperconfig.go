@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -40,9 +40,9 @@ import (
 
 const (
 	// Gatekeeper only uses the configs from the namespace which is set as "gatekeeper namespace" in the gatekeeper controller and audit.
-	// For our deployment, its always `gatekeeper-system`
+	// For our deployment, its always `gatekeeper-system`.
 	ConfigNamespace = "gatekeeper-system"
-	// Gatekeeper audit also uses the hardcoded config name `config`
+	// Gatekeeper audit also uses the hardcoded config name `config`.
 	ConfigName = "config"
 )
 
@@ -100,12 +100,12 @@ func convertExternalToAPI(conf *configv1alpha1.Config) (*apiv2.GatekeeperConfig,
 
 	specRaw, err := json.Marshal(&conf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %w", err)
 	}
 
 	err = json.Unmarshal(specRaw, &apiConf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %w", err)
 	}
 
 	return apiConf, nil
@@ -116,12 +116,12 @@ func convertAPIToExternal(conf *apiv2.GatekeeperConfig) (*configv1alpha1.Config,
 
 	specRaw, err := json.Marshal(&conf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %w", err)
 	}
 
 	err = json.Unmarshal(specRaw, &externalConf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %w", err)
 	}
 
 	return externalConf, nil
@@ -275,7 +275,7 @@ type patchGatekeeperConfigReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchGatekeeperConfigReq decodes http request into patchGatekeeperConfigReq
+// DecodePatchGatekeeperConfigReq decodes http request into patchGatekeeperConfigReq.
 func DecodePatchGatekeeperConfigReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchGatekeeperConfigReq
 
@@ -285,7 +285,7 @@ func DecodePatchGatekeeperConfigReq(c context.Context, r *http.Request) (interfa
 	}
 	req.gatekeeperConfigReq = ctReq.(gatekeeperConfigReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

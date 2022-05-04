@@ -50,6 +50,8 @@ func (m *JSONSchemaPropsOrBool) validateSchema(formats strfmt.Registry) error {
 		if err := m.Schema.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Schema")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Schema")
 			}
 			return err
 		}
@@ -78,6 +80,8 @@ func (m *JSONSchemaPropsOrBool) contextValidateSchema(ctx context.Context, forma
 		if err := m.Schema.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("Schema")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("Schema")
 			}
 			return err
 		}

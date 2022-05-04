@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +35,7 @@ const (
 	controllerName = resources.GatekeeperControllerDeploymentName
 	auditName      = resources.GatekeeperAuditDeploymentName
 	imageName      = "openpolicyagent/gatekeeper"
-	tag            = "v3.2.3"
+	tag            = "v3.6.0"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
@@ -79,8 +80,8 @@ var (
 	}
 )
 
-// ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment
-func ControllerDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
+// ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment.
+func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -103,11 +104,24 @@ func ControllerDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
-			dep.Spec.Template.Spec.Containers = getControllerContainers()
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, registryWithOverwrite)
+			var err error
+			if resourceOverride != nil {
+				overridesRequirements := map[string]*corev1.ResourceRequirements{
+					controllerName: resourceOverride.DeepCopy(),
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, overridesRequirements, dep.Annotations)
+			} else {
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -126,8 +140,8 @@ func ControllerDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	}
 }
 
-// AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment
-func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
+// AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment.
+func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -150,11 +164,21 @@ func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(true)
+			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
-			dep.Spec.Template.Spec.Containers = getAuditContainers()
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
+			var err error
+			if resourceOverride != nil {
+				overridesRequirements := map[string]*corev1.ResourceRequirements{
+					auditName: resourceOverride.DeepCopy(),
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, overridesRequirements, dep.Annotations)
+			} else {
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			}
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
@@ -162,18 +186,19 @@ func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	}
 }
 
-func getControllerContainers() []corev1.Container {
-
+func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 	return []corev1.Container{{
 		Name:            controllerName,
-		Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
+		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
 			"--port=8443",
 			"--logtostderr",
 			fmt.Sprintf("--exempt-namespace=%s", resources.GatekeeperNamespace),
+			fmt.Sprintf("--exempt-namespace=%s", metav1.NamespaceSystem),
 			"--operation=webhook",
+			fmt.Sprintf("--enable-mutation=%t", enableMutation),
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -206,7 +231,7 @@ func getControllerContainers() []corev1.Container {
 				}},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
 					Port:   intstr.FromInt(healthzPort),
@@ -220,7 +245,7 @@ func getControllerContainers() []corev1.Container {
 			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
 					Port:   intstr.FromInt(healthzPort),
@@ -240,23 +265,25 @@ func getControllerContainers() []corev1.Container {
 					"all",
 				},
 			},
-			RunAsGroup:   pointer.Int64Ptr(999),
-			RunAsNonRoot: pointer.BoolPtr(true),
-			RunAsUser:    pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
+			RunAsGroup:             pointer.Int64Ptr(999),
+			RunAsNonRoot:           pointer.BoolPtr(true),
+			RunAsUser:              pointer.Int64Ptr(1000),
 		},
 	}}
 }
 
-func getAuditContainers() []corev1.Container {
-
+func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 	return []corev1.Container{{
 		Name:            auditName,
-		Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
+		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
 			"--logtostderr",
 			"--operation=audit",
+			fmt.Sprintf("--constraint-violations-limit=%d", resources.ConstraintViolationsLimit),
+			fmt.Sprintf("--audit-match-kind-only=%t", resources.AuditMatchKindOnly),
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -279,7 +306,7 @@ func getAuditContainers() []corev1.Container {
 				}},
 		},
 		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/healthz",
 					Port:   intstr.FromInt(healthzPort),
@@ -293,7 +320,7 @@ func getAuditContainers() []corev1.Container {
 			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
 					Port:   intstr.FromInt(healthzPort),
@@ -313,9 +340,10 @@ func getAuditContainers() []corev1.Container {
 					"all",
 				},
 			},
-			RunAsGroup:   pointer.Int64Ptr(999),
-			RunAsNonRoot: pointer.BoolPtr(true),
-			RunAsUser:    pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
+			RunAsGroup:             pointer.Int64Ptr(999),
+			RunAsNonRoot:           pointer.BoolPtr(true),
+			RunAsUser:              pointer.Int64Ptr(1000),
 		},
 	}}
 }

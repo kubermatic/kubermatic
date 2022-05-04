@@ -20,7 +20,7 @@ import (
 	"context"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,14 +38,34 @@ type Credentials struct {
 	VSphere      VSphereCredentials
 	Alibaba      AlibabaCredentials
 	Anexia       AnexiaCredentials
+	Nutanix      NutanixCredentials
 }
 
 type AWSCredentials struct {
-	AccessKeyID     string
-	SecretAccessKey string
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }
 
 type AzureCredentials struct {
+	TenantID       string
+	SubscriptionID string
+	ClientID       string
+	ClientSecret   string
+}
+
+type EKSCredentials struct {
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
+}
+
+type GKECredentials struct {
+	ServiceAccount string
+}
+type AKSCredentials struct {
 	TenantID       string
 	SubscriptionID string
 	ClientID       string
@@ -67,8 +87,8 @@ type HetznerCredentials struct {
 type OpenstackCredentials struct {
 	Username                    string
 	Password                    string
-	Tenant                      string
-	TenantID                    string
+	Project                     string
+	ProjectID                   string
 	Domain                      string
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
@@ -81,7 +101,10 @@ type PacketCredentials struct {
 }
 
 type KubevirtCredentials struct {
+	// Admin kubeconfig for KubeVirt cluster
 	KubeConfig string
+	// CSI driver kubeconfig for user cluster to provision storage on KubeVirt cluster
+	CSIKubeConfig string
 }
 
 type VSphereCredentials struct {
@@ -96,6 +119,14 @@ type AlibabaCredentials struct {
 
 type AnexiaCredentials struct {
 	Token string
+}
+
+type NutanixCredentials struct {
+	Username    string
+	Password    string
+	CSIUsername string
+	CSIPassword string
+	ProxyURL    string
 }
 
 type CredentialsData interface {
@@ -183,6 +214,12 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 		}
 	}
 
+	if data.Cluster().Spec.Cloud.Nutanix != nil {
+		if credentials.Nutanix, err = GetNutanixCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+
 	return credentials, err
 }
 
@@ -196,6 +233,8 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		}
 		cluster.Spec.Cloud.AWS.AccessKeyID = credentials.AWS.AccessKeyID
 		cluster.Spec.Cloud.AWS.SecretAccessKey = credentials.AWS.SecretAccessKey
+		cluster.Spec.Cloud.AWS.AssumeRoleARN = credentials.AWS.AssumeRoleARN
+		cluster.Spec.Cloud.AWS.AssumeRoleExternalID = credentials.AWS.AssumeRoleExternalID
 	}
 	if data.Cluster().Spec.Cloud.Azure != nil {
 		if credentials.Azure, err = GetAzureCredentials(data); err != nil {
@@ -229,14 +268,13 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 			return err
 		}
 		cluster.Spec.Cloud.Openstack.Token = credentials.Openstack.Token
-		cluster.Spec.Cloud.Openstack.TenantID = credentials.Openstack.TenantID
-		cluster.Spec.Cloud.Openstack.Tenant = credentials.Openstack.Tenant
+		cluster.Spec.Cloud.Openstack.ProjectID = credentials.Openstack.ProjectID
+		cluster.Spec.Cloud.Openstack.Project = credentials.Openstack.Project
 		cluster.Spec.Cloud.Openstack.Domain = credentials.Openstack.Domain
 		cluster.Spec.Cloud.Openstack.ApplicationCredentialID = credentials.Openstack.ApplicationCredentialID
 		cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = credentials.Openstack.ApplicationCredentialSecret
 		cluster.Spec.Cloud.Openstack.Password = credentials.Openstack.Password
 		cluster.Spec.Cloud.Openstack.Username = credentials.Openstack.Username
-
 	}
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
@@ -292,7 +330,80 @@ func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 		return AWSCredentials{}, err
 	}
 
+	// AssumeRole credentials are optional. They are allowed to be empty
+	awsCredentials.AssumeRoleARN = spec.AssumeRoleARN
+	awsCredentials.AssumeRoleExternalID = spec.AssumeRoleExternalID
+
 	return awsCredentials, nil
+}
+
+func GetGKECredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (GKECredentials, error) {
+	spec := cluster.Spec.CloudSpec.GKE
+	gkeCredentials := GKECredentials{}
+	GetGlobalSecretKeySelectorValue := provider.SecretKeySelectorValueFuncFactory(ctx, client)
+	var err error
+
+	if spec.ServiceAccount != "" {
+		gkeCredentials.ServiceAccount = spec.ServiceAccount
+	} else if gkeCredentials.ServiceAccount, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, GCPServiceAccount); err != nil {
+		return GKECredentials{}, err
+	}
+
+	return gkeCredentials, nil
+}
+
+func GetEKSCredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (EKSCredentials, error) {
+	spec := cluster.Spec.CloudSpec.EKS
+	eksCredentials := EKSCredentials{}
+	GetGlobalSecretKeySelectorValue := provider.SecretKeySelectorValueFuncFactory(ctx, client)
+	var err error
+
+	if spec.AccessKeyID != "" {
+		eksCredentials.AccessKeyID = spec.AccessKeyID
+	} else if eksCredentials.AccessKeyID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSAccessKeyID); err != nil {
+		return EKSCredentials{}, err
+	}
+
+	if spec.SecretAccessKey != "" {
+		eksCredentials.SecretAccessKey = spec.SecretAccessKey
+	} else if eksCredentials.SecretAccessKey, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSSecretAccessKey); err != nil {
+		return EKSCredentials{}, err
+	}
+
+	return eksCredentials, nil
+}
+
+func GetAKSCredentials(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster) (AKSCredentials, error) {
+	spec := cluster.Spec.CloudSpec.AKS
+	aksCredentials := AKSCredentials{}
+	GetGlobalSecretKeySelectorValue := provider.SecretKeySelectorValueFuncFactory(ctx, client)
+	var err error
+
+	if spec.TenantID != "" {
+		aksCredentials.TenantID = spec.TenantID
+	} else if aksCredentials.TenantID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureTenantID); err != nil {
+		return AKSCredentials{}, err
+	}
+
+	if spec.SubscriptionID != "" {
+		aksCredentials.SubscriptionID = spec.SubscriptionID
+	} else if aksCredentials.SubscriptionID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureSubscriptionID); err != nil {
+		return AKSCredentials{}, err
+	}
+
+	if spec.ClientID != "" {
+		aksCredentials.ClientID = spec.ClientID
+	} else if aksCredentials.ClientID, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientID); err != nil {
+		return AKSCredentials{}, err
+	}
+
+	if spec.ClientSecret != "" {
+		aksCredentials.ClientSecret = spec.ClientSecret
+	} else if aksCredentials.ClientSecret, err = GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientSecret); err != nil {
+		return AKSCredentials{}, err
+	}
+
+	return aksCredentials, nil
 }
 
 func GetAzureCredentials(data CredentialsData) (AzureCredentials, error) {
@@ -405,19 +516,25 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 		return OpenstackCredentials{}, err
 	}
 
-	if spec.Tenant != "" {
-		openstackCredentials.Tenant = spec.Tenant
+	if spec.Project != "" {
+		openstackCredentials.Project = spec.Project
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		if openstackCredentials.Tenant, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenant); err != nil {
-			return OpenstackCredentials{}, err
+		if openstackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProject); err != nil {
+			// fallback to tenant
+			if openstackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenant); err != nil {
+				return OpenstackCredentials{}, err
+			}
 		}
 	}
 
-	if spec.TenantID != "" {
-		openstackCredentials.TenantID = spec.TenantID
+	if spec.ProjectID != "" {
+		openstackCredentials.ProjectID = spec.ProjectID
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		if openstackCredentials.TenantID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenantID); err != nil {
-			return OpenstackCredentials{}, err
+		if openstackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProjectID); err != nil {
+			// fallback to tenantID
+			if openstackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenantID); err != nil {
+				return OpenstackCredentials{}, err
+			}
 		}
 	}
 
@@ -452,6 +569,12 @@ func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {
 	if spec.Kubeconfig != "" {
 		kubevirtCredentials.KubeConfig = spec.Kubeconfig
 	} else if kubevirtCredentials.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubevirtKubeConfig); err != nil {
+		return KubevirtCredentials{}, err
+	}
+
+	if spec.CSIKubeconfig != "" {
+		kubevirtCredentials.CSIKubeConfig = spec.CSIKubeconfig
+	} else if kubevirtCredentials.CSIKubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubevirtCSIKubeConfig); err != nil {
 		return KubevirtCredentials{}, err
 	}
 
@@ -537,4 +660,46 @@ func GetAnexiaCredentials(data CredentialsData) (AnexiaCredentials, error) {
 	}
 
 	return anexiaCredentials, nil
+}
+
+func GetNutanixCredentials(data CredentialsData) (NutanixCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Nutanix
+	credentials := NutanixCredentials{}
+	var err error
+
+	if spec.Username != "" {
+		credentials.Username = spec.Username
+	} else if credentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixUsername); err != nil {
+		return NutanixCredentials{}, err
+	}
+
+	if spec.Password != "" {
+		credentials.Password = spec.Password
+	} else if credentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixPassword); err != nil {
+		return NutanixCredentials{}, err
+	}
+
+	if spec.ProxyURL != "" {
+		credentials.ProxyURL = spec.ProxyURL
+	} else {
+		credentials.ProxyURL, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixProxyURL)
+	}
+
+	if spec.CSI == nil {
+		return credentials, nil
+	}
+
+	if spec.CSI.Username != "" {
+		credentials.CSIUsername = spec.CSI.Username
+	} else if credentials.CSIUsername, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixCSIUsername); err != nil {
+		return NutanixCredentials{}, err
+	}
+
+	if spec.CSI.Password != "" {
+		credentials.CSIPassword = spec.CSI.Password
+	} else if credentials.CSIPassword, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, NutanixCSIPassword); err != nil {
+		return NutanixCredentials{}, err
+	}
+
+	return credentials, nil
 }

@@ -13,57 +13,75 @@
 # limitations under the License.
 
 nginx:
-  hostNetwork: false
-  asDaemonSet: false
-  replicas: 3
-  image:
-    repository: k8s.gcr.io/ingress-nginx/controller
-    tag: v0.49.0
-  config: {}
-#   load-balance: "least_conn"
-  extraArgs: []
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-  nodeSelector: {}
-  affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-          - key: kubermatic.io/type
-            operator: In
-            values:
-            - stable
-  tolerations:
-  - key: only_critical
-    operator: Equal
-    value: "true"
-    effect: NoSchedule
+  fullnameOverride: nginx-ingress
 
-  # set this to true to automatically add these tolerations
-  # to make nginx run on master nodes:
-  #   - { key: dedicated, operator: Equal, value: master, effect: NoSchedule }
-  #   - { key: node-role.kubernetes.io/master, effect: NoSchedule }
-  ignoreMasterTaint: false
+  # values for the ingress-nginx chart start below
+  # reference: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
+  controller:
+    hostNetwork: false
+    replicaCount: 3
+    config: {}
+  #   load-balance: "least_conn"
+    extraArgs: {}
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    nodeSelector: {}
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: kubermatic.io/type
+              operator: In
+              values:
+              - stable
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "10254"
 
-  # Optionally change this to ClusterFirstWithHostNet in case you have 'hostNetwork: true'.
-  # By default, while using host network, name resolution uses the host's DNS. If you wish nginx-controller
-  # to keep resolving names inside the k8s network, use ClusterFirstWithHostNet.
-  dnsPolicy: ClusterFirst
-  service:
-    # externalTrafficPolicy denotes if this Service desires to route external traffic to node-local or
-    # cluster-wide endpoints. Available values: "Local" and "Cluster".
-    # "Local" preserves the client source IP, and "Cluster" doesn't.
-    externalTrafficPolicy: ""
+    metrics:
+      port: 10254
+      # if this port is changed, change healthz-port: in extraArgs: accordingly
+      enabled: true
 
-    # a list of additional annotations for the LoadBalancer service; use this
-    # to set any provider-related settings
-    annotations:
-      # make sure the LoadBalancer stays when this Helm release is ever removed
-      "helm.sh/resource-policy": keep
+    tolerations:
+    - key: only_critical
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+    # Uncomment the following tolerations to make nginx run on master nodes:
+    # - key: dedicated
+    #   operator: Equal
+    #   value: master
+    #   effect: NoSchedule
+    # - key: node-role.kubernetes.io/master
+    #   effect: NoSchedule
+
+
+    # Optionally change this to ClusterFirstWithHostNet in case you have 'hostNetwork: true'.
+    # By default, while using host network, name resolution uses the host's DNS. If you wish nginx-controller
+    # to keep resolving names inside the k8s network, use ClusterFirstWithHostNet.
+    dnsPolicy: ClusterFirst
+    service:
+      # externalTrafficPolicy denotes if this Service desires to route external traffic to node-local or
+      # cluster-wide endpoints. Available values: "Local" and "Cluster".
+      # "Local" preserves the client source IP, and "Cluster" doesn't.
+      externalTrafficPolicy: ""
+
+      # a list of additional annotations for the LoadBalancer service; use this
+      # to set any provider-related settings
+      annotations:
+        # make sure the LoadBalancer stays when this Helm release is ever removed
+        "helm.sh/resource-policy": keep
+      # in case of azure, can specific a specific IP address for the nginx service
+      # loadBalancerIP: ""
+    
+    # Temporarily disable the admission webhooks
+    admissionWebhooks:
+      enabled: true

@@ -2,15 +2,12 @@
 
 approvers:
   - sig-api
-  - sig-security
 
 reviewers:
   - sig-api
-  - sig-security
 
 labels:
   - sig/api
-  - sig/security
 
 options:
   no_parent_owners: true

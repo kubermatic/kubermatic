@@ -62,11 +62,20 @@ type ListAWSSecurityGroupsParams struct {
 	// AccessKeyID.
 	AccessKeyID *string
 
+	// AssumeRoleARN.
+	AssumeRoleARN *string
+
+	// AssumeRoleExternalID.
+	AssumeRoleExternalID *string
+
 	// Credential.
 	Credential *string
 
 	// SecretAccessKey.
 	SecretAccessKey *string
+
+	// VPC.
+	VPC *string
 
 	// Dc.
 	DC string
@@ -135,6 +144,28 @@ func (o *ListAWSSecurityGroupsParams) SetAccessKeyID(accessKeyID *string) {
 	o.AccessKeyID = accessKeyID
 }
 
+// WithAssumeRoleARN adds the assumeRoleARN to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) WithAssumeRoleARN(assumeRoleARN *string) *ListAWSSecurityGroupsParams {
+	o.SetAssumeRoleARN(assumeRoleARN)
+	return o
+}
+
+// SetAssumeRoleARN adds the assumeRoleARN to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) SetAssumeRoleARN(assumeRoleARN *string) {
+	o.AssumeRoleARN = assumeRoleARN
+}
+
+// WithAssumeRoleExternalID adds the assumeRoleExternalID to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) WithAssumeRoleExternalID(assumeRoleExternalID *string) *ListAWSSecurityGroupsParams {
+	o.SetAssumeRoleExternalID(assumeRoleExternalID)
+	return o
+}
+
+// SetAssumeRoleExternalID adds the assumeRoleExternalId to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) SetAssumeRoleExternalID(assumeRoleExternalID *string) {
+	o.AssumeRoleExternalID = assumeRoleExternalID
+}
+
 // WithCredential adds the credential to the list a w s security groups params
 func (o *ListAWSSecurityGroupsParams) WithCredential(credential *string) *ListAWSSecurityGroupsParams {
 	o.SetCredential(credential)
@@ -155,6 +186,17 @@ func (o *ListAWSSecurityGroupsParams) WithSecretAccessKey(secretAccessKey *strin
 // SetSecretAccessKey adds the secretAccessKey to the list a w s security groups params
 func (o *ListAWSSecurityGroupsParams) SetSecretAccessKey(secretAccessKey *string) {
 	o.SecretAccessKey = secretAccessKey
+}
+
+// WithVPC adds the vPC to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) WithVPC(vPC *string) *ListAWSSecurityGroupsParams {
+	o.SetVPC(vPC)
+	return o
+}
+
+// SetVPC adds the vPC to the list a w s security groups params
+func (o *ListAWSSecurityGroupsParams) SetVPC(vPC *string) {
+	o.VPC = vPC
 }
 
 // WithDC adds the dc to the list a w s security groups params
@@ -184,6 +226,22 @@ func (o *ListAWSSecurityGroupsParams) WriteToRequest(r runtime.ClientRequest, re
 		}
 	}
 
+	if o.AssumeRoleARN != nil {
+
+		// header param AssumeRoleARN
+		if err := r.SetHeaderParam("AssumeRoleARN", *o.AssumeRoleARN); err != nil {
+			return err
+		}
+	}
+
+	if o.AssumeRoleExternalID != nil {
+
+		// header param AssumeRoleExternalID
+		if err := r.SetHeaderParam("AssumeRoleExternalID", *o.AssumeRoleExternalID); err != nil {
+			return err
+		}
+	}
+
 	if o.Credential != nil {
 
 		// header param Credential
@@ -196,6 +254,14 @@ func (o *ListAWSSecurityGroupsParams) WriteToRequest(r runtime.ClientRequest, re
 
 		// header param SecretAccessKey
 		if err := r.SetHeaderParam("SecretAccessKey", *o.SecretAccessKey); err != nil {
+			return err
+		}
+	}
+
+	if o.VPC != nil {
+
+		// header param VPC
+		if err := r.SetHeaderParam("VPC", *o.VPC); err != nil {
 			return err
 		}
 	}

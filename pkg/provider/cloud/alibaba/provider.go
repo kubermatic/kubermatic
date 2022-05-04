@@ -17,12 +17,13 @@ limitations under the License.
 package alibaba
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -31,6 +32,8 @@ type Alibaba struct {
 	dc                *kubermaticv1.DatacenterSpecAlibaba
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
+
+var _ provider.CloudProvider = &Alibaba{}
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Alibaba, error) {
 	if dc.Spec.Alibaba == nil {
@@ -42,11 +45,11 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
-func (a *Alibaba) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *Alibaba) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (a *Alibaba) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	accessKeyID, accessKeySecret, err := GetCredentialsForCluster(spec, a.secretKeySelector, a.dc)
 	if err != nil {
 		return err
@@ -54,24 +57,24 @@ func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	_, err = ecs.NewClientWithAccessKey(a.dc.Region, accessKeyID, accessKeySecret)
 	if err != nil {
-		return fmt.Errorf("failed to get Alibaba cloud client: %v", err)
+		return fmt.Errorf("failed to get Alibaba cloud client: %w", err)
 	}
 	return nil
 }
 
-func (a *Alibaba) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (a *Alibaba) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
-func (a *Alibaba) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
+func (a *Alibaba) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
 }
 
-func (a *Alibaba) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (a *Alibaba) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc, dc *kubermaticv1.DatacenterSpecAlibaba) (accessKeyID string, accessKeySecret string, err error) {
 	accessKeyID = cloud.Alibaba.AccessKeyID
 	accessKeySecret = cloud.Alibaba.AccessKeySecret
@@ -97,4 +100,17 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return accessKeyID, accessKeySecret, nil
+}
+
+func ValidateCredentials(region, accessKeyID, accessKeySecret string) error {
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return err
+	}
+
+	requestZones := ecs.CreateDescribeZonesRequest()
+	requestZones.Scheme = "https"
+
+	_, err = client.DescribeZones(requestZones)
+	return err
 }

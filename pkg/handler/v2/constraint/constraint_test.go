@@ -28,8 +28,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
@@ -142,15 +141,15 @@ func TestListConstraints(t *testing.T) {
 			res := httptest.NewRecorder()
 			ctx := context.Background()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
 				err = clientsSets.FakeClient.Create(ctx, gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+					t.Fatalf("failed to create gk object %v: %v", gkObject, err)
 				}
 			}
 
@@ -214,7 +213,7 @@ func TestGetConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -268,15 +267,15 @@ func TestGetConstraints(t *testing.T) {
 			res := httptest.NewRecorder()
 			ctx := context.Background()
 
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
 				err = clientsSets.FakeClient.Create(ctx, gkObject)
 				if err != nil {
-					t.Fatalf("failed to create gk object due to %v", err)
+					t.Fatalf("failed to create gk object: %v", err)
 				}
 			}
 
@@ -361,15 +360,14 @@ func genGatekeeperConstraint(name, kind string, t *testing.T) *unstructured.Unst
 }
 
 func unmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
-
 	raw, err := json.Marshal(object)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling: %v", err)
+		return nil, fmt.Errorf("error marshalling: %w", err)
 	}
 	result := make(map[string]interface{})
 	err = json.Unmarshal(raw, &result)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling: %v", err)
+		return nil, fmt.Errorf("error unmarshalling: %w", err)
 	}
 
 	return result, nil
@@ -406,7 +404,7 @@ func TestDeleteConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -437,9 +435,9 @@ func TestDeleteConstraints(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints/%s",
 				tc.ProjectID, tc.ClusterID, tc.ConstraintName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -490,7 +488,7 @@ func TestCreateConstraints(t *testing.T) {
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -525,7 +523,7 @@ func TestCreateConstraints(t *testing.T) {
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabel\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8c.io \"requiredlabel\" not found"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -537,7 +535,9 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 5: cannot create constraint with invalid parameters",
 			Constraint: func() apiv2.Constraint {
 				c := test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel")
-				c.Spec.Parameters = map[string]interface{}{"labels": "fail"}
+				c.Spec.Parameters = map[string]json.RawMessage{
+					"labels": []byte(`"fail"`),
+				}
 				return apiv2.Constraint{
 					Name: "ct1",
 					Spec: c.Spec,
@@ -558,8 +558,8 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 6: cannot create rawJSON constraint with invalid parameters",
 			Constraint: func() apiv2.Constraint {
 				c := test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel")
-				c.Spec.Parameters = kubermaticv1.Parameters{
-					"rawJSON": `{"labels":"gatekeeper"}`,
+				c.Spec.Parameters = map[string]json.RawMessage{
+					"rawJSON": []byte(`"{\"labels\":\"gatekeeper\"}"`),
 				}
 				return apiv2.Constraint{
 					Name: "ct1",
@@ -595,9 +595,9 @@ func TestCreateConstraints(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints",
 				tc.ProjectID, tc.ClusterID), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -646,7 +646,7 @@ func TestPatchConstraints(t *testing.T) {
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			Patch:            `{"spec":{"constraintType":"RequiredLabel","parameters":{"labels":["test"]},"match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to project my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -728,9 +728,9 @@ func TestPatchConstraints(t *testing.T) {
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints/%s",
 				tc.ProjectID, tc.ClusterID, tc.ConstraintName), strings.NewReader(tc.Patch))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -788,7 +788,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 				Name: "ct1",
 				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
 			},
-			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabel\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8c.io \"requiredlabel\" not found"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -806,15 +806,14 @@ func TestCreateDefaultConstraints(t *testing.T) {
 			t.Fatalf("error marshalling body into json: %v", err)
 		}
 		t.Run(tc.Name, func(t *testing.T) {
-
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
 			req := httptest.NewRequest("POST", "/api/v2/constraints", bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -828,7 +827,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 	}
 }
 
-func convertInternalToAPIConstraint(c *v1.Constraint) *apiv2.Constraint {
+func convertInternalToAPIConstraint(c *kubermaticv1.Constraint) *apiv2.Constraint {
 	return &apiv2.Constraint{
 		Name: c.Name,
 		Spec: c.Spec,
@@ -842,8 +841,8 @@ func TestListDefaultConstraints(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                       string
-		ct1                        *v1.Constraint
-		ct2                        *v1.Constraint
+		ct1                        *kubermaticv1.Constraint
+		ct2                        *kubermaticv1.Constraint
 		ExpectedDefaultConstraints []apiv2.Constraint
 		HTTPStatus                 int
 		ExistingAPIUser            *apiv1.User
@@ -867,9 +866,9 @@ func TestListDefaultConstraints(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v2/constraints", strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -912,7 +911,7 @@ func TestGetDefaultConstraint(t *testing.T) {
 		{
 			Name:             "scenario 2: get non-existing default constraint",
 			CTName:           "missing",
-			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"missing\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8c.io \"missing\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel"),
@@ -923,13 +922,12 @@ func TestGetDefaultConstraint(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/constraints/%s", tc.CTName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -972,7 +970,7 @@ func TestDeleteDefaultConstraints(t *testing.T) {
 		{
 			Name:             "scenario 3: delete non-existing default constraint should fail",
 			CTToDeleteName:   "idontexist",
-			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8c.io \"idontexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
@@ -980,13 +978,12 @@ func TestDeleteDefaultConstraints(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/constraints/%s", tc.CTToDeleteName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -1075,7 +1072,7 @@ func TestPatchDefaultConstraints(t *testing.T) {
 			Name:             "scenario 6: cannot patch non-existing default constraint",
 			ConstraintName:   "doesnotexist",
 			Patch:            `{"spec":{"match":{"kinds":[{"apiGroups":[""],"kinds":["pods"]}]},"parameters":{"rawJSON":"{\"labels\":[\"test1\"]}"},"constraintType":"RequiredLabel", "disabled": false, "selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"filtered":"false"}}}}}`,
-			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"doesnotexist\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8c.io \"doesnotexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 			ExistingObjects: []ctrlruntimeclient.Object{
@@ -1085,14 +1082,13 @@ func TestPatchDefaultConstraints(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
 
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/constraints/%s", tc.ConstraintName), strings.NewReader(tc.Patch))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

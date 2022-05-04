@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -29,7 +29,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -39,7 +39,7 @@ import (
 
 func ListEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		constraintTemplateList, err := constraintTemplateProvider.List()
+		constraintTemplateList, err := constraintTemplateProvider.List(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -55,13 +55,12 @@ func ListEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider
 
 func GetEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-
 		req := request.(constraintTemplateReq)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		constraintTemplate, err := constraintTemplateProvider.Get(req.Name)
+		constraintTemplate, err := constraintTemplateProvider.Get(ctx, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -96,7 +95,7 @@ func DecodeConstraintTemplateRequest(c context.Context, r *http.Request) (interf
 	}, nil
 }
 
-// Validate validates constraintTemplate request
+// Validate validates constraintTemplate request.
 func (req constraintTemplateReq) Validate() error {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("the constraint template name cannot be empty")
@@ -128,7 +127,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePr
 			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("create ct validation failed: %v", err))
 		}
 
-		ct, err = constraintTemplateProvider.Create(ct)
+		ct, err = constraintTemplateProvider.Create(ctx, ct)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -178,7 +177,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 		}
 
 		// get CT
-		originalCT, err := constraintTemplateProvider.Get(req.Name)
+		originalCT, err := constraintTemplateProvider.Get(ctx, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -220,7 +219,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 		}
 
 		// apply patch
-		patchedCT, err = constraintTemplateProvider.Update(patchedCT)
+		patchedCT, err = constraintTemplateProvider.Update(ctx, patchedCT)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -256,7 +255,7 @@ type patchConstraintTemplateReq struct {
 	Patch json.RawMessage
 }
 
-// DecodePatchCTReq decodes http request into patchConstraintTemplateReq
+// DecodePatchCTReq decodes http request into patchConstraintTemplateReq.
 func DecodePatchConstraintTemplateReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req patchConstraintTemplateReq
 
@@ -266,7 +265,7 @@ func DecodePatchConstraintTemplateReq(c context.Context, r *http.Request) (inter
 	}
 	req.constraintTemplateReq = ctReq.(constraintTemplateReq)
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
@@ -292,7 +291,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePr
 			},
 		}
 
-		err = constraintTemplateProvider.Delete(ct)
+		err = constraintTemplateProvider.Delete(ctx, ct)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

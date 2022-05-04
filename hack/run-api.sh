@@ -31,8 +31,8 @@ echodate "Compiling API..."
 make kubermatic-api
 
 API_EXTRA_ARGS=""
-if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-  API_EXTRA_ARGS="-dynamic-datacenters -dynamic-presets"
+if [ -n "${CONFIG_FILE:-}" ]; then
+  API_EXTRA_ARGS="-kubermatic-configuration-file=$CONFIG_FILE"
 fi
 
 if [ -z "${VAULT_ADDR:-}" ]; then
@@ -65,15 +65,13 @@ set -x
 ./_build/kubermatic-api $API_EXTRA_ARGS \
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=charts/kubermatic-operator/static/ca-bundle.pem \
-  -versions=charts/kubermatic/static/master/versions.yaml \
-  -updates=charts/kubermatic/static/master/updates.yaml \
-  -master-resources=charts/kubermatic/static/master \
   -worker-name="$(worker_name)" \
   -internal-address=127.0.0.1:18085 \
   -prometheus-url=http://localhost:9090 \
   -address=127.0.0.1:8080 \
   -oidc-url=https://dev.kubermatic.io/dex \
   -oidc-authenticator-client-id=kubermatic \
+  -feature-gates=KonnectivityService=true \
   -service-account-signing-key="$SERVICE_ACCOUNT_SIGNING_KEY" \
   -log-debug=$KUBERMATIC_DEBUG \
   -pprof-listen-address=":$PPROF_PORT" \

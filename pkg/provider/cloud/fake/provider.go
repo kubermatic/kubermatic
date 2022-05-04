@@ -17,8 +17,10 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
@@ -26,30 +28,32 @@ type fakeCloudProvider struct {
 	nodes map[string]*apiv1.Node
 }
 
-// NewCloudProvider creates a new fake cloud provider
+// NewCloudProvider creates a new fake cloud provider.
 func NewCloudProvider() provider.CloudProvider {
 	return &fakeCloudProvider{
 		nodes: map[string]*apiv1.Node{},
 	}
 }
 
-func (p *fakeCloudProvider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+var _ provider.CloudProvider = &fakeCloudProvider{}
+
+func (p *fakeCloudProvider) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (p *fakeCloudProvider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (p *fakeCloudProvider) ValidateCloudSpec(_ context.Context, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (p *fakeCloudProvider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *fakeCloudProvider) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *fakeCloudProvider) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
-func (p *fakeCloudProvider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
+func (p *fakeCloudProvider) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }

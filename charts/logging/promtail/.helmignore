@@ -8,3 +8,4 @@
 .idea/
 *.tmproj
 .vscode/
+test/

@@ -19,7 +19,6 @@ package usersshkeysagent
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,7 +35,7 @@ import (
 )
 
 func TestReconcileUserSSHKeys(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "sshkeys")
+	tmpDir, err := os.MkdirTemp("", "sshkeys")
 	if err != nil {
 		t.Fatalf("error while creating test base dir: %v", err)
 	}
@@ -151,7 +150,6 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 					if int16(sshDirInfo.Mode()) != tc.expectedDirMode {
 						t.Fatal(".ssh dir mode and its expected file mode don't match")
 					}
-
 				}
 			}
 		})
@@ -159,7 +157,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 }
 
 func readAuthorizedKeysFile(path string) (string, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
@@ -177,11 +175,11 @@ func cleanupFiles(tmpFiles []string) error {
 
 func changeFileModes(sshDir, authorizedKeysFile string) error {
 	if err := os.Chmod(authorizedKeysFile, 0700); err != nil {
-		return fmt.Errorf("error while changing file mode: %v", err)
+		return fmt.Errorf("error while changing file mode: %w", err)
 	}
 
 	if err := os.Chmod(sshDir, 0600); err != nil {
-		return fmt.Errorf("error while changing file mode: %v", err)
+		return fmt.Errorf("error while changing file mode: %w", err)
 	}
 	return nil
 }

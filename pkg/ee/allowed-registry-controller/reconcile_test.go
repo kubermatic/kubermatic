@@ -1,9 +1,9 @@
-// +build ee
+//go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Loodse GmbH
+                     Copyright © 2021 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -26,14 +26,15 @@ package allowedregistrycontroller_test
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -53,35 +54,68 @@ import (
 const testNamespace = "kubermatic"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
-		name               string
-		allowedRegistry    *kubermaticv1.AllowedRegistry
-		expectedCT         *kubermaticv1.ConstraintTemplate
-		expectedConstraint *kubermaticv1.Constraint
-		masterClient       ctrlruntimeclient.Client
+		name                  string
+		allowedRegistry       []*kubermaticv1.AllowedRegistry
+		allowedRegistryUpdate *kubermaticv1.AllowedRegistry
+		expectedCT            *kubermaticv1.ConstraintTemplate
+		expectedConstraint    *kubermaticv1.Constraint
+		masterClient          ctrlruntimeclient.Client
 	}{
 		{
-			name:               "scenario 1: sync ct to seed cluster",
-			allowedRegistry:    genAllowedRegistry(false),
+			name:               "scenario 1: sync allowedlist to seed cluster",
+			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", false)},
 			expectedCT:         genConstraintTemplate(),
 			expectedConstraint: genWRConstraint(sets.NewString("quay.io")),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genAllowedRegistry(false)).
+				WithObjects(genAllowedRegistry("quay", "quay.io", false)).
 				Build(),
 		},
 		{
-			name:               "scenario 2: cleanup ct on seed cluster when master ct is being terminated",
-			allowedRegistry:    genAllowedRegistry(true),
+			name:               "scenario 2: cleanup allowedlist on seed cluster when master ct is being terminated",
+			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", true)},
 			expectedCT:         genConstraintTemplate(),
 			expectedConstraint: genWRConstraint(sets.NewString()),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genAllowedRegistry(true),
+				WithObjects(genAllowedRegistry("quay", "quay.io", true),
 					genConstraintTemplate(), genWRConstraint(sets.NewString("quay.io"))).
+				Build(),
+		},
+		{
+			name: "scenario 3: sync multiple allowedlists to seed cluster",
+			allowedRegistry: []*kubermaticv1.AllowedRegistry{
+				genAllowedRegistry("quay", "quay.io", false),
+				genAllowedRegistry("myreg", "https://myregistry.com", false),
+			},
+			expectedCT:         genConstraintTemplate(),
+			expectedConstraint: genWRConstraint(sets.NewString("quay.io", "https://myregistry.com")),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(
+					genAllowedRegistry("quay", "quay.io", false),
+					genAllowedRegistry("myreg", "https://myregistry.com", false)).
+				Build(),
+		},
+		{
+			name: "scenario 4: update a allowedlist",
+			allowedRegistry: []*kubermaticv1.AllowedRegistry{
+				genAllowedRegistry("quay", "quay.io", false),
+				genAllowedRegistry("myreg", "https://myregistry.com", false),
+			},
+			allowedRegistryUpdate: genAllowedRegistry("quay", "quay.io-edited", false),
+			expectedCT:            genConstraintTemplate(),
+			expectedConstraint:    genWRConstraint(sets.NewString("quay.io-edited", "https://myregistry.com")),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(
+					genAllowedRegistry("quay", "quay.io", false),
+					genAllowedRegistry("myreg", "https://myregistry.com", false)).
 				Build(),
 		},
 	}
@@ -97,9 +131,28 @@ func TestReconcile(t *testing.T) {
 				testNamespace,
 			)
 
-			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.allowedRegistry.Name}}
-			if _, err := r.Reconcile(ctx, request); err != nil {
-				t.Fatalf("reconciling failed: %v", err)
+			for _, ar := range tc.allowedRegistry {
+				request := reconcile.Request{NamespacedName: types.NamespacedName{Name: ar.Name}}
+				if _, err := r.Reconcile(ctx, request); err != nil {
+					t.Fatalf("reconciling failed: %v", err)
+				}
+			}
+
+			if tc.allowedRegistryUpdate != nil {
+				var ar kubermaticv1.AllowedRegistry
+				if err := tc.masterClient.Get(ctx, types.NamespacedName{Name: tc.allowedRegistryUpdate.Name}, &ar); err != nil {
+					t.Fatal(err)
+				}
+
+				ar.Spec = tc.allowedRegistryUpdate.Spec
+				if err := tc.masterClient.Update(ctx, &ar); err != nil {
+					t.Fatal(err)
+				}
+
+				request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.allowedRegistryUpdate.Name}}
+				if _, err := r.Reconcile(ctx, request); err != nil {
+					t.Fatalf("reconciling failed: %v", err)
+				}
 			}
 
 			// check CT
@@ -144,12 +197,12 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 
 	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1beta1.CRD{
-			Spec: constrainttemplatev1beta1.CRDSpec{
-				Names: constrainttemplatev1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind: allowedregistrycontroller.AllowedRegistryCTName,
 				},
-				Validation: &constrainttemplatev1beta1.Validation{
+				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							allowedregistrycontroller.AllowedRegistryField: {
@@ -165,7 +218,7 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 				},
 			},
 		},
-		Targets: []constrainttemplatev1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego:   "package allowedregistry\n\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.containers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.initContainers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}",
@@ -176,11 +229,11 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 	return ct
 }
 
-func genAllowedRegistry(deleted bool) *kubermaticv1.AllowedRegistry {
+func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.AllowedRegistry {
 	wr := &kubermaticv1.AllowedRegistry{}
-	wr.Name = "AllowedRegistry"
+	wr.Name = name
 	wr.Spec = kubermaticv1.AllowedRegistrySpec{
-		RegistryPrefix: "quay.io",
+		RegistryPrefix: registry,
 	}
 
 	if deleted {
@@ -197,10 +250,7 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
-	interfaceList := []interface{}{}
-	for _, registry := range registrySet.List() {
-		interfaceList = append(interfaceList, registry)
-	}
+	jsonRegSet, _ := json.Marshal(registrySet.List())
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: allowedregistrycontroller.AllowedRegistryCTName,
@@ -212,8 +262,8 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 				},
 			},
 		},
-		Parameters: kubermaticv1.Parameters{
-			allowedregistrycontroller.AllowedRegistryField: interfaceList,
+		Parameters: map[string]json.RawMessage{
+			allowedregistrycontroller.AllowedRegistryField: jsonRegSet,
 		},
 		Disabled: registrySet.Len() == 0,
 	}

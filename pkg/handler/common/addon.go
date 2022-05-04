@@ -20,7 +20,7 @@ import (
 	"context"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -49,7 +49,7 @@ func PatchAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	apiAddon.Spec.Variables = *rawVars
+	apiAddon.Spec.Variables = rawVars
 
 	if apiAddon.Labels == nil {
 		apiAddon.Labels = map[string]string{}
@@ -134,7 +134,12 @@ func GetAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGette
 	return result, nil
 }
 
-func ListInstallableAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, accessibleAddons sets.String, projectID, clusterID string) (interface{}, error) {
+func ListInstallableAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, configGetter provider.KubermaticConfigurationGetter, projectID, clusterID string) (interface{}, error) {
+	config, err := configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
 	if err != nil {
 		return nil, err
@@ -150,7 +155,7 @@ func ListInstallableAddonEndpoint(ctx context.Context, userInfoGetter provider.U
 		installedAddons.Insert(addon.Name)
 	}
 
-	return accessibleAddons.Difference(installedAddons).UnsortedList(), nil
+	return sets.NewString(config.Spec.API.AccessibleAddons...).Difference(installedAddons).UnsortedList(), nil
 }
 
 func DeleteAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID, addonID string) (interface{}, error) {
@@ -161,8 +166,8 @@ func DeleteAddonEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	return nil, common.KubernetesErrorToHTTPError(deleteAddon(ctx, userInfoGetter, cluster, projectID, addonID))
 }
 
-func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider, addonID string) (interface{}, error) {
-	addon, err := addonConfigProvider.Get(addonID)
+func GetAddonConfigEndpoint(ctx context.Context, addonConfigProvider provider.AddonConfigProvider, addonID string) (interface{}, error) {
+	addon, err := addonConfigProvider.Get(ctx, addonID)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -170,8 +175,8 @@ func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider, ad
 	return convertInternalAddonConfigToExternal(addon)
 }
 
-func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) (interface{}, error) {
-	list, err := addonConfigProvider.List()
+func ListAddonConfigsEndpoint(ctx context.Context, addonConfigProvider provider.AddonConfigProvider) (interface{}, error) {
+	list, err := addonConfigProvider.List(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -179,93 +184,92 @@ func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) 
 	return convertInternalAddonConfigsToExternal(list)
 }
 
-func deleteAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, projectID, addonID string) error {
+func deleteAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, addonID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return err
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.DeleteUnsecured(cluster, addonID)
+		return privilegedAddonProvider.DeleteUnsecured(ctx, cluster, addonID)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.Delete(userInfo, cluster, addonID)
+	return addonProvider.Delete(ctx, userInfo, cluster, addonID)
 }
 
-func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, addon *kubermaticapiv1.Addon, projectID string) (*kubermaticapiv1.Addon, error) {
+func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon, projectID string) (*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.UpdateUnsecured(cluster, addon)
+		return privilegedAddonProvider.UpdateUnsecured(ctx, cluster, addon)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.Update(userInfo, cluster, addon)
+	return addonProvider.Update(ctx, userInfo, cluster, addon)
 }
 
-func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, rawVars *runtime.RawExtension, labels map[string]string, projectID, name string) (*kubermaticapiv1.Addon, error) {
+func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, rawVars *runtime.RawExtension, labels map[string]string, projectID, name string) (*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.NewUnsecured(cluster, name, rawVars, labels)
+		return privilegedAddonProvider.NewUnsecured(ctx, cluster, name, rawVars, labels)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.New(userInfo, cluster, name, rawVars, labels)
-
+	return addonProvider.New(ctx, userInfo, cluster, name, rawVars, labels)
 }
 
-func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, projectID, addonID string) (*kubermaticapiv1.Addon, error) {
+func getAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, addonID string) (*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.GetUnsecured(cluster, addonID)
+		return privilegedAddonProvider.GetUnsecured(ctx, cluster, addonID)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.Get(userInfo, cluster, addonID)
+	return addonProvider.Get(ctx, userInfo, cluster, addonID)
 }
 
-func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, projectID string) ([]*kubermaticapiv1.Addon, error) {
+func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) ([]*kubermaticv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.ListUnsecured(cluster)
+		return privilegedAddonProvider.ListUnsecured(ctx, cluster)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.List(userInfo, cluster)
+	return addonProvider.List(ctx, userInfo, cluster)
 }
 
-func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv1.Addon, error) {
+func convertInternalAddonToExternal(internalAddon *kubermaticv1.Addon) (*apiv1.Addon, error) {
 	result := &apiv1.Addon{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalAddon.Name,
@@ -283,7 +287,7 @@ func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv
 			IsDefault: internalAddon.Spec.IsDefault,
 		},
 	}
-	if len(internalAddon.Spec.Variables.Raw) > 0 {
+	if internalAddon.Spec.Variables != nil && len(internalAddon.Spec.Variables.Raw) > 0 {
 		if err := k8sjson.Unmarshal(internalAddon.Spec.Variables.Raw, &result.Spec.Variables); err != nil {
 			return nil, err
 		}
@@ -295,7 +299,7 @@ func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv
 	return result, nil
 }
 
-func convertInternalAddonsToExternal(internalAddons []*kubermaticapiv1.Addon) ([]*apiv1.Addon, error) {
+func convertInternalAddonsToExternal(internalAddons []*kubermaticv1.Addon) ([]*apiv1.Addon, error) {
 	result := []*apiv1.Addon{}
 
 	for _, addon := range internalAddons {
@@ -309,7 +313,7 @@ func convertInternalAddonsToExternal(internalAddons []*kubermaticapiv1.Addon) ([
 	return result, nil
 }
 
-func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticapiv1.AddonConfig) (*apiv1.AddonConfig, error) {
+func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticv1.AddonConfig) (*apiv1.AddonConfig, error) {
 	return &apiv1.AddonConfig{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalAddonConfig.Name,
@@ -327,7 +331,7 @@ func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticapiv1.A
 	}, nil
 }
 
-func convertInternalAddonConfigsToExternal(internalAddonConfigs *kubermaticapiv1.AddonConfigList) ([]*apiv1.AddonConfig, error) {
+func convertInternalAddonConfigsToExternal(internalAddonConfigs *kubermaticv1.AddonConfigList) ([]*apiv1.AddonConfig, error) {
 	result := []*apiv1.AddonConfig{}
 
 	for _, internalAddonConfig := range internalAddonConfigs.Items {

@@ -19,10 +19,11 @@ package usercluster
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -56,21 +57,24 @@ const name = "usercluster-controller"
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
 // This makes importing the the deployment elsewhere (openshift controller)
-// easier as only have to implement the parts that are actually in use
+// easier as only have to implement the parts that are actually in use.
 type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	NodeLocalDNSCacheEnabled() bool
 	GetOpenVPNServerPort() (int32, error)
+	GetKonnectivityServerPort() (int32, error)
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
 	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
+	IsKonnectivityEnabled() bool
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
+// nolint:gocyclo
 func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -96,15 +100,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			openvpnServerPort, err := data.GetOpenVPNServerPort()
-			if err != nil {
-				return nil, err
-			}
-
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -134,16 +133,48 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
 				"-cluster-url", data.Cluster().Address.URL,
+				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
-				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
-				"-version", data.Cluster().Spec.Version.String(),
-				"-owner-email", data.Cluster().Status.UserEmail,
+				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
 			}, getNetworkArgs(data)...)
+
+			if email := data.Cluster().Status.UserEmail; email != "" {
+				args = append(args, "-owner-email", email)
+			}
+
+			if data.Cluster().Spec.DebugLog {
+				args = append(args, "-log-debug=true")
+			}
+
+			if data.IsKonnectivityEnabled() {
+				args = append(args, "-konnectivity-enabled=true")
+
+				kHost := data.Cluster().Address.ExternalName
+				if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+					kHost = fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, kHost)
+				}
+				kPort, err := data.GetKonnectivityServerPort()
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, "-konnectivity-server-host", kHost)
+				args = append(args, "-konnectivity-server-port", fmt.Sprint(kPort))
+			} else {
+				openvpnServerPort, err := data.GetOpenVPNServerPort()
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, "-openvpn-server-port", fmt.Sprint(openvpnServerPort))
+			}
+
+			if data.Cluster().Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] {
+				args = append(args, "-enable-network-policies")
+			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 				args = append(args, "-tunneling-agent-ip", data.Cluster().Address.IP)
@@ -152,9 +183,13 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			providerName, err := data.GetCloudProviderName()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get cloud provider name: %v", err)
+				return nil, fmt.Errorf("failed to get cloud provider name: %w", err)
 			}
 			args = append(args, "-cloud-provider-name", providerName)
+
+			if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
+				args = append(args, "-nutanix-csi-enabled=true")
+			}
 
 			if data.Cluster().Spec.UpdateWindow != nil && data.Cluster().Spec.UpdateWindow.Length != "" && data.Cluster().Spec.UpdateWindow.Start != "" {
 				args = append(args, "-update-window-start", data.Cluster().Spec.UpdateWindow.Start, "-update-window-length", data.Cluster().Spec.UpdateWindow.Length)
@@ -162,6 +197,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds != nil {
 				args = append(args, "-opa-webhook-timeout", fmt.Sprint(*data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
+			}
+
+			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled {
+				args = append(args, fmt.Sprintf("-enable-mutation=%t", data.Cluster().Spec.OPAIntegration.ExperimentalEnableMutation))
 			}
 
 			if data.UserClusterMLAEnabled() && data.Cluster().Spec.MLA != nil {
@@ -173,7 +212,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					if err != nil {
 						return nil, err
 					}
-					mlaEndpoint := fmt.Sprintf("%s:%d", data.Cluster().Address.ExternalName, mlaGatewayPort)
+					mlaEndpoint := net.JoinHostPort(data.Cluster().Address.ExternalName, fmt.Sprintf("%d", mlaGatewayPort))
 					if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 						mlaEndpoint = resources.MLAGatewaySNIPrefix + mlaEndpoint
 					}
@@ -181,14 +220,21 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				}
 			}
 
-			if helper.NeedCCMMigration(data.Cluster()) {
+			if data.Cluster().Spec.EnableOperatingSystemManager {
+				args = append(args, "-operating-system-manager-enabled")
+			}
+
+			if kubermaticv1helper.NeedCCMMigration(data.Cluster()) {
 				args = append(args, "-ccm-migration")
-				args = append(args, fmt.Sprintf("-cluster-name=%v", data.Cluster().Name))
+			}
+
+			if kubermaticv1helper.CCMMigrationCompleted(data.Cluster()) {
+				args = append(args, "-ccm-migration-completed")
 			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
 			if err != nil {
-				return nil, fmt.Errorf("failed to get label args value: %v", err)
+				return nil, fmt.Errorf("failed to get label args value: %w", err)
 			}
 			if labelArgsValue != "" {
 				args = append(args, "-node-labels", labelArgsValue)
@@ -213,7 +259,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
 								Port:   intstr.FromInt(8086),
@@ -241,13 +287,13 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -308,7 +354,7 @@ func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {
 
 	bytes, err := json.Marshal(labelsToApply)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal labels: %v", err)
+		return "", fmt.Errorf("failed to marshal labels: %w", err)
 	}
 	return string(bytes), nil
 }

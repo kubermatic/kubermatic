@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -101,27 +101,36 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		subdomain = m.seed.Spec.SeedDNSOverwrite
 	}
 
-	frontProxyLoadBalancerServiceIP := ""
+	frontProxyLBServiceIP := ""
+	frontProxyLBServiceHostname := ""
 	if m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		frontProxyLoadBalancerService := &corev1.Service{}
 		nn := types.NamespacedName{Namespace: m.cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}
 		if err := m.client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
-			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
+			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %w", err)
 		}
-		// Use this as default in case the implementation doesn't populate the status
-		frontProxyLoadBalancerServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
-		// Supposively there is only one if not..Good luck
+		frontProxyLBServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP // default in case the implementation doesn't populate the status
 		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
 			if ingress.IP != "" {
-				frontProxyLoadBalancerServiceIP = ingress.IP
+				frontProxyLBServiceIP = ingress.IP
 			}
+			if ingress.Hostname != "" {
+				frontProxyLBServiceHostname = ingress.Hostname
+			}
+		}
+		if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) > 1 {
+			m.log.Debugw("Multiple ingress values in LB status, the following values will be used", "ip", frontProxyLBServiceIP, "hostname", frontProxyLBServiceHostname)
 		}
 	}
 
 	// External Name
 	externalName := ""
 	if m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		externalName = frontProxyLoadBalancerServiceIP
+		if frontProxyLBServiceIP != "" {
+			externalName = frontProxyLBServiceIP
+		} else {
+			externalName = frontProxyLBServiceHostname
+		}
 	} else {
 		externalName = fmt.Sprintf("%s.%s.%s", m.cluster.Name, subdomain, m.externalURL)
 	}
@@ -149,7 +158,16 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	// controller manager.
 	switch m.cluster.Spec.ExposeStrategy {
 	case kubermaticv1.ExposeStrategyLoadBalancer:
-		ip = frontProxyLoadBalancerServiceIP
+		if frontProxyLBServiceIP != "" {
+			ip = frontProxyLBServiceIP
+		} else if frontProxyLBServiceHostname != "" {
+			var err error
+			// Always lookup IP address, in case it changes
+			ip, err = m.getExternalIPv4(frontProxyLBServiceHostname)
+			if err != nil {
+				return nil, err
+			}
+		}
 	case kubermaticv1.ExposeStrategyNodePort:
 		var err error
 		// Always lookup IP address, in case it changes (IP's on AWS LB's change)
@@ -207,7 +225,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 	resolvedIPs, err := m.lookupFunction(hostname)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup ip for %s: %v", hostname, err)
+		return "", fmt.Errorf("failed to lookup ip for %s: %w", hostname, err)
 	}
 	ipList := sets.NewString()
 	for _, ip := range resolvedIPs {
@@ -217,7 +235,7 @@ func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 	}
 	ips := ipList.List()
 	if len(ips) == 0 {
-		return "", fmt.Errorf("no ip addresses found for %s: %v", hostname, err)
+		return "", fmt.Errorf("no ip addresses found for %s: %w", hostname, err)
 	}
 
 	// Just one ipv4

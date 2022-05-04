@@ -20,41 +20,45 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 
 	"github.com/go-logr/zapr"
-	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
-	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
-	controllerName = "seed-controller-manager"
+	controllerName = "kkp-seed-controller-manager"
 )
 
-//nolint:gocritic,exitAfterDefer
+//nolint:gocritic
 func main() {
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
@@ -63,7 +67,7 @@ func main() {
 	logOpts.AddFlags(flag.CommandLine)
 	options, err := newControllerRunOptions()
 	if err != nil {
-		fmt.Printf("Failed to create controller run options due to = %v\n", err)
+		fmt.Printf("Failed to create controller run options: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -72,20 +76,24 @@ func main() {
 		os.Exit(1)
 	}
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	log := rawLog.Sugar().With(
-		"worker-name", options.workerName,
-	)
+	log := rawLog.Sugar()
+	if options.workerName != "" {
+		log = log.With("worker-name", options.workerName)
+	}
 	defer func() {
 		if err := log.Sync(); err != nil {
 			fmt.Println(err)
 		}
 	}()
 
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+
+	// make sure the logging flags actually affect the global (deprecated) logger instance
+	kubermaticlog.Logger = log
+
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, &versions)
-
-	// Set the logger used by sigs.k8s.io/controller-runtime
-	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	electionName := controllerName + "-leader-election"
 	if options.workerName != "" {
@@ -104,6 +112,13 @@ func main() {
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
+		NewClient: func(c ctrlruntimecache.Cache, config *rest.Config, options ctrlruntimeclient.Options, uncachedObjects ...ctrlruntimeclient.Object) (ctrlruntimeclient.Client, error) {
+			// get rid of warnings related to
+			// policy/v1beta1 PodDisruptionBudget is deprecated in v1.21+, unavailable in v1.25+; use policy/v1 PodDisruptionBudget
+			options.Opts.SuppressWarnings = true
+
+			return ctrlruntimecluster.DefaultNewClient(c, config, options, uncachedObjects...)
+		},
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
@@ -118,13 +133,22 @@ func main() {
 	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
-	if err := gatekeeperv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatekeeperv1beta1.SchemeGroupVersion), zap.Error(err))
+	if err := constrainttemplatesv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", constrainttemplatesv1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := osmv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := appkubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", appkubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1beta2.VerticalPodAutoscalerList{}); err != nil {
-		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
+		if meta.IsNoMatchError(err) {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
 Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
@@ -135,10 +159,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
 	// Default to empty JSON object
-	// TODO(irozzo) Do not create secret and image pull secret if empty
+	// TODO: Do not create secret and image pull secret if empty
 	dockerPullConfigJSON := []byte("{}")
 	if options.dockerPullConfigJSONFile != "" {
-		dockerPullConfigJSON, err = ioutil.ReadFile(options.dockerPullConfigJSONFile)
+		dockerPullConfigJSON, err = os.ReadFile(options.dockerPullConfigJSONFile)
 		if err != nil {
 			log.Fatalw(
 				"Failed to read docker pull config file",
@@ -151,7 +175,17 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	rootCtx := context.Background()
 	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
 	if err != nil {
-		log.Fatalw("Unable to create the seed factory", zap.Error(err))
+		log.Fatalw("Unable to create the seed getter", zap.Error(err))
+	}
+
+	var configGetter provider.KubermaticConfigurationGetter
+	if options.kubermaticConfiguration != nil {
+		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+	} else {
+		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
+	}
+	if err != nil {
+		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
 	}
 
 	var clientProvider *client.Provider
@@ -170,39 +204,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		mgr:                  mgr,
 		clientProvider:       clientProvider,
 		seedGetter:           seedGetter,
+		configGetter:         configGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,
 		versions:             versions,
-	}
-
-	if options.admissionWebhook.Configured() {
-		if err := options.admissionWebhook.Configure(mgr.GetWebhookServer()); err != nil {
-			log.Fatalw("Failed to configure admission webhook server", zap.Error(err))
-		}
-		// Register Seed validation admission webhook
-		h, err := seedValidationHandler(rootCtx, mgr.GetClient(), options)
-		if err != nil {
-			log.Fatalw("Failed to build Seed validation handler", zap.Error(err))
-		}
-
-		// Setup the admission handler for kubermatic Seed CRDs
-		h.SetupWebhookWithManager(mgr)
-		// Setup the validation admission handler for kubermatic Cluster CRDs
-		clustervalidation.NewAdmissionHandler(options.featureGates).SetupWebhookWithManager(mgr)
-		// Setup the mutation admission handler for kubermatic Cluster CRDs
-		getter, err := seedGetterFactory(rootCtx, mgr.GetAPIReader(), options)
-		if err != nil {
-			log.Fatalf("make seed getter with api reader: %v", err)
-		}
-		seed, err := getter()
-		if err != nil {
-			log.Fatalf("could not get seed resource: %v", err)
-		}
-		settings, err := defaultComponentSettings(ctrlCtx.runOptions, seed)
-		if err != nil {
-			log.Fatal(err)
-		}
-		clustermutation.NewAdmissionHandler(settings).SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

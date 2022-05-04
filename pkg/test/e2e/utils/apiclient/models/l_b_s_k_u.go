@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// LBSKU l b s k u
+// LBSKU Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
 //
 // swagger:model LBSKU
 type LBSKU string

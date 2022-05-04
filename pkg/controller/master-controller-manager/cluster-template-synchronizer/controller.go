@@ -19,13 +19,11 @@ package clustertemplatesynchronizer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -43,7 +41,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic cluster templates on the master cluster to the seed clusters.
-	ControllerName = "cluster_template_syncing_controller"
+	ControllerName = "kkp-cluster-template-synchronizer"
 )
 
 type reconciler struct {
@@ -56,8 +54,8 @@ type reconciler struct {
 func Add(
 	masterMgr manager.Manager,
 	seedManagers map[string]manager.Manager,
-	log *zap.SugaredLogger) error {
-
+	log *zap.SugaredLogger,
+) error {
 	log = log.Named(ControllerName)
 	r := &reconciler{
 		log:          log,
@@ -86,14 +84,10 @@ func Add(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-
 	log := r.log.With("resource", request.Name)
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)
-	if controllerutil.IsCacheNotStarted(err) {
-		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -115,11 +109,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer) {
-		kuberneteshelper.AddFinalizer(clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, clusterTemplate); err != nil {
-			return fmt.Errorf("failed to add finalizer: %w", err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	clusterTemplateCreatorGetters := []reconciling.NamedKubermaticV1ClusterTemplateCreatorGetter{
@@ -137,7 +128,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate) error {
-
 	if kuberneteshelper.HasFinalizer(template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer) {
 		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
 			err := seedClient.Delete(ctx, &kubermaticv1.ClusterTemplate{
@@ -150,8 +140,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}); err != nil {
 			return err
 		}
-		kuberneteshelper.RemoveFinalizer(template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, template); err != nil {
+
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove cluster template finalizer %s: %w", template.Name, err)
 		}
 	}
@@ -169,8 +159,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		kuberneteshelper.RemoveFinalizer(template, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, template); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, template, kubermaticapiv1.CredentialsSecretsCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove credential secret finalizer %s: %w", template.Name, err)
 		}
 	}
@@ -180,7 +169,6 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 
 func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate, action func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error) error {
 	for seedName, seedClient := range r.seedClients {
-
 		log := log.With("seed", seedName)
 
 		log.Debug("Reconciling cluster template with seed")

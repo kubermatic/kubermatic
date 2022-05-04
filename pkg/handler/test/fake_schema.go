@@ -17,7 +17,7 @@ limitations under the License.
 package test
 
 import (
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,7 @@ import (
 
 var SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
-// SchemeGroupVersion is group version used to register these objects
+// SchemeGroupVersion is group version used to register these objects.
 var SchemeGroupVersion = schema.GroupVersion{Group: constraint.ConstraintsGroup, Version: constraint.ConstraintsVersion}
 
 // Adds the list of known types to api.Scheme.
@@ -83,8 +83,8 @@ type UniqueLabelList struct {
 }
 
 type ConstraintSpec struct {
-	Match      v1.Match          `json:"match,omitempty"`
-	Parameters map[string]string `json:"parameters,omitempty"`
+	Match      kubermaticv1.Match     `json:"match,omitempty"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
 }
 
 type ConstraintStatus struct {
@@ -186,7 +186,7 @@ func (in *ConstraintSpec) DeepCopyInto(out *ConstraintSpec) {
 	in.Match.DeepCopyInto(&out.Match)
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
-		*out = make(map[string]string, len(*in))
+		*out = make(map[string]interface{}, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}

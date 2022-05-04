@@ -17,10 +17,11 @@ limitations under the License.
 package v2
 
 import (
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -30,8 +31,8 @@ import (
 type ConstraintTemplate struct {
 	Name string `json:"name"`
 
-	Spec   crdapiv1.ConstraintTemplateSpec  `json:"spec"`
-	Status v1beta1.ConstraintTemplateStatus `json:"status"`
+	Spec   kubermaticv1.ConstraintTemplateSpec            `json:"spec"`
+	Status constrainttemplatesv1.ConstraintTemplateStatus `json:"status"`
 }
 
 // Constraint represents a gatekeeper Constraint
@@ -40,11 +41,11 @@ type Constraint struct {
 	Name   string            `json:"name"`
 	Labels map[string]string `json:"labels,omitempty"`
 
-	Spec   crdapiv1.ConstraintSpec `json:"spec"`
-	Status *ConstraintStatus       `json:"status,omitempty"`
+	Spec   kubermaticv1.ConstraintSpec `json:"spec"`
+	Status *ConstraintStatus           `json:"status,omitempty"`
 }
 
-// ConstraintStatus represents a constraint status which holds audit info
+// ConstraintStatus represents a constraint status which holds audit info.
 type ConstraintStatus struct {
 	Enforcement    string      `json:"enforcement,omitempty"`
 	AuditTimestamp string      `json:"auditTimestamp,omitempty"`
@@ -52,7 +53,7 @@ type ConstraintStatus struct {
 	Synced         *bool       `json:"synced,omitempty"`
 }
 
-// Violation represents a gatekeeper constraint violation
+// Violation represents a gatekeeper constraint violation.
 type Violation struct {
 	EnforcementAction string `json:"enforcementAction,omitempty"`
 	Kind              string `json:"kind,omitempty"`
@@ -112,7 +113,7 @@ type ReadinessSpec struct {
 	StatsEnabled bool `json:"statsEnabled,omitempty"`
 }
 
-// GVK group version kind of a resource
+// GVK group version kind of a resource.
 type GVK struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
@@ -133,11 +134,31 @@ type Preset struct {
 	Providers []PresetProvider `json:"providers"`
 }
 
+// PresetBody represents the body of a created preset
+// swagger:model PresetBody
+type PresetBody struct {
+	PresetBodyMetadata `json:"metadata,omitempty"`
+	Spec               kubermaticv1.PresetSpec `json:"spec"`
+}
+
+// PresetBodyMetadata represents metadata within the body of a created preset
+// swagger:model PresetBodyMetadata
+type PresetBodyMetadata struct {
+	Name string `json:"name,omitempty"`
+}
+
 // PresetProvider represents a preset provider
 // swagger:model PresetProvider
 type PresetProvider struct {
-	Name    crdapiv1.ProviderType `json:"name"`
-	Enabled bool                  `json:"enabled"`
+	Name    kubermaticv1.ProviderType `json:"name"`
+	Enabled bool                      `json:"enabled"`
+}
+
+// PresetStats represents a preset statistics
+// swagger:model PresetStats
+type PresetStats struct {
+	AssociatedClusters         int `json:"associatedClusters"`
+	AssociatedClusterTemplates int `json:"associatedClusterTemplates"`
 }
 
 // Alertmanager represents an Alertmanager Configuration
@@ -156,6 +177,10 @@ type AlertmanagerSpec struct {
 type SeedSettings struct {
 	// the Seed level MLA (Monitoring, Logging, and Alerting) stack settings
 	MLA MLA `json:"mla"`
+	// the Seed level metering settings
+	Metering kubermaticv1.MeteringConfiguration `json:"metering"`
+	// the Seed level seed dns overwrite
+	SeedDNSOverwrite string `json:"seedDNSOverwrite,omitempty"`
 }
 
 type MLA struct {
@@ -166,14 +191,38 @@ type MLA struct {
 // ClusterTemplate represents a ClusterTemplate object
 // swagger:model ClusterTemplate
 type ClusterTemplate struct {
+	apiv1.ObjectMeta
+
+	Name string `json:"name"`
+	ID   string `json:"id,omitempty"`
+
+	ProjectID      string                         `json:"projectID,omitempty"`
+	User           string                         `json:"user,omitempty"`
+	Scope          string                         `json:"scope"`
+	UserSSHKeys    []ClusterTemplateSSHKey        `json:"userSshKeys,omitempty"`
+	Cluster        *ClusterTemplateInfo           `json:"cluster,omitempty"`
+	NodeDeployment *ClusterTemplateNodeDeployment `json:"nodeDeployment,omitempty"`
+	Applications   []apiv1.Application            `json:"applications,omitempty"`
+}
+
+// ClusterTemplateInfo represents a ClusterTemplateInfo object.
+type ClusterTemplateInfo struct {
+	Labels          map[string]string `json:"labels,omitempty"`
+	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+	// indicates the preset name
+	Credential string            `json:"credential,omitempty"`
+	Spec       apiv1.ClusterSpec `json:"spec"`
+}
+
+type ClusterTemplateNodeDeployment struct {
+	Spec apiv1.NodeDeploymentSpec `json:"spec"`
+}
+
+// ClusterTemplateSSHKey represents SSH Key object for Cluster Template
+// swagger:model ClusterTemplateSSHKey
+type ClusterTemplateSSHKey struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`
-
-	ProjectID      string                `json:"projectID,omitempty"`
-	User           string                `json:"user,omitempty"`
-	Scope          string                `json:"scope"`
-	Cluster        *apiv1.Cluster        `json:"cluster,omitempty"`
-	NodeDeployment *apiv1.NodeDeployment `json:"nodeDeployment,omitempty"`
 }
 
 // ClusterTemplateList represents a ClusterTemplate list
@@ -185,16 +234,19 @@ type ClusterTemplateList []ClusterTemplate
 type ClusterTemplateInstance struct {
 	Name string `json:"name"`
 
-	Spec crdapiv1.ClusterTemplateInstanceSpec `json:"spec"`
+	Spec kubermaticv1.ClusterTemplateInstanceSpec `json:"spec"`
 }
 
 // RuleGroup represents a rule group of recording and alerting rules.
 // swagger:model RuleGroup
 type RuleGroup struct {
+	Name string `json:"name"`
+	// IsDefault indicates whether the ruleGroup is default
+	IsDefault bool `json:"isDefault,omitempty"`
 	// contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
 	Data []byte `json:"data"`
 	// the type of this ruleGroup applies to. It can be `Metrics`.
-	Type crdapiv1.RuleGroupType `json:"type"`
+	Type kubermaticv1.RuleGroupType `json:"type"`
 }
 
 // AllowedRegistry represents a object containing a allowed image registry prefix
@@ -202,13 +254,13 @@ type RuleGroup struct {
 type AllowedRegistry struct {
 	Name string `json:"name"`
 
-	Spec crdapiv1.AllowedRegistrySpec `json:"spec"`
+	Spec kubermaticv1.AllowedRegistrySpec `json:"spec"`
 }
 
 // EtcdBackupConfig represents an object holding the configuration for etcd backups
 // swagger:model EtcdBackupConfig
 type EtcdBackupConfig struct {
-	Name string `json:"name"`
+	apiv1.ObjectMeta
 
 	Spec   EtcdBackupConfigSpec   `json:"spec"`
 	Status EtcdBackupConfigStatus `json:"status"`
@@ -225,23 +277,23 @@ type EtcdBackupConfigStatus struct {
 
 type BackupStatus struct {
 	// ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
-	ScheduledTime      *apiv1.Time                `json:"scheduledTime,omitempty"`
-	BackupName         string                     `json:"backupName,omitempty"`
-	JobName            string                     `json:"jobName,omitempty"`
-	BackupStartTime    *apiv1.Time                `json:"backupStartTime,omitempty"`
-	BackupFinishedTime *apiv1.Time                `json:"backupFinishedTime,omitempty"`
-	BackupPhase        crdapiv1.BackupStatusPhase `json:"backupPhase,omitempty"`
-	BackupMessage      string                     `json:"backupMessage,omitempty"`
-	DeleteJobName      string                     `json:"deleteJobName,omitempty"`
-	DeleteStartTime    *apiv1.Time                `json:"deleteStartTime,omitempty"`
-	DeleteFinishedTime *apiv1.Time                `json:"deleteFinishedTime,omitempty"`
-	DeletePhase        crdapiv1.BackupStatusPhase `json:"deletePhase,omitempty"`
-	DeleteMessage      string                     `json:"deleteMessage,omitempty"`
+	ScheduledTime      *apiv1.Time                    `json:"scheduledTime,omitempty"`
+	BackupName         string                         `json:"backupName,omitempty"`
+	JobName            string                         `json:"jobName,omitempty"`
+	BackupStartTime    *apiv1.Time                    `json:"backupStartTime,omitempty"`
+	BackupFinishedTime *apiv1.Time                    `json:"backupFinishedTime,omitempty"`
+	BackupPhase        kubermaticv1.BackupStatusPhase `json:"backupPhase,omitempty"`
+	BackupMessage      string                         `json:"backupMessage,omitempty"`
+	DeleteJobName      string                         `json:"deleteJobName,omitempty"`
+	DeleteStartTime    *apiv1.Time                    `json:"deleteStartTime,omitempty"`
+	DeleteFinishedTime *apiv1.Time                    `json:"deleteFinishedTime,omitempty"`
+	DeletePhase        kubermaticv1.BackupStatusPhase `json:"deletePhase,omitempty"`
+	DeleteMessage      string                         `json:"deleteMessage,omitempty"`
 }
 
 type EtcdBackupConfigCondition struct {
 	// Type of EtcdBackupConfig condition.
-	Type crdapiv1.EtcdBackupConfigConditionType `json:"type"`
+	Type kubermaticv1.EtcdBackupConfigConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
@@ -270,11 +322,16 @@ type EtcdBackupConfigSpec struct {
 	// Keep is the number of backups to keep around before deleting the oldest one
 	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
 	Keep *int `json:"keep,omitempty"`
+	// Destination indicates where the backup will be stored. The destination name should correspond to a destination in
+	// the cluster's Seed.Spec.EtcdBackupRestore.
+	Destination string `json:"destination,omitempty"`
 }
 
 // EtcdRestore represents an object holding the configuration for etcd backup restore
 // swagger:model EtcdRestore
 type EtcdRestore struct {
+	apiv1.ObjectMeta
+
 	Name string `json:"name"`
 
 	Spec   EtcdRestoreSpec   `json:"spec"`
@@ -282,8 +339,8 @@ type EtcdRestore struct {
 }
 
 type EtcdRestoreStatus struct {
-	Phase       crdapiv1.EtcdRestorePhase `json:"phase"`
-	RestoreTime *apiv1.Time               `json:"restoreTime,omitempty"`
+	Phase       kubermaticv1.EtcdRestorePhase `json:"phase"`
+	RestoreTime *apiv1.Time                   `json:"restoreTime,omitempty"`
 }
 
 // EtcdRestoreSpec represents an object holding the etcd backup restore configuration specification
@@ -296,6 +353,9 @@ type EtcdRestoreSpec struct {
 	// BackupDownloadCredentialsSecret is the name of a secret in the cluster-xxx namespace containing
 	// credentials needed to download the backup
 	BackupDownloadCredentialsSecret string `json:"backupDownloadCredentialsSecret,omitempty"`
+	// Destination indicates where the backup was stored. The destination name should correspond to a destination in
+	// the cluster's Seed.Spec.EtcdBackupRestore.
+	Destination string `json:"destination,omitempty"`
 }
 
 // OIDCSpec contains OIDC params that can be used to access user cluster.
@@ -304,4 +364,1019 @@ type OIDCSpec struct {
 	IssuerURL    string `json:"issuerUrl,omitempty"`
 	ClientID     string `json:"clientId,omitempty"`
 	ClientSecret string `json:"clientSecret,omitempty"`
+}
+
+// BackupCredentials contains credentials for etcd backups
+// swagger:model BackupCredentials
+type BackupCredentials struct {
+	// S3BackupCredentials holds credentials for a S3 client compatible backup destination
+	S3BackupCredentials S3BackupCredentials `json:"s3,omitempty"`
+	// Destination corresponds to the Seeds Seed.Spec.EtcdBackupRestore.Destinations, it defines for which destination
+	// the backup credentials will be created. If set, it updates the credentials ref in the related Seed BackupDestination
+	Destination string `json:"destination,omitempty"`
+}
+
+// S3BackupCredentials contains credentials for S3 etcd backups
+// swagger:model S3BackupCredentials
+type S3BackupCredentials struct {
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+}
+
+// MLAAdminSetting represents an object holding admin setting options for user cluster MLA (Monitoring, Logging and Alerting).
+// swagger:model MLAAdminSetting
+type MLAAdminSetting struct {
+	// MonitoringRateLimits contains rate-limiting configuration for monitoring in the user cluster.
+	MonitoringRateLimits *kubermaticv1.MonitoringRateLimitSettings `json:"monitoringRateLimits,omitempty"`
+	// LoggingRateLimits contains rate-limiting configuration logging in the user cluster.
+	LoggingRateLimits *kubermaticv1.LoggingRateLimitSettings `json:"loggingRateLimits,omitempty"`
+}
+
+// ExternalCluster represents an object holding cluster details
+// swagger:model ExternalCluster
+type ExternalCluster struct {
+	apiv1.ObjectMeta `json:",inline"`
+	Labels           map[string]string         `json:"labels,omitempty"`
+	Spec             ExternalClusterSpec       `json:"spec,omitempty"`
+	Cloud            *ExternalClusterCloudSpec `json:"cloud,omitempty"`
+	Status           ExternalClusterStatus     `json:"status"`
+}
+
+type ExternalClusterState string
+
+const (
+	// PROVISIONING state indicates the cluster is being created.
+	PROVISIONING ExternalClusterState = "Provisioning"
+
+	// STOPPED state indicates the cluster is stopped, this state is specific to aks clusters.
+	STOPPED ExternalClusterState = "Stopped"
+
+	// STOPPING state indicates the cluster is stopping, this state is specific to aks clusters.
+	STOPPING ExternalClusterState = "Stopping"
+
+	// RUNNING state indicates the cluster has been created and is fully usable.
+	RUNNING ExternalClusterState = "Running"
+
+	// RECONCILING state indicates that some work is actively being done on the cluster, such as upgrading the master or
+	// node software. Details can be found in the `StatusMessage` field.
+	RECONCILING ExternalClusterState = "Reconciling"
+
+	// DELETING state indicates the cluster is being deleted.
+	DELETING ExternalClusterState = "Deleting"
+
+	// UNKNOWN Not set.
+	UNKNOWN ExternalClusterState = "Unknown"
+
+	// ERROR state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
+	// `statusMessage` field.
+	ERROR ExternalClusterState = "Error"
+)
+
+// ExternalClusterStatus defines the external cluster status.
+type ExternalClusterStatus struct {
+	State         ExternalClusterState `json:"state"`
+	StatusMessage string               `json:"statusMessage,omitempty"`
+}
+
+// ExternalClusterSpec defines the external cluster specification.
+type ExternalClusterSpec struct {
+	// Version desired version of the kubernetes master components
+	Version ksemver.Semver `json:"version,omitempty"`
+
+	GKEClusterSpec *GKEClusterSpec `json:"gkeclusterSpec,omitempty"`
+	EKSClusterSpec *EKSClusterSpec `json:"eksclusterSpec,omitempty"`
+	AKSClusterSpec *AKSClusterSpec `json:"aksclusterSpec,omitempty"`
+}
+
+// ExternalClusterCloudSpec represents an object holding cluster cloud details
+// swagger:model ExternalClusterCloudSpec
+type ExternalClusterCloudSpec struct {
+	GKE     *GKECloudSpec `json:"gke,omitempty"`
+	EKS     *EKSCloudSpec `json:"eks,omitempty"`
+	AKS     *AKSCloudSpec `json:"aks,omitempty"`
+	KubeOne *KubeOneSpec  `json:"kubeOne,omitempty"`
+}
+
+type KubeOneSpec struct {
+	// Manifest Base64 encoded manifest
+	Manifest         string            `json:"manifest,omitempty"`
+	SSHKey           KubeOneSSHKey     `json:"sshKey,omitempty"`
+	ContainerRuntime string            `json:"containerRuntime,omitempty"`
+	CloudSpec        *KubeOneCloudSpec `json:"cloudSpec,omitempty"`
+}
+
+// SSHKeySpec represents the details of a ssh key.
+type KubeOneSSHKey struct {
+	// PrivateKey Base64 encoded privateKey
+	PrivateKey string `json:"privateKey,omitempty"`
+	Passphrase string `json:"passphrase,omitempty"`
+}
+
+type KubeOneCloudSpec struct {
+	AWS          *KubeOneAWSCloudSpec          `json:"aws,omitempty"`
+	GCP          *KubeOneGCPCloudSpec          `json:"gcp,omitempty"`
+	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
+	DigitalOcean *KubeOneDigitalOceanCloudSpec `json:"digitalocean,omitempty"`
+	OpenStack    *KubeOneOpenStackCloudSpec    `json:"openstack,omitempty"`
+	Equinix      *KubeOneEquinixCloudSpec      `json:"equinix,omitempty"`
+	Hetzner      *KubeOneHetznerCloudSpec      `json:"hetzner,omitempty"`
+	VSphere      *KubeOneVSphereCloudSpec      `json:"vsphere,omitempty"`
+	Nutanix      *KubeOneNutanixCloudSpec      `json:"nutanix,omitempty"`
+}
+
+// KubeOneAWSCloudSpec specifies access data to Amazon Web Services.
+type KubeOneAWSCloudSpec struct {
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+// KubeOneGCPCloudSpec specifies access data to GCP.
+type KubeOneGCPCloudSpec struct {
+	ServiceAccount string `json:"serviceAccount"`
+}
+
+// KubeOneAzureCloudSpec specifies access credentials to Azure cloud.
+type KubeOneAzureCloudSpec struct {
+	TenantID       string `json:"tenantID"`
+	SubscriptionID string `json:"subscriptionID"`
+	ClientID       string `json:"clientID"`
+	ClientSecret   string `json:"clientSecret"`
+}
+
+// KubeOneDigitalOceanCloudSpec specifies access data to DigitalOcean.
+type KubeOneDigitalOceanCloudSpec struct {
+	// Token is used to authenticate with the DigitalOcean API.
+	Token string `json:"token"`
+}
+
+// KubeOneOpenStackCloudSpec specifies access data to an OpenStack cloud.
+type KubeOneOpenStackCloudSpec struct {
+	AuthURL  string `json:"authURL"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+
+	// Project, formally known as tenant.
+	Project string `json:"project"`
+	// ProjectID, formally known as tenantID.
+	ProjectID string `json:"projectID"`
+
+	Domain string `json:"domain"`
+	Region string `json:"region"`
+}
+
+// KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.
+type KubeOneVSphereCloudSpec struct {
+	Server   string `json:"server"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.
+type KubeOneEquinixCloudSpec struct {
+	APIKey    string `json:"apiKey"`
+	ProjectID string `json:"projectID"`
+}
+
+// KubeOneHetznerCloudSpec specifies access data to hetzner cloud.
+type KubeOneHetznerCloudSpec struct {
+	// Token is used to authenticate with the Hetzner cloud API.
+	Token string `json:"token"`
+}
+
+// KubeOneNutanixCloudSpec specifies the access data to Nutanix.
+type KubeOneNutanixCloudSpec struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	// Endpoint is the Nutanix API (Prism Central) endpoint
+	Endpoint string `json:"endpoint"`
+	// Port is the Nutanix API (Prism Central) port
+	Port string `json:"port"`
+
+	// PrismElementUsername to be used for the CSI driver
+	PrismElementUsername string `json:"elementUsername"`
+	// PrismElementPassword to be used for the CSI driver
+	PrismElementPassword string `json:"elementPassword"`
+	// PrismElementEndpoint to access Nutanix Prism Element for the CSI driver
+	PrismElementEndpoint string `json:"elementEndpoint"`
+
+	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
+	// +optional
+	ClusterName   string `json:"clusterName,omitempty"`
+	AllowInsecure bool   `json:"allowInsecure,omitempty"`
+	ProxyURL      string `json:"proxyURL,omitempty"`
+}
+
+type GKECloudSpec struct {
+	Name           string `json:"name"`
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	Zone           string `json:"zone"`
+}
+
+type EKSCloudSpec struct {
+	Name            string `json:"name"`
+	AccessKeyID     string `json:"accessKeyID,omitempty" required:"true"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty" required:"true"`
+	Region          string `json:"region" required:"true"`
+}
+
+type EKSClusterSpec struct {
+	// The VPC configuration used by the cluster control plane. Amazon EKS VPC resources
+	// have specific requirements to work properly with Kubernetes. For more information,
+	// see Cluster VPC Considerations (https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html)
+	// and Cluster Security Group Considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
+	// in the Amazon EKS User Guide. You must specify at least two subnets. You
+	// can specify up to five security groups, but we recommend that you use a dedicated
+	// security group for your cluster control plane.
+	//
+	// ResourcesVpcConfig is a required field
+
+	ResourcesVpcConfig VpcConfigRequest `json:"vpcConfigRequest" required:"true"`
+
+	// The desired Kubernetes version for your cluster. If you don't specify a value
+	// here, the latest version available in Amazon EKS is used.
+	Version string `json:"version"`
+
+	// The Amazon Resource Name (ARN) of the IAM role that provides permissions
+	// for the Kubernetes control plane to make calls to AWS API operations on your
+	// behalf. For more information, see Amazon EKS Service IAM Role (https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html)
+	// in the Amazon EKS User Guide .
+	//
+	// RoleArn is a required field
+	RoleArn string `json:"roleArn" required:"true"`
+}
+
+type AKSCloudSpec struct {
+	Name           string `json:"name"`
+	TenantID       string `json:"tenantID,omitempty" required:"true"`
+	SubscriptionID string `json:"subscriptionID,omitempty" required:"true"`
+	ClientID       string `json:"clientID,omitempty" required:"true"`
+	ClientSecret   string `json:"clientSecret,omitempty" required:"true"`
+	ResourceGroup  string `json:"resourceGroup" required:"true"`
+}
+
+// AKSClusterSpec Azure Kubernetes Service cluster.
+type AKSClusterSpec struct {
+	// Location - Resource location
+	Location string `json:"location" required:"true"`
+	// KubernetesVersion - When you upgrade a supported AKS cluster, Kubernetes minor versions cannot be skipped. All upgrades must be performed sequentially by major version number. For example, upgrades between 1.14.x -> 1.15.x or 1.15.x -> 1.16.x are allowed, however 1.14.x -> 1.16.x is not allowed. See [upgrading an AKS cluster](https://docs.microsoft.com/azure/aks/upgrade-cluster) for more details.
+	KubernetesVersion string `json:"kubernetesVersion"`
+	// NodeResourceGroup - The name of the resource group containing agent pool nodes.
+	NodeResourceGroup string `json:"nodeResourceGroup,omitempty"`
+	// EnableRBAC - Whether Kubernetes Role-Based Access Control Enabled.
+	EnableRBAC bool `json:"enableRBAC,omitempty"`
+	// ManagedAAD - Whether The Azure Active Directory configuration Enabled.
+	ManagedAAD bool `json:"managedAAD,omitempty"`
+	// DNSPrefix - This cannot be updated once the Managed Cluster has been created.
+	DNSPrefix string `json:"dnsPrefix,omitempty"`
+	// FqdnSubdomain - This cannot be updated once the Managed Cluster has been created.
+	FqdnSubdomain string `json:"fqdnSubdomain,omitempty"`
+	// Fqdn - READ-ONLY; The FQDN of the master pool.
+	Fqdn string `json:"fqdn,omitempty"`
+	// PrivateFQDN - READ-ONLY; The FQDN of private cluster.
+	PrivateFQDN string `json:"privateFQDN,omitempty"`
+	// MachineDeploymentSpec - The agent pool properties.
+	MachineDeploymentSpec *AKSMachineDeploymentCloudSpec `json:"machineDeploymentSpec,omitempty"`
+	// NetworkProfile - The network configuration profile.
+	NetworkProfile AKSNetworkProfile `json:"networkProfile,omitempty"`
+}
+
+// AKS NetworkProfile profile of network configuration.
+type AKSNetworkProfile struct {
+	// PodCidr - A CIDR notation IP range from which to assign pod IPs when kubenet is used.
+	PodCidr string `json:"podCidr,omitempty"`
+	// ServiceCidr - A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges.
+	ServiceCidr string `json:"serviceCidr,omitempty"`
+	// DNSServiceIP - An IP address assigned to the Kubernetes DNS service. It must be within the Kubernetes service address range specified in serviceCidr.
+	DNSServiceIP string `json:"dnsServiceIP,omitempty"`
+	// DockerBridgeCidr - A CIDR notation IP range assigned to the Docker bridge network. It must not overlap with any Subnet IP ranges or the Kubernetes service address range.
+	DockerBridgeCidr string `json:"dockerBridgeCidr,omitempty"`
+	// NetworkPlugin - Network plugin used for building the Kubernetes network. Possible values include: 'Azure', 'Kubenet'
+	NetworkPlugin string `json:"networkPlugin,omitempty"`
+	// NetworkPolicy - Network policy used for building the Kubernetes network. Possible values include: 'Calico', 'Azure'
+	NetworkPolicy string `json:"networkPolicy,omitempty"`
+	// NetworkMode - This cannot be specified if networkPlugin is anything other than 'azure'. Possible values include: 'Transparent', 'Bridge'
+	NetworkMode string `json:"networkMode,omitempty"`
+	// OutboundType - This can only be set at cluster creation time and cannot be changed later. For more information see [egress outbound type](https://docs.microsoft.com/azure/aks/egress-outboundtype). Possible values include: 'OutboundTypeLoadBalancer', 'OutboundTypeUserDefinedRouting', 'OutboundTypeManagedNATGateway', 'OutboundTypeUserAssignedNATGateway'
+	OutboundType string `json:"outboundType,omitempty"`
+	// LoadBalancerSku - The default is 'standard'. See [Azure Load Balancer SKUs](https://docs.microsoft.com/azure/load-balancer/skus) for more information about the differences between load balancer SKUs. Possible values include: 'LoadBalancerSkuStandard', 'LoadBalancerSkuBasic'
+	LoadBalancerSku string `json:"loadBalancerSku,omitempty"`
+}
+
+type VpcConfigRequest struct {
+	// Specify one or more security groups for the cross-account elastic network
+	// interfaces that Amazon EKS creates to use to allow communication between
+	// your nodes and the Kubernetes control plane. If you don't specify any security
+	// groups, then familiarize yourself with the difference between Amazon EKS
+	// defaults for clusters deployed with Kubernetes:
+	//
+	//    * 1.14 Amazon EKS platform version eks.2 and earlier
+	//
+	//    * 1.14 Amazon EKS platform version eks.3 and later
+	//
+	// For more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
+	// in the Amazon EKS User Guide .
+	SecurityGroupIds []*string `json:"securityGroupIds" required:"true"`
+
+	// Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account
+	// elastic network interfaces in these subnets to allow communication between
+	// your nodes and the Kubernetes control plane.
+	SubnetIds []*string `json:"subnetIds" required:"true"`
+}
+
+// ExternalClusterNode represents an object holding external cluster node
+// swagger:model ExternalClusterNode
+type ExternalClusterNode struct {
+	apiv1.Node `json:",inline"`
+}
+
+// ExternalClusterMachineDeployment represents an object holding external cluster machine deployment
+// swagger:model ExternalClusterMachineDeployment
+type ExternalClusterMachineDeployment struct {
+	apiv1.NodeDeployment `json:",inline"`
+	Cloud                *ExternalClusterMachineDeploymentCloudSpec `json:"cloud,omitempty"`
+}
+
+// GKECluster represents a object of GKE cluster.
+// swagger:model GKECluster
+type GKECluster struct {
+	Name       string `json:"name"`
+	IsImported bool   `json:"imported"`
+	Zone       string `json:"zone"`
+}
+
+// GKEClusterList represents an array of GKE clusters.
+// swagger:model GKEClusterList
+type GKEClusterList []GKECluster
+
+// GKEImage represents an object of GKE image.
+// swagger:model GKEImage
+type GKEImage struct {
+	Name      string `json:"name"`
+	IsDefault bool   `json:"default"`
+}
+
+// GKEImageList represents an array of GKE images.
+// swagger:model GKEImageList
+type GKEImageList []GKEImage
+
+// GKEZone represents a object of GKE zone.
+// swagger:model GKEZone
+type GKEZone struct {
+	Name      string `json:"name"`
+	IsDefault bool   `json:"default"`
+}
+
+// GKEZoneList represents an array of GKE zones.
+// swagger:model GKEZoneList
+type GKEZoneList []GKEZone
+
+// EKSCluster represents a object of EKS cluster.
+// swagger:model EKSCluster
+type EKSCluster struct {
+	Name       string `json:"name"`
+	Region     string `json:"region"`
+	IsImported bool   `json:"imported"`
+}
+
+// EKSClusterList represents a list of EKS clusters.
+// swagger:model EKSClusterList
+type EKSClusterList []EKSCluster
+
+// Regions represents a list of EKS regions.
+// swagger:model EKSRegions
+type EKSRegions []string
+
+// EKSAMITypes represents a list of EKS AMI Types for node group.
+// swagger:model EKSAMITypes
+type EKSAMITypes []string
+
+// EKSCapacityTypes represents a list of EKS Capacity Types for node group.
+// swagger:model EKSCapacityTypes
+type EKSCapacityTypes []string
+
+// EKSInstanceTypes represents a list of EKS Instance Types for node group.
+// swagger:model EKSInstanceTypes
+type EKSInstanceTypes []string
+
+// EKSSubnetIDList represents an array of EKS subnetID.
+// swagger:model EKSSubnetIDList
+type EKSSubnetIDList []EKSSubnetID
+
+// EKSSubnetID represents a object of EKS subnetID.
+// swagger:model EKSSubnetID
+type EKSSubnetID string
+
+// EKSSecurityGroupIDList represents an array of EKS securityGroupID.
+// swagger:model EKSSecurityGroupIDList
+type EKSSecurityGroupIDList []EKSSecurityGroupID
+
+// EKSSecurityGroupID represents a object of EKS securityGroupID.
+// swagger:model EKSSecurityGroupID
+type EKSSecurityGroupID string
+
+// EKSVPCList represents an array of EKS VPC.
+// swagger:model EKSVPCList
+type EKSVPCList []EKSVPC
+
+// EKSVPC represents a object of EKS VpcId.
+// swagger:model EKSVPC
+type EKSVPC struct {
+	ID        string `json:"id"`
+	IsDefault bool   `json:"default"`
+}
+
+// AKSCluster represents a object of AKS cluster.
+// swagger:model AKSCluster
+type AKSCluster struct {
+	Name          string `json:"name"`
+	ResourceGroup string `json:"resourceGroup"`
+	IsImported    bool   `json:"imported"`
+}
+
+// AKSClusterList represents an list of AKS clusters.
+// swagger:model AKSClusterList
+type AKSClusterList []AKSCluster
+
+// AKSVMSizeList represents an array of AKS VM sizes.
+// swagger:model AKSVMSizeList
+type AKSVMSizeList []AKSVMSize
+
+// AKSVMSize is the object representing Azure VM sizes.
+// swagger:model AKSVMSize
+type AKSVMSize string
+
+// AKSNodePoolModes represents nodepool modes.
+// swagger:model AKSNodePoolModes
+type AKSNodePoolModes []string
+
+// FeatureGates represents an object holding feature gate settings
+// swagger:model FeatureGates
+type FeatureGates struct {
+	KonnectivityService *bool `json:"konnectivityService,omitempty"`
+	OIDCKubeCfgEndpoint *bool `json:"oidcKubeCfgEndpoint,omitempty"`
+}
+
+// ExternalClusterMachineDeploymentCloudSpec represents an object holding machine deployment cloud details.
+// swagger:model ExternalClusterMachineDeploymentCloudSpec
+type ExternalClusterMachineDeploymentCloudSpec struct {
+	GKE *GKEMachineDeploymentCloudSpec `json:"gke,omitempty"`
+	AKS *AKSMachineDeploymentCloudSpec `json:"aks,omitempty"`
+	EKS *EKSMachineDeploymentCloudSpec `json:"eks,omitempty"`
+}
+
+type EKSMachineDeploymentCloudSpec struct {
+	// The subnets to use for the Auto Scaling group that is created for your node
+	// group. These subnets must have the tag key kubernetes.io/cluster/CLUSTER_NAME
+	// with a value of shared, where CLUSTER_NAME is replaced with the name of your
+	// cluster. If you specify launchTemplate, then don't specify SubnetId (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkInterface.html)
+	// in your launch template, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	//
+	// Subnets is a required field
+	Subnets []*string `json:"subnets" required:"true"`
+
+	// The Amazon Resource Name (ARN) of the IAM role to associate with your node
+	// group. The Amazon EKS worker node kubelet daemon makes calls to AWS APIs
+	// on your behalf. Nodes receive permissions for these API calls through an
+	// IAM instance profile and associated policies. Before you can launch nodes
+	// and register them into a cluster, you must create an IAM role for those nodes
+	// to use when they are launched. For more information, see Amazon EKS node
+	// IAM role (https://docs.aws.amazon.com/eks/latest/userguide/worker_node_IAM_role.html)
+	// in the Amazon EKS User Guide . If you specify launchTemplate, then don't
+	// specify IamInstanceProfile (https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_IamInstanceProfile.html)
+	// in your launch template, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	//
+	// NodeRole is a required field
+	NodeRole string `json:"nodeRole" required:"true"`
+
+	// The AMI type for your node group. GPU instance types should use the AL2_x86_64_GPU
+	// AMI type. Non-GPU instances should use the AL2_x86_64 AMI type. Arm instances
+	// should use the AL2_ARM_64 AMI type. All types use the Amazon EKS optimized
+	// Amazon Linux 2 AMI. If you specify launchTemplate, and your launch template
+	// uses a custom AMI, then don't specify amiType, or the node group deployment
+	// will fail. For more information about using launch templates with Amazon
+	// EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	AmiType string `json:"amiType,omitempty"`
+
+	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
+	CapacityType string `json:"capacityType,omitempty"`
+
+	// The root device disk size (in GiB) for your node group instances. The default
+	// disk size is 20 GiB. If you specify launchTemplate, then don't specify diskSize,
+	// or the node group deployment will fail. For more information about using
+	// launch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	DiskSize int64 `json:"diskSize,omitempty"`
+
+	// Specify the instance types for a node group. If you specify a GPU instance
+	// type, be sure to specify AL2_x86_64_GPU with the amiType parameter. If you
+	// specify launchTemplate, then you can specify zero or one instance type in
+	// your launch template or you can specify 0-20 instance types for instanceTypes.
+	// If however, you specify an instance type in your launch template and specify
+	// any instanceTypes, the node group deployment will fail. If you don't specify
+	// an instance type in a launch template or for instanceTypes, then t3.medium
+	// is used, by default. If you specify Spot for capacityType, then we recommend
+	// specifying multiple values for instanceTypes. For more information, see Managed
+	// node group capacity types (https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types)
+	// and Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	InstanceTypes []*string `json:"instanceTypes,omitempty"`
+
+	// The Kubernetes labels to be applied to the nodes in the node group when they
+	// are created.
+	Labels map[string]*string `json:"labels,omitempty"`
+
+	// The scaling configuration details for the Auto Scaling group that is created
+	// for your node group.
+	ScalingConfig EKSNodegroupScalingConfig `json:"scalingConfig,omitempty"`
+
+	// The Kubernetes version to use for your managed nodes. By default, the Kubernetes
+	// version of the cluster is used, and this is the only accepted specified value.
+	// If you specify launchTemplate, and your launch template uses a custom AMI,
+	// then don't specify version, or the node group deployment will fail. For more
+	// information about using launch templates with Amazon EKS, see Launch template
+	// support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
+	// in the Amazon EKS User Guide.
+	Version string `json:"version,omitempty"`
+}
+
+type EKSNodegroupScalingConfig struct {
+	// The current number of nodes that the managed node group should maintain.
+	DesiredSize int64 `json:"desiredSize,omitempty"`
+
+	// The maximum number of nodes that the managed node group can scale out to.
+	// For information about the maximum number that you can specify, see Amazon
+	// EKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)
+	// in the Amazon EKS User Guide.
+	MaxSize int64 `json:"maxSize,omitempty"`
+
+	// The minimum number of nodes that the managed node group can scale in to.
+	// This number must be greater than zero.
+	MinSize int64 `json:"minSize,omitempty"`
+}
+
+type AKSMachineDeploymentCloudSpec struct {
+	// Name - Node pool name must contain only lowercase letters and numbers. For Linux node pools must be 12 or fewer characters.
+	Name string `json:"name"`
+	// BasicSettings - Settings for creating the AKS agentpool
+	BasicSettings AgentPoolBasics `json:"basicSettings"`
+	// OptionalSettings - Optional Settings for creating the AKS agentpool
+	OptionalSettings AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
+	// Configuration - Configuration of created AKS agentpool
+	Configuration AgentPoolConfig `json:"configuration,omitempty"`
+}
+
+type AgentPoolBasics struct {
+	// Required: Count - Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1.
+	Count int32 `json:"count" required:"true"`
+	// Required: VMSize - VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions
+	VMSize string `json:"vmSize" required:"true"`
+	// Mode - Possible values include: 'System', 'User'.
+	Mode string `json:"mode,omitempty"`
+	// OrchestratorVersion - As a best practice, you should upgrade all node pools in an AKS cluster to the same Kubernetes version. The node pool version must have the same major version as the control plane. The node pool minor version must be within two minor versions of the control plane version. The node pool version cannot be greater than the control plane version. For more information see [upgrading a node pool](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#upgrade-a-node-pool).
+	OrchestratorVersion string `json:"orchestratorVersion,omitempty"`
+	// AvailabilityZones - The list of Availability zones to use for nodes. This can only be specified if the AgentPoolType property is 'VirtualMachineScaleSets'.
+	AvailabilityZones []string `json:"availabilityZones,omitempty"`
+	// EnableAutoScaling - Whether to enable auto-scaler
+	EnableAutoScaling bool `json:"enableAutoScaling,omitempty"`
+	// The scaling configuration details for the Auto Scaling group that is created
+	// for your node group.
+	ScalingConfig AKSNodegroupScalingConfig `json:"scalingConfig,omitempty"`
+	// The OSDiskSize for Agent agentpool cannot be less than 30GB or larger than 2048GB.
+	OsDiskSizeGB int32 `json:"osDiskSizeGB,omitempty"`
+}
+
+type AKSNodegroupScalingConfig struct {
+	// MaxCount - The maximum number of nodes for auto-scaling
+	MaxCount int32 `json:"maxCount,omitempty"`
+	// MinCount - The minimum number of nodes for auto-scaling
+	MinCount int32 `json:"minCount,omitempty"`
+}
+
+type AgentPoolOptionalSettings struct {
+	// NodeLabels - The node labels to be persisted across all nodes in agent pool.
+	NodeLabels map[string]*string `json:"nodeLabels,omitempty"`
+	// NodeTaints - The taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule.
+	// Placing custom taints on system pool is not supported(except 'CriticalAddonsOnly' taint or taint effect is 'PreferNoSchedule'). Please refer to https://aka.ms/aks/system-taints for detail
+	NodeTaints []string `json:"nodeTaints,omitempty"`
+}
+
+type AgentPoolConfig struct {
+	// OsDiskType - Possible values include: 'Managed', 'Ephemeral'
+	OsDiskType string `json:"osDiskType,omitempty"`
+	// MaxPods - The maximum number of pods that can run on a node.
+	MaxPods int32 `json:"maxPods,omitempty"`
+	// OsType - Possible values include: 'Linux', 'Windows'. The default value is 'Linux'.
+	// Windows node pools are not supported on kubenet clusters
+	OsType string `json:"osType,omitempty"`
+	// EnableNodePublicIP - Some scenarios may require nodes in a node pool to receive their own dedicated public IP addresses. A common scenario is for gaming workloads, where a console needs to make a direct connection to a cloud virtual machine to minimize hops. For more information see [assigning a public IP per node](https://docs.microsoft.com/azure/aks/use-multiple-node-pools#assign-a-public-ip-per-node-for-your-node-pools). The default is false.
+	EnableNodePublicIP bool `json:"enableNodePublicIP,omitempty"`
+	// MaxSurgeUpgradeSetting - This can either be set to an integer (e.g. '5') or a percentage (e.g. '50%'). If a percentage is specified, it is the percentage of the total agent pool size at the time of the upgrade. For percentages, fractional nodes are rounded up. If not specified, the default is 1. For more information, including best practices, see: https://docs.microsoft.com/azure/aks/upgrade-cluster#customize-node-surge-upgrade
+	MaxSurgeUpgradeSetting string `json:"maxSurge,omitempty"`
+	// VnetSubnetID - If this is not specified, a VNET and subnet will be generated and used. If no podSubnetID is specified, this applies to nodes and pods, otherwise it applies to just nodes. This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
+	VnetSubnetID string `json:"vnetSubnetID,omitempty"`
+	// PodSubnetID - If omitted, pod IPs are statically assigned on the node subnet (see vnetSubnetID for more details). This is of the form: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{virtualNetworkName}/subnets/{subnetName}
+	PodSubnetID string `json:"podSubnetID,omitempty"`
+}
+
+// GKEMachineDeploymentCloudSpec represents an object holding GKE machine deployment cloud details.
+type GKEMachineDeploymentCloudSpec struct {
+	// Autoscaling: Autoscaler configuration for this NodePool. Autoscaler
+	// is enabled only if a valid configuration is present.
+	Autoscaling *GKENodePoolAutoscaling `json:"autoscaling,omitempty"`
+
+	// Config: The node configuration of the pool.
+	Config *GKENodeConfig `json:"config,omitempty"`
+
+	// Management: NodeManagement configuration for this NodePool.
+	Management *GKENodeManagement `json:"management,omitempty"`
+
+	// Locations: The list of Google Compute Engine zones
+	// (https://cloud.google.com/compute/docs/zones#available) in which the
+	// NodePool's nodes should be located. If this value is unspecified
+	// during node pool creation, the Cluster.Locations
+	// (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters#Cluster.FIELDS.locations)
+	// value will be used, instead. Warning: changing node pool locations
+	// will result in nodes being added and/or removed.
+	Locations []string `json:"locations,omitempty"`
+}
+
+// GKENodeManagement defines the set of node management
+// services turned on for the node pool.
+type GKENodeManagement struct {
+	// AutoRepair: A flag that specifies whether the node auto-repair is
+	// enabled for the node pool. If enabled, the nodes in this node pool
+	// will be monitored and, if they fail health checks too many times, an
+	// automatic repair action will be triggered.
+	AutoRepair bool `json:"autoRepair,omitempty"`
+
+	// AutoUpgrade: A flag that specifies whether node auto-upgrade is
+	// enabled for the node pool. If enabled, node auto-upgrade helps keep
+	// the nodes in your node pool up to date with the latest release
+	// version of Kubernetes.
+	AutoUpgrade bool `json:"autoUpgrade,omitempty"`
+}
+
+// GKENodeConfig Parameters that describe the nodes in a cluster.
+type GKENodeConfig struct {
+	// DiskSizeGb: Size of the disk attached to each node, specified in GB.
+	// The smallest allowed disk size is 10GB. If unspecified, the default
+	// disk size is 100GB.
+	DiskSizeGb int64 `json:"diskSizeGb,omitempty"`
+
+	// DiskType: Type of the disk attached to each node (e.g. 'pd-standard',
+	// 'pd-ssd' or 'pd-balanced') If unspecified, the default disk type is
+	// 'pd-standard'
+	DiskType string `json:"diskType,omitempty"`
+
+	// ImageType: The image type to use for this node. Note that for a given
+	// image type, the latest version of it will be used.
+	ImageType string `json:"imageType,omitempty"`
+
+	// LocalSsdCount: The number of local SSD disks to be attached to the
+	// node. The limit for this value is dependent upon the maximum number
+	// of disks available on a machine per zone. See:
+	// https://cloud.google.com/compute/docs/disks/local-ssd for more
+	// information.
+	LocalSsdCount int64 `json:"localSsdCount,omitempty"`
+
+	// MachineType: The name of a Google Compute Engine machine type
+	// (https://cloud.google.com/compute/docs/machine-types) If unspecified,
+	// the default machine type is `e2-medium`.
+	MachineType string `json:"machineType,omitempty"`
+
+	// Labels: The map of Kubernetes labels (key/value pairs) to be applied
+	// to each node. These will added in addition to any default label(s)
+	// that Kubernetes may apply to the node. In case of conflict in label
+	// keys, the applied set may differ depending on the Kubernetes version
+	// -- it's best to assume the behavior is undefined and conflicts should
+	// be avoided. For more information, including usage and the valid
+	// values, see:
+	// https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Preemptible: Whether the nodes are created as preemptible VM
+	// instances. See:
+	// https://cloud.google.com/compute/docs/instances/preemptible for more
+	// information about preemptible VM instances.
+	Preemptible bool `json:"preemptible,omitempty"`
+}
+
+// GKENodePoolAutoscaling contains information
+// required by cluster autoscaler to adjust the size of the node pool to
+// the current cluster usage.
+type GKENodePoolAutoscaling struct {
+	// Autoprovisioned: Can this node pool be deleted automatically.
+	Autoprovisioned bool `json:"autoprovisioned,omitempty"`
+
+	// Enabled: Is autoscaling enabled for this node pool.
+	Enabled bool `json:"enabled,omitempty"`
+
+	// MaxNodeCount: Maximum number of nodes in the NodePool. Must be >=
+	// min_node_count. There has to enough quota to scale up the cluster.
+	MaxNodeCount int64 `json:"maxNodeCount,omitempty"`
+
+	// MinNodeCount: Minimum number of nodes in the NodePool. Must be >= 1
+	// and <= max_node_count.
+	MinNodeCount int64 `json:"minNodeCount,omitempty"`
+}
+
+// BackupDestinationNames represents an list of backup destination names.
+// swagger:model BackupDestinationNames
+type BackupDestinationNames []string
+
+// GKEClusterSpec A Google Kubernetes Engine cluster.
+type GKEClusterSpec struct {
+	// Autopilot: Autopilot configuration for the cluster.
+	Autopilot bool `json:"autopilot,omitempty"`
+
+	// GKEClusterAutoscaling: Cluster-level autoscaling configuration.
+	Autoscaling *GKEClusterAutoscaling `json:"autoscaling,omitempty"`
+
+	// ClusterIpv4Cidr: The IP address range of the container pods in this
+	// cluster, in CIDR
+	// (http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
+	// notation (e.g. `10.96.0.0/14`). Leave blank to have one automatically
+	// chosen or specify a `/14` block in `10.0.0.0/8`.
+	ClusterIpv4Cidr string `json:"clusterIpv4Cidr,omitempty"`
+
+	// DefaultMaxPodsConstraint: The default constraint on the maximum
+	// number of pods that can be run simultaneously on a node in the node
+	// pool of this cluster. Only honored if cluster created with IP Alias
+	// support.
+	DefaultMaxPodsConstraint *int64 `json:"defaultMaxPodsConstraint,omitempty"`
+
+	// EnableKubernetesAlpha: Kubernetes alpha features are enabled on this
+	// cluster. This includes alpha API groups (e.g. v1alpha1) and features
+	// that may not be production ready in the kubernetes version of the
+	// master and nodes. The cluster has no SLA for uptime and master/node
+	// upgrades are disabled. Alpha enabled clusters are automatically
+	// deleted thirty days after creation.
+	EnableKubernetesAlpha bool `json:"enableKubernetesAlpha,omitempty"`
+
+	// EnableTpu: Enable the ability to use Cloud TPUs in this cluster.
+	EnableTpu bool `json:"enableTpu,omitempty"`
+
+	// InitialClusterVersion: The initial Kubernetes version for this
+	// cluster. Valid versions are those found in validMasterVersions
+	// returned by getServerConfig. The version can be upgraded over time;
+	// such upgrades are reflected in currentMasterVersion and
+	// currentNodeVersion. Users may specify either explicit versions
+	// offered by Kubernetes Engine or version aliases, which have the
+	// following behavior: - "latest": picks the highest valid Kubernetes
+	// version - "1.X": picks the highest valid patch+gke.N patch in the 1.X
+	// version - "1.X.Y": picks the highest valid gke.N patch in the 1.X.Y
+	// version - "1.X.Y-gke.N": picks an explicit Kubernetes version -
+	// "","-": picks the default Kubernetes version
+	InitialClusterVersion string `json:"initialClusterVersion,omitempty"`
+
+	// InitialNodeCount: The number of nodes to create in this cluster. You
+	// must ensure that your Compute Engine resource quota
+	// (https://cloud.google.com/compute/quotas) is sufficient for this
+	// number of instances. You must also have available firewall and routes
+	// quota. For requests, this field should only be used in lieu of a
+	// "node_pool" object, since this configuration (along with the
+	// "node_config") will be used to create a "NodePool" object with an
+	// auto-generated name. Do not use this and a node_pool at the same
+	// time. This field is deprecated, use node_pool.initial_node_count
+	// instead.
+	InitialNodeCount int64 `json:"initialNodeCount,omitempty"`
+
+	// Locations: The list of Google Compute Engine zones
+	// (https://cloud.google.com/compute/docs/zones#available) in which the
+	// cluster's nodes should be located. This field provides a default
+	// value if NodePool.Locations
+	// (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.nodePools#NodePool.FIELDS.locations)
+	// are not specified during node pool creation. Warning: changing
+	// cluster locations will update the NodePool.Locations
+	// (https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.nodePools#NodePool.FIELDS.locations)
+	// of all node pools and will result in nodes being added and/or
+	// removed.
+	Locations []string `json:"locations,omitempty"`
+
+	// Network: The name of the Google Compute Engine network
+	// (https://cloud.google.com/compute/docs/networks-and-firewalls#networks)
+	// to which the cluster is connected. If left unspecified, the `default`
+	// network will be used.
+	Network string `json:"network,omitempty"`
+
+	// NodeConfig: Parameters used in creating the cluster's nodes. For
+	// requests, this field should only be used in lieu of a "node_pool"
+	// object, since this configuration (along with the
+	// "initial_node_count") will be used to create a "NodePool" object with
+	// an auto-generated name. Do not use this and a node_pool at the same
+	// time. For responses, this field will be populated with the node
+	// configuration of the first node pool. (For configuration of each node
+	// pool, see `node_pool.config`) If unspecified, the defaults are used.
+	// This field is deprecated, use node_pool.config instead.
+	NodeConfig *GKENodeConfig `json:"nodeConfig,omitempty"`
+
+	// Subnetwork: The name of the Google Compute Engine subnetwork
+	// (https://cloud.google.com/compute/docs/subnetworks) to which the
+	// cluster is connected.
+	Subnetwork string `json:"subnetwork,omitempty"`
+
+	// TpuIpv4CidrBlock: [Output only] The IP address range of the Cloud
+	// TPUs in this cluster, in CIDR
+	// (http://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing)
+	// notation (e.g. `1.2.3.4/29`).
+	TpuIpv4CidrBlock string `json:"tpuIpv4CidrBlock,omitempty"`
+
+	// VerticalPodAutoscaling: Cluster-level Vertical Pod Autoscaling
+	// configuration.
+	VerticalPodAutoscaling bool `json:"verticalPodAutoscaling,omitempty"`
+}
+
+// GKEClusterAutoscaling contains global, per-cluster
+// information required by Cluster Autoscaler to automatically adjust
+// the size of the cluster and create/delete node pools based on the
+// current needs.
+type GKEClusterAutoscaling struct {
+	// AutoprovisioningLocations: The list of Google Compute Engine zones
+	// (https://cloud.google.com/compute/docs/zones#available) in which the
+	// NodePool's nodes can be created by NAP.
+	AutoprovisioningLocations []string `json:"autoprovisioningLocations,omitempty"`
+
+	// AutoprovisioningNodePoolDefaults: AutoprovisioningNodePoolDefaults
+	// contains defaults for a node pool created by NAP.
+	AutoprovisioningNodePoolDefaults *GKEAutoprovisioningNodePoolDefaults `json:"autoprovisioningNodePoolDefaults,omitempty"`
+
+	// EnableNodeAutoprovisioning: Enables automatic node pool creation and
+	// deletion.
+	EnableNodeAutoprovisioning bool `json:"enableNodeAutoprovisioning,omitempty"`
+
+	// ResourceLimits: Contains global constraints regarding minimum and
+	// maximum amount of resources in the cluster.
+	ResourceLimits []*GKEResourceLimit `json:"resourceLimits,omitempty"`
+}
+
+// GKEResourceLimit Contains information about amount of some resource in
+// the cluster. For memory, value should be in GB.
+type GKEResourceLimit struct {
+	// Maximum: Maximum amount of the resource in the cluster.
+	Maximum int64 `json:"maximum,omitempty,string"`
+
+	// Minimum: Minimum amount of the resource in the cluster.
+	Minimum int64 `json:"minimum,omitempty,string"`
+
+	// ResourceType: Resource name "cpu", "memory" or gpu-specific string.
+	ResourceType string `json:"resourceType,omitempty"`
+}
+
+// GKEAutoprovisioningNodePoolDefaults
+// contains defaults for a node pool created by NAP.
+type GKEAutoprovisioningNodePoolDefaults struct {
+	// BootDiskKmsKey: The Customer Managed Encryption Key used to encrypt
+	// the boot disk attached to each node in the node pool. This should be
+	// of the form
+	// projects/[KEY_PROJECT_ID]/locations/[LOCATION]/keyRings/[RING_NAME]/cr
+	// yptoKeys/[KEY_NAME]. For more information about protecting resources
+	// with Cloud KMS Keys please see:
+	// https://cloud.google.com/compute/docs/disks/customer-managed-encryption
+	BootDiskKmsKey string `json:"bootDiskKmsKey,omitempty"`
+
+	// DiskSizeGb: Size of the disk attached to each node, specified in GB.
+	// The smallest allowed disk size is 10GB. If unspecified, the default
+	// disk size is 100GB.
+	DiskSizeGb int64 `json:"diskSizeGb,omitempty"`
+
+	// DiskType: Type of the disk attached to each node (e.g. 'pd-standard',
+	// 'pd-ssd' or 'pd-balanced') If unspecified, the default disk type is
+	// 'pd-standard'
+	DiskType string `json:"diskType,omitempty"`
+
+	// Management: Specifies the node management options for NAP created
+	// node-pools.
+	Management *GKENodeManagement `json:"management,omitempty"`
+
+	// MinCpuPlatform: Minimum CPU platform to be used for NAP created node
+	// pools. The instance may be scheduled on the specified or newer CPU
+	// platform. Applicable values are the friendly names of CPU platforms,
+	// such as minCpuPlatform: Intel Haswell or minCpuPlatform: Intel Sandy
+	// Bridge. For more information, read how to specify min CPU platform
+	// (https://cloud.google.com/compute/docs/instances/specify-min-cpu-platform)
+	// To unset the min cpu platform field pass "automatic" as field value.
+	MinCpuPlatform string `json:"minCpuPlatform,omitempty"`
+
+	// OauthScopes: Scopes that are used by NAP when creating node pools.
+	OauthScopes []string `json:"oauthScopes,omitempty"`
+
+	// ServiceAccount: The Google Cloud Platform Service Account to be used
+	// by the node VMs.
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// ShieldedInstanceConfig: Shielded Instance options.
+	ShieldedInstanceConfig *GKEShieldedInstanceConfig `json:"shieldedInstanceConfig,omitempty"`
+
+	// UpgradeSettings: Specifies the upgrade settings for NAP created node
+	// pools
+	UpgradeSettings *GKEUpgradeSettings `json:"upgradeSettings,omitempty"`
+}
+
+// GKEShieldedInstanceConfig a set of Shielded Instance options.
+type GKEShieldedInstanceConfig struct {
+	// EnableIntegrityMonitoring: Defines whether the instance has integrity
+	// monitoring enabled. Enables monitoring and attestation of the boot
+	// integrity of the instance. The attestation is performed against the
+	// integrity policy baseline. This baseline is initially derived from
+	// the implicitly trusted boot image when the instance is created.
+	EnableIntegrityMonitoring bool `json:"enableIntegrityMonitoring,omitempty"`
+
+	// EnableSecureBoot: Defines whether the instance has Secure Boot
+	// enabled. Secure Boot helps ensure that the system only runs authentic
+	// software by verifying the digital signature of all boot components,
+	// and halting the boot process if signature verification fails.
+	EnableSecureBoot bool `json:"enableSecureBoot,omitempty"`
+}
+
+// GKEUpgradeSettings These upgrade settings control the level of
+// parallelism and the level of disruption caused by an upgrade.
+// maxUnavailable controls the number of nodes that can be
+// simultaneously unavailable. maxSurge controls the number of
+// additional nodes that can be added to the node pool temporarily for
+// the time of the upgrade to increase the number of available nodes.
+// (maxUnavailable + maxSurge) determines the level of parallelism (how
+// many nodes are being upgraded at the same time). Note: upgrades
+// inevitably introduce some disruption since workloads need to be moved
+// from old nodes to new, upgraded ones. Even if maxUnavailable=0, this
+// holds true. (Disruption stays within the limits of
+// PodDisruptionBudget, if it is configured.) Consider a hypothetical
+// node pool with 5 nodes having maxSurge=2, maxUnavailable=1. This
+// means the upgrade process upgrades 3 nodes simultaneously. It creates
+// 2 additional (upgraded) nodes, then it brings down 3 old (not yet
+// upgraded) nodes at the same time. This ensures that there are always
+// at least 4 nodes available.
+type GKEUpgradeSettings struct {
+	// MaxSurge: The maximum number of nodes that can be created beyond the
+	// current size of the node pool during the upgrade process.
+	MaxSurge int64 `json:"maxSurge,omitempty"`
+
+	// MaxUnavailable: The maximum number of nodes that can be
+	// simultaneously unavailable during the upgrade process. A node is
+	// considered available if its status is Ready.
+	MaxUnavailable int64 `json:"maxUnavailable,omitempty"`
+}
+
+// VirtualMachineInstancePresetList represents a list of VirtualMachineInstancePreset.
+// swagger:model VirtualMachineInstancePresetList
+type VirtualMachineInstancePresetList []VirtualMachineInstancePreset
+
+// VirtualMachineInstancePreset represents a KubeVirt Virtual Machine Instance Preset
+// swagger:model VirtualMachineInstancePreset
+type VirtualMachineInstancePreset struct {
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	// Spec contains the kubevirtv1.VirtualMachineInstancePreset.Spec object marshalled
+	Spec string `json:"spec,omitempty"`
+}
+
+// StorageClassList represents a list of Kubernetes StorageClass.
+// swagger:model StorageClassList
+type StorageClassList []StorageClass
+
+// StorageClass represents a Kubernetes StorageClass
+// swagger:model StorageClass
+type StorageClass struct {
+	Name string `json:"name"`
+}
+
+// CNIVersions is a list of versions for a CNI Plugin
+// swagger:model CNIVersions
+type CNIVersions struct {
+	// CNIPluginType represents the type of the CNI Plugin
+	CNIPluginType string `json:"cniPluginType"`
+	// Versions represents the list of the CNI Plugin versions that are supported
+	Versions []string `json:"versions"`
+}
+
+// NetworkDefaults contains cluster network default settings.
+// swagger:model NetworkDefaults
+type NetworkDefaults struct {
+	// IPv4 contains cluster network default settings for IPv4 network family.
+	IPv4 *NetworkDefaultsIPFamily `json:"ipv4,omitempty"`
+	// IPv6 contains cluster network default settings for IPv6 network family.
+	IPv6 *NetworkDefaultsIPFamily `json:"ipv6,omitempty"`
+	// ProxyMode defines the default kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	ProxyMode string `json:"proxyMode,omitempty"`
+	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
+	NodeLocalDNSCacheEnabled bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
+}
+
+// NetworkDefaultsIPFamily contains cluster network default settings for an IP family.
+// swagger:model NetworkDefaultsIPFamily
+type NetworkDefaultsIPFamily struct {
+	// PodsCIDR contains the default network range from which POD networks are allocated.
+	PodsCIDR string `json:"podsCidr,omitempty"`
+	// ServicesCIDR contains the default network range from which service VIPs are allocated.
+	ServicesCIDR string `json:"servicesCidr,omitempty"`
+	// NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.
+	NodeCIDRMaskSize int32 `json:"nodeCidrMaskSize,omitempty"`
+	// NodePortsAllowedIPRange defines the default IP range from which access to NodePort services is allowed for applicable cloud providers.
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 }

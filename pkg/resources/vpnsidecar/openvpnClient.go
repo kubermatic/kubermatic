@@ -17,7 +17,7 @@ limitations under the License.
 package vpnsidecar
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +32,7 @@ var (
 		},
 		Limits: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("32Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
 		},
 	}
 )
@@ -46,7 +46,7 @@ type openvpnData interface {
 // running alongside a master component, providing vpn access
 // to user cluster networks.
 // Also required but not provided by this func:
-// * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName
+// * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName.
 func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:    name,

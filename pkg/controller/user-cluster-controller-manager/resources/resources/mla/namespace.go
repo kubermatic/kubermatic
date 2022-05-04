@@ -17,6 +17,7 @@ limitations under the License.
 package mla
 
 import (
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -25,6 +26,11 @@ import (
 
 func NamespaceCreator() (string, reconciling.NamespaceCreator) {
 	return resources.UserClusterMLANamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Labels != nil {
+			ns.Labels[common.ComponentLabel] = resources.MLAComponentName
+		} else {
+			ns.SetLabels(map[string]string{common.ComponentLabel: resources.MLAComponentName})
+		}
 		return ns, nil
 	}
 }

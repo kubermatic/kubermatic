@@ -230,6 +230,9 @@ type JSONSchemaProps struct {
 
 	// not
 	Not *JSONSchemaProps `json:"not,omitempty"`
+
+	// x kubernetes validations
+	XKubernetesValidations ValidationRules `json:"x-kubernetes-validations,omitempty"`
 }
 
 // Validate validates this JSON schema props
@@ -300,6 +303,10 @@ func (m *JSONSchemaProps) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateXKubernetesValidations(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -314,6 +321,8 @@ func (m *JSONSchemaProps) validateDollarSchema(formats strfmt.Registry) error {
 	if err := m.DollarSchema.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("$schema")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("$schema")
 		}
 		return err
 	}
@@ -335,6 +344,8 @@ func (m *JSONSchemaProps) validateAllOf(formats strfmt.Registry) error {
 			if err := m.AllOf[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("allOf" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("allOf" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -359,6 +370,8 @@ func (m *JSONSchemaProps) validateAnyOf(formats strfmt.Registry) error {
 			if err := m.AnyOf[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("anyOf" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("anyOf" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -383,6 +396,8 @@ func (m *JSONSchemaProps) validateEnum(formats strfmt.Registry) error {
 			if err := m.Enum[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("enum" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("enum" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -407,6 +422,8 @@ func (m *JSONSchemaProps) validateOneOf(formats strfmt.Registry) error {
 			if err := m.OneOf[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("oneOf" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("oneOf" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -429,6 +446,11 @@ func (m *JSONSchemaProps) validatePatternProperties(formats strfmt.Registry) err
 		}
 		if val, ok := m.PatternProperties[k]; ok {
 			if err := val.Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("patternProperties" + "." + k)
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("patternProperties" + "." + k)
+				}
 				return err
 			}
 		}
@@ -450,6 +472,11 @@ func (m *JSONSchemaProps) validateProperties(formats strfmt.Registry) error {
 		}
 		if val, ok := m.Properties[k]; ok {
 			if err := val.Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("properties" + "." + k)
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("properties" + "." + k)
+				}
 				return err
 			}
 		}
@@ -468,6 +495,8 @@ func (m *JSONSchemaProps) validateAdditionalItems(formats strfmt.Registry) error
 		if err := m.AdditionalItems.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("additionalItems")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("additionalItems")
 			}
 			return err
 		}
@@ -485,6 +514,8 @@ func (m *JSONSchemaProps) validateAdditionalProperties(formats strfmt.Registry) 
 		if err := m.AdditionalProperties.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("additionalProperties")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("additionalProperties")
 			}
 			return err
 		}
@@ -502,6 +533,8 @@ func (m *JSONSchemaProps) validateDefault(formats strfmt.Registry) error {
 		if err := m.Default.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("default")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("default")
 			}
 			return err
 		}
@@ -519,6 +552,8 @@ func (m *JSONSchemaProps) validateDefinitions(formats strfmt.Registry) error {
 		if err := m.Definitions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("definitions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("definitions")
 			}
 			return err
 		}
@@ -536,6 +571,8 @@ func (m *JSONSchemaProps) validateDependencies(formats strfmt.Registry) error {
 		if err := m.Dependencies.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("dependencies")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("dependencies")
 			}
 			return err
 		}
@@ -553,6 +590,8 @@ func (m *JSONSchemaProps) validateExample(formats strfmt.Registry) error {
 		if err := m.Example.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("example")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("example")
 			}
 			return err
 		}
@@ -570,6 +609,8 @@ func (m *JSONSchemaProps) validateExternalDocs(formats strfmt.Registry) error {
 		if err := m.ExternalDocs.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("externalDocs")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("externalDocs")
 			}
 			return err
 		}
@@ -587,6 +628,8 @@ func (m *JSONSchemaProps) validateItems(formats strfmt.Registry) error {
 		if err := m.Items.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("items")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("items")
 			}
 			return err
 		}
@@ -604,9 +647,28 @@ func (m *JSONSchemaProps) validateNot(formats strfmt.Registry) error {
 		if err := m.Not.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("not")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("not")
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) validateXKubernetesValidations(formats strfmt.Registry) error {
+	if swag.IsZero(m.XKubernetesValidations) { // not required
+		return nil
+	}
+
+	if err := m.XKubernetesValidations.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("x-kubernetes-validations")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("x-kubernetes-validations")
+		}
+		return err
 	}
 
 	return nil
@@ -680,6 +742,10 @@ func (m *JSONSchemaProps) ContextValidate(ctx context.Context, formats strfmt.Re
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateXKubernetesValidations(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -691,6 +757,8 @@ func (m *JSONSchemaProps) contextValidateDollarSchema(ctx context.Context, forma
 	if err := m.DollarSchema.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("$schema")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("$schema")
 		}
 		return err
 	}
@@ -706,6 +774,8 @@ func (m *JSONSchemaProps) contextValidateAllOf(ctx context.Context, formats strf
 			if err := m.AllOf[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("allOf" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("allOf" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -724,6 +794,8 @@ func (m *JSONSchemaProps) contextValidateAnyOf(ctx context.Context, formats strf
 			if err := m.AnyOf[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("anyOf" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("anyOf" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -742,6 +814,8 @@ func (m *JSONSchemaProps) contextValidateEnum(ctx context.Context, formats strfm
 			if err := m.Enum[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("enum" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("enum" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -760,6 +834,8 @@ func (m *JSONSchemaProps) contextValidateOneOf(ctx context.Context, formats strf
 			if err := m.OneOf[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("oneOf" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("oneOf" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -806,6 +882,8 @@ func (m *JSONSchemaProps) contextValidateAdditionalItems(ctx context.Context, fo
 		if err := m.AdditionalItems.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("additionalItems")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("additionalItems")
 			}
 			return err
 		}
@@ -820,6 +898,8 @@ func (m *JSONSchemaProps) contextValidateAdditionalProperties(ctx context.Contex
 		if err := m.AdditionalProperties.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("additionalProperties")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("additionalProperties")
 			}
 			return err
 		}
@@ -834,6 +914,8 @@ func (m *JSONSchemaProps) contextValidateDefault(ctx context.Context, formats st
 		if err := m.Default.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("default")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("default")
 			}
 			return err
 		}
@@ -847,6 +929,8 @@ func (m *JSONSchemaProps) contextValidateDefinitions(ctx context.Context, format
 	if err := m.Definitions.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("definitions")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("definitions")
 		}
 		return err
 	}
@@ -859,6 +943,8 @@ func (m *JSONSchemaProps) contextValidateDependencies(ctx context.Context, forma
 	if err := m.Dependencies.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("dependencies")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("dependencies")
 		}
 		return err
 	}
@@ -872,6 +958,8 @@ func (m *JSONSchemaProps) contextValidateExample(ctx context.Context, formats st
 		if err := m.Example.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("example")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("example")
 			}
 			return err
 		}
@@ -886,6 +974,8 @@ func (m *JSONSchemaProps) contextValidateExternalDocs(ctx context.Context, forma
 		if err := m.ExternalDocs.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("externalDocs")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("externalDocs")
 			}
 			return err
 		}
@@ -900,6 +990,8 @@ func (m *JSONSchemaProps) contextValidateItems(ctx context.Context, formats strf
 		if err := m.Items.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("items")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("items")
 			}
 			return err
 		}
@@ -914,9 +1006,25 @@ func (m *JSONSchemaProps) contextValidateNot(ctx context.Context, formats strfmt
 		if err := m.Not.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("not")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("not")
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *JSONSchemaProps) contextValidateXKubernetesValidations(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.XKubernetesValidations.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("x-kubernetes-validations")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("x-kubernetes-validations")
+		}
+		return err
 	}
 
 	return nil

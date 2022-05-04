@@ -157,16 +157,21 @@ func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 	return addonID, nil
 }
 
-func ListAccessibleAddons(accessibleAddons sets.String) endpoint.Endpoint {
+func ListAccessibleAddons(configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return accessibleAddons.UnsortedList(), nil
+		config, err := configGetter(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return sets.NewString(config.Spec.API.AccessibleAddons...).List(), nil
 	}
 }
 
-func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, accessibleAddons sets.String) endpoint.Endpoint {
+func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
-		return handlercommon.ListInstallableAddonEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, accessibleAddons, req.ProjectID, req.ClusterID)
+		return handlercommon.ListInstallableAddonEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, configGetter, req.ProjectID, req.ClusterID)
 	}
 }
 
@@ -207,7 +212,7 @@ func DeleteAddonEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 
 func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return handlercommon.ListAddonConfigsEndpoint(addonConfigProvider)
+		return handlercommon.ListAddonConfigsEndpoint(ctx, addonConfigProvider)
 	}
 }
 
@@ -215,6 +220,6 @@ func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider) en
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getConfigReq)
 
-		return handlercommon.GetAddonConfigEndpoint(addonConfigProvider, req.AddonID)
+		return handlercommon.GetAddonConfigEndpoint(ctx, addonConfigProvider, req.AddonID)
 	}
 }

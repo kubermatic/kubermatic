@@ -22,22 +22,19 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+CONTAINERIZE_IMAGE=golang:1.18.1 containerize ./hack/gen-api-client.sh
+
 cd cmd/kubermatic-api/
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
 function cleanup() {
   rm $TMP_SWAGGER
-
-  # disable swagger:meta comment
-  perl -0777 -i -p -e 's/(package handler)/\n\1/' ../../pkg/handler/routes_v1.go
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-# enable the package-level swagger:meta comment
-perl -0777 -i -p -e 's/\n(package handler)/\1/' ../../pkg/handler/routes_v1.go
-
 go run github.com/go-swagger/go-swagger/cmd/swagger generate spec \
+  --tags=ee \
   --scan-models \
   -o ${TMP_SWAGGER}
 

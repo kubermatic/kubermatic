@@ -50,7 +50,7 @@ spec:
         - '{"command":"/dashboard","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--namespace","kubernetes-dashboard","--enable-insecure-login"]}'
         command:
         - /http-prober-bin/http-prober
-        image: docker.io/kubernetesui/dashboard:v2.0.4
+        image: docker.io/kubernetesui/dashboard:v2.5.0
         imagePullPolicy: IfNotPresent
         name: kubernetes-dashboard
         ports:
@@ -75,12 +75,14 @@ spec:
           name: tmp-volume
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      imagePullSecrets:
+      - name: dockercfg
       initContainers:
       - command:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.3.2
+        image: quay.io/kubermatic/http-prober:v0.3.3
         name: copy-http-prober
         resources: {}
         volumeMounts:

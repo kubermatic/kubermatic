@@ -37,15 +37,18 @@ echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 
 
 EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
+maxDuration=60 # in minutes
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
 elif [[ $provider == "packet" ]]; then
+  maxDuration=90
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
     -packet-project-id=${PACKET_PROJECT_ID}"
 elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
 elif [[ $provider == "azure" ]]; then
+  maxDuration=90
   EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
     -azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
@@ -56,12 +59,13 @@ elif [[ $provider == "hetzner" ]]; then
   EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}"
 elif [[ $provider == "openstack" ]]; then
   EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}"
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
-    -vsphere-password=${VSPHERE_E2E_PASSWORD}"
+    -vsphere-password=${VSPHERE_E2E_PASSWORD}
+    -vsphere-datastore=HS-FreeNAS"
 elif [[ $provider == "kubevirt" ]]; then
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"
@@ -69,9 +73,29 @@ elif [[ $provider == "kubevirt" ]]; then
 elif [[ $provider == "alibaba" ]]; then
   EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
+elif [[ $provider == "nutanix" ]]; then
+  EXTRA_ARGS="-nutanix-username=${NUTANIX_E2E_USERNAME}
+    -nutanix-password=${NUTANIX_E2E_PASSWORD}
+    -nutanix-csi-username=${NUTANIX_E2E_PE_USERNAME}
+    -nutanix-csi-password=${NUTANIX_E2E_PE_PASSWORD}
+    -nutanix-csi-endpoint=${NUTANIX_E2E_PE_ENDPOINT}
+    -nutanix-proxy-url=http://${NUTANIX_E2E_PROXY_USERNAME}:${NUTANIX_E2E_PROXY_PASSWORD}@10.240.20.100:${NUTANIX_E2E_PROXY_PORT}/
+    -nutanix-cluster-name=${NUTANIX_E2E_CLUSTER_NAME}
+    -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
+    -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
 fi
 
-timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
+# in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),
+# so we must multiply the maxDuration with the number of scenarios
+numDists=$(echo "${DISTRIBUTIONS:-}" | tr "," "\n" | wc -l)
+numVersions=$(echo "${VERSIONS_TO_TEST:-}" | tr "," "\n" | wc -l)
+((maxDuration = $numDists * $numVersions * $maxDuration))
+
+# add a bit of setup time to bring up the project, tear it down again etc.
+((maxDuration = $maxDuration + 30))
+
+timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
+  -client="${SETUP_MODE:-api}" \
   -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \

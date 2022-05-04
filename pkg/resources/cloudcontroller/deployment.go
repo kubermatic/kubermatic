@@ -50,6 +50,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 	case data.Cluster().Spec.Cloud.VSphere != nil:
 		creatorGetter = vsphereDeploymentCreator(data)
+
+	case data.Cluster().Spec.Cloud.Kubevirt != nil:
+		creatorGetter = kubevirtDeploymentCreator(data)
 	}
 
 	if creatorGetter != nil {
@@ -64,11 +67,15 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					return nil, err
 				}
 
-				containerNames := sets.NewString(ccmContainerName, openvpnClientContainerName)
+				containerNames := sets.NewString(ccmContainerName)
+
+				if !data.IsKonnectivityEnabled() {
+					containerNames.Insert(openvpnClientContainerName)
+				}
 
 				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
 				if err != nil {
-					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 				}
 				modified.Spec.Template.Spec = *wrappedPodSpec
 

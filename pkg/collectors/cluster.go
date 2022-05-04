@@ -22,7 +22,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -33,7 +33,7 @@ const (
 	prefix = "kubermatic_cluster_"
 )
 
-// ClusterCollector exports metrics for cluster resources
+// ClusterCollector exports metrics for cluster resources.
 type ClusterCollector struct {
 	client ctrlruntimeclient.Reader
 
@@ -42,7 +42,7 @@ type ClusterCollector struct {
 	clusterInfo    *prometheus.Desc
 }
 
-// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry
+// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry.
 func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
 	cc := &ClusterCollector{
 		client: client,
@@ -78,18 +78,18 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 	registry.MustRegister(cc)
 }
 
-// Describe returns the metrics descriptors
+// Describe returns the metrics descriptors.
 func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- cc.clusterCreated
 	ch <- cc.clusterDeleted
 	ch <- cc.clusterInfo
 }
 
-// Collect gets called by prometheus to collect the metrics
+// Collect gets called by prometheus to collect the metrics.
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := cc.client.List(context.Background(), clusters); err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %v", err))
+		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %w", err))
 		return
 	}
 
@@ -117,7 +117,7 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 
 	labels, err := cc.clusterLabels(c)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %v", c.Name, err))
+		utilruntime.HandleError(fmt.Errorf("failed to determine labels for cluster %s: %w", c.Name, err))
 	} else {
 		ch <- prometheus.MustNewConstMetric(
 			cc.clusterInfo,

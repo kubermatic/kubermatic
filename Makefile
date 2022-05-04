@@ -18,7 +18,7 @@ export GO111MODULE = on
 export KUBERMATIC_EDITION ?= ce
 DOCKER_REPO ?= quay.io/kubermatic
 REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
-CMD = $(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
+CMD ?= $(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
 TAGS ?= $(shell git describe --tags --always)
@@ -34,7 +34,6 @@ LDFLAGS += -extldflags '-static' \
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
-GOBUILDIMAGE ?= golang:1.16.1
 DOCKER_BIN := $(shell which docker)
 
 .PHONY: all
@@ -82,15 +81,8 @@ build-tests:
 	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
 
 .PHONY: test-integration
-test-integration: CGO_ENABLED=1
-test-integration: download-gocache
-	@# Run integration tests and only integration tests by:
-	@# * Finding all files that contain the build tag via grep
-	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
-	@# * Prefixing them with `./` as that's needed by `go test` as well
-	@grep --files-with-matches --recursive --extended-regexp '\+build.+integration' cmd/ pkg/ \
-		|xargs dirname \
-		|xargs --max-args=1 -I ^ go test -tags "integration $(KUBERMATIC_EDITION)"  -race ./^
+test-integration:
+	./hack/run-integration-tests.sh
 
 .PHONY: test-update
 test-update:
@@ -120,12 +112,21 @@ endif
 	done
 
 .PHONY: lint
-lint:
+lint: lint-crds
 	golangci-lint run \
 		--verbose \
-		--build-tags "$(KUBERMATIC_EDITION)" \
 		--print-resources-usage \
 		./pkg/... ./cmd/... ./codegen/...
+
+.PHONY: lint-crds
+lint-crds:
+	# we want tagliatelle to check only CRDs
+	golangci-lint run \
+		--verbose \
+		--print-resources-usage \
+		--disable-all \
+		--enable tagliatelle \
+		./pkg/apis/kubermatic/...
 
 .PHONY: shellcheck
 shellcheck:
@@ -139,7 +140,7 @@ spellcheck:
 
 .PHONY: cover
 cover:
-	./hack/cover.sh --html
+	./hack/coverage.sh --html
 
 .PHONY: run-controller-manager
 run-controller-manager:
@@ -160,6 +161,7 @@ run-master-controller-manager:
 .PHONY: verify
 verify:
 	./hack/verify-codegen.sh
+	./hack/verify-import-order.sh
 	./hack/verify-swagger.sh
 	./hack/verify-api-client.sh
 

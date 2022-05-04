@@ -31,7 +31,7 @@ import (
 
 const (
 	name = "prometheus"
-	tag  = "v2.29.1"
+	tag  = "v2.34.0"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
@@ -42,17 +42,17 @@ var (
 		name: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("1Gi"),
-				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceCPU:    resource.MustParse("500m"),
 			},
 		},
 	}
 )
 
-// StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet
+// StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet.
 func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.PrometheusStatefulSetName, func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
@@ -64,7 +64,6 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			}
 
 			set.Name = resources.PrometheusStatefulSetName
-			set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 			requiredBaseLabels := map[string]string{"cluster": data.Cluster().Name}
 			set.Labels = resources.BaseAppLabels(name, requiredBaseLabels)
@@ -78,7 +77,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, requiredBaseLabels)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -144,7 +143,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						FailureThreshold:    10,
 						InitialDelaySeconds: 30,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/healthy",
 								Port:   intstr.FromString("web"),
@@ -158,7 +157,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						FailureThreshold:    6,
 						InitialDelaySeconds: 5,
 						SuccessThreshold:    1,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/-/ready",
 								Port:   intstr.FromString("web"),
@@ -170,7 +169,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			}
 			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			set.Spec.Template.Spec.Volumes = volumes
 

@@ -35,25 +35,39 @@ export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 
-echodate "Creating UI Azure preset..."
+echodate "Creating Azure preset..."
 cat << EOF > preset-azure.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-azure
   namespace: kubermatic
 spec:
   azure:
-    tenantId: ${AZURE_E2E_TESTS_TENANT_ID}
-    subscriptionId: ${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
-    clientId: ${AZURE_E2E_TESTS_CLIENT_ID}
+    tenantID: ${AZURE_E2E_TESTS_TENANT_ID}
+    subscriptionID: ${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
+    clientID: ${AZURE_E2E_TESTS_CLIENT_ID}
     clientSecret: ${AZURE_E2E_TESTS_CLIENT_SECRET}
+    loadBalancerSKU: "standard"
 EOF
 retry 2 kubectl apply -f preset-azure.yaml
 
-echodate "Creating UI DigitalOcean preset..."
+echodate "Creating Hetzner preset..."
+cat << EOF > preset-hetzner.yaml
+apiVersion: kubermatic.k8c.io/v1
+kind: Preset
+metadata:
+  name: e2e-hetzner
+  namespace: kubermatic
+spec:
+  hetzner:
+    token: ${HZ_E2E_TOKEN}
+EOF
+retry 2 kubectl apply -f preset-hetzner.yaml
+
+echodate "Creating DigitalOcean preset..."
 cat << EOF > preset-digitalocean.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-digitalocean
@@ -64,9 +78,9 @@ spec:
 EOF
 retry 2 kubectl apply -f preset-digitalocean.yaml
 
-echodate "Creating UI GCP preset..."
+echodate "Creating GCP preset..."
 cat << EOF > preset-gcp.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-gcp
@@ -76,7 +90,7 @@ spec:
     serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
 EOF
 cat << EOF > preset-gcp-datacenter.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-gcp-datacenter
@@ -89,9 +103,9 @@ EOF
 retry 2 kubectl apply -f preset-gcp.yaml
 retry 2 kubectl apply -f preset-gcp-datacenter.yaml
 
-echodate "Creating UI OpenStack preset..."
+echodate "Creating OpenStack preset..."
 cat << EOF > preset-openstack.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
   name: e2e-openstack
@@ -100,19 +114,20 @@ spec:
   openstack:
     username: ${OS_USERNAME}
     password: ${OS_PASSWORD}
-    tenant: ${OS_TENANT_NAME}
+    project: ${OS_TENANT_NAME}
+    projectID: ""
     domain: ${OS_DOMAIN}
 EOF
 retry 2 kubectl apply -f preset-openstack.yaml
 
 echodate "Creating roxy2 user..."
 cat << EOF > user.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
   name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3
 spec:
-  email: roxy2@loodse.com
+  email: roxy2@kubermatic.com
   id: 1413636a43ddc27da27e47614faedff24b4ab19c9d9f2b45dd1b89d9_KUBE
   name: roxy2
   admin: true

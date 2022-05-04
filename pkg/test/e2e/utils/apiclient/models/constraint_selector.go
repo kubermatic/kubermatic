@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ConstraintSelector ConstraintSelector is the object holding the cluster selection filters
+// ConstraintSelector ConstraintSelector is the object holding the cluster selection filters.
 //
 // swagger:model ConstraintSelector
 type ConstraintSelector struct {
@@ -48,6 +48,8 @@ func (m *ConstraintSelector) validateLabelSelector(formats strfmt.Registry) erro
 		if err := m.LabelSelector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labelSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("labelSelector")
 			}
 			return err
 		}
@@ -76,6 +78,8 @@ func (m *ConstraintSelector) contextValidateLabelSelector(ctx context.Context, f
 		if err := m.LabelSelector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labelSelector")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("labelSelector")
 			}
 			return err
 		}

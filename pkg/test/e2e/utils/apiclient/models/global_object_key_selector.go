@@ -83,6 +83,8 @@ func (m *GlobalObjectKeySelector) validateUID(formats strfmt.Registry) error {
 	if err := m.UID.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("uid")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("uid")
 		}
 		return err
 	}
@@ -109,6 +111,8 @@ func (m *GlobalObjectKeySelector) contextValidateUID(ctx context.Context, format
 	if err := m.UID.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("uid")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("uid")
 		}
 		return err
 	}

@@ -25,7 +25,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticcrdv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
@@ -59,7 +59,10 @@ type createReq struct {
 }
 
 func (req *createReq) validate() (ruleGroupName string, err error) {
-	return getRuleGroupNameInData(req.Body.Data)
+	if req.Body.IsDefault {
+		return "", fmt.Errorf("only Admin can create default rule group")
+	}
+	return GetRuleGroupNameInData(req.Body.Data)
 }
 
 // updateReq defines HTTP request for updating ruleGroup
@@ -75,7 +78,10 @@ type updateReq struct {
 }
 
 func (req *updateReq) validate() error {
-	ruleGroupNameInData, err := getRuleGroupNameInData(req.Body.Data)
+	if req.Body.IsDefault {
+		return fmt.Errorf("only Admin can update default rule group")
+	}
+	ruleGroupNameInData, err := GetRuleGroupNameInData(req.Body.Data)
 	if err != nil {
 		return err
 	}
@@ -102,7 +108,7 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	ruleGroupID, err := decodeRuleGroupID(r)
+	ruleGroupID, err := DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -119,11 +125,11 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 	req.Type = r.URL.Query().Get("type")
 	if len(req.Type) > 0 {
-		if (req.Type == string(kubermaticcrdv1.RuleGroupTypeMetrics)) ||
-			(req.Type == string(kubermaticcrdv1.RuleGroupTypeLogs)) {
+		if (req.Type == string(kubermaticv1.RuleGroupTypeMetrics)) ||
+			(req.Type == string(kubermaticv1.RuleGroupTypeLogs)) {
 			return req, nil
 		}
-		return nil, utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s, supported value: %s, %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics, kubermaticcrdv1.RuleGroupTypeLogs)
+		return nil, utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s, supported value: %s, %s", req.Type, kubermaticv1.RuleGroupTypeMetrics, kubermaticv1.RuleGroupTypeLogs)
 	}
 	return req, nil
 }
@@ -149,7 +155,7 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
-	ruleGroupID, err := decodeRuleGroupID(r)
+	ruleGroupID, err := DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +175,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	ruleGroupID, err := decodeRuleGroupID(r)
+	ruleGroupID, err := DecodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +183,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func decodeRuleGroupID(r *http.Request) (string, error) {
+func DecodeRuleGroupID(r *http.Request) (string, error) {
 	ruleGroupID := mux.Vars(r)["rulegroup_id"]
 	if ruleGroupID == "" {
 		return "", utilerrors.NewBadRequest("rulegroup_id parameter is required but was not provided")
@@ -185,9 +191,9 @@ func decodeRuleGroupID(r *http.Request) (string, error) {
 	return ruleGroupID, nil
 }
 
-func getRuleGroupNameInData(data []byte) (string, error) {
+func GetRuleGroupNameInData(data []byte) (string, error) {
 	bodyMap := map[string]interface{}{}
-	if err := yaml.Unmarshal(data, &bodyMap); err != nil {
+	if err := yaml.UnmarshalStrict(data, &bodyMap); err != nil {
 		return "", fmt.Errorf("cannot unmarshal rule group data in yaml: %w", err)
 	}
 	ruleGroupName, ok := bodyMap["name"].(string)

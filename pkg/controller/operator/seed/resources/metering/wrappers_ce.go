@@ -1,4 +1,4 @@
-// +build !ee
+//go:build !ee
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -21,17 +21,13 @@ package metering
 import (
 	"context"
 
-	"go.uber.org/zap"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ReconcileMeteringResources reconciles the metering related resources.
-func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _ string,
-	_ *operatorv1alpha1.KubermaticConfiguration, _ *kubermaticv1.Seed, _ *zap.SugaredLogger) error {
-
+func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _ *runtime.Scheme, _ *kubermaticv1.KubermaticConfiguration, _ *kubermaticv1.Seed) error {
 	return nil
 }

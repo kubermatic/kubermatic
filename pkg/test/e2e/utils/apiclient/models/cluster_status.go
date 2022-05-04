@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ClusterStatus ClusterStatus defines the cluster status
+// ClusterStatus ClusterStatus defines the cluster status.
 //
 // swagger:model ClusterStatus
 type ClusterStatus struct {
@@ -36,6 +36,10 @@ func (m *ClusterStatus) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateVersion(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -50,6 +54,25 @@ func (m *ClusterStatus) validateExternalCCMMigration(formats strfmt.Registry) er
 	if err := m.ExternalCCMMigration.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("externalCCMMigration")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("externalCCMMigration")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterStatus) validateVersion(formats strfmt.Registry) error {
+	if swag.IsZero(m.Version) { // not required
+		return nil
+	}
+
+	if err := m.Version.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("version")
 		}
 		return err
 	}
@@ -65,6 +88,10 @@ func (m *ClusterStatus) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateVersion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -76,6 +103,22 @@ func (m *ClusterStatus) contextValidateExternalCCMMigration(ctx context.Context,
 	if err := m.ExternalCCMMigration.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("externalCCMMigration")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("externalCCMMigration")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterStatus) contextValidateVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Version.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("version")
 		}
 		return err
 	}

@@ -55,6 +55,51 @@ func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.D
 	}, nil
 }
 
+func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err error) {
+	chart, err := LoadChart(chartDirectory)
+	if err != nil {
+		return err
+	}
+
+	for idx, dep := range chart.Dependencies {
+		repoName := fmt.Sprintf("dep-%s-%d", chart.Name, idx)
+		repoAddFlags := []string{
+			"repo",
+			"add",
+			repoName,
+			dep.Repository,
+		}
+
+		repoRemoveFlags := []string{
+			"repo",
+			"remove",
+			repoName,
+		}
+
+		defer func() {
+			_, removeErr := c.run("default", repoRemoveFlags...)
+			if err != nil {
+				err = removeErr
+			}
+		}()
+
+		if _, err = c.run("default", repoAddFlags...); err != nil {
+			return err
+		}
+	}
+
+	command := []string{
+		"dependency",
+		"build",
+	}
+
+	command = append(command, chartDirectory)
+
+	_, err = c.run("default", command...)
+
+	return err
+}
+
 func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) error {
 	command := []string{
 		"upgrade",
@@ -95,27 +140,51 @@ func (c *cli) ListReleases(namespace string) ([]Release, error) {
 
 	output, err := c.run(namespace, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list releases: %v", err)
+		return nil, fmt.Errorf("failed to list releases: %w", err)
 	}
 
 	releases := []Release{}
 	if err := json.NewDecoder(bytes.NewReader(output)).Decode(&releases); err != nil {
-		return nil, fmt.Errorf("failed to parse Helm output: %v", err)
+		return nil, fmt.Errorf("failed to parse Helm output: %w", err)
 	}
 
 	for idx, release := range releases {
-		nameParts := strings.Split(release.Chart, "-")
-		tail := nameParts[len(nameParts)-1]
-
-		version, err := semver.NewVersion(tail)
-		if err == nil {
-			releases[idx].Version = version
+		version, chart, err := guessChartName(release.Chart)
+		if err != nil {
+			return nil, fmt.Errorf("failed to determine version of release %s: %w", release.Name, err)
 		}
 
-		releases[idx].Chart = strings.Join(nameParts[:len(nameParts)-1], "-")
+		releases[idx].Chart = chart
+		releases[idx].Version = version
 	}
 
 	return releases, nil
+}
+
+func guessChartName(fullChart string) (*semver.Version, string, error) {
+	parts := strings.Split(fullChart, "-")
+	if len(parts) == 1 {
+		return nil, "", fmt.Errorf("%q is too short to be <chart>-<version>", fullChart)
+	}
+
+	chartName := parts[0]
+	parts = parts[1:]
+
+	for len(parts) > 0 {
+		versionString := strings.Join(parts, "-")
+
+		// have we found a valid version?
+		version, err := semver.NewVersion(versionString)
+		if err == nil {
+			return version, chartName, nil
+		}
+
+		// not a valid version, treat the first part as part of the chart name
+		chartName = fmt.Sprintf("%s-%s", chartName, parts[0])
+		parts = parts[1:]
+	}
+
+	return nil, "", fmt.Errorf("cannot determine chart and release from %q", fullChart)
 }
 
 func (c *cli) UninstallRelease(namespace string, name string) error {

@@ -30,8 +30,8 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -46,7 +46,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ResourceMetricsInfo is a struct that holds the node metrics
+// ResourceMetricsInfo is a struct that holds the node metrics.
 type ResourceMetricsInfo struct {
 	Name      string
 	Metrics   corev1.ResourceList
@@ -54,7 +54,7 @@ type ResourceMetricsInfo struct {
 }
 
 // OIDCConfiguration is a struct that holds
-// OIDC provider configuration data, read from command line arguments
+// OIDC provider configuration data, read from command line arguments.
 type OIDCConfiguration struct {
 	// URL holds OIDC Issuer URL address
 	URL string
@@ -72,11 +72,16 @@ type OIDCConfiguration struct {
 	OfflineAccessAsScope bool
 }
 
-// UpdateManager specifies a set of methods to handle cluster versions & updates
+// UpdateManager specifies a set of methods to handle cluster versions & updates.
 type UpdateManager interface {
-	GetVersions(string) ([]*version.Version, error)
+	GetVersions() ([]*version.Version, error)
+	GetVersionsForProvider(kubermaticv1.ProviderType, ...kubermaticv1.ConditionType) ([]*version.Version, error)
 	GetDefault() (*version.Version, error)
-	GetPossibleUpdates(from, clusterType string) ([]*version.Version, error)
+	GetPossibleUpdates(from string, provider kubermaticv1.ProviderType, condition ...kubermaticv1.ConditionType) ([]*version.Version, error)
+}
+
+type SupportManager interface {
+	GetIncompatibilities() []*version.ProviderIncompatibility
 }
 
 // ServerMetrics defines metrics used by the API.
@@ -86,13 +91,13 @@ type ServerMetrics struct {
 	InitNodeDeploymentFailures *prometheus.CounterVec
 }
 
-// IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider
+// IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider.
 func IsBringYourOwnProvider(spec kubermaticv1.CloudSpec) (bool, error) {
 	providerName, err := provider.ClusterCloudProviderName(spec)
 	if err != nil {
 		return false, err
 	}
-	return providerName == provider.BringYourOwnCloudProvider, nil
+	return providerName == string(kubermaticv1.BringYourOwnCloudProvider), nil
 }
 
 type CredentialsData struct {
@@ -111,10 +116,10 @@ func (d CredentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconf
 
 // GetReadyPod returns a pod matching provided label selector if it is posting ready status, error otherwise.
 // Namespace can be ensured by creating proper PodInterface client.
-func GetReadyPod(client corev1interface.PodInterface, labelSelector string) (*corev1.Pod, error) {
-	pods, err := client.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
+func GetReadyPod(ctx context.Context, client corev1interface.PodInterface, labelSelector string) (*corev1.Pod, error) {
+	pods, err := client.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get pod: %v", err)
+		return nil, fmt.Errorf("failed to get pod: %w", err)
 	}
 
 	readyPods := getReadyPods(pods)
@@ -135,12 +140,14 @@ func GetReadyPod(client corev1interface.PodInterface, labelSelector string) (*co
 //   to be more expensive than doing the extra round via the TCP socket:
 //   https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transport.go#L454
 func GetPortForwarder(
+	ctx context.Context,
 	coreClient corev1interface.CoreV1Interface,
 	cfg *rest.Config,
 	namespace string,
 	labelSelector string,
-	containerPort int) (*portforward.PortForwarder, chan struct{}, error) {
-	pod, err := GetReadyPod(coreClient.Pods(namespace), labelSelector)
+	containerPort int,
+) (*portforward.PortForwarder, chan struct{}, error) {
+	pod, err := GetReadyPod(ctx, coreClient.Pods(namespace), labelSelector)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -155,7 +162,7 @@ func GetPortForwarder(
 	errorBuffer := bytes.NewBuffer(make([]byte, 1024))
 	portforwarder, err := portforward.NewOnAddresses(dialer, []string{"127.0.0.1"}, []string{"0:" + strconv.Itoa(containerPort)}, stopChan, readyChan, bytes.NewBuffer(make([]byte, 1024)), errorBuffer)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create portforwarder: %v", err)
+		return nil, nil, fmt.Errorf("failed to create portforwarder: %w", err)
 	}
 
 	// Portforwarding is blocking, so we can't do it here
@@ -181,11 +188,7 @@ func isPodReady(pod corev1.Pod) bool {
 	return false
 }
 
-func getDialerForPod(
-	pod *corev1.Pod,
-	restClient rest.Interface,
-	cfg *rest.Config) (httpstream.Dialer, error) {
-
+func getDialerForPod(pod *corev1.Pod, restClient rest.Interface, cfg *rest.Config) (httpstream.Dialer, error) {
 	// The logic here is copied straight from kubectl at
 	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/kubectl/pkg/cmd/portforward/portforward.go#L334
 	req := restClient.Post().
@@ -196,20 +199,20 @@ func getDialerForPod(
 
 	transport, upgrader, err := spdy.RoundTripperFor(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get spdy roundTripper: %v", err)
+		return nil, fmt.Errorf("failed to get spdy roundTripper: %w", err)
 	}
 
 	return spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL()), nil
 }
 
-// WaitForPortForwarder waits until started port forwarder is ready, or emits an error to provided errChan
-func WaitForPortForwarder(p *portforward.PortForwarder, errChan <-chan error) error {
-	timeout := time.After(10 * time.Second)
+// WaitForPortForwarder waits until started port forwarder is ready, or emits an error to provided errChan.
+func WaitForPortForwarder(duration time.Duration, p *portforward.PortForwarder, errChan <-chan error) error {
+	timeout := time.After(duration)
 	select {
 	case <-timeout:
 		return errors.New("timeout waiting for backend connection")
 	case err := <-errChan:
-		return fmt.Errorf("failed to get connection to backend: %v", err)
+		return fmt.Errorf("failed to get connection to backend: %w", err)
 	case <-p.Ready:
 		return nil
 	}
@@ -218,11 +221,9 @@ func WaitForPortForwarder(p *portforward.PortForwarder, errChan <-chan error) er
 // WriteHTTPError writes an http error out. If debug is enabled, it also gets logged.
 func WriteHTTPError(log *zap.SugaredLogger, w http.ResponseWriter, err error) {
 	log.Debugw("Encountered error", zap.Error(err))
-	var httpErr kubermaticerrors.HTTPError
 
-	if asserted, ok := err.(kubermaticerrors.HTTPError); ok {
-		httpErr = asserted
-	} else {
+	var httpErr kubermaticerrors.HTTPError
+	if !errors.As(err, &httpErr) {
 		httpErr = kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
@@ -242,22 +243,22 @@ func ForwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) e
 		}
 	}()
 
-	if err := WaitForPortForwarder(forwarder, errorChan); err != nil {
+	if err := WaitForPortForwarder(10*time.Second, forwarder, errorChan); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
-	allProjectMembers, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
+func GetOwnersForProject(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
+	allProjectMembers, err := memberProvider.List(ctx, userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
 	if err != nil {
 		return nil, err
 	}
 	projectOwners := []apiv1.User{}
 	for _, projectMember := range allProjectMembers {
 		if rbac.ExtractGroupPrefix(projectMember.Spec.Group) == rbac.OwnerGroupNamePrefix {
-			user, err := userProvider.UserByEmail(projectMember.Spec.UserEmail)
+			user, err := userProvider.UserByEmail(ctx, projectMember.Spec.UserEmail)
 			if err != nil {
 				continue
 			}
@@ -279,7 +280,7 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 	}
 
 	// check first if project exist
-	adminProject, err := privilegedProjectProvider.GetUnsecured(projectID, options)
+	adminProject, err := privilegedProjectProvider.GetUnsecured(ctx, projectID, options)
 	if err != nil {
 		return nil, err
 	}
@@ -293,13 +294,13 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 	if err != nil {
 		return nil, err
 	}
-	return projectProvider.Get(userInfo, projectID, options)
+	return projectProvider.Get(ctx, userInfo, projectID, options)
 }
 
 func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticv1.Cluster, projectID string) (ctrlruntimeclient.Client, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user information: %v", err)
+		return nil, fmt.Errorf("failed to get user information: %w", err)
 	}
 	if adminUserInfo.IsAdmin {
 		return clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
@@ -307,7 +308,7 @@ func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGette
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user information: %v", err)
+		return nil, fmt.Errorf("failed to get user information: %w", err)
 	}
 	return clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 }

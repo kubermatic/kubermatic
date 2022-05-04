@@ -1,4 +1,4 @@
-// +build e2e
+//go:build e2e
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -21,12 +21,13 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 
@@ -49,7 +50,6 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 					Enforced: false,
 				},
 				DefaultNodeCount:            10,
-				ClusterTypeOptions:          kubermaticv1.ClusterTypeKubernetes,
 				DisplayDemoInfo:             false,
 				DisplayAPIDocs:              false,
 				DisplayTermsOfService:       false,
@@ -227,8 +227,8 @@ func TestRestrictProjectCreation(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error during cluster creation")
 			}
-			createError, ok := err.(*project.CreateProjectDefault)
-			if !ok {
+			var createError *project.CreateProjectDefault
+			if !errors.As(err, &createError) {
 				t.Fatalf("create project: expected error, but got %v", err)
 			}
 			if createError.Code() != http.StatusForbidden {

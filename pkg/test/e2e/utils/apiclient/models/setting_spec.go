@@ -42,6 +42,9 @@ type SettingSpec struct {
 	// mla alertmanager prefix
 	MlaAlertmanagerPrefix string `json:"mlaAlertmanagerPrefix,omitempty"`
 
+	// mla grafana prefix
+	MlaGrafanaPrefix string `json:"mlaGrafanaPrefix,omitempty"`
+
 	// restrict project creation
 	RestrictProjectCreation bool `json:"restrictProjectCreation,omitempty"`
 
@@ -50,9 +53,6 @@ type SettingSpec struct {
 
 	// cleanup options
 	CleanupOptions *CleanupOptions `json:"cleanupOptions,omitempty"`
-
-	// cluster type options
-	ClusterTypeOptions ClusterType `json:"clusterTypeOptions,omitempty"`
 
 	// custom links
 	CustomLinks CustomLinks `json:"customLinks,omitempty"`
@@ -72,10 +72,6 @@ func (m *SettingSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCleanupOptions(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateClusterTypeOptions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -110,24 +106,11 @@ func (m *SettingSpec) validateCleanupOptions(formats strfmt.Registry) error {
 		if err := m.CleanupOptions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cleanupOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cleanupOptions")
 			}
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *SettingSpec) validateClusterTypeOptions(formats strfmt.Registry) error {
-	if swag.IsZero(m.ClusterTypeOptions) { // not required
-		return nil
-	}
-
-	if err := m.ClusterTypeOptions.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("clusterTypeOptions")
-		}
-		return err
 	}
 
 	return nil
@@ -141,6 +124,8 @@ func (m *SettingSpec) validateCustomLinks(formats strfmt.Registry) error {
 	if err := m.CustomLinks.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("customLinks")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("customLinks")
 		}
 		return err
 	}
@@ -157,6 +142,8 @@ func (m *SettingSpec) validateMachineDeploymentVMResourceQuota(formats strfmt.Re
 		if err := m.MachineDeploymentVMResourceQuota.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("machineDeploymentVMResourceQuota")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("machineDeploymentVMResourceQuota")
 			}
 			return err
 		}
@@ -174,6 +161,8 @@ func (m *SettingSpec) validateMlaOptions(formats strfmt.Registry) error {
 		if err := m.MlaOptions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mlaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mlaOptions")
 			}
 			return err
 		}
@@ -191,6 +180,8 @@ func (m *SettingSpec) validateOpaOptions(formats strfmt.Registry) error {
 		if err := m.OpaOptions.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("opaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("opaOptions")
 			}
 			return err
 		}
@@ -204,10 +195,6 @@ func (m *SettingSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 	var res []error
 
 	if err := m.contextValidateCleanupOptions(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateClusterTypeOptions(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -239,21 +226,11 @@ func (m *SettingSpec) contextValidateCleanupOptions(ctx context.Context, formats
 		if err := m.CleanupOptions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cleanupOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("cleanupOptions")
 			}
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *SettingSpec) contextValidateClusterTypeOptions(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := m.ClusterTypeOptions.ContextValidate(ctx, formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("clusterTypeOptions")
-		}
-		return err
 	}
 
 	return nil
@@ -264,6 +241,8 @@ func (m *SettingSpec) contextValidateCustomLinks(ctx context.Context, formats st
 	if err := m.CustomLinks.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("customLinks")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("customLinks")
 		}
 		return err
 	}
@@ -277,6 +256,8 @@ func (m *SettingSpec) contextValidateMachineDeploymentVMResourceQuota(ctx contex
 		if err := m.MachineDeploymentVMResourceQuota.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("machineDeploymentVMResourceQuota")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("machineDeploymentVMResourceQuota")
 			}
 			return err
 		}
@@ -291,6 +272,8 @@ func (m *SettingSpec) contextValidateMlaOptions(ctx context.Context, formats str
 		if err := m.MlaOptions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mlaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("mlaOptions")
 			}
 			return err
 		}
@@ -305,6 +288,8 @@ func (m *SettingSpec) contextValidateOpaOptions(ctx context.Context, formats str
 		if err := m.OpaOptions.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("opaOptions")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("opaOptions")
 			}
 			return err
 		}

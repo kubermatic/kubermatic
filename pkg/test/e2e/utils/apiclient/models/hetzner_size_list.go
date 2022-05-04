@@ -58,6 +58,8 @@ func (m *HetznerSizeList) validateDedicated(formats strfmt.Registry) error {
 			if err := m.Dedicated[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("dedicated" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("dedicated" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -82,6 +84,8 @@ func (m *HetznerSizeList) validateStandard(formats strfmt.Registry) error {
 			if err := m.Standard[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("standard" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("standard" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -118,6 +122,8 @@ func (m *HetznerSizeList) contextValidateDedicated(ctx context.Context, formats 
 			if err := m.Dedicated[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("dedicated" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("dedicated" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -136,6 +142,8 @@ func (m *HetznerSizeList) contextValidateStandard(ctx context.Context, formats s
 			if err := m.Standard[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("standard" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("standard" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

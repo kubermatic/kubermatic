@@ -19,7 +19,7 @@ package metricsserver
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
@@ -57,7 +57,7 @@ const (
 	tag = "v0.5.0"
 )
 
-// metricsServerData is the data needed to construct the metrics-server components
+// metricsServerData is the data needed to construct the metrics-server components.
 type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
@@ -66,10 +66,11 @@ type metricsServerData interface {
 	DNATControllerImage() string
 	DNATControllerTag() string
 	NodeAccessNetwork() string
+	IsKonnectivityEnabled() bool
 }
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics
-// server
+// server.
 func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
 	dnsName := "metrics-server.kube-system.svc"
 	return servingcerthelper.ServingCertSecretCreator(caGetter,
@@ -81,7 +82,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 		nil)
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment
+// DeploymentCreator returns the function to create and update the metrics server deployment.
 func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -94,10 +95,10 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.IsKonnectivityEnabled())
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -105,16 +106,6 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
-
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
-			}
-
-			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-			}
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
@@ -148,24 +139,36 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 						},
 					},
 				},
-				*openvpnSidecar,
-				*dnatControllerSidecar,
 			}
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				name:                       defaultResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
-				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+				name: defaultResourceRequirements.DeepCopy(),
+			}
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
+				}
+				dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
+				if err != nil {
+					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
+					*openvpnSidecar,
+					*dnatControllerSidecar,
+				)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+				defResourceRequirements[dnatControllerSidecar.Name] = dnatControllerSidecar.Resources.DeepCopy()
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -174,29 +177,13 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+	vs := []corev1.Volume{
 		{
 			Name: resources.MetricsServerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.MetricsServerKubeconfigSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.KubeletDnatControllerKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 				},
 			},
 		},
@@ -209,4 +196,25 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	if !isKonnectivityEnabled {
+		vs = append(vs, []corev1.Volume{
+			{
+				Name: resources.OpenVPNClientCertificatesSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.OpenVPNClientCertificatesSecretName,
+					},
+				},
+			},
+			{
+				Name: resources.KubeletDnatControllerKubeconfigSecretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
+					},
+				},
+			},
+		}...)
+	}
+	return vs
 }

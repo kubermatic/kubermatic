@@ -39,8 +39,8 @@ import (
 )
 
 const (
-	// This controller adds special label for build-it cluster roles to make them visible in the API
-	controllerName = "cluster_role_label_controller"
+	// This controller adds special label for build-it cluster roles to make them visible in the API.
+	controllerName = "kkp-cluster-role-label-synchronizer"
 )
 
 type reconciler struct {
@@ -63,12 +63,12 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
 	// Watch for changes to ClusterRoles
 	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("cluster-admin", "view", "edit")); err != nil {
-		return fmt.Errorf("failed to establish watch for the ClusterRoles %v", err)
+		return fmt.Errorf("failed to establish watch for the ClusterRoles: %w", err)
 	}
 
 	return nil
@@ -92,7 +92,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			log.Debug("cluster role not found, returning")
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster role: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster role: %w", err)
 	}
 
 	err = r.reconcile(ctx, log, clusterRole)
@@ -119,7 +119,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	clusterRole.Labels[handlercommon.UserClusterComponentKey] = handlercommon.UserClusterRoleComponentValue
 
 	if err := r.client.Patch(ctx, clusterRole, ctrlruntimeclient.MergeFrom(oldClusterRole)); err != nil {
-		return fmt.Errorf("failed to update cluster role: %v", err)
+		return fmt.Errorf("failed to update cluster role: %w", err)
 	}
 
 	return nil

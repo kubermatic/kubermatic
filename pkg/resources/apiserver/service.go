@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the external API server service
+// ServiceCreator returns the function to reconcile the external API server service.
 func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {

@@ -1,4 +1,4 @@
-// +build ee
+//go:build ee
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -21,16 +21,25 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 
+	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func addFlags(fs *flag.FlagSet) {
-	eemasterctrlmgr.AddFlags(fs)
+	// NOP
+}
+
+func setupControllers(ctrlCtx *controllerContext) error {
+	if err := allowedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
+		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
+	}
+
+	return nil
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
@@ -39,12 +48,4 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt controllerRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return eemasterctrlmgr.SeedKubeconfigGetterFactory(ctx, client)
-}
-
-func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedwebhook.AdmissionHandler, error) {
-	return (&seedwebhook.ValidationHandlerBuilder{}).
-		Client(client).
-		WorkerName(options.workerName).
-		FeatureGates(options.featureGates).
-		Build(ctx)
 }

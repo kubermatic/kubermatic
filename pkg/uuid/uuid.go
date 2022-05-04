@@ -44,7 +44,7 @@ func UUID() (string, error) {
 }
 
 // ShortUID generates a non-cryptographic random string in base62.
-// Size defines the bit length of the generated uuid
+// Size defines the bit length of the generated uuid.
 func ShortUID(size int) string {
 	s := make([]byte, size)
 	for i := 0; i < size; i++ {

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -50,16 +50,22 @@ var (
 	}
 )
 
-// WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment
+// WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment.
 func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			args := []string{
-				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 				"-logtostderr",
 				"-v", "4",
 				"-listen-address", "0.0.0.0:9876",
 				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-namespace", fmt.Sprintf("%s-%s", "cluster", data.Cluster().Name),
+			}
+
+			// Enable validations corresponding to OSM
+			if data.Cluster().Spec.EnableOperatingSystemManager {
+				args = append(args, "-use-osm")
 			}
 
 			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
@@ -90,7 +96,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 
 			podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
 
@@ -112,11 +118,11 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					Command: []string{"/usr/local/bin/webhook"},
 					Args:    args,
 					Env: append(envVars, corev1.EnvVar{
-						Name:  "KUBECONFIG",
-						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+						Name:  "PROBER_KUBECONFIG",
+						Value: "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 					}),
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(9876),
@@ -130,7 +136,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 8,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
 								Port:   intstr.FromInt(9876),
@@ -145,7 +151,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.MachineControllerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
+							MountPath: "/etc/kubernetes/worker-kubeconfig",
 							ReadOnly:  true,
 						},
 						{
@@ -163,12 +169,14 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, webhookResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
+
+			dep.Spec.Template.Spec.ServiceAccountName = webhookServiceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -177,7 +185,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 	}
 }
 
-// ServiceCreator returns the function to reconcile the DNS service
+// ServiceCreator returns the function to reconcile the DNS service.
 func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MachineControllerWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
@@ -207,7 +215,7 @@ type tlsServingCertCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate
+// TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate.
 func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.MachineControllerWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
@@ -217,7 +225,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 
 			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get root ca: %v", err)
+				return nil, fmt.Errorf("failed to get root ca: %w", err)
 			}
 			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName)
 			altNames := certutil.AltNames{
@@ -232,7 +240,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			if b, exists := se.Data[resources.MachineControllerWebhookServingCertCertKeyName]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MachineControllerWebhookServingCertCertKeyName, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.MachineControllerWebhookServingCertCertKeyName, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil
@@ -248,7 +256,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
 				[]string{commonName})
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate serving cert: %v", err)
+				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
 			}
 			se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
 			se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)

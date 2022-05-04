@@ -28,7 +28,7 @@ type HTTPError struct {
 	details []string
 }
 
-// New creates a brand new HTTPError object
+// New creates a brand new HTTPError object.
 func New(code int, msg string) HTTPError {
 	return HTTPError{
 		code: code,
@@ -36,7 +36,7 @@ func New(code int, msg string) HTTPError {
 	}
 }
 
-// NewWithDetails creates a brand new HTTPError object
+// NewWithDetails creates a brand new HTTPError object.
 func NewWithDetails(code int, msg string, details []string) HTTPError {
 	return HTTPError{
 		code:    code,
@@ -50,12 +50,12 @@ func (err HTTPError) Error() string {
 	return err.msg
 }
 
-// StatusCode returns the status code for the error
+// StatusCode returns the status code for the error.
 func (err HTTPError) StatusCode() int {
 	return err.code
 }
 
-// Details returns additional message about the errors
+// Details returns additional message about the errors.
 func (err HTTPError) Details() []string {
 	return err.details
 }
@@ -65,8 +65,8 @@ func NewNotFound(kind, name string) error {
 	return HTTPError{http.StatusNotFound, fmt.Sprintf("%s %q not found", kind, name), nil}
 }
 
-// NewWrongRequest creates a HTTP 400 error, if we got a wrong request type.
-func NewWrongRequest(got, want interface{}) error {
+// NewWrongMethod creates a HTTP 400 error, if we got a wrong request type.
+func NewWrongMethod(got, want interface{}) error {
 	return HTTPError{http.StatusBadRequest, fmt.Sprintf("Got a '%T' request - expected a '%T' request", got, want), nil}
 }
 
@@ -90,7 +90,7 @@ func NewNotImplemented() error {
 	return HTTPError{http.StatusNotImplemented, "not implemented", nil}
 }
 
-// NewAlreadyExists creates a HTTP 409 already exists error
+// NewAlreadyExists creates a HTTP 409 already exists error.
 func NewAlreadyExists(kind, name string) error {
 	return HTTPError{http.StatusConflict, fmt.Sprintf("%s %q already exists", kind, name), nil}
 }

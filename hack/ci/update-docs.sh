@@ -25,6 +25,9 @@ source hack/lib.sh
 TARGET_DIR=docs_sync
 REVISION=$(git rev-parse --short HEAD)
 
+# create the addon resource overview (addonresources.json)
+go run codegen/addon-resources/main.go
+
 # configure Git
 git config --global user.email "dev@kubermatic.com"
 git config --global user.name "Prow CI Robot"
@@ -42,9 +45,15 @@ mkdir -p content/kubermatic/master/data
 cp ../docs/zz_generated.seed.yaml content/kubermatic/master/data/seed.yaml
 cp ../docs/zz_generated.kubermaticConfiguration.yaml content/kubermatic/master/data/kubermaticConfiguration.yaml
 cp ../docs/zz_generated.addondata.go.txt content/kubermatic/master/data/addondata.go
+cp ../docs/zz_generated.prometheusdata.go.txt content/kubermatic/master/data/prometheusdata.go
+cp ../cmd/kubermatic-api/swagger.json content/kubermatic/master/data/swagger.json
+cp ../addonresources.json content/kubermatic/master/data/addonresources.json
 
 # re-create Prometheus runbook
 make runbook
+
+# update CRDs reference
+hack/render-crds.sh
 
 # update repo
 git add .

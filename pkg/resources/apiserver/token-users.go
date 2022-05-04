@@ -27,7 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// TokenUsers returns a secret containing the tokens csv
+// TokenUsers returns a secret containing the tokens csv.
 func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.TokensSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
@@ -58,7 +58,7 @@ func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretCrea
 	}
 }
 
-// TokenViewerCreator returns a secret containing the viewer token
+// TokenViewerCreator returns a secret containing the viewer token.
 func TokenViewerCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.ViewerTokenSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {

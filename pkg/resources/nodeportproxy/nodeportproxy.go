@@ -17,10 +17,9 @@ limitations under the License.
 package nodeportproxy
 
 import (
-	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -32,18 +31,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	name               = "nodeport-proxy"
 	imageName          = "kubermatic/nodeport-proxy"
-	envoyAppLabelValue = name + "-envoy"
+	envoyAppLabelValue = resources.NodePortProxyEnvoyDeploymentName
 
-	// NodePortPRoxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
+	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
 	// We use it when clusters get exposed via a LoadBalancer, to allow re-using that LoadBalancer
-	// for both the kube-apiserver and the openVPN server
+	// for both the kube-apiserver and the openVPN server.
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
 	DefaultExposeAnnotationKey                 = "nodeport-proxy.k8s.io/expose"
 	// PortHostMappingAnnotationKey contains the mapping between the port to be
@@ -64,7 +62,7 @@ const (
 	SNIType
 	// TunnelingType configures Envoy to terminate the tunnel and stream the
 	// data to the destination.
-	// The only supported tunneling tecnique at the moment in HTTP/2 Connect.
+	// The only supported tunneling technique at the moment in HTTP/2 Connect.
 	TunnelingType
 )
 
@@ -123,7 +121,7 @@ var (
 				corev1.ResourceMemory: resource.MustParse("48Mi"),
 			},
 		},
-		"envoy": {
+		resources.NodePortProxyEnvoyContainerName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("50m"),
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
@@ -150,107 +148,61 @@ type nodePortProxyData interface {
 	ImageRegistry(string) string
 	NodePortProxyTag() string
 	Cluster() *kubermaticv1.Cluster
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data nodePortProxyData) error {
-	image := data.ImageRegistry("quay.io") + "/" + imageName + ":" + data.NodePortProxyTag()
-	namespace := data.Cluster().Status.NamespaceName
-	if namespace == "" {
-		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", data.Cluster().Name)
+func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+	return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+		return sa, nil
 	}
-
-	err := reconciling.ReconcileServiceAccounts(
-		ctx, []reconciling.NamedServiceAccountCreatorGetter{serviceAccount()}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
-	}
-
-	err = reconciling.ReconcileRoles(
-		ctx, []reconciling.NamedRoleCreatorGetter{role()}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to ensure Role: %v", err)
-	}
-
-	err = reconciling.ReconcileRoleBindings(
-		ctx, []reconciling.NamedRoleBindingCreatorGetter{roleBinding(namespace)}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to ensure RoleBinding: %v", err)
-	}
-
-	deployments := []reconciling.NamedDeploymentCreatorGetter{deploymentEnvoy(image, data),
-		deploymentLBUpdater(image)}
-	err = reconciling.ReconcileDeployments(ctx, deployments, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to reconcile Deployments: %v", err)
-	}
-
-	err = reconciling.ReconcilePodDisruptionBudgets(
-		ctx, []reconciling.NamedPodDisruptionBudgetCreatorGetter{podDisruptionBudget()}, namespace, client)
-	if err != nil {
-		return fmt.Errorf("failed to reconcile PodDisruptionBudget: %v", err)
-	}
-	return nil
 }
 
-func serviceAccount() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
-		return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			return sa, nil
+func RoleCreator() (string, reconciling.RoleCreator) {
+	return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+		r.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"endpoints", "services"},
+				Verbs:     []string{"list", "get", "watch"},
+			},
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"services"},
+				ResourceNames: []string{resources.FrontLoadBalancerServiceName},
+				Verbs:         []string{"update"},
+			},
 		}
+		return r, nil
 	}
 }
 
-func role() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
-		return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Rules = []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"endpoints", "services"},
-					Verbs:     []string{"list", "get", "watch"},
-				},
-				{
-					APIGroups:     []string{""},
-					Resources:     []string{"services"},
-					ResourceNames: []string{resources.FrontLoadBalancerServiceName},
-					Verbs:         []string{"update"},
-				},
-			}
-			return r, nil
+func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
+	return name, func(r *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+		r.Subjects = []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: name,
+			},
 		}
-	}
-}
-
-func roleBinding(ns string) reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
-		return name, func(r *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			r.Subjects = []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      name,
-					Namespace: ns,
-				},
-			}
-			r.RoleRef = rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "Role",
-				Name:     name,
-			}
-			return r, nil
+		r.RoleRef = rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     name,
 		}
+		return r, nil
 	}
 }
 
-func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
 	volumeMountNameEnvoyConfig := "envoy-config"
-	name := envoyAppLabelValue
 	return func() (string, reconciling.DeploymentCreator) {
-		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Labels = resources.BaseAppLabels(name, nil)
+		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Name = resources.NodePortProxyEnvoyDeploymentName
+			d.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabels(name, nil)
+				MatchLabels: resources.BaseAppLabels(envoyAppLabelValue, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
@@ -258,7 +210,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "copy-envoy-config",
-					Image: image,
+					Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
 					Command: []string{
 						"/bin/cp",
 						"/envoy.yaml",
@@ -273,7 +225,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "envoy-manager",
-				Image: image,
+				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
 				Command: []string{"/envoy-manager",
 					"-listen-address=:8001",
 					"-envoy-node-name=$(PODNAME)",
@@ -296,7 +248,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					},
 				},
 			}, {
-				Name:  "envoy",
+				Name:  resources.NodePortProxyEnvoyContainerName,
 				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.16.0",
 				Command: []string{
 					"/usr/local/bin/envoy",
@@ -316,7 +268,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					},
 				},
 				Lifecycle: &corev1.Lifecycle{
-					PreStop: &corev1.Handler{
+					PreStop: &corev1.LifecycleHandler{
 						Exec: &corev1.ExecAction{
 							Command: []string{
 								"wget",
@@ -328,7 +280,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 				},
 				ReadinessProbe: &corev1.Probe{
 					FailureThreshold: 3,
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "healthz",
 							Port:   intstr.FromInt(8002),
@@ -344,10 +296,18 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					MountPath: "/etc/envoy",
 				}},
 			}}
-			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
+			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), d.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
+
+			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, data.Cluster().Name)
+			if data.SupportsFailureDomainZoneAntiAffinity() {
+				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue))
+				d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+			}
+
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{{
 				Name: volumeMountNameEnvoyConfig,
 				VolumeSource: corev1.VolumeSource{
@@ -360,15 +320,16 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 	}
 }
 
-func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter {
-	name := name + "-lb-updater"
+func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
+	deploymentName := fmt.Sprintf("%s-lb-updater", name)
 	return func() (string, reconciling.DeploymentCreator) {
-		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Labels = resources.BaseAppLabels(name, nil)
+		return deploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Name = deploymentName
+			d.Labels = resources.BaseAppLabels(deploymentName, nil)
 			d.Spec.Replicas = resources.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabels(name, nil)
+				MatchLabels: resources.BaseAppLabels(deploymentName, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabels(deploymentName, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
@@ -382,7 +343,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 					"-expose-annotation-key=" + NodePortProxyExposeNamespacedAnnotationKey,
 					"-namespaced=true",
 				},
-				Image: image,
+				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
 				Env: []corev1.EnvVar{{
 					Name: "MY_NAMESPACE",
 					ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
@@ -392,7 +353,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 			}}
 			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			d.Spec.Template.Spec.ServiceAccountName = "nodeport-proxy"
 
@@ -401,7 +362,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 	}
 }
 
-func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	maxUnavailable := intstr.FromInt(1)
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name + "-envoy", func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
@@ -415,8 +376,8 @@ func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 }
 
 // FrontLoadBalancerServiceCreator returns the creator for the LoadBalancer that fronts apiserver
-// and openVPN when using exposeStrategy=LoadBalancer
-func FrontLoadBalancerServiceCreator() reconciling.NamedServiceCreatorGetter {
+// and openVPN when using exposeStrategy=LoadBalancer.
+func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.FrontLoadBalancerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just
@@ -434,6 +395,32 @@ func FrontLoadBalancerServiceCreator() reconciling.NamedServiceCreatorGetter {
 				}
 			}
 
+			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
+				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
+					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
+				}
+			}
+
+			// Copy custom annotations if supplied by seed spec.
+			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				s.Annotations = data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations
+			}
+
+			if data.Cluster().Spec.Cloud.AWS != nil {
+				if s.Annotations == nil {
+					s.Annotations = make(map[string]string)
+				}
+
+				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
+				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
+
+				// Make sure to use Network Load Balancer with fixed IPs instead of Classic Load Balancer
+				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-type"] = "nlb"
+				// Extend the default idle timeout (60s), e.g. to not timeout "kubectl logs -f"
+				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout"] = "3600"
+				// Load-balance across nodes in all zones to ensure HA if nodes in a DNS-selected zone are not available
+				s.Annotations["service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled"] = "true"
+			}
 			s.Spec.Selector = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			return s, nil
 		}

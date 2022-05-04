@@ -17,13 +17,14 @@ limitations under the License.
 package vsphere
 
 import (
+	"context"
 	"strings"
 	"testing"
 
 	"github.com/vmware/govmomi/simulator"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -293,7 +294,7 @@ func TestProviderValidateCloudSpec(t *testing.T) {
 			v := &Provider{
 				dc: tt.dc,
 			}
-			if err := v.ValidateCloudSpec(tt.spec); (err != nil) != tt.wantErr {
+			if err := v.ValidateCloudSpec(context.Background(), tt.spec); (err != nil) != tt.wantErr {
 				t.Errorf("Provider.ValidateCloudSpec() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -302,7 +303,7 @@ func TestProviderValidateCloudSpec(t *testing.T) {
 
 // The following resources are made available:
 // * Datastore named: LocalDS_0
-// * Datastore cluster named: DC0_POD0
+// * Datastore cluster named: DC0_POD0.
 type vSphereSimulator struct {
 	t      *testing.T
 	model  *simulator.Model

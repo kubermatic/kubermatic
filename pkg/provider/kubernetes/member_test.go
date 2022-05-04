@@ -17,12 +17,13 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/go-test/deep"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
@@ -48,8 +49,8 @@ func TestCreateBinding(t *testing.T) {
 		return fakeClient, nil
 	}
 	// act
-	target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
-	result, err := target.Create(&provider.UserInfo{Email: authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", existingProject.Name)}, existingProject, memberEmail, groupName)
+	target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
+	result, err := target.Create(context.Background(), &provider.UserInfo{Email: authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", existingProject.Name)}, existingProject, memberEmail, groupName)
 
 	// validate
 	if err != nil {
@@ -135,8 +136,8 @@ func TestListBinding(t *testing.T) {
 				return fakeClient, nil
 			}
 			// act
-			target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
-			result, err := target.List(&provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", tc.projectToSync.Name)}, tc.projectToSync, nil)
+			target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient)
+			result, err := target.List(context.Background(), &provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", tc.projectToSync.Name)}, tc.projectToSync, nil)
 
 			// validate
 			if err != nil {

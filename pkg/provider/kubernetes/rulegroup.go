@@ -19,7 +19,7 @@ package kubernetes
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -38,7 +38,10 @@ type RuleGroupProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// NewRuleGroupProvider returns a ruleGroup provider
+var _ provider.RuleGroupProvider = &RuleGroupProvider{}
+var _ provider.PrivilegedRuleGroupProvider = &RuleGroupProvider{}
+
+// NewRuleGroupProvider returns a ruleGroup provider.
 func NewRuleGroupProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *RuleGroupProvider {
 	return &RuleGroupProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
@@ -64,30 +67,30 @@ func RuleGroupProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provi
 	}
 }
 
-func (r RuleGroupProvider) Create(userInfo *provider.UserInfo, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
+func (r RuleGroupProvider) Create(ctx context.Context, userInfo *provider.UserInfo, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	err = impersonationClient.Create(context.Background(), ruleGroup)
+	err = impersonationClient.Create(ctx, ruleGroup)
 	return ruleGroup, err
 }
 
-func (r RuleGroupProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
+func (r RuleGroupProvider) List(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	return listRuleGroups(impersonationClient, cluster, options)
+	return listRuleGroups(ctx, impersonationClient, cluster.Status.NamespaceName, options)
 }
 
-func (r RuleGroupProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error) {
+func (r RuleGroupProvider) Get(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 	ruleGroup := &kubermaticv1.RuleGroup{}
-	if err := impersonationClient.Get(context.Background(), types.NamespacedName{
+	if err := impersonationClient.Get(ctx, types.NamespacedName{
 		Name:      ruleGroupName,
 		Namespace: cluster.Status.NamespaceName,
 	}, ruleGroup); err != nil {
@@ -96,21 +99,21 @@ func (r RuleGroupProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv
 	return ruleGroup, nil
 }
 
-func (r RuleGroupProvider) Update(userInfo *provider.UserInfo, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
+func (r RuleGroupProvider) Update(ctx context.Context, userInfo *provider.UserInfo, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	err = impersonationClient.Update(context.Background(), newRuleGroup)
+	err = impersonationClient.Update(ctx, newRuleGroup)
 	return newRuleGroup, err
 }
 
-func (r RuleGroupProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) error {
+func (r RuleGroupProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) error {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return err
 	}
-	return impersonationClient.Delete(context.Background(), &kubermaticv1.RuleGroup{
+	return impersonationClient.Delete(ctx, &kubermaticv1.RuleGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ruleGroupName,
 			Namespace: cluster.Status.NamespaceName,
@@ -118,46 +121,46 @@ func (r RuleGroupProvider) Delete(userInfo *provider.UserInfo, cluster *kubermat
 	})
 }
 
-func (r RuleGroupProvider) GetUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error) {
+func (r RuleGroupProvider) GetUnsecured(ctx context.Context, ruleGroupName, namespace string) (*kubermaticv1.RuleGroup, error) {
 	ruleGroup := &kubermaticv1.RuleGroup{}
-	if err := r.privilegedClient.Get(context.Background(), types.NamespacedName{
+	if err := r.privilegedClient.Get(ctx, types.NamespacedName{
 		Name:      ruleGroupName,
-		Namespace: cluster.Status.NamespaceName,
+		Namespace: namespace,
 	}, ruleGroup); err != nil {
 		return nil, err
 	}
 	return ruleGroup, nil
 }
 
-func (r RuleGroupProvider) ListUnsecured(cluster *kubermaticv1.Cluster, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
-	return listRuleGroups(r.privilegedClient, cluster, options)
+func (r RuleGroupProvider) ListUnsecured(ctx context.Context, namespace string, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
+	return listRuleGroups(ctx, r.privilegedClient, namespace, options)
 }
 
-func (r RuleGroupProvider) CreateUnsecured(ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
-	err := r.privilegedClient.Create(context.Background(), ruleGroup)
+func (r RuleGroupProvider) CreateUnsecured(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
+	err := r.privilegedClient.Create(ctx, ruleGroup)
 	return ruleGroup, err
 }
 
-func (r RuleGroupProvider) UpdateUnsecured(newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
-	err := r.privilegedClient.Update(context.Background(), newRuleGroup)
+func (r RuleGroupProvider) UpdateUnsecured(ctx context.Context, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
+	err := r.privilegedClient.Update(ctx, newRuleGroup)
 	return newRuleGroup, err
 }
 
-func (r RuleGroupProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) error {
-	return r.privilegedClient.Delete(context.Background(), &kubermaticv1.RuleGroup{
+func (r RuleGroupProvider) DeleteUnsecured(ctx context.Context, ruleGroupName, namespace string) error {
+	return r.privilegedClient.Delete(ctx, &kubermaticv1.RuleGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ruleGroupName,
-			Namespace: cluster.Status.NamespaceName,
+			Namespace: namespace,
 		},
 	})
 }
 
-func listRuleGroups(client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
+func listRuleGroups(ctx context.Context, client ctrlruntimeclient.Client, namespace string, options *provider.RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error) {
 	if options == nil {
 		options = &provider.RuleGroupListOptions{}
 	}
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
-	if err := client.List(context.Background(), ruleGroupList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+	if err := client.List(ctx, ruleGroupList, ctrlruntimeclient.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
 	var res []*kubermaticv1.RuleGroup

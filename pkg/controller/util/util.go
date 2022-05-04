@@ -20,25 +20,26 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"k8s.io/client-go/util/workqueue"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // EnqueueClusterForNamespacedObject enqueues the cluster that owns a namespaced object, if any
-// It is used by various controllers to react to changes in the resources in the cluster namespace
+// It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := client.List(context.Background(), clusterList); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
 		for _, cluster := range clusterList.Items {
@@ -52,7 +53,7 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.
 
 // EnqueueClusterForNamespacedObjectWithSeedName enqueues the cluster that owns a namespaced object,
 // if any. The seedName is put into the namespace field
-// It is used by various controllers to react to changes in the resources in the cluster namespace
+// It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
@@ -61,7 +62,7 @@ func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Clie
 		}
 
 		if err := client.List(context.Background(), clusterList, listOpts); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
 
@@ -93,9 +94,69 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandle
 	})
 }
 
+// EnqueueProjectForCluster returns an event handler that creates a reconcile
+// request for the project of a cluster, based on the ProjectIDLabelKey label.
+func EnqueueProjectForCluster() handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		cluster, ok := a.(*kubermaticv1.Cluster)
+		if !ok {
+			return nil
+		}
+
+		projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+		if projectID == "" {
+			return nil // should never happen, a webhook ensures a proper label
+		}
+
+		return []reconcile.Request{{NamespacedName: types.NamespacedName{
+			Name: projectID,
+		}}}
+	})
+}
+
+const (
+	CreateOperation = "create"
+	UpdateOperation = "update"
+	DeleteOperation = "delete"
+)
+
+// EnqueueObjectWithOperation enqueues a the namespaced name for any resource. It puts
+// the current operation (create, update, delete) as the namespace and "namespace/name"
+// of the object into the name of the reconcile request.
+func EnqueueObjectWithOperation() handler.EventHandler {
+	return handler.Funcs{
+		CreateFunc: func(e event.CreateEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: CreateOperation,
+					Name:      fmt.Sprintf("%s/%s", e.Object.GetNamespace(), e.Object.GetName()),
+				},
+			})
+		},
+
+		UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: UpdateOperation,
+					Name:      fmt.Sprintf("%s/%s", e.ObjectNew.GetNamespace(), e.ObjectNew.GetName()),
+				},
+			})
+		},
+
+		DeleteFunc: func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: DeleteOperation,
+					Name:      fmt.Sprintf("%s/%s", e.Object.GetNamespace(), e.Object.GetName()),
+				},
+			})
+		},
+	}
+}
+
 // EnqueueConst enqueues a constant. It is meant for controllers that don't have a parent object
 // they could enc and instead reconcile everything at once.
-// The queueKey will be defaulted if empty
+// The queueKey will be defaulted if empty.
 func EnqueueConst(queueKey string) handler.EventHandler {
 	if queueKey == "" {
 		queueKey = "const"
@@ -129,7 +190,7 @@ func ClusterAvailableForReconciling(ctx context.Context, client ctrlruntimeclien
 func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, clusters); err != nil {
-		return true, fmt.Errorf("failed to list clusters: %v", err)
+		return true, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
 	finishedUpdatingClustersCount := 0
@@ -142,15 +203,4 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
 
 	return clustersUpdatingInProgressCount >= limit, nil
-}
-
-// IsCacheNotStarted returns true if the given error is not nil and an instance of
-// cache.ErrCacheNotStarted.
-func IsCacheNotStarted(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	_, ok := err.(*cache.ErrCacheNotStarted)
-	return ok
 }

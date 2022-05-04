@@ -20,8 +20,8 @@ import (
 	"context"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -32,7 +32,7 @@ import (
 func TestRetagImageForAllVersions(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
-	config, err := common.DefaultConfiguration(&operatorv1alpha1.KubermaticConfiguration{}, log)
+	config, err := defaults.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, log)
 	if err != nil {
 		t.Errorf("failed to determine versions: %v", err)
 	}
@@ -48,11 +48,15 @@ func TestRetagImageForAllVersions(t *testing.T) {
 
 	imageSet := sets.NewString()
 	for _, clusterVersion := range clusterVersions {
-		images, err := getImagesForVersion(log, clusterVersion, config, addonPath, kubermaticVersions, caBundle)
-		if err != nil {
-			t.Errorf("Error calling getImagesForVersion: %v", err)
+		for _, cloudSpec := range getCloudSpecs() {
+			for _, cniPlugin := range getCNIPlugins() {
+				images, err := getImagesForVersion(log, clusterVersion, cloudSpec, cniPlugin, config, addonPath, kubermaticVersions, caBundle)
+				if err != nil {
+					t.Errorf("Error calling getImagesForVersion: %v", err)
+				}
+				imageSet.Insert(images...)
+			}
 		}
-		imageSet.Insert(images...)
 	}
 
 	if err := processImages(context.Background(), log, true, imageSet.List(), "test-registry:5000"); err != nil {

@@ -32,29 +32,29 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 
 source hack/ci/setup-kind-cluster.sh
-source hack/ci/setup-kubermatic-in-kind.sh
+source hack/ci/setup-kubermatic-backups-in-kind.sh
 
-echodate "Creating UI DigitalOcean preset..."
-cat << EOF > preset-digitalocean.yaml
-apiVersion: kubermatic.k8s.io/v1
+echodate "Creating Hetzner preset..."
+cat << EOF > preset-hetzner.yaml
+apiVersion: kubermatic.k8c.io/v1
 kind: Preset
 metadata:
-  name: e2e-digitalocean
+  name: e2e-hetzner
   namespace: kubermatic
 spec:
-  digitalocean:
-    token: ${DO_E2E_TESTS_TOKEN}
+  hetzner:
+    token: ${HZ_E2E_TOKEN}
 EOF
-retry 2 kubectl apply -f preset-digitalocean.yaml
+retry 2 kubectl apply -f preset-hetzner.yaml
 
 echodate "Creating roxy2 user..."
 cat << EOF > user.yaml
-apiVersion: kubermatic.k8s.io/v1
+apiVersion: kubermatic.k8c.io/v1
 kind: User
 metadata:
   name: c41724e256445bf133d6af1168c2d96a7533cd437618fdbe6dc2ef1fee97acd3
 spec:
-  email: roxy2@loodse.com
+  email: roxy2@kubermatic.com
   id: 1413636a43ddc27da27e47614faedff24b4ab19c9d9f2b45dd1b89d9_KUBE
   name: roxy2
   admin: true
@@ -62,5 +62,5 @@ EOF
 retry 2 kubectl apply -f user.yaml
 
 echodate "Running etcd-launcher tests..."
-go test -timeout 30m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
+go test -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -kubeconfig "$KUBECONFIG"
 echodate "Tests completed successfully!"

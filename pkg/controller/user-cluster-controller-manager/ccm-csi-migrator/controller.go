@@ -25,9 +25,9 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	controllerName = "ccm-csi-migrator"
+	controllerName = "kkp-ccm-csi-migrator"
 )
 
 type reconciler struct {
@@ -72,7 +72,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller %s: %v", controllerName, err)
+		return fmt.Errorf("failed to create controller %s: %w", controllerName, err)
 	}
 
 	// Watch for changes to Machines
@@ -88,7 +88,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 			}
 		}),
 	); err != nil {
-		return fmt.Errorf("failed to establish watch for the Machines %v", err)
+		return fmt.Errorf("failed to establish watch for the Machines %w", err)
 	}
 
 	return nil
@@ -106,13 +106,13 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("Request", request.NamespacedName.String())
 	log.Debug("Reconciling")
 
-	cluster := &v1.Cluster{}
+	cluster := &kubermaticv1.Cluster{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("cluster not found, returning")
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
 	err = r.reconcile(ctx, log, cluster)
@@ -124,61 +124,39 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldCluster *v1.Cluster) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	machines := &v1alpha1.MachineList{}
 	if err := r.userClient.List(ctx, machines); err != nil {
-		log.Debugw("error while listing machines in user oldCluster", zap.Error(err))
-		return err
+		return fmt.Errorf("failed to list machines in user cluster: %w", err)
 	}
 
 	// check all the machines have been migrated
 	var migrated = true
 	for _, machine := range machines.Items {
-		flag := common.GetKubeletFlags(&machine)[common.ExternalCloudProviderKubeletFlag]
+		flag := common.GetKubeletFlags(machine.Annotations)[common.ExternalCloudProviderKubeletFlag]
 		if boolFlag, err := strconv.ParseBool(flag); !boolFlag || err != nil {
 			migrated = false
 			break
 		}
 	}
 
-	// if the cluster condition status has changed, update it accordingly
-	newCluster := oldCluster.DeepCopy()
-	if toPatch := r.ensureMigrationConditionStatus(migrated, newCluster); toPatch {
-		if err := r.seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to update cluster: %v", err)
+	// update cluster condition
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+		conditionType := kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted
+		newStatus := corev1.ConditionFalse
+		reason := kubermaticv1.ReasonClusterCCMMigrationInProgress
+		message := "migrating to external CCM"
+
+		if migrated {
+			newStatus = corev1.ConditionTrue
+			reason = kubermaticv1.ReasonClusterCSIKubeletMigrationCompleted
+			message = "external CCM/CSI migration completed"
 		}
+
+		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, newStatus, reason, message)
+	}); err != nil {
+		return fmt.Errorf("failed to update cluster: %w", err)
 	}
 
 	return nil
-}
-
-func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *v1.Cluster) bool {
-	var (
-		newStatus corev1.ConditionStatus
-		reason    string
-		message   string
-	)
-
-	if migrated {
-		newStatus = corev1.ConditionTrue
-		reason = v1.ReasonClusterCSIKubeletMigrationCompleted
-		message = "external CCM/CSI migration completed"
-	} else {
-		newStatus = corev1.ConditionFalse
-		reason = v1.ReasonClusterCCMMigrationInProgress
-		message = "migrating to external CCM"
-	}
-
-	toPatch := !helper.ClusterConditionHasStatus(cluster, v1.ClusterConditionCSIKubeletMigrationCompleted, newStatus)
-	if toPatch {
-		helper.SetClusterCondition(
-			cluster,
-			r.versions,
-			v1.ClusterConditionCSIKubeletMigrationCompleted,
-			newStatus,
-			reason,
-			message,
-		)
-	}
-	return toPatch
 }

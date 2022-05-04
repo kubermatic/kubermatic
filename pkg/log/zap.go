@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -34,7 +35,7 @@ func init() {
 
 var Logger *zap.SugaredLogger
 
-// Options exports a options struct to be used by cmd's
+// Options exports a options struct to be used by cmd's.
 type Options struct {
 	// Enable debug logs
 	Debug bool
@@ -54,6 +55,11 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.Var(&o.Format, "log-format", "Log format, one of "+AvailableFormats.String())
 }
 
+func (o *Options) AddPFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&o.Debug, "log-debug", o.Debug, "Enables debug logging")
+	fs.Var(&o.Format, "log-format", "Log format, one of "+AvailableFormats.String())
+}
+
 func (o *Options) Validate() error {
 	if !AvailableFormats.Contains(o.Format) {
 		return fmt.Errorf("invalid log-format specified %q; available: %s", o.Format, AvailableFormats.String())
@@ -63,12 +69,17 @@ func (o *Options) Validate() error {
 
 type Format string
 
-// String implements the cli.Value and flag.Value interfaces
+// Type implements the pflag.Value interfaces.
+func (f *Format) Type() string {
+	return "string"
+}
+
+// String implements the cli.Value and flag.Value interfaces.
 func (f *Format) String() string {
 	return string(*f)
 }
 
-// Set implements the cli.Value and flag.Value interfaces
+// Set implements the cli.Value and flag.Value interfaces.
 func (f *Format) Set(s string) error {
 	switch strings.ToLower(s) {
 	case "json":
@@ -146,7 +157,7 @@ func New(debug bool, format Format) *zap.Logger {
 	return zap.New(coreLog, opts...)
 }
 
-// NewDefault creates new default logger
+// NewDefault creates new default logger.
 func NewDefault() *zap.Logger {
 	return New(false, FormatJSON)
 }

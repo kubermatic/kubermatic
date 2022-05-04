@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,26 +29,28 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewAdminProvider returns a admin provider
+// NewAdminProvider returns a admin provider.
 func NewAdminProvider(client ctrlruntimeclient.Client) *AdminProvider {
 	return &AdminProvider{
 		client: client,
 	}
 }
 
-// AdminProvider manages admin resources
+// AdminProvider manages admin resources.
 type AdminProvider struct {
 	client ctrlruntimeclient.Client
 }
 
-// GetAdmins return all users with admin rights
-func (a *AdminProvider) GetAdmins(userInfo *provider.UserInfo) ([]kubermaticv1.User, error) {
+var _ provider.AdminProvider = &AdminProvider{}
+
+// GetAdmins return all users with admin rights.
+func (a *AdminProvider) GetAdmins(ctx context.Context, userInfo *provider.UserInfo) ([]kubermaticv1.User, error) {
 	var adminList []kubermaticv1.User
 	if !userInfo.IsAdmin {
 		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
 	users := &kubermaticv1.UserList{}
-	if err := a.client.List(context.Background(), users); err != nil {
+	if err := a.client.List(ctx, users); err != nil {
 		return nil, err
 	}
 
@@ -61,8 +63,8 @@ func (a *AdminProvider) GetAdmins(userInfo *provider.UserInfo) ([]kubermaticv1.U
 	return adminList, nil
 }
 
-// SetAdmin set/clear admin rights
-func (a *AdminProvider) SetAdmin(userInfo *provider.UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error) {
+// SetAdmin set/clear admin rights.
+func (a *AdminProvider) SetAdmin(ctx context.Context, userInfo *provider.UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error) {
 	if !userInfo.IsAdmin {
 		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
@@ -70,14 +72,14 @@ func (a *AdminProvider) SetAdmin(userInfo *provider.UserInfo, email string, isAd
 		return nil, kerrors.NewBadRequest("can not change own privileges")
 	}
 	userList := &kubermaticv1.UserList{}
-	if err := a.client.List(context.Background(), userList); err != nil {
+	if err := a.client.List(ctx, userList); err != nil {
 		return nil, err
 	}
 	for _, user := range userList.Items {
 		if strings.EqualFold(user.Spec.Email, email) {
 			userCopy := user.DeepCopy()
 			userCopy.Spec.IsAdmin = isAdmin
-			if err := a.client.Update(context.Background(), userCopy); err != nil {
+			if err := a.client.Update(ctx, userCopy); err != nil {
 				return nil, err
 			}
 			return userCopy, nil

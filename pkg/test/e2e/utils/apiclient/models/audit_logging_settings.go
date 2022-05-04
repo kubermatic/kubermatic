@@ -8,26 +8,79 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
-// AuditLoggingSettings audit logging settings
+// AuditLoggingSettings AuditLoggingSettings configures audit logging functionality.
 //
 // swagger:model AuditLoggingSettings
 type AuditLoggingSettings struct {
 
-	// enabled
+	// Enabled will enable or disable audit logging.
 	Enabled bool `json:"enabled,omitempty"`
+
+	// policy preset
+	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
 }
 
 // Validate validates this audit logging settings
 func (m *AuditLoggingSettings) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validatePolicyPreset(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this audit logging settings based on context it is used
+func (m *AuditLoggingSettings) validatePolicyPreset(formats strfmt.Registry) error {
+	if swag.IsZero(m.PolicyPreset) { // not required
+		return nil
+	}
+
+	if err := m.PolicyPreset.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("policyPreset")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("policyPreset")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this audit logging settings based on the context it is used
 func (m *AuditLoggingSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePolicyPreset(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AuditLoggingSettings) contextValidatePolicyPreset(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.PolicyPreset.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("policyPreset")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("policyPreset")
+		}
+		return err
+	}
+
 	return nil
 }
 

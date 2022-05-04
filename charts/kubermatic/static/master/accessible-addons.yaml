@@ -1,7 +1,0 @@
-# This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
-
-addons:
-- cluster-autoscaler
-- node-exporter
-- kube-state-metrics
-- multus

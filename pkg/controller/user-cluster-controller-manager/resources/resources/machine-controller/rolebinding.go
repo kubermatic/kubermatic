@@ -63,7 +63,7 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	}
 }
 
-// ClusterInfoAnonymousRoleBindingCreator returns a func to create/update the RoleBinding to allow anonymous access to the cluster-info ConfigMap
+// ClusterInfoAnonymousRoleBindingCreator returns a func to create/update the RoleBinding to allow anonymous access to the cluster-info ConfigMap.
 func ClusterInfoAnonymousRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.ClusterInfoAnonymousRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {

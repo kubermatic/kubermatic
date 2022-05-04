@@ -50,6 +50,11 @@ compiled.
 A dedicated postsubmit job that runs after every change to the master
 branch is keeping the cache up-to-date.
 
+## fetch-chart-dependencies.sh
+
+This script fetches dependencies for a chart, based on the lock file
+contained within the charts' directory. The script iterates over all charts.
+
 ## github-release.sh
 
 This script is run for every tagged revision and will create
@@ -74,6 +79,11 @@ This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the e2e tests for the
 API.
 
+## run-cilium-e2e-test.sh
+
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to master.
+
 ## run-conformance-tests.sh
 
 After having set up a local KKP installation, this script is then
@@ -90,6 +100,16 @@ Kubernetes conformance.
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the etcd-launcher tests.
 
+## run-konnectivity-e2e-test.sh
+
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to master.
+
+## run-mla-e2e-tests.sh
+
+This script sets up a local KKP installation in kind, deploys a
+couple of test Presets and Users and then runs the MLA e2e tests.
+
 ## run-offline-test.sh
 
 This script was used to run KKP conformance tests inside an offline
@@ -103,11 +123,50 @@ Operator. The presubmit job for this script is currently not used.
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the OPA e2e tests.
 
+## run-user-ssh-key-agent-tests.sh
+
+This script tests whether we can successfully build the multiarch
+version for the user-ssh-key-agent.
+
 ## setup-kind-cluster.sh
 
 TBD
 
+## setup-kubermatic-backups-in-kind.sh
+
+This script creates a local kind cluster, compiles the KKP binaries,
+creates all Docker images and loads them into the kind cluster,
+generates a custom CA and a certificate for minio to be used as backup location,
+then installs KKP using the KKP installer + operator and sets up a
+single shared master/seed system.
+This serves as the precursor for all other tests.
+
+This script should be sourced, not called, so callers get the variables
+it sets.
+
 ## setup-kubermatic-in-kind.sh
+
+This script creates a local kind cluster, compiles the KKP binaries,
+creates all Docker images and loads them into the kind cluster,
+then installs KKP using the KKP installer + operator and sets up a
+single shared master/seed system.
+This serves as the precursor for all other tests.
+
+This script should be sourced, not called, so callers get the variables
+it sets.
+
+## setup-kubermatic-mla-in-kind.sh
+
+This script creates a local kind cluster, compiles the KKP binaries,
+creates all Docker images and loads them into the kind cluster,
+then installs KKP using the KKP installer + operator and sets up a
+single shared master/seed system.
+This serves as the precursor for all other tests.
+
+This script should be sourced, not called, so callers get the variables
+it sets.
+
+## setup-mla.sh
 
 This script creates a local kind cluster, compiles the KKP binaries,
 creates all Docker images and loads them into the kind cluster,
@@ -130,6 +189,14 @@ the GitHub release logic before they are merged. The script will
 perform all steps for a release *except* actually communicating
 with GitHub.
 
+## test-helm-charts.sh
+
+This script runs whenever one or more Helm charts were updated.
+For every changed chart in a PR, it tries to find a `test/` directory
+inside the chart and then execute it. The purpose is to run some
+static tests for our Helm charts, as not all of them are tested
+in the conformance tests.
+
 ## update-docs.sh
 
 Updates the docs repository by copying over a couple of generated
@@ -141,7 +208,7 @@ Runs as a postsubmit and refreshes the gocache by downloading the
 previous version, compiling everything and then tar'ing up the
 Go cache again.
 
-## verify-chart-versions.sh
+## verify.sh
 
 This script is used as a presubmit to check that Helm chart versions
 have been updated if charts have been modified. Without the Prow env

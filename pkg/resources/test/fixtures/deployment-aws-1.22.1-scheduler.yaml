@@ -20,6 +20,7 @@ spec:
       creationTimestamp: null
       labels:
         app: scheduler
+        app.kubernetes.io/version: 1.22.1
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cluster: de-test-01
@@ -44,60 +45,6 @@ spec:
             weight: 10
       containers:
       - args:
-        - --client
-        - --proto
-        - tcp
-        - --dev
-        - tun
-        - --auth-nocache
-        - --remote
-        - openvpn-server.cluster-de-test-01.svc.cluster.local.
-        - "1194"
-        - --nobind
-        - --connect-timeout
-        - "5"
-        - --connect-retry
-        - "1"
-        - --ca
-        - /etc/openvpn/pki/client/ca.crt
-        - --cert
-        - /etc/openvpn/pki/client/client.crt
-        - --key
-        - /etc/openvpn/pki/client/client.key
-        - --remote-cert-tls
-        - server
-        - --link-mtu
-        - "1432"
-        - --cipher
-        - AES-256-GCM
-        - --auth
-        - SHA1
-        - --keysize
-        - "256"
-        - --script-security
-        - "2"
-        - --status
-        - /run/openvpn-status
-        - --log
-        - /dev/stdout
-        command:
-        - /usr/sbin/openvpn
-        image: quay.io/kubermatic/openvpn:v2.5.2-r0
-        name: openvpn-client
-        resources:
-          limits:
-            cpu: 100m
-            memory: 32Mi
-          requests:
-            cpu: 5m
-            memory: 5Mi
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/openvpn/pki/client
-          name: openvpn-client-certificates
-          readOnly: true
-      - args:
         - -endpoint
         - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
         - -insecure
@@ -108,7 +55,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/kube-scheduler","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--port","0"]}'
+        - '{"command":"/usr/local/bin/kube-scheduler","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--port","0","--profiling=false"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -154,6 +101,60 @@ spec:
           readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      - args:
+        - --client
+        - --proto
+        - tcp
+        - --dev
+        - tun
+        - --auth-nocache
+        - --remote
+        - openvpn-server.cluster-de-test-01.svc.cluster.local.
+        - "1194"
+        - --nobind
+        - --connect-timeout
+        - "5"
+        - --connect-retry
+        - "1"
+        - --ca
+        - /etc/openvpn/pki/client/ca.crt
+        - --cert
+        - /etc/openvpn/pki/client/client.crt
+        - --key
+        - /etc/openvpn/pki/client/client.key
+        - --remote-cert-tls
+        - server
+        - --link-mtu
+        - "1432"
+        - --cipher
+        - AES-256-GCM
+        - --auth
+        - SHA1
+        - --keysize
+        - "256"
+        - --script-security
+        - "2"
+        - --status
+        - /run/openvpn-status
+        - --log
+        - /dev/stdout
+        command:
+        - /usr/sbin/openvpn
+        image: quay.io/kubermatic/openvpn:v2.5.2-r0
+        name: openvpn-client
+        resources:
+          limits:
+            cpu: "1"
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 5Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/openvpn/pki/client
+          name: openvpn-client-certificates
+          readOnly: true
       dnsConfig:
         nameservers:
         - 192.0.2.14
@@ -172,16 +173,13 @@ spec:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.3.2
+        image: quay.io/kubermatic/http-prober:v0.3.3
         name: copy-http-prober
         resources: {}
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
       volumes:
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
       - name: ca
         secret:
           items:
@@ -194,6 +192,9 @@ spec:
       - name: scheduler-kubeconfig
         secret:
           secretName: scheduler-kubeconfig
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}

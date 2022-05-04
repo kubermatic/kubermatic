@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"time"
@@ -28,8 +28,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -50,9 +50,9 @@ import (
 )
 
 const (
-	alertmanagerFinalizer        = "kubermatic.io/alertmanager"
-	alertmanagerConfigEndpoint   = "/api/v1/alerts"
-	alertmanagerTenantHeaderName = "X-Scope-OrgID"
+	alertmanagerFinalizer        = "kubermatic.k8c.io/alertmanager"
+	AlertmanagerConfigEndpoint   = "/api/v1/alerts"
+	AlertmanagerTenantHeaderName = "X-Scope-OrgID"
 )
 
 type alertmanagerReconciler struct {
@@ -130,7 +130,7 @@ func newAlertmanagerReconciler(
 		}
 		if alertmanager.Spec.ConfigSecret.Name == a.GetName() {
 			clusterList := &kubermaticv1.ClusterList{}
-			if err := client.List(context.Background(), clusterList); err != nil {
+			if err := client.List(ctx, clusterList); err != nil {
 				log.Errorw("Failed to list clusters", zap.Error(err))
 				utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			}
@@ -182,7 +182,6 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 		result = &reconcile.Result{}
 	}
 	return *result, err
-
 }
 
 type alertmanagerController struct {
@@ -209,7 +208,6 @@ func newAlertmanagerController(
 }
 
 func (r *alertmanagerController) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-
 	mlaEnabled := cluster.Spec.MLA != nil && (cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled)
 	// Currently, we don't have a dedicated flag for enabling/disabling Alertmanager, and Alertmanager will be enabled
 	// or disabled based on MLA flag.
@@ -217,20 +215,22 @@ func (r *alertmanagerController) reconcile(ctx context.Context, cluster *kuberma
 		return nil, r.handleDeletion(ctx, cluster)
 	}
 
-	if !kubernetes.HasFinalizer(cluster, alertmanagerFinalizer) {
-		kubernetes.AddFinalizer(cluster, alertmanagerFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
-			return nil, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, cluster, alertmanagerFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if err := r.ensureAlertmanagerConfiguration(ctx, cluster); err != nil {
+	err := r.ensureAlertmanagerConfiguration(ctx, cluster)
+	// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
+	if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil {
+		return nil, fmt.Errorf("failed to update alertmanager configuration status: %w", err)
+	}
+	if err != nil {
 		return nil, fmt.Errorf("failed to create alertmanager configuration: %w", err)
 	}
 	return nil, nil
 }
 
-func (r *alertmanagerController) cleanUp(ctx context.Context) error {
+func (r *alertmanagerController) CleanUp(ctx context.Context) error {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.List(ctx, clusterList); err != nil {
 		return err
@@ -244,32 +244,42 @@ func (r *alertmanagerController) cleanUp(ctx context.Context) error {
 }
 
 func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
-	if err := r.cleanUpAlertmanagerConfiguration(cluster); err != nil {
-		return fmt.Errorf("failed to delete alertmanager configuration: %w", err)
-	}
-	if cluster.DeletionTimestamp.IsZero() {
-		// if cluster is still there we need to delete objects manually
-		if err := r.cleanUpAlertmanagerObjects(ctx, cluster); err != nil {
-			return fmt.Errorf("failed to remove alertmanager objects: %w", err)
+	// only perform cleanup steps if the Cluster object is valid,
+	// but do remove the finalizer at the end even if the object was junk,
+	// so that we do not block cluster deletion
+	if cluster.Status.NamespaceName != "" {
+		// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
+		err := r.cleanUpAlertmanagerConfiguration(ctx, cluster)
+		// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
+		if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil && !errors.IsNotFound(errC) {
+			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to delete alertmanager configuration: %w", err)
+		}
+		if cluster.DeletionTimestamp.IsZero() {
+			// if cluster is still there we need to delete objects manually
+			err := r.cleanUpAlertmanagerObjects(ctx, cluster)
+			// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
+			if errC := r.cleanUpAlertmanagerConfigurationStatus(ctx, cluster, err); errC != nil {
+				return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", errC)
+			}
+			if err != nil {
+				return fmt.Errorf("failed to remove alertmanager objects: %w", err)
+			}
 		}
 	}
-	if kubernetes.HasFinalizer(cluster, alertmanagerFinalizer) {
-		kubernetes.RemoveFinalizer(cluster, alertmanagerFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
-			return fmt.Errorf("updating Cluster: %w", err)
-		}
-	}
-	return nil
+
+	return kubernetes.TryRemoveFinalizer(ctx, r, cluster, alertmanagerFinalizer)
 }
 
-func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(cluster *kubermaticv1.Cluster) error {
-	req, err := http.NewRequest(http.MethodDelete,
-		r.cortexAlertmanagerURL+alertmanagerConfigEndpoint, nil)
+func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete,
+		r.cortexAlertmanagerURL+AlertmanagerConfigEndpoint, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
+	req.Header.Add(AlertmanagerTenantHeaderName, cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -277,13 +287,24 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(cluster *kuber
 	// https://cortexmetrics.io/docs/api/#delete-alertmanager-configuration
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
 		return fmt.Errorf("status code: %d, response body: %s", resp.StatusCode, string(body))
 	}
 	return nil
+}
+
+func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx context.Context, cluster *kubermaticv1.Cluster, errC error) error {
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		// Remove the alertmanager config status in Cluster CR
+		c.Status.ExtendedHealth.AlertmanagerConfig = nil
+		if errC != nil && !errors.IsNotFound(errC) {
+			down := kubermaticv1.HealthStatusDown
+			c.Status.ExtendedHealth.AlertmanagerConfig = &down
+		}
+	})
 }
 
 func (r *alertmanagerController) cleanUpAlertmanagerObjects(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -321,26 +342,27 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 	if err != nil {
 		return fmt.Errorf("failed to get alertmanager config: %w", err)
 	}
-	alertmanagerURL := r.cortexAlertmanagerURL + alertmanagerConfigEndpoint
-	currentConfig, err := r.getCurrentAlertmanagerConfig(alertmanagerURL, cluster)
+
+	alertmanagerURL := r.cortexAlertmanagerURL + AlertmanagerConfigEndpoint
+	currentConfig, err := r.getCurrentAlertmanagerConfig(ctx, alertmanagerURL, cluster)
 	if err != nil {
 		return err
 	}
 	expectedConfig := map[string]interface{}{}
-	if err := yaml.Unmarshal(config, &expectedConfig); err != nil {
+	if err := yaml.UnmarshalStrict(config, &expectedConfig); err != nil {
 		return fmt.Errorf("unable to unmarshal expected config: %w", err)
 	}
 	if reflect.DeepEqual(currentConfig, expectedConfig) {
 		return nil
 	}
 
-	req, err := http.NewRequest(http.MethodPost,
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		alertmanagerURL,
 		bytes.NewBuffer(config))
 	if err != nil {
 		return err
 	}
-	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
+	req.Header.Add(AlertmanagerTenantHeaderName, cluster.Name)
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -349,7 +371,7 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 	// https://cortexmetrics.io/docs/api/#set-alertmanager-configuration
 	if resp.StatusCode != http.StatusCreated {
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
@@ -358,8 +380,7 @@ func (r *alertmanagerController) ensureAlertmanagerConfiguration(ctx context.Con
 	return nil
 }
 
-func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Context, cluster *kubermaticv1.Cluster) ([]byte, error) {
-	configuration := []byte(resources.DefaultAlertmanagerConfig)
+func (r *alertmanagerController) getAlertmanagerForCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, error) {
 	alertNamespacedName := types.NamespacedName{
 		Name:      resources.AlertmanagerName,
 		Namespace: cluster.Status.NamespaceName,
@@ -372,6 +393,16 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 	}
 	if err := r.Get(ctx, alertNamespacedName, alertmanager); err != nil && !errors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get alertmanager: %w", err)
+	}
+	return alertmanager, nil
+}
+
+func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Context, cluster *kubermaticv1.Cluster) ([]byte, error) {
+	configuration := []byte(resources.DefaultAlertmanagerConfig)
+
+	alertmanager, err := r.getAlertmanagerForCluster(ctx, cluster)
+	if err != nil {
+		return nil, err
 	}
 
 	if alertmanager.Spec.ConfigSecret.Name == "" {
@@ -410,12 +441,12 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 	return secret.Data[resources.AlertmanagerConfigSecretKey], nil
 }
 
-func (r *alertmanagerController) getCurrentAlertmanagerConfig(alertmanagerURL string, cluster *kubermaticv1.Cluster) (map[string]interface{}, error) {
-	req, err := http.NewRequest(http.MethodGet, alertmanagerURL, nil)
+func (r *alertmanagerController) getCurrentAlertmanagerConfig(ctx context.Context, alertmanagerURL string, cluster *kubermaticv1.Cluster) (map[string]interface{}, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, alertmanagerURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
+	req.Header.Add(AlertmanagerTenantHeaderName, cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -426,7 +457,7 @@ func (r *alertmanagerController) getCurrentAlertmanagerConfig(alertmanagerURL st
 		return nil, nil
 	}
 	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
 		}
@@ -438,4 +469,43 @@ func (r *alertmanagerController) getCurrentAlertmanagerConfig(alertmanagerURL st
 		return nil, fmt.Errorf("unable to decode response body: %w", err)
 	}
 	return config, nil
+}
+
+func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Context, cluster *kubermaticv1.Cluster, configErr error) error {
+	alertmanager, err := r.getAlertmanagerForCluster(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get alertmanager: %w", err)
+	}
+	oldAlertmanager := alertmanager.DeepCopy()
+
+	up := kubermaticv1.HealthStatusUp
+	down := kubermaticv1.HealthStatusDown
+
+	alertmanager.Status.ConfigStatus.ErrorMessage = "" // reset error message
+	alertmanager.Status.ConfigStatus.Status = corev1.ConditionTrue
+	alertmanager.Status.ConfigStatus.LastUpdated = metav1.Now()
+	clusterStatus := &up
+	if configErr != nil {
+		alertmanager.Status.ConfigStatus.ErrorMessage = configErr.Error()
+		alertmanager.Status.ConfigStatus.Status = corev1.ConditionFalse
+		alertmanager.Status.ConfigStatus.LastUpdated = oldAlertmanager.Status.ConfigStatus.LastUpdated
+		clusterStatus = &down
+	}
+
+	// Update alertmanager config status in Alertmanager CR
+	if oldAlertmanager.Status.ConfigStatus != alertmanager.Status.ConfigStatus {
+		if err := r.Client.Status().Patch(ctx, alertmanager, ctrlruntimeclient.MergeFrom(oldAlertmanager)); err != nil {
+			return fmt.Errorf("error patching alertmanager config status: %w", err)
+		}
+	}
+
+	// Update alertmanager config status in Cluster CR
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth.AlertmanagerConfig = clusterStatus
+	})
+	if err != nil {
+		return fmt.Errorf("error patching cluster health status: %w", err)
+	}
+
+	return nil
 }

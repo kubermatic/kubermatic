@@ -60,22 +60,22 @@ func NewCreateExternalClusterCreated() *CreateExternalClusterCreated {
 
 /* CreateExternalClusterCreated describes a response with status code 201, with default header values.
 
-Cluster
+ExternalCluster
 */
 type CreateExternalClusterCreated struct {
-	Payload *models.Cluster
+	Payload *models.ExternalCluster
 }
 
 func (o *CreateExternalClusterCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/kubernetes/clusters][%d] createExternalClusterCreated  %+v", 201, o.Payload)
 }
-func (o *CreateExternalClusterCreated) GetPayload() *models.Cluster {
+func (o *CreateExternalClusterCreated) GetPayload() *models.ExternalCluster {
 	return o.Payload
 }
 
 func (o *CreateExternalClusterCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Cluster)
+	o.Payload = new(models.ExternalCluster)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

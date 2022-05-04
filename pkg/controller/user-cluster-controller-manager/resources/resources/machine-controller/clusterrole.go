@@ -27,7 +27,7 @@ const (
 	Name = "machine-controller"
 )
 
-// ClusterRole returns a cluster role for the machine controller (user-cluster)
+// ClusterRole returns a cluster role for the machine controller (user-cluster).
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MachineControllerClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
@@ -58,11 +58,11 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				{
 					APIGroups: []string{""},
 					Resources: []string{"pods"},
-					Verbs:     []string{"list", "get"},
+					Verbs:     []string{"list", "get", "delete"},
 				},
 				{
 					APIGroups: []string{""},
-					Resources: []string{"persistentvolumes", "secrets", "configmaps"},
+					Resources: []string{"persistentvolumes", "persistentvolumeclaims", "secrets", "configmaps"},
 					Verbs:     []string{"list", "get", "watch"},
 				},
 				{
@@ -98,6 +98,11 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					Resources:     []string{"signers"},
 					ResourceNames: []string{"kubernetes.io/kubelet-serving"},
 					Verbs:         []string{"approve"},
+				},
+				{
+					APIGroups: []string{"storage.k8s.io"},
+					Resources: []string{"volumeattachments"},
+					Verbs:     []string{"list", "get", "watch"},
 				},
 			}
 			return cr, nil

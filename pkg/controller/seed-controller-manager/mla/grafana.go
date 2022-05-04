@@ -22,19 +22,18 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
 
 func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project) (grafanasdk.Org, error) {
-	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
+	orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
 	if !ok {
 		return grafanasdk.Org{}, fmt.Errorf("project should have grafana org annotation set")
 	}
@@ -45,7 +44,7 @@ func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, proj
 	return grafanaClient.GetOrgById(ctx, uint(id))
 }
 
-func getGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, orgID, uid uint) (*grafanasdk.OrgUser, error) {
+func GetGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, orgID, uid uint) (*grafanasdk.OrgUser, error) {
 	users, err := grafanaClient.GetOrgUsers(ctx, orgID)
 	if err != nil {
 		return nil, err
@@ -59,9 +58,9 @@ func getGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 	return nil, nil
 }
 
-func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org grafanasdk.Org, user *grafanasdk.User, role models.RoleType) error {
+func addUserToOrg(ctx context.Context, grafanaClient *grafanasdk.Client, org grafanasdk.Org, user *grafanasdk.User, role grafanasdk.RoleType) error {
 	// checking if user already exists in the corresponding organization
-	orgUser, err := getGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
+	orgUser, err := GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get user : %w", err)
 	}
@@ -122,14 +121,33 @@ func addGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 	return nil
 }
 
-func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, configMap corev1.ConfigMap) error {
+func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, configMap *corev1.ConfigMap) error {
 	for _, data := range configMap.Data {
 		var board grafanasdk.Board
 		if err := json.Unmarshal([]byte(data), &board); err != nil {
 			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
 		}
 		if status, err := grafanaClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
-			log.Debugf("unable to set dashboard: %w (status: %s, message: %s)",
+			log.Errorf("unable to set dashboard: %w (status: %s, message: %s)",
+				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			return err
+		}
+	}
+	return nil
+}
+
+func deleteDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, configMap *corev1.ConfigMap) error {
+	for _, data := range configMap.Data {
+		var board grafanasdk.Board
+		if err := json.Unmarshal([]byte(data), &board); err != nil {
+			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
+		}
+		if board.UID == "" {
+			log.Debugf("dashboard %s doesn't have UID set, skipping", board.Title)
+			continue
+		}
+		if status, err := grafanaClient.DeleteDashboardByUID(ctx, board.UID); err != nil {
+			log.Errorf("unable to delete dashboard: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			return err
 		}

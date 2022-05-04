@@ -18,12 +18,15 @@ package machine
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
+	"k8s.io/utils/pointer"
 )
 
 func TestGetVSphereProviderSpec(t *testing.T) {
@@ -57,7 +60,8 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 				},
 			},
 			wantRawConf: vsphere.RawConfig{
-				Datastore: providerconfigtypes.ConfigVarString{Value: "default-datastore"},
+				Datastore:     providerconfigtypes.ConfigVarString{Value: "default-datastore"},
+				AllowInsecure: providerconfigtypes.ConfigVarBool{Value: pointer.Bool(false)},
 			},
 		},
 		{
@@ -84,7 +88,8 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 				},
 			},
 			wantRawConf: vsphere.RawConfig{
-				Datastore: providerconfigtypes.ConfigVarString{Value: "my-datastore"},
+				Datastore:     providerconfigtypes.ConfigVarString{Value: "my-datastore"},
+				AllowInsecure: providerconfigtypes.ConfigVarBool{Value: pointer.Bool(false)},
 			},
 		},
 		{
@@ -111,7 +116,8 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 				},
 			},
 			wantRawConf: vsphere.RawConfig{
-				Datastore: providerconfigtypes.ConfigVarString{Value: "my-datastore-cluster"},
+				Datastore:     providerconfigtypes.ConfigVarString{Value: "my-datastore-cluster"},
+				AllowInsecure: providerconfigtypes.ConfigVarBool{Value: pointer.Bool(false)},
 			},
 		},
 	}
@@ -127,7 +133,7 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error occurred whil unmarshaling raw config: %v", err)
 			}
-			if gotRawConf != tt.wantRawConf {
+			if !reflect.DeepEqual(gotRawConf, tt.wantRawConf) {
 				t.Errorf("getVSphereProviderSpec() = %+v, want %+v", gotRawConf, tt.wantRawConf)
 			}
 		})

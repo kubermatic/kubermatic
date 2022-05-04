@@ -17,12 +17,13 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -52,17 +53,17 @@ func TestGetRuleGroup(t *testing.T) {
 		{
 			name: "get ruleGroup",
 			existingObjects: []ctrlruntimeclient.Object{
-				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 			userInfo:          &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:           genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
-			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 		},
 		{
 			name:          "ruleGroup is not found",
 			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
-			expectedError: "rulegroups.kubermatic.k8s.io \"test-rule-group\" not found",
+			expectedError: "rulegroups.kubermatic.k8c.io \"test-rule-group\" not found",
 		},
 	}
 
@@ -78,7 +79,7 @@ func TestGetRuleGroup(t *testing.T) {
 
 			ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, client)
 
-			ruleGroup, err := ruleGroupProvider.Get(tc.userInfo, tc.cluster, testRuleGroupName)
+			ruleGroup, err := ruleGroupProvider.Get(context.Background(), tc.userInfo, tc.cluster, testRuleGroupName)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -109,47 +110,47 @@ func TestListRuleGroup(t *testing.T) {
 		{
 			name: "list all ruleGroups",
 			existingObjects: []ctrlruntimeclient.Object{
-				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:  genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
 			expectedRuleGroups: []*kubermaticv1.RuleGroup{
-				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 		},
 		{
 			name: "list all ruleGroups with empty list options",
 			existingObjects: []ctrlruntimeclient.Object{
-				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 			listOptions: &provider.RuleGroupListOptions{},
 			userInfo:    &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:     genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
 			expectedRuleGroups: []*kubermaticv1.RuleGroup{
-				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-2", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 		},
 		{
 			name: "list ruleGroups with metrics type as list options",
 			existingObjects: []ctrlruntimeclient.Object{
-				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-2", testRuleGroupClusterName, "FakeType"),
-				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-2", testRuleGroupClusterName, "FakeType", false),
+				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 			listOptions: &provider.RuleGroupListOptions{RuleGroupType: kubermaticv1.RuleGroupTypeMetrics},
 			userInfo:    &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:     genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
 			expectedRuleGroups: []*kubermaticv1.RuleGroup{
-				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-1", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+				test.GenRuleGroup("test-3", testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 		},
 		{
@@ -171,7 +172,7 @@ func TestListRuleGroup(t *testing.T) {
 
 			ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, client)
 
-			ruleGroups, err := ruleGroupProvider.List(tc.userInfo, tc.cluster, tc.listOptions)
+			ruleGroups, err := ruleGroupProvider.List(context.Background(), tc.userInfo, tc.cluster, tc.listOptions)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -218,17 +219,17 @@ func TestCreateRuleGroup(t *testing.T) {
 			name:              "create ruleGroup",
 			userInfo:          &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:           genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
-			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 		},
 		{
 			name: "create ruleGroup which already exists",
 			existingObjects: []ctrlruntimeclient.Object{
-				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 			userInfo:          &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:           genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
-			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-			expectedError:     "rulegroups.kubermatic.k8s.io \"test-rule-group\" already exists",
+			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+			expectedError:     "rulegroups.kubermatic.k8c.io \"test-rule-group\" already exists",
 		},
 	}
 
@@ -244,13 +245,13 @@ func TestCreateRuleGroup(t *testing.T) {
 
 			ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, client)
 
-			_, err := ruleGroupProvider.Create(tc.userInfo, tc.expectedRuleGroup)
+			_, err := ruleGroupProvider.Create(context.Background(), tc.userInfo, tc.expectedRuleGroup)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				ruleGroup, err := ruleGroupProvider.Get(tc.userInfo, tc.cluster, tc.expectedRuleGroup.Name)
+				ruleGroup, err := ruleGroupProvider.Get(context.Background(), tc.userInfo, tc.cluster, tc.expectedRuleGroup.Name)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -278,18 +279,18 @@ func TestUpdateRuleGroup(t *testing.T) {
 		{
 			name: "update ruleGroup type",
 			existingObjects: []ctrlruntimeclient.Object{
-				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, "FakeType"),
+				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, "FakeType", false),
 			},
 			userInfo:          &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:           genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
-			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
+			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
 		},
 		{
 			name:              "update ruleGroup which doesn't exist",
 			userInfo:          &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:           genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
-			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics),
-			expectedError:     "rulegroups.kubermatic.k8s.io \"test-rule-group\" not found",
+			expectedRuleGroup: test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, kubermaticv1.RuleGroupTypeMetrics, false),
+			expectedError:     "rulegroups.kubermatic.k8c.io \"test-rule-group\" not found",
 		},
 	}
 
@@ -305,22 +306,22 @@ func TestUpdateRuleGroup(t *testing.T) {
 
 			ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, client)
 			if len(tc.expectedError) == 0 {
-				currentRuleGroup, err := ruleGroupProvider.Get(tc.userInfo, tc.cluster, tc.expectedRuleGroup.Name)
+				currentRuleGroup, err := ruleGroupProvider.Get(context.Background(), tc.userInfo, tc.cluster, tc.expectedRuleGroup.Name)
 				if err != nil {
 					t.Fatal(err)
 				}
 				tc.expectedRuleGroup.ResourceVersion = currentRuleGroup.ResourceVersion
-				_, err = ruleGroupProvider.Update(tc.userInfo, tc.expectedRuleGroup)
+				_, err = ruleGroupProvider.Update(context.Background(), tc.userInfo, tc.expectedRuleGroup)
 				if err != nil {
 					t.Fatal(err)
 				}
-				ruleGroup, err := ruleGroupProvider.Get(tc.userInfo, tc.cluster, tc.expectedRuleGroup.Name)
+				ruleGroup, err := ruleGroupProvider.Get(context.Background(), tc.userInfo, tc.cluster, tc.expectedRuleGroup.Name)
 				if err != nil {
 					t.Fatal(err)
 				}
 				assert.Equal(t, tc.expectedRuleGroup, ruleGroup)
 			} else {
-				_, err := ruleGroupProvider.Update(tc.userInfo, tc.expectedRuleGroup)
+				_, err := ruleGroupProvider.Update(context.Background(), tc.userInfo, tc.expectedRuleGroup)
 				if err == nil {
 					t.Fatalf("expected error message")
 				}
@@ -343,7 +344,7 @@ func TestDeleteRuleGroup(t *testing.T) {
 		{
 			name: "delete ruleGroup",
 			existingObjects: []ctrlruntimeclient.Object{
-				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, "FakeType"),
+				test.GenRuleGroup(testRuleGroupName, testRuleGroupClusterName, "FakeType", false),
 			},
 			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
@@ -354,7 +355,7 @@ func TestDeleteRuleGroup(t *testing.T) {
 			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			cluster:       genCluster(testRuleGroupClusterName, "kubernetes", "my-first-project-ID", "test-rule-group", "john@acme.com"),
 			ruleGroupName: testRuleGroupName,
-			expectedError: "rulegroups.kubermatic.k8s.io \"test-rule-group\" not found",
+			expectedError: "rulegroups.kubermatic.k8c.io \"test-rule-group\" not found",
 		},
 	}
 
@@ -369,12 +370,12 @@ func TestDeleteRuleGroup(t *testing.T) {
 			}
 
 			ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, client)
-			err := ruleGroupProvider.Delete(tc.userInfo, tc.cluster, tc.ruleGroupName)
+			err := ruleGroupProvider.Delete(context.Background(), tc.userInfo, tc.cluster, tc.ruleGroupName)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
 				}
-				_, err = ruleGroupProvider.Get(tc.userInfo, tc.cluster, tc.ruleGroupName)
+				_, err = ruleGroupProvider.Get(context.Background(), tc.userInfo, tc.cluster, tc.ruleGroupName)
 				assert.True(t, errors.IsNotFound(err))
 			} else {
 				if err == nil {

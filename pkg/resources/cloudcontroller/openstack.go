@@ -19,7 +19,7 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -78,49 +78,77 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
-
-			version, err := getOSVersion(data.Cluster().Spec.Version)
+			version, err := getOSVersion(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
-				Name: resources.CloudConfigConfigMapName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: resources.CloudConfigConfigMapName,
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
+				corev1.Volume{
+					Name: resources.CloudConfigConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CloudConfigConfigMapName,
+							},
 						},
 					},
 				},
-			})
+				corev1.Volume{
+					Name: resources.CABundleConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CABundleConfigMapName,
+							},
+						},
+					},
+				},
+			)
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:    ccmContainerName,
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
 					Command: []string{"/bin/openstack-cloud-controller-manager"},
 					Args:    getOSFlags(data),
-					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-						Name:      resources.CloudConfigConfigMapName,
-						MountPath: "/etc/kubernetes/cloud",
-						ReadOnly:  true,
-					}),
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SSL_CERT_FILE",
+							Value: "/etc/kubermatic/certs/ca-bundle.pem",
+						},
+					},
+					VolumeMounts: append(getVolumeMounts(),
+						corev1.VolumeMount{
+							Name:      resources.CloudConfigConfigMapName,
+							MountPath: "/etc/kubernetes/cloud",
+							ReadOnly:  true,
+						},
+						corev1.VolumeMount{
+							Name:      resources.CABundleConfigMapName,
+							MountPath: "/etc/kubermatic/certs",
+							ReadOnly:  true,
+						},
+					),
 				},
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName:    osResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+				ccmContainerName: osResourceRequirements.DeepCopy(),
 			}
+
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil
@@ -142,17 +170,17 @@ func getOSFlags(data *resources.TemplateData) []string {
 }
 
 func getOSVersion(version semver.Semver) (string, error) {
-	switch version.Minor() {
-	case 19:
-		return "1.19.2", nil
+	switch version.Semver().Minor() {
 	case 20:
 		return "1.20.2", nil
 	case 21:
 		return "1.21.0", nil
 	case 22:
+		return "1.22.0", nil
+	case 23:
 		fallthrough
 	default:
-		return "1.22.0", nil
+		return "1.23.1", nil
 	}
 }
 

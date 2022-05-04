@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,14 +47,11 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1
 	}
 
 	for _, constraint := range constraintList.Items {
-		oldConstraint := constraint.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(&constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := d.seedClient.Patch(ctx, &constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
-			return fmt.Errorf("failed to remove constraint finalizer %s: %v", constraint.Name, err)
+		err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
+		if err != nil {
+			return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
 		}
 	}
 
-	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
-	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
 }

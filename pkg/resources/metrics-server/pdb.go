@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

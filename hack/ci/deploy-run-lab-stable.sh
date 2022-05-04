@@ -37,5 +37,5 @@ vault kv get -field=values.yaml dev/seed-clusters/run.lab.kubermatic.io > ${VALU
 echodate "Successfully got secrets for run from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to run.lab.kubermatic.io"
-TILLER_NAMESPACE=kubermatic ./hack/ci/deploy.sh master ${VALUES_FILE}
+./hack/ci/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to run.lab.kubermatic.io"

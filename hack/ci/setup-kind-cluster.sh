@@ -24,7 +24,7 @@ fi
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
-start_docker_daemon
+start_docker_daemon_ci
 
 # Prevent mtu-related timeouts
 echodate "Setting iptables rule to clamp mss to path mtu"
@@ -56,20 +56,81 @@ source <(k completion bash )
 source <(k completion bash | sed s/kubectl/k/g)
 EOF
 
-# Load kind image
-echodate "Loading kindest image"
-docker load --input /kindest.tar
-echodate "Loaded kindest image"
-
 # Create kind cluster
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-export KIND_NODE_VERSION=v1.21.1
-kind create cluster --name "$KIND_CLUSTER_NAME" --image=kindest/node:$KIND_NODE_VERSION
-pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
+
+# If a Docker mirror is available, we tunnel it into the
+# kind cluster, which has its own containerd daemon.
+# kind current does not allow accessing ports on the host
+# from within the cluster and also does not allow adding
+# custom flags to the `docker run` call it does in the
+# background.
+# To circumvent this, we use socat to make the TCP-based
+# mirror available as a local socket and then mount this
+# into the kind container.
+# Since containerd does not support sockets, we also start
+# a second socat process in the kind container that unwraps
+# the socket again and listens on 127.0.0.1:5001, which is
+# then used for containerd.
+# Being a docker registry does not incur a lot of requests,
+# just a few big ones. For this socat seems pretty reliable.
+if [ -n "${DOCKER_REGISTRY_MIRROR_ADDR:-}" ]; then
+  mirrorHost="$(echo "$DOCKER_REGISTRY_MIRROR_ADDR" | sed 's#http://##' | sed 's#/+$##g')"
+
+  # make the registry mirror available as a socket,
+  # so we can mount it into the kind cluster
+  mkdir -p /mirror
+  socat UNIX-LISTEN:/mirror/mirror.sock,fork,reuseaddr,unlink-early,mode=777 TCP4:$mirrorHost &
+
+  function end_socat_process {
+    echodate "Killing socat docker registry mirror processes..."
+    pkill -e socat
+  }
+  appendTrap end_socat_process EXIT
+
+  cat << EOF > kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: "${KIND_CLUSTER_NAME}"
+nodes:
+  - role: control-plane
+    # mount the socket
+    extraMounts:
+    - hostPath: /mirror
+      containerPath: /mirror
+containerdConfigPatches:
+  # point to the soon-to-start local socat process
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+    endpoint = ["http://127.0.0.1:5001"]
+EOF
+
+  kind create cluster --config kind-config.yaml
+  pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate
+
+  # unwrap the socket inside the kind cluster and make it available on a TCP port,
+  # because containerd/Docker doesn't support sockets for mirrors.
+  docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
+else
+  kind create cluster --name "$KIND_CLUSTER_NAME"
+fi
+
+# This is required if the kindest version matches the user cluster version.
+# The kindest image comes with preloaded control plane images, however,
+# the preloaded kube-controller-manager image doesn't have cloud providers
+# built-in. This is done intentionally in order to reduce the kindest image
+# size because kind is used only for local clusters.
+# When the kindest version matches the user cluster version, KKP will use the
+# preloaded kube-controller-manager image instead of pulling the image from
+# k8s.gcr.io. This will cause the kube-controller-manager to crashloop because
+# there are no cloud providers in that preloaded image.
+# As a solution, we remove the preloaded image after starting the kind
+# cluster, which will force KKP to pull the correct image.
+docker exec "kubermatic-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi k8s.gcr.io/kube-controller-manager:{}" || true
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as
@@ -111,4 +172,4 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   echodate "Successfully set up iptables rules for nodeports"
 fi
 
-echodate "Kind cluster $KIND_CLUSTER_NAME using Kubernetes $KIND_NODE_VERSION is up and running."
+echodate "Kind cluster $KIND_CLUSTER_NAME is up and running."

@@ -19,11 +19,13 @@ package collectors
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,7 +34,7 @@ const (
 	addonPrefix = "kubermatic_addon_"
 )
 
-// AddonCollector exports metrics for addon resources
+// AddonCollector exports metrics for addon resources.
 type AddonCollector struct {
 	client ctrlruntimeclient.Reader
 
@@ -41,7 +43,7 @@ type AddonCollector struct {
 	addonReconcileFail *prometheus.Desc
 }
 
-// MustRegisterAddonCollector registers the addon collector at the given prometheus registry
+// MustRegisterAddonCollector registers the addon collector at the given prometheus registry.
 func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
 	cc := &AddonCollector{
 		client: client,
@@ -68,21 +70,21 @@ func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlrunti
 	registry.MustRegister(cc)
 }
 
-// Describe returns the metrics descriptors
+// Describe returns the metrics descriptors.
 func (cc AddonCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- cc.addonCreated
 	ch <- cc.addonDeleted
 	ch <- cc.addonReconcileFail
 }
 
-// Collect gets called by prometheus to collect the metrics
+// Collect gets called by prometheus to collect the metrics.
 func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 	addons := &kubermaticv1.AddonList{}
 	if err := cc.client.List(
 		context.Background(),
 		addons,
 		&ctrlruntimeclient.ListOptions{}); err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list addons in AddonCollector: %v", err))
+		utilruntime.HandleError(fmt.Errorf("failed to list addons in AddonCollector: %w", err))
 		return
 	}
 	for _, addon := range addons.Items {
@@ -91,20 +93,14 @@ func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, addon *kubermaticv1.Addon) {
-	if len(addon.OwnerReferences) < 1 || addon.OwnerReferences[0].Kind != kubermaticv1.ClusterKindName {
-		utilruntime.HandleError(fmt.Errorf("No owning cluster for addon %v/%v", addon.Namespace, addon.Name))
-		return
-	}
-
-	clusterName := addon.OwnerReferences[0].Name
+	parts := strings.Split(addon.Namespace, "-")
+	clusterName := parts[1]
 
 	notCreated := 1
-	for _, cond := range addon.Status.Conditions {
-		if cond.Type == kubermaticv1.AddonResourcesCreated {
-			notCreated = 0
-			break
-		}
+	if addon.Status.Conditions[kubermaticv1.AddonResourcesCreated].Status == corev1.ConditionTrue {
+		notCreated = 0
 	}
+
 	ch <- prometheus.MustNewConstMetric(
 		cc.addonReconcileFail,
 		prometheus.GaugeValue,

@@ -66,7 +66,7 @@ type DeleteEtcdBackupConfigOK struct {
 }
 
 func (o *DeleteEtcdBackupConfigOK) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] deleteEtcdBackupConfigOK ", 200)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigOK ", 200)
 }
 
 func (o *DeleteEtcdBackupConfigOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type DeleteEtcdBackupConfigUnauthorized struct {
 }
 
 func (o *DeleteEtcdBackupConfigUnauthorized) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] deleteEtcdBackupConfigUnauthorized ", 401)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigUnauthorized ", 401)
 }
 
 func (o *DeleteEtcdBackupConfigUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type DeleteEtcdBackupConfigForbidden struct {
 }
 
 func (o *DeleteEtcdBackupConfigForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] deleteEtcdBackupConfigForbidden ", 403)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigForbidden ", 403)
 }
 
 func (o *DeleteEtcdBackupConfigForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *DeleteEtcdBackupConfigDefault) Code() int {
 }
 
 func (o *DeleteEtcdBackupConfigDefault) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}][%d] deleteEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
 func (o *DeleteEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload

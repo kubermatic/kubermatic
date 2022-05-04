@@ -22,8 +22,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 
 	corev1 "k8s.io/api/core/v1"
@@ -130,13 +128,13 @@ func portHostMappingFromAnnotation(svc *corev1.Service) (portHostMapping, error)
 	}
 	err := json.Unmarshal([]byte(val), &m)
 	if err != nil {
-		return m, errors.Wrap(err, "failed to unmarshal port host mapping")
+		return m, fmt.Errorf("failed to unmarshal port host mapping: %w", err)
 	}
 	return m, nil
 }
 
 func (p portHostMapping) validate(svc *corev1.Service) error {
-	// TODO(irozzo): validate that hosts are well formed FQDN
+	// TODO: validate that hosts are well formed FQDN
 	portNames, hosts := p.portHostSets()
 	if len(p) > hosts.Len() {
 		return fmt.Errorf("duplicated hostname in port host mapping of service: %v", p)

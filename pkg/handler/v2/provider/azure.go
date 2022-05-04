@@ -45,10 +45,10 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(projectProvider provid
 	}
 }
 
-func AzureSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureSecurityGroupsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(azureSecurityGroupsReq)
-		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -56,10 +56,10 @@ func AzureSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, userIn
 	}
 }
 
-func AzureResourceGroupsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureResourceGroupsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(azureResourceGroupsReq)
-		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -67,10 +67,10 @@ func AzureResourceGroupsEndpoint(presetsProvider provider.PresetProvider, userIn
 	}
 }
 
-func AzureRouteTablesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureRouteTablesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(azureRouteTablesReq)
-		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -78,10 +78,10 @@ func AzureRouteTablesEndpoint(presetsProvider provider.PresetProvider, userInfoG
 	}
 }
 
-func AzureVirtualNetworksEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureVirtualNetworksEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(azureVirtualNetworksReq)
-		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -89,10 +89,10 @@ func AzureVirtualNetworksEndpoint(presetsProvider provider.PresetProvider, userI
 	}
 }
 
-func AzureSubnetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureSubnetsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(azureSubnetsReq)
-		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ type azureCredentials struct {
 	clientSecret   string
 }
 
-func getAzureCredentialsFromReq(ctx context.Context, req azureCommonReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*azureCredentials, error) {
+func getAzureCredentialsFromReq(ctx context.Context, req azureCommonReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*azureCredentials, error) {
 	subscriptionID := req.SubscriptionID
 	clientID := req.ClientID
 	clientSecret := req.ClientSecret
@@ -119,7 +119,7 @@ func getAzureCredentialsFromReq(ctx context.Context, req azureCommonReq, userInf
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
@@ -146,7 +146,7 @@ type azureSizeNoCredentialsReq struct {
 	cluster.GetClusterReq
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req azureSizeNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -180,7 +180,7 @@ type azureAvailabilityZonesNoCredentialsReq struct {
 	SKUName string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req azureAvailabilityZonesNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -198,7 +198,7 @@ func DecodeAzureAvailabilityZonesNoCredentialsReq(c context.Context, r *http.Req
 	return req, nil
 }
 
-// azureCommonReq represent a request for Azure support
+// azureCommonReq represent a request for Azure support.
 type azureCommonReq struct {
 	// in: header
 	SubscriptionID string

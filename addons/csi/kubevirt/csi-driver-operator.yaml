@@ -1,0 +1,383 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ if eq .Cluster.CloudProviderName "kubevirt" }}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.6.1
+  creationTimestamp: null
+  name: tenants.csiprovisioner.kubevirt.io
+spec:
+  group: csiprovisioner.kubevirt.io
+  names:
+    kind: Tenant
+    listKind: TenantList
+    plural: tenants
+    singular: tenant
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Tenant is the Schema for the tenants API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: TenantSpec defines the desired state of Tenant.
+              properties:
+                imageRepository:
+                  description: Image repository address
+                  type: string
+                imageTag:
+                  description: Image tag that should be used for all csi driver components
+                  type: string
+                infraClusterLabels:
+                  description: The driver creates resources in the infra cluster. These
+                    resources are labeled with the values you supply in infraClusterLabels.
+                  type: string
+                infraClusterNamespace:
+                  description: Set infraClusterNamespace to the KubeVirt cluster namespace.
+                  type: string
+                storageClasses:
+                  description: StorageClasses represents storage classes that the tenant
+                    operator should create.
+                  items:
+                    description: StorageClass represents a storage class that should
+                      reference a KubeVirt storage class on infra cluster.
+                    properties:
+                      bus:
+                        description: The VM bus type, defaults to scsi.
+                        type: string
+                      infraStorageClassName:
+                        description: Name of the storage class to use on the infrastructure
+                          cluster.
+                        type: string
+                    required:
+                      - infraStorageClassName
+                    type: object
+                  type: array
+              required:
+                - infraClusterLabels
+                - infraClusterNamespace
+              type: object
+            status:
+              description: TenantStatus defines the observed state of Tenant.
+              properties:
+                resourceConditions:
+                  description: Conditions represents resource conditions that operator
+                    reconciles.
+                  items:
+                    description: ResourceStatusCondition contains details for the current
+                      condition.
+                    properties:
+                      lastTransitionTime:
+                        description: Last time the condition transitioned from one status
+                          to another.
+                        format: date-time
+                        type: string
+                      operationResult:
+                        description: OperationResult is the action result of a CreateOrUpdate
+                          call.
+                        type: string
+                      reason:
+                        description: Unique, one-word, CamelCase reason for the condition's
+                          last transition.
+                        type: string
+                      resource:
+                        description: Resource represents a k8s resource that has been
+                          created/updated by the operator.
+                        type: string
+                    required:
+                      - operationResult
+                      - resource
+                    type: object
+                  type: array
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: kubevirt-csi-driver-operator
+  name: kubevirt-csi-driver
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubevirt-csi-driver-operator
+  namespace: kubevirt-csi-driver
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: kubevirt-csi-driver-operator
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - events
+      - secrets
+      - serviceaccounts
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumeclaims/status
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+    verbs:
+      - '*'
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+      - list
+  - apiGroups:
+      - apps
+      - extensions
+    resources:
+      - daemonsets
+      - deployments
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - '*'
+  - apiGroups:
+      - csi.storage.k8s.io
+      - storage.k8s.io
+    resources:
+      - csidrivers
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - csi.storage.k8s.io
+      - storage.k8s.io
+    resources:
+      - csinodeinfos
+      - csinodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - csiprovisioner.kubevirt.io
+    resources:
+      - tenants
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - csiprovisioner.kubevirt.io
+    resources:
+      - tenants/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - csiprovisioner.kubevirt.io
+    resources:
+      - tenants/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - clusterroles
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotcontents
+    verbs:
+      - '*'
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshots
+      - volumesnapshots/status
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csidrivers
+      - storageclasses
+      - volumeattachments
+      - volumeattachments/status
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubevirt-csi-driver-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubevirt-csi-driver-operator
+subjects:
+  - kind: ServiceAccount
+    name: kubevirt-csi-driver-operator
+    namespace: kubevirt-csi-driver
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubevirt-csi-driver-operator
+  namespace: kubevirt-csi-driver
+  labels:
+    control-plane: kubevirt-csi-driver-operator
+spec:
+  selector:
+    matchLabels:
+      control-plane: kubevirt-csi-driver-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: kubevirt-csi-driver-operator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - command:
+            - /manager
+          args:
+            - --leader-elect
+          image: quay.io/kubermatic/kubevirt-csi-driver-operator:v0.1.0
+          imagePullPolicy: Always
+          name: manager
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 200m
+              memory: 100Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+      serviceAccountName: kubevirt-csi-driver-operator
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: csiprovisioner.kubevirt.io/v1alpha1
+kind: Tenant
+metadata:
+  name: tenant
+spec:
+  infraClusterNamespace: {{ .Cluster.Namespace }}
+  infraClusterLabels: cluster-name={{ .Cluster.Name }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: infra-cluster-credentials
+  namespace: kubevirt-csi-driver
+data:
+  kubeconfig: {{ .Credentials.Kubevirt.CSIKubeConfig | b64enc }}
+{{end}}

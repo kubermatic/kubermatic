@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ServiceAccountCreator creates the service account for the dashboard-metrics-scraper
+// ServiceAccountCreator creates the service account for the dashboard-metrics-scraper.
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.MetricsScraperServiceAccountUsername, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {

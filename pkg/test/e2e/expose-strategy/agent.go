@@ -18,15 +18,16 @@ package exposestrategy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -54,38 +55,38 @@ type AgentConfig struct {
 }
 
 // DeployAgentPod deploys the pod to be used to verify tunneling expose strategy.
-func (a *AgentConfig) DeployAgentPod() error {
+func (a *AgentConfig) DeployAgentPod(ctx context.Context) error {
 	agentCm := a.newAgentConfigMap(a.Namespace)
-	if err := a.Client.Create(context.TODO(), agentCm); err != nil {
-		return errors.Wrap(err, "failed to create agent config map")
+	if err := a.Client.Create(ctx, agentCm); err != nil {
+		return fmt.Errorf("failed to create agent config map: %w", err)
 	}
 	a.AgentConfigMap = agentCm
 	agentPod := a.newAgentPod(a.Namespace)
-	if err := a.Client.Create(context.TODO(), agentPod); err != nil {
-		return errors.Wrap(err, "failed to create agent pod")
+	if err := a.Client.Create(ctx, agentPod); err != nil {
+		return fmt.Errorf("failed to create agent pod: %w", err)
 	}
 
-	if !e2eutils.CheckPodsRunningReady(a.Client, a.Namespace, []string{agentPod.Name}, agentDeployTimeout) {
+	if !e2eutils.CheckPodsRunningReady(ctx, a.Client, a.Namespace, []string{agentPod.Name}, agentDeployTimeout) {
 		return errors.New("timeout occurred while waiting for agent pod readiness")
 	}
 
-	if err := a.Client.Get(context.TODO(), ctrlruntimeclient.ObjectKey{
+	if err := a.Client.Get(ctx, ctrlruntimeclient.ObjectKey{
 		Namespace: agentPod.Namespace,
 		Name:      agentPod.Name,
 	}, agentPod); err != nil {
-		return errors.Wrap(err, "failed to get agent pod")
+		return fmt.Errorf("failed to get agent pod: %w", err)
 	}
 	a.AgentPod = agentPod
 	return nil
 }
 
 // CleanUp deletes the resources.
-func (a *AgentConfig) CleanUp() error {
+func (a *AgentConfig) CleanUp(ctx context.Context) error {
 	if a.AgentPod != nil {
-		return a.Client.Delete(context.TODO(), a.AgentPod)
+		return a.Client.Delete(ctx, a.AgentPod)
 	}
 	if a.AgentConfigMap != nil {
-		return a.Client.Delete(context.TODO(), a.AgentConfigMap)
+		return a.Client.Delete(ctx, a.AgentConfigMap)
 	}
 	return nil
 }
@@ -115,7 +116,7 @@ func (a *AgentConfig) newAgentConfigMap(ns string) *corev1.ConfigMap {
 			},
 		},
 	})()
-	// TODO(irozzo): errors should never be thrown here
+	// TODO: errors should never be thrown here
 	cm, _ := createConfigMap(&corev1.ConfigMap{})
 	cm.Name = cmName
 	cm.Namespace = ns
@@ -124,8 +125,8 @@ func (a *AgentConfig) newAgentConfigMap(ns string) *corev1.ConfigMap {
 
 // newAgnhostPod returns a pod returns the manifest of the agent pod.
 func (a *AgentConfig) newAgentPod(ns string) *corev1.Pod {
-	agentName, createDs := envoyagent.DaemonSetCreator(net.IPv4(0, 0, 0, 0), a.Versions)()
-	// TODO(irozzo): errors should never be thrown here
+	agentName, createDs := envoyagent.DaemonSetCreator(net.IPv4(0, 0, 0, 0), a.Versions, "", registry.GetOverwriteFunc(""))()
+	// TODO: errors should never be thrown here
 	ds, _ := createDs(&appsv1.DaemonSet{})
 	// We don't need the init containers in this context.
 	ds.Spec.Template.Spec.InitContainers = []corev1.Container{}

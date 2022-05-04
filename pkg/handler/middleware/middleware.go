@@ -18,6 +18,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -26,7 +27,7 @@ import (
 	transporthttp "github.com/go-kit/kit/transport/http"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -35,95 +36,105 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
 	datacenterContextKey kubermaticcontext.Key = "datacenter"
 
-	// RawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx
+	// RawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx.
 	RawTokenContextKey kubermaticcontext.Key = "raw-auth-token"
 
-	// TokenExpiryContextKey key under which the current token expiry (OpenID ID Token) is kept in the ctx
+	// TokenExpiryContextKey key under which the current token expiry (OpenID ID Token) is kept in the ctx.
 	TokenExpiryContextKey kubermaticcontext.Key = "auth-token-expiry"
 
-	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request
+	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request.
 	noTokenFoundKey kubermaticcontext.Key = "no-token-found"
 
-	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx
+	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx.
 	ClusterProviderContextKey kubermaticcontext.Key = "cluster-provider"
 
-	// PrivilegedClusterProviderContextKey key under which the current PrivilegedClusterProvider is kept in the ctx
+	// PrivilegedClusterProviderContextKey key under which the current PrivilegedClusterProvider is kept in the ctx.
 	PrivilegedClusterProviderContextKey kubermaticcontext.Key = "privileged-cluster-provider"
 
-	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx
+	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx.
 	UserInfoContextKey kubermaticcontext.Key = "user-info"
 
-	// AuthenticatedUserContextKey key under which the current User (from OIDC provider) is kept in the ctx
+	// AuthenticatedUserContextKey key under which the current User (from OIDC provider) is kept in the ctx.
 	AuthenticatedUserContextKey kubermaticcontext.Key = "authenticated-user"
 
-	// AddonProviderContextKey key under which the current AddonProvider is kept in the ctx
+	// AddonProviderContextKey key under which the current AddonProvider is kept in the ctx.
 	AddonProviderContextKey kubermaticcontext.Key = "addon-provider"
 
-	// PrivilegedAddonProviderContextKey key under which the current PrivilegedAddonProvider is kept in the ctx
+	// PrivilegedAddonProviderContextKey key under which the current PrivilegedAddonProvider is kept in the ctx.
 	PrivilegedAddonProviderContextKey kubermaticcontext.Key = "privileged-addon-provider"
 
-	// ConstraintProviderContextKey key under which the current ConstraintProvider is kept in the ctx
+	// ConstraintProviderContextKey key under which the current ConstraintProvider is kept in the ctx.
 	ConstraintProviderContextKey kubermaticcontext.Key = "constraint-provider"
 
-	// PrivilegedConstraintProviderContextKey key under which the current PrivilegedConstraintProvider is kept in the ctx
+	// PrivilegedConstraintProviderContextKey key under which the current PrivilegedConstraintProvider is kept in the ctx.
 	PrivilegedConstraintProviderContextKey kubermaticcontext.Key = "privileged-constraint-provider"
 
-	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx
+	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx.
 	AlertmanagerProviderContextKey kubermaticcontext.Key = "alertmanager-provider"
 
-	// PrivilegedAlertmanagerProviderContextKey key under which the current PrivilegedAlertmanagerProvider is kept in the ctx
+	// PrivilegedAlertmanagerProviderContextKey key under which the current PrivilegedAlertmanagerProvider is kept in the ctx.
 	PrivilegedAlertmanagerProviderContextKey kubermaticcontext.Key = "privileged-alertmanager-provider"
 
-	// RuleGroupProviderContextKey key under which the current RuleGroupProvider is kept in the ctx
+	// RuleGroupProviderContextKey key under which the current RuleGroupProvider is kept in the ctx.
 	RuleGroupProviderContextKey kubermaticcontext.Key = "rulegroup-provider"
 
-	// PrivilegedRuleGroupProviderContextKey key under which the current PrivilegedRuleGroupProvider is kept in the ctx
+	// PrivilegedRuleGroupProviderContextKey key under which the current PrivilegedRuleGroupProvider is kept in the ctx.
 	PrivilegedRuleGroupProviderContextKey kubermaticcontext.Key = "privileged-rulegroup-provider"
 
-	// EtcdBackupConfigProviderContextKey key under which the current EtcdBackupConfigProvider is kept in the ctx
+	// EtcdBackupConfigProviderContextKey key under which the current EtcdBackupConfigProvider is kept in the ctx.
 	EtcdBackupConfigProviderContextKey kubermaticcontext.Key = "etcdbackupconfig-provider"
 
-	// PrivilegedEtcdBackupConfigProviderContextKey key under which the current PrivilegedEtcdBackupConfigProvider is kept in the ctx
+	// PrivilegedEtcdBackupConfigProviderContextKey key under which the current PrivilegedEtcdBackupConfigProvider is kept in the ctx.
 	PrivilegedEtcdBackupConfigProviderContextKey kubermaticcontext.Key = "privileged-etcdbackupconfig-provider"
 
-	// EtcdRestoreProviderContextKey key under which the current EtcdRestoreProvider is kept in the ctx
+	// EtcdRestoreProviderContextKey key under which the current EtcdRestoreProvider is kept in the ctx.
 	EtcdRestoreProviderContextKey kubermaticcontext.Key = "etcdbrestore-provider"
 
-	// PrivilegedEtcdRestoreProviderContextKey key under which the current PrivilegedEtcdRestoreProvider is kept in the ctx
+	// PrivilegedEtcdRestoreProviderContextKey key under which the current PrivilegedEtcdRestoreProvider is kept in the ctx.
 	PrivilegedEtcdRestoreProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-provider"
 
-	// EtcdBackupConfigProjectProviderContextKey key under which the current EtcdBackupConfigProjectProvider is kept in the ctx
+	// EtcdBackupConfigProjectProviderContextKey key under which the current EtcdBackupConfigProjectProvider is kept in the ctx.
 	EtcdBackupConfigProjectProviderContextKey kubermaticcontext.Key = "etcdbackupconfig-project-provider"
 
-	// PrivilegedEtcdBackupConfigProjectProviderContextKey key under which the current PrivilegedEtcdBackupConfigProjectProvider is kept in the ctx
+	// PrivilegedEtcdBackupConfigProjectProviderContextKey key under which the current PrivilegedEtcdBackupConfigProjectProvider is kept in the ctx.
 	PrivilegedEtcdBackupConfigProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdbackupconfig-project-provider"
 
-	// EtcdRestoreProjectProviderContextKey key under which the current EtcdRestoreProjectProvider is kept in the ctx
+	// EtcdRestoreProjectProviderContextKey key under which the current EtcdRestoreProjectProvider is kept in the ctx.
 	EtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "etcdbrestore-project-provider"
 
-	// PrivilegedEtcdRestoreProjectProviderContextKey key under which the current PrivilegedEtcdRestoreProjectProvider is kept in the ctx
+	// PrivilegedEtcdRestoreProjectProviderContextKey key under which the current PrivilegedEtcdRestoreProjectProvider is kept in the ctx.
 	PrivilegedEtcdRestoreProjectProviderContextKey kubermaticcontext.Key = "privileged-etcdrestore-project-provider"
+
+	// BackupCredentialsProviderContextKey key under which the current BackupCredentialsProvider is kept in the ctx.
+	BackupCredentialsProviderContextKey kubermaticcontext.Key = "backupcredentials-provider"
+
+	// PrivilegedMLAAdminSettingProviderContextKey key under which the current PrivilegedMLAAdminSettingProvider is kept in the ctx.
+	PrivilegedMLAAdminSettingProviderContextKey kubermaticcontext.Key = "privileged-mla-admin-setting-provider"
 
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
 
-// seedClusterGetter defines functionality to retrieve a seed name
+// Now stubbed out to allow testing.
+var Now = time.Now
+
+// seedClusterGetter defines functionality to retrieve a seed name.
 type seedClusterGetter interface {
 	GetSeedCluster() apiv1.SeedCluster
 }
 
-// SetClusterProvider is a middleware that injects the current ClusterProvider into the ctx
+// SetClusterProvider is a middleware that injects the current ClusterProvider into the ctx.
 func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
+			clusterProvider, ctx, err := GetClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
 			if err != nil {
 				return nil, err
 			}
@@ -134,11 +145,11 @@ func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, se
 	}
 }
 
-// SetPrivilegedClusterProvider is a middleware that injects the current ClusterProvider into the ctx
+// SetPrivilegedClusterProvider is a middleware that injects the current ClusterProvider into the ctx.
 func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
+			clusterProvider, ctx, err := GetClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
 			if err != nil {
 				return nil, err
 			}
@@ -152,7 +163,7 @@ func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProvider
 }
 
 // UserSaver is a middleware that checks if authenticated user already exists in the database
-// next it creates/retrieve an internal object (kubermaticv1.User) and stores it the ctx under UserCRContexKey
+// next it creates/retrieve an internal object (kubermaticv1.User) and stores it the ctx under UserCRContexKey.
 func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -162,29 +173,51 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 			}
 			authenticatedUser := rawAuthenticatesUser.(apiv1.User)
 
-			user, err := userProvider.UserByEmail(authenticatedUser.Email)
+			user, err := userProvider.UserByEmail(ctx, authenticatedUser.Email)
 			if err != nil {
-				if err != provider.ErrNotFound {
+				if !errors.Is(err, provider.ErrNotFound) {
 					return nil, common.KubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
-				user, err = userProvider.CreateUser(authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
+				user, err = userProvider.CreateUser(ctx, authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
 				if err != nil {
 					if !kerrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
 					}
-					if user, err = userProvider.UserByEmail(authenticatedUser.Email); err != nil {
+					if user, err = userProvider.UserByEmail(ctx, authenticatedUser.Email); err != nil {
 						return nil, common.KubernetesErrorToHTTPError(err)
 					}
 				}
 			}
-			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+
+			now := Now().UTC()
+
+			// Throttle the last seen update to once a minute not to pressure the K8S API too much.
+			if !user.Status.LastSeen.IsZero() && now.Sub(user.Status.LastSeen.Time).Minutes() < 1.0 {
+				return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+			}
+
+			updatedUser := user.DeepCopy()
+			updatedUser.Status.LastSeen = metav1.NewTime(now)
+			updatedUser, err = userProvider.UpdateUser(ctx, updatedUser)
+
+			// Ignore conflict error during update of the lastSeen field as it is not super important.
+			// It can be updated next time.
+			if kerrors.IsConflict(err) {
+				return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
+			}
+
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, updatedUser), request)
 		}
 	}
 }
 
 // UserInfoUnauthorized tries to build userInfo for not authenticated (token) user
-// instead it reads the user_id from the request and finds the associated user in the database
+// instead it reads the user_id from the request and finds the associated user in the database.
 func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -198,7 +231,7 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 			}
 			userID := userIDGetter.GetUserID()
 			projectID := prjIDGetter.GetProjectID()
-			user, err := userProvider.UserByID(userID)
+			user, err := userProvider.UserByID(ctx, userID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -207,7 +240,7 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 				uInfo := &provider.UserInfo{Email: user.Spec.Email, IsAdmin: true}
 				return next(context.WithValue(ctx, UserInfoContextKey, uInfo), request)
 			}
-			uInfo, err := createUserInfo(user, projectID, userProjectMapper)
+			uInfo, err := createUserInfo(ctx, user, projectID, userProjectMapper)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -216,7 +249,7 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 	}
 }
 
-// TokenVerifier knows how to verify a token from the incoming request
+// TokenVerifier knows how to verify a token from the incoming request.
 func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -238,7 +271,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 			defer cancel()
 			claims, err := tokenVerifier.Verify(verifyCtx, token)
 			if err != nil {
-				return nil, k8cerrors.New(http.StatusUnauthorized, fmt.Sprintf("access denied due to an invalid token, details = %v", err))
+				return nil, k8cerrors.New(http.StatusUnauthorized, fmt.Sprintf("access denied, invalid token: %v", err))
 			}
 
 			if claims.Subject == "" {
@@ -262,7 +295,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 				return nil, k8cerrors.NewNotAuthorized()
 			}
 
-			if err := checkBlockedTokens(claims.Email, token, userProvider); err != nil {
+			if err := checkBlockedTokens(ctx, claims.Email, token, userProvider); err != nil {
 				return nil, err
 			}
 
@@ -272,13 +305,13 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 	}
 }
 
-// Addons is a middleware that injects the current AddonProvider into the ctx
+// Addons is a middleware that injects the current AddonProvider into the ctx.
 func Addons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			addonProvider, err := getAddonProvider(clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			addonProvider, err := getAddonProvider(ctx, clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -288,12 +321,12 @@ func Addons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderG
 	}
 }
 
-// PrivilegedAddons is a middleware that injects the current PrivilegedAddonProvider into the ctx
+// PrivilegedAddons is a middleware that injects the current PrivilegedAddonProvider into the ctx.
 func PrivilegedAddons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			addonProvider, err := getAddonProvider(clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			addonProvider, err := getAddonProvider(ctx, clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -304,7 +337,7 @@ func PrivilegedAddons(clusterProviderGetter provider.ClusterProviderGetter, addo
 	}
 }
 
-func getAddonProvider(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AddonProvider, error) {
+func getAddonProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AddonProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -316,7 +349,7 @@ func getAddonProvider(clusterProviderGetter provider.ClusterProviderGetter, addo
 			if err != nil {
 				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -331,7 +364,7 @@ func getAddonProvider(clusterProviderGetter provider.ClusterProviderGetter, addo
 	return addonProviderGetter(seed)
 }
 
-// TokenExtractor knows how to extract a token from the incoming request
+// TokenExtractor knows how to extract a token from the incoming request.
 func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		token, err := o.Extract(r)
@@ -342,11 +375,11 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	}
 }
 
-func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
+func createUserInfo(ctx context.Context, user *kubermaticv1.User, projectID string, userProjectMapper provider.ProjectMemberMapper) (*provider.UserInfo, error) {
 	var group string
 	if projectID != "" {
 		var err error
-		group, err = userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
+		group, err = userProjectMapper.MapUserToGroup(ctx, user.Spec.Email, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -355,7 +388,7 @@ func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMap
 	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
 }
 
-func getClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {
+func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {
 	getter, ok := request.(seedClusterGetter)
 	if !ok {
 		return nil, nil, fmt.Errorf("request is no dcGetter")
@@ -382,28 +415,28 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 	return clusterProvider, ctx, nil
 }
 
-func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kubermaticapiv1.Seed, clusterProviderGetter provider.ClusterProviderGetter, clusterID string) (provider.ClusterProvider, context.Context, error) {
+func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kubermaticv1.Seed, clusterProviderGetter provider.ClusterProviderGetter, clusterID string) (provider.ClusterProvider, context.Context, error) {
 	for _, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
 			return nil, ctx, k8cerrors.NewNotFound("cluster-provider", clusterID)
 		}
-		if clusterProvider.IsCluster(clusterID) {
+		if clusterProvider.IsCluster(ctx, clusterID) {
 			return clusterProvider, ctx, nil
 		}
 	}
 	return nil, ctx, k8cerrors.NewNotFound("cluster-provider", clusterID)
 }
 
-func checkBlockedTokens(email, token string, userProvider provider.UserProvider) error {
-	user, err := userProvider.UserByEmail(email)
+func checkBlockedTokens(ctx context.Context, email, token string, userProvider provider.UserProvider) error {
+	user, err := userProvider.UserByEmail(ctx, email)
 	if err != nil {
-		if err != provider.ErrNotFound {
+		if !errors.Is(err, provider.ErrNotFound) {
 			return common.KubernetesErrorToHTTPError(err)
 		}
 		return nil
 	}
-	blockedTokens, err := userProvider.GetUserBlacklistTokens(user)
+	blockedTokens, err := userProvider.GetInvalidatedTokens(ctx, user)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
@@ -415,20 +448,20 @@ func checkBlockedTokens(email, token string, userProvider provider.UserProvider)
 	return nil
 }
 
-// SetSeedsGetter injects the current SeedsGetter into the ctx
+// SetSeedsGetter injects the current SeedsGetter into the ctx.
 func SetSeedsGetter(seedsGetter provider.SeedsGetter) transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		return context.WithValue(ctx, SeedsGetterContextKey, seedsGetter)
 	}
 }
 
-// Constraints is a middleware that injects the current ConstraintProvider into the ctx
+// Constraints is a middleware that injects the current ConstraintProvider into the ctx.
 func Constraints(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			constraintProvider, err := getConstraintProvider(clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			constraintProvider, err := getConstraintProvider(ctx, clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -438,12 +471,12 @@ func Constraints(clusterProviderGetter provider.ClusterProviderGetter, constrain
 	}
 }
 
-// PrivilegedConstraints is a middleware that injects the current PrivilegedConstraintProvider into the ctx
+// PrivilegedConstraints is a middleware that injects the current PrivilegedConstraintProvider into the ctx.
 func PrivilegedConstraints(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			constraintProvider, err := getConstraintProvider(clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			constraintProvider, err := getConstraintProvider(ctx, clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -454,7 +487,7 @@ func PrivilegedConstraints(clusterProviderGetter provider.ClusterProviderGetter,
 	}
 }
 
-func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.ConstraintProvider, error) {
+func getConstraintProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.ConstraintProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -466,7 +499,7 @@ func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter,
 			if err != nil {
 				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -481,13 +514,13 @@ func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter,
 	return constraintProviderGetter(seed)
 }
 
-// Alertmanagers is a middleware that injects the current AlertmanagerProvider into the ctx
+// Alertmanagers is a middleware that injects the current AlertmanagerProvider into the ctx.
 func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			alertmanagerProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			alertmanagerProvider, err := getAlertmanagerProvider(ctx, clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -497,12 +530,12 @@ func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertma
 	}
 }
 
-// PrivilegedAlertmanagers is a middleware that injects the current PrivilegedAlertmanagerProvider into the ctx
+// PrivilegedAlertmanagers is a middleware that injects the current PrivilegedAlertmanagerProvider into the ctx.
 func PrivilegedAlertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			alertmanagerProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			alertmanagerProvider, err := getAlertmanagerProvider(ctx, clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -513,7 +546,7 @@ func PrivilegedAlertmanagers(clusterProviderGetter provider.ClusterProviderGette
 	}
 }
 
-func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AlertmanagerProvider, error) {
+func getAlertmanagerProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AlertmanagerProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -525,7 +558,7 @@ func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGette
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -540,13 +573,13 @@ func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGette
 	return alertmanagerProviderGetter(seed)
 }
 
-// RuleGroups is a middleware that injects the current RuleGroupProvider into the ctx
+// RuleGroups is a middleware that injects the current RuleGroupProvider into the ctx.
 func RuleGroups(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			ruleGroupProvider, err := getRuleGroupProvider(clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ruleGroupProvider, err := getRuleGroupProvider(ctx, clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -556,12 +589,12 @@ func RuleGroups(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupP
 	}
 }
 
-// PrivilegedRuleGroups is a middleware that injects the current PrivilegedRuleGroupProvider into the ctx
+// PrivilegedRuleGroups is a middleware that injects the current PrivilegedRuleGroupProvider into the ctx.
 func PrivilegedRuleGroups(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			ruleGroupProvider, err := getRuleGroupProvider(clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ruleGroupProvider, err := getRuleGroupProvider(ctx, clusterProviderGetter, ruleGroupProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -572,7 +605,7 @@ func PrivilegedRuleGroups(clusterProviderGetter provider.ClusterProviderGetter, 
 	}
 }
 
-func getRuleGroupProvider(clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.RuleGroupProvider, error) {
+func getRuleGroupProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, ruleGroupProviderGetter provider.RuleGroupProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.RuleGroupProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -584,7 +617,7 @@ func getRuleGroupProvider(clusterProviderGetter provider.ClusterProviderGetter, 
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -599,13 +632,13 @@ func getRuleGroupProvider(clusterProviderGetter provider.ClusterProviderGetter, 
 	return ruleGroupProviderGetter(seed)
 }
 
-// EtcdBackupConfig is a middleware that injects the current EtcdBackupConfigProvider into the ctx
+// EtcdBackupConfig is a middleware that injects the current EtcdBackupConfigProvider into the ctx.
 func EtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			etcdBackupConfigProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			etcdBackupConfigProvider, err := getEtcdBackupConfigProvider(ctx, clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -615,12 +648,12 @@ func EtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGetter, etcd
 	}
 }
 
-// PrivilegedEtcdBackupConfig is a middleware that injects the current PrivilegedEtcdBackupConfigProvider into the ctx
+// PrivilegedEtcdBackupConfig is a middleware that injects the current PrivilegedEtcdBackupConfigProvider into the ctx.
 func PrivilegedEtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			ebcProvider, err := getEtcdBackupConfigProvider(clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			ebcProvider, err := getEtcdBackupConfigProvider(ctx, clusterProviderGetter, etcdBackupConfigProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -631,7 +664,7 @@ func PrivilegedEtcdBackupConfig(clusterProviderGetter provider.ClusterProviderGe
 	}
 }
 
-func getEtcdBackupConfigProvider(clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdBackupConfigProvider, error) {
+func getEtcdBackupConfigProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdBackupConfigProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -643,7 +676,7 @@ func getEtcdBackupConfigProvider(clusterProviderGetter provider.ClusterProviderG
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -658,13 +691,13 @@ func getEtcdBackupConfigProvider(clusterProviderGetter provider.ClusterProviderG
 	return etcdBackupConfigProviderGetter(seed)
 }
 
-// EtcdRestore is a middleware that injects the current EtcdRestoreProvider into the ctx
+// EtcdRestore is a middleware that injects the current EtcdRestoreProvider into the ctx.
 func EtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			etcdRestoreProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			etcdRestoreProvider, err := getEtcdRestoreProvider(ctx, clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -674,12 +707,12 @@ func EtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdResto
 	}
 }
 
-// PrivilegedEtcdRestore is a middleware that injects the current PrivilegedEtcdRestoreProvider into the ctx
+// PrivilegedEtcdRestore is a middleware that injects the current PrivilegedEtcdRestoreProvider into the ctx.
 func PrivilegedEtcdRestore(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			erProvider, err := getEtcdRestoreProvider(clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			erProvider, err := getEtcdRestoreProvider(ctx, clusterProviderGetter, etcdRestoreProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -690,7 +723,7 @@ func PrivilegedEtcdRestore(clusterProviderGetter provider.ClusterProviderGetter,
 	}
 }
 
-func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdRestoreProvider, error) {
+func getEtcdRestoreProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, etcdRestoreProviderGetter provider.EtcdRestoreProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.EtcdRestoreProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
@@ -702,7 +735,7 @@ func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if clusterProvider.IsCluster(clusterID) {
+			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
 				break
 			}
@@ -717,7 +750,7 @@ func getEtcdRestoreProvider(clusterProviderGetter provider.ClusterProviderGetter
 	return etcdRestoreProviderGetter(seed)
 }
 
-// EtcdBackupConfigProject is a middleware that injects the current EtcdBackupConfigProjectProvider into the ctx
+// EtcdBackupConfigProject is a middleware that injects the current EtcdBackupConfigProjectProvider into the ctx.
 func EtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -731,7 +764,7 @@ func EtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.Etcd
 	}
 }
 
-// PrivilegedEtcdBackupConfigProject is a middleware that injects the current PrivilegedEtcdBackupConfigProjectProvider into the ctx
+// PrivilegedEtcdBackupConfigProject is a middleware that injects the current PrivilegedEtcdBackupConfigProjectProvider into the ctx.
 func PrivilegedEtcdBackupConfigProject(etcdBackupConfigProjectProviderGetter provider.EtcdBackupConfigProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -755,7 +788,7 @@ func getEtcdBackupConfigProjectProvider(etcdBackupConfigProjectProviderGetter pr
 	return etcdBackupConfigProjectProviderGetter(seeds)
 }
 
-// EtcdRestoreProject is a middleware that injects the current EtcdRestoreProjectProvider into the ctx
+// EtcdRestoreProject is a middleware that injects the current EtcdRestoreProjectProvider into the ctx.
 func EtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -769,7 +802,7 @@ func EtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestorePro
 	}
 }
 
-// PrivilegedEtcdRestoreProject is a middleware that injects the current PrivilegedEtcdRestoreProjectProvider into the ctx
+// PrivilegedEtcdRestoreProject is a middleware that injects the current PrivilegedEtcdRestoreProjectProvider into the ctx.
 func PrivilegedEtcdRestoreProject(etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -791,4 +824,73 @@ func getEtcdRestoreProjectProvider(etcdRestoreProjectProviderGetter provider.Etc
 	}
 
 	return etcdRestoreProjectProviderGetter(seeds)
+}
+
+// BackupCredentials is a middleware that injects the current BackupCredentialsProvider into the ctx.
+func BackupCredentials(backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			seeds, err := seedsGetter()
+			if err != nil {
+				return nil, err
+			}
+
+			seed, found := seeds[seedCluster.SeedName]
+			if !found {
+				return nil, k8cerrors.NewBadRequest("couldn't find seed %q", seedCluster.SeedName)
+			}
+
+			backupCredentialsProvider, err := backupCredentialsProviderGetter(seed)
+			if err != nil {
+				return nil, err
+			}
+
+			ctx = context.WithValue(ctx, BackupCredentialsProviderContextKey, backupCredentialsProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+// PrivilegedMLAAdminSetting is a middleware that injects the current PrivilegedMLAAdminSettingProvider into the ctx.
+func PrivilegedMLAAdminSetting(clusterProviderGetter provider.ClusterProviderGetter, mlaAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+			privilegedMLAAdminSettingProvider, err := getPrivilegedMLAAdminSettingProvider(ctx, clusterProviderGetter, mlaAdminSettingProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, PrivilegedMLAAdminSettingProviderContextKey, privilegedMLAAdminSettingProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getPrivilegedMLAAdminSettingProvider(ctx context.Context, clusterProviderGetter provider.ClusterProviderGetter, mlaAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.PrivilegedMLAAdminSettingProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if clusterProvider.IsCluster(ctx, clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
+	}
+
+	seed, found := seeds[seedName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find seed %q", seedName)
+	}
+
+	return mlaAdminSettingProviderGetter(seed)
 }

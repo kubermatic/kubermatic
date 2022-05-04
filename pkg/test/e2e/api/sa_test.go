@@ -1,4 +1,4 @@
-// +build e2e
+//go:build e2e
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -135,7 +135,7 @@ func TestTokenAccessForProject(t *testing.T) {
 			}
 
 			// check if SA can add member to the project
-			_, err = apiRunnerWithSAToken.AddProjectUser(project.ID, "roxy2@loodse.com", "roxy2", "viewers")
+			_, err = apiRunnerWithSAToken.AddProjectUser(project.ID, "roxy2@kubermatic.com", "roxy2", "viewers")
 			switch tc.group {
 			case rbac.ViewerGroupNamePrefix:
 			case rbac.EditorGroupNamePrefix:
@@ -186,7 +186,7 @@ func TestTokenAccessForProject(t *testing.T) {
 					t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 				}
 			case rbac.ProjectManagerGroupNamePrefix:
-				newSAproject, err := apiRunnerWithSAToken.CreateProjectBySA(rand.String(10), []string{"roxy2@loodse.com", "roxy@loodse.com"})
+				newSAproject, err := apiRunnerWithSAToken.CreateProjectBySA(rand.String(10), []string{"roxy2@kubermatic.com", "roxy@kubermatic.com"})
 				if err != nil {
 					t.Fatalf("service account in projectmanagers should create a project %v", err)
 				}
@@ -208,7 +208,6 @@ func TestTokenAccessForProject(t *testing.T) {
 			if !strings.Contains(err.Error(), "403") {
 				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 			}
-
 		})
 	}
 }

@@ -18,7 +18,7 @@ package mla
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -47,9 +47,12 @@ func newTestOrgUserGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.O
 		Build()
 	ts := httptest.NewServer(handler)
 
-	grafanaClient := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
+	grafanaClient, err := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
+	assert.Nil(t, err)
 
-	orgUserGrafanaController := newOrgUserGrafanaController(dynamicClient, kubermaticlog.Logger, grafanaClient)
+	orgUserGrafanaController := newOrgUserGrafanaController(dynamicClient, kubermaticlog.Logger, func(ctx context.Context) (*grafanasdk.Client, error) {
+		return grafanaClient, nil
+	})
 	reconciler := orgUserGrafanaReconciler{
 		Client:                   dynamicClient,
 		log:                      kubermaticlog.Logger,
@@ -87,7 +90,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -120,7 +123,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -132,22 +135,22 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "lookup user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "add org user",
 					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -168,7 +171,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -180,22 +183,22 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "lookup user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update org user",
 					request:  httptest.NewRequest(http.MethodPatch, "/api/orgs/1/users/1", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User updated"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User updated"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -218,7 +221,7 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
 					},
 					Spec: kubermaticv1.ProjectSpec{
 						Name: "projectName",
@@ -230,17 +233,17 @@ func TestOrgUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "lookup user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},

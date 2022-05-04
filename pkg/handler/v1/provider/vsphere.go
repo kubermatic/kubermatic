@@ -30,12 +30,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got %T", request)
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -45,7 +45,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetsProvider p
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -55,7 +55,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetsProvider p
 			}
 		}
 
-		return providercommon.GetVsphereNetworks(userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
+		return providercommon.GetVsphereNetworks(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 
@@ -66,16 +66,15 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 		req := request.(VSphereNetworksNoCredentialsReq)
 		return providercommon.VsphereNetworksWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider,
 			privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, caBundle)
-
 	}
 }
 
-func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereFoldersReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got %T", request)
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -85,7 +84,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetsProvider pr
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -95,7 +94,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetsProvider pr
 			}
 		}
 
-		return providercommon.GetVsphereFolders(userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
+		return providercommon.GetVsphereFolders(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 

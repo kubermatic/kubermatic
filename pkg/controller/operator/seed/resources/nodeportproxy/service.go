@@ -17,8 +17,8 @@ limitations under the License.
 package nodeportproxy
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,11 +30,11 @@ import (
 // as all existing kubeconfigs for user clusters would be broken.
 
 const (
-	// ServiceName is the name for the created service object
+	// ServiceName is the name for the created service object.
 	ServiceName = "nodeport-proxy"
 )
 
-// ServiceCreator bootstraps the nodeport-proxy service object for a seed cluster resource
+// ServiceCreator bootstraps the nodeport-proxy service object for a seed cluster resource.
 func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return ServiceName, func(s *corev1.Service) (*corev1.Service, error) {
@@ -46,9 +46,28 @@ func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceCreatorGett
 				common.NameLabel: EnvoyDeploymentName,
 			}
 
-			// Copy custom annotations if supplied by seed spec.
+			if s.Annotations == nil {
+				s.Annotations = make(map[string]string)
+			}
+
+			// seed.Spec.NodeportProxy.Annotations is deprecated and should be removed in the future
+			// To avoid breaking changes we still copy these values over to the service annotations
 			if seed.Spec.NodeportProxy.Annotations != nil {
 				s.Annotations = seed.Spec.NodeportProxy.Annotations
+			}
+
+			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
+			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
+			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				for k, v := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
+					s.Annotations[k] = v
+				}
+			}
+
+			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
+				for _, cidr := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
+					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
+				}
 			}
 
 			// Services need at least one port to be valid, so create it initially.

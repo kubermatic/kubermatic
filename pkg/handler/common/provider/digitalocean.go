@@ -26,7 +26,7 @@ import (
 	"golang.org/x/oauth2"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -40,7 +40,6 @@ var reStandard = regexp.MustCompile("(^s|S)")
 var reOptimized = regexp.MustCompile("(^c|C)")
 
 func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
-
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -62,18 +61,17 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 		return nil, err
 	}
 
-	settings, err := settingsProvider.GetGlobalSettings()
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	return DigitaloceanSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, accessToken)
-
 }
 
 func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.DigitaloceanSizeList, error) {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
+	client := godo.NewClient(oauth2.NewClient(ctx, static))
 
 	listOptions := &godo.ListOptions{
 		Page:    1,
@@ -82,7 +80,7 @@ func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentV
 
 	sizes, _, err := client.Sizes.List(ctx, listOptions)
 	if err != nil {
-		return apiv1.DigitaloceanSizeList{}, fmt.Errorf("failed to list sizes: %v", err)
+		return apiv1.DigitaloceanSizeList{}, fmt.Errorf("failed to list sizes: %w", err)
 	}
 
 	sizeList := apiv1.DigitaloceanSizeList{

@@ -17,7 +17,7 @@ limitations under the License.
 package etcd
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -30,14 +30,14 @@ type pdbData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the etcd PodDisruptionBudget
+// PodDisruptionBudgetCreator returns a func to create/update the etcd PodDisruptionBudget.
 func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.EtcdPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt((resources.EtcdClusterSize / 2) + 1)
 			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
-					MatchLabels: getBasePodLabels(data.Cluster()),
+					MatchLabels: GetBasePodLabels(data.Cluster()),
 				},
 				MinAvailable: &minAvailable,
 			}
@@ -45,5 +45,4 @@ func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudg
 			return pdb, nil
 		}
 	}
-
 }

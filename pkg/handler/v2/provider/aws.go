@@ -48,7 +48,7 @@ type awsSizeNoCredentialsReq struct {
 	Architecture string `json:"architecture,omitempty"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req awsSizeNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -81,10 +81,49 @@ func DecodeAWSSizeNoCredentialsReq(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
+// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials.
 func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(cluster.GetClusterReq)
 		return providercommon.AWSSubnetNoCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
 	}
+}
+
+// AWSCommonReq represent a request with common parameters for .
+type AWSCommonReq struct {
+	// in: header
+	// name: AccessKeyID
+	AccessKeyID string
+	// in: header
+	// name: SecretAccessKey
+	SecretAccessKey string
+	// in: header
+	// name: Credential
+	Credential string
+	// in: header
+	// name: AssumeRoleARN
+	AssumeRoleARN string
+	// in: header
+	// name: AssumeRoleExternalID
+	AssumeRoleExternalID string
+}
+
+func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AWSCommonReq
+
+	req.AccessKeyID = r.Header.Get("AccessKeyID")
+	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
+	req.Credential = r.Header.Get("Credential")
+	req.AssumeRoleARN = r.Header.Get("AssumeRoleARN")
+	req.AssumeRoleExternalID = r.Header.Get("AssumeRoleExternalID")
+
+	return req, nil
+}
+
+// Validate validates AWSCommonReq request.
+func (req AWSCommonReq) Validate() error {
+	if len(req.Credential) == 0 && len(req.AccessKeyID) == 0 && len(req.SecretAccessKey) == 0 {
+		return fmt.Errorf("AWS credentials cannot be empty")
+	}
+	return nil
 }

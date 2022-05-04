@@ -21,45 +21,66 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/go-kit/kit/endpoint"
+	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-
-	"k8s.io/klog"
+	"k8c.io/kubermatic/v2/pkg/version"
 )
 
-func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider,
-	exposeStrategy kubermaticv1.ExposeStrategy, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager, caBundle *x509.CertPool) endpoint.Endpoint {
+func CreateEndpoint(
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter,
+	credentialManager provider.PresetProvider,
+	exposeStrategy kubermaticv1.ExposeStrategy,
+	userInfoGetter provider.UserInfoGetter,
+	settingsProvider provider.SettingsProvider,
+	caBundle *x509.CertPool,
+	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateClusterReq)
-		globalSettings, err := settingsProvider.GetGlobalSettings()
+
+		config, err := configGetter(ctx)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, updateManager)
+
+		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
 		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider,
-			seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle)
+			seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
 	}
 }
 
-// ListEndpoint list clusters for the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// ListEndpoint list clusters for the given project.
+func ListEndpoint(
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter,
+	clusterProviderGetter provider.ClusterProviderGetter,
+	userInfoGetter provider.UserInfoGetter,
+	configGetter provider.KubermaticConfigurationGetter,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetProjectRq)
 		allClusters := make([]*apiv1.Cluster, 0)
@@ -73,10 +94,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			// if a Seed is bad, do not forward that error to the user, but only log
 			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
-				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
+				kubermaticlog.Logger.Errorw("failed to create cluster provider", "seed", seed.Name, zap.Error(err))
 				continue
 			}
-			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID)
+			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -87,10 +108,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
-		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID)
+		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID, configGetter)
 	}
 }
 
@@ -102,11 +123,11 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProv
 }
 
 func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
+	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		return handlercommon.PatchEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Patch, seedsGetter,
-			projectProvider, privilegedProjectProvider, caBundle)
+			projectProvider, privilegedProjectProvider, caBundle, configGetter, features)
 	}
 }
 
@@ -124,10 +145,10 @@ func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
-		return handlercommon.MigrateEndpointToExternalCCM(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider)
+		return handlercommon.MigrateEndpointToExternalCCM(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider, configGetter)
 	}
 }
 
@@ -176,7 +197,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, privileg
 			return nil, err
 		}
 
-		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(cluster))
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(ctx, cluster))
 	}
 }
 
@@ -190,7 +211,7 @@ func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider, privile
 			return nil, err
 		}
 
-		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(cluster))
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(ctx, cluster))
 	}
 }
 
@@ -202,7 +223,7 @@ type adminTokenReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-// GetSeedCluster returns the AssignSSHKeysReq object
+// GetSeedCluster returns the AssignSSHKeysReq object.
 func (req adminTokenReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -249,7 +270,7 @@ func DecodeListSSHKeysReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-// GetSeedCluster returns the AssignSSHKeysReq object
+// GetSeedCluster returns the AssignSSHKeysReq object.
 func (req ListSSHKeysReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -266,7 +287,7 @@ type AssignSSHKeysReq struct {
 	KeyID string `json:"key_id"`
 }
 
-// GetSeedCluster returns the AssignSSHKeysReq object
+// GetSeedCluster returns the AssignSSHKeysReq object.
 func (req AssignSSHKeysReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -308,7 +329,7 @@ type EventsReq struct {
 	Type string `json:"type,omitempty"`
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req EventsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -366,14 +387,14 @@ func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.ClusterID = clusterID
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req PatchReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -395,7 +416,7 @@ type DeleteReq struct {
 	DeleteLoadBalancers bool
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req DeleteReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -439,7 +460,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // GetClusterReq defines HTTP request for getCluster endpoint.
-// swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2 getClusterMetricsV2 listNamespaceV2 getClusterUpgradesV2 listAWSSizesNoCredentialsV2 listAWSSubnetsNoCredentialsV2 listGCPNetworksNoCredentialsV2 listGCPZonesNoCredentialsV2 listHetznerSizesNoCredentialsV2 listDigitaloceanSizesNoCredentialsV2 migrateClusterToExternalCCM getClusterOidc
+// swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2 getClusterMetricsV2 listNamespaceV2 getClusterUpgradesV2 listAWSSizesNoCredentialsV2 listAWSSubnetsNoCredentialsV2 listGCPNetworksNoCredentialsV2 listGCPZonesNoCredentialsV2 listHetznerSizesNoCredentialsV2 listDigitaloceanSizesNoCredentialsV2 migrateClusterToExternalCCM getClusterOidc listKubevirtVmiPresetsNoCredentials getKubevirtVmiPresetNoCredentials listKubevirtStorageClassesNoCredentials getKubevirtStorageClassesNoCredentials
 type GetClusterReq struct {
 	common.ProjectReq
 	// in: path
@@ -465,7 +486,7 @@ func DecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req GetClusterReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
@@ -483,7 +504,7 @@ type CreateClusterReq struct {
 	seedName string
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req CreateClusterReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		SeedName: req.seedName,
@@ -515,12 +536,12 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates CreateEndpoint request
-func (req CreateClusterReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
+// Validate validates CreateEndpoint request.
+func (req CreateClusterReq) Validate(updateManager common.UpdateManager) error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
 	}
-	return handlercommon.ValidateClusterSpec(clusterType, updateManager, req.Body)
+	return handlercommon.ValidateClusterSpec(updateManager, req.Body)
 }
 
 func FindSeedNameForDatacenter(ctx context.Context, datacenter string) (string, error) {
@@ -530,7 +551,7 @@ func FindSeedNameForDatacenter(ctx context.Context, datacenter string) (string, 
 	}
 	seeds, err := seedsGetter()
 	if err != nil {
-		return "", fmt.Errorf("failed to list seeds: %v", err)
+		return "", fmt.Errorf("failed to list seeds: %w", err)
 	}
 	for name, seed := range seeds {
 		if _, ok := seed.Spec.Datacenters[datacenter]; ok {
@@ -546,8 +567,8 @@ func GetClusterProviderFromRequest(
 	request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
-
+	userInfoGetter provider.UserInfoGetter,
+) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 	req, ok := request.(GetClusterReq)
 	if !ok {
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")

@@ -19,14 +19,12 @@ package masterconstraintsynchronizer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -42,7 +40,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraints on the master cluster to the seed clusters.
-	ControllerName = "master_constraint_syncing_controller"
+	ControllerName = "kkp-master-constraint-synchronizer"
 )
 
 type reconciler struct {
@@ -57,8 +55,8 @@ func Add(ctx context.Context,
 	masterMgr manager.Manager,
 	namespace string,
 	seedManagers map[string]manager.Manager,
-	log *zap.SugaredLogger) error {
-
+	log *zap.SugaredLogger,
+) error {
 	log = log.Named(ControllerName)
 	r := &reconciler{
 		log:          log,
@@ -72,7 +70,7 @@ func Add(ctx context.Context,
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -81,7 +79,7 @@ func Add(ctx context.Context,
 
 	// Watch for changes to Constraints
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Constraint{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
-		return fmt.Errorf("failed to watch constraints: %v", err)
+		return fmt.Errorf("failed to watch constraints: %w", err)
 	}
 
 	return nil
@@ -98,15 +96,12 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 	}
 }
 
-// Reconcile reconciles the kubermatic constraints in the master cluster and syncs them to all seeds
+// Reconcile reconciles the kubermatic constraints in the master cluster and syncs them to all seeds.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("resource", request.Name)
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)
-	if controllerutil.IsCacheNotStarted(err) {
-		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -116,7 +111,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) syncAllSeeds(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, action func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint) error) error {
 	for seedName, seedClient := range r.seedClients {
-
 		log := log.With("seed", seedName)
 
 		log.Debug("Reconciling constraint with seed")
@@ -131,31 +125,21 @@ func (r *reconciler) syncAllSeeds(ctx context.Context, log *zap.SugaredLogger, c
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
-
 	constraint := &kubermaticv1.Constraint{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, constraint); err != nil {
-		if controllerutil.IsCacheNotStarted(err) {
-			return err
-		}
-
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	// handling deletion
 	if !constraint.DeletionTimestamp.IsZero() {
-
 		if err := r.handleDeletion(ctx, log, constraint); err != nil {
-			return fmt.Errorf("handling deletion of constraint: %v", err)
+			return fmt.Errorf("handling deletion of constraint: %w", err)
 		}
 		return nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer) {
-		oldconstraint := constraint.DeepCopy()
-		kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
-			return fmt.Errorf("failed to set constraint finalizer %s: %v", constraint.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
@@ -168,7 +152,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint) error {
-
 	// if finalizer not set to master Constraint then return
 	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer) {
 		return nil
@@ -188,10 +171,5 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return err
 	}
 
-	oldconstraint := constraint.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
-	if err := r.masterClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
-		return fmt.Errorf("failed to remove constraint finalizer %s: %v", constraint.Name, err)
-	}
-	return nil
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraint, kubermaticapiv1.GatekeeperSeedConstraintCleanupFinalizer)
 }

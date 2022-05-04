@@ -20,11 +20,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -42,48 +42,42 @@ const (
 	serviceAccountName = "kubermatic"
 )
 
-var (
-	inPlaceConversionFlag = cli.BoolFlag{
-		Name:  "in-place",
-		Usage: "Update the given kubeconfig file instead of outputting to stdout",
-	}
-	namespaceFlag = cli.StringFlag{
-		Name:  "namespace",
-		Value: metav1.NamespaceSystem,
-		Usage: "Namespace to create ServiceAccount and ClusterRoleBinding in",
-	}
-)
-
-func ConvertKubeconfigCommand(logger *logrus.Logger) cli.Command {
-	return cli.Command{
-		Name:      "convert-kubeconfig",
-		Usage:     "Takes a kubeconfig and creates a ServiceAccount with cluster-admin permissions in all clusters, then updates the kubeconfig to use the ServiceAccount's token",
-		Action:    ConvertKubeconfigAction(logger),
-		ArgsUsage: "KUBECONFIG",
-		Flags: []cli.Flag{
-			inPlaceConversionFlag,
-			namespaceFlag,
-		},
-	}
+type ConvertKubeconfigOptions struct {
+	InPlace   bool
+	Namespace string
 }
 
-func ConvertKubeconfigAction(logger *logrus.Logger) cli.ActionFunc {
-	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
+func ConvertKubeconfigCommand(logger *logrus.Logger) *cobra.Command {
+	opt := ConvertKubeconfigOptions{
+		Namespace: metav1.NamespaceSystem,
+	}
+
+	cmd := &cobra.Command{
+		Use:          "convert-kubeconfig KUBECONFIG",
+		Short:        "convert a kubeconfig to use static credentials for use in Seeds",
+		Long:         "Takes a kubeconfig and creates a ServiceAccount with cluster-admin permissions in all clusters, then updates the kubeconfig to use the ServiceAccount's token",
+		RunE:         ConvertKubeconfigFunc(logger, &opt),
+		SilenceUsage: true,
+	}
+
+	cmd.PersistentFlags().BoolVarP(&opt.InPlace, "in-place", "i", false, "update the given kubeconfig file instead of outputting to stdout")
+	cmd.PersistentFlags().StringVarP(&opt.Namespace, "namespace", "n", opt.Namespace, "namespace to create ServiceAccount and ClusterRoleBinding in")
+
+	return cmd
+}
+
+func ConvertKubeconfigFunc(logger *logrus.Logger, options *ConvertKubeconfigOptions) cobraFuncE {
+	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		var err error
 
-		filename := ctx.Args().First()
-		if filename == "" {
+		if len(args) == 0 {
 			return errors.New("no kubeconfig file given")
 		}
+		filename := args[0]
 
 		kubeconfig, err := readKubeconfig(filename)
 		if err != nil {
-			return fmt.Errorf("failed to read kubeconfig: %v", err)
-		}
-
-		namespace := ctx.String(namespaceFlag.Name)
-		if namespace == "" {
-			namespace = metav1.NamespaceSystem
+			return fmt.Errorf("failed to read kubeconfig: %w", err)
 		}
 
 		for clusterName := range kubeconfig.Clusters {
@@ -108,34 +102,34 @@ func ConvertKubeconfigAction(logger *logrus.Logger) cli.ActionFunc {
 
 			clientConfig, err := clientcmd.NewInteractiveClientConfig(*kubeconfig, contextName, nil, nil, nil).ClientConfig()
 			if err != nil {
-				return fmt.Errorf("failed to create client config: %v", err)
+				return fmt.Errorf("failed to create client config: %w", err)
 			}
 
-			token, err := reconcileCluster(context.Background(), clientConfig, namespace, clog)
+			token, err := reconcileCluster(context.Background(), clientConfig, options.Namespace, clog)
 			if err != nil {
-				return fmt.Errorf("failed to reconcile: %v", err)
+				return fmt.Errorf("failed to reconcile: %w", err)
 			}
 
 			if err := updateKubeconfig(kubeconfig, clusterName, contextName, token); err != nil {
-				return fmt.Errorf("failed to update kubeconfig: %v", err)
+				return fmt.Errorf("failed to update kubeconfig: %w", err)
 			}
 
 			clog.Info("Done converting cluster")
 		}
 
 		output := "-"
-		if ctx.Bool(inPlaceConversionFlag.Name) {
+		if options.InPlace {
 			output = filename
 		}
 
 		if err := writeKubeconfig(kubeconfig, output); err != nil {
-			return fmt.Errorf("failed to save kubeconfig: %v", err)
+			return fmt.Errorf("failed to save kubeconfig: %w", err)
 		}
 
 		logger.Info("All Done")
 
 		return nil
-	}))
+	})
 }
 
 func readKubeconfig(filename string) (*clientcmdapi.Config, error) {
@@ -147,19 +141,19 @@ func readKubeconfig(filename string) (*clientcmdapi.Config, error) {
 	} else {
 		input, err = os.Open(filename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open file: %v", err)
+			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
 		defer input.Close()
 	}
 
-	content, err := ioutil.ReadAll(input)
+	content, err := io.ReadAll(input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read: %v", err)
+		return nil, fmt.Errorf("failed to read: %w", err)
 	}
 
 	config, err := clientcmd.Load(content)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse kubeconfig: %v", err)
+		return nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
 	}
 
 	if config.AuthInfos == nil {
@@ -178,7 +172,7 @@ func readKubeconfig(filename string) (*clientcmdapi.Config, error) {
 func writeKubeconfig(kubeconfig *clientcmdapi.Config, filename string) error {
 	encoded, err := clientcmd.Write(*kubeconfig)
 	if err != nil {
-		return fmt.Errorf("failed to serialize kubeconfig: %v", err)
+		return fmt.Errorf("failed to serialize kubeconfig: %w", err)
 	}
 
 	var output *os.File
@@ -187,13 +181,13 @@ func writeKubeconfig(kubeconfig *clientcmdapi.Config, filename string) error {
 	} else {
 		output, err = os.Create(filename)
 		if err != nil {
-			return fmt.Errorf("failed to open file for writing: %v", err)
+			return fmt.Errorf("failed to open file for writing: %w", err)
 		}
 		defer output.Close()
 	}
 
 	if _, err := output.Write(encoded); err != nil {
-		return fmt.Errorf("failed to write to file: %v", err)
+		return fmt.Errorf("failed to write to file: %w", err)
 	}
 
 	return nil
@@ -233,7 +227,7 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 		HealthProbeBindAddress: "0",
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create Kubernetes client: %v", err)
+		return "", fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
 	cache := mgr.GetCache()
@@ -251,20 +245,20 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		serviceAccountCreatorGetter,
 	}, namespace, client); err != nil {
-		return "", fmt.Errorf("failed to create ServiceAccount: %v", err)
+		return "", fmt.Errorf("failed to create ServiceAccount: %w", err)
 	}
 
 	log.Info("Reconciling ClusterRoleBinding...")
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
 		clusterRoleCreatorGetterFactory(namespace),
 	}, "", client); err != nil {
-		return "", fmt.Errorf("failed to create ClusterRoleBinding: %v", err)
+		return "", fmt.Errorf("failed to create ClusterRoleBinding: %w", err)
 	}
 
 	log.Info("Retrieving ServiceAccount token...")
 	sa := corev1.ServiceAccount{}
 	if err := client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: namespace}, &sa); err != nil {
-		return "", fmt.Errorf("failed to get ServiceAccount: %v", err)
+		return "", fmt.Errorf("failed to get ServiceAccount: %w", err)
 	}
 
 	if len(sa.Secrets) == 0 {
@@ -274,7 +268,7 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 	secretName := sa.Secrets[0].Name
 	secret := corev1.Secret{}
 	if err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret); err != nil {
-		return "", fmt.Errorf("failed to get ServiceAccount token Secret: %v", err)
+		return "", fmt.Errorf("failed to get ServiceAccount token Secret: %w", err)
 	}
 
 	token, ok := secret.Data["token"]

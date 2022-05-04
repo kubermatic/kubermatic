@@ -23,8 +23,7 @@ import (
 	"time"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -32,16 +31,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
+
 const userName = "user-test"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name         string
 		requestName  string
@@ -84,10 +88,11 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			r := &reconciler{
-				log:          kubermaticlog.Logger,
-				recorder:     &record.FakeRecorder{},
-				masterClient: tc.masterClient,
-				seedClients:  map[string]ctrlruntimeclient.Client{"test": tc.seedClient},
+				log:             kubermaticlog.Logger,
+				recorder:        &record.FakeRecorder{},
+				masterClient:    tc.masterClient,
+				seedClients:     map[string]ctrlruntimeclient.Client{"test": tc.seedClient},
+				masterAPIReader: tc.masterClient,
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
@@ -104,6 +109,9 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("failed to get user: %v", err)
 				}
 			} else {
+				seedUser = sanitize(seedUser)
+				tc.expectedUser = sanitize(tc.expectedUser)
+
 				if err != nil {
 					t.Fatalf("failed to get user: %v", err)
 				}
@@ -126,5 +134,12 @@ func generateUser(name string, deleted bool) *kubermaticv1.User {
 		user.DeletionTimestamp = &deleteTime
 		user.Finalizers = append(user.Finalizers, v1.SeedUserCleanupFinalizer)
 	}
+	return user
+}
+
+// Skip problematic fields from the comparison such as `LastSeen` Time field
+// as even DeepCopy does not result in equal internal location field value.
+func sanitize(user *kubermaticv1.User) *kubermaticv1.User {
+	user.Status.LastSeen = metav1.Time{}
 	return user
 }

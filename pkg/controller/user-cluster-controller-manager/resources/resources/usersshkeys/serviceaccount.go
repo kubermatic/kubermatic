@@ -17,6 +17,7 @@ limitations under the License.
 package usersshkeys
 
 import (
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -49,6 +50,9 @@ func RoleCreator() reconciling.NamedRoleCreatorGetter {
 							"get",
 							"list",
 							"watch",
+						},
+						ResourceNames: []string{
+							resources.UserSSHKeys,
 						},
 					},
 				}

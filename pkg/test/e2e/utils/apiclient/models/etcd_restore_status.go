@@ -52,6 +52,8 @@ func (m *EtcdRestoreStatus) validatePhase(formats strfmt.Registry) error {
 	if err := m.Phase.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("phase")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("phase")
 		}
 		return err
 	}
@@ -67,6 +69,8 @@ func (m *EtcdRestoreStatus) validateRestoreTime(formats strfmt.Registry) error {
 	if err := m.RestoreTime.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("restoreTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("restoreTime")
 		}
 		return err
 	}
@@ -97,6 +101,8 @@ func (m *EtcdRestoreStatus) contextValidatePhase(ctx context.Context, formats st
 	if err := m.Phase.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("phase")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("phase")
 		}
 		return err
 	}
@@ -109,6 +115,8 @@ func (m *EtcdRestoreStatus) contextValidateRestoreTime(ctx context.Context, form
 	if err := m.RestoreTime.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("restoreTime")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("restoreTime")
 		}
 		return err
 	}

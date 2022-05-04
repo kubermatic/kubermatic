@@ -25,10 +25,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-test/deep"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -90,23 +94,6 @@ func TestCreateEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusCreated,
 			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 		},
-		{
-			Name:      "validation fails when schedule is set and keep is not",
-			ProjectID: test.GenDefaultProject().Name,
-			ClusterID: test.GenDefaultCluster().Name,
-			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultCluster(),
-			),
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-			EtcdBackupConfig: func() *apiv2.EtcdBackupConfig {
-				ebc := test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name)
-				ebc.Spec.Keep = nil
-				return ebc
-			}(),
-			ExpectedHTTPStatusCode: http.StatusBadRequest,
-			ExpectedResponse:       nil,
-		},
 	}
 
 	for _, tc := range testCases {
@@ -119,9 +106,9 @@ func TestCreateEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, requestURL, bytes.NewBuffer(body))
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -129,11 +116,19 @@ func TestCreateEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, resp.Code, resp.Body.String())
 			}
 			if resp.Code == http.StatusCreated {
-				b, err := json.Marshal(tc.ExpectedResponse)
+				// Remove ID from comparison as its generated on create
+				tc.ExpectedResponse.ID = ""
+
+				resultEBC := &apiv2.EtcdBackupConfig{}
+				err := json.Unmarshal(resp.Body.Bytes(), resultEBC)
 				if err != nil {
-					t.Fatalf("failed to marshal expected response %v", err)
+					t.Fatalf("failed unmarshalling response %v", err)
 				}
-				test.CompareWithResult(t, resp, string(b))
+				resultEBC.ID = ""
+
+				if diff := deep.Equal(tc.ExpectedResponse, resultEBC); len(diff) != 0 {
+					t.Fatalf("Difference in expected and received result %v", diff)
+				}
 			}
 		})
 	}
@@ -143,7 +138,7 @@ func TestGetEndpoint(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		Name                      string
-		EtcdBackupConfigName      string
+		EtcdBackupConfigID        string
 		ProjectID                 string
 		ClusterID                 string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
@@ -152,10 +147,10 @@ func TestGetEndpoint(t *testing.T) {
 		ExpectedHTTPStatusCode    int
 	}{
 		{
-			Name:                 "get etcdbackupconfig that belongs to the given cluster",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "get etcdbackupconfig that belongs to the given cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -166,10 +161,10 @@ func TestGetEndpoint(t *testing.T) {
 			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 		},
 		{
-			Name:                 "get etcdbackupconfig which doesn't exist",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "get etcdbackupconfig which doesn't exist",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -178,10 +173,10 @@ func TestGetEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusNotFound,
 		},
 		{
-			Name:                 "user john cannot get etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "user john cannot get etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -192,10 +187,10 @@ func TestGetEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
-			Name:                 "admin user john can get etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "admin user john can get etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -206,17 +201,31 @@ func TestGetEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 		},
+		{
+			Name:               "get etcdbackupconfig with a complex cluster id",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", "test-ab-cd"),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          "test-ab-cd",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genDefaultClusterWithName("test-ab-cd"),
+				test.GenEtcdBackupConfig("test-1", genDefaultClusterWithName("test-ab-cd"), test.GenDefaultProject().Name),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-1", "test-ab-cd"),
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/etcdbackupconfigs/%s", tc.ProjectID, tc.ClusterID, tc.EtcdBackupConfigName)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/etcdbackupconfigs/%s", tc.ProjectID, tc.ClusterID, tc.EtcdBackupConfigID)
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -231,9 +240,14 @@ func TestGetEndpoint(t *testing.T) {
 
 				test.CompareWithResult(t, resp, string(b))
 			}
-
 		})
 	}
+}
+
+func genDefaultClusterWithName(name string) *kubermaticv1.Cluster {
+	c := test.GenDefaultCluster()
+	c.Name = name
+	return c
 }
 
 func TestListEndpoint(t *testing.T) {
@@ -304,9 +318,9 @@ func TestListEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -322,7 +336,6 @@ func TestListEndpoint(t *testing.T) {
 
 				etcdBackupConfigs.EqualOrDie(expectedEtcdBackupConfigs, t)
 			}
-
 		})
 	}
 }
@@ -331,7 +344,7 @@ func TestDeleteEndpoint(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		Name                      string
-		EtcdBackupConfigName      string
+		EtcdBackupConfigID        string
 		ProjectID                 string
 		ClusterID                 string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
@@ -339,10 +352,10 @@ func TestDeleteEndpoint(t *testing.T) {
 		ExpectedHTTPStatusCode    int
 	}{
 		{
-			Name:                 "delete etcdbackupconfig that belongs to the given cluster",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "delete etcdbackupconfig that belongs to the given cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -352,10 +365,10 @@ func TestDeleteEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusOK,
 		},
 		{
-			Name:                 "delete etcdbackupconfig which doesn't exist",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "delete etcdbackupconfig which doesn't exist",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -364,10 +377,10 @@ func TestDeleteEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusNotFound,
 		},
 		{
-			Name:                 "user john cannot delete etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "user john cannot delete etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -378,10 +391,10 @@ func TestDeleteEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
-			Name:                 "admin user john can delete etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigName: "test-1",
-			ProjectID:            test.GenDefaultProject().Name,
-			ClusterID:            test.GenDefaultCluster().Name,
+			Name:               "admin user john can delete etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
+			ProjectID:          test.GenDefaultProject().Name,
+			ClusterID:          test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
@@ -395,13 +408,13 @@ func TestDeleteEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/etcdbackupconfigs/%s", tc.ProjectID, tc.ClusterID, tc.EtcdBackupConfigName)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/etcdbackupconfigs/%s", tc.ProjectID, tc.ClusterID, tc.EtcdBackupConfigID)
 			req := httptest.NewRequest(http.MethodDelete, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -416,7 +429,7 @@ func TestPatchEndpoint(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		Name                      string
-		EtcdBackupConfigName      string
+		EtcdBackupConfigID        string
 		PatchSpec                 *apiv2.EtcdBackupConfigSpec
 		ProjectID                 string
 		ClusterID                 string
@@ -426,8 +439,8 @@ func TestPatchEndpoint(t *testing.T) {
 		ExpectedHTTPStatusCode    int
 	}{
 		{
-			Name:                 "patch etcdbackupconfig",
-			EtcdBackupConfigName: "test-1",
+			Name:               "patch etcdbackupconfig",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
@@ -449,8 +462,8 @@ func TestPatchEndpoint(t *testing.T) {
 			}(),
 		},
 		{
-			Name:                 "patch etcdbackupconfig which doesn't exist",
-			EtcdBackupConfigName: "test-1",
+			Name:               "patch etcdbackupconfig which doesn't exist",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
@@ -466,8 +479,8 @@ func TestPatchEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusNotFound,
 		},
 		{
-			Name:                 "user john cannot patch etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigName: "test-1",
+			Name:               "user john cannot patch etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
@@ -485,8 +498,8 @@ func TestPatchEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusForbidden,
 		},
 		{
-			Name:                 "admin user john can patch etcdbackupconfig that belongs to bob's cluster",
-			EtcdBackupConfigName: "test-1",
+			Name:               "admin user john can patch etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
 				spec.Schedule = modifiedSchedule
@@ -509,12 +522,11 @@ func TestPatchEndpoint(t *testing.T) {
 			}(),
 		},
 		{
-			Name:                 "patch etcdbackupconfig validation fail",
-			EtcdBackupConfigName: "test-1",
+			Name:               "patch etcdbackupconfig destination",
+			EtcdBackupConfigID: etcdbackupconfig.GenEtcdBackupConfigID("test-1", test.GenDefaultCluster().Name),
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
-				spec.Schedule = modifiedSchedule
-				spec.Keep = nil
+				spec.Destination = "s3"
 				return &spec
 			}(),
 			ProjectID: test.GenDefaultProject().Name,
@@ -525,13 +537,18 @@ func TestPatchEndpoint(t *testing.T) {
 				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExpectedHTTPStatusCode: http.StatusBadRequest,
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: func() *apiv2.EtcdBackupConfig {
+				ebc := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name)
+				ebc.Spec.Destination = "s3"
+				return ebc
+			}(),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/etcdbackupconfigs/%s", tc.ProjectID, tc.ClusterID, tc.EtcdBackupConfigName)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/etcdbackupconfigs/%s", tc.ProjectID, tc.ClusterID, tc.EtcdBackupConfigID)
 			body, err := json.Marshal(tc.PatchSpec)
 			if err != nil {
 				t.Fatalf("failed marshalling etcdbackupconfig: %v", err)
@@ -539,9 +556,9 @@ func TestPatchEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPatch, requestURL, bytes.NewBuffer(body))
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -556,7 +573,6 @@ func TestPatchEndpoint(t *testing.T) {
 
 				test.CompareWithResult(t, resp, string(b))
 			}
-
 		})
 	}
 }
@@ -566,6 +582,7 @@ func TestProjectListEndpoint(t *testing.T) {
 	testCases := []struct {
 		Name                      string
 		ProjectID                 string
+		Type                      string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
 		ExpectedResponse          []*apiv2.EtcdBackupConfig
@@ -580,12 +597,22 @@ func TestProjectListEndpoint(t *testing.T) {
 				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
 				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
+				func() *apiv2.EtcdBackupConfig {
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			},
 		},
 		{
@@ -611,25 +638,98 @@ func TestProjectListEndpoint(t *testing.T) {
 				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
 				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			),
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.EtcdBackupConfig{
 				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
 				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
+				func() *apiv2.EtcdBackupConfig {
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
 			},
+		},
+		{
+			Name:      "filter by type snapshot",
+			ProjectID: test.GenDefaultProject().Name,
+			Type:      "snapshot",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: []*apiv2.EtcdBackupConfig{
+				func() *apiv2.EtcdBackupConfig {
+					ebc := test.GenAPIEtcdBackupConfig("test-4", test.GenDefaultCluster().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
+			},
+		},
+		{
+			Name:      "filter by type automatic",
+			ProjectID: test.GenDefaultProject().Name,
+			Type:      "automatic",
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-3", test.GenDefaultCluster(), "some-different-project"),
+				func() *kubermaticv1.EtcdBackupConfig {
+					ebc := test.GenEtcdBackupConfig("test-4", test.GenDefaultCluster(), test.GenDefaultProject().Name)
+					ebc.Spec.Schedule = ""
+					return ebc
+				}(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: []*apiv2.EtcdBackupConfig{
+				test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name),
+				test.GenAPIEtcdBackupConfig("test-2", "clusterAbcID"),
+			},
+		},
+		{
+			Name:      "fail filtering by unknown type",
+			Type:      "unknown",
+			ProjectID: test.GenDefaultProject().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAdminUser("John", "john@acme.com", false),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+				test.GenEtcdBackupConfig("test-2", test.GenDefaultCluster(), test.GenDefaultProject().Name),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusBadRequest,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/etcdbackupconfigs", tc.ProjectID)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/etcdbackupconfigs?type=%s", tc.ProjectID, tc.Type)
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to: %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(resp, req)
 
@@ -645,7 +745,6 @@ func TestProjectListEndpoint(t *testing.T) {
 
 				etcdBackupConfigs.EqualOrDie(expectedEtcdBackupConfigs, t)
 			}
-
 		})
 	}
 }

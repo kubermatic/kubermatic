@@ -14,16 +14,16 @@
 
 apiVersion: v1
 name: oauth
-version: 1.5.8
-appVersion: v2.27.0
+version: v9.9.9-dev
+appVersion: v2.31.1
 description: Dex
 keywords:
-- kubermatic
-- oauth
-- dex
+  - kubermatic
+  - oauth
+  - dex
 home: https://github.com/dexidp/dex
 sources:
-- https://github.com/kubermatic/kubermatic
+  - https://github.com/kubermatic/kubermatic
 maintainers:
-- name: The Kubermatic Kubernetes Platform contributors
-  email: support@kubermatic.com
+  - name: The Kubermatic Kubernetes Platform contributors
+    email: support@kubermatic.com

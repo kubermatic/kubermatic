@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the seed cluster internal metrics-server service
+// ServiceCreator returns the function to reconcile the seed cluster internal metrics-server service.
 func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {

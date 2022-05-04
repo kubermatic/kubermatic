@@ -52,12 +52,12 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 	}
 }
 
-func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(vSphereDatastoresReq)
 		if !ok {
-			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got = %T", request)
+			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got %T", request)
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -67,7 +67,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider 
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -77,7 +77,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider 
 			}
 		}
 
-		return providercommon.GetVsphereDatastoreList(userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
+		return providercommon.GetVsphereDatastoreList(ctx, userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 
@@ -112,7 +112,7 @@ type vSphereNoCredentialsReq struct {
 	cluster.GetClusterReq
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (req vSphereNoCredentialsReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,

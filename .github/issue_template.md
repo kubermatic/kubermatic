@@ -1,3 +1,0 @@
-**User Story**
-
-**Acceptance criteria**

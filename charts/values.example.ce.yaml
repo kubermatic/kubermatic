@@ -32,6 +32,19 @@ dex:
     - https://cluster.example.dev
     - https://cluster.example.dev/projects
 
+  # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
+  # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
+  # More about this configuration at https://docs.kubermatic.com/kubermatic/master/tutorials_howtos/oidc_provider_configuration/share-_clusters_via_delegated_oidc_authentication/
+  - id: kubermaticIssuer
+    name: Kubermatic OIDC Issuer
+    # Generate a secure secret key
+    # Those can be generated on the shell using:
+    # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
+    secret: <a-random-key>
+    RedirectURIs:
+      # ensure the URLs below use the dex.ingress.host configured above
+      - https://cluster.example.dev/api/v1/kubeconfig
+
   # Depending on your chosen login method, you need to configure either an OAuth provider like
   # Google or GitHub, or configure a set of static passwords. Check the `charts/oauth/values.yaml`
   # for an overview over all available connectors.
@@ -60,3 +73,9 @@ dex:
 minio:
   storeSize: '500Gi'
   storageClass: minio-hdd
+
+telemetry:
+  # uuid is the unique identifier of the client where the agent is running.
+  # This field is required and will print an error message when that entry is missing.
+  # You can generate uuid using command uuidgen on your linux machine
+  uuid: ""

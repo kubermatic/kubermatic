@@ -29,7 +29,7 @@ import (
 
 type caGetter func() (*triple.KeyPair, error)
 
-// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
+// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA.
 func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
@@ -40,7 +40,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 
 			ca, err := getCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get CA: %v", err)
+				return nil, fmt.Errorf("failed to get CA: %w", err)
 			}
 
 			if se.Data == nil {
@@ -50,7 +50,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 			if b, exists := se.Data[dataCertKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", dataCertKey, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", dataCertKey, err)
 				}
 
 				if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations, ca.Cert) {
@@ -60,7 +60,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 
 			newKP, err := triple.NewClientKeyPair(ca, commonName, organizations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create key pair: %v", err)
+				return nil, fmt.Errorf("failed to create key pair: %w", err)
 			}
 
 			se.Data[dataKeyKey] = triple.EncodePrivateKeyPEM(newKP.Key)

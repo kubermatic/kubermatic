@@ -17,9 +17,13 @@ limitations under the License.
 package anexia
 
 import (
+	"context"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"go.anx.io/go-anxcloud/pkg/client"
+	"go.anx.io/go-anxcloud/pkg/vsphere/provisioning/templates"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -28,6 +32,8 @@ type Anexia struct {
 	dc                *kubermaticv1.DatacenterSpecAnexia
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
+
+var _ provider.CloudProvider = &Anexia{}
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Anexia, error) {
 	if dc.Spec.Anexia == nil {
@@ -39,31 +45,29 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
-func (a *Anexia) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *Anexia) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Anexia) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (a *Anexia) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	_, err := GetCredentialsForCluster(spec, a.secretKeySelector)
-	if err != nil {
-		return err
-	}
+
+	return err
+}
+
+func (a *Anexia) InitializeCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
+}
+
+func (a *Anexia) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return cluster, nil
+}
+
+func (a *Anexia) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *Anexia) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
-}
-
-func (a *Anexia) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return c, nil
-}
-
-func (a *Anexia) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
-	return nil
-}
-
-// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (token string, err error) {
 	accessToken := cloud.Anexia.Token
 
@@ -78,4 +82,19 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return accessToken, nil
+}
+
+func ValidateCredentials(ctx context.Context, accessToken, locationID string) error {
+	cli, err := getClient(accessToken)
+	if err != nil {
+		return err
+	}
+	t := templates.NewAPI(cli)
+	_, err = t.List(ctx, locationID, "templates", 1, 1)
+	return err
+}
+
+func getClient(token string) (client.Client, error) {
+	tokenOpt := client.TokenFromString(token)
+	return client.New(tokenOpt)
 }

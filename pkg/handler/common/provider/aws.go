@@ -26,7 +26,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -72,12 +72,12 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-	accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+	accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetList, err := ListAWSSubnets(accessKeyID, secretAccessKey, cluster.Spec.Cloud.AWS.VPCID, dc)
+	subnetList, err := ListAWSSubnets(ctx, accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, cluster.Spec.Cloud.AWS.VPCID, dc)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 		return nil, errors.NewNotFound("cloud spec (dc) for ", clusterID)
 	}
 
-	settings, err := settingsProvider.GetGlobalSettings()
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -125,15 +125,14 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 	return AWSSizes(dc.Spec.AWS.Region, architecture, settings.Spec.MachineDeploymentVMResourceQuota)
 }
 
-func ListAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
-
+func ListAWSSubnets(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(ctx, accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, datacenter.Spec.AWS.Region, vpcID)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get subnets: %v", err)
+		return nil, fmt.Errorf("couldn't get subnets: %w", err)
 	}
 
 	subnets := apiv1.AWSSubnetList{}
@@ -171,7 +170,6 @@ func ListAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kube
 			AvailableIPAddressCount: *s.AvailableIpAddressCount,
 			DefaultForAz:            *s.DefaultForAz,
 		})
-
 	}
 
 	return subnets, nil
@@ -196,7 +194,7 @@ func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList,
 	for _, md := range machineDeployments.Items {
 		cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
+			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %w", err)
 		}
 		if cloudSpec.AWS == nil {
 			return nil, errors.NewBadRequest("cloud spec missing")
@@ -314,4 +312,11 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 	}
 
 	return filteredRecords
+}
+
+type AWSCredential struct {
+	AccessKeyID          string
+	SecretAccessKey      string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }

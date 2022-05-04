@@ -1,9 +1,9 @@
-// +build ee
+//go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Loodse GmbH
+                     Copyright © 2021 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -25,20 +25,30 @@
 package metering
 
 import (
+	"strconv"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
 
-// cronJobCreator returns the func to create/update the etcd defragger cronjob
-func cronJobCreator(seedName string) reconciling.NamedCronJobCreatorGetter {
+// cronJobCreator returns the func to create/update the metering report cronjob.
+func cronJobCreator(seedName, reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
-		return meteringCronJobMonthly, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		return reportName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+			labels := job.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			labels[MeteringLabelKey] = reportName
+			job.SetLabels(labels)
 
-			job.Spec.Schedule = "0 6 1 * *"
+			job.Spec.Schedule = mrc.Schedule
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32Ptr(1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = meteringToolName
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
@@ -47,7 +57,7 @@ func cronJobCreator(seedName string) reconciling.NamedCronJobCreatorGetter {
 			job.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "s3fetch",
-					Image: "docker.io/minio/mc:RELEASE.2021-07-27T06-46-19Z",
+					Image: getMinioImage(getRegistry),
 					Command: []string{
 						"/bin/sh",
 					},
@@ -69,9 +79,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "endpoint",
+									Key: Endpoint,
 								},
 							},
 						},
@@ -80,9 +90,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "bucket",
+									Key: Bucket,
 								},
 							},
 						},
@@ -91,9 +101,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "accessKey",
+									Key: AccessKey,
 								},
 							},
 						},
@@ -102,9 +112,9 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "secretKey",
+									Key: SecretKey,
 								},
 							},
 						},
@@ -114,19 +124,20 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  "kubermatic-metering-report",
-					Image: "quay.io/kubermatic/metering:7a12117",
-					Command: []string{
-						"/bin/sh",
-					},
+					Name:            "kubermatic-metering-report",
+					Image:           getMeteringImage(getRegistry),
+					ImagePullPolicy: corev1.PullAlways,
+					Command:         []string{"/bin/sh"},
 					Args: []string{
 						"-c",
-						`/usr/local/bin/kubermatic-metering-report -workdir=/metering-data \
-                                                          -reportdir=/report \
-                                                          -last-month \
-                                                          -seed=` + seedName + ` \
-                                                          -scrape-interval=300
-                        touch /report/finished`,
+						`mkdir -p /report/` + reportName + `
+kubermatic-metering-report \
+  -workdir=/metering-data \
+  -reportdir=/report/` + reportName + ` \
+  -last-number-of-days=` + strconv.Itoa(mrc.Interval) + ` \
+  -seed=` + seedName + ` \
+  -scrape-interval=300
+touch /report/finished`,
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -143,7 +154,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 				},
 				{
 					Name:  "s3upload",
-					Image: "docker.io/minio/mc:RELEASE.2021-07-27T06-46-19Z",
+					Image: getMinioImage(getRegistry),
 					Command: []string{
 						"/bin/sh",
 					},
@@ -163,9 +174,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "endpoint",
+									Key: Endpoint,
 								},
 							},
 						},
@@ -174,9 +185,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "bucket",
+									Key: Bucket,
 								},
 							},
 						},
@@ -185,9 +196,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "accessKey",
+									Key: AccessKey,
 								},
 							},
 						},
@@ -196,9 +207,9 @@ mc mirror /report s3/$S3_BUCKET`,
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "s3",
+										Name: SecretName,
 									},
-									Key: "secretKey",
+									Key: SecretKey,
 								},
 							},
 						},

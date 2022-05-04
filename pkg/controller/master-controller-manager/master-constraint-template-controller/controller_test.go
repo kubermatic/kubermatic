@@ -22,10 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -44,7 +44,6 @@ import (
 const ctName = "requiredlabels"
 
 func TestReconcile(t *testing.T) {
-
 	testCases := []struct {
 		name                 string
 		requestName          string
@@ -91,6 +90,7 @@ func TestReconcile(t *testing.T) {
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: tc.masterClient,
+				seedsGetter:  test.CreateTestSeedsGetter(ctx, tc.masterClient),
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return tc.seedClient, nil
 				},
@@ -129,12 +129,12 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTemplate {
+func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
 
 	ct.Spec = genCTSpec()
-	if delete {
+	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
 		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
@@ -145,13 +145,13 @@ func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTem
 
 func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 	return kubermaticv1.ConstraintTemplateSpec{
-		CRD: v1beta1.CRD{
-			Spec: v1beta1.CRDSpec{
-				Names: v1beta1.Names{
+		CRD: constrainttemplatev1.CRD{
+			Spec: constrainttemplatev1.CRDSpec{
+				Names: constrainttemplatev1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &v1beta1.Validation{
+				Validation: &constrainttemplatev1.Validation{
 					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
 						Properties: map[string]apiextensionv1.JSONSchemaProps{
 							"labels": {
@@ -167,7 +167,7 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 				},
 			},
 		},
-		Targets: []v1beta1.Target{
+		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `

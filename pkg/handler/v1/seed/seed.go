@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-// ListSeedNamesEndpoint returns a list of all seed names
+// ListSeedNamesEndpoint returns a list of all seed names.
 func ListSeedNamesEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		seedMap, err := seedsGetter()

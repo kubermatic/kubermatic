@@ -18,10 +18,10 @@ import (
 type CleanupOptions struct {
 
 	// enabled
-	Enabled bool `json:"Enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 
 	// enforced
-	Enforced bool `json:"Enforced,omitempty"`
+	Enforced bool `json:"enforced,omitempty"`
 }
 
 // Validate validates this cleanup options

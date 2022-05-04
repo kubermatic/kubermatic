@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strconv"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -50,7 +50,7 @@ func appPodLabels(appName string) map[string]string {
 	}
 }
 
-func RecommenderDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func RecommenderDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return RecommenderName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -66,6 +66,13 @@ func RecommenderDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration,
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = RecommenderName
+			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "recommender",

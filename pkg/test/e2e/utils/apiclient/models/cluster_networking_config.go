@@ -22,13 +22,29 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain,omitempty"`
 
+	// KonnectivityEnabled enables konnectivity for controlplane to node network communication.
+	KonnectivityEnabled bool `json:"konnectivityEnabled,omitempty"`
+
+	// NodeCIDRMaskSizeIPv4 is the mask size used to address the nodes within provided IPv4 Pods CIDR.
+	// It has to be larger than the provided IPv4 Pods CIDR. Defaults to 24.
+	// +optional
+	NodeCIDRMaskSizeIPV4 int32 `json:"nodeCidrMaskSizeIPv4,omitempty"`
+
+	// NodeCIDRMaskSizeIPv6 is the mask size used to address the nodes within provided IPv6 Pods CIDR.
+	// It has to be larger than the provided IPv6 Pods CIDR. Defaults to 64.
+	// +optional
+	NodeCIDRMaskSizeIPV6 int32 `json:"nodeCidrMaskSizeIPv6,omitempty"`
+
 	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
 	// Defaults to true.
 	NodeLocalDNSCacheEnabled bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
-	// ProxyMode defines the kube-proxy mode (ipvs/iptables).
-	// Defaults to ipvs.
+	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode,omitempty"`
+
+	// ip family
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
 
 	// ipvs
 	Ipvs *IPVSConfiguration `json:"ipvs,omitempty"`
@@ -43,6 +59,10 @@ type ClusterNetworkingConfig struct {
 // Validate validates this cluster networking config
 func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateIPFamily(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateIpvs(formats); err != nil {
 		res = append(res, err)
@@ -62,6 +82,23 @@ func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ClusterNetworkingConfig) validateIPFamily(formats strfmt.Registry) error {
+	if swag.IsZero(m.IPFamily) { // not required
+		return nil
+	}
+
+	if err := m.IPFamily.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipFamily")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipFamily")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterNetworkingConfig) validateIpvs(formats strfmt.Registry) error {
 	if swag.IsZero(m.Ipvs) { // not required
 		return nil
@@ -71,6 +108,8 @@ func (m *ClusterNetworkingConfig) validateIpvs(formats strfmt.Registry) error {
 		if err := m.Ipvs.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("ipvs")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("ipvs")
 			}
 			return err
 		}
@@ -88,6 +127,8 @@ func (m *ClusterNetworkingConfig) validatePods(formats strfmt.Registry) error {
 		if err := m.Pods.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("pods")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("pods")
 			}
 			return err
 		}
@@ -105,6 +146,8 @@ func (m *ClusterNetworkingConfig) validateServices(formats strfmt.Registry) erro
 		if err := m.Services.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("services")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("services")
 			}
 			return err
 		}
@@ -116,6 +159,10 @@ func (m *ClusterNetworkingConfig) validateServices(formats strfmt.Registry) erro
 // ContextValidate validate this cluster networking config based on the context it is used
 func (m *ClusterNetworkingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.contextValidateIPFamily(ctx, formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.contextValidateIpvs(ctx, formats); err != nil {
 		res = append(res, err)
@@ -135,12 +182,28 @@ func (m *ClusterNetworkingConfig) ContextValidate(ctx context.Context, formats s
 	return nil
 }
 
+func (m *ClusterNetworkingConfig) contextValidateIPFamily(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.IPFamily.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipFamily")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipFamily")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterNetworkingConfig) contextValidateIpvs(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Ipvs != nil {
 		if err := m.Ipvs.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("ipvs")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("ipvs")
 			}
 			return err
 		}
@@ -155,6 +218,8 @@ func (m *ClusterNetworkingConfig) contextValidatePods(ctx context.Context, forma
 		if err := m.Pods.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("pods")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("pods")
 			}
 			return err
 		}
@@ -169,6 +234,8 @@ func (m *ClusterNetworkingConfig) contextValidateServices(ctx context.Context, f
 		if err := m.Services.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("services")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("services")
 			}
 			return err
 		}

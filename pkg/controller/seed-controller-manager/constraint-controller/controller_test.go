@@ -22,7 +22,7 @@ import (
 	"time"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -143,7 +143,7 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func genConstraint(name, namespace, kind string, label, delete bool) *kubermaticv1.Constraint {
+func genConstraint(name, namespace, kind string, label, deleted bool) *kubermaticv1.Constraint {
 	constraint := test.GenConstraint(name, namespace, kind)
 	if label {
 		if constraint.Labels != nil {
@@ -152,7 +152,7 @@ func genConstraint(name, namespace, kind string, label, delete bool) *kubermatic
 			constraint.Labels = map[string]string{Key: constraint.Name}
 		}
 	}
-	if delete {
+	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		constraint.DeletionTimestamp = &deleteTime
 		constraint.Finalizers = append(constraint.Finalizers, v1.KubermaticUserClusterNsDefaultConstraintCleanupFinalizer)

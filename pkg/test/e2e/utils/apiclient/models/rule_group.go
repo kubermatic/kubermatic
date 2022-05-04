@@ -21,6 +21,12 @@ type RuleGroup struct {
 	// contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
 	Data []uint8 `json:"data"`
 
+	// IsDefault indicates whether the ruleGroup is default
+	IsDefault bool `json:"isDefault,omitempty"`
+
+	// name
+	Name string `json:"name,omitempty"`
+
 	// type
 	Type RuleGroupType `json:"type,omitempty"`
 }
@@ -47,6 +53,8 @@ func (m *RuleGroup) validateType(formats strfmt.Registry) error {
 	if err := m.Type.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("type")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("type")
 		}
 		return err
 	}
@@ -73,6 +81,8 @@ func (m *RuleGroup) contextValidateType(ctx context.Context, formats strfmt.Regi
 	if err := m.Type.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("type")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("type")
 		}
 		return err
 	}

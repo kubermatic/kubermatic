@@ -22,12 +22,14 @@ import (
 	"strconv"
 	"text/template"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig/v3"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,8 +39,7 @@ import (
 )
 
 const (
-	name = "etcd"
-
+	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 )
 
@@ -68,12 +69,30 @@ type etcdStatefulSetCreatorData interface {
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-// StatefulSetCreator returns the function to reconcile the etcd StatefulSet
-func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool) reconciling.NamedStatefulSetCreatorGetter {
+// StatefulSetCreator returns the function to reconcile the etcd StatefulSet.
+func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-
 			replicas := computeReplicas(data, set)
+			imageTag := ImageTag(data.Cluster())
+
+			imageTagVersion, err := semverlib.NewVersion(imageTag)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse etcd image tag: %w", err)
+			}
+
+			etcdConstraint, err := semverlib.NewConstraint(">= 3.5.0, < 3.6.0")
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse etcd constraint: %w", err)
+			}
+
+			// enable initial and periodic etcd data corruption checks by default if running etcd 3.5.
+			// The etcd team has recommended to enable this feature for etcd 3.5 due to data consistency issues.
+			// Reference: https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ
+			if ok := etcdConstraint.Check(imageTagVersion); ok {
+				enableDataCorruptionChecks = true
+			}
+
 			set.Name = resources.EtcdStatefulSetName
 			set.Spec.Replicas = resources.Int32(replicas)
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
@@ -81,7 +100,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			set.Spec.ServiceName = resources.EtcdServiceName
 			set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			baseLabels := getBasePodLabels(data.Cluster())
+			baseLabels := GetBasePodLabels(data.Cluster())
 			set.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
 			}
@@ -89,7 +108,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -97,6 +116,73 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Labels: podLabels,
 			}
 			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
+
+			etcdEnv := []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "POD_IP",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "status.podIP",
+						},
+					},
+				},
+				{
+					Name: "NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "metadata.namespace",
+						},
+					},
+				},
+				{
+					Name:  "TOKEN",
+					Value: data.Cluster().Name,
+				},
+				{
+					Name:  "ENABLE_CORRUPTION_CHECK",
+					Value: strconv.FormatBool(enableDataCorruptionChecks),
+				},
+				{
+					Name:  "ETCDCTL_API",
+					Value: "3",
+				},
+				{
+					Name:  "ETCDCTL_CACERT",
+					Value: resources.EtcdTrustedCAFile,
+				},
+				{
+					Name:  "ETCDCTL_CERT",
+					Value: resources.EtcdClientCertFile,
+				},
+				{
+					Name:  "ETCDCTL_KEY",
+					Value: resources.EtcdClientKeyFile,
+				},
+			}
+
+			etcdPorts := []corev1.ContainerPort{
+				{
+					ContainerPort: 2379,
+					Protocol:      corev1.ProtocolTCP,
+					Name:          "client",
+				},
+				{
+					ContainerPort: 2380,
+					Protocol:      corev1.ProtocolTCP,
+					Name:          "peer",
+				},
+			}
 
 			launcherEnabled := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]
 			if launcherEnabled {
@@ -114,7 +200,22 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 					},
 				}
+
+				etcdPorts = append(etcdPorts, corev1.ContainerPort{
+					ContainerPort: 2381,
+					Protocol:      corev1.ProtocolTCP,
+					Name:          "peer-tls",
+				})
+
+				set.Spec.Template.ObjectMeta.Annotations = map[string]string{
+					resources.EtcdTLSEnabledAnnotation: "",
+				}
+
+				if enableTLSOnly {
+					etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "PEER_TLS_MODE", Value: "strict"})
+				}
 			}
+
 			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks, launcherEnabled)
 			if err != nil {
 				return nil, err
@@ -123,85 +224,18 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				{
 					Name: resources.EtcdStatefulSetName,
 
-					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
+					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + imageTag,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         etcdStartCmd,
-					Env: []corev1.EnvVar{
-						{
-							Name: "POD_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "metadata.name",
-								},
-							},
-						},
-						{
-							Name: "POD_IP",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "status.podIP",
-								},
-							},
-						},
-						{
-							Name: "NAMESPACE",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "metadata.namespace",
-								},
-							},
-						},
-						{
-							Name:  "TOKEN",
-							Value: data.Cluster().Name,
-						},
-						{
-							Name:  "ETCD_CLUSTER_SIZE",
-							Value: strconv.Itoa(int(replicas)),
-						},
-						{
-							Name:  "ENABLE_CORRUPTION_CHECK",
-							Value: strconv.FormatBool(enableDataCorruptionChecks),
-						},
-						{
-							Name:  "ETCDCTL_API",
-							Value: "3",
-						},
-						{
-							Name:  "ETCDCTL_CACERT",
-							Value: resources.EtcdTrustedCAFile,
-						},
-						{
-							Name:  "ETCDCTL_CERT",
-							Value: resources.EtcdClientCertFile,
-						},
-						{
-							Name:  "ETCDCTL_KEY",
-							Value: resources.EtcdClientKeyFile,
-						},
-					},
-					Ports: []corev1.ContainerPort{
-						{
-							ContainerPort: 2379,
-							Protocol:      corev1.ProtocolTCP,
-							Name:          "client",
-						},
-						{
-							ContainerPort: 2380,
-							Protocol:      corev1.ProtocolTCP,
-							Name:          "peer",
-						},
-					},
+					Env:             etcdEnv,
+					Ports:           etcdPorts,
 					ReadinessProbe: &corev1.Probe{
 						TimeoutSeconds:      10,
 						PeriodSeconds:       15,
 						SuccessThreshold:    1,
 						FailureThreshold:    3,
 						InitialDelaySeconds: 5,
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							Exec: &corev1.ExecAction{
 								Command: []string{
 									"/usr/local/bin/etcdctl",
@@ -212,7 +246,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 					},
 					LivenessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/health",
 								Port:   intstr.FromInt(2378),
@@ -255,13 +289,13 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
 				antiAffinities := set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
-				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name))
+				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName))
 				set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
 			}
 
@@ -281,8 +315,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:            "data",
-							OwnerReferences: []metav1.OwnerReference{data.GetClusterRef()},
+							Name: "data",
 						},
 						Spec: corev1.PersistentVolumeClaimSpec{
 							StorageClassName: resources.String(storageClass),
@@ -341,7 +374,7 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
+func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	additionalLabels := map[string]string{
 		"cluster": cluster.Name,
 	}
@@ -349,13 +382,18 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 }
 
 // ImageTag returns the correct etcd image tag for a given Cluster
-// TODO: Other functions use this function, switch them to getLauncherImage
+// TODO: Other functions use this function, switch them to getLauncherImage.
 func ImageTag(c *kubermaticv1.Cluster) string {
-	if c.Spec.Version.Minor() < 22 {
+	// most other control plane parts refer to the controller-manager's version, which
+	// during updates lacks behind the apiserver by one minor version; this is so that
+	// also external components like the kubernetes dashboard or external ccms wait for
+	// the new apiserver to be ready; etcd however is different and gets updated together
+	// with the apiserver
+	if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
 		return "v3.4.3"
 	}
 
-	return "v3.5.0"
+	return "v3.5.3"
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int32 {
@@ -373,7 +411,6 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	}
 	isEtcdHealthy := data.Cluster().Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp
 	if isEtcdHealthy { // no scaling until we are healthy
-
 		if etcdClusterSize > replicas {
 			return replicas + 1
 		}
@@ -408,7 +445,6 @@ func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabl
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
 			"-namespace", "$(NAMESPACE)",
-			"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
 			"-pod-name", "$(POD_NAME)",
 			"-pod-ip", "$(POD_IP)",
 			"-api-version", "$(ETCDCTL_API)",
@@ -421,7 +457,7 @@ func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabl
 
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
 	}
 
 	tplData := commandTplData{
@@ -470,7 +506,7 @@ exec /usr/local/bin/etcd \
     --key-file /etc/etcd/pki/tls/etcd-tls.key \
 {{- if .EnableCorruptionCheck }}
     --experimental-initial-corrupt-check=true \
-    --experimental-corrupt-check-time=10m \
+    --experimental-corrupt-check-time=240m \
 {{- end }}
     --auto-compaction-retention=8
 `

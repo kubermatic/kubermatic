@@ -19,23 +19,23 @@ package admin
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-// KubermaticSettingsEndpoint returns global settings
+// KubermaticSettingsEndpoint returns global settings.
 func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		globalSettings, err := settingsProvider.GetGlobalSettings()
+		globalSettings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -44,10 +44,10 @@ func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endp
 	}
 }
 
-// KubermaticCustomLinksEndpoint returns custom links
+// KubermaticCustomLinksEndpoint returns custom links.
 func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		globalSettings, err := settingsProvider.GetGlobalSettings()
+		globalSettings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -56,7 +56,7 @@ func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) e
 	}
 }
 
-// UpdateKubermaticSettingsEndpoint updates global settings
+// UpdateKubermaticSettingsEndpoint updates global settings.
 func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchKubermaticSettingsReq)
@@ -65,7 +65,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingGlobalSettings, err := settingsProvider.GetGlobalSettings()
+		existingGlobalSettings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -85,7 +85,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 		}
 
 		existingGlobalSettings.Spec = *patchedGlobalSettingsSpec
-		globalSettings, err := settingsProvider.UpdateGlobalSettings(userInfo, existingGlobalSettings)
+		globalSettings, err := settingsProvider.UpdateGlobalSettings(ctx, userInfo, existingGlobalSettings)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -105,7 +105,7 @@ func DecodePatchKubermaticSettingsReq(c context.Context, r *http.Request) (inter
 	var req patchKubermaticSettingsReq
 	var err error
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

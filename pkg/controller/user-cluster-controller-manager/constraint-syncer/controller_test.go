@@ -1,4 +1,4 @@
-// +build ee
+//go:build ee
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -27,7 +27,7 @@ import (
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -76,8 +76,8 @@ func TestReconcile(t *testing.T) {
 				WithObjects(
 					func() ctrlruntimeclient.Object {
 						c := test.GenConstraint(constraintName, "namespace", kind)
-						c.Spec.Parameters = map[string]interface{}{
-							"rawJSON": `{"labels":["gatekeeper","opa"]}`,
+						c.Spec.Parameters = map[string]json.RawMessage{
+							"rawJSON": []byte(`"{\"labels\":[\"gatekeeper\",\"opa\"]}"`),
 						}
 						return c
 					}()).
@@ -97,7 +97,7 @@ func TestReconcile(t *testing.T) {
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(func() *v1.Constraint {
+				WithObjects(func() *kubermaticv1.Constraint {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
@@ -125,7 +125,7 @@ func TestReconcile(t *testing.T) {
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(func() *v1.Constraint {
+				WithObjects(func() *kubermaticv1.Constraint {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
@@ -165,7 +165,7 @@ func TestReconcile(t *testing.T) {
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(func() *v1.Constraint {
+				WithObjects(func() *kubermaticv1.Constraint {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
@@ -186,7 +186,7 @@ func TestReconcile(t *testing.T) {
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(func() *v1.Constraint {
+				WithObjects(func() *kubermaticv1.Constraint {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
@@ -263,7 +263,6 @@ func TestReconcile(t *testing.T) {
 			if !reflect.DeepEqual(matchMap, resultMatch) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(matchMap, matchMap))
 			}
-
 			// cast params to bytes for comparison
 			expectedParamsBytes, err := json.Marshal(tc.expectedConstraint.Spec.Parameters)
 			if err != nil {
@@ -276,7 +275,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(expectedParamsBytes, resultParamsBytes) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(expectedParamsBytes, resultParamsBytes))
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedConstraint.Spec.Parameters, resultParamsBytes))
 			}
 
 			if !reflect.DeepEqual(reqLabel.GetName(), tc.expectedConstraint.Name) {

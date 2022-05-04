@@ -18,8 +18,14 @@ import (
 // swagger:model ClusterHealth
 type ClusterHealth struct {
 
+	// alertmanager config
+	AlertmanagerConfig HealthStatus `json:"alertmanagerConfig,omitempty"`
+
 	// apiserver
 	Apiserver HealthStatus `json:"apiserver,omitempty"`
+
+	// application controller
+	ApplicationController HealthStatus `json:"applicationController,omitempty"`
 
 	// cloud provider infrastructure
 	CloudProviderInfrastructure HealthStatus `json:"cloudProviderInfrastructure,omitempty"`
@@ -36,8 +42,17 @@ type ClusterHealth struct {
 	// gatekeeper controller
 	GatekeeperController HealthStatus `json:"gatekeeperController,omitempty"`
 
+	// logging
+	Logging HealthStatus `json:"logging,omitempty"`
+
 	// machine controller
 	MachineController HealthStatus `json:"machineController,omitempty"`
+
+	// mla gateway
+	MlaGateway HealthStatus `json:"mlaGateway,omitempty"`
+
+	// monitoring
+	Monitoring HealthStatus `json:"monitoring,omitempty"`
 
 	// scheduler
 	Scheduler HealthStatus `json:"scheduler,omitempty"`
@@ -50,7 +65,15 @@ type ClusterHealth struct {
 func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAlertmanagerConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateApiserver(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateApplicationController(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -74,7 +97,19 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateLogging(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMachineController(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMlaGateway(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMonitoring(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -92,6 +127,23 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ClusterHealth) validateAlertmanagerConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.AlertmanagerConfig) { // not required
+		return nil
+	}
+
+	if err := m.AlertmanagerConfig.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("alertmanagerConfig")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("alertmanagerConfig")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) validateApiserver(formats strfmt.Registry) error {
 	if swag.IsZero(m.Apiserver) { // not required
 		return nil
@@ -100,6 +152,25 @@ func (m *ClusterHealth) validateApiserver(formats strfmt.Registry) error {
 	if err := m.Apiserver.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("apiserver")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("apiserver")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateApplicationController(formats strfmt.Registry) error {
+	if swag.IsZero(m.ApplicationController) { // not required
+		return nil
+	}
+
+	if err := m.ApplicationController.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("applicationController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("applicationController")
 		}
 		return err
 	}
@@ -115,6 +186,8 @@ func (m *ClusterHealth) validateCloudProviderInfrastructure(formats strfmt.Regis
 	if err := m.CloudProviderInfrastructure.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("cloudProviderInfrastructure")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("cloudProviderInfrastructure")
 		}
 		return err
 	}
@@ -130,6 +203,8 @@ func (m *ClusterHealth) validateController(formats strfmt.Registry) error {
 	if err := m.Controller.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("controller")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("controller")
 		}
 		return err
 	}
@@ -145,6 +220,8 @@ func (m *ClusterHealth) validateEtcd(formats strfmt.Registry) error {
 	if err := m.Etcd.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("etcd")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("etcd")
 		}
 		return err
 	}
@@ -160,6 +237,8 @@ func (m *ClusterHealth) validateGatekeeperAudit(formats strfmt.Registry) error {
 	if err := m.GatekeeperAudit.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("gatekeeperAudit")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("gatekeeperAudit")
 		}
 		return err
 	}
@@ -175,6 +254,25 @@ func (m *ClusterHealth) validateGatekeeperController(formats strfmt.Registry) er
 	if err := m.GatekeeperController.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("gatekeeperController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("gatekeeperController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateLogging(formats strfmt.Registry) error {
+	if swag.IsZero(m.Logging) { // not required
+		return nil
+	}
+
+	if err := m.Logging.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("logging")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("logging")
 		}
 		return err
 	}
@@ -190,6 +288,42 @@ func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error
 	if err := m.MachineController.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("machineController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateMlaGateway(formats strfmt.Registry) error {
+	if swag.IsZero(m.MlaGateway) { // not required
+		return nil
+	}
+
+	if err := m.MlaGateway.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaGateway")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("mlaGateway")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateMonitoring(formats strfmt.Registry) error {
+	if swag.IsZero(m.Monitoring) { // not required
+		return nil
+	}
+
+	if err := m.Monitoring.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("monitoring")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("monitoring")
 		}
 		return err
 	}
@@ -205,6 +339,8 @@ func (m *ClusterHealth) validateScheduler(formats strfmt.Registry) error {
 	if err := m.Scheduler.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("scheduler")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("scheduler")
 		}
 		return err
 	}
@@ -220,6 +356,8 @@ func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Regi
 	if err := m.UserClusterControllerManager.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("userClusterControllerManager")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("userClusterControllerManager")
 		}
 		return err
 	}
@@ -231,7 +369,15 @@ func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Regi
 func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAlertmanagerConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateApiserver(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateApplicationController(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -255,7 +401,19 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateLogging(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMachineController(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMlaGateway(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMonitoring(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -273,11 +431,41 @@ func (m *ClusterHealth) ContextValidate(ctx context.Context, formats strfmt.Regi
 	return nil
 }
 
+func (m *ClusterHealth) contextValidateAlertmanagerConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.AlertmanagerConfig.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("alertmanagerConfig")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("alertmanagerConfig")
+		}
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterHealth) contextValidateApiserver(ctx context.Context, formats strfmt.Registry) error {
 
 	if err := m.Apiserver.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("apiserver")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("apiserver")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateApplicationController(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ApplicationController.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("applicationController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("applicationController")
 		}
 		return err
 	}
@@ -290,6 +478,8 @@ func (m *ClusterHealth) contextValidateCloudProviderInfrastructure(ctx context.C
 	if err := m.CloudProviderInfrastructure.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("cloudProviderInfrastructure")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("cloudProviderInfrastructure")
 		}
 		return err
 	}
@@ -302,6 +492,8 @@ func (m *ClusterHealth) contextValidateController(ctx context.Context, formats s
 	if err := m.Controller.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("controller")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("controller")
 		}
 		return err
 	}
@@ -314,6 +506,8 @@ func (m *ClusterHealth) contextValidateEtcd(ctx context.Context, formats strfmt.
 	if err := m.Etcd.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("etcd")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("etcd")
 		}
 		return err
 	}
@@ -326,6 +520,8 @@ func (m *ClusterHealth) contextValidateGatekeeperAudit(ctx context.Context, form
 	if err := m.GatekeeperAudit.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("gatekeeperAudit")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("gatekeeperAudit")
 		}
 		return err
 	}
@@ -338,6 +534,22 @@ func (m *ClusterHealth) contextValidateGatekeeperController(ctx context.Context,
 	if err := m.GatekeeperController.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("gatekeeperController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("gatekeeperController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateLogging(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Logging.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("logging")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("logging")
 		}
 		return err
 	}
@@ -350,6 +562,36 @@ func (m *ClusterHealth) contextValidateMachineController(ctx context.Context, fo
 	if err := m.MachineController.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("machineController")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateMlaGateway(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.MlaGateway.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("mlaGateway")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("mlaGateway")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) contextValidateMonitoring(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Monitoring.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("monitoring")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("monitoring")
 		}
 		return err
 	}
@@ -362,6 +604,8 @@ func (m *ClusterHealth) contextValidateScheduler(ctx context.Context, formats st
 	if err := m.Scheduler.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("scheduler")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("scheduler")
 		}
 		return err
 	}
@@ -374,6 +618,8 @@ func (m *ClusterHealth) contextValidateUserClusterControllerManager(ctx context.
 	if err := m.UserClusterControllerManager.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("userClusterControllerManager")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("userClusterControllerManager")
 		}
 		return err
 	}

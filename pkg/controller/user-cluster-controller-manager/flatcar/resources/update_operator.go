@@ -17,10 +17,10 @@ limitations under the License.
 package resources
 
 import (
-	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,9 +38,7 @@ var (
 	deploymentMaxUnavailable       = intstr.FromString("25%")
 )
 
-type GetImageRegistry func(reg string) string
-
-func OperatorDeploymentCreator(getRegistry GetImageRegistry, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
+func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OperatorDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = &deploymentReplicas
@@ -58,9 +56,6 @@ func OperatorDeploymentCreator(getRegistry GetImageRegistry, updateWindow kuberm
 			dep.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			dep.Spec.Template.ObjectMeta.Labels = labels
 			dep.Spec.Template.Spec.ServiceAccountName = OperatorServiceAccountName
-
-			// The operator should only run on Flatcar nodes
-			dep.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue}
 
 			env := []corev1.EnvVar{
 				{
@@ -91,20 +86,9 @@ func OperatorDeploymentCreator(getRegistry GetImageRegistry, updateWindow kuberm
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-operator",
-					Image:   getRegistry(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
+					Image:   registryWithOverwrite(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
 					Command: []string{"/bin/update-operator"},
 					Env:     env,
-				},
-			}
-
-			dep.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Operator: corev1.TolerationOpExists,
-				},
-				{
-					Effect:   corev1.TaintEffectNoExecute,
-					Operator: corev1.TolerationOpExists,
 				},
 			}
 

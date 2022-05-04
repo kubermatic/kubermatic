@@ -97,7 +97,6 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 		}
 		assertNetworkEquals(t, reconciledMachine, tuple.ip, tuple.gw, "8.8.8.8")
 	}
-
 }
 
 func TestReuseReleasedIP(t *testing.T) {

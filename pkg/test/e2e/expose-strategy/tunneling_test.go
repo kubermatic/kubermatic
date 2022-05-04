@@ -1,4 +1,4 @@
-// +build e2e
+//go:build e2e
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -19,6 +19,8 @@ limitations under the License.
 package exposestrategy
 
 import (
+	"context"
+
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
@@ -29,6 +31,8 @@ import (
 )
 
 var _ = ginkgo.Describe("The Tunneling strategy", func() {
+	ctx := context.Background()
+
 	var (
 		clusterJig  *ClusterJig
 		agentConfig *AgentConfig
@@ -43,7 +47,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			DatacenterName: options.datacenter,
 			Version:        options.kubernetesVersion,
 		}
-		gomega.Expect(clusterJig.SetUp()).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
+		gomega.Expect(clusterJig.SetUp(ctx)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
 		agentConfig = &AgentConfig{
 			Log:       e2eutils.DefaultLogger,
 			Client:    k8scli,
@@ -58,17 +62,17 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			Config:        restConf,
 			CreatePodFunc: newClientPod,
 		}}
-		gomega.Expect(agentConfig.DeployAgentPod()).NotTo(gomega.HaveOccurred(), "agent should deploy successfully")
-		gomega.Expect(client.DeployTestPod()).NotTo(gomega.HaveOccurred(), "client pod should deploy successfully")
+		gomega.Expect(agentConfig.DeployAgentPod(ctx)).NotTo(gomega.HaveOccurred(), "agent should deploy successfully")
+		gomega.Expect(client.DeployTestPod(ctx)).NotTo(gomega.HaveOccurred(), "client pod should deploy successfully")
 	})
 	ginkgo.AfterEach(func() {
 		if !options.skipCleanup {
-			gomega.Expect(clusterJig.CleanUp()).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
 			if agentConfig != nil {
-				gomega.Expect(agentConfig.CleanUp()).NotTo(gomega.HaveOccurred())
+				gomega.Expect(agentConfig.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
 			}
 			if client != nil {
-				gomega.Expect(client.CleanUp()).NotTo(gomega.HaveOccurred())
+				gomega.Expect(client.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
 			}
 		}
 	})
@@ -77,7 +81,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			ginkgo.By("relying on SNI when Kubeconfig is used e.g. Kubelet")
 			gomega.Expect(client.QueryApiserverVersion("", false, options.kubernetesVersion, 5, 4)).To(gomega.BeTrue(), "Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
 			ginkgo.By("tunneling requests using HTTP/2 CONNECT when no SNI is present e.g. pods relying on kubernetes service in default namespace")
-			// TODO(irozzo): For sake of simplicity we are deploying an agent in the
+			// TODO: For sake of simplicity we are deploying an agent in the
 			// seed cluster. It would be better to create workers in the future for
 			// better coverage.
 			gomega.Expect(client.QueryApiserverVersion(agentConfig.GetKASHostPort(), true, options.kubernetesVersion, 5, 4)).To(gomega.BeTrue(), "Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")

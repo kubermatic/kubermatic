@@ -61,6 +61,8 @@ func (m *EtcdBackupConfigStatus) validateConditions(formats strfmt.Registry) err
 			if err := m.Conditions[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("conditions" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -85,6 +87,8 @@ func (m *EtcdBackupConfigStatus) validateCurrentBackups(formats strfmt.Registry)
 			if err := m.CurrentBackups[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("lastBackups" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("lastBackups" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -121,6 +125,8 @@ func (m *EtcdBackupConfigStatus) contextValidateConditions(ctx context.Context, 
 			if err := m.Conditions[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("conditions" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -139,6 +145,8 @@ func (m *EtcdBackupConfigStatus) contextValidateCurrentBackups(ctx context.Conte
 			if err := m.CurrentBackups[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("lastBackups" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("lastBackups" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

@@ -20,10 +20,8 @@ import (
 	"reflect"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -31,8 +29,11 @@ import (
 )
 
 func TestExternalCCMMigration(t *testing.T) {
+	const (
+		kubernetesVersionToTest = "1.21.0"
+	)
+
 	t.Parallel()
-	version, _ := semverlib.NewVersion("1.21.0")
 	testCases := []struct {
 		Name           string
 		Datacenter     *kubermaticv1.Datacenter
@@ -52,8 +53,11 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
 					},
 				},
 			},
@@ -78,14 +82,14 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
+					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
+						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionTrue,
 						},
 					},
@@ -103,8 +107,11 @@ func TestExternalCCMMigration(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
-					Version: semver.Semver{
-						Version: version,
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
 					},
 				},
 			},
@@ -120,8 +127,11 @@ func TestExternalCCMMigration(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{},
 					},
-					Version: semver.Semver{
-						Version: version,
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
 					},
 				},
 			},
@@ -146,14 +156,14 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
-					},
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
 				},
 				Status: kubermaticv1.ClusterStatus{
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted,
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
+					},
+					Conditions: map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{
+						kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted: {
 							Status: corev1.ConditionFalse,
 						},
 					},
@@ -180,8 +190,11 @@ func TestExternalCCMMigration(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
-					Version: semver.Semver{
-						Version: version,
+					Version: *semver.NewSemverOrDie(kubernetesVersionToTest),
+				},
+				Status: kubermaticv1.ClusterStatus{
+					Versions: kubermaticv1.ClusterVersionsStatus{
+						ControlPlane: *semver.NewSemverOrDie(kubernetesVersionToTest),
 					},
 				},
 			},

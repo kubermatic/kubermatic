@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -65,7 +65,7 @@ func TestListConstraintTemplates(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ctList, err := provider.List()
+			ctList, err := provider.List(context.Background())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -122,7 +122,7 @@ func TestGetConstraintTemplates(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ct, err := provider.Get("ct1")
+			ct, err := provider.Get(context.Background(), "ct1")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -162,7 +162,7 @@ func TestCreateConstraintTemplates(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ct, err := provider.Create(tc.ctToCreate)
+			ct, err := provider.Create(context.Background(), tc.ctToCreate)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -221,7 +221,7 @@ func TestUpdateConstraintTemplates(t *testing.T) {
 			updatedCT := ct.DeepCopy()
 			tc.constraintUpdate(updatedCT)
 
-			ct, err = provider.Update(updatedCT)
+			ct, err = provider.Update(context.Background(), updatedCT)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -265,7 +265,7 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = provider.Delete(tc.CTtoDelete)
+			err = provider.Delete(context.Background(), tc.CTtoDelete)
 			if err != nil {
 				t.Fatal(err)
 			}

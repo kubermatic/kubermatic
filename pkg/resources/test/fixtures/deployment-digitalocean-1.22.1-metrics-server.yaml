@@ -114,7 +114,7 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 100m
+            cpu: "1"
             memory: 32Mi
           requests:
             cpu: 5m
@@ -158,7 +158,7 @@ spec:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.3.2
+        image: quay.io/kubermatic/http-prober:v0.3.3
         name: copy-http-prober
         resources: {}
         volumeMounts:
@@ -168,15 +168,15 @@ spec:
       - name: metrics-server
         secret:
           secretName: metrics-server
+      - name: metrics-server-serving-cert
+        secret:
+          secretName: metrics-server-serving-cert
       - name: openvpn-client-certificates
         secret:
           secretName: openvpn-client-certificates
       - name: kubeletdnatcontroller-kubeconfig
         secret:
           secretName: kubeletdnatcontroller-kubeconfig
-      - name: metrics-server-serving-cert
-        secret:
-          secretName: metrics-server-serving-cert
       - emptyDir: {}
         name: http-prober-bin
 status: {}

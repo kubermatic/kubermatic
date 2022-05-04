@@ -35,6 +35,11 @@ spec:
       containers:
       - name: kube-state-metrics
         image: '{{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}'
+        # Ref: https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/#what-is-new-in-v2-0
+        # Issue and solutions: https://github.com/kubernetes/kube-state-metrics/issues/1501#issuecomment-863020915
+        # and https://github.com/kubernetes/kube-state-metrics/issues/1489#issuecomment-851970288
+        args:
+        - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance]
         ports:
         - name: http-metrics
           containerPort: 8080

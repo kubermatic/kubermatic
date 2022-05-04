@@ -33,7 +33,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem"]}'
+        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-namespace","cluster-de-test-01"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
@@ -43,6 +43,10 @@ spec:
           value: aws-access-key-id
         - name: AWS_SECRET_ACCESS_KEY
           value: aws-secret-access-key
+        - name: AWS_ASSUME_ROLE_ARN
+          value: aws-assume-role-arn
+        - name: AWS_ASSUME_ROLE_EXTERNAL_ID
+          value: aws-assume-role-external-id
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
@@ -55,9 +59,13 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: no_proxy
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
-        - name: KUBECONFIG
-          value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: docker.io/kubermatic/machine-controller:v1.35.1
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: PROBER_KUBECONFIG
+          value: /etc/kubernetes/worker-kubeconfig/kubeconfig
+        image: docker.io/kubermatic/machine-controller:v1.48.0
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -86,7 +94,7 @@ spec:
             cpu: 10m
             memory: 32Mi
         volumeMounts:
-        - mountPath: /etc/kubernetes/kubeconfig
+        - mountPath: /etc/kubernetes/worker-kubeconfig
           name: machinecontroller-kubeconfig
           readOnly: true
         - mountPath: /tmp/cert
@@ -104,12 +112,13 @@ spec:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.3.2
+        image: quay.io/kubermatic/http-prober:v0.3.3
         name: copy-http-prober
         resources: {}
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      serviceAccountName: kubermatic-machine-controller-webhook
       volumes:
       - name: machinecontroller-kubeconfig
         secret:

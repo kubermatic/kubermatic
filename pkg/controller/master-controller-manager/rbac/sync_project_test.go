@@ -19,16 +19,16 @@ package rbac
 import (
 	"context"
 	"reflect"
-	"sort"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -36,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta/testrestmapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,53 +66,6 @@ func getFakeClientset(objs ...ctrlruntimeclient.Object) *fake.Clientset {
 	return fake.NewSimpleClientset(runtimeObjects...)
 }
 
-func TestEnsureProjectIsInActivePhase(t *testing.T) {
-	tests := []struct {
-		name            string
-		projectToSync   *kubermaticv1.Project
-		expectedProject *kubermaticv1.Project
-	}{
-		{
-			name:          "scenario 1: a project's phase is set to Active",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			expectedProject: func() *kubermaticv1.Project {
-				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				project.Status.Phase = "Active"
-				return project
-			}(),
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// setup the test scenario
-			ctx := context.Background()
-			objs := []ctrlruntimeclient.Object{}
-			objs = append(objs, test.expectedProject)
-			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
-
-			// act
-			target := projectController{
-				client:     masterClient,
-				restMapper: getFakeRestMapper(t),
-			}
-			err := target.ensureProjectIsInActivePhase(ctx, test.projectToSync)
-			assert.Nil(t, err)
-
-			// validate
-			var projectList kubermaticv1.ProjectList
-			err = masterClient.List(ctx, &projectList)
-			assert.NoError(t, err)
-
-			projectList.Items[0].ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
-
-			assert.Len(t, projectList.Items, 1)
-			assert.Equal(t, projectList.Items[0], *test.expectedProject)
-		})
-	}
-}
-
 func TestEnsureProjectInitialized(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -122,10 +74,10 @@ func TestEnsureProjectInitialized(t *testing.T) {
 	}{
 		{
 			name:          "scenario 1: cleanup finializer is added to a project",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball"),
 			expectedProject: func() *kubermaticv1.Project {
-				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
-				project.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				project := test.CreateProject("thunderball")
+				project.Finalizers = []string{"kubermatic.k8c.io/controller-manager-rbac-cleanup"}
 				return project
 			}(),
 		},
@@ -143,6 +95,7 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			target := projectController{
 				client:     masterClient,
 				restMapper: getFakeRestMapper(t),
+				log:        zap.NewNop().Sugar(),
 			}
 			err := target.ensureCleanupFinalizerExists(ctx, test.projectToSync)
 			assert.NoError(t, err)
@@ -589,6 +542,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureClusterRBACRoleBindingForResources(ctx, test.projectToSync)
 			assert.NoError(t, err)
@@ -649,188 +603,6 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 	}
 }
 
-// TestEnsureClusterResourcesCleanup test if cluster resources for the given
-// project were removed from all physical locations
-func TestEnsureClusterResourcesCleanup(t *testing.T) {
-	tests := []struct {
-		name                string
-		projectToSync       *kubermaticv1.Project
-		existingClustersOn  map[string][]*kubermaticv1.Cluster
-		remainingClustersOn map[string][]string
-	}{
-		// scenario 1
-		{
-			name:          "scenario 1: when a project is removed all cluster resources from all clusters (physical location) are also removed",
-			projectToSync: test.CreateProject("plan9", test.CreateUser("bob")),
-			existingClustersOn: map[string][]*kubermaticv1.Cluster{
-
-				// cluster resources that are on "a" physical location
-				"a": {
-
-					// cluster "abcd" that belongs to "thunderball" project
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "abcd",
-							UID:  types.UID("abcdID"),
-							Labels: map[string]string{
-								kubermaticv1.ProjectIDLabelKey: "thunderball",
-							},
-						},
-						Spec:    kubermaticv1.ClusterSpec{},
-						Address: kubermaticv1.ClusterAddress{},
-						Status: kubermaticv1.ClusterStatus{
-							NamespaceName: "cluster-abcd",
-						},
-					},
-
-					// cluster "ab" that belongs to "plan9" project
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "ab",
-							UID:  types.UID("abID"),
-							Labels: map[string]string{
-								kubermaticv1.ProjectIDLabelKey: "plan9",
-							},
-						},
-						Spec:    kubermaticv1.ClusterSpec{},
-						Address: kubermaticv1.ClusterAddress{},
-						Status: kubermaticv1.ClusterStatus{
-							NamespaceName: "cluster-ab",
-						},
-					},
-				},
-
-				// cluster resources that are on "b" physical location
-				"b": {
-
-					// cluster "xyz" that belongs to "plan9" project
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "xyz",
-							UID:  types.UID("xyzID"),
-							Labels: map[string]string{
-								kubermaticv1.ProjectIDLabelKey: "plan9",
-							},
-						},
-						Spec:    kubermaticv1.ClusterSpec{},
-						Address: kubermaticv1.ClusterAddress{},
-						Status: kubermaticv1.ClusterStatus{
-							NamespaceName: "cluster-xyz",
-						},
-					},
-
-					// cluster "zzz" that belongs to "plan9" project
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "zzz",
-							UID:  types.UID("zzzID"),
-							Labels: map[string]string{
-								kubermaticv1.ProjectIDLabelKey: "plan9",
-							},
-						},
-						Spec:    kubermaticv1.ClusterSpec{},
-						Address: kubermaticv1.ClusterAddress{},
-						Status: kubermaticv1.ClusterStatus{
-							NamespaceName: "cluster-zzz",
-						},
-					},
-				},
-
-				// cluster resources that are on "c" physical location
-				"c": {
-
-					// cluster "cat" that belongs to "acme" project
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "cat",
-							UID:  types.UID("catID"),
-							Labels: map[string]string{
-								kubermaticv1.ProjectIDLabelKey: "acme",
-							},
-						},
-						Spec:    kubermaticv1.ClusterSpec{},
-						Address: kubermaticv1.ClusterAddress{},
-						Status: kubermaticv1.ClusterStatus{
-							NamespaceName: "cluster-cat",
-						},
-					},
-
-					// cluster "bat" that belongs to "acme" project
-					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "bat",
-							UID:  types.UID("batID"),
-							Labels: map[string]string{
-								kubermaticv1.ProjectIDLabelKey: "acme",
-							},
-						},
-						Spec:    kubermaticv1.ClusterSpec{},
-						Address: kubermaticv1.ClusterAddress{},
-						Status: kubermaticv1.ClusterStatus{
-							NamespaceName: "cluster-bat",
-						},
-					},
-				},
-			},
-			remainingClustersOn: map[string][]string{
-				"a": {"abcd"},
-				"b": {},
-				"c": {"cat", "bat"},
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// prepare test data
-			ctx := context.Background()
-
-			seedClientMap := make(map[string]ctrlruntimeclient.Client, len(test.existingClustersOn))
-			{
-				index := 0
-				for providerName, clusterResources := range test.existingClustersOn {
-					kubermaticObjs := []ctrlruntimeclient.Object{}
-					for _, clusterResource := range clusterResources {
-						kubermaticObjs = append(kubermaticObjs, clusterResource)
-					}
-
-					seedClientMap[providerName] = fakectrlruntimeclient.NewClientBuilder().WithObjects(kubermaticObjs...).Build()
-					index++
-				}
-			}
-			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(test.projectToSync).Build()
-
-			// act
-			target := projectController{
-				client:        fakeMasterClusterClient,
-				restMapper:    getFakeRestMapper(t),
-				seedClientMap: seedClientMap,
-			}
-			if err := target.ensureProjectCleanup(ctx, test.projectToSync); err != nil {
-				t.Fatal(err)
-			}
-
-			// validate
-			for providerName, expectedClusterResources := range test.remainingClustersOn {
-				cli := seedClientMap[providerName]
-
-				var clusterList kubermaticv1.ClusterList
-				err := cli.List(ctx, &clusterList)
-				assert.NoError(t, err)
-
-				remainingClusters := []string{}
-				for _, c := range clusterList.Items {
-					remainingClusters = append(remainingClusters, c.Name)
-				}
-
-				sort.Strings(expectedClusterResources)
-				sort.Strings(remainingClusters)
-
-				assert.Equal(t, expectedClusterResources, remainingClusters)
-			}
-		})
-	}
-}
-
 func TestEnsureProjectCleanup(t *testing.T) {
 	tests := []struct {
 		name                                 string
@@ -849,7 +621,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 		{
 
 			name:          "Scenario 1: When a project is removed corresponding Subject from the Cluster RBAC Binding are removed",
-			projectToSync: test.CreateProject("plan9", test.CreateUser("James Bond")),
+			projectToSync: test.CreateProject("plan9"),
 			projectResourcesToSync: []projectResource{
 				{
 					object: &kubermaticv1.Cluster{
@@ -1065,6 +837,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				client:           fakeMasterClusterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureProjectCleanup(ctx, test.projectToSync)
 			assert.NoError(t, err)
@@ -1337,6 +1110,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				client:           fakeMasterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClients,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureClusterRBACRoleForResources(ctx)
 			assert.Nil(t, err)
@@ -1392,211 +1166,6 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				assert.Len(t, clusterRoleList.Items, len(test.expectedClusterRolesForSeeds),
 					"cluster contains more ClusterRoles than expected (%d > %d)", len(clusterRoleList.Items), len(test.expectedClusterRolesForSeeds))
 			}
-		})
-	}
-}
-
-func TestEnsureProjectOwner(t *testing.T) {
-	tests := []struct {
-		name                   string
-		existingKubermaticObjs []ctrlruntimeclient.Object
-		projectToSync          *kubermaticv1.Project
-		existingUser           *kubermaticv1.User
-		expectedBindings       []kubermaticv1.UserProjectBinding
-		existingBinding        *kubermaticv1.UserProjectBinding
-	}{
-		{
-			name:                   "scenario 1: make sure, that the owner of the newly created project is set properly.",
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
-			projectToSync:          test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			existingUser:           test.CreateUser("James Bond"),
-			expectedBindings: func() []kubermaticv1.UserProjectBinding {
-				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
-				binding.ObjectMeta.Name = ""
-				binding.ResourceVersion = ""
-				return []kubermaticv1.UserProjectBinding{*binding}
-			}(),
-		},
-		{
-			name:                   "scenario 2: no op when the owner of the project was set.",
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
-			projectToSync:          test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			existingUser:           test.CreateUser("James Bond"),
-			existingBinding:        test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedBindings: func() []kubermaticv1.UserProjectBinding {
-				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.ObjectMeta.Name = ""
-				binding.ResourceVersion = ""
-				return []kubermaticv1.UserProjectBinding{*binding}
-			}(),
-		},
-		{
-			name: "scenario 3: make sure, that the owners of the newly created project are set properly.",
-			existingKubermaticObjs: []ctrlruntimeclient.Object{
-				test.CreateUser("Batman"),
-			},
-			projectToSync: func() *kubermaticv1.Project {
-				firstOwner := test.CreateUser("James Bond")
-				secondOwner := test.CreateUser("Batman")
-				return &kubermaticv1.Project{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       kubermaticv1.ProjectKindName,
-						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						UID:  types.UID("thunderball") + "ID",
-						Name: "thunderball",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: firstOwner.APIVersion,
-								Kind:       firstOwner.Kind,
-								UID:        firstOwner.GetUID(),
-								Name:       firstOwner.Name,
-							},
-							{
-								APIVersion: secondOwner.APIVersion,
-								Kind:       secondOwner.Kind,
-								UID:        secondOwner.GetUID(),
-								Name:       secondOwner.Name,
-							},
-						},
-					},
-					Spec: kubermaticv1.ProjectSpec{
-						Name: "thunderball",
-					},
-					Status: kubermaticv1.ProjectStatus{
-						Phase: kubermaticv1.ProjectInactive,
-					},
-				}
-			}(),
-			existingUser: test.CreateUser("James Bond"),
-			expectedBindings: func() []kubermaticv1.UserProjectBinding {
-				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
-				binding.ObjectMeta.Name = ""
-				binding.ResourceVersion = ""
-				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
-				binding2.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
-				binding2.ObjectMeta.Name = ""
-				binding2.ResourceVersion = ""
-				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
-			}(),
-		},
-		{
-			name: "scenario 4: create bindings only for existing users",
-			existingKubermaticObjs: []ctrlruntimeclient.Object{
-				test.CreateUser("Batman"),
-			},
-			projectToSync: func() *kubermaticv1.Project {
-				firstOwner := test.CreateUser("James Bond")
-				secondOwner := test.CreateUser("Batman")
-				thirdOwner := test.CreateUser("Superman")
-				return &kubermaticv1.Project{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       kubermaticv1.ProjectKindName,
-						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						UID:  types.UID("thunderball") + "ID",
-						Name: "thunderball",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: firstOwner.APIVersion,
-								Kind:       firstOwner.Kind,
-								UID:        firstOwner.GetUID(),
-								Name:       firstOwner.Name,
-							},
-							{
-								APIVersion: secondOwner.APIVersion,
-								Kind:       secondOwner.Kind,
-								UID:        secondOwner.GetUID(),
-								Name:       secondOwner.Name,
-							},
-							{
-								APIVersion: thirdOwner.APIVersion,
-								Kind:       thirdOwner.Kind,
-								UID:        thirdOwner.GetUID(),
-								Name:       thirdOwner.Name,
-							},
-						},
-					},
-					Spec: kubermaticv1.ProjectSpec{
-						Name: "thunderball",
-					},
-					Status: kubermaticv1.ProjectStatus{
-						Phase: kubermaticv1.ProjectInactive,
-					},
-				}
-			}(),
-			existingUser: test.CreateUser("James Bond"),
-			expectedBindings: func() []kubermaticv1.UserProjectBinding {
-				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
-				binding.ObjectMeta.Name = ""
-				binding.ResourceVersion = ""
-				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
-				binding2.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
-				binding2.ObjectMeta.Name = ""
-				binding2.ResourceVersion = ""
-				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
-			}(),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// setup the test scenario
-			ctx := context.Background()
-			objs := test.existingKubermaticObjs
-			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			if test.existingUser != nil {
-				err := userIndexer.Add(test.existingUser)
-				if err != nil {
-					t.Fatal(err)
-				}
-				objs = append(objs, test.existingUser)
-			}
-			bindingIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			if test.existingBinding != nil {
-				err := bindingIndexer.Add(test.existingBinding)
-				if err != nil {
-					t.Fatal(err)
-				}
-				objs = append(objs, test.existingBinding)
-			}
-			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
-
-			// act
-			target := projectController{
-				client:     masterClient,
-				restMapper: getFakeRestMapper(t),
-			}
-			err := target.ensureProjectOwner(ctx, test.projectToSync)
-			assert.NoError(t, err)
-
-			// validate
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			var userProjectBindingList kubermaticv1.UserProjectBindingList
-			err = masterClient.List(ctx, &userProjectBindingList)
-			assert.NoError(t, err)
-
-			assert.Len(t, userProjectBindingList.Items, len(test.expectedBindings))
-
-			var copyUserProjectBindingList []kubermaticv1.UserProjectBinding
-			for _, item := range userProjectBindingList.Items {
-				// Hack around the fact that the bindings' names are random
-				item.ObjectMeta.Name = ""
-				item.ResourceVersion = ""
-				copyUserProjectBindingList = append(copyUserProjectBindingList, item)
-			}
-
-			sortUserProjectBinding(test.expectedBindings)
-			sortUserProjectBinding(copyUserProjectBindingList)
-
-			assert.Equal(t, copyUserProjectBindingList, test.expectedBindings)
 		})
 	}
 }
@@ -1843,6 +1412,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureRBACRoleForResources(ctx)
 			assert.Nil(t, err)
@@ -2291,6 +1861,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureRBACRoleBindingForResources(ctx, test.projectToSync)
 			assert.Nil(t, err)
@@ -2367,7 +1938,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 		{
 
 			name:          "Scenario 1: When a project is removed corresponding Subject from the RBAC Binding are removed",
-			projectToSync: test.CreateProject("plan9", test.CreateUser("James Bond")),
+			projectToSync: test.CreateProject("plan9"),
 			projectResourcesToSync: []projectResource{
 
 				{
@@ -2589,6 +2160,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err = target.ensureProjectCleanup(ctx, test.projectToSync)
 			assert.NoError(t, err)
@@ -2646,11 +2218,4 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			}
 		})
 	}
-}
-
-func sortUserProjectBinding(bindings []kubermaticv1.UserProjectBinding) {
-	sort.Slice(bindings, func(i, j int) bool {
-		mi, mj := bindings[i], bindings[j]
-		return mi.Spec.UserEmail < mj.Spec.UserEmail
-	})
 }

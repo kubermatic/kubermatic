@@ -23,21 +23,24 @@ import (
 	"net/http"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ClusterTemplateProvider struct that holds required components in order manage cluster templates
+// ClusterTemplateProvider struct that holds required components in order manage cluster templates.
 type ClusterTemplateProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient ImpersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 }
 
-// NewClusterTemplateProvider returns a cluster template provider
+var _ provider.ClusterTemplateProvider = &ClusterTemplateProvider{}
+
+// NewClusterTemplateProvider returns a cluster template provider.
 func NewClusterTemplateProvider(createMasterImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) (*ClusterTemplateProvider, error) {
 	return &ClusterTemplateProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
@@ -45,12 +48,16 @@ func NewClusterTemplateProvider(createMasterImpersonatedClient ImpersonationClie
 	}, nil
 }
 
-func (p *ClusterTemplateProvider) New(userInfo *provider.UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error) {
+func (p *ClusterTemplateProvider) New(ctx context.Context, userInfo *provider.UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error) {
 	if userInfo == nil || newClusterTemplate == nil {
 		return nil, errors.New("userInfo and/or cluster is missing but required")
 	}
 	if scope == "" {
 		return nil, errors.New("cluster template scope is missing but required")
+	}
+
+	if userInfo.IsAdmin {
+		return p.createTemplate(ctx, newClusterTemplate)
 	}
 
 	if !userInfo.IsAdmin && scope == kubermaticv1.GlobalClusterTemplateScope {
@@ -65,15 +72,18 @@ func (p *ClusterTemplateProvider) New(userInfo *provider.UserInfo, newClusterTem
 		return nil, errors.New("project ID is missing but required")
 	}
 
-	if err := p.clientPrivileged.Create(context.Background(), newClusterTemplate); err != nil {
+	return p.createTemplate(ctx, newClusterTemplate)
+}
+
+func (p *ClusterTemplateProvider) createTemplate(ctx context.Context, newClusterTemplate *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error) {
+	if err := p.clientPrivileged.Create(ctx, newClusterTemplate); err != nil {
 		return nil, err
 	}
 
 	return newClusterTemplate, nil
-
 }
 
-func (p *ClusterTemplateProvider) List(userInfo *provider.UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error) {
+func (p *ClusterTemplateProvider) List(ctx context.Context, userInfo *provider.UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error) {
 	if userInfo == nil {
 		return nil, errors.New("userInfo is missing but required")
 	}
@@ -81,7 +91,7 @@ func (p *ClusterTemplateProvider) List(userInfo *provider.UserInfo, projectID st
 	var result []kubermaticv1.ClusterTemplate
 	globalUserResult := &kubermaticv1.ClusterTemplateList{}
 
-	if err := p.clientPrivileged.List(context.Background(), globalUserResult); err != nil {
+	if err := p.clientPrivileged.List(ctx, globalUserResult); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +99,7 @@ func (p *ClusterTemplateProvider) List(userInfo *provider.UserInfo, projectID st
 		switch {
 		case template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.GlobalClusterTemplateScope:
 			result = append(result, template)
-		case strings.EqualFold(template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey], userInfo.Email):
+		case strings.EqualFold(template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey], userInfo.Email) && template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.UserClusterTemplateScope:
 			result = append(result, template)
 		case projectID != "" && template.Labels[kubermaticv1.ProjectIDLabelKey] == projectID && template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.ProjectClusterTemplateScope:
 			result = append(result, template)
@@ -99,7 +109,7 @@ func (p *ClusterTemplateProvider) List(userInfo *provider.UserInfo, projectID st
 	return result, nil
 }
 
-func (p *ClusterTemplateProvider) Get(userInfo *provider.UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error) {
+func (p *ClusterTemplateProvider) Get(ctx context.Context, userInfo *provider.UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error) {
 	if userInfo == nil {
 		return nil, errors.New("userInfo is missing but required")
 	}
@@ -109,7 +119,7 @@ func (p *ClusterTemplateProvider) Get(userInfo *provider.UserInfo, projectID, te
 
 	result := &kubermaticv1.ClusterTemplate{}
 
-	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: templateID}, result); err != nil {
+	if err := p.clientPrivileged.Get(ctx, ctrlruntimeclient.ObjectKey{Name: templateID}, result); err != nil {
 		return nil, err
 	}
 
@@ -130,7 +140,7 @@ func (p *ClusterTemplateProvider) Get(userInfo *provider.UserInfo, projectID, te
 	return result, nil
 }
 
-func (p *ClusterTemplateProvider) Delete(userInfo *provider.UserInfo, projectID, templateID string) error {
+func (p *ClusterTemplateProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, projectID, templateID string) error {
 	if userInfo == nil {
 		return errors.New("userInfo is missing but required")
 	}
@@ -138,7 +148,7 @@ func (p *ClusterTemplateProvider) Delete(userInfo *provider.UserInfo, projectID,
 		return errors.New("templateID is missing but required")
 	}
 
-	result, err := p.Get(userInfo, projectID, templateID)
+	result, err := p.Get(ctx, userInfo, projectID, templateID)
 	if err != nil {
 		return err
 	}
@@ -148,5 +158,21 @@ func (p *ClusterTemplateProvider) Delete(userInfo *provider.UserInfo, projectID,
 		return kubermaticerrors.New(http.StatusForbidden, fmt.Sprintf("user %s can't delete template %s", userInfo.Email, templateID))
 	}
 
-	return p.clientPrivileged.Delete(context.Background(), result)
+	return p.clientPrivileged.Delete(ctx, result)
+}
+
+func (p *ClusterTemplateProvider) ListALL(ctx context.Context, labelSelector labels.Selector) ([]kubermaticv1.ClusterTemplate, error) {
+	optionsLabelSelector := labels.Everything()
+	if labelSelector != nil {
+		optionsLabelSelector = labelSelector
+	}
+
+	globalUserResult := &kubermaticv1.ClusterTemplateList{}
+	if err := p.clientPrivileged.List(ctx, globalUserResult, ctrlruntimeclient.MatchingLabelsSelector{
+		Selector: optionsLabelSelector,
+	}); err != nil {
+		return nil, err
+	}
+
+	return globalUserResult.Items, nil
 }

@@ -17,15 +17,19 @@ limitations under the License.
 package backup
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,26 +43,46 @@ import (
 )
 
 var (
-	testStoreContainer = corev1.Container{Name: "kubermatic-store",
-		Image:        "busybox",
-		VolumeMounts: []corev1.VolumeMount{{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
-	testCleanupContainer = corev1.Container{Name: "kubermatic-cleanup",
+	testStoreContainer = corev1.Container{
+		Name:  "kubermatic-store",
+		Image: "busybox",
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: SharedVolumeName, MountPath: "/etcd-backups"},
+		},
+	}
+
+	testCleanupContainer = corev1.Container{
+		Name:  "kubermatic-cleanup",
 		Image: "busybox",
 	}
 )
 
+func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
+	var buf bytes.Buffer
+	if err := yaml.Encode(c, &buf); err != nil {
+		t.Fatalf("failed to encode container as YAML: %v", err)
+	}
+
+	return buf.String()
+}
+
 func TestEnsureBackupCronJob(t *testing.T) {
+	version := *semver.NewSemverOrDie("1.22.5")
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie("1.22.1"),
+			Version: version,
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "testnamespace",
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Etcd: kubermaticv1.HealthStatusUp,
+			},
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: version,
+				Apiserver:    version,
 			},
 		},
 	}
@@ -84,15 +108,29 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		},
 	}
 
+	configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(&kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
+				BackupStoreContainer:   encodeContainerAsYAML(t, &testStoreContainer),
+				BackupCleanupContainer: encodeContainerAsYAML(t, &testCleanupContainer),
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create config getter: %v", err)
+	}
+
 	ctx := context.Background()
 	reconciler := &Reconciler{
 		log:                  kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		storeContainer:       testStoreContainer,
-		cleanupContainer:     testCleanupContainer,
 		backupContainerImage: DefaultBackupContainerImage,
 		Client:               ctrlruntimefakeclient.NewClientBuilder().WithObjects(caSecret, cluster).Build(),
 		scheme:               scheme.Scheme,
 		caBundle:             certificates.NewFakeCABundle(),
+		configGetter:         configGetter,
+		seedGetter: func() (*kubermaticv1.Seed, error) {
+			return test.GenTestSeed(), nil
+		},
 	}
 
 	if _, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}}); err != nil {
@@ -160,8 +198,8 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	if secret.OwnerReferences[0].Kind != "Cluster" {
 		t.Errorf("Expected ownerRef.Kind to be 'Cluster' but was %q", secret.OwnerReferences[0].Kind)
 	}
-	if secret.OwnerReferences[0].APIVersion != "kubermatic.k8s.io/v1" {
-		t.Errorf("Expected ownerRef.APIVersion to be 'kubermatic.k8s.io/v1' but was %q", secret.OwnerReferences[0].APIVersion)
+	if secret.OwnerReferences[0].APIVersion != "kubermatic.k8c.io/v1" {
+		t.Errorf("Expected ownerRef.APIVersion to be 'kubermatic.k8c.io/v1' but was %q", secret.OwnerReferences[0].APIVersion)
 	}
 	if secret.OwnerReferences[0].Name != "test-cluster" {
 		t.Errorf("Expected ownerRef.Name to be 'test-cluster' but was %q", secret.OwnerReferences[0].Name)
@@ -169,11 +207,8 @@ func TestEnsureBackupCronJob(t *testing.T) {
 }
 
 func TestCleanupJobSpec(t *testing.T) {
-	reconciler := Reconciler{
-		cleanupContainer: testCleanupContainer,
-	}
-
-	cleanupJob := reconciler.cleanupJob(&kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}})
+	reconciler := Reconciler{}
+	cleanupJob := reconciler.cleanupJob(&kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}}, &testCleanupContainer)
 
 	if cleanupJob.Namespace != metav1.NamespaceSystem {
 		t.Errorf("expected cleanup jobs Namespace to be %q but was %q", metav1.NamespaceSystem, cleanupJob.Namespace)

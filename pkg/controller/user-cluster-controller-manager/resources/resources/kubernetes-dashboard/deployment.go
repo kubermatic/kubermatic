@@ -22,6 +22,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -48,11 +49,11 @@ var (
 const (
 	scraperName      = resources.MetricsScraperDeploymentName
 	scraperImageName = "kubernetesui/metrics-scraper"
-	scraperTag       = "v1.0.3"
+	scraperTag       = "v1.0.7"
 )
 
-// DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment
-func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
+// DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment.
+func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = scraperName
@@ -69,24 +70,30 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			dep.Spec.Template.Spec.Containers = getContainers()
+			dep.Spec.Template.Spec.Containers = getContainers(registryWithOverwrite)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = scraperName
+
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 
 			return dep, nil
 		}
 	}
 }
 
-func getContainers() []corev1.Container {
+func getContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            scraperName,
-			Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, scraperImageName, scraperTag),
+			Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), scraperImageName, scraperTag),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/metrics-sidecar"},
 			VolumeMounts: []corev1.VolumeMount{

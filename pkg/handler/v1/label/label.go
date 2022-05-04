@@ -22,7 +22,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticcrdv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 const (
@@ -36,8 +36,9 @@ const (
 var systemLabels apiv1.ResourceLabelMap = map[apiv1.ResourceType]apiv1.LabelKeyList{
 	ProjectResourceType: {},
 	ClusterResourceType: {
-		kubermaticcrdv1.WorkerNameLabelKey,
-		kubermaticcrdv1.ProjectIDLabelKey,
+		kubermaticv1.WorkerNameLabelKey,
+		kubermaticv1.ProjectIDLabelKey,
+		kubermaticv1.IsCredentialPresetLabelKey,
 	},
 	NodeDeploymentResourceType: {},
 }
@@ -55,7 +56,7 @@ func GetSystemLabels() apiv1.ResourceLabelMap {
 	return systemLabels
 }
 
-// FilterLabels removes system labels from the provided labels map
+// FilterLabels removes system labels from the provided labels map.
 func FilterLabels(resource apiv1.ResourceType, labels map[string]string) map[string]string {
 	for _, label := range systemLabels[resource] {
 		delete(labels, label)

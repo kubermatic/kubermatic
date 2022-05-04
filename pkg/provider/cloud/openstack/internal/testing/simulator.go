@@ -19,7 +19,7 @@ package testing
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"sync"
@@ -31,6 +31,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
@@ -252,6 +253,51 @@ func (s *Subnet) SubResources() []ResourceBuilder {
 	return nil
 }
 
+type SubnetPool subnetpools.SubnetPool
+
+func (s SubnetPool) GetID() string {
+	return s.ID
+}
+
+func (s SubnetPool) GetName() string {
+	return s.Name
+}
+
+func (s SubnetPool) GetType() string {
+	return "subnetpools"
+}
+
+func (s SubnetPool) GetPath() string {
+	return "/subnetpools"
+}
+
+func (s *SubnetPool) FromCreateRequest(c []byte) (Resource, error) {
+	createOpts := struct {
+		subnetpools.CreateOpts `json:"subnetPool"`
+	}{}
+	err := json.Unmarshal(c, &createOpts)
+	if err != nil {
+		return nil, err
+	}
+	s.ID = SubnetPoolID
+	s.Description = createOpts.Description
+	s.ProjectID = createOpts.ProjectID
+	return s, nil
+}
+
+func (s *SubnetPool) CreateResponse() ([]byte, error) {
+	res := struct {
+		SubnetPool *SubnetPool `json:"subnetPool"`
+	}{
+		SubnetPool: s,
+	}
+	return json.Marshal(res)
+}
+
+func (s *SubnetPool) SubResources() []ResourceBuilder {
+	return nil
+}
+
 type Port ports.Port
 
 func (p Port) GetID() string {
@@ -426,6 +472,7 @@ func NewSimulator(t *testing.T) *Simulator {
 	}).
 		Register(func() Resource { return &Network{} }).
 		Register(func() Resource { return &Subnet{} }).
+		Register(func() Resource { return &SubnetPool{} }).
 		Register(func() Resource { return &SecGroup{} }).
 		Register(func() Resource { return &SecGroupRule{} }).
 		Register(func() Resource { return &Router{} }).
@@ -504,7 +551,7 @@ func (s *Simulator) Handle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, string(out))
 	case http.MethodPost:
-		reqBody, err := ioutil.ReadAll(r.Body)
+		reqBody, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err.Error())
@@ -529,7 +576,7 @@ func (s *Simulator) Handle(w http.ResponseWriter, r *http.Request) {
 		s.resources[r.URL.Path] = append(s.resources[r.URL.Path], newRes)
 		s.Unlock()
 	case http.MethodPut:
-		reqBody, err := ioutil.ReadAll(r.Body)
+		reqBody, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err.Error())

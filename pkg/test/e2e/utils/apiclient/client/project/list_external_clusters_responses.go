@@ -60,16 +60,16 @@ func NewListExternalClustersOK() *ListExternalClustersOK {
 
 /* ListExternalClustersOK describes a response with status code 200, with default header values.
 
-ClusterList
+ExternalCluster
 */
 type ListExternalClustersOK struct {
-	Payload models.ClusterList
+	Payload []*models.ExternalCluster
 }
 
 func (o *ListExternalClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersOK  %+v", 200, o.Payload)
 }
-func (o *ListExternalClustersOK) GetPayload() models.ClusterList {
+func (o *ListExternalClustersOK) GetPayload() []*models.ExternalCluster {
 	return o.Payload
 }
 

@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// NamespaceCreator creates the namespace for CloudInitSettingsNamespace
+// NamespaceCreator creates the namespace for CloudInitSettingsNamespace.
 func NamespaceCreator() (string, reconciling.NamespaceCreator) {
 	return resources.CloudInitSettingsNamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		return ns, nil

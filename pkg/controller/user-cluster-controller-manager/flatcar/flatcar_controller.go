@@ -20,13 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources"
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +39,9 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_flatcar_controller"
+	// This controller is responsible for ensuring that the flatcar-linux-update-operator is installed when we have a healthy(running) flatcar
+	// node in our cluster.
+	ControllerName = "kkp-flatcar-update-operator-controller"
 )
 
 type Reconciler struct {
@@ -49,7 +52,6 @@ type Reconciler struct {
 }
 
 func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
-
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
 		overwriteRegistry: overwriteRegistry,
@@ -79,11 +81,36 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %v", err)
+	var nodeList corev1.NodeList
+	if err := r.List(ctx, &nodeList,
+		ctrlruntimeclient.MatchingLabels{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue},
+	); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	// filter out any Flatcar nodes that are already being deleted
+	var nodes []corev1.Node
+	for _, node := range nodeList.Items {
+		if node.ObjectMeta.DeletionTimestamp == nil {
+			nodes = append(nodes, node)
+		}
+	}
+
+	if len(nodes) == 0 {
+		if err := r.cleanupUpdateOperatorResources(ctx); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to clean up UpdateOperator resources: %w", err)
+		}
+	} else {
+		if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %w", err)
+		}
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
+	return resources.EnsureAllDeleted(ctx, r.Client)
 }
 
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
@@ -94,7 +121,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.AgentServiceAccountCreator(),
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the ServiceAccounts: %v", err)
+		return fmt.Errorf("failed to reconcile the ServiceAccounts: %w", err)
 	}
 
 	crCreators := []reconciling.NamedClusterRoleCreatorGetter{
@@ -102,7 +129,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.AgentClusterRoleCreator(),
 	}
 	if err := reconciling.ReconcileClusterRoles(ctx, crCreators, metav1.NamespaceNone, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the ClusterRoles: %v", err)
+		return fmt.Errorf("failed to reconcile the ClusterRoles: %w", err)
 	}
 
 	crbCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{
@@ -110,39 +137,30 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.AgentClusterRoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, crbCreators, metav1.NamespaceNone, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %v", err)
+		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %w", err)
 	}
 
 	depCreators := getDeploymentCreators(r.overwriteRegistry, r.updateWindow)
 	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the Deployments: %v", err)
+		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
 	dsCreators := getDaemonSetCreators(r.overwriteRegistry)
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the DaemonSets: %v", err)
+		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 
 	return nil
 }
 
-func getRegistryDefaultFunc(overwriteRegistry string) func(defaultRegistry string) string {
-	return func(defaultRegistry string) string {
-		if overwriteRegistry != "" {
-			return overwriteRegistry
-		}
-		return defaultRegistry
-	}
-}
-
 func getDeploymentCreators(overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow) []reconciling.NamedDeploymentCreatorGetter {
 	return []reconciling.NamedDeploymentCreatorGetter{
-		resources.OperatorDeploymentCreator(getRegistryDefaultFunc(overwriteRegistry), updateWindow),
+		resources.OperatorDeploymentCreator(registry.GetOverwriteFunc(overwriteRegistry), updateWindow),
 	}
 }
 
 func getDaemonSetCreators(overwriteRegistry string) []reconciling.NamedDaemonSetCreatorGetter {
 	return []reconciling.NamedDaemonSetCreatorGetter{
-		resources.AgentDaemonSetCreator(getRegistryDefaultFunc(overwriteRegistry)),
+		resources.AgentDaemonSetCreator(registry.GetOverwriteFunc(overwriteRegistry)),
 	}
 }

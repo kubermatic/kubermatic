@@ -17,9 +17,12 @@ limitations under the License.
 package packet
 
 import (
+	"context"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"github.com/packethost/packngo"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -39,23 +42,25 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 	}
 }
 
+var _ provider.CloudProvider = &packet{}
+
 // DefaultCloudSpec adds defaults to the CloudSpec.
-func (p *packet) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (p *packet) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec validates the given CloudSpec.
-func (p *packet) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (p *packet) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
 	_, _, err := GetCredentialsForCluster(spec, p.secretKeySelector)
 	return err
 }
 
 // InitializeCloudProvider initializes a cluster, in particular
 // updates BillingCycle to the defaultBillingCycle, if it is not set.
-func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *packet) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.Packet.BillingCycle == "" {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Packet.BillingCycle = defaultBillingCycle
 		})
 		if err != nil {
@@ -66,13 +71,18 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 	return cluster, nil
 }
 
-// CleanUpCloudProvider
-func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// TODO: Hey, you! Yes, you! Why don't you implement reconciling for Packet? Would be really cool :)
+// func (p *packet) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+// 	return cluster, nil
+// }
+
+// CleanUpCloudProvider.
+func (p *packet) CleanUpCloudProvider(_ context.Context, cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
-func (p *packet) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
+func (p *packet) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.CloudSpec, _ kubermaticv1.CloudSpec) error {
 	return nil
 }
 
@@ -101,4 +111,10 @@ func GetCredentialsForCluster(cloudSpec kubermaticv1.CloudSpec, secretKeySelecto
 	}
 
 	return apiKey, projectID, nil
+}
+
+func ValidateCredentials(apiKey, projectID string) error {
+	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
+	_, _, err := client.Projects.Get(projectID, nil)
+	return err
 }

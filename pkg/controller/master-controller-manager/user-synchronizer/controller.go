@@ -23,15 +23,16 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -40,14 +41,15 @@ import (
 )
 
 const (
-	ControllerName = "user-synchronizer"
+	ControllerName = "kkp-user-synchronizer"
 )
 
 type reconciler struct {
-	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
-	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
+	log             *zap.SugaredLogger
+	recorder        record.EventRecorder
+	masterClient    ctrlruntimeclient.Client
+	masterAPIReader ctrlruntimeclient.Reader
+	seedClients     map[string]ctrlruntimeclient.Client
 }
 
 func Add(
@@ -56,12 +58,12 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 ) error {
-
 	r := &reconciler{
-		log:          log.Named(ControllerName),
-		recorder:     masterManager.GetEventRecorderFor(ControllerName),
-		masterClient: masterManager.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
+		log:             log.Named(ControllerName),
+		recorder:        masterManager.GetEventRecorderFor(ControllerName),
+		masterClient:    masterManager.GetClient(),
+		masterAPIReader: masterManager.GetAPIReader(),
+		seedClients:     map[string]ctrlruntimeclient.Client{},
 	}
 
 	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
@@ -72,7 +74,7 @@ func Add(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
 		user := object.(*kubermaticv1.User)
-		return !kubernetes.IsProjectServiceAccount(user.Spec.Email)
+		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
 	})
 
 	for seedName, seedManager := range seedManagers {
@@ -80,7 +82,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate,
+		&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate, withEventFilter(),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for user objects in master cluster: %w", err)
 	}
@@ -88,12 +90,32 @@ func Add(
 	return nil
 }
 
-// Reconcile reconciles Kubermatic User objects (excluding service account users) on the master cluster to all seed clusters
+func withEventFilter() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return true
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return true
+		},
+	}
+}
+
+// Reconcile reconciles Kubermatic User objects (excluding service account users) on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 
 	user := &kubermaticv1.User{}
-	if err := r.masterClient.Get(ctx, request.NamespacedName, user); err != nil {
+	// using the reader here to bypass the cache. It is necessary because we update the same object we are watching
+	// in the case when master and seed clusters are on the same cluster. Otherwise, the old cache state can overwrite
+	// the update. Ideally, we would not reconcile the resource whose change caused the reconciliation.
+	if err := r.masterAPIReader.Get(ctx, request.NamespacedName, user); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
@@ -104,18 +126,31 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer) {
-		kuberneteshelper.AddFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, user); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to add user finalizer %s: %w", user.Name, err)
-		}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, kubermaticapiv1.SeedUserCleanupFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	userCreatorGetters := []reconciling.NamedKubermaticV1UserCreatorGetter{
 		userCreatorGetter(user),
 	}
 	err := r.syncAllSeeds(log, user, func(seedClusterClient ctrlruntimeclient.Client, user *kubermaticv1.User) error {
-		return reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClusterClient)
+		err := reconciling.ReconcileKubermaticV1Users(ctx, userCreatorGetters, "", seedClusterClient)
+		if err != nil {
+			return fmt.Errorf("failed to reconcile user: %w", err)
+		}
+
+		seedUser := &kubermaticv1.User{}
+		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedUser); err != nil {
+			return fmt.Errorf("failed to fetch user on seed cluster: %w", err)
+		}
+
+		oldSeedUser := seedUser.DeepCopy()
+		seedUser.Status = *user.Status.DeepCopy()
+		if err := seedClusterClient.Status().Patch(ctx, seedUser, ctrlruntimeclient.MergeFrom(oldSeedUser)); err != nil {
+			return fmt.Errorf("failed to update user status on seed cluster: %w", err)
+		}
+
+		return nil
 	})
 	if err != nil {
 		r.recorder.Eventf(user, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -134,13 +169,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	if err != nil {
 		return err
 	}
-	if kuberneteshelper.HasFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer) {
-		kuberneteshelper.RemoveFinalizer(user, kubermaticapiv1.SeedUserCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, user); err != nil {
-			return fmt.Errorf("failed to remove user finalizer %s: %w", user.Name, err)
-		}
-	}
-	return nil
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, kubermaticapiv1.SeedUserCleanupFinalizer)
 }
 
 func (r *reconciler) syncAllSeeds(

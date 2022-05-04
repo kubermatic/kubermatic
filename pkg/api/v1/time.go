@@ -33,7 +33,7 @@ func (t *Time) String() string {
 	return t.Time.String()
 }
 
-// NewTime returns a wrapped instance of the provided time
+// NewTime returns a wrapped instance of the provided time.
 func NewTime(t time.Time) Time {
 	return Time{t}
 }

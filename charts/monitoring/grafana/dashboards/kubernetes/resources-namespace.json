@@ -302,7 +302,7 @@
           "step": 10
         },
         {
-          "expr": "sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -311,7 +311,7 @@
           "step": 10
         },
         {
-          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\"}) by (pod) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\"}) by (pod) / sum(kube_pod_container_resource_limits{resource=\"cpu\", namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -695,7 +695,7 @@
           "step": 10
         },
         {
-          "expr": "sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(kube_pod_container_resource_limits{resource=\"memory\", namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -704,7 +704,7 @@
           "step": 10
         },
         {
-          "expr": "sum(container_memory_usage_bytes{job=\"cadvisor\",namespace=\"$namespace\",container!=\"\"}) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(container_memory_usage_bytes{job=\"cadvisor\",namespace=\"$namespace\",container!=\"\"}) by (pod) / sum(kube_pod_container_resource_limits{resource=\"memory\", namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,

@@ -18,13 +18,13 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 
 	"go.uber.org/zap"
 
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,12 +37,12 @@ func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kub
 
 	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create addon template data: %v", err)
+		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}
 
-	infos, err := ioutil.ReadDir(addonsPath)
+	infos, err := os.ReadDir(addonsPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to list addons: %v", err)
+		return nil, fmt.Errorf("unable to list addons: %w", err)
 	}
 
 	serializer := json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
@@ -54,7 +54,7 @@ func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kub
 		addonName := info.Name()
 		addonImages, err := getImagesFromAddon(log, path.Join(addonsPath, addonName), serializer, addonData)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get images for addon %s: %v", addonName, err)
+			return nil, fmt.Errorf("failed to get images for addon %s: %w", addonName, err)
 		}
 		images = append(images, addonImages...)
 	}
@@ -68,12 +68,12 @@ func getImagesFromAddon(log *zap.SugaredLogger, addonPath string, decoder runtim
 
 	allManifests, err := addonutil.ParseFromFolder(log, "", addonPath, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", addonPath, err)
+		return nil, fmt.Errorf("failed to parse addon templates in %s: %w", addonPath, err)
 	}
 
 	var images []string
 	for _, manifest := range allManifests {
-		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Raw)
+		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Content.Raw)
 		if err != nil {
 			return nil, err
 		}

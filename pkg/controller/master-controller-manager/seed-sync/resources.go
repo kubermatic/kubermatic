@@ -17,7 +17,7 @@ limitations under the License.
 package seedsync
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
@@ -34,6 +34,23 @@ func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {
 			s.Spec = seed.Spec
 
 			return s, nil
+		}
+	}
+}
+
+func configCreator(config *kubermaticv1.KubermaticConfiguration) reconciling.NamedKubermaticConfigurationCreatorGetter {
+	return func() (string, reconciling.KubermaticConfigurationCreator) {
+		return config.Name, func(c *kubermaticv1.KubermaticConfiguration) (*kubermaticv1.KubermaticConfiguration, error) {
+			c.Labels = config.Labels
+			if c.Labels == nil {
+				c.Labels = make(map[string]string)
+			}
+			c.Labels[ManagedByLabel] = ControllerName
+
+			c.Annotations = config.Annotations
+			c.Spec = config.Spec
+
+			return c, nil
 		}
 	}
 }

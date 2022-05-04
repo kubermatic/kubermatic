@@ -1,4 +1,4 @@
-// +build e2e
+//go:build e2e
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -44,9 +44,9 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 			name:       "create cluster template in user scope",
 			scope:      kubermaticv1.UserClusterTemplateScope,
 			dc:         "kubermatic",
-			location:   "do-fra1",
+			location:   "hetzner-hel1",
 			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
+			credential: "e2e-hetzner",
 			newName:    "newName",
 			replicas:   3,
 		},
@@ -54,9 +54,9 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 			name:       "create cluster template in project scope",
 			scope:      kubermaticv1.ProjectClusterTemplateScope,
 			dc:         "kubermatic",
-			location:   "do-fra1",
+			location:   "hetzner-hel1",
 			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
+			credential: "e2e-hetzner",
 			newName:    "newName",
 			replicas:   3,
 		},
@@ -65,9 +65,9 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 			name:       "create cluster template in global scope",
 			scope:      kubermaticv1.GlobalClusterTemplateScope,
 			dc:         "kubermatic",
-			location:   "do-fra1",
+			location:   "hetzner-hel1",
 			version:    utils.KubernetesVersion(),
-			credential: "e2e-digitalocean",
+			credential: "e2e-hetzner",
 			newName:    "newName",
 			replicas:   3,
 		},
@@ -102,7 +102,6 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to create cluster template: %v", getErrorResponse(err))
 				}
-
 			} else {
 				clusterTemplate, err = testClient.CreateClusterTemplate(project.ID, tc.newName, tc.scope, tc.credential, tc.version, tc.location)
 				if err != nil {
@@ -117,7 +116,6 @@ func TestCreateClusterTemplateAndInstance(t *testing.T) {
 			if clusterTemplate.Scope != tc.scope {
 				t.Fatalf("expected scope %v, but got %v", tc.scope, clusterTemplate.Scope)
 			}
-
 		})
 	}
 }

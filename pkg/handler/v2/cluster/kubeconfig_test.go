@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -53,7 +53,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -83,7 +83,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "viewers"),
 
@@ -113,7 +113,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -144,7 +144,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
 				test.GenTestSeed(),
 				/*add projects*/
-				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				test.GenBinding("foo-ID", "john@acme.com", "owners"),
 
@@ -165,7 +165,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 				},
 			},
 			ExistingAPIUser:        *test.GenAPIUser("bob", "bob@acme.com"),
-			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = foo-ID"}}`,
+			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to project foo-ID"}}`,
 		},
 	}
 
@@ -175,9 +175,9 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, tc.ExistingObjects, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, tc.ExistingObjects, []ctrlruntimeclient.Object{}, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -189,7 +189,6 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponseString)
 		})
 	}
-
 }
 
 func genToken(tokenID string) string {

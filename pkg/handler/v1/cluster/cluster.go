@@ -21,65 +21,79 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-
-	"k8s.io/klog"
+	"k8c.io/kubermatic/v2/pkg/version"
 )
 
-func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider,
-	exposeStrategy kubermaticv1.ExposeStrategy, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager, caBundle *x509.CertPool) endpoint.Endpoint {
+func CreateEndpoint(
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter,
+	credentialManager provider.PresetProvider,
+	exposeStrategy kubermaticv1.ExposeStrategy,
+	userInfoGetter provider.UserInfoGetter,
+	settingsProvider provider.SettingsProvider,
+	caBundle *x509.CertPool,
+	configGetter provider.KubermaticConfigurationGetter,
+	features features.FeatureGate,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
-		globalSettings, err := settingsProvider.GetGlobalSettings()
+
+		config, err := configGetter(ctx)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, updateManager)
+
+		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle)
+		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
 	}
 }
 
-func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID)
+		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID, configGetter)
 	}
 }
 
 func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
+	seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		return handlercommon.PatchEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Patch, seedsGetter,
-			projectProvider, privilegedProjectProvider, caBundle)
+			projectProvider, privilegedProjectProvider, caBundle, configGetter, features)
 	}
 }
 
-// ListEndpoint list clusters within the given datacenter
-func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// ListEndpoint list clusters within the given datacenter.
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, configGetter provider.KubermaticConfigurationGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID)
+		apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -87,8 +101,15 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-// ListAllEndpoint list clusters for the given project in all datacenters
-func ListAllEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// ListAllEndpoint list clusters for the given project in all datacenters.
+func ListAllEndpoint(
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter,
+	clusterProviderGetter provider.ClusterProviderGetter,
+	userInfoGetter provider.UserInfoGetter,
+	configGetter provider.KubermaticConfigurationGetter,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetProjectRq)
 		allClusters := make([]*apiv1.Cluster, 0)
@@ -102,10 +123,10 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, privilegedProject
 			// if a Seed is bad, do not forward that error to the user, but only log
 			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
-				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
+				kubermaticlog.Logger.Errorw("failed to create cluster provider", "seed", seed.Name, zap.Error(err))
 				continue
 			}
-			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID)
+			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -116,7 +137,13 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, privilegedProject
 	}
 }
 
-func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeleteEndpoint(
+	sshKeyProvider provider.SSHKeyProvider,
+	privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DeleteReq)
 		return handlercommon.DeleteEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.DeleteVolumes, req.DeleteLoadBalancers, sshKeyProvider, privilegedSSHKeyProvider, projectProvider, privilegedProjectProvider)
@@ -137,7 +164,13 @@ func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AssignSSHKeyEndpoint(
+	sshKeyProvider provider.SSHKeyProvider,
+	privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AssignSSHKeysReq)
 		return handlercommon.AssignSSHKeyEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.KeyID, projectProvider, privilegedProjectProvider, sshKeyProvider, privilegedSSHKeyProvider)
@@ -151,7 +184,13 @@ func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider
 	}
 }
 
-func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DetachSSHKeyEndpoint(
+	sshKeyProvider provider.SSHKeyProvider,
+	privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider,
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DetachSSHKeysReq)
 		return handlercommon.DetachSSHKeyEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.KeyID, projectProvider, privilegedProjectProvider, sshKeyProvider, privilegedSSHKeyProvider)
@@ -201,8 +240,8 @@ type CreateReq struct {
 	Body apiv1.CreateClusterSpec
 }
 
-// Validate validates DeleteEndpoint request
-func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
+// Validate validates CreateEndpoint request.
+func (r CreateReq) Validate(updateManager common.UpdateManager) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")
 	}
@@ -214,25 +253,25 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 		return fmt.Errorf("invalid cluster type %s", r.Body.Cluster.Type)
 	}
 
-	if clusterType != kubermaticv1.ClusterTypeAll && clusterType != apiv1.ToInternalClusterType(r.Body.Cluster.Type) {
-		return fmt.Errorf("disabled cluster type %s", r.Body.Cluster.Type)
-	}
-
-	if r.Body.Cluster.Spec.Version.Version == nil {
+	if r.Body.Cluster.Spec.Version.Semver() == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
 
-	versions, err := updateManager.GetVersions(r.Body.Cluster.Type)
+	providerName, err := provider.ClusterCloudProviderName(r.Body.Cluster.Spec.Cloud)
 	if err != nil {
-		return fmt.Errorf("failed to get available cluster versions: %v", err)
+		return fmt.Errorf("failed to get the cloud provider name: %w", err)
+	}
+	versions, err := updateManager.GetVersionsForProvider(kubermaticv1.ProviderType(providerName))
+	if err != nil {
+		return fmt.Errorf("failed to get available cluster versions: %w", err)
 	}
 	for _, availableVersion := range versions {
-		if r.Body.Cluster.Spec.Version.Version.Equal(availableVersion.Version) {
+		if r.Body.Cluster.Spec.Version.Semver().Equal(availableVersion.Version) {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", r.Body.Cluster.Spec.Version.Version)
+	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", r.Body.Cluster.Spec.Version.Semver())
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -296,7 +335,7 @@ func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.DCReq = dcr.(common.DCReq)
 	req.ClusterID = clusterID
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
@@ -402,7 +441,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, privileg
 			return nil, err
 		}
 
-		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(cluster))
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(ctx, cluster))
 	}
 }
 
@@ -416,7 +455,7 @@ func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider, privile
 			return nil, err
 		}
 
-		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(cluster))
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(ctx, cluster))
 	}
 }
 
@@ -506,8 +545,8 @@ func GetClusterProviderFromRequest(
 	request interface{},
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
-
+	userInfoGetter provider.UserInfoGetter,
+) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 	req, ok := request.(common.GetClusterReq)
 	if !ok {
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")

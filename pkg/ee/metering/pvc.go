@@ -1,9 +1,9 @@
-// +build ee
+//go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Loodse GmbH
+                     Copyright © 2021 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -28,7 +28,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -42,37 +43,46 @@ import (
 // exporting it to the S3 bucket.
 func persistentVolumeClaimCreator(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) error {
 	pvc := &corev1.PersistentVolumeClaim{}
-
 	if err := client.Get(ctx, types.NamespacedName{Namespace: seed.Namespace, Name: meteringDataName}, pvc); err != nil {
 		if kerrors.IsNotFound(err) {
 			pvc.ObjectMeta.Name = meteringDataName
-			pvc.ObjectMeta.Namespace = seed.Namespace
+			pvc.ObjectMeta.Namespace = resources.KubermaticNamespace
 			pvc.ObjectMeta.Labels = map[string]string{
 				"app": meteringToolName,
 			}
 
-			pvc.Spec.StorageClassName = pointer.StringPtr(seed.Spec.Metering.StorageClassName)
-			pvc.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteOnce,
-			}
-
-			pvcStorageSize, err := resource.ParseQuantity(seed.Spec.Metering.StorageSize)
-			if err != nil {
-				return fmt.Errorf("failed to parse value of metering pvc storage size %q: %v", "100Gi", err)
-			}
-
-			pvc.Spec.Resources = corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					"storage": pvcStorageSize,
-				},
+			if err := updatePVCStorageSizeAndName(pvc, seed); err != nil {
+				return fmt.Errorf("failed to update pvc storage class name or size: %w", err)
 			}
 
 			if err := client.Create(ctx, pvc); err != nil {
-				return fmt.Errorf("failed to create pvc %v for the metering tool: %v", meteringDataName, err)
+				return fmt.Errorf("failed to create pvc %v for the metering tool: %w", meteringDataName, err)
 			}
+
+			return nil
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func updatePVCStorageSizeAndName(pvc *corev1.PersistentVolumeClaim, seed *kubermaticv1.Seed) error {
+	pvc.Spec.StorageClassName = pointer.StringPtr(seed.Spec.Metering.StorageClassName)
+	pvc.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{
+		corev1.ReadWriteOnce,
+	}
+
+	pvcStorageSize, err := resource.ParseQuantity(seed.Spec.Metering.StorageSize)
+	if err != nil {
+		return fmt.Errorf("failed to parse value of metering pvc storage size %q: %w", seed.Spec.Metering.StorageSize, err)
+	}
+
+	pvc.Spec.Resources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			"storage": pvcStorageSize,
+		},
 	}
 
 	return nil

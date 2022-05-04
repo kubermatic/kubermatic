@@ -54,7 +54,7 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 				To:                  "1.6.0",
 				AutomaticNodeUpdate: true,
 			}},
-			expectedError: nodeupdate.ErrVersionSkew{
+			expectedError: nodeupdate.VersionSkewError{
 				ControlPlane: semver.MustParse("1.5.0"),
 				Kubelet:      semver.MustParse("1.6.0"),
 			},
@@ -69,7 +69,7 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 					{Version: semver.MustParse(tc.updates[0].To)},
 				},
 			}
-			version, err := m.AutomaticNodeUpdate(tc.fromVersion, "", tc.controlPlaneVersion)
+			version, err := m.AutomaticNodeUpdate(tc.fromVersion, tc.controlPlaneVersion)
 			// a simple err comparison considers them different, because they contain different
 			// semver pointers, even thought their value is equal
 			if !reflect.DeepEqual(err, tc.expectedError) {

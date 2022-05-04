@@ -19,16 +19,17 @@ package kubernetes
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// EtcdBackupConfigProvider struct that holds required components in order manage etcd backup configs
+// EtcdBackupConfigProvider struct that holds required components in order manage etcd backup configs.
 type EtcdBackupConfigProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -36,7 +37,10 @@ type EtcdBackupConfigProvider struct {
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
-// NewEtcdBackupConfigProvider returns a constraint provider
+var _ provider.EtcdBackupConfigProvider = &EtcdBackupConfigProvider{}
+var _ provider.PrivilegedEtcdBackupConfigProvider = &EtcdBackupConfigProvider{}
+
+// NewEtcdBackupConfigProvider returns a constraint provider.
 func NewEtcdBackupConfigProvider(createSeedImpersonatedClient ImpersonationClient, client ctrlruntimeclient.Client) *EtcdBackupConfigProvider {
 	return &EtcdBackupConfigProvider{
 		clientPrivileged:             client,
@@ -62,101 +66,96 @@ func EtcdBackupConfigProviderFactory(mapper meta.RESTMapper, seedKubeconfigGette
 	}
 }
 
-func (p *EtcdBackupConfigProvider) Create(userInfo *provider.UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-
+func (p *EtcdBackupConfigProvider) Create(ctx context.Context, userInfo *provider.UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	err = impersonationClient.Create(context.Background(), etcdBackupConfig)
+	err = impersonationClient.Create(ctx, etcdBackupConfig)
 	return etcdBackupConfig, err
 }
 
-func (p *EtcdBackupConfigProvider) CreateUnsecured(etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-	err := p.clientPrivileged.Create(context.Background(), etcdBackupConfig)
+func (p *EtcdBackupConfigProvider) CreateUnsecured(ctx context.Context, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	err := p.clientPrivileged.Create(ctx, etcdBackupConfig)
 	return etcdBackupConfig, err
 }
 
-func (p *EtcdBackupConfigProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
-
+func (p *EtcdBackupConfigProvider) Get(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	ebc := &kubermaticv1.EtcdBackupConfig{}
-	err = impersonationClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, ebc)
+	err = impersonationClient.Get(ctx, types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, ebc)
 	return ebc, err
 }
 
-func (p *EtcdBackupConfigProvider) GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
+func (p *EtcdBackupConfigProvider) GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
 	ebc := &kubermaticv1.EtcdBackupConfig{}
-	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, ebc)
+	err := p.clientPrivileged.Get(ctx, types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, ebc)
 	return ebc, err
 }
 
-func (p *EtcdBackupConfigProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
-
+func (p *EtcdBackupConfigProvider) List(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	ebcList := &kubermaticv1.EtcdBackupConfigList{}
-	err = impersonationClient.List(context.Background(), ebcList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	err = impersonationClient.List(ctx, ebcList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
 	return ebcList, err
 }
 
-func (p *EtcdBackupConfigProvider) ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
+func (p *EtcdBackupConfigProvider) ListUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
 	ebcList := &kubermaticv1.EtcdBackupConfigList{}
-	err := p.clientPrivileged.List(context.Background(), ebcList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	err := p.clientPrivileged.List(ctx, ebcList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
 	return ebcList, err
 }
 
-func (p *EtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
-
+func (p *EtcdBackupConfigProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
 	}
 
 	ebc := &kubermaticv1.EtcdBackupConfig{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 		},
 	}
-	return impersonationClient.Delete(context.Background(), ebc)
+	return impersonationClient.Delete(ctx, ebc)
 }
 
-func (p *EtcdBackupConfigProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error {
+func (p *EtcdBackupConfigProvider) DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster, name string) error {
 	ebc := &kubermaticv1.EtcdBackupConfig{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: cluster.Status.NamespaceName,
 		},
 	}
-	return p.clientPrivileged.Delete(context.Background(), ebc)
+	return p.clientPrivileged.Delete(ctx, ebc)
 }
 
-func (p *EtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-
+func (p *EtcdBackupConfigProvider) Patch(ctx context.Context, userInfo *provider.UserInfo, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	err = impersonationClient.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
-	return new, err
+	err = impersonationClient.Patch(ctx, newConfig, ctrlruntimeclient.MergeFrom(oldConfig))
+	return newConfig, err
 }
 
-func (p *EtcdBackupConfigProvider) PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
-	err := p.clientPrivileged.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
-	return new, err
+func (p *EtcdBackupConfigProvider) PatchUnsecured(ctx context.Context, oldConfig, newConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	err := p.clientPrivileged.Patch(ctx, newConfig, ctrlruntimeclient.MergeFrom(oldConfig))
+	return newConfig, err
 }
 
-// EtcdBackupConfigProjectProvider struct that holds required components in order manage etcd backup backupConfigs across projects
+// EtcdBackupConfigProjectProvider struct that holds required components in order manage etcd backup backupConfigs across projects.
 type EtcdBackupConfigProjectProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
@@ -164,7 +163,10 @@ type EtcdBackupConfigProjectProvider struct {
 	clientsPrivileged             map[string]ctrlruntimeclient.Client
 }
 
-// NewEtcdBackupConfigProjectProvider returns an etcd backupConfig global provider
+var _ provider.EtcdBackupConfigProjectProvider = &EtcdBackupConfigProjectProvider{}
+var _ provider.PrivilegedEtcdBackupConfigProjectProvider = &EtcdBackupConfigProjectProvider{}
+
+// NewEtcdBackupConfigProjectProvider returns an etcd backupConfig global provider.
 func NewEtcdBackupConfigProjectProvider(createSeedImpersonatedClients map[string]ImpersonationClient, clients map[string]ctrlruntimeclient.Client) *EtcdBackupConfigProjectProvider {
 	return &EtcdBackupConfigProjectProvider{
 		clientsPrivileged:             clients,
@@ -197,7 +199,7 @@ func EtcdBackupConfigProjectProviderFactory(mapper meta.RESTMapper, seedKubeconf
 	}
 }
 
-func (p *EtcdBackupConfigProjectProvider) List(userInfo *provider.UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
+func (p *EtcdBackupConfigProjectProvider) List(ctx context.Context, userInfo *provider.UserInfo, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
 	var etcdBackupConfigLists []*kubermaticv1.EtcdBackupConfigList
 	for _, createSeedImpersonationClient := range p.createSeedImpersonatedClients {
 		impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, createSeedImpersonationClient)
@@ -206,8 +208,12 @@ func (p *EtcdBackupConfigProjectProvider) List(userInfo *provider.UserInfo, proj
 		}
 
 		ebcList := &kubermaticv1.EtcdBackupConfigList{}
-		err = impersonationClient.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{provider.ProjectLabelKey: projectID})
+		err = impersonationClient.List(ctx, ebcList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
+			// skip if cluster is unreachable
+			if kubenetutil.IsConnectionRefused(err) {
+				continue
+			}
 			return nil, err
 		}
 		etcdBackupConfigLists = append(etcdBackupConfigLists, ebcList)
@@ -216,12 +222,16 @@ func (p *EtcdBackupConfigProjectProvider) List(userInfo *provider.UserInfo, proj
 	return etcdBackupConfigLists, nil
 }
 
-func (p *EtcdBackupConfigProjectProvider) ListUnsecured(projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
+func (p *EtcdBackupConfigProjectProvider) ListUnsecured(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
 	var etcdBackupConfigLists []*kubermaticv1.EtcdBackupConfigList
 	for _, clientPrivileged := range p.clientsPrivileged {
 		ebcList := &kubermaticv1.EtcdBackupConfigList{}
-		err := clientPrivileged.List(context.Background(), ebcList, ctrlruntimeclient.MatchingLabels{provider.ProjectLabelKey: projectID})
+		err := clientPrivileged.List(ctx, ebcList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID})
 		if err != nil {
+			// skip if cluster is unreachable
+			if kubenetutil.IsConnectionRefused(err) {
+				continue
+			}
 			return nil, err
 		}
 		etcdBackupConfigLists = append(etcdBackupConfigLists, ebcList)

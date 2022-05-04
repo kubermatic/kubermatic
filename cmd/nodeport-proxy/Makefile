@@ -17,11 +17,11 @@ GOOS ?= $(shell go env GOOS)
 
 .PHONY: lb-updater
 lb-updater:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/lb-updater k8c.io/kubermatic/v2/cmd/nodeport-proxy/lb-updater
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/lb-updater -v k8c.io/kubermatic/v2/cmd/nodeport-proxy/lb-updater
 
 .PHONY: envoy-manager
 envoy-manager:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/envoy-manager k8c.io/kubermatic/v2/cmd/nodeport-proxy/envoy-manager
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/envoy-manager -v k8c.io/kubermatic/v2/cmd/nodeport-proxy/envoy-manager
 
 .PHONY: build
 build: envoy-manager lb-updater

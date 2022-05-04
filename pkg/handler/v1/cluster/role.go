@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -51,7 +51,7 @@ func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +86,7 @@ func CreateRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ type createRoleReq struct {
 	Body apiv1.Role
 }
 
-// Validate validates createRoleReq request
+// Validate validates createRoleReq request.
 func (r createRoleReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
@@ -143,7 +143,7 @@ func (r createRoleReq) Validate() error {
 	return nil
 }
 
-// Validate validates createRoleReq request
+// Validate validates createRoleReq request.
 func (r createClusterRoleReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
@@ -264,7 +264,7 @@ func GetClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -291,7 +291,7 @@ func GetRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -309,7 +309,7 @@ func GetRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	}
 }
 
-// DeleteClusterRoleEndpoint deletes ClusterRole with given name
+// DeleteClusterRoleEndpoint deletes ClusterRole with given name.
 func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getClusterRoleReq)
@@ -319,7 +319,7 @@ func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -341,7 +341,7 @@ func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 	}
 }
 
-// DeleteRoleEndpoint deletes Role with given name
+// DeleteRoleEndpoint deletes Role with given name.
 func DeleteRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getRoleReq)
@@ -351,7 +351,7 @@ func DeleteRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -453,7 +453,7 @@ func DecodeGetClusterRoleReq(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-// PatchRoleEndpoint patches Role with given name
+// PatchRoleEndpoint patches Role with given name.
 func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchRoleReq)
@@ -463,7 +463,7 @@ func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -541,14 +541,14 @@ func DecodePatchRoleReq(c context.Context, r *http.Request) (interface{}, error)
 	}
 	req.Namespace = namespace
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
 	return req, nil
 }
 
-// PatchRoleEndpoint patches ClusterRole with given name
+// PatchRoleEndpoint patches ClusterRole with given name.
 func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchClusterRoleReq)
@@ -558,7 +558,7 @@ func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.E
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := clusterProvider.Get(ctx, userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -628,14 +628,14 @@ func DecodePatchClusterRoleReq(c context.Context, r *http.Request) (interface{},
 	}
 	req.RoleID = roleID
 
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+	if req.Patch, err = io.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 
 	return req, nil
 }
 
-// generateRBACClusterRole creates cluster role
+// generateRBACClusterRole creates cluster role.
 func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.ClusterRole, error) {
 	if rules == nil {
 		return nil, fmt.Errorf("the policy rule can not be nil")
@@ -650,7 +650,7 @@ func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.Cl
 	return clusterRole, nil
 }
 
-// generateRBACRole creates role
+// generateRBACRole creates role.
 func generateRBACRole(name, namespace string, rules []rbacv1.PolicyRule) (*rbacv1.Role, error) {
 	if rules == nil {
 		return nil, fmt.Errorf("the policy rule can not be nil")

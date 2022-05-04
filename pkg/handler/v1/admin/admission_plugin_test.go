@@ -24,12 +24,12 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -51,7 +51,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 			name:                   "scenario 1: not authorized user gets plugins",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -69,7 +69,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -77,7 +77,7 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -97,9 +97,9 @@ func TestListAdmissionPluginEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -133,7 +133,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 			plugin:                 "test",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -153,7 +153,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -161,7 +161,7 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -181,9 +181,9 @@ func TestGetAdmissionPluginEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -217,7 +217,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 			plugin:                 "test",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -237,7 +237,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -245,7 +245,7 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -265,9 +265,9 @@ func TestDeleteAdmissionPluginEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)
@@ -303,7 +303,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			body:                   `{"name":"eventRateLimit","plugin":"EventRateLimit","fromVersion":"1.13.0"}`,
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 2
@@ -325,7 +325,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -333,7 +333,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -352,7 +352,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -360,7 +360,7 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 					},
 				},
 				&kubermaticv1.AdmissionPlugin{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "eventRateLimit",
 					},
 					Spec: kubermaticv1.AdmissionPluginSpec{
@@ -380,9 +380,9 @@ func TestUpdateAdmissionPluginEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 
 			ep.ServeHTTP(res, req)

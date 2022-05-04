@@ -31,6 +31,7 @@ import (
 
 const (
 	HetznerCCMDeploymentName = "hcloud-cloud-controller-manager"
+	hetznerCCMVersion        = "v1.12.1"
 )
 
 var (
@@ -71,14 +72,9 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			f := false
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
-
 			credentials, err := resources.GetCredentials(data)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %v", err)
+				return nil, fmt.Errorf("failed to get credentials: %w", err)
 			}
 
 			network := data.Cluster().Spec.Cloud.Hetzner.Network
@@ -86,13 +82,12 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				network = data.DC().Spec.Hetzner.Network
 			}
 
-			dep.Spec.Template.Spec.Volumes = getVolumes()
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
-				*openvpnSidecar,
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:v1.8.1",
+					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:" + hetznerCCMVersion,
 					Command: []string{
 						"/bin/hcloud-cloud-controller-manager",
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
@@ -118,18 +113,36 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 							Name:  "HCLOUD_NETWORK",
 							Value: network,
 						},
+						{
+							// Required since Hetzner CCM v1.11.0.
+							// By default, the Hetzner CCM tries to validate is the control plane node
+							// attached to the configured Hetzner network. This is causing the Hetzner
+							// CCM to crashloopbackoff since the control plane is running on the seed
+							// cluster, which might not be a Hetzner cluster.
+							// https://github.com/hetznercloud/hcloud-cloud-controller-manager/commit/354f8f85714a934ecc9781747a20d13034165c90
+							Name:  "HCLOUD_NETWORK_DISABLE_ATTACHED_CHECK",
+							Value: "true",
+						},
 					},
 					VolumeMounts: getVolumeMounts(),
 				},
 			}
-
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName:    hetznerResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+				ccmContainerName: hetznerResourceRequirements.DeepCopy(),
 			}
+
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
+				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			return dep, nil

@@ -27,7 +27,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -48,7 +48,7 @@ func newTestRuleGroupReconciler(objects []ctrlruntimeclient.Object, handler http
 		Build()
 	ts := httptest.NewServer(handler)
 
-	controller := newRuleGroupController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL, ts.URL)
+	controller := newRuleGroupController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL, ts.URL, mlaNamespace)
 	reconciler := ruleGroupReconciler{
 		Client:              fakeClient,
 		log:                 kubermaticlog.Logger,
@@ -82,14 +82,14 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "get",
 					request: httptest.NewRequest(http.MethodGet,
-						fmt.Sprintf("%s%s/%s", metricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", MetricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
-						metricsRuleGroupConfigEndpoint+defaultNamespace,
+						MetricsRuleGroupConfigEndpoint+defaultNamespace,
 						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
@@ -110,14 +110,14 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "get",
 					request: httptest.NewRequest(http.MethodGet,
-						fmt.Sprintf("%s%s/%s", logRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", LogRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
-						logRuleGroupConfigEndpoint+defaultNamespace,
+						LogRuleGroupConfigEndpoint+defaultNamespace,
 						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
@@ -150,7 +150,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "delete",
 					request: httptest.NewRequest(http.MethodDelete,
-						fmt.Sprintf("%s%s/%s", metricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", MetricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
@@ -171,7 +171,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				{
 					name: "delete",
 					request: httptest.NewRequest(http.MethodDelete,
-						fmt.Sprintf("%s%s/%s", logRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						fmt.Sprintf("%s%s/%s", LogRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
@@ -205,7 +205,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 }
 
 func generateRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType, deleted bool) *kubermaticv1.RuleGroup {
-	group := test.GenRuleGroup(name, clusterName, ruleGroupType)
+	group := test.GenRuleGroup(name, clusterName, ruleGroupType, false)
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		group.DeletionTimestamp = &deleteTime

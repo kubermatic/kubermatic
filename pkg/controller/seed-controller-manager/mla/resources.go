@@ -18,15 +18,18 @@ package mla
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -57,13 +60,19 @@ http {
   scgi_temp_path        /tmp/scgi_temp;
 
   default_type application/octet-stream;
-  log_format   main '$remote_addr - $remote_user [$time_local]  $status '
-	'"$request" $body_bytes_sent "$http_referer" '
-	'"$http_user_agent" "$http_x_forwarded_for" $http_x_scope_orgid';
-  access_log   /dev/stderr  main;
   sendfile     on;
   tcp_nopush   on;
   resolver kube-dns.kube-system.svc.cluster.local;
+
+{{ if .LokiWriteLimit }}
+  limit_req_zone $binary_remote_addr zone=loki_write_limit:1m rate={{ .LokiWriteLimit }}r/s;
+{{ end }}
+{{ if .LokiReadLimit }}
+  limit_req_zone $binary_remote_addr zone=loki_read_limit:1m rate={{ .LokiReadLimit }}r/s;
+{{ end }}
+{{ if .CortexReadLimit }}
+  limit_req_zone $binary_remote_addr zone=cortex_read_limit:1m rate={{ .CortexReadLimit }}r/s;
+{{ end }}
 
   # write path - exposed to user clusters
   server {
@@ -76,21 +85,24 @@ http {
 	ssl_client_certificate  {{ .SSLCACertFile }};
 	ssl_protocols           TLSv1.3;
 
-	# Loki Config
+	# Loki
 	location = /loki/api/v1/push {
-	  proxy_pass       http://loki-distributed-distributor.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
+{{ if .LokiWriteLimit }}
+      limit_req zone=loki_write_limit{{ if .LokiWriteLimitBurst }} burst={{ .LokiWriteLimitBurst }} nodelay{{ end }};
+{{ end }}
+	  proxy_pass       http://loki-distributed-distributor.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
 
-	# Cortex Config
+	# Cortex
 	location = /api/v1/push {
-	  proxy_pass      http://cortex-distributor.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
+	  proxy_pass      http://cortex-distributor.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
 	}
   }
 
   # read path - cluster-local access only
   server {
 	listen             8081;
-	proxy_set_header   X-Scope-OrgID {{ .TenantID}};
+	proxy_set_header   X-Scope-OrgID {{ .TenantID }};
 
 	# k8s probes
 	location = / {
@@ -98,25 +110,20 @@ http {
 	  auth_basic off;
 	}
 
-	# location = /api/prom/tail {
-	#   proxy_pass       http://loki-distributed-querier.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
-	#   proxy_set_header Upgrade $http_upgrade;
-	#   proxy_set_header Connection "upgrade";
-	# }
-
-	# location = /loki/api/v1/tail {
-	#   proxy_pass       http://loki-distributed-querier.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
-	#   proxy_set_header Upgrade $http_upgrade;
-	#   proxy_set_header Connection "upgrade";
-	# }
-
+	# Loki
 	location ~ /loki/api/.* {
-	  proxy_pass       http://loki-distributed-query-frontend.{{ .Namespace}}.svc.cluster.local:3100$request_uri;
+{{ if .LokiReadLimit }}
+      limit_req zone=loki_read_limit{{ if .LokiReadLimitBurst }} burst={{ .LokiReadLimitBurst }} nodelay{{ end }};
+{{ end }}
+	  proxy_pass       http://loki-distributed-query-frontend.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
 
-	# Cortex Config
+	# Cortex
 	location ~ /api/prom/.* {
-	  proxy_pass       http://cortex-query-frontend.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
+{{ if .CortexReadLimit }}
+      limit_req zone=cortex_read_limit{{ if .CortexReadLimitBurst }} burst={{ .CortexReadLimitBurst }} nodelay{{ end }};
+{{ end }}
+	  proxy_pass       http://cortex-query-frontend.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
 	}
   }
 }
@@ -129,6 +136,7 @@ const (
 	extPortName = "http-ext"
 	intPortName = "http-int"
 
+	configHashAnnotation     = "mla.k8c.io/config-hash"
 	configVolumeName         = "config"
 	configVolumePath         = "/etc/nginx"
 	certificatesVolumeName   = "gw-certificates"
@@ -138,46 +146,62 @@ const (
 )
 
 type configTemplateData struct {
-	Namespace     string
-	TenantID      string
-	SSLCertFile   string
-	SSLKeyFile    string
-	SSLCACertFile string
+	Namespace            string
+	TenantID             string
+	SSLCertFile          string
+	SSLKeyFile           string
+	SSLCACertFile        string
+	CortexReadLimit      int32
+	CortexReadLimitBurst int32
+	LokiWriteLimit       int32
+	LokiWriteLimitBurst  int32
+	LokiReadLimit        int32
+	LokiReadLimitBurst   int32
 }
 
 func renderTemplate(tpl string, data interface{}) (string, error) {
 	t, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(tpl)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse as Go template: %v", err)
+		return "", fmt.Errorf("failed to parse as Go template: %w", err)
 	}
 
 	output := bytes.Buffer{}
 	if err := t.Execute(&output, data); err != nil {
-		return "", fmt.Errorf("failed to render template: %v", err)
+		return "", fmt.Errorf("failed to render template: %w", err)
 	}
 
 	return strings.TrimSpace(output.String()), nil
 }
 
-func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string) reconciling.NamedConfigMapCreatorGetter {
+func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *kubermaticv1.MLAAdminSetting) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
-				configData := configTemplateData{
-					Namespace:     mlaNamespace,
-					TenantID:      c.Name,
-					SSLCertFile:   fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayCertSecretKey),
-					SSLKeyFile:    fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayKeySecretKey),
-					SSLCACertFile: fmt.Sprintf("%s/%s", caCertificatesVolumePath, resources.MLAGatewayCACertKey),
-				}
-				config, err := renderTemplate(nginxConfig, configData)
-				if err != nil {
-					return nil, fmt.Errorf("failed to render Prometheus config: %v", err)
-				}
-
-				cm.Data = map[string]string{
-					"nginx.conf": config}
+				cm.Data = map[string]string{}
 			}
+			configData := configTemplateData{
+				Namespace:     mlaNamespace,
+				TenantID:      c.Name,
+				SSLCertFile:   fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayCertSecretKey),
+				SSLKeyFile:    fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayKeySecretKey),
+				SSLCACertFile: fmt.Sprintf("%s/%s", caCertificatesVolumePath, resources.MLAGatewayCACertKey),
+			}
+			if s != nil && s.Spec.MonitoringRateLimits != nil {
+				// NOTE: Cortex write path rate-limiting is implemented directly by Cortex configuration
+				configData.CortexReadLimit = s.Spec.MonitoringRateLimits.QueryRate
+				configData.CortexReadLimitBurst = s.Spec.MonitoringRateLimits.QueryBurstSize
+			}
+			if s != nil && s.Spec.LoggingRateLimits != nil {
+				configData.LokiWriteLimit = s.Spec.LoggingRateLimits.IngestionRate
+				configData.LokiWriteLimitBurst = s.Spec.LoggingRateLimits.IngestionBurstSize
+				configData.LokiReadLimit = s.Spec.LoggingRateLimits.QueryRate
+				configData.LokiReadLimitBurst = s.Spec.LoggingRateLimits.QueryBurstSize
+			}
+			config, err := renderTemplate(nginxConfig, configData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to render Prometheus config: %w", err)
+			}
+			cm.Data["nginx.conf"] = config
 			return cm, nil
 		}
 	}
@@ -256,10 +280,10 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 
 const (
 	image   = "nginxinc/nginx-unprivileged"
-	version = "1.19-alpine"
+	version = "1.20.1-alpine"
 )
 
-func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -276,6 +300,16 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				RunAsNonRoot: pointer.BoolPtr(true),
 			}
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
+			// hash for the annotation used to force deployment rollout upon configuration change
+			configHash := sha1.New()
+			configData, err := json.Marshal(settings)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode MLAAdminSetting: %w", err)
+			}
+			configHash.Write(configData)
+			d.Spec.Template.Annotations = map[string]string{
+				configHashAnnotation: fmt.Sprintf("%x", configHash.Sum(nil)),
+			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "nginx",
@@ -294,7 +328,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						},
 					},
 					ReadinessProbe: &corev1.Probe{
-						Handler: corev1.Handler{
+						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/",
 								Port:   intstr.FromString(intPortName),
@@ -397,7 +431,7 @@ func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
 			if data, exists := se.Data[resources.MLAGatewayCACertKey]; exists {
 				certs, err := certutil.ParseCertsPEM(data)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %v",
+					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %w",
 						resources.MLAGatewayCACertKey, resources.MLAGatewayCASecretName, err)
 				}
 				if !resources.CertWillExpireSoon(certs[0]) {
@@ -407,7 +441,7 @@ func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
 
 			cert, key, err := certificates.GetECDSACACertAndKey()
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate MLA CA: %v", err)
+				return nil, fmt.Errorf("failed to generate MLA CA: %w", err)
 			}
 			se.Data[resources.MLAGatewayCACertKey] = cert
 			se.Data[resources.MLAGatewayCAKeyKey] = key
@@ -427,7 +461,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 
 			ca, err := mlaGatewayCAGetter()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get MLA Gateway ca: %v", err)
+				return nil, fmt.Errorf("failed to get MLA Gateway ca: %w", err)
 			}
 			if c.Address.ExternalName == "" {
 				return nil, fmt.Errorf("unable to issue MLA Gateway certificate: cluster ExternalName is empty")
@@ -439,10 +473,14 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 					c.Address.ExternalName, // required for NodePort expose strategy
 				},
 			}
+			cIP := net.ParseIP(c.Address.IP)
+			if cIP != nil {
+				altNames.IPs = []net.IP{cIP} // required for LoadBalancer expose strategy
+			}
 			if b, exists := se.Data[resources.MLAGatewayCertSecretKey]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MLAGatewayCertSecretKey, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.MLAGatewayCertSecretKey, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil
@@ -455,7 +493,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 			}
 			cert, key, err := certificates.GetSignedECDSACertAndKey(certificates.Duration365d, config, ca.Cert, ca.Key)
 			if err != nil {
-				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+				return nil, fmt.Errorf("unable to sign the server certificate: %w", err)
 			}
 
 			se.Data[resources.MLAGatewayCertSecretKey] = cert

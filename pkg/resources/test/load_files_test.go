@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,13 +28,14 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -56,6 +57,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/yaml"
 )
 
 var update = flag.Bool("update", false, "Update test fixtures")
@@ -74,12 +76,12 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	res = append([]byte("# This file has been generated, DO NOT EDIT.\n\n"), res...)
 
 	if *update {
-		if err := ioutil.WriteFile(path, res, 0644); err != nil {
+		if err := os.WriteFile(path, res, 0644); err != nil {
 			t.Fatalf("failed to update fixtures: %v", err)
 		}
 	}
 
-	exp, err := ioutil.ReadFile(path)
+	exp, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,16 +150,13 @@ func (tc testCase) fixturePath(resType, resName string) string {
 func TestLoadFiles(t *testing.T) {
 	versions := []*version.Version{
 		{
-			Version: semver.MustParse("1.19.0"),
-		},
-		{
-			Version: semver.MustParse("1.20.0"),
-		},
-		{
 			Version: semver.MustParse("1.21.0"),
 		},
 		{
 			Version: semver.MustParse("1.22.1"),
+		},
+		{
+			Version: semver.MustParse("1.23.5"),
 		},
 	}
 
@@ -190,21 +189,22 @@ func TestLoadFiles(t *testing.T) {
 		},
 		"aws": {
 			AWS: &kubermaticv1.AWSCloudSpec{
-				AccessKeyID:         "aws-access-key-id",
-				SecretAccessKey:     "aws-secret-access-key",
-				InstanceProfileName: "aws-instance-profile-name",
-				RoleName:            "aws-role-name",
-				RouteTableID:        "aws-route-table-id",
-				SecurityGroupID:     "aws-security-group",
-				VPCID:               "aws-vpn-id",
-				ControlPlaneRoleARN: "aws-role-arn",
+				AccessKeyID:          "aws-access-key-id",
+				SecretAccessKey:      "aws-secret-access-key",
+				AssumeRoleARN:        "aws-assume-role-arn",
+				AssumeRoleExternalID: "aws-assume-role-external-id",
+				InstanceProfileName:  "aws-instance-profile-name",
+				RouteTableID:         "aws-route-table-id",
+				SecurityGroupID:      "aws-security-group",
+				VPCID:                "aws-vpn-id",
+				ControlPlaneRoleARN:  "aws-role-arn",
 			},
 		},
 		"openstack": {
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
 				SubnetID:       "openstack-subnet-id",
 				Username:       "openstack-username",
-				Tenant:         "openstack-tenant",
+				Project:        "openstack-project",
 				Domain:         "openstack-domain",
 				FloatingIPPool: "openstack-floating-ip-pool",
 				Network:        "openstack-network",
@@ -262,6 +262,24 @@ func TestLoadFiles(t *testing.T) {
 	kubermaticVersions := kubermatic.NewFakeVersions()
 	caBundle := certificates.NewFakeCABundle()
 
+	config := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+				Monitoring: kubermaticv1.KubermaticUserClusterMonitoringConfiguration{
+					ScrapeAnnotationPrefix: defaults.DefaultUserClusterScrapeAnnotationPrefix,
+					CustomScrapingConfigs: `
+- job_name: custom-test-config
+  scheme: https
+  metrics_path: '/metrics'
+  static_configs:
+  - targets:
+    - 'foo.bar:12345'
+`,
+				},
+			},
+		},
+	}
+
 	for _, ver := range versions {
 		for prov, cloudspec := range clouds {
 			for _, features := range featureSets {
@@ -295,6 +313,10 @@ func TestLoadFiles(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+							},
 							MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
 								{
 									CIDR: "192.168.1.1/24",
@@ -322,6 +344,12 @@ func TestLoadFiles(t *testing.T) {
 						},
 						Status: kubermaticv1.ClusterStatus{
 							NamespaceName: "cluster-de-test-01",
+							Versions: kubermaticv1.ClusterVersionsStatus{
+								ControlPlane:      *ksemver.NewSemverOrDie(ver.Version.String()),
+								Apiserver:         *ksemver.NewSemverOrDie(ver.Version.String()),
+								ControllerManager: *ksemver.NewSemverOrDie(ver.Version.String()),
+								Scheduler:         *ksemver.NewSemverOrDie(ver.Version.String()),
+							},
 						},
 					}
 
@@ -633,29 +661,6 @@ func TestLoadFiles(t *testing.T) {
 						close(stopCh)
 					}()
 
-					promTmpFile, err := ioutil.TempFile("", "kubermatic")
-					if err != nil {
-						t.Fatalf("couldn't create temp file, see: %v", err)
-					}
-
-					promTmpFilePath := promTmpFile.Name()
-					_, err = promTmpFile.WriteString(`- job_name: custom-test-config
-  scheme: https
-  metrics_path: '/metrics'
-  static_configs:
-  - targets:
-    - 'foo.bar:12345'
-`)
-					if err != nil {
-						t.Fatalf("couldn't write to temp file, see: %v", err)
-					}
-					defer (func() {
-						err = os.Remove(promTmpFilePath)
-						if err != nil {
-							t.Fatalf("couldn't delete temp file, see: %v", err)
-						}
-					})()
-
 					ctx := context.Background()
 					data := resources.NewTemplateDataBuilder().
 						WithContext(ctx).
@@ -673,11 +678,10 @@ func TestLoadFiles(t *testing.T) {
 								},
 							},
 						}).
+						WithKubermaticConfiguration(config).
 						WithNodeAccessNetwork("192.0.2.0/24").
 						WithEtcdDiskSize(resource.MustParse("5Gi")).
 						WithBackupPeriod(20 * time.Minute).
-						WithMonitoringScrapeAnnotationPrefix("kubermatic_io_monitoring").
-						WithInClusterPrometheusScrapingConfigsFile(promTmpFilePath).
 						WithUserClusterMLAEnabled(true).
 						WithCABundle(caBundle).
 						WithOIDCIssuerURL("https://dev.kubermatic.io/dex").
@@ -729,7 +733,7 @@ func TestLoadFiles(t *testing.T) {
 					}
 
 					var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
-					statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false)...)
+					statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false, false)...)
 					statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 					for _, creatorGetter := range statefulSetCreators {
 						_, create := creatorGetter()
@@ -788,7 +792,7 @@ func TestLoadFiles(t *testing.T) {
 						checkTestResult(t, fixturePath, res)
 					}
 
-					for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data) {
+					for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data, test.GenTestSeed()) {
 						_, create := creatorGetter()
 						res, err := create(&kubermaticv1.EtcdBackupConfig{})
 						if err != nil {

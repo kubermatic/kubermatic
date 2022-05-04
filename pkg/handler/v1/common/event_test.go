@@ -66,15 +66,12 @@ func TestFilterEventsByType(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
 			result := common.FilterEventsByType(tc.InputEvents, tc.Filter)
 			if !equal(result, tc.ExpectedEvents) {
 				t.Fatalf("event list %v is not the same as expected %v", result, tc.ExpectedEvents)
 			}
-
 		})
 	}
-
 }
 
 // equal tells whether a and b contain the same elements.

@@ -1,4 +1,4 @@
-// +build e2e
+//go:build e2e
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
@@ -38,7 +38,7 @@ type testOptions struct {
 }
 
 var options = testOptions{
-	kubernetesVersion: *semver.NewSemverOrDie("v1.20.2"),
+	kubernetesVersion: *semver.NewSemverOrDie("v1.22.7"),
 }
 
 func init() {

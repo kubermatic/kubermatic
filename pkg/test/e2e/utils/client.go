@@ -25,23 +25,27 @@ import (
 	"testing"
 	"time"
 
-	semver "github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/azure"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraint"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraints"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constrainttemplates"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mlaadminsetting"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/tokens"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/users"
@@ -57,7 +61,7 @@ import (
 // TestClient wraps the Swagger-generated API client with some more
 // convenient functions, tailor-made for writing tests.
 type TestClient struct {
-	client      *apiclient.KubermaticAPI
+	client      *apiclient.KubermaticKubernetesPlatformAPI
 	bearerToken runtime.ClientAuthInfoWriter
 	test        *testing.T
 }
@@ -82,7 +86,7 @@ func NewTestClient(token string, t *testing.T) *TestClient {
 }
 
 // CreateProject creates a new project and waits for it to become active (ready).
-func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
+func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*apiv1.Project, error) {
 	before := time.Now()
 	timeout := 30 * time.Second
 
@@ -91,7 +95,7 @@ func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
 		Duration: 1 * time.Second,
 		Steps:    4,
 		Factor:   1.5,
-	})
+	}, ignoredStatusCodes...)
 
 	r.test.Logf("Creating project %s...", name)
 
@@ -103,7 +107,7 @@ func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
-		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+		return apiProject != nil && apiProject.Status == string(kubermaticv1.ProjectActive)
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
@@ -138,7 +142,7 @@ func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Proj
 	var apiProject *apiv1.Project
 	if !WaitFor(1*time.Second, timeout, func() bool {
 		apiProject, _ = r.GetProject(response.Payload.ID)
-		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+		return apiProject != nil && apiProject.Status == string(kubermaticv1.ProjectActive)
 	}) {
 		// best effort cleanup of a failed cluster
 		_ = r.DeleteProject(name)
@@ -165,7 +169,7 @@ func (r *TestClient) GetProject(id string) (*apiv1.Project, error) {
 	return convertProject(project.Payload)
 }
 
-// ListProjects gets projects
+// ListProjects gets projects.
 func (r *TestClient) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 	params := &project.ListProjectsParams{DisplayAll: &displayAll}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -187,7 +191,7 @@ func (r *TestClient) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 	return projectList, nil
 }
 
-// UpdateProject updates the given project
+// UpdateProject updates the given project.
 func (r *TestClient) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
 	params := &project.UpdateProjectParams{ProjectID: projectToUpdate.ID, Body: &models.Project{Name: projectToUpdate.Name}}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -219,7 +223,7 @@ func convertProject(project *models.Project) (*apiv1.Project, error) {
 	return apiProject, nil
 }
 
-// DeleteProject deletes given project
+// DeleteProject deletes given project.
 func (r *TestClient) DeleteProject(id string) error {
 	r.test.Log("Deleting project...")
 
@@ -307,7 +311,7 @@ func (r *TestClient) CreateServiceAccount(name, group, projectID string) (*apiv1
 	return apiServiceAccount, nil
 }
 
-// GetServiceAccount returns service account for given ID and project
+// GetServiceAccount returns service account for given ID and project.
 func (r *TestClient) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.ListServiceAccountsParams{ProjectID: projectID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -326,7 +330,7 @@ func (r *TestClient) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAc
 	return nil, fmt.Errorf("ServiceAccount %s not found", saID)
 }
 
-// DeleteServiceAccount deletes service account for given ID and project
+// DeleteServiceAccount deletes service account for given ID and project.
 func (r *TestClient) DeleteServiceAccount(saID, projectID string) error {
 	r.test.Logf("Deleting ServiceAccount %s...", saID)
 
@@ -361,7 +365,7 @@ func convertServiceAccount(sa *models.ServiceAccount) (*apiv1.ServiceAccount, er
 	return apiServiceAccount, nil
 }
 
-// AddTokenToServiceAccount creates a new token for service account
+// AddTokenToServiceAccount creates a new token for service account.
 func (r *TestClient) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.ServiceAccountToken, error) {
 	r.test.Logf("Adding token %s to ServiceAccount %s...", name, saID)
 
@@ -378,7 +382,7 @@ func (r *TestClient) AddTokenToServiceAccount(name, saID, projectID string) (*ap
 	return convertServiceAccountToken(token.Payload)
 }
 
-// DeleteTokenForServiceAccount deletes a token for service account
+// DeleteTokenForServiceAccount deletes a token for service account.
 func (r *TestClient) DeleteTokenForServiceAccount(tokenID, saID, projectID string) error {
 	r.test.Logf("Deleting token %s from ServiceAccount %s...", tokenID, saID)
 
@@ -409,7 +413,7 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 	return apiServiceAccountToken, nil
 }
 
-// ListCredentials returns list of credential names for the provider
+// ListCredentials returns list of credential names for the provider.
 func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string, error) {
 	params := &credentials.ListCredentialsParams{ProviderName: providerName, Datacenter: &datacenter}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -425,11 +429,11 @@ func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string,
 	return names, nil
 }
 
-// CreateAWSCluster creates cluster for AWS provider
-func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
-	vr, err := semver.NewVersion(version)
+// CreateAWSCluster creates cluster for AWS provider.
+func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone, proxyMode string, replicas int32, konnectivityEnabled bool, cniSettings *models.CNIPluginSettings) (*apiv1.Cluster, error) {
+	_, err := semver.NewVersion(version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
 
 	clusterSpec := &models.CreateClusterSpec{}
@@ -444,8 +448,18 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 					AccessKeyID:     accessKeyID,
 				},
 			},
-			Version: vr,
+			Version:   models.Semver(version),
+			CniPlugin: cniSettings,
+			ClusterNetwork: &models.ClusterNetworkingConfig{
+				ProxyMode: proxyMode,
+			},
 		},
+	}
+
+	if konnectivityEnabled {
+		clusterSpec.Cluster.Spec.ClusterNetwork = &models.ClusterNetworkingConfig{
+			KonnectivityEnabled: true,
+		}
 	}
 
 	if replicas > 0 {
@@ -490,11 +504,11 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 	return convertCluster(clusterResponse.Payload)
 }
 
-// CreateDOCluster creates cluster for DigitalOcean provider
-func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
-	vr, err := semver.NewVersion(version)
+// CreateKubevirtCluster creates cluster for Kubevirt provider.
+func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
+	_, err := semver.NewVersion(version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
 
 	clusterSpec := &models.CreateClusterSpec{}
@@ -505,25 +519,92 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 		Spec: &models.ClusterSpec{
 			Cloud: &models.CloudSpec{
 				DatacenterName: location,
-				Digitalocean:   &models.DigitaloceanCloudSpec{},
+				Kubevirt:       &models.KubevirtCloudSpec{},
 			},
-			Version: vr,
+			Version: models.Semver(version),
 		},
 	}
 
 	if replicas > 0 {
-		instanceSize := "s-2vcpu-2gb"
+		cpu := "1"
+		memory := "2Gi"
+		pvcSize := "20Gi"
+		sourceURL := "http://vm-repo.default.svc.cluster.local/CentOS-7-x86_64-GenericCloud.qcow2"
+		storageClassName := "standard"
 
 		clusterSpec.NodeDeployment = &models.NodeDeployment{
 			Spec: &models.NodeDeploymentSpec{
 				Replicas: &replicas,
 				Template: &models.NodeSpec{
 					Cloud: &models.NodeCloudSpec{
-						Digitalocean: &models.DigitaloceanNodeSpec{
-							Size:       &instanceSize,
-							Backups:    false,
-							IPV6:       false,
-							Monitoring: false,
+						Kubevirt: &models.KubevirtNodeSpec{
+							CPUs:                        &cpu,
+							Memory:                      &memory,
+							PrimaryDiskOSImage:          &sourceURL,
+							PrimaryDiskSize:             &pvcSize,
+							PrimaryDiskStorageClassName: &storageClassName,
+						},
+					},
+					OperatingSystem: &models.OperatingSystemSpec{
+						Centos: &models.CentOSSpec{
+							DistUpgradeOnBoot: false,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	r.test.Logf("Creating Kubevirt cluster %q (%s, %d nodes)...", name, version, replicas)
+
+	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	r.test.Log("Cluster created successfully.")
+
+	return convertCluster(clusterResponse.Payload)
+}
+
+// CreateHetznerCluster creates cluster for Hetzner provider.
+func (r *TestClient) CreateHetznerCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
+	_, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
+	}
+
+	clusterSpec := &models.CreateClusterSpec{}
+	clusterSpec.Cluster = &models.Cluster{
+		Type:       "kubernetes",
+		Name:       name,
+		Credential: credential,
+		Spec: &models.ClusterSpec{
+			Cloud: &models.CloudSpec{
+				DatacenterName: location,
+				Hetzner:        &models.HetznerCloudSpec{},
+			},
+			Version: models.Semver(version),
+		},
+	}
+
+	if replicas > 0 {
+		instanceSize := "cx21"
+
+		clusterSpec.NodeDeployment = &models.NodeDeployment{
+			Spec: &models.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &models.NodeSpec{
+					Cloud: &models.NodeCloudSpec{
+						Hetzner: &models.HetznerNodeSpec{
+							Type: &instanceSize,
 						},
 					},
 					OperatingSystem: &models.OperatingSystemSpec{
@@ -539,7 +620,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	r.test.Logf("Creating DigitalOcean cluster %q (%s, %d nodes)...", name, version, replicas)
+	r.test.Logf("Creating Hetzner cluster %q (%s, %d nodes)...", name, version, replicas)
 
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
@@ -551,7 +632,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 	return convertCluster(clusterResponse.Payload)
 }
 
-// DeleteCluster delete cluster method
+// DeleteCluster delete cluster method.
 func (r *TestClient) DeleteCluster(projectID, dc, clusterID string) error {
 	r.test.Logf("Deleting cluster %s...", clusterID)
 
@@ -567,7 +648,7 @@ func (r *TestClient) DeleteCluster(projectID, dc, clusterID string) error {
 	return nil
 }
 
-// GetCluster cluster getter
+// GetCluster cluster getter.
 func (r *TestClient) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
 	params := &project.GetClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -580,7 +661,7 @@ func (r *TestClient) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster
 	return convertCluster(cluster.Payload)
 }
 
-// GetClusterEvents returns the cluster events
+// GetClusterEvents returns the cluster events.
 func (r *TestClient) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
 	params := &project.GetClusterEventsParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -593,23 +674,23 @@ func (r *TestClient) GetClusterEvents(projectID, dc, clusterID string) ([]*model
 	return events.Payload, nil
 }
 
-// PrintClusterEvents prints all cluster events using its test.Logf
+// PrintClusterEvents prints all cluster events using its test.Logf.
 func (r *TestClient) PrintClusterEvents(projectID, dc, clusterID string) error {
 	events, err := r.GetClusterEvents(projectID, dc, clusterID)
 	if err != nil {
-		return fmt.Errorf("failed to get cluster events: %v", err)
+		return fmt.Errorf("failed to get cluster events: %w", err)
 	}
 
 	encodedEvents, err := json.Marshal(events)
 	if err != nil {
-		return fmt.Errorf("failed to serialize events: %v", err)
+		return fmt.Errorf("failed to serialize events: %w", err)
 	}
 
 	r.test.Logf("Cluster events:\n%s", string(encodedEvents))
 	return nil
 }
 
-// GetClusterHealthStatus gets the cluster status
+// GetClusterHealthStatus gets the cluster status.
 func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -621,13 +702,22 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 
 	apiClusterHealth := &apiv1.ClusterHealth{}
 	apiClusterHealth.Apiserver = convertHealthStatus(response.Payload.Apiserver)
+	apiClusterHealth.ApplicationController = convertHealthStatus(response.Payload.ApplicationController)
 	apiClusterHealth.Controller = convertHealthStatus(response.Payload.Controller)
 	apiClusterHealth.Etcd = convertHealthStatus(response.Payload.Etcd)
 	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
 	apiClusterHealth.Scheduler = convertHealthStatus(response.Payload.Scheduler)
 	apiClusterHealth.UserClusterControllerManager = convertHealthStatus(response.Payload.UserClusterControllerManager)
-	apiClusterHealth.GatekeeperController = convertHealthStatus(response.Payload.GatekeeperController)
-	apiClusterHealth.GatekeeperAudit = convertHealthStatus(response.Payload.GatekeeperAudit)
+
+	if status := response.Payload.GatekeeperController; status != "" {
+		converted := convertHealthStatus(status)
+		apiClusterHealth.GatekeeperController = &converted
+	}
+
+	if status := response.Payload.GatekeeperAudit; status != "" {
+		converted := convertHealthStatus(status)
+		apiClusterHealth.GatekeeperAudit = &converted
+	}
 
 	return apiClusterHealth, nil
 }
@@ -658,9 +748,10 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 	if !WaitFor(5*time.Second, timeout, func() bool {
 		healthStatus, _ := r.GetClusterHealthStatus(projectID, dc, clusterID)
 		return IsHealthyCluster(healthStatus) &&
-			healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
-			healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp
-
+			healthStatus.GatekeeperController != nil &&
+			*healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
+			healthStatus.GatekeeperAudit != nil &&
+			*healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp
 	}) {
 		return errors.New("OPA enabled cluster did not become healthy")
 	}
@@ -670,17 +761,17 @@ func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID st
 }
 
 func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
-	switch int64(status) {
-	case int64(kubermaticv1.HealthStatusProvisioning):
+	switch string(status) {
+	case string(kubermaticv1.HealthStatusProvisioning):
 		return kubermaticv1.HealthStatusProvisioning
-	case int64(kubermaticv1.HealthStatusUp):
+	case string(kubermaticv1.HealthStatusUp):
 		return kubermaticv1.HealthStatusUp
 	default:
 		return kubermaticv1.HealthStatusDown
 	}
 }
 
-// GetClusterNodeDeployments returns the cluster node deployments
+// GetClusterNodeDeployments returns the cluster node deployments.
 func (r *TestClient) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
 	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, DC: dc}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -724,7 +815,7 @@ func (r *TestClient) WaitForClusterNodeDeploymentsToExist(projectID, dc, cluster
 }
 
 func (r *TestClient) WaitForClusterNodeDeploymentsToByReady(projectID, dc, clusterID string, replicas int32) error {
-	timeout := 10 * time.Minute
+	timeout := 15 * time.Minute
 	before := time.Now()
 
 	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to become ready...", timeout, clusterID)
@@ -757,7 +848,7 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 	return apiCluster, nil
 }
 
-// ListGCPZones returns list of GCP zones
+// ListGCPZones returns list of GCP zones.
 func (r *TestClient) ListGCPZones(credential, dc string) ([]string, error) {
 	params := &gcp.ListGCPZonesParams{Credential: &credential, DC: dc}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -775,7 +866,7 @@ func (r *TestClient) ListGCPZones(credential, dc string) ([]string, error) {
 	return names, nil
 }
 
-// ListGCPDiskTypes returns list of GCP disk types
+// ListGCPDiskTypes returns list of GCP disk types.
 func (r *TestClient) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 	params := &gcp.ListGCPDiskTypesParams{Credential: &credential, Zone: &zone}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -793,7 +884,7 @@ func (r *TestClient) ListGCPDiskTypes(credential, zone string) ([]string, error)
 	return names, nil
 }
 
-// ListGCPSizes returns list of GCP sizes
+// ListGCPSizes returns list of GCP sizes.
 func (r *TestClient) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
 	params := &gcp.ListGCPSizesParams{Credential: &credential, Zone: &zone}
 	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
@@ -817,12 +908,13 @@ func (r *TestClient) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSi
 	return sizes, nil
 }
 
-// IsHealthyCluster check if all cluster components are up
+// IsHealthyCluster check if all cluster components are up.
 func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 	return healthStatus != nil &&
 		kubermaticv1.HealthStatusUp == healthStatus.UserClusterControllerManager &&
 		kubermaticv1.HealthStatusUp == healthStatus.Scheduler &&
 		kubermaticv1.HealthStatusUp == healthStatus.MachineController &&
+		kubermaticv1.HealthStatusUp == healthStatus.ApplicationController &&
 		kubermaticv1.HealthStatusUp == healthStatus.Etcd &&
 		kubermaticv1.HealthStatusUp == healthStatus.Controller &&
 		kubermaticv1.HealthStatusUp == healthStatus.Apiserver
@@ -931,7 +1023,6 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			Enforced: gSettings.CleanupOptions.Enforced,
 		},
 		DefaultNodeCount:      gSettings.DefaultNodeCount,
-		ClusterTypeOptions:    kubermaticv1.ClusterType(gSettings.ClusterTypeOptions),
 		DisplayDemoInfo:       gSettings.DisplayDemoInfo,
 		DisplayAPIDocs:        gSettings.DisplayAPIDocs,
 		DisplayTermsOfService: gSettings.DisplayTermsOfService,
@@ -948,6 +1039,7 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			MonitoringEnforced: gSettings.MlaOptions.MonitoringEnforced,
 		},
 		MlaAlertmanagerPrefix: gSettings.MlaAlertmanagerPrefix,
+		MlaGrafanaPrefix:      gSettings.MlaGrafanaPrefix,
 	}
 }
 
@@ -1035,7 +1127,7 @@ func (r *TestClient) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.C
 	return clusterRoleNames, nil
 }
 
-// BindUserToClusterRole
+// BindUserToClusterRole.
 func (r *TestClient) BindUserToClusterRole(projectID, dc, clusterID, roleName, user string) (*apiv1.ClusterRoleBinding, error) {
 	params := &project.BindUserToClusterRoleParams{
 		Body:      &models.ClusterRoleUser{UserEmail: user},
@@ -1146,7 +1238,7 @@ type PatchCluster struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-// CreateUserSSHKey creates a new user SSH key
+// CreateUserSSHKey creates a new user SSH key.
 func (r *TestClient) CreateUserSSHKey(projectID, keyName, publicKey string) (*apiv1.SSHKey, error) {
 	params := &project.CreateSSHKeyParams{
 		Key: &models.SSHKey{
@@ -1167,7 +1259,7 @@ func (r *TestClient) CreateUserSSHKey(projectID, keyName, publicKey string) (*ap
 	return convertSSHKey(key.Payload), nil
 }
 
-// ListUserSSHKey list user SSH keys
+// ListUserSSHKey list user SSH keys.
 func (r *TestClient) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
 	params := &project.ListSSHKeysParams{
 		ProjectID: projectID,
@@ -1187,7 +1279,7 @@ func (r *TestClient) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
 	return resultList, nil
 }
 
-// DeleteUserSSHKey deletes user SSH keys
+// DeleteUserSSHKey deletes user SSH keys.
 func (r *TestClient) DeleteUserSSHKey(projectID, keyID string) error {
 	params := &project.DeleteSSHKeyParams{
 		ProjectID: projectID,
@@ -1201,7 +1293,7 @@ func (r *TestClient) DeleteUserSSHKey(projectID, keyID string) error {
 	return err
 }
 
-// AssignSSHKeyToCluster adds user SSH key to the cluster
+// AssignSSHKeyToCluster adds user SSH key to the cluster.
 func (r *TestClient) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID string) error {
 	params := &project.AssignSSHKeyToClusterParams{
 		ClusterID: clusterID,
@@ -1215,7 +1307,7 @@ func (r *TestClient) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID strin
 	return err
 }
 
-// DetachSSHKeyFromClusterParams detaches user SSH key from the cluster
+// DetachSSHKeyFromClusterParams detaches user SSH key from the cluster.
 func (r *TestClient) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, keyID string) error {
 	params := &project.DetachSSHKeyFromClusterParams{
 		ClusterID: clusterID,
@@ -1223,7 +1315,11 @@ func (r *TestClient) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, key
 		KeyID:     keyID,
 		ProjectID: projectID,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusForbidden)
 
 	_, err := r.client.Project.DetachSSHKeyFromCluster(params, r.bearerToken)
 	return err
@@ -1248,7 +1344,11 @@ func (r *TestClient) ListDCForProvider(provider string) ([]*models.Datacenter, e
 	params := &datacenter.ListDCForProviderParams{
 		Provider: provider,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1263,7 +1363,11 @@ func (r *TestClient) GetDCForProvider(provider, dc string) (*models.Datacenter, 
 		Provider:   provider,
 		Datacenter: dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	receivedDC, err := r.client.Datacenter.GetDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1281,7 +1385,11 @@ func (r *TestClient) CreateDC(seed string, dc *models.Datacenter) (*models.Datac
 		},
 		Seed: seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
 	if err != nil {
@@ -1297,7 +1405,11 @@ func (r *TestClient) DeleteDC(seed, dc string) error {
 		DC:   dc,
 	}
 	// HTTP400 is returned when the DC is not yet available in the Seed
-	SetupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusBadRequest)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusBadRequest)
 
 	_, err := r.client.Datacenter.DeleteDC(params, r.bearerToken)
 	return err
@@ -1332,7 +1444,11 @@ func (r *TestClient) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter,
 		DCToPatch: dcToPatch,
 		Seed:      seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	patchedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
 	if err != nil {
@@ -1347,7 +1463,11 @@ func (r *TestClient) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 		Seed: seed,
 		DC:   dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusNotFound)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusNotFound)
 
 	receivedDC, err := r.client.Datacenter.GetDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1361,7 +1481,11 @@ func (r *TestClient) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
 	params := &datacenter.ListDCForSeedParams{
 		Seed: seed,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1375,7 +1499,11 @@ func (r *TestClient) GetDC(dc string) (*models.Datacenter, error) {
 	params := &datacenter.GetDatacenterParams{
 		DC: dc,
 	}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	receivedDC, err := r.client.Datacenter.GetDatacenter(params, r.bearerToken)
 	if err != nil {
@@ -1387,7 +1515,11 @@ func (r *TestClient) GetDC(dc string) (*models.Datacenter, error) {
 
 func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 	params := &datacenter.ListDatacentersParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	list, err := r.client.Datacenter.ListDatacenters(params, r.bearerToken)
 	if err != nil {
@@ -1399,7 +1531,11 @@ func (r *TestClient) ListDC() ([]*models.Datacenter, error) {
 
 func (r *TestClient) Logout() error {
 	params := &users.LogoutCurrentUserParams{}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
 	return err
@@ -1458,7 +1594,6 @@ func (r *TestClient) GetConstraint(projectID, clusterID, name string) (*apiv2.Co
 }
 
 func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constraint, error) {
-
 	kind := &models.Kind{
 		Kinds: []string{"ConfigMap"}, APIGroups: []string{""},
 	}
@@ -1468,7 +1603,7 @@ func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constr
 			Kinds: []*models.Kind{kind},
 		},
 		Parameters: models.Parameters{
-			"rawJSON": `{"labels":["gatekeeper"]}`,
+			"labels": json.RawMessage(`["gatekeeper"]`),
 		},
 	}
 
@@ -1509,63 +1644,6 @@ func convertDefaultConstraint(constraint *models.Constraint) (*kubermaticv1.Cons
 	return Constraint, nil
 }
 
-func (r *TestClient) CreateCT(name, ctKind string) (*kubermaticv1.ConstraintTemplate, error) {
-
-	spec := models.ConstraintTemplateSpec{
-		Crd: &models.CRD{
-			Spec: &models.CRDSpec{
-				Names: &models.Names{
-					Kind: ctKind,
-				},
-				Validation: &models.Validation{
-					OpenAPIV3Schema: &models.JSONSchemaProps{
-						Properties: map[string]models.JSONSchemaProps{
-							"labels": {
-								Type: "array",
-								Items: &models.JSONSchemaPropsOrArray{
-									Schema: &models.JSONSchemaProps{
-										Type: "string",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Targets: []*models.Target{
-			{
-				Target: "admission.k8s.gatekeeper.sh",
-				Rego:   "package requiredlabels\nviolation[{\"msg\": msg, \"details\": {\"missing_labels\": missing}}] {\n  provided := {label | input.review.object.metadata.labels[label]}\n  required := {label | label := input.parameters.labels[_]}\n  missing := required - provided\n  count(missing) > 0\n  msg := sprintf(\"you must provide labels: %v\", [missing])\n}",
-			},
-		},
-	}
-	params := &constrainttemplates.CreateConstraintTemplateParams{
-		Body: &models.CtBody{
-			Name: name,
-			Spec: &spec,
-		},
-	}
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-
-	r.test.Logf("Creating constraint template %s...", name)
-	ct, err := r.client.Constrainttemplates.CreateConstraintTemplate(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-	return convertDefaultConstraintTemplate(ct.Payload)
-}
-
-func convertDefaultConstraintTemplate(constraintTemplate *models.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
-	Constraint := &kubermaticv1.ConstraintTemplate{}
-	Constraint.Name = constraintTemplate.Name
-	return Constraint, nil
-}
-
 func (r *TestClient) DeleteConstraintTemplate(name string) error {
 	r.test.Log("Deleting constraint template...")
 
@@ -1600,13 +1678,13 @@ func (r *TestClient) DeleteConstraint(name string) error {
 	return nil
 }
 
-// CreateClusterTemplate method creates cluster template object
+// CreateClusterTemplate method creates cluster template object.
 func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, version, location string) (*apiv2.ClusterTemplate, error) {
-
-	vr, err := semver.NewVersion(version)
+	_, err := semver.NewVersion(version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
+
 	params := &project.CreateClusterTemplateParams{
 		Body: project.CreateClusterTemplateBody{
 			Name:  name,
@@ -1618,9 +1696,9 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 				Spec: &models.ClusterSpec{
 					Cloud: &models.CloudSpec{
 						DatacenterName: location,
-						Digitalocean:   &models.DigitaloceanCloudSpec{},
+						Hetzner:        &models.HetznerCloudSpec{},
 					},
-					Version: vr,
+					Version: models.Semver(version),
 				},
 			},
 			NodeDeployment: nil,
@@ -1645,23 +1723,16 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 		ProjectID: template.Payload.ProjectID,
 		User:      template.Payload.User,
 		Scope:     template.Payload.Scope,
-		Cluster: &apiv1.Cluster{
-			ObjectMeta: apiv1.ObjectMeta{
-				Name: template.Payload.Cluster.Name,
-			},
+		Cluster: &apiv2.ClusterTemplateInfo{
 			Labels:          template.Payload.Cluster.Labels,
 			InheritedLabels: template.Payload.Cluster.InheritedLabels,
-			Type:            template.Payload.Cluster.Type,
 			Credential:      template.Payload.Cluster.Credential,
-
-			Status: apiv1.ClusterStatus{},
 		},
 	}, nil
 }
 
-// CreateClusterTemplate method creates cluster template instance object
+// CreateClusterTemplate method creates cluster template instance object.
 func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string, replicas int64) (*apiv2.ClusterTemplateInstance, error) {
-
 	params := &project.CreateClusterTemplateInstanceParams{
 		Body: project.CreateClusterTemplateInstanceBody{
 			Replicas: replicas,
@@ -1692,9 +1763,8 @@ func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string,
 	}, nil
 }
 
-// ListClusters method lists user clusters
+// ListClusters method lists user clusters.
 func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
-
 	params := &project.ListClustersV2Params{
 		ProjectID: projectID,
 	}
@@ -1721,4 +1791,118 @@ func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
 	}
 
 	return clusterList, nil
+}
+
+// ListDOSizes returns list DO sizes.
+func (r *TestClient) ListDOSizes(credential string) (*models.DigitaloceanSizeList, error) {
+	params := &digitalocean.ListDigitaloceanSizesParams{
+		Credential: &credential,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	sizesResponse, err := r.client.Digitalocean.ListDigitaloceanSizes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return sizesResponse.Payload, nil
+}
+
+// ListAzureSizes returns list Azure sizes.
+func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSizeList, error) {
+	params := &azure.ListAzureSizesParams{
+		Credential: &credential,
+		Location:   &location,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	sizesResponse, err := r.client.Azure.ListAzureSizes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return sizesResponse.Payload, nil
+}
+
+// UpdateAlertmanager updates alertmanager config for specific cluster.
+func (r *TestClient) UpdateAlertmanager(clusterID, projectID, config string) (*models.Alertmanager, error) {
+	params := &project.UpdateAlertmanagerParams{
+		Body: &models.Alertmanager{
+			Spec: &models.AlertmanagerSpec{
+				Config: []byte(config),
+			},
+		},
+		ClusterID: clusterID,
+		ProjectID: projectID,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+	updateResponse, err := r.client.Project.UpdateAlertmanager(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return updateResponse.Payload, nil
+}
+
+// CreateRuleGroup creates rule group with specific type.
+func (r *TestClient) CreateRuleGroup(clusterID, projectID string, ruleGroupType kubermaticv1.RuleGroupType, config []byte) (*models.RuleGroup, error) {
+	params := &rulegroup.CreateRuleGroupParams{
+		Body: &models.RuleGroup{
+			Data: config,
+			Type: models.RuleGroupType(ruleGroupType),
+		},
+		ClusterID: clusterID,
+		ProjectID: projectID,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+	createResponse, err := r.client.Rulegroup.CreateRuleGroup(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return createResponse.Payload, nil
+}
+
+// SetMonitoringMLARateLimits updates monitoring MLA rate limits.
+func (r *TestClient) SetMonitoringMLARateLimits(clusterID, projectID string, rateLimits kubermaticv1.MonitoringRateLimitSettings) (*models.MLAAdminSetting, error) {
+	params := &mlaadminsetting.CreateMLAAdminSettingParams{
+		Body: &models.MLAAdminSetting{
+			MonitoringRateLimits: &models.MonitoringRateLimitSettings{
+				IngestionBurstSize: rateLimits.IngestionBurstSize,
+				IngestionRate:      rateLimits.IngestionRate,
+				MaxSamplesPerQuery: rateLimits.MaxSamplesPerQuery,
+				MaxSeriesPerMetric: rateLimits.MaxSeriesPerMetric,
+				MaxSeriesPerQuery:  rateLimits.MaxSeriesPerQuery,
+				MaxSeriesTotal:     rateLimits.MaxSeriesTotal,
+				QueryBurstSize:     rateLimits.QueryBurstSize,
+				QueryRate:          rateLimits.QueryRate,
+			},
+		},
+		ClusterID: clusterID,
+		ProjectID: projectID,
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+	updateResponse, err := r.client.Mlaadminsetting.CreateMLAAdminSetting(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return updateResponse.Payload, nil
 }

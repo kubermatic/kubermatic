@@ -18,16 +18,16 @@ package addon
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -45,13 +45,13 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 
 	clusters := []kubermaticv1.Cluster{}
 	for _, filename := range clusterFiles {
-		content, err := ioutil.ReadFile(filename)
+		content, err := os.ReadFile(filename)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		cluster := kubermaticv1.Cluster{}
-		err = yaml.Unmarshal(content, &cluster)
+		err = yaml.UnmarshalStrict(content, &cluster)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +105,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 }
 
 func TestNewTemplateData(t *testing.T) {
-	version := semver.NewSemverOrDie("v1.22.1")
+	version := semver.NewSemverOrDie("v1.22.5")
 	feature := "myfeature"
 	cluster := kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
@@ -114,9 +114,18 @@ func TestNewTemplateData(t *testing.T) {
 					StrictArp: pointer.BoolPtr(true),
 				},
 			},
+			CNIPlugin: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+			},
 			Version: *version,
 			Features: map[string]bool{
 				feature: true,
+			},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			Versions: kubermaticv1.ClusterVersionsStatus{
+				ControlPlane: *version,
 			},
 		},
 	}

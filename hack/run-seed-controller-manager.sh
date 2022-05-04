@@ -22,6 +22,8 @@ source hack/lib.sh
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
+KUBERMATIC_SEED=${KUBERMATIC_SEED:-europe-west3-c}
+KUBERMATIC_EXTERNAL_URL=${KUBERMATIC_EXTERNAL_URL:-dev.kubermatic.io}
 PPROF_PORT=${PPROF_PORT:-6600}
 
 # Deploy a user-cluster/ipam-controller for which we actuallly
@@ -31,8 +33,9 @@ export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"
 make seed-controller-manager
 
 CTRL_EXTRA_ARGS=""
-if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-  CTRL_EXTRA_ARGS="-dynamic-datacenters"
+
+if [ -n "${CONFIG_FILE:-}" ]; then
+  CTRL_EXTRA_ARGS="-kubermatic-configuration-file=$CONFIG_FILE"
 fi
 
 if [ -z "${VAULT_ADDR:-}" ]; then
@@ -62,23 +65,17 @@ set -x
 ./_build/seed-controller-manager $CTRL_EXTRA_ARGS \
   -namespace=kubermatic \
   -enable-leader-election=false \
-  -datacenter-name=europe-west3-c \
+  -seed-name=$KUBERMATIC_SEED \
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=$CA_BUNDLE \
-  -versions=charts/kubermatic/static/master/versions.yaml \
-  -updates=charts/kubermatic/static/master/updates.yaml \
-  -kubernetes-addons-path=addons \
-  -kubernetes-addons-file=charts/kubermatic/static/master/kubernetes-addons.yaml \
-  -feature-gates=OpenIDAuthPlugin=true \
+  -addons-path=addons \
+  -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
   -worker-name="$(worker_name)" \
-  -external-url=dev.kubermatic.io \
-  -backup-container=charts/kubermatic/static/store-container.yaml \
-  -cleanup-container=charts/kubermatic/static/cleanup-container.yaml \
+  -external-url=$KUBERMATIC_EXTERNAL_URL \
   -docker-pull-config-json-file=$DOCKERCONFIGJSON \
   -oidc-issuer-url=$OIDC_ISSUER_URL \
   -oidc-issuer-client-id=$OIDC_ISSUER_CLIENT_ID \
   -oidc-issuer-client-secret=$OIDC_ISSUER_CLIENT_SECRET \
-  -monitoring-scrape-annotation-prefix='kubermatic.io' \
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -max-parallel-reconcile=10 \

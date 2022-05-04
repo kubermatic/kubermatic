@@ -203,14 +203,14 @@ data:
           key_file: /etc/kubernetes/prometheus-client.key
 
       relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_kubermatic_io_monitoring_port]
+      - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port]
         action: keep
         regex: \d+
-      - source_labels: [__meta_kubernetes_pod_annotation_kubermatic_io_monitoring_path]
+      - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_path]
         regex: (.+)
         action: replace
         target_label: __metrics_path__
-      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_kubermatic_io_monitoring_port, __metrics_path__]
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port, __metrics_path__]
         action: replace
         regex: (.*);(.*);(.*);(.*)
         target_label: __metrics_path__
@@ -251,23 +251,84 @@ data:
         labels:
           kubermatic: federate
 
-    - name: kubermatic.machine_controller
+    - name: kubermatic.etcd
       rules:
-      - record: job:machine_controller_errors_total:rate5m
-        expr: rate(machine_controller_errors_total[5m])
-        labels:
-          kubermatic: federate
-
-      - alert: KubernetesAdmissionWebhookHighRejectionRate
+      - alert: EtcdInsufficientMembers
         annotations:
-          message: '{{ $labels.operation }} requests for Machine objects are failing (Admission) with a high rate. Consider checking the affected objects'
-        expr: rate(apiserver_admission_webhook_admission_latencies_seconds_count{name="machine-controller.kubermatic.io-machines",rejected="true"}[5m]) > 0.01
-        for: 5m
+          message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value }}).'
+        expr: |
+          sum(up{job="etcd"} == bool 1) by (job) < ((count(up{job="etcd"}) by (job) + 1) / 2)
+        for: 15m
+        labels:
+          severity: critical
+
+      - alert: EtcdNoLeader
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}": member {{ $labels.instance }} has no leader.'
+        expr: |
+          etcd_server_has_leader{job="etcd"} == 0
+        for: 15m
+        labels:
+          severity: critical
+
+      - alert: EtcdHighNumberOfLeaderChanges
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}": instance {{ $labels.instance }} has seen {{ $value }} leader changes within the last hour.'
+        expr: |
+          rate(etcd_server_leader_changes_seen_total{job="etcd"}[15m]) > 3
+        for: 15m
         labels:
           severity: warning
 
-    - name: kubermatic.etcd
-      rules:
+      - alert: EtcdGRPCRequestsSlow
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job="etcd", grpc_type="unary"}[5m])) by (job, instance, grpc_service, grpc_method, le))
+          > 0.15
+        for: 10m
+        labels:
+          severity: critical
+
+      - alert: EtcdMemberCommunicationSlow
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To }} is taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job="etcd"}[5m]))
+          > 0.15
+        for: 10m
+        labels:
+          severity: warning
+
+      - alert: EtcdHighNumberOfFailedProposals
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures within the last hour on etcd instance {{ $labels.instance }}.'
+        expr: |
+          rate(etcd_server_proposals_failed_total{job="etcd"}[15m]) > 5
+        for: 15m
+        labels:
+          severity: warning
+
+      - alert: EtcdHighFsyncDurations
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}": 99th percentile fync durations are {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"}[5m]))
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+
+      - alert: EtcdHighCommitDurations
+        annotations:
+          message: 'Etcd cluster "{{ $labels.job }}": 99th percentile commit durations {{ $value }}s on etcd instance {{ $labels.instance }}.'
+        expr: |
+          histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job="etcd"}[5m]))
+          > 0.25
+        for: 10m
+        labels:
+          severity: warning
+
       - record: job:etcd_server_has_leader:sum
         expr: sum(etcd_server_has_leader)
         labels:
@@ -405,6 +466,14 @@ data:
         labels:
           severity: warning
 
+      - alert: KubernetesAdmissionWebhookHighRejectionRate
+        annotations:
+          message: '{{ $labels.operation }} requests for Machine objects are failing (Admission) with a high rate. Consider checking the affected objects'
+        expr: rate(apiserver_admission_webhook_admission_latencies_seconds_count{name="machine-controller.kubermatic.io-machines",rejected="true"}[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+
       - record: job:machine_controller_errors_total:rate5m
         expr: rate(machine_controller_errors_total[5m])
         labels:
@@ -419,84 +488,6 @@ data:
         expr: sum(machine_controller_machines)
         labels:
           kubermatic: federate
-
-    - name: etcd
-      rules:
-      - alert: EtcdInsufficientMembers
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value }}).'
-        expr: |
-          sum(up{job="etcd"} == bool 1) by (job) < ((count(up{job="etcd"}) by (job) + 1) / 2)
-        for: 15m
-        labels:
-          severity: critical
-
-      - alert: EtcdNoLeader
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": member {{ $labels.instance }} has no leader.'
-        expr: |
-          etcd_server_has_leader{job="etcd"} == 0
-        for: 15m
-        labels:
-          severity: critical
-
-      - alert: EtcdHighNumberOfLeaderChanges
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": instance {{ $labels.instance }} has seen {{ $value }} leader changes within the last hour.'
-        expr: |
-          rate(etcd_server_leader_changes_seen_total{job="etcd"}[15m]) > 3
-        for: 15m
-        labels:
-          severity: warning
-
-      - alert: EtcdGRPCRequestsSlow
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
-        expr: |
-          histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job="etcd", grpc_type="unary"}[5m])) by (job, instance, grpc_service, grpc_method, le))
-          > 0.15
-        for: 10m
-        labels:
-          severity: critical
-
-      - alert: EtcdMemberCommunicationSlow
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To }} is taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
-        expr: |
-          histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job="etcd"}[5m]))
-          > 0.15
-        for: 10m
-        labels:
-          severity: warning
-
-      - alert: EtcdHighNumberOfFailedProposals
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures within the last hour on etcd instance {{ $labels.instance }}.'
-        expr: |
-          rate(etcd_server_proposals_failed_total{job="etcd"}[15m]) > 5
-        for: 15m
-        labels:
-          severity: warning
-
-      - alert: EtcdHighFsyncDurations
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": 99th percentile fync durations are {{ $value }}s on etcd instance {{ $labels.instance }}.'
-        expr: |
-          histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"}[5m]))
-          > 0.5
-        for: 10m
-        labels:
-          severity: warning
-
-      - alert: EtcdHighCommitDurations
-        annotations:
-          message: 'Etcd cluster "{{ $labels.job }}": 99th percentile commit durations {{ $value }}s on etcd instance {{ $labels.instance }}.'
-        expr: |
-          histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job="etcd"}[5m]))
-          > 0.25
-        for: 10m
-        labels:
-          severity: warning
 
     - name: process.filedescriptors
       rules:
@@ -520,6 +511,21 @@ data:
         for: 10m
         labels:
           severity: critical
+
+    - name: kubernetes-nodes
+      rules:
+      - alert: KubernetesNodeNotReady
+        annotations:
+          message: '{{ $labels.node }} has been unready for more than an hour.'
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 30m
+        labels:
+          severity: warning
+
+      - record: job:kube_node_info:count
+        expr: count(kube_node_info)
+        labels:
+          kubermatic: federate
 
     - name: kubernetes-absent
       rules:
@@ -589,16 +595,6 @@ data:
           message: DNS resolver has disappeared from Prometheus target discovery.
         expr: absent(up{job="dns-resolver"} == 1)
         for: 15m
-        labels:
-          severity: warning
-
-    - name: kubernetes-nodes
-      rules:
-      - alert: KubernetesNodeNotReady
-        annotations:
-          message: '{{ $labels.node }} has been unready for more than an hour.'
-        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
-        for: 30m
         labels:
           severity: warning
 metadata:

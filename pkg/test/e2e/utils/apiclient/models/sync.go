@@ -51,6 +51,8 @@ func (m *Sync) validateSyncOnly(formats strfmt.Registry) error {
 			if err := m.SyncOnly[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("syncOnly" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("syncOnly" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -83,6 +85,8 @@ func (m *Sync) contextValidateSyncOnly(ctx context.Context, formats strfmt.Regis
 			if err := m.SyncOnly[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("syncOnly" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("syncOnly" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

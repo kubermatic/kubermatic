@@ -1,0 +1,468 @@
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ if eq .Cluster.CloudProviderName "nutanix" }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-provisioner
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: external-provisioner-runner
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims/status"]
+    verbs: ["update", "patch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots/status"]
+    verbs: ["update"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents"]
+    verbs: ["create", "get", "list", "watch", "update", "delete"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents/status"]
+    verbs: ["update"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-provisioner-role
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: csi-provisioner
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: external-provisioner-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+# needed for StatefulSet
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-provisioner-ntnx-plugin
+  namespace: kube-system
+  labels:
+    app: csi-provisioner-ntnx-plugin
+spec:
+  selector:
+    app: csi-provisioner-ntnx-plugin
+  ports:
+    - name: dummy
+      port: 12345
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-node-ntnx-plugin
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-node-runner
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch", "update"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-node-role
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: csi-node-ntnx-plugin
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: csi-node-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: csi.nutanix.com
+spec:
+  attachRequired: false
+  podInfoOnMount: true
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-node-ntnx-plugin
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: csi-node-ntnx-plugin
+  template:
+    metadata:
+      labels:
+        app: csi-node-ntnx-plugin
+    spec:
+      serviceAccount: csi-node-ntnx-plugin
+      hostNetwork: true
+      containers:
+        - name: driver-registrar
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.2.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --v=5
+            - --csi-address=$(ADDRESS)
+            - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: /var/lib/kubelet/plugins/csi.nutanix.com/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            limits:
+              cpu: 100m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi/
+            - name: registration-dir
+              mountPath: /registration
+        - name: csi-node-ntnx-plugin
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+          image: {{ Registry "quay.io" }}/karbon/ntnx-csi:v2.5.0
+          imagePullPolicy: IfNotPresent
+          args :
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--nodeid=$(NODE_ID)"
+            - "--drivername=csi.nutanix.com"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: SSL_CERT_FILE
+              value: "/etc/kubermatic/certs/ca-bundle.pem"
+          resources:
+            limits:
+              cpu: 100m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet
+              # needed so that any mounts setup inside this container are
+              # propagated back to the host machine.
+              mountPropagation: "Bidirectional"
+            - mountPath: /dev
+              name: device-dir
+            - mountPath: /etc/iscsi
+              name: iscsi-dir
+            - mountPath: /host
+              name: root-dir
+              # This is needed because mount is run from host using chroot.
+              mountPropagation: "Bidirectional"
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
+              readOnly: true
+          ports:
+            - containerPort: 9808
+              name: http-endpoint
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http-endpoint
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 2
+            failureThreshold: 3
+        - name: liveness-probe
+          volumeMounts:
+            - mountPath: /csi
+              name: plugin-dir
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.3.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --csi-address=/csi/csi.sock
+            - --http-endpoint=:9808
+      priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        - operator: "Exists"
+      volumes:
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: Directory
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi.nutanix.com/
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: device-dir
+          hostPath:
+            path: /dev
+        - name: iscsi-dir
+          hostPath:
+            path: /etc/iscsi
+            type: Directory
+        - name: root-dir
+          hostPath:
+            path: /
+            type: Directory
+        - name: ca-bundle
+          configMap:
+            name: ca-bundle
+---
+
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-provisioner-ntnx-plugin
+  namespace: kube-system
+spec:
+  serviceName: csi-provisioner-ntnx-plugin
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-provisioner-ntnx-plugin
+  template:
+    metadata:
+      labels:
+        app: csi-provisioner-ntnx-plugin
+    spec:
+      serviceAccount: csi-provisioner
+      hostNetwork: true
+      containers:
+        - name: csi-provisioner
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v2.2.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --csi-address=$(ADDRESS)
+            - --timeout=60s
+            - --worker-threads=16
+            # This adds PV/PVC metadata to create volume requests
+            - --extra-create-metadata=true
+            - --default-fstype=ext4
+            # This is used to collect CSI operation metrics
+            - --http-endpoint=:9809
+            - --v=5
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          resources:
+            limits:
+              cpu: 100m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: csi-resizer
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.2.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --v=5
+            - --csi-address=$(ADDRESS)
+            - --timeout=60s
+            - --leader-election=false
+            # NTNX CSI driver supports online volume expansion.
+            - --handle-volume-inuse-error=false
+            - --http-endpoint=:9810
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: csi-snapshotter
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v4.2.1
+          imagePullPolicy: IfNotPresent
+          args:
+          - --csi-address=$(ADDRESS)
+          - --leader-election=false
+          - --logtostderr=true
+          - --timeout=300s
+          env:
+          - name: ADDRESS
+            value: /csi/csi.sock
+          volumeMounts:
+          - name: socket-dir
+            mountPath: /csi
+        - name: ntnx-csi-plugin
+          image: {{ Registry "quay.io" }}/karbon/ntnx-csi:v2.5.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: true
+            privileged: true
+          args:
+            - --endpoint=$(CSI_ENDPOINT)
+            - --nodeid=$(NODE_ID)
+            - --drivername=csi.nutanix.com
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: SSL_CERT_FILE
+              value: "/etc/kubermatic/certs/ca-bundle.pem"
+          resources:
+            limits:
+              cpu: 100m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          volumeMounts:
+            - mountPath: /var/lib/csi/sockets/pluginproxy/
+              name: socket-dir
+            # This is needed for static NFS volume feature.
+            - mountPath: /host
+              name: root-dir
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
+              readOnly: true
+          ports:
+            - containerPort: 9807
+              name: http-endpoint
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http-endpoint
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 2
+            failureThreshold: 3
+        - name: liveness-probe
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.3.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --csi-address=/csi/csi.sock
+            - --http-endpoint=:9807
+      priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/controlplane"
+          operator: "Exists"
+          effect: "NoSchedule"
+      volumes:
+        - emptyDir: {}
+          name: socket-dir
+        - hostPath:
+            path: /
+            type: Directory
+          name: root-dir
+        - name: ca-bundle
+          configMap:
+            name: ca-bundle
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: csi-metrics-service
+  namespace: kube-system
+  labels:
+    app: csi-provisioner-ntnx-plugin
+spec:
+  type: ClusterIP
+  selector:
+    app: csi-provisioner-ntnx-plugin
+  ports:
+    - name: provisioner
+      port: 9809
+      targetPort: 9809
+      protocol: TCP
+    - name: resizer
+      port: 9810
+      targetPort: 9810
+      protocol: TCP
+
+{{ end }}

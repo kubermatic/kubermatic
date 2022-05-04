@@ -21,10 +21,10 @@ type DatacenterSpecKubevirt struct {
 	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
 	// 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
 	// policy selected with DNSPolicy.
-	DNSPolicy string `json:"dns_policy,omitempty"`
+	DNSPolicy string `json:"dnsPolicy,omitempty"`
 
 	// dns config
-	DNSConfig *PodDNSConfig `json:"dns_config,omitempty"`
+	DNSConfig *PodDNSConfig `json:"dnsConfig,omitempty"`
 }
 
 // Validate validates this datacenter spec kubevirt
@@ -49,7 +49,9 @@ func (m *DatacenterSpecKubevirt) validateDNSConfig(formats strfmt.Registry) erro
 	if m.DNSConfig != nil {
 		if err := m.DNSConfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("dns_config")
+				return ve.ValidateName("dnsConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("dnsConfig")
 			}
 			return err
 		}
@@ -77,7 +79,9 @@ func (m *DatacenterSpecKubevirt) contextValidateDNSConfig(ctx context.Context, f
 	if m.DNSConfig != nil {
 		if err := m.DNSConfig.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("dns_config")
+				return ve.ValidateName("dnsConfig")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("dnsConfig")
 			}
 			return err
 		}

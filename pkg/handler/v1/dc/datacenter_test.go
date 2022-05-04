@@ -25,12 +25,18 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
 
 func TestDatacentersListEndpoint(t *testing.T) {
 	t.Parallel()
@@ -42,13 +48,13 @@ func TestDatacentersListEndpoint(t *testing.T) {
 	}{
 		{
 			name:             "admin should be able to list dc without email filtering",
-			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"registry_mirrors":["http://127.0.0.1:5001"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pause_image":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomains":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
+			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list dc with email filtering",
-			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"registry_mirrors":["http://127.0.0.1:5001"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pause_image":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
+			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
@@ -58,9 +64,9 @@ func TestDatacentersListEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v1/dc", nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -85,7 +91,7 @@ func TestDatacenterGetEndpoint(t *testing.T) {
 		{
 			name:             "admin should be able to get email restricted dc",
 			dc:               "restricted-fake-dc",
-			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -99,7 +105,7 @@ func TestDatacenterGetEndpoint(t *testing.T) {
 		{
 			name:             "regular user should be able to get restricted dc if his email domain is allowed",
 			dc:               "restricted-fake-dc",
-			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
 		},
@@ -123,9 +129,9 @@ func TestDatacenterGetEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/dc/%s", tc.dc), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -150,14 +156,14 @@ func TestDatacenterListForProviderEndpoint(t *testing.T) {
 		{
 			name:             "admin should be able to list dc per provider without email filtering",
 			provider:         "fake",
-			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"registry_mirrors":["http://127.0.0.1:5001"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomains":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
+			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list dc per provider with email filtering",
 			provider:         "fake",
-			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"registry_mirrors":["http://127.0.0.1:5001"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}]`,
+			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}]`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
@@ -174,9 +180,9 @@ func TestDatacenterListForProviderEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/dc", tc.provider), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -203,7 +209,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			name:             "admin should be able to get email restricted dc",
 			provider:         "fake",
 			dc:               "restricted-fake-dc",
-			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -219,7 +225,7 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			name:             "regular user should be able to get restricted dc if his email domain is allowed",
 			provider:         "fake",
 			dc:               "restricted-fake-dc",
-			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
 		},
@@ -253,9 +259,9 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/dc/%s", tc.provider, tc.dc), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -280,14 +286,14 @@ func TestDatacenterListForSeedEndpoint(t *testing.T) {
 		{
 			name:             "admin should be able to list dc per seed without email filtering",
 			seed:             "us-central1",
-			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"registry_mirrors":["http://127.0.0.1:5001"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pause_image":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomains":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
+			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc2"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 		{
 			name:             "regular user should be able to list dc per seed with email filtering",
 			seed:             "us-central1",
-			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"registry_mirrors":["http://127.0.0.1:5001"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pause_image":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
+			expectedResponse: `[{"metadata":{"name":"audited-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc"},"spec":{"seed":"us-central1","country":"Germany","location":"Henrik's basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"httpProxy":"HTTPProxy","insecureRegistries":["incsecure-registry"],"registryMirrors":["http://127.0.0.1:5001"],"pauseImage":"pause-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}]`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAPIUser(),
 		},
@@ -304,9 +310,9 @@ func TestDatacenterListForSeedEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/seed/%s/dc", tc.seed), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -333,7 +339,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			name:             "admin should be able to get email restricted dc",
 			seed:             "us-central1",
 			dc:               "restricted-fake-dc",
-			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -349,7 +355,7 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			name:             "regular user should be able to get restricted dc if his email domain is allowed",
 			seed:             "us-central1",
 			dc:               "restricted-fake-dc",
-			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmails":["example.com"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
 		},
@@ -383,9 +389,9 @@ func TestDatacenterGetForSeedEndpoint(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seed, tc.dc), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -415,7 +421,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 				Seed:         "us-central1",
 				Country:      "NL",
 				Location:     "Amsterdam",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "do-correct",
 			seedName:         "us-central1",
@@ -427,7 +433,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "non-admin should not be able to create dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "do-correct",
 			seedName:         "us-central1",
@@ -439,7 +445,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should not be able to create already existing dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "private-do1",
 			seedName:         "us-central1",
@@ -451,7 +457,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should not be able to create a dc in non existing seed",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "idontexist",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "private-do1",
 			seedName:         "idontexist",
@@ -474,8 +480,8 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should not be able to create a dc with multiple specified providers",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
-				AWS:          &v1.DatacenterSpecAWS{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+				AWS:          &kubermaticv1.DatacenterSpecAWS{},
 			},
 			dcName:           "private-do1",
 			seedName:         "us-central1",
@@ -487,7 +493,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			name: "should receive a validation error when providing different seed name in path and request",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed:         "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 			},
 			dcName:           "private-do1",
 			seedName:         "different",
@@ -512,9 +518,9 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/seed/%s/dc", tc.seedName), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -545,20 +551,20 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 				Seed:     "us-central1",
 				Country:  "NL",
 				Location: "Amsterdam",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
-				Node: v1.NodeSettings{
+				Node: kubermaticv1.NodeSettings{
 					PauseImage: "pause-image",
 				},
 				EnforceAuditLogging:      true,
 				EnforcePodSecurityPolicy: false,
-				RequiredEmailDomains:     []string{"example.com", "pleaseno.org"},
+				RequiredEmails:           []string{"example.com", "pleaseno.org"},
 			},
 			dcName:           "private-do1",
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
-			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pause_image":"pause-image"},"requiredEmailDomains":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pauseImage":"pause-image"},"requiredEmails":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -568,20 +574,20 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 				Seed:     "us-central1",
 				Country:  "NL",
 				Location: "Amsterdam",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
-				Node: v1.NodeSettings{
+				Node: kubermaticv1.NodeSettings{
 					PauseImage: "pause-image",
 				},
 				EnforceAuditLogging:      true,
 				EnforcePodSecurityPolicy: false,
-				RequiredEmailDomains:     []string{"example.com", "pleaseno.org"},
+				RequiredEmails:           []string{"example.com", "pleaseno.org"},
 			},
 			dcName:           "private-do1-updated",
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
-			expectedResponse: `{"metadata":{"name":"private-do1-updated"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pause_image":"pause-image"},"requiredEmailDomains":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}}`,
+			expectedResponse: `{"metadata":{"name":"private-do1-updated"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pauseImage":"pause-image"},"requiredEmails":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -589,7 +595,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "non-admin should not be able to update dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -604,7 +610,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update non existing dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -619,7 +625,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update dc name to existing dc",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -634,7 +640,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update a dc in non existing seed",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "idontexist",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -661,10 +667,10 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should not be able to update a dc with multiple specified providers",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
-				AWS: &v1.DatacenterSpecAWS{
+				AWS: &kubermaticv1.DatacenterSpecAWS{
 					Region: "EU",
 				},
 			},
@@ -679,7 +685,7 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 			name: "should receive a validation error when providing different seed name in path and request",
 			dcSpec: apiv1.DatacenterSpec{
 				Seed: "us-central1",
-				Digitalocean: &v1.DatacenterSpecDigitalocean{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "EU",
 				},
 			},
@@ -707,9 +713,9 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcPathName), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -738,7 +744,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			patch:            `{"metadata":{"name":"private-do1"},"spec":{"country":"NL","location":"Amsterdam","aws":{"region":"EU"},"digitalocean":null,"node":null,"enforceAuditLogging":false}}`,
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
-			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"aws","aws":{"region":"EU","images":null},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}`,
+			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"aws","aws":{"region":"EU"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -747,7 +753,7 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 			patch:            `{"metadata":{"name":"private-do1-updated"}}`,
 			dcPathName:       "private-do1",
 			seedName:         "us-central1",
-			expectedResponse: `{"metadata":{"name":"private-do1-updated"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pause_image":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}`,
+			expectedResponse: `{"metadata":{"name":"private-do1-updated"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pauseImage":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}}`,
 			httpStatus:       200,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -821,9 +827,9 @@ func TestDatacenterPatchEndpoint(t *testing.T) {
 				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcPathName), strings.NewReader(tc.patch))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 
@@ -885,9 +891,9 @@ func TestDatacenterDeleteEndpoint(t *testing.T) {
 				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcName), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create test endpoint: %v", err)
 			}
 			ep.ServeHTTP(res, req)
 

@@ -20,15 +20,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"reflect"
 	"time"
 
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -48,7 +49,7 @@ import (
 )
 
 const (
-	prometheusType = "prometheus"
+	PrometheusType = "prometheus"
 	lokiType       = "loki"
 )
 
@@ -93,7 +94,11 @@ func newDatasourceGrafanaReconciler(
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch Clusters: %v", err)
+		return fmt.Errorf("failed to watch Clusters: %w", err)
+	}
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}},
+		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()), predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
+		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}
 	return err
 }
@@ -109,6 +114,11 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 
 	if cluster.Status.NamespaceName == "" {
 		log.Debug("Skipping cluster reconciling because it has no namespace yet")
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
+	if cluster.Address.ExternalName == "" {
+		log.Debug("Skipping cluster reconciling because it has no external name yet")
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
@@ -136,10 +146,8 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 
 type datasourceGrafanaController struct {
 	ctrlruntimeclient.Client
-	httpClient   *http.Client
-	grafanaURL   string
-	grafanaAuth  string
-	mlaNamespace string
+	clientProvider grafanaClientProvider
+	mlaNamespace   string
 
 	log               *zap.SugaredLogger
 	overwriteRegistry string
@@ -147,20 +155,16 @@ type datasourceGrafanaController struct {
 
 func newDatasourceGrafanaController(
 	client ctrlruntimeclient.Client,
-	httpClient *http.Client,
-	grafanaURL string,
-	grafanaAuth string,
+	clientProvider grafanaClientProvider,
 	mlaNamespace string,
 
 	log *zap.SugaredLogger,
 	overwriteRegistry string,
 ) *datasourceGrafanaController {
 	return &datasourceGrafanaController{
-		Client:       client,
-		mlaNamespace: mlaNamespace,
-		httpClient:   httpClient,
-		grafanaURL:   grafanaURL,
-		grafanaAuth:  grafanaAuth,
+		Client:         client,
+		mlaNamespace:   mlaNamespace,
+		clientProvider: clientProvider,
 
 		log:               log,
 		overwriteRegistry: overwriteRegistry,
@@ -172,24 +176,33 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	if cluster.Spec.MLA == nil {
 		cluster.Spec.MLA = &kubermaticv1.MLASettings{}
 	}
-	grafanaClient := grafanasdk.NewClient(r.grafanaURL, r.grafanaAuth, r.httpClient)
 	projectID, ok := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]
 	if !ok {
 		return nil, fmt.Errorf("unable to get project name from label")
 	}
 
+	grafanaClient, err := r.clientProvider(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Grafana client: %w", err)
+	}
+
 	project := &kubermaticv1.Project{}
-	err := r.Get(ctx, types.NamespacedName{Name: projectID}, project)
+	err = r.Get(ctx, types.NamespacedName{Name: projectID}, project)
 	if err != nil {
 		if apiErrors.IsNotFound(err) {
 			// if project removed before cluster we need only to remove resources and finalizer
-			if err := r.handleDeletion(ctx, nil, cluster); err != nil {
+			if err := r.handleDeletion(ctx, cluster, nil); err != nil {
 				return nil, fmt.Errorf("handling deletion: %w", err)
 			}
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
+
+	if grafanaClient == nil {
+		return nil, nil
+	}
+
 	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
 		return nil, err
@@ -199,17 +212,14 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 
 	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
 	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
-		if err := r.handleDeletion(ctx, grafanaClient, cluster); err != nil {
+		if err := r.handleDeletion(ctx, cluster, grafanaClient); err != nil {
 			return nil, fmt.Errorf("handling deletion: %w", err)
 		}
 		return nil, nil
 	}
 
-	if !kubernetes.HasFinalizer(cluster, mlaFinalizer) {
-		kubernetes.AddFinalizer(cluster, mlaFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
-			return nil, fmt.Errorf("updating finalizers: %w", err)
-		}
+	if err := kubernetes.TryAddFinalizer(ctx, r, cluster, mlaFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	data := resources.NewTemplateDataBuilder().
@@ -219,14 +229,23 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		WithOverwriteRegistry(r.overwriteRegistry).
 		Build()
 
-	if err := r.ensureConfigMaps(ctx, cluster); err != nil {
+	settings := &kubermaticv1.MLAAdminSetting{}
+	if err := r.Get(ctx, types.NamespacedName{Name: resources.MLAAdminSettingsName, Namespace: cluster.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to get MLAAdminSetting: %w", err)
+	}
+
+	if err := r.ensureConfigMaps(ctx, cluster, settings); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
-	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
+	if err := r.ensureDeployments(ctx, cluster, data, settings); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
+	}
+	err = r.mlaGatewayHealth(ctx, cluster)
+	if err != nil {
+		return nil, err
 	}
 	if err := r.ensureServices(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Services in namespace %s: %w", "mla", err)
@@ -240,26 +259,26 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
 	}
-	if err := r.reconcileDatasource(ctx, grafanaClient, cluster.Spec.MLA.LoggingEnabled, lokiDS); err != nil {
+	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS, grafanaClient); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
 	}
 
 	prometheusDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
-		UID:    getDatasourceUIDForCluster(prometheusType, cluster),
+		UID:    getDatasourceUIDForCluster(PrometheusType, cluster),
 		Name:   getPrometheusDatasourceNameForCluster(cluster),
-		Type:   prometheusType,
+		Type:   PrometheusType,
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 	}
-	if err := r.reconcileDatasource(ctx, grafanaClient, cluster.Spec.MLA.MonitoringEnabled, prometheusDS); err != nil {
+	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled, prometheusDS, grafanaClient); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
 	}
 
 	return nil, nil
 }
 
-func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, grafanaClient *grafanasdk.Client, enabled bool, expected grafanasdk.Datasource) error {
+func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource, grafanaClient *grafanasdk.Client) error {
 	if enabled {
 		ds, err := grafanaClient.GetDatasourceByUID(ctx, expected.UID)
 		if err != nil {
@@ -291,25 +310,24 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, g
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 	return nil
-
 }
 
-func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		GatewayDeploymentCreator(data),
+		GatewayDeploymentCreator(data, settings),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		GatewayConfigMapCreator(c, r.mlaNamespace),
+		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
 	}
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 	return nil
 }
@@ -319,8 +337,8 @@ func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kube
 		GatewayCACreator(),
 		GatewayCertificateCreator(c, data.GetMLAGatewayCA),
 	}
-	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
-		return fmt.Errorf("failed to ensure that the Secrets exist: %v", err)
+	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure that the Secrets exist: %w", err)
 	}
 	return nil
 }
@@ -330,48 +348,75 @@ func (r *datasourceGrafanaController) ensureServices(ctx context.Context, c *kub
 		GatewayInternalServiceCreator(),
 		GatewayExternalServiceCreator(c),
 	}
-	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client)
 }
 
-func (r *datasourceGrafanaController) cleanUp(ctx context.Context) error {
+func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.List(ctx, clusterList); err != nil {
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		if err := r.handleDeletion(ctx, nil, &cluster); err != nil {
+		if err := r.handleDeletion(ctx, &cluster, nil); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, grafanaClient *grafanasdk.Client, cluster *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.Context, cluster *kubermaticv1.Cluster, resourceDeletionErr error) error {
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		// Remove the health status in Cluster CR
+		c.Status.ExtendedHealth.MLAGateway = nil
+		if resourceDeletionErr != nil && !apiErrors.IsNotFound(resourceDeletionErr) {
+			down := kubermaticv1.HealthStatusDown
+			c.Status.ExtendedHealth.MLAGateway = &down
+		}
+	})
+}
+
+func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster, grafanaClient *grafanasdk.Client) error {
 	if grafanaClient != nil {
 		// that's mostly means that Grafana organization doesn't exists anymore
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
-		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(prometheusType, cluster)); err != nil {
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
-
-	if cluster.DeletionTimestamp.IsZero() {
+	if cluster.DeletionTimestamp.IsZero() && cluster.Status.NamespaceName != "" {
 		for _, resource := range ResourcesOnDeletion(cluster.Status.NamespaceName) {
-			if err := r.Client.Delete(ctx, resource); err != nil && !apiErrors.IsNotFound(err) {
-				return fmt.Errorf("failed to delete %s: %v", resource.GetName(), err)
+			err := r.Client.Delete(ctx, resource)
+			// Update Health status even in case of error
+			// If any resources could not be deleted (configmap, secret,.. not only deployment)
+			// The status will be kubermaticv1.HealthStatusDown until everything is cleaned up.
+			// Then the status will be removed
+			if errH := r.cleanUpMlaGatewayHealthStatus(ctx, cluster, err); errH != nil {
+				return fmt.Errorf("failed to update mlaGateway status in cluster: %w", errH)
+			}
+			if err != nil && !apiErrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete %s: %w", resource.GetName(), err)
 			}
 		}
 	}
 
-	if kubernetes.HasFinalizer(cluster, mlaFinalizer) {
-		kubernetes.RemoveFinalizer(cluster, mlaFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
-			return fmt.Errorf("updating Cluster: %w", err)
-		}
+	return kubernetes.TryRemoveFinalizer(ctx, r, cluster, mlaFinalizer)
+}
+
+func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	mlaGatewayHealth, err := resources.HealthyDeployment(ctx, r.Client, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: gatewayName}, 1)
+	if err != nil {
+		return fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterPrometheusDeploymentName, err)
+	}
+
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth.MLAGateway = &mlaGatewayHealth
+	})
+	if err != nil {
+		return fmt.Errorf("error patching cluster health status: %w", err)
 	}
 
 	return nil

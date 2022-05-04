@@ -32,6 +32,7 @@ data:
     web:
       http: 0.0.0.0:5556
     frontend:
+      dir: /srv/dex/web
       logoURL: theme/logo.svg
     telemetry:
       http: 0.0.0.0:5558

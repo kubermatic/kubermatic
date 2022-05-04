@@ -42,6 +42,9 @@ type NodeCloudSpec struct {
 	// kubevirt
 	Kubevirt *KubevirtNodeSpec `json:"kubevirt,omitempty"`
 
+	// nutanix
+	Nutanix *NutanixNodeSpec `json:"nutanix,omitempty"`
+
 	// openstack
 	Openstack *OpenstackNodeSpec `json:"openstack,omitempty"`
 
@@ -88,6 +91,10 @@ func (m *NodeCloudSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateNutanix(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateOpenstack(formats); err != nil {
 		res = append(res, err)
 	}
@@ -115,6 +122,8 @@ func (m *NodeCloudSpec) validateAlibaba(formats strfmt.Registry) error {
 		if err := m.Alibaba.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("alibaba")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("alibaba")
 			}
 			return err
 		}
@@ -132,6 +141,8 @@ func (m *NodeCloudSpec) validateAnexia(formats strfmt.Registry) error {
 		if err := m.Anexia.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("anexia")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("anexia")
 			}
 			return err
 		}
@@ -149,6 +160,8 @@ func (m *NodeCloudSpec) validateAws(formats strfmt.Registry) error {
 		if err := m.Aws.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aws")
 			}
 			return err
 		}
@@ -166,6 +179,8 @@ func (m *NodeCloudSpec) validateAzure(formats strfmt.Registry) error {
 		if err := m.Azure.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("azure")
 			}
 			return err
 		}
@@ -183,6 +198,8 @@ func (m *NodeCloudSpec) validateDigitalocean(formats strfmt.Registry) error {
 		if err := m.Digitalocean.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("digitalocean")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("digitalocean")
 			}
 			return err
 		}
@@ -200,6 +217,8 @@ func (m *NodeCloudSpec) validateGcp(formats strfmt.Registry) error {
 		if err := m.Gcp.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gcp")
 			}
 			return err
 		}
@@ -217,6 +236,8 @@ func (m *NodeCloudSpec) validateHetzner(formats strfmt.Registry) error {
 		if err := m.Hetzner.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("hetzner")
 			}
 			return err
 		}
@@ -234,6 +255,27 @@ func (m *NodeCloudSpec) validateKubevirt(formats strfmt.Registry) error {
 		if err := m.Kubevirt.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubevirt")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubevirt")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *NodeCloudSpec) validateNutanix(formats strfmt.Registry) error {
+	if swag.IsZero(m.Nutanix) { // not required
+		return nil
+	}
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nutanix")
 			}
 			return err
 		}
@@ -251,6 +293,8 @@ func (m *NodeCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 		if err := m.Openstack.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openstack")
 			}
 			return err
 		}
@@ -268,6 +312,8 @@ func (m *NodeCloudSpec) validatePacket(formats strfmt.Registry) error {
 		if err := m.Packet.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("packet")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("packet")
 			}
 			return err
 		}
@@ -285,6 +331,8 @@ func (m *NodeCloudSpec) validateVsphere(formats strfmt.Registry) error {
 		if err := m.Vsphere.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vsphere")
 			}
 			return err
 		}
@@ -329,6 +377,10 @@ func (m *NodeCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Regi
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateNutanix(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOpenstack(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -353,6 +405,8 @@ func (m *NodeCloudSpec) contextValidateAlibaba(ctx context.Context, formats strf
 		if err := m.Alibaba.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("alibaba")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("alibaba")
 			}
 			return err
 		}
@@ -367,6 +421,8 @@ func (m *NodeCloudSpec) contextValidateAnexia(ctx context.Context, formats strfm
 		if err := m.Anexia.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("anexia")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("anexia")
 			}
 			return err
 		}
@@ -381,6 +437,8 @@ func (m *NodeCloudSpec) contextValidateAws(ctx context.Context, formats strfmt.R
 		if err := m.Aws.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aws")
 			}
 			return err
 		}
@@ -395,6 +453,8 @@ func (m *NodeCloudSpec) contextValidateAzure(ctx context.Context, formats strfmt
 		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("azure")
 			}
 			return err
 		}
@@ -409,6 +469,8 @@ func (m *NodeCloudSpec) contextValidateDigitalocean(ctx context.Context, formats
 		if err := m.Digitalocean.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("digitalocean")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("digitalocean")
 			}
 			return err
 		}
@@ -423,6 +485,8 @@ func (m *NodeCloudSpec) contextValidateGcp(ctx context.Context, formats strfmt.R
 		if err := m.Gcp.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("gcp")
 			}
 			return err
 		}
@@ -437,6 +501,8 @@ func (m *NodeCloudSpec) contextValidateHetzner(ctx context.Context, formats strf
 		if err := m.Hetzner.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("hetzner")
 			}
 			return err
 		}
@@ -451,6 +517,24 @@ func (m *NodeCloudSpec) contextValidateKubevirt(ctx context.Context, formats str
 		if err := m.Kubevirt.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubevirt")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("kubevirt")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *NodeCloudSpec) contextValidateNutanix(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Nutanix != nil {
+		if err := m.Nutanix.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("nutanix")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("nutanix")
 			}
 			return err
 		}
@@ -465,6 +549,8 @@ func (m *NodeCloudSpec) contextValidateOpenstack(ctx context.Context, formats st
 		if err := m.Openstack.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openstack")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openstack")
 			}
 			return err
 		}
@@ -479,6 +565,8 @@ func (m *NodeCloudSpec) contextValidatePacket(ctx context.Context, formats strfm
 		if err := m.Packet.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("packet")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("packet")
 			}
 			return err
 		}
@@ -493,6 +581,8 @@ func (m *NodeCloudSpec) contextValidateVsphere(ctx context.Context, formats strf
 		if err := m.Vsphere.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("vsphere")
 			}
 			return err
 		}

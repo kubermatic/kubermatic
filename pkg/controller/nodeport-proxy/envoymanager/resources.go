@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -42,6 +41,7 @@ import (
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
@@ -168,7 +168,7 @@ func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *c
 
 // build returns a new Snapshot from the resources derived by the Services
 // provided so far.
-func (sb *snapshotBuilder) build(version string) envoycachev3.Snapshot {
+func (sb *snapshotBuilder) build(version string) (envoycachev3.Snapshot, error) {
 	l, c := sb.makeInitialResources()
 
 	l = append(l, sb.listeners...)
@@ -223,7 +223,7 @@ func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylis
 
 			tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
 			if err != nil {
-				panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
+				panic(fmt.Errorf("failed to marshal tcpProxyConfig: %w", err))
 			}
 
 			sniFilterChains = append(sniFilterChains, &envoylistenerv3.FilterChain{
@@ -275,7 +275,6 @@ func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) 
 }
 
 func (sb *snapshotBuilder) makeTunnelingVirtualHosts(service *corev1.Service) (vhs []*envoyroutev3.VirtualHost, ports sets.String) {
-
 	serviceKey := ServiceKey(service)
 	ports = sets.NewString()
 
@@ -346,7 +345,7 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 	}
 	httpManagerConfigMarshalled, err := anypb.New(hcm)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to marshal HTTP Connection Manager"))
+		panic(fmt.Errorf("failed to marshal HTTP Connection Manager: %w", err))
 	}
 
 	sb.log.Debugf("using a listener on port %d", sb.EnvoyTunnelingListenerPort)
@@ -438,7 +437,7 @@ func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servi
 
 		tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
 		if err != nil {
-			panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
+			panic(fmt.Errorf("failed to marshal tcpProxyConfig: %w", err))
 		}
 
 		sb.log.Debugw("creating NodePort listener", "service", serviceKey, "nodePort", servicePort.NodePort)
@@ -526,7 +525,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 	healthCheckMarshalled, err := anypb.New(healthCheck)
 	if err != nil {
 		// panic as this either never occurs or cannot recover
-		panic(errors.Wrap(err, "failed to marshal HealthCheck"))
+		panic(fmt.Errorf("failed to marshal HealthCheck: %w", err))
 	}
 
 	httpConnectionManager := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
@@ -573,7 +572,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 
 	httpConnectionManagerMarshalled, err := anypb.New(httpConnectionManager)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to marshal HTTPConnectionManager"))
+		panic(fmt.Errorf("failed to marshal HTTPConnectionManager: %w", err))
 	}
 
 	listener := &envoylistenerv3.Listener{
@@ -611,9 +610,7 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 // service/target port combination.
 // Based on:
 // https://github.com/kubernetes/ingress-nginx/blob/decc1346dd956a7f3edfc23c2547abbc75598e36/internal/ingress/controller/endpoints.go#L35
-func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServicePort, proto corev1.Protocol,
-	eps *corev1.Endpoints) []*envoyendpointv3.LbEndpoint {
-
+func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServicePort, proto corev1.Protocol, eps *corev1.Endpoints) []*envoyendpointv3.LbEndpoint {
 	var upsServers []*envoyendpointv3.LbEndpoint
 
 	if s == nil || port == nil {
@@ -629,7 +626,6 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 
 	for _, ss := range eps.Subsets {
 		for _, epPort := range ss.Ports {
-
 			if !reflect.DeepEqual(epPort.Protocol, proto) {
 				continue
 			}
@@ -679,14 +675,12 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 	return upsServers
 }
 
-func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) envoycachev3.Snapshot {
+func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) (envoycachev3.Snapshot, error) {
 	return envoycachev3.NewSnapshot(
 		version,
-		nil,       // endpoints
-		clusters,  // clusters
-		nil,       // routes
-		listeners, // listeners
-		nil,       // runtimes
-		nil,       // secrets
+		map[envoyresourcev3.Type][]envoycachetype.Resource{
+			envoyresourcev3.ClusterType:  clusters,
+			envoyresourcev3.ListenerType: listeners,
+		},
 	)
 }

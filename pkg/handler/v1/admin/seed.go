@@ -21,12 +21,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -34,10 +36,12 @@ import (
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ListSeedsEndpoint returns seed list
+var resourceNameValidator = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
+
+// ListSeedsEndpoint returns seed list.
 func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
@@ -64,7 +68,7 @@ func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provid
 	}
 }
 
-// GetSeedEndpoint returns seed element
+// GetSeedEndpoint returns seed element.
 func GetSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(seedReq)
@@ -82,8 +86,8 @@ func GetSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provide
 	}
 }
 
-// UpdateSeedEndpoint updates seed element
-func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+// UpdateSeedEndpoint updates seed element.
+func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateSeedReq)
 		if !ok {
@@ -97,26 +101,41 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		if err != nil {
 			return nil, err
 		}
-		seedClient, err := seedClientGetter(seed)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		oldSeed := seed.DeepCopy()
-		seed.Spec = req.Body.Spec
 
-		if err := seedClient.Patch(ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-			return nil, fmt.Errorf("failed to update Seed: %v", err)
+		originalJSON, err := json.Marshal(seed.Spec)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current seed to JSON: %v", err))
+		}
+		newJSON, err := json.Marshal(req.Body.Spec)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to convert patch seed to JSON: %v", err))
+		}
+
+		patchedJSON, err := jsonpatch.MergePatch(originalJSON, newJSON)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch: %v", err))
+		}
+
+		var seedSpec *kubermaticv1.SeedSpec
+		err = json.Unmarshal(patchedJSON, &seedSpec)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed unmarshall patched seed: %v", err))
+		}
+		seed.Spec = *seedSpec
+
+		if err := masterClient.Update(ctx, seed); err != nil {
+			return nil, fmt.Errorf("failed to update Seed: %w", err)
 		}
 
 		return apiv1.Seed{
 			Name:     req.Name,
-			SeedSpec: convertSeedSpec(req.Body.Spec, req.Name),
+			SeedSpec: convertSeedSpec(seed.Spec, req.Name),
 		}, nil
 	}
 }
 
-// DeleteSeedEndpoint deletes seed CRD element with the given name from the Kubermatic
-func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+// DeleteSeedEndpoint deletes seed CRD element with the given name from the Kubermatic.
+func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, masterClient client.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(seedReq)
 		if !ok {
@@ -126,12 +145,9 @@ func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 		if err != nil {
 			return nil, err
 		}
-		seedClient, err := seedClientGetter(seed)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if err := seedClient.Delete(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to delete seed: %v", err)
+
+		if err := masterClient.Delete(ctx, seed); err != nil {
+			return nil, fmt.Errorf("failed to delete seed: %w", err)
 		}
 
 		return nil, nil
@@ -204,10 +220,29 @@ func DecodeSeedReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// Validate validates UpdateAdmissionPluginEndpoint request
+// Validate validates UpdateAdmissionPluginEndpoint request.
 func (r updateSeedReq) Validate() error {
 	if r.Name != r.Body.Name {
-		return fmt.Errorf("seed name mismatch, you requested to update Seed = %s but body contains Seed = %s", r.Name, r.Body.Name)
+		return fmt.Errorf("seed name mismatch, you requested to update Seed %q but body contains Seed %q", r.Name, r.Body.Name)
+	}
+
+	if r.Body.Spec.EtcdBackupRestore == nil {
+		return nil
+	}
+
+	defaultDestination := r.Body.Spec.EtcdBackupRestore.DefaultDestination
+	if len(defaultDestination) > 0 {
+		if !resourceNameValidator.MatchString(defaultDestination) {
+			return fmt.Errorf("default destination name is invalid, must match %s", resourceNameValidator.String())
+		}
+	}
+
+	for k := range r.Body.Spec.EtcdBackupRestore.Destinations {
+		if len(k) > 0 {
+			if !resourceNameValidator.MatchString(k) {
+				return fmt.Errorf("destination name is invalid, must match %s", resourceNameValidator.String())
+			}
+		}
 	}
 	return nil
 }
@@ -225,10 +260,11 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.Seed
 			ResourceVersion: seedSpec.Kubeconfig.ResourceVersion,
 			FieldPath:       seedSpec.Kubeconfig.FieldPath,
 		},
-		SeedDNSOverwrite: seedSpec.SeedDNSOverwrite,
-		ProxySettings:    seedSpec.ProxySettings,
-		ExposeStrategy:   seedSpec.ExposeStrategy,
-		MLA:              seedSpec.MLA,
+		SeedDNSOverwrite:  seedSpec.SeedDNSOverwrite,
+		ProxySettings:     seedSpec.ProxySettings,
+		ExposeStrategy:    seedSpec.ExposeStrategy,
+		MLA:               seedSpec.MLA,
+		EtcdBackupRestore: seedSpec.EtcdBackupRestore,
 	}
 	if seedSpec.Datacenters != nil {
 		resultSeedSpec.SeedDatacenters = make(map[string]apiv1.Datacenter)

@@ -59,7 +59,7 @@ func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 				},
 			},
 			key:           "bar",
-			expectedError: "configVar.Namspace is empty",
+			expectedError: "configVar.Namespace is empty",
 		},
 		{
 			name: "error on empty key",

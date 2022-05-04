@@ -12,19 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
+apiVersion: v2
 name: cert-manager
-version: 2.0.3
-appVersion: v1.5.2
+version: v9.9.9-dev
+appVersion: v1.8.0
 description: A Helm chart for cert-manager
 keywords:
-- kubermatic
-- cert-manager
-- letsencrypt
-- tls
-home: https://github.com/jetstack/cert-manager
+  - kubermatic
+  - cert-manager
+  - letsencrypt
+  - tls
+home: https://github.com/cert-manager/cert-manager
 sources:
-- https://github.com/jetstack/cert-manager/tree/master/deploy/charts/cert-manager
+  - https://github.com/cert-manager/cert-manager/tree/master/deploy/charts/cert-manager
 maintainers:
-- name: The Kubermatic Kubernetes Platform contributors
-  email: support@kubermatic.com
+  - name: The Kubermatic Kubernetes Platform contributors
+    email: support@kubermatic.com
+dependencies:
+  - repository: https://charts.jetstack.io
+    name: cert-manager
+    version: 1.8.0

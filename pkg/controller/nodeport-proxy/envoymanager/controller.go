@@ -22,7 +22,6 @@ import (
 	"reflect"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -86,9 +85,13 @@ func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlrunti
 		Options: opts,
 		cache:   cache,
 	}
+	s, err := newSnapshotBuilder(log, portHostMappingFromAnnotation, opts).build("0.0.0")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to build snapshot: %w", err)
+	}
 
-	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshotBuilder(log, portHostMappingFromAnnotation, opts).build("0.0.0")); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to set initial Envoy cache snapshot")
+	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
+		return nil, nil, fmt.Errorf("failed to set initial Envoy cache snapshot: %w", err)
 	}
 	return &r, cache, nil
 }
@@ -117,7 +120,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 		ctrlruntimeclient.InNamespace(r.Namespace),
 		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
-		return errors.Wrap(err, "failed to list service's")
+		return fmt.Errorf("failed to list services: %w", err)
 	}
 
 	// Sort services in descending order by creation timestamp, in order to
@@ -141,7 +144,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			return errors.Wrap(err, fmt.Sprintf("failed to get endpoints for service '%s'", svcKey))
+			return fmt.Errorf("failed to get endpoints for service '%s': %w", svcKey, err)
 		}
 		// Add service to the service builder
 		sb.addService(&service, &eps, ets)
@@ -151,33 +154,45 @@ func (r *Reconciler) sync(ctx context.Context) error {
 	currSnapshot, err := r.cache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
 		r.log.Debugf("setting first snapshot: %v", err)
-		if err := r.cache.SetSnapshot(r.EnvoyNodeName, sb.build("0.0.0")); err != nil {
-			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
+		s, err := sb.build("0.0.0")
+		if err != nil {
+			return fmt.Errorf("failed to build the first snapshot: %w", err)
+		}
+		if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
+			return fmt.Errorf("failed to set a new Envoy cache snapshot: %w", err)
 		}
 		return nil
 	}
 
 	lastUsedVersion, err := semver.NewVersion(currSnapshot.GetVersion(envoyresourcev3.ClusterType))
 	if err != nil {
-		return errors.Wrap(err, "failed to parse version from last snapshot")
+		return fmt.Errorf("failed to parse version from last snapshot: %w", err)
+	}
+
+	s, err := sb.build(lastUsedVersion.String())
+	if err != nil {
+		return fmt.Errorf("failed to build snapshot: %w", err)
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	if reflect.DeepEqual(currSnapshot, sb.build(lastUsedVersion.String())) {
+	if reflect.DeepEqual(currSnapshot, s) {
 		r.log.Debug("no changes detected")
 		return nil
 	}
 
 	newVersion := lastUsedVersion.IncMajor()
 	r.log.Infow("detected a change. Updating the Envoy config cache...", "version", newVersion.String())
-	newSnapshot := sb.build(newVersion.String())
-
-	if err := newSnapshot.Consistent(); err != nil {
-		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
+	newSnapshot, err := sb.build(newVersion.String())
+	if err != nil {
+		return fmt.Errorf("failed to build snapshot: %w", err)
 	}
 
-	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot); err != nil {
-		return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
+	if err := newSnapshot.Consistent(); err != nil {
+		return fmt.Errorf("new Envoy config snapshot is not consistent: %w", err)
+	}
+
+	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, newSnapshot); err != nil {
+		return fmt.Errorf("failed to set a new Envoy cache snapshot: %w", err)
 	}
 
 	return nil
@@ -198,31 +213,33 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manag
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.log})).
 		Watches(&source.Kind{Type: &corev1.Endpoints{}},
-			handler.EnqueueRequestsFromMapFunc(r.endpointsToService)).
+			handler.EnqueueRequestsFromMapFunc(r.newEndpointHandler(ctx))).
 		Complete(r)
 }
 
-func (r *Reconciler) endpointsToService(obj ctrlruntimeclient.Object) []ctrlruntime.Request {
-	svcName := types.NamespacedName{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-	}
-	// Get the service associated to the Endpoints
-	svc := corev1.Service{}
-	if err := r.Client.Get(context.Background(), svcName, &svc); err != nil {
-		// Avoid enqueuing events for endpoints that do not have an associated
-		// service (e.g. leader election).
-		if !apierrors.IsNotFound(err) {
-			r.log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+func (r *Reconciler) newEndpointHandler(ctx context.Context) handler.MapFunc {
+	return func(obj ctrlruntimeclient.Object) []ctrlruntime.Request {
+		svcName := types.NamespacedName{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
 		}
-		return nil
-	}
+		// Get the service associated to the Endpoints
+		svc := corev1.Service{}
+		if err := r.Client.Get(ctx, svcName, &svc); err != nil {
+			// Avoid enqueuing events for endpoints that do not have an associated
+			// service (e.g. leader election).
+			if !apierrors.IsNotFound(err) {
+				r.log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+			}
+			return nil
+		}
 
-	// Avoid enqueuing events for services that are not exposed.
-	if !isExposed(&svc, r.ExposeAnnotationKey) {
-		return nil
+		// Avoid enqueuing events for services that are not exposed.
+		if !isExposed(&svc, r.ExposeAnnotationKey) {
+			return nil
+		}
+		return []ctrlruntime.Request{{NamespacedName: svcName}}
 	}
-	return []ctrlruntime.Request{{NamespacedName: svcName}}
 }
 
 // exposeAnnotationPredicate is used to filter out events associated to
@@ -233,22 +250,22 @@ type exposeAnnotationPredicate struct {
 	annotation string
 }
 
-// Create returns true if the Create event should be processed
+// Create returns true if the Create event should be processed.
 func (e exposeAnnotationPredicate) Create(event event.CreateEvent) bool {
 	return e.match(event.Object)
 }
 
-// Delete returns true if the Delete event should be processed
+// Delete returns true if the Delete event should be processed.
 func (e exposeAnnotationPredicate) Delete(event event.DeleteEvent) bool {
 	return e.match(event.Object)
 }
 
-// Update returns true if the Update event should be processed
+// Update returns true if the Update event should be processed.
 func (e exposeAnnotationPredicate) Update(event event.UpdateEvent) bool {
 	return e.match(event.ObjectNew)
 }
 
-// Generic returns true if the Generic event should be processed
+// Generic returns true if the Generic event should be processed.
 func (e exposeAnnotationPredicate) Generic(event event.GenericEvent) bool {
 	return e.match(event.Object)
 }

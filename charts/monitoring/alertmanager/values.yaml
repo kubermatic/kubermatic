@@ -15,16 +15,27 @@
 alertmanager:
   image:
     repository: quay.io/prometheus/alertmanager
-    tag: v0.22.2
+    tag: v0.24.0
     pullPolicy: IfNotPresent
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.3.0
+    tag: v0.7.1
     pullPolicy: IfNotPresent
   host: ""
   replicas: 3
   storageSize: 100Mi
   storageClass: kubermatic-fast
+  sidecarContainers: {}
+    # specify additional sidecars in format {"name": container_spec}
+    # sidecar-name:
+    #  args: ["command", "args", "here"]
+    #  image: some/image:latest
+  sidecarServicePorts: {}
+    # specify ports to expose in a service in format {"name": port_spec}
+    # port-name:
+    #   port: 8080
+    #   protocol: TCP
+    #   targetPort: 8080
 
   config:
     global:
@@ -32,6 +43,7 @@ alertmanager:
     route:
       receiver: default
       repeat_interval: 1h
+      group_by: [alertname, namespace, seed_cluster, cluster]
       routes:
       - receiver: blackhole
         match:

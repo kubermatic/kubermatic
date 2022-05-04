@@ -21,6 +21,17 @@
 # receives a SIGINT
 set -o monitor
 
+# Get the operating system
+# Possible values are:
+#		* linux for linux
+#		* darwin for macOS
+#
+# usage:
+# if [ "${OS}" == "darwin" ]; then
+#   # do macos stuff
+# fi
+OS="$(echo $(uname) | tr '[:upper:]' '[:lower:]')"
+
 worker_name() {
   echo "${KUBERMATIC_WORKERNAME:-$(uname -n)}" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]'
 }
@@ -78,31 +89,41 @@ write_junit() {
     errors=1
     failure='<failure type="Failure">Step failed</failure>'
   fi
-  TEST_NAME="[Kubermatic] ${TEST_NAME#\[Kubermatic\] }"
-  cat << EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME | sed 's/ /_/g').xml
+  TEST_CLASS="${TEST_CLASS:-Kubermatic}"
+  cat << EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]').xml
 <?xml version="1.0" ?>
 <testsuites>
-    <testsuite errors="$errors" failures="$errors" name="$TEST_NAME" tests="1">
-        <testcase classname="$TEST_NAME" name="$TEST_NAME" time="$duration">
-          $failure
-        </testcase>
-    </testsuite>
+  <testsuite errors="$errors" failures="$errors" name="$TEST_CLASS" tests="1">
+    <testcase classname="$TEST_CLASS" name="$TEST_NAME" time="$duration">
+      $failure
+    </testcase>
+  </testsuite>
 </testsuites>
 EOF
 }
 
 containerize() {
   local cmd="$1"
-  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:1.6.0}"
+  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.0.0}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
+  local gomodcache="${CONTAINERIZE_GOMODCACHE:-/tmp/.gomodcache}"
+  local skip="${NO_CONTAINERIZE:-}"
+
+  # short-circuit containerize when in some cases it needs to be avoided
+  [ -n "$skip" ] && return
 
   if ! [ -f /.dockerenv ]; then
     echodate "Running $cmd in a Docker container using $image..."
+    mkdir -p "$gocache"
+    mkdir -p "$gomodcache"
 
     exec docker run \
-      -v $PWD:/go/src/k8c.io/kubermatic \
+      -v "$PWD":/go/src/k8c.io/kubermatic \
+      -v "$gocache":"$gocache" \
+      -v "$gomodcache":"$gomodcache" \
       -w /go/src/k8c.io/kubermatic \
       -e "GOCACHE=$gocache" \
+      -e "GOMODCACHE=$gomodcache" \
       -u "$(id -u):$(id -g)" \
       --entrypoint="$cmd" \
       --rm \
@@ -271,8 +292,8 @@ pushMetric() {
   local help="${5:-}"
   local pushgateway="${PUSHGATEWAY_URL:-}"
   local job="ci"
-  local instance="$PROW_JOB_ID"
-  local prowjob="$JOB_NAME"
+  local instance="${PROW_JOB_ID:-}"
+  local prowjob="${JOB_NAME:-}"
 
   if [ -z "$pushgateway" ]; then
     return
@@ -352,6 +373,12 @@ docker_logs() {
   fi
 }
 
+start_docker_daemon_ci() {
+  # DOCKER_REGISTRY_MIRROR_ADDR is injected via Prow preset;
+  # start-docker.sh is part of the build image.
+  DOCKER_REGISTRY_MIRROR="${DOCKER_REGISTRY_MIRROR_ADDR:-}" DOCKER_MTU=1400 start-docker.sh
+}
+
 start_docker_daemon() {
   if docker stats --no-stream > /dev/null 2>&1; then
     echodate "Not starting Docker again, it's already running."
@@ -360,8 +387,8 @@ start_docker_daemon() {
 
   # Start Docker daemon
   echodate "Starting Docker"
-  # Set the MTU to 1400 to avoid issues with our CI environment.
-  dockerd --mtu 1400 > /tmp/docker.log 2>&1 &
+  dockerd > /tmp/docker.log 2>&1 &
+
   echodate "Started Docker successfully"
   appendTrap docker_logs EXIT
 
@@ -369,4 +396,49 @@ start_docker_daemon() {
   echodate "Waiting for Docker"
   retry 5 docker stats --no-stream
   echodate "Docker became ready"
+}
+
+repeat() {
+  local end=$1
+  local str="${2:-=}"
+
+  for i in $(seq 1 $end); do
+    echo -n "${str}"
+  done
+}
+
+heading() {
+  local title="$@"
+  echo "$title"
+  repeat ${#title} "="
+  echo
+}
+
+# This is used during releases to set the correct version on all Helm charts.
+set_helm_charts_version() {
+  local version="$1"
+  local dockerTag="${2:-$version}"
+
+  echodate "Setting Helm chart version to $version..."
+
+  while IFS= read -r -d '' chartFile; do
+    chart="$(basename $(dirname "$chartFile"))"
+
+    yq write --inplace "$chartFile" version "$version"
+    if [ "$chart" = "kubermatic-operator" ]; then
+      yq write --inplace "$chartFile" appVersion "$version"
+      yq write --inplace "$(dirname "$chartFile")/values.yaml" kubermaticOperator.image.tag "$dockerTag"
+    fi
+  done < <(find charts -name 'Chart.yaml' -print0 | sort --zero-terminated)
+}
+
+# copy_crds_to_chart is used during GitHub releases and for e2e tests,
+# it ensures that the auto-generated CRDs in pkg/ are copied into the
+# operator chart.
+copy_crds_to_chart() {
+  chartCRDs=charts/kubermatic-operator/crd/k8c.io
+  sourceCRDs=pkg/validation/openapi/crd/k8c.io
+
+  mkdir -p $chartCRDs
+  cp $sourceCRDs/* $chartCRDs
 }

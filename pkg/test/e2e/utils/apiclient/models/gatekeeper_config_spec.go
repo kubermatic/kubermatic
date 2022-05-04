@@ -72,6 +72,8 @@ func (m *GatekeeperConfigSpec) validateMatch(formats strfmt.Registry) error {
 			if err := m.Match[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("match" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("match" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -91,6 +93,8 @@ func (m *GatekeeperConfigSpec) validateReadiness(formats strfmt.Registry) error 
 		if err := m.Readiness.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("readiness")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("readiness")
 			}
 			return err
 		}
@@ -108,6 +112,8 @@ func (m *GatekeeperConfigSpec) validateSync(formats strfmt.Registry) error {
 		if err := m.Sync.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sync")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sync")
 			}
 			return err
 		}
@@ -125,6 +131,8 @@ func (m *GatekeeperConfigSpec) validateValidation(formats strfmt.Registry) error
 		if err := m.Validation.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("validation")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("validation")
 			}
 			return err
 		}
@@ -167,6 +175,8 @@ func (m *GatekeeperConfigSpec) contextValidateMatch(ctx context.Context, formats
 			if err := m.Match[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("match" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("match" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -183,6 +193,8 @@ func (m *GatekeeperConfigSpec) contextValidateReadiness(ctx context.Context, for
 		if err := m.Readiness.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("readiness")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("readiness")
 			}
 			return err
 		}
@@ -197,6 +209,8 @@ func (m *GatekeeperConfigSpec) contextValidateSync(ctx context.Context, formats 
 		if err := m.Sync.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sync")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("sync")
 			}
 			return err
 		}
@@ -211,6 +225,8 @@ func (m *GatekeeperConfigSpec) contextValidateValidation(ctx context.Context, fo
 		if err := m.Validation.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("validation")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("validation")
 			}
 			return err
 		}

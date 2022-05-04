@@ -17,26 +17,27 @@ limitations under the License.
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 
 	"code.cloudfoundry.org/go-pubsub"
 	"github.com/gorilla/websocket"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 )
 
-func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string) {
+func WriteUser(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string) {
 	// There can be a race here if the user changes between getting the initial data and setting up the subscription
-	initialUser, err := providers.UserProvider.UserByEmail(userEmail)
+	initialUser, err := providers.UserProvider.UserByEmail(ctx, userEmail)
 	if err != nil {
 		log.Logger.Debug(err)
 		return
 	}
 
-	bindings, err := providers.MemberMapper.MappingsFor(initialUser.Spec.Email)
+	bindings, err := providers.MemberMapper.MappingsFor(ctx, initialUser.Spec.Email)
 	if err != nil {
 		log.Logger.Debug("cannot get project mappings for user %s: %v", initialUser.Name, err)
 		return
@@ -63,13 +64,13 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 	unSub := providers.UserWatcher.Subscribe(func(rawUser interface{}) {
 		var response []byte
 		if rawUser != nil {
-			user, ok := rawUser.(*v1.User)
+			user, ok := rawUser.(*kubermaticv1.User)
 			if !ok {
 				log.Logger.Warn("cannot convert user for user watch: %v", rawUser)
 				return
 			}
 
-			bindings, err := providers.MemberMapper.MappingsFor(user.Spec.Email)
+			bindings, err := providers.MemberMapper.MappingsFor(ctx, user.Spec.Email)
 			if err != nil {
 				log.Logger.Debug("cannot get project mappings for user %s: %v", user.Name, err)
 				return

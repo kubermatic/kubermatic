@@ -25,11 +25,12 @@ import (
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	equinixmetal "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	packet "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
@@ -42,11 +43,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-// GetAPIV1OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine
+// GetAPIV1OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine.
 func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.OperatingSystemSpec, error) {
 	decodedProviderSpec, err := providerconfig.GetConfig(machineSpec.ProviderSpec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)
+		return nil, fmt.Errorf("failed to get machine providerConfig: %w", err)
 	}
 
 	operatingSystemSpec := &apiv1.OperatingSystemSpec{}
@@ -55,7 +56,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	case providerconfig.OperatingSystemFlatcar:
 		config := &flatcar.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse flatcar config: %v", err)
+			return nil, fmt.Errorf("failed to parse flatcar config: %w", err)
 		}
 
 		operatingSystemSpec.Flatcar = &apiv1.FlatcarSpec{
@@ -68,7 +69,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	case providerconfig.OperatingSystemUbuntu:
 		config := &ubuntu.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse ubuntu config: %v", err)
+			return nil, fmt.Errorf("failed to parse ubuntu config: %w", err)
 		}
 		operatingSystemSpec.Ubuntu = &apiv1.UbuntuSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
@@ -77,7 +78,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	case providerconfig.OperatingSystemCentOS:
 		config := &centos.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse centos config: %v", err)
+			return nil, fmt.Errorf("failed to parse centos config: %w", err)
 		}
 		operatingSystemSpec.CentOS = &apiv1.CentOSSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
@@ -86,7 +87,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	case providerconfig.OperatingSystemSLES:
 		config := &sles.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse sles config: %v", err)
+			return nil, fmt.Errorf("failed to parse sles config: %w", err)
 		}
 		operatingSystemSpec.SLES = &apiv1.SLESSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
@@ -95,7 +96,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	case providerconfig.OperatingSystemRHEL:
 		config := &rhel.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse rhel config: %v", err)
+			return nil, fmt.Errorf("failed to parse rhel config: %w", err)
 		}
 		operatingSystemSpec.RHEL = &apiv1.RHELSpec{
 			DistUpgradeOnBoot:               config.DistUpgradeOnBoot,
@@ -108,11 +109,11 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	return operatingSystemSpec, nil
 }
 
-// GetAPIV2NodeCloudSpec returns the api compatible NodeCloudSpec for the given machine
+// GetAPIV2NodeCloudSpec returns the api compatible NodeCloudSpec for the given machine.
 func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.NodeCloudSpec, error) {
 	decodedProviderSpec, err := providerconfig.GetConfig(machineSpec.ProviderSpec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)
+		return nil, fmt.Errorf("failed to get machine providerConfig: %w", err)
 	}
 
 	cloudSpec := &apiv1.NodeCloudSpec{}
@@ -121,7 +122,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderAWS:
 		config := &aws.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse aws config: %v", err)
+			return nil, fmt.Errorf("failed to parse aws config: %w", err)
 		}
 
 		spotInstanceMaxPrice, spotInstanceInterruptionBehavior, spotInstancePersistentRequest := extractSpotInstanceConfigs(config)
@@ -139,15 +140,17 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			SpotInstanceMaxPrice:             spotInstanceMaxPrice,
 			SpotInstancePersistentRequest:    spotInstancePersistentRequest,
 			SpotInstanceInterruptionBehavior: spotInstanceInterruptionBehavior,
+			AssumeRoleARN:                    config.AssumeRoleARN.Value,
+			AssumeRoleExternalID:             config.AssumeRoleExternalID.Value,
 		}
 	case providerconfig.CloudProviderAzure:
 		config := &azure.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse Azure config: %v", err)
+			return nil, fmt.Errorf("failed to parse Azure config: %w", err)
 		}
 		cloudSpec.Azure = &apiv1.AzureNodeSpec{
 			Size:           config.VMSize.Value,
-			AssignPublicIP: config.AssignPublicIP.Value,
+			AssignPublicIP: config.AssignPublicIP.Value != nil && *config.AssignPublicIP.Value,
 			Tags:           config.Tags,
 			ImageID:        config.ImageID.Value,
 			Zones:          config.Zones,
@@ -157,13 +160,13 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderDigitalocean:
 		config := &digitalocean.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse digitalocean config: %v", err)
+			return nil, fmt.Errorf("failed to parse digitalocean config: %w", err)
 		}
 		cloudSpec.Digitalocean = &apiv1.DigitaloceanNodeSpec{
-			IPv6:       config.IPv6.Value,
+			IPv6:       config.IPv6.Value != nil && *config.IPv6.Value,
 			Size:       config.Size.Value,
-			Backups:    config.Backups.Value,
-			Monitoring: config.Monitoring.Value,
+			Backups:    config.Backups.Value != nil && *config.Backups.Value,
+			Monitoring: config.Monitoring.Value != nil && *config.Backups.Value,
 		}
 		for _, v := range config.Tags {
 			cloudSpec.Digitalocean.Tags = append(cloudSpec.Digitalocean.Tags, v.Value)
@@ -171,7 +174,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderOpenstack:
 		config := &openstack.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse openstack config: %v", err)
+			return nil, fmt.Errorf("failed to parse openstack config: %w", err)
 		}
 		cloudSpec.Openstack = &apiv1.OpenstackNodeSpec{
 			Flavor:                    config.Flavor.Value,
@@ -188,7 +191,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderHetzner:
 		config := &hetzner.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse hetzner config: %v", err)
+			return nil, fmt.Errorf("failed to parse hetzner config: %w", err)
 		}
 		cloudSpec.Hetzner = &apiv1.HetznerNodeSpec{
 			Type: config.ServerType.Value,
@@ -202,7 +205,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderVsphere:
 		config := &vsphere.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse vsphere config: %v", err)
+			return nil, fmt.Errorf("failed to parse vsphere config: %w", err)
 		}
 		cloudSpec.VSphere = &apiv1.VSphereNodeSpec{
 			CPUs:       int(config.CPUs),
@@ -210,10 +213,17 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			DiskSizeGB: config.DiskSizeGB,
 			Template:   config.TemplateVMName.Value,
 		}
-	case providerconfig.CloudProviderPacket:
-		config := &packet.RawConfig{}
+		for _, v := range config.Tags {
+			cloudSpec.VSphere.Tags = append(cloudSpec.VSphere.Tags, apiv1.VSphereTag{
+				Name:        v.Name,
+				Description: v.Description,
+				CategoryID:  v.CategoryID,
+			})
+		}
+	case providerconfig.CloudProviderEquinixMetal:
+		config := &equinixmetal.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse packet config: %v", err)
+			return nil, fmt.Errorf("failed to parse equinixmetal config: %w", err)
 		}
 		cloudSpec.Packet = &apiv1.PacketNodeSpec{
 			InstanceType: config.InstanceType.Value,
@@ -224,14 +234,14 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderGoogle:
 		config := &gce.CloudProviderSpec{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse gcp config: %v", err)
+			return nil, fmt.Errorf("failed to parse gcp config: %w", err)
 		}
 		cloudSpec.GCP = &apiv1.GCPNodeSpec{
 			Zone:        config.Zone.Value,
 			MachineType: config.MachineType.Value,
 			DiskSize:    config.DiskSize,
 			DiskType:    config.DiskType.Value,
-			Preemptible: config.Preemptible.Value,
+			Preemptible: config.Preemptible.Value != nil && *config.Preemptible.Value,
 			Labels:      config.Labels,
 			Tags:        config.Tags,
 			CustomImage: config.CustomImage.Value,
@@ -239,21 +249,37 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderKubeVirt:
 		config := &kubevirt.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse kubevirt config: %v", err)
+			return nil, fmt.Errorf("failed to parse kubevirt config: %w", err)
 		}
 
 		cloudSpec.Kubevirt = &apiv1.KubevirtNodeSpec{
-			CPUs:             config.CPUs.Value,
-			Memory:           config.Memory.Value,
-			Namespace:        config.Namespace.Value,
-			SourceURL:        config.SourceURL.Value,
-			StorageClassName: config.StorageClassName.Value,
-			PVCSize:          config.PVCSize.Value,
+			FlavorName:                  config.VirtualMachine.Flavor.Name.Value,
+			FlavorProfile:               config.VirtualMachine.Flavor.Profile.Value,
+			CPUs:                        config.VirtualMachine.Template.CPUs.Value,
+			Memory:                      config.VirtualMachine.Template.Memory.Value,
+			PrimaryDiskOSImage:          config.VirtualMachine.Template.PrimaryDisk.OsImage.Value,
+			PrimaryDiskStorageClassName: config.VirtualMachine.Template.PrimaryDisk.StorageClassName.Value,
+			PrimaryDiskSize:             config.VirtualMachine.Template.PrimaryDisk.Size.Value,
+			PodAffinityPreset:           config.Affinity.PodAffinityPreset.Value,
+			PodAntiAffinityPreset:       config.Affinity.PodAntiAffinityPreset.Value,
+			NodeAffinityPreset: apiv1.NodeAffinityPreset{
+				Type: config.Affinity.NodeAffinityPreset.Type.Value,
+				Key:  config.Affinity.NodeAffinityPreset.Key.Value,
+			},
+		}
+		cloudSpec.Kubevirt.SecondaryDisks = make([]apiv1.SecondaryDisks, 0, len(config.VirtualMachine.Template.SecondaryDisks))
+		for _, sd := range config.VirtualMachine.Template.SecondaryDisks {
+			secondaryDisk := apiv1.SecondaryDisks{Size: sd.Size.Value, StorageClassName: sd.StorageClassName.Value}
+			cloudSpec.Kubevirt.SecondaryDisks = append(cloudSpec.Kubevirt.SecondaryDisks, secondaryDisk)
+		}
+		cloudSpec.Kubevirt.NodeAffinityPreset.Values = make([]string, 0, len(config.Affinity.NodeAffinityPreset.Values))
+		for _, np := range config.Affinity.NodeAffinityPreset.Values {
+			cloudSpec.Kubevirt.NodeAffinityPreset.Values = append(cloudSpec.Kubevirt.NodeAffinityPreset.Values, np.Value)
 		}
 	case providerconfig.CloudProviderAlibaba:
 		config := &alibaba.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse alibaba config: %v", err)
+			return nil, fmt.Errorf("failed to parse alibaba config: %w", err)
 		}
 		cloudSpec.Alibaba = &apiv1.AlibabaNodeSpec{
 			InstanceType:            config.InstanceType.Value,
@@ -268,7 +294,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		{
 			config := &anexia.RawConfig{}
 			if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-				return nil, fmt.Errorf("failed to parse anexia config: %v", err)
+				return nil, fmt.Errorf("failed to parse anexia config: %w", err)
 			}
 			cloudSpec.Anexia = &apiv1.AnexiaNodeSpec{
 				VlanID:     config.VlanID.Value,
@@ -276,6 +302,23 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 				CPUs:       config.CPUs,
 				Memory:     int64(config.Memory),
 				DiskSize:   int64(config.DiskSize),
+			}
+		}
+	case providerconfig.CloudProviderNutanix:
+		{
+			config := &nutanix.RawConfig{}
+			if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
+				return nil, fmt.Errorf("failed to parse nutanix config: %w", err)
+			}
+			cloudSpec.Nutanix = &apiv1.NutanixNodeSpec{
+				SubnetName:     config.SubnetName.Value,
+				ImageName:      config.ImageName.Value,
+				Categories:     config.Categories,
+				CPUs:           config.CPUs,
+				CPUCores:       config.CPUCores,
+				CPUPassthrough: config.CPUPassthrough,
+				MemoryMB:       config.MemoryMB,
+				DiskSize:       config.DiskSize,
 			}
 		}
 	default:
@@ -291,7 +334,7 @@ func extractSpotInstanceConfigs(config *aws.RawConfig) (*string, *string, *bool)
 		config.SpotInstanceConfig != nil {
 		return &config.SpotInstanceConfig.MaxPrice.Value,
 			&config.SpotInstanceConfig.InterruptionBehavior.Value,
-			&config.SpotInstanceConfig.PersistentRequest.Value
+			config.SpotInstanceConfig.PersistentRequest.Value
 	}
 
 	return nil, nil, nil

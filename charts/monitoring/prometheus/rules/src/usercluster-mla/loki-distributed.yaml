@@ -1,0 +1,127 @@
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+groups:
+  - name: loki-distributed
+    rules:
+      - alert: LokiIngesterDown
+        annotations:
+          message: Loki-ingester has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokiingesterdown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ingester",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiDistributorDown
+        annotations:
+          message: Loki-distributor has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokidistributordown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="distributor",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiQuerierDown
+        annotations:
+          message: Loki-querier has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokiquerierdown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="querier",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiQueryFrontendDown
+        annotations:
+          message: Loki-query-frontend has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokiqueryfrontenddown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="query-frontend",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiTableManagerDown
+        annotations:
+          message: Loki-table-manager has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokitablemanagerdown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="table-manager",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiCompactorDown
+        annotations:
+          message: Loki-compactor has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokicompactordown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="compactor",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiRulerDown
+        annotations:
+          message: Loki-ruler has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokirulerdown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ruler",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiMemcachedChunksDown
+        annotations:
+          message: Loki-memcached-chunks has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokimemcachedchunksdown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-chunks",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiMemcachedFrontendDown
+        annotations:
+          message: Loki-memcached-frontend has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokimemcachedfrontenddown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-frontend",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiMemcachedIndexQueriesDown
+        annotations:
+          message: Loki-memcached-index-queries has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokimemcachedindexqueriesdown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-index-queries",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki
+      - alert: LokiMemcachedIndexWritesDown
+        annotations:
+          message: Loki-memcached-index-writes has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-lokimemcachedindexwritesdown
+        expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-index-writes",app_kubernetes_io_name="loki-distributed"} == 1)
+        for: 15m
+        labels:
+          severity: warning
+          resource: loki
+          service: loki

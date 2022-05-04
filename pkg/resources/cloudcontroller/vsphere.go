@@ -19,7 +19,7 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -75,32 +75,46 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			if err != nil {
 				return nil, err
 			}
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
-			version, err := getVsphereCPIVersion(data.Cluster().Spec.Version)
-			if err != nil {
-				return nil, err
-			}
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-			}
+			version := getVsphereCPIVersion(data.Cluster().Status.Versions.ControlPlane)
+
 			container := getCPIContainer(version, data)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				container,
-				*openvpnSidecar,
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
-				Name: resources.CloudConfigConfigMapName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: resources.CloudConfigConfigMapName,
+			if !data.IsKonnectivityEnabled() {
+				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+				}
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
+			}
+
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
+				corev1.Volume{
+					Name: resources.CloudConfigConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CloudConfigConfigMapName,
+							},
 						},
 					},
 				},
-			})
+				corev1.Volume{
+					Name: resources.CABundleConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CABundleConfigMapName,
+							},
+						},
+					},
+				},
+			)
 
 			return dep, nil
 		}
@@ -112,6 +126,9 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 	c := corev1.Container{
 		Name:  ccmContainerName,
 		Image: controllerManagerImage,
+		SecurityContext: &corev1.SecurityContext{
+			RunAsUser: pointer.Int64(1001),
+		},
 		Command: []string{
 			"/bin/vsphere-cloud-controller-manager",
 		},
@@ -121,10 +138,23 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 			"--cloud-config=/etc/cloud/config",
 			"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		},
-		VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-			MountPath: "/etc/cloud",
-			Name:      resources.CloudConfigConfigMapName,
-		}),
+		Env: []corev1.EnvVar{
+			{
+				Name:  "SSL_CERT_FILE",
+				Value: "/etc/kubermatic/certs/ca-bundle.pem",
+			},
+		},
+		VolumeMounts: append(getVolumeMounts(),
+			corev1.VolumeMount{
+				MountPath: "/etc/cloud",
+				Name:      resources.CloudConfigConfigMapName,
+			},
+			corev1.VolumeMount{
+				Name:      resources.CABundleConfigMapName,
+				MountPath: "/etc/kubermatic/certs",
+				ReadOnly:  true,
+			},
+		),
 		Resources: vsphereCPIResourceRequirements,
 	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
@@ -134,28 +164,18 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 	return c
 }
 
-const latestVsphereCPIVersion = "1.21.0"
-
-func getVsphereCPIVersion(version semver.Semver) (string, error) {
-	switch version.Minor() {
-	case 19:
-		return "1.19.1", nil
+func getVsphereCPIVersion(version semver.Semver) string {
+	switch version.Semver().Minor() {
 	case 20:
-		return "1.20.0", nil
+		return "1.20.0"
 	case 21:
-		return latestVsphereCPIVersion, nil
+		return "1.21.1"
 	case 22:
-		return latestVsphereCPIVersion, nil
+		fallthrough
+	case 23:
+		fallthrough
+	//	By default return latest version
 	default:
-		return latestVsphereCPIVersion, nil
+		return "1.22.4"
 	}
-}
-
-// VsphereCloudControllerSupported checks if this version of Kubernetes is supported
-// by our implementation of the external cloud controller.
-func VsphereCloudControllerSupported(version semver.Semver) bool {
-	if _, err := getVsphereCPIVersion(version); err != nil {
-		return false
-	}
-	return true
 }

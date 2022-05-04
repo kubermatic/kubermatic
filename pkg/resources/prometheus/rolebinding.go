@@ -23,7 +23,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleBindingCreator returns the func to create/update the RoleBinding for Prometheus
+// RoleBindingCreator returns the func to create/update the RoleBinding for Prometheus.
 func RoleBindingCreator(clusterNamespace string) reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.PrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
@@ -44,5 +44,4 @@ func RoleBindingCreator(clusterNamespace string) reconciling.NamedRoleBindingCre
 			return rb, nil
 		}
 	}
-
 }

@@ -19,10 +19,11 @@ package kubernetesdashboard
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,21 +51,20 @@ var (
 const (
 	name      = resources.KubernetesDashboardDeploymentName
 	imageName = "kubernetesui/dashboard"
-	tag       = "v2.0.4"
-	// Namespace used by Dashboard to find required resources.
+	// Namespace used by dashboard to find required resources.
 	Namespace     = "kubernetes-dashboard"
 	ContainerPort = 9090
 	AppLabel      = resources.AppLabelKey + "=" + name
 )
 
-// kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components
+// kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components.
 type kubernetesDashboardData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 }
 
-// DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment
+// DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment.
 func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -79,7 +79,12 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+				return nil, fmt.Errorf("failed to create pod labels: %w", err)
+			}
+
+			containers, err := getContainers(data, dep.Spec.Template.Spec.Containers)
+			if err != nil {
+				return nil, err
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
@@ -87,17 +92,18 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
-			dep.Spec.Template.Spec.Containers = getContainers(data, dep.Spec.Template.Spec.Containers)
+			dep.Spec.Template.Spec.Containers = containers
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 
@@ -106,7 +112,7 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 	}
 }
 
-func getContainers(data kubernetesDashboardData, existingContainers []corev1.Container) []corev1.Container {
+func getContainers(data kubernetesDashboardData, existingContainers []corev1.Container) ([]corev1.Container, error) {
 	// We must do some hoops there because SecurityContext.RunAsGroup
 	// does not exit in all Kubernetes versions. We must keep it if it
 	// exists but never set it ourselves. The APIServer defaults
@@ -118,6 +124,12 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 	securityContext.RunAsUser = pointer.Int64Ptr(1001)
 	securityContext.ReadOnlyRootFilesystem = pointer.BoolPtr(true)
 	securityContext.AllowPrivilegeEscalation = pointer.BoolPtr(false)
+
+	tag, err := getDashboardVersion(data.Cluster().Status.Versions.ControlPlane)
+	if err != nil {
+		return nil, err
+	}
+
 	return []corev1.Container{{
 		Name:            name,
 		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryDocker), imageName, tag),
@@ -145,7 +157,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 			},
 		},
 		SecurityContext: securityContext,
-	}}
+	}}, nil
 }
 
 func getVolumes() []corev1.Volume {
@@ -163,5 +175,23 @@ func getVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+	}
+}
+
+func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
+	// check the GitHub releases for find compat info on the dashboard:
+	// https://github.com/kubernetes/dashboard/releases
+
+	switch clusterVersion.MajorMinor() {
+	case "1.20":
+		return "v2.4.0", nil
+	case "1.21":
+		return "v2.4.0", nil
+	case "1.22":
+		return "v2.5.0", nil
+	case "1.23":
+		return "v2.5.0", nil
+	default:
+		return "", fmt.Errorf("no compatible version defined for Kubernetes %q", clusterVersion.MajorMinor())
 	}
 }

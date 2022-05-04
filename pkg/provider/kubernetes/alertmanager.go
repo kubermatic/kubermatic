@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -43,7 +43,10 @@ type AlertmanagerProvider struct {
 	privilegedClient ctrlruntimeclient.Client
 }
 
-// NewAlertmanagerProvider returns an alertmanager provider
+var _ provider.AlertmanagerProvider = &AlertmanagerProvider{}
+var _ provider.PrivilegedAlertmanagerProvider = &AlertmanagerProvider{}
+
+// NewAlertmanagerProvider returns an alertmanager provider.
 func NewAlertmanagerProvider(createSeedImpersonatedClient ImpersonationClient, privilegedClient ctrlruntimeclient.Client) *AlertmanagerProvider {
 	return &AlertmanagerProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
@@ -70,51 +73,50 @@ func AlertmanagerProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter pr
 }
 
 // Get gets an Alertmanager object and Secret which contains the configuration of this Alertmanager.
-func (p *AlertmanagerProvider) Get(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
+func (p *AlertmanagerProvider) Get(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	return get(impersonationClient, cluster)
+	return get(ctx, impersonationClient, cluster)
 }
 
 // Update updates an Alertmanager object and corresponding config Secret since Alertmanager and Secret will
 // be created by alertmanager configuration controller.
-func (p *AlertmanagerProvider) Update(expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret, userInfo *provider.UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
+func (p *AlertmanagerProvider) Update(ctx context.Context, expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret, userInfo *provider.UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	return update(impersonationClient, expectedAlertmanager, expectedSecret)
+	return update(ctx, impersonationClient, expectedAlertmanager, expectedSecret)
 }
 
 // Reset resets corresponding config Secret of Alertmanager object to the default config. This will not remove
 // Alertmanager object, it will only delete the config secret, and alertmanager controller will create default config secret.
-func (p *AlertmanagerProvider) Reset(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo) error {
+func (p *AlertmanagerProvider) Reset(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo) error {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
 	}
-	return reset(impersonationClient, cluster)
+	return reset(ctx, impersonationClient, cluster)
 }
 
 // GetUnsecured gets an Alertmanager object and Secret which contains the configuration of this Alertmanager by using a privileged client.
-func (p *AlertmanagerProvider) GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
-	return get(p.privilegedClient, cluster)
+func (p *AlertmanagerProvider) GetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
+	return get(ctx, p.privilegedClient, cluster)
 }
 
 // UpdateUnsecured updates an Alertmanager object and corresponding config Secret by using a privileged client.
-func (p *AlertmanagerProvider) UpdateUnsecured(expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
-	return update(p.privilegedClient, expectedAlertmanager, expectedSecret)
+func (p *AlertmanagerProvider) UpdateUnsecured(ctx context.Context, expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
+	return update(ctx, p.privilegedClient, expectedAlertmanager, expectedSecret)
 }
 
 // ResetUnsecured resets corresponding config Secret of Alertmanager object to the default config by using a privileged client.
-func (p *AlertmanagerProvider) ResetUnsecured(cluster *kubermaticv1.Cluster) error {
-	return reset(p.privilegedClient, cluster)
+func (p *AlertmanagerProvider) ResetUnsecured(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	return reset(ctx, p.privilegedClient, cluster)
 }
 
-func get(client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
-	ctx := context.Background()
+func get(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
 	alertmanager := &kubermaticv1.Alertmanager{}
 	if err := client.Get(ctx, types.NamespacedName{
 		Name:      resources.AlertmanagerName,
@@ -132,8 +134,7 @@ func get(client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kuber
 	return alertmanager, configSecret, nil
 }
 
-func update(client ctrlruntimeclient.Client, expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
-	ctx := context.Background()
+func update(ctx context.Context, client ctrlruntimeclient.Client, expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
 	alertmanager := &kubermaticv1.Alertmanager{}
 
 	if err := client.Get(ctx, types.NamespacedName{
@@ -160,8 +161,7 @@ func update(client ctrlruntimeclient.Client, expectedAlertmanager *kubermaticv1.
 	return alertmanager, secret, nil
 }
 
-func reset(client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	ctx := context.Background()
+func reset(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	alertmanager := &kubermaticv1.Alertmanager{}
 	if err := client.Get(ctx, types.NamespacedName{
 		Name:      resources.AlertmanagerName,

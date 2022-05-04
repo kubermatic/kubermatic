@@ -19,12 +19,11 @@ package projectlabelsynchronizer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "kubermatic_project_label_synchronizer"
+const ControllerName = "kkp-project-label-synchronizer"
 
 type reconciler struct {
 	log                     *zap.SugaredLogger
@@ -83,7 +82,7 @@ func Add(
 ) error {
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %v", err)
+		return fmt.Errorf("failed to build worker-name selector: %w", err)
 	}
 
 	log = log.Named(ControllerName)
@@ -100,7 +99,7 @@ func Add(
 	}
 	c, err := controller.New(ControllerName, masterManager, ctrlOpts)
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -108,15 +107,15 @@ func Add(
 
 		seedClusterWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
 		if err := seedClusterWatch.InjectCache(seedManager.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache for seed %q into watch: %v", seedName, err)
+			return fmt.Errorf("failed to inject cache for seed %q into watch: %w", seedName, err)
 		}
 		if err := c.Watch(seedClusterWatch, requestFromCluster(log), workerlabel.Predicates(workerName)); err != nil {
-			return fmt.Errorf("failed to watch clusters in seed %q: %v", seedName, err)
+			return fmt.Errorf("failed to watch clusters in seed %q: %w", seedName, err)
 		}
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch projects: %v", err)
+		return fmt.Errorf("failed to watch projects: %w", err)
 	}
 
 	return nil
@@ -127,9 +126,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)
-	if controllerutil.IsCacheNotStarted(err) {
-		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -139,16 +135,17 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	project := &kubermaticv1.Project{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
-		if controllerutil.IsCacheNotStarted(err) {
-			return err
-		}
-
 		if kerrors.IsNotFound(err) {
 			log.Debug("Didn't find project, returning")
 			return nil
 		}
 
-		return fmt.Errorf("failed to get project %s: %v", request.Name, err)
+		return fmt.Errorf("failed to get project %s: %w", request.Name, err)
+	}
+
+	if project.Status.Phase == "" {
+		log.Debug("Project has no phase set in its status, skipping reconciling")
+		return nil
 	}
 
 	if len(project.Labels) == 0 {
@@ -159,7 +156,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	workerNameLabelSelectorRequirements, _ := r.workerNameLabelSelector.Requirements()
 	projectLabelRequirement, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.Name})
 	if err != nil {
-		return fmt.Errorf("failed to construct label requirement for project: %v", err)
+		return fmt.Errorf("failed to construct label requirement for project: %w", err)
 	}
 
 	listOpts := &ctrlruntimeclient.ListOptions{
@@ -174,12 +171,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 		unfilteredClusters := &kubermaticv1.ClusterList{}
 		if err := seedClient.List(ctx, unfilteredClusters, listOpts); err != nil {
-			if controllerutil.IsCacheNotStarted(err) {
-				log.Debug("cache for seed client was not yet started, cannot list Clusters")
-			} else {
-				errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %v", seedName, err))
-			}
-
+			errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %w", seedName, err))
 			continue
 		}
 
@@ -193,10 +185,14 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			}
 			oldCluster := cluster.DeepCopy()
 			cluster.Labels = newClusterLabels
-			cluster.Status.InheritedLabels = getInheritedLabels(project.Labels)
 			log.Debug("Updating labels on cluster")
 			if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
+			}
+			if err := helper.UpdateClusterStatus(ctx, seedClient, cluster, func(c *kubermaticv1.Cluster) {
+				c.Status.InheritedLabels = getInheritedLabels(project.Labels)
+			}); err != nil {
+				errs = append(errs, fmt.Errorf("failed to update status on cluster %q: %w", cluster.Name, err))
 			}
 		}
 	}

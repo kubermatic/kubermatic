@@ -26,6 +26,10 @@ type EtcdRestoreSpec struct {
 
 	// ClusterID is the id of the cluster which will be restored from the backup
 	ClusterID string `json:"clusterId,omitempty"`
+
+	// Destination indicates where the backup was stored. The destination name should correspond to a destination in
+	// the cluster's Seed.Spec.EtcdBackupRestore.
+	Destination string `json:"destination,omitempty"`
 }
 
 // Validate validates this etcd restore spec

@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -158,6 +158,9 @@ func namedProjectClientWithLabels(name string, labels map[string]string) ctrlrun
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,
+		},
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectActive,
 		},
 	}).Build()
 }

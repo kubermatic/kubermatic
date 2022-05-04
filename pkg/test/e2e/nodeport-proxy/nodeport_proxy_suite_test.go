@@ -1,4 +1,4 @@
-// +build e2e
+//go:build e2e
 
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -19,6 +19,7 @@ limitations under the License.
 package nodeportproxy
 
 import (
+	"context"
 	"flag"
 	"testing"
 
@@ -63,15 +64,15 @@ var _ = ginkgo.BeforeSuite(func() {
 			CreatePodFunc: newAgnhostPod,
 		},
 	}
-	gomega.Expect(deployer.SetUp()).NotTo(gomega.HaveOccurred(), "nodeport-proxy should deploy successfully")
+	gomega.Expect(deployer.SetUp(context.Background())).NotTo(gomega.HaveOccurred(), "nodeport-proxy should deploy successfully")
 	// We put the test pod in same namespace as the nodeport proxy
 	networkingTest.Namespace = deployer.Namespace
-	gomega.Expect(networkingTest.DeployTestPod()).NotTo(gomega.HaveOccurred(), "test pod should deploy successfully")
+	gomega.Expect(networkingTest.DeployTestPod(context.Background())).NotTo(gomega.HaveOccurred(), "test pod should deploy successfully")
 })
 
 var _ = ginkgo.AfterSuite(func() {
 	if !skipCleanup {
-		gomega.Expect(networkingTest.CleanUp()).NotTo(gomega.HaveOccurred(), "failed to clean-up networkingTest")
-		gomega.Expect(deployer.CleanUp()).NotTo(gomega.HaveOccurred(), "failed to clean-up deployer")
+		gomega.Expect(networkingTest.CleanUp(context.Background())).NotTo(gomega.HaveOccurred(), "failed to clean-up networkingTest")
+		gomega.Expect(deployer.CleanUp(context.Background())).NotTo(gomega.HaveOccurred(), "failed to clean-up deployer")
 	}
 })

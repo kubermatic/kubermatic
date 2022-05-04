@@ -18,7 +18,7 @@ import (
 // swagger:model Validation
 type Validation struct {
 
-	// +kubebuilder:default=true
+	// +kubebuilder:default=false
 	LegacySchema bool `json:"legacySchema,omitempty"`
 
 	// open API v3 schema
@@ -48,6 +48,8 @@ func (m *Validation) validateOpenAPIV3Schema(formats strfmt.Registry) error {
 		if err := m.OpenAPIV3Schema.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openAPIV3Schema")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openAPIV3Schema")
 			}
 			return err
 		}
@@ -76,6 +78,8 @@ func (m *Validation) contextValidateOpenAPIV3Schema(ctx context.Context, formats
 		if err := m.OpenAPIV3Schema.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openAPIV3Schema")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("openAPIV3Schema")
 			}
 			return err
 		}

@@ -51,7 +51,7 @@ spec:
         - name: config
           mountPath: /etc/dex/cfg
         - name: themes
-          mountPath: /web/themes/coreos
+          mountPath: /srv/dex/web/themes/light
           readOnly: true
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.certMount | trim | indent 8 }}
 {{- end }}

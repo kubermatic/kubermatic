@@ -21,9 +21,9 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -61,9 +61,9 @@ type CABundle struct {
 }
 
 func NewCABundleFromFile(filename string) (*CABundle, error) {
-	bytes, err := ioutil.ReadFile(filename)
+	bytes, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	bundle, err := NewCABundleFromBytes(bytes)
@@ -77,7 +77,7 @@ func NewCABundleFromFile(filename string) (*CABundle, error) {
 
 func NewCABundleFromBytes(bytes []byte) (*CABundle, error) {
 	if err := ValidateCABundle(string(bytes)); err != nil {
-		return nil, fmt.Errorf("CA bundle is invalid: %v", err)
+		return nil, fmt.Errorf("CA bundle is invalid: %w", err)
 	}
 
 	pool := x509.NewCertPool()
@@ -124,16 +124,16 @@ func (b *CABundle) String() string {
 	return string(b.bytes)
 }
 
-func GlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) (*corev1.ConfigMap, error) {
+func GlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) (*corev1.ConfigMap, error) {
 	caBundle := &corev1.ConfigMap{}
 	key := types.NamespacedName{Name: config.Spec.CABundle.Name, Namespace: config.Namespace}
 
 	if err := client.Get(ctx, key, caBundle); err != nil {
-		return nil, fmt.Errorf("failed to fetch CA bundle: %v", err)
+		return nil, fmt.Errorf("failed to fetch CA bundle: %w", err)
 	}
 
 	if err := ValidateCABundleConfigMap(caBundle); err != nil {
-		return nil, fmt.Errorf("CA bundle is invalid: %v", err)
+		return nil, fmt.Errorf("CA bundle is invalid: %w", err)
 	}
 
 	return caBundle, nil

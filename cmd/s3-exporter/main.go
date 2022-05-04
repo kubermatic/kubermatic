@@ -24,15 +24,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
-	"k8c.io/kubermatic/v2/pkg/exporters/s3"
+	"k8c.io/kubermatic/v2/pkg/collectors"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func main() {
@@ -72,7 +74,11 @@ func main() {
 	if err != nil {
 		logger.Fatalw("Failed to load kubeconfig", zap.Error(err))
 	}
-	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
+
+	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	if err != nil {
+		logger.Fatalw("Failed to create kube client", zap.Error(err))
+	}
 
 	secure := true
 	if strings.HasPrefix(*endpointWithProto, "http://") {
@@ -82,13 +88,10 @@ func main() {
 	endpoint := strings.TrimPrefix(*endpointWithProto, "http://")
 	endpoint = strings.TrimPrefix(endpoint, "https://")
 
-	stopChannel := make(chan struct{})
-	minioClient, err := minio.New(endpoint, *accessKeyID, *secretAccessKey, secure)
-	if err != nil {
-		logger.Fatalw("Failed to get S3 client", zap.Error(err))
+	options := &minio.Options{
+		Creds:  credentials.NewStaticV4(*accessKeyID, *secretAccessKey, ""),
+		Secure: secure,
 	}
-
-	minioClient.SetAppInfo("kubermatic-exporter", "v0.1")
 
 	if *caBundleFile != "" {
 		bundle, err := certificates.NewCABundleFromFile(*caBundleFile)
@@ -96,13 +99,28 @@ func main() {
 			logger.Fatalw("Failed to load CA bundle", zap.Error(err))
 		}
 
-		minioClient.SetCustomTransport(&http.Transport{
+		options.Transport = &http.Transport{
 			TLSClientConfig:    &tls.Config{RootCAs: bundle.CertPool()},
 			DisableCompression: true,
-		})
+		}
 	}
 
-	s3.MustRun(minioClient, kubermaticClient, *bucket, *listenAddress, logger)
+	stopChannel := make(chan struct{})
+	minioClient, err := minio.New(endpoint, options)
+	if err != nil {
+		logger.Fatalw("Failed to get S3 client", zap.Error(err))
+	}
+
+	minioClient.SetAppInfo("kubermatic-exporter", "v0.2")
+
+	collectors.MustRegisterS3Collector(minioClient, client, *bucket, logger)
+
+	http.Handle("/", promhttp.Handler())
+	go func() {
+		if err := http.ListenAndServe(*listenAddress, nil); err != nil {
+			logger.Fatalw("Failed to listen", zap.Error(err))
+		}
+	}()
 
 	logger.Infof("Successfully started, listening on %s", *listenAddress)
 	<-stopChannel

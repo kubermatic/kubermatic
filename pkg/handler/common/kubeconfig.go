@@ -30,11 +30,12 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kcerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -71,7 +72,7 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	}
 
 	if adminUserInfo.IsAdmin {
-		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -84,14 +85,37 @@ func GetAdminKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.Use
 	}
 	if strings.HasPrefix(userInfo.Group, "viewers") {
 		filePrefix = "viewer"
-		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(ctx, cluster)
 	} else {
-		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 	}
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: filePrefix}, nil
+}
+
+func GetKubeconfigEndpoint(ctx context.Context, cluster *kubermaticv1.ExternalCluster, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (interface{}, error) {
+	filePrefix := "external-cluster"
+
+	kubeconfigReference := cluster.Spec.KubeconfigReference
+	if kubeconfigReference == nil {
+		return nil, fmt.Errorf("kubeconfig not available for the Cluster")
+	}
+
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())
+
+	rawKubeconfig, err := secretKeyGetter(kubeconfigReference, resources.KubeconfigSecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
+	}
+
+	return &encodeKubeConifgResponse{clientCfg: cfg, filePrefix: filePrefix}, nil
 }
 
 func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -101,7 +125,7 @@ func GetOidcKubeconfigEndpoint(ctx context.Context, userInfoGetter provider.User
 	if err != nil {
 		return nil, err
 	}
-	adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+	adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -157,11 +181,11 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	if req.phase == exchangeCodePhase {
 		// validate the state
 		if req.decodedState.Nonce != req.cookieNonceValue {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter = %s", req.decodedState.Nonce)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter: %s", req.decodedState.Nonce)
 		}
 		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("error while exchanging oidc code for token = %v", err)
+			return nil, kcerrors.NewBadRequest("error while exchanging oidc code for token: %v", err)
 		}
 		if len(oidcTokens.RefreshToken) == 0 {
 			return nil, kcerrors.NewBadRequest("the refresh token is missing but required, try setting/unsetting \"oidc-offline-access-as-scope\" command line flag")
@@ -175,7 +199,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 			return nil, kcerrors.NewBadRequest("the token doesn't contain the mandatory \"email\" claim")
 		}
 
-		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -231,7 +255,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	// PHASE initial handles request from the end-user that wants to authenticate
 	// and kicksoff the process of kubeconfig generation
 	if req.phase != initialPhase {
-		return nil, kcerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase = %d, expected phase = %d, did you forget to set the phase while decoding the request ?", req.phase, initialPhase))
+		return nil, kcerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase %d, expected phase %d, did you forget to set the phase while decoding the request?", req.phase, initialPhase))
 	}
 
 	rsp := createOIDCKubeconfigRsp{}
@@ -278,7 +302,7 @@ type CreateOIDCKubeconfigReq struct {
 	cookieNonceValue string
 }
 
-// OIDCState holds data that are send and retrieved from OIDC provider
+// OIDCState holds data that are send and retrieved from OIDC provider.
 type OIDCState struct {
 	// nonce a random string that binds requests / responses of API server and OIDC provider
 	// see https://tools.ietf.org/html/rfc6749#section-10.12
@@ -311,7 +335,7 @@ func EncodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 		// clear cookie by setting MaxAge<0
 		err = setCookie(w, "", rsp.secureCookieMode, -1)
 		if err != nil {
-			return fmt.Errorf("the cookie can't be removed, err = %v", err)
+			return fmt.Errorf("the cookie can't be removed: %w", err)
 		}
 		return EncodeKubeconfig(c, w, &encodeKubeConifgResponse{clientCfg: rsp.oidcKubeConfig})
 	}
@@ -321,7 +345,7 @@ func EncodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 	// and set cookie with nonce
 	err = setCookie(w, rsp.nonce, rsp.secureCookieMode, cookieMaxAge)
 	if err != nil {
-		return fmt.Errorf("the cookie can't be created, err = %v", err)
+		return fmt.Errorf("the cookie can't be created: %w", err)
 	}
 	w.Header().Add("Location", rsp.authCodeURL)
 	w.Header().Add("Cache-Control", "no-cache")
@@ -337,7 +361,7 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		errType := r.URL.Query().Get("error")
 		errMessage := r.URL.Query().Get("error_description")
 		if len(errMessage) != 0 {
-			return nil, fmt.Errorf("OIDC provider error type = %s, description = %s", errType, errMessage)
+			return nil, fmt.Errorf("OIDC provider error %s: %s", errType, errMessage)
 		}
 	}
 
@@ -349,15 +373,15 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 	if len(req.code) != 0 && len(req.encodedState) != 0 {
 		unescapedState, err := url.QueryUnescape(req.encodedState)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected url encoded value, err = %v", err)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected url encoded value: %v", err)
 		}
 		rawState, err := base64.StdEncoding.DecodeString(unescapedState)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value, err = %v", err)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value: %v", err)
 		}
 		oidcState := OIDCState{}
 		if err := json.Unmarshal(rawState, &oidcState); err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value, err = %v", err)
+			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value: %v", err)
 		}
 		// handle cookie when new endpoint is created and secureCookie was initialized
 		if secureCookie != nil {
@@ -368,7 +392,7 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 					req.cookieNonceValue = value
 				}
 			} else {
-				return nil, kcerrors.NewBadRequest("incorrect value of cookie or cookie not set, err = %v", err)
+				return nil, kcerrors.NewBadRequest("incorrect value of cookie or cookie not set: %v", err)
 			}
 		}
 		req.phase = exchangeCodePhase
@@ -390,29 +414,28 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-// GetUserID implements UserGetter interface
+// GetUserID implements UserGetter interface.
 func (r CreateOIDCKubeconfigReq) GetUserID() string {
 	return r.UserID
 }
 
-// GetSeedCluster returns the SeedCluster object
+// GetSeedCluster returns the SeedCluster object.
 func (r CreateOIDCKubeconfigReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: r.ClusterID,
 	}
 }
 
-// GetProjectID implements ProjectGetter interface
+// GetProjectID implements ProjectGetter interface.
 func (r CreateOIDCKubeconfigReq) GetProjectID() string {
 	return r.ProjectID
 }
 
-// setCookie add cookie with random string value
+// setCookie add cookie with random string value.
 func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int) error {
-
 	encoded, err := secureCookie.Encode(csrfCookieName, nonce)
 	if err != nil {
-		return fmt.Errorf("the encode cookie failed, err = %v", err)
+		return fmt.Errorf("the encode cookie failed: %w", err)
 	}
 	cookie := &http.Cookie{
 		Name:     csrfCookieName,
@@ -438,25 +461,25 @@ func getClusterForOIDCEndpoint(ctx context.Context, projectProvider provider.Pro
 	}
 	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-	project, err := getProjectForOIDCEndpoint(userInfo, projectProvider, privilegedProjectProvider, projectID)
+	project, err := getProjectForOIDCEndpoint(ctx, userInfo, projectProvider, privilegedProjectProvider, projectID)
 	if err != nil {
 		return nil, err
 	}
 
 	if userInfo.IsAdmin {
-		return privilegedClusterProvider.GetUnsecured(project, clusterID, nil)
+		return privilegedClusterProvider.GetUnsecured(ctx, project, clusterID, nil)
 	}
 
-	return clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
+	return clusterProvider.Get(ctx, userInfo, clusterID, &provider.ClusterGetOptions{})
 }
 
-func getProjectForOIDCEndpoint(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
+func getProjectForOIDCEndpoint(ctx context.Context, userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
 	if userInfo.IsAdmin {
 		// get any project for admin
-		return privilegedProjectProvider.GetUnsecured(projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+		return privilegedProjectProvider.GetUnsecured(ctx, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 	}
 
-	return projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+	return projectProvider.Get(ctx, userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 }
 
 type encodeKubeConifgResponse struct {

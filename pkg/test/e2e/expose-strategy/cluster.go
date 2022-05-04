@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -51,11 +51,36 @@ type ClusterJig struct {
 	Cluster *kubermaticv1.Cluster
 }
 
-func (c *ClusterJig) SetUp() error {
+func (c *ClusterJig) createProject(ctx context.Context) (*kubermaticv1.Project, error) {
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "proj1234",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "test project",
+		},
+	}
+
+	if err := c.Client.Create(ctx, project); err != nil {
+		return nil, fmt.Errorf("failed to create project: %w", err)
+	}
+
+	return project, nil
+}
+
+func (c *ClusterJig) SetUp(ctx context.Context) error {
+	project, err := c.createProject(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create project: %w", err)
+	}
+
 	c.Log.Debugw("Creating cluster", "name", c.Name)
 	c.Cluster = &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: c.Name,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
@@ -97,21 +122,28 @@ func (c *ClusterJig) SetUp() error {
 			HumanReadableName:     "test",
 			Version:               c.Version,
 		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: fmt.Sprintf("cluster-%s", c.Name),
-			UserEmail:     "e2e@test.com",
-		},
 	}
-	if err := c.Client.Create(context.TODO(), c.Cluster); err != nil {
-		return errors.Wrap(err, "failed to create cluster")
+	if err := c.Client.Create(ctx, c.Cluster); err != nil {
+		return fmt.Errorf("failed to create cluster: %w", err)
+	}
+
+	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, c.Client, c.Log, ctrlruntimeclient.ObjectKeyFromObject(c.Cluster), c.Cluster)
+	if err := wait.Poll(100*time.Millisecond, 5*time.Second, waiter); err != nil {
+		return fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
+	}
+
+	if err := kubermaticv1helper.UpdateClusterStatus(ctx, c.Client, c.Cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.UserEmail = "e2e@test.com"
+	}); err != nil {
+		return fmt.Errorf("failed to update cluster status: %w", err)
 	}
 
 	return c.waitForClusterControlPlaneReady(c.Cluster)
 }
 
 // CleanUp deletes the cluster.
-func (c *ClusterJig) CleanUp() error {
-	return c.Client.Delete(context.TODO(), c.Cluster)
+func (c *ClusterJig) CleanUp(ctx context.Context) error {
+	return c.Client.Delete(ctx, c.Cluster)
 }
 
 func (c *ClusterJig) waitForClusterControlPlaneReady(cl *kubermaticv1.Cluster) error {
@@ -119,10 +151,7 @@ func (c *ClusterJig) waitForClusterControlPlaneReady(cl *kubermaticv1.Cluster) e
 		if err := c.Client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: c.Name, Namespace: cl.Namespace}, cl); err != nil {
 			return false, err
 		}
-		_, cond := kubermaticv1helper.GetClusterCondition(cl, kubermaticv1.ClusterConditionSeedResourcesUpToDate)
-		if cond != nil && cond.Status == corev1.ConditionTrue {
-			return true, nil
-		}
-		return false, nil
+
+		return cl.Status.Conditions[kubermaticv1.ClusterConditionSeedResourcesUpToDate].Status == corev1.ConditionTrue, nil
 	})
 }

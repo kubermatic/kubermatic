@@ -1,9 +1,9 @@
-// +build ee
+//go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2020 Loodse GmbH
+                     Copyright © 2020 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -26,7 +26,6 @@ package kubermaticapi
 
 import (
 	"context"
-	"flag"
 
 	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -34,24 +33,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	dynamicDatacenters = false
-	datacentersFile    = ""
-)
-
-func AddFlags(fs *flag.FlagSet) {
-	fs.BoolVar(&dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters. Enabling this and defining the datcenters flag will enable the migration of the datacenters defined in datancenters.yaml to Seed custom resources.")
-	fs.StringVar(&datacentersFile, "datacenters", "", "The datacenters.yaml file path.")
-}
-
 func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
-	return eeprovider.SeedsGetterFactory(ctx, client, datacentersFile, namespace, dynamicDatacenters)
+	return eeprovider.SeedsGetterFactory(ctx, client, namespace)
 }
 
 func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
-	if dynamicDatacenters {
-		return provider.SeedKubeconfigGetterFactory(ctx, client)
-	}
-
-	return eeprovider.SeedKubeconfigGetter, nil
+	return provider.SeedKubeconfigGetterFactory(ctx, client)
 }

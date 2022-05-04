@@ -18,19 +18,21 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/clusterdeletion"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -54,10 +56,10 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_kubernetes_controller"
+	ControllerName = "kkp-kubernetes-controller"
 )
 
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
 type userClusterConnectionProvider interface {
 	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
@@ -67,39 +69,34 @@ type Features struct {
 	EtcdDataCorruptionChecks     bool
 	KubernetesOIDCAuthentication bool
 	EtcdLauncher                 bool
+	Konnectivity                 bool
 }
 
-// Reconciler is a controller which is responsible for managing clusters
+// Reconciler is a controller which is responsible for managing clusters.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 	log                     *zap.SugaredLogger
 	userClusterConnProvider userClusterConnectionProvider
 	workerName              string
 
-	externalURL string
-	seedGetter  provider.SeedGetter
+	externalURL  string
+	seedGetter   provider.SeedGetter
+	configGetter provider.KubermaticConfigurationGetter
 
 	recorder record.EventRecorder
 
-	overwriteRegistry                                string
-	nodePortRange                                    string
-	nodeAccessNetwork                                string
-	etcdDiskSize                                     resource.Quantity
-	inClusterPrometheusRulesFile                     string
-	inClusterPrometheusDisableDefaultRules           bool
-	inClusterPrometheusDisableDefaultScrapingConfigs bool
-	inClusterPrometheusScrapingConfigsFile           string
-	monitoringScrapeAnnotationPrefix                 string
-	userClusterMLAEnabled                            bool
-	dockerPullConfigJSON                             []byte
-	kubermaticImage                                  string
-	etcdLauncherImage                                string
-	dnatControllerImage                              string
-	machineControllerImageTag                        string
-	machineControllerImageRepository                 string
-	concurrentClusterUpdates                         int
-	etcdBackupRestoreController                      bool
-	backupSchedule                                   time.Duration
+	overwriteRegistry                string
+	nodeAccessNetwork                string
+	etcdDiskSize                     resource.Quantity
+	userClusterMLAEnabled            bool
+	dockerPullConfigJSON             []byte
+	kubermaticImage                  string
+	etcdLauncherImage                string
+	dnatControllerImage              string
+	machineControllerImageTag        string
+	machineControllerImageRepository string
+	concurrentClusterUpdates         int
+	backupSchedule                   time.Duration
 
 	oidcIssuerURL      string
 	oidcIssuerClientID string
@@ -119,20 +116,14 @@ func Add(
 	workerName string,
 	externalURL string,
 	seedGetter provider.SeedGetter,
+	configGetter provider.KubermaticConfigurationGetter,
 	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
-	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
-	monitoringScrapeAnnotationPrefix string,
-	inClusterPrometheusRulesFile string,
-	inClusterPrometheusDisableDefaultRules bool,
-	inClusterPrometheusDisableDefaultScrapingConfigs bool,
-	inClusterPrometheusScrapingConfigsFile string,
 	userClusterMLAEnabled bool,
 	dockerPullConfigJSON []byte,
 	concurrentClusterUpdates int,
-	etcdBackupRestoreController bool,
 	backupSchedule time.Duration,
 
 	oidcIssuerURL string,
@@ -147,8 +138,8 @@ func Add(
 	caBundle *certificates.CABundle,
 
 	features Features,
-	versions kubermatic.Versions) error {
-
+	versions kubermatic.Versions,
+) error {
 	reconciler := &Reconciler{
 		log:                     log.Named(ControllerName),
 		Client:                  mgr.GetClient(),
@@ -157,28 +148,22 @@ func Add(
 
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 
-		overwriteRegistry:                      overwriteRegistry,
-		nodePortRange:                          nodePortRange,
-		nodeAccessNetwork:                      nodeAccessNetwork,
-		etcdDiskSize:                           etcdDiskSize,
-		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
-		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
-		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
-		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
-		userClusterMLAEnabled:                            userClusterMLAEnabled,
-		dockerPullConfigJSON:                             dockerPullConfigJSON,
-		kubermaticImage:                                  kubermaticImage,
-		etcdLauncherImage:                                etcdLauncherImage,
-		dnatControllerImage:                              dnatControllerImage,
-		machineControllerImageTag:                        machineControllerImageTag,
-		machineControllerImageRepository:                 machineControllerImageRepository,
-		concurrentClusterUpdates:                         concurrentClusterUpdates,
-		etcdBackupRestoreController:                      etcdBackupRestoreController,
-		backupSchedule:                                   backupSchedule,
+		overwriteRegistry:                overwriteRegistry,
+		nodeAccessNetwork:                nodeAccessNetwork,
+		etcdDiskSize:                     etcdDiskSize,
+		userClusterMLAEnabled:            userClusterMLAEnabled,
+		dockerPullConfigJSON:             dockerPullConfigJSON,
+		kubermaticImage:                  kubermaticImage,
+		etcdLauncherImage:                etcdLauncherImage,
+		dnatControllerImage:              dnatControllerImage,
+		machineControllerImageTag:        machineControllerImageTag,
+		machineControllerImageRepository: machineControllerImageRepository,
+		concurrentClusterUpdates:         concurrentClusterUpdates,
+		backupSchedule:                   backupSchedule,
 
-		externalURL: externalURL,
-		seedGetter:  seedGetter,
+		externalURL:  externalURL,
+		seedGetter:   seedGetter,
+		configGetter: configGetter,
 
 		oidcIssuerURL:      oidcIssuerURL,
 		oidcIssuerClientID: oidcIssuerClientID,
@@ -213,7 +198,7 @@ func Add(
 
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 
@@ -233,6 +218,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 	log = log.With("cluster", cluster.Name)
+
+	// ensure new Cluster objects have basic status information set;
+	// this should be done regardless of ClusterAvailableForReconciling()
+	// and hence outside the ClusterReconcileWrapper
+	if err := r.reconcileClusterStatus(ctx, cluster); err != nil {
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+
+		return reconcile.Result{}, err
+	}
+
+	// the update controller needs to determine the target version based on the spec
+	// before we can reconcile anything
+	if cluster.Status.Versions.ControlPlane == "" {
+		log.Debug("Cluster not yet ready for reconciling")
+
+		return reconcile.Result{}, nil
+	}
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -266,6 +269,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
+func (r *Reconciler) reconcileClusterStatus(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if c.Status.NamespaceName == "" {
+			c.Status.NamespaceName = kubernetesprovider.NamespaceName(cluster.Name)
+		}
+	})
+}
+
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// synchronize cluster.status.health for Kubernetes clusters
 	if err := r.syncHealth(ctx, cluster); err != nil {
@@ -279,25 +290,26 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		userClusterClientGetter := func() (ctrlruntimeclient.Client, error) {
 			client, err := r.userClusterConnProvider.GetClient(ctx, cluster)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+				return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 			}
 			return client, nil
 		}
+
 		// Always requeue a cluster after we executed the cleanup.
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter, r.etcdBackupRestoreController).CleanupCluster(ctx, log, cluster)
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
 	}
 
 	res, err := r.reconcileCluster(ctx, cluster)
 	if err != nil {
 		updateErr := r.updateClusterError(ctx, cluster, kubermaticv1.ReconcileClusterError, err.Error())
 		if updateErr != nil {
-			return nil, fmt.Errorf("failed to set the cluster error: %v", updateErr)
+			return nil, fmt.Errorf("failed to set the cluster error: %w", updateErr)
 		}
 		return nil, fmt.Errorf("failed to reconcile cluster: %w", err)
 	}
 
 	if err := r.clearClusterError(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to clear error on cluster: %v", err)
+		return nil, fmt.Errorf("failed to clear error on cluster: %w", err)
 	}
 
 	return res, nil
@@ -310,50 +322,38 @@ func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil
 	}
 
-	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...))
+	if !reflect.DeepEqual(oldCluster.Status, cluster.Status) {
+		return errors.New("updateCluster must not change cluster status")
+	}
+
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finalizers ...string) (*reconcile.Result, error) {
-	if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(c, finalizers...)
-	}, ctrlruntimeclient.MergeFromWithOptimisticLock{}); err != nil {
-		if !kerrors.IsConflict(err) {
-			return nil, fmt.Errorf("failed to add finalizers %v: %w", finalizers, err)
-		}
-		// In case of conflict we just re-enqueue the item for later
-		// processing without returning an error.
-		r.log.Infow("failed to add finalizers", "error", err, "finalizers", finalizers)
-		return &reconcile.Result{Requeue: true}, nil
-	}
-	return &reconcile.Result{}, nil
+	return &reconcile.Result{}, kuberneteshelper.TryAddFinalizer(ctx, r, cluster, finalizers...)
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {
-	if cluster.Status.ErrorReason == nil || *cluster.Status.ErrorReason != reason {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.ErrorMessage = &message
-			c.Status.ErrorReason = &reason
-		})
-		if err != nil {
-			return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %v", reason, message, err)
-		}
+	err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ErrorMessage = &message
+		c.Status.ErrorReason = &reason
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %w", reason, message, err)
 	}
 
 	return nil
 }
 
 func (r *Reconciler) clearClusterError(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if cluster.Status.ErrorReason != nil || cluster.Status.ErrorMessage != nil {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.ErrorMessage = nil
-			c.Status.ErrorReason = nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		c.Status.ErrorMessage = nil
+		c.Status.ErrorReason = nil
+	})
 }
 
 func (r *Reconciler) getOwnerRefForCluster(cluster *kubermaticv1.Cluster) metav1.OwnerReference {

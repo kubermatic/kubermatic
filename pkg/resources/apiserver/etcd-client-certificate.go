@@ -27,7 +27,7 @@ type etcdClientCertificateCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// EtcdClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against etcd
+// EtcdClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against etcd.
 func EtcdClientCertificateCreator(data etcdClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverEtcdClientCertificateSecretName,

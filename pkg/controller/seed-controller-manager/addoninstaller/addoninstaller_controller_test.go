@@ -18,20 +18,29 @@ package addoninstaller
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-test/deep"
 
-	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/yaml"
 )
+
+func init() {
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
+}
 
 var addons = kubermaticv1.AddonList{Items: []kubermaticv1.Addon{
 	{ObjectMeta: metav1.ObjectMeta{Name: "Foo"}},
@@ -41,11 +50,6 @@ var addons = kubermaticv1.AddonList{Items: []kubermaticv1.Addon{
 		Annotations: map[string]string{"foo": "bar"},
 	}},
 }}
-
-func truePtr() *bool {
-	b := true
-	return &b
-}
 
 func TestCreateAddon(t *testing.T) {
 	name := "test-cluster"
@@ -59,22 +63,13 @@ func TestCreateAddon(t *testing.T) {
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Foo",
@@ -87,24 +82,15 @@ func TestCreateAddon(t *testing.T) {
 				},
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",
@@ -124,17 +110,15 @@ func TestCreateAddon(t *testing.T) {
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver: kubermaticv1.HealthStatusUp,
 					},
-					NamespaceName: "cluster-" + name,
+					NamespaceName: kubernetes.NamespaceName(name),
 				},
 			},
 		},
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			client := ctrlruntimefakeclient.
 				NewClientBuilder().
@@ -142,10 +126,16 @@ func TestCreateAddon(t *testing.T) {
 				WithObjects(test.cluster).
 				Build()
 
+			config := createKubermaticConfiguration(addons)
+			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			if err != nil {
+				t.Fatalf("Failed to create Config Getter: %v", err)
+			}
+
 			reconciler := Reconciler{
-				log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:           client,
-				kubernetesAddons: addons,
+				log:          kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:       client,
+				configGetter: configGetter,
 			}
 
 			if _, err := reconciler.reconcile(context.Background(), reconciler.log, test.cluster); err != nil {
@@ -163,8 +153,24 @@ func TestCreateAddon(t *testing.T) {
 					t.Errorf("created addon is not equal to expected addon, diff: %v", diff)
 				}
 			}
-
 		})
+	}
+}
+
+func createKubermaticConfiguration(addons kubermaticv1.AddonList) *kubermaticv1.KubermaticConfiguration {
+	encoded, err := yaml.Marshal(addons)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal addon list: %v", err))
+	}
+
+	return &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+				Addons: kubermaticv1.KubermaticAddonsConfiguration{
+					DefaultManifests: string(encoded),
+				},
+			},
+		},
 	}
 }
 
@@ -181,22 +187,13 @@ func TestUpdateAddon(t *testing.T) {
 			existingClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",
@@ -211,22 +208,13 @@ func TestUpdateAddon(t *testing.T) {
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Foo",
@@ -239,24 +227,15 @@ func TestUpdateAddon(t *testing.T) {
 				},
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
 						ResourceVersion: "2",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",
@@ -276,10 +255,9 @@ func TestUpdateAddon(t *testing.T) {
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver: kubermaticv1.HealthStatusUp,
 					},
-					NamespaceName: "cluster-" + name,
+					NamespaceName: kubernetes.NamespaceName(name),
 				},
 			},
 		},
@@ -288,22 +266,13 @@ func TestUpdateAddon(t *testing.T) {
 			existingClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "to-be-deleted",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "ToBeDeleted",
@@ -318,22 +287,13 @@ func TestUpdateAddon(t *testing.T) {
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Foo",
@@ -346,24 +306,15 @@ func TestUpdateAddon(t *testing.T) {
 				},
 				{
 					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
+						APIVersion: "kubermatic.k8c.io/v1",
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
-						Namespace:       "cluster-" + name,
+						Namespace:       kubernetes.NamespaceName(name),
 						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
 						Annotations:     map[string]string{"foo": "bar"},
 						ResourceVersion: "1",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         "kubermatic.k8s.io/v1",
-								Kind:               "Cluster",
-								Name:               name,
-								Controller:         truePtr(),
-								BlockOwnerDeletion: truePtr(),
-							},
-						},
 					},
 					Spec: kubermaticv1.AddonSpec{
 						Name: "Bar",
@@ -383,20 +334,18 @@ func TestUpdateAddon(t *testing.T) {
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
 					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-
 						Apiserver: kubermaticv1.HealthStatusUp,
 					},
-					NamespaceName: "cluster-" + name,
+					NamespaceName: kubernetes.NamespaceName(name),
 				},
 			},
 		},
-		// TODO(irozzo) Add test to ensure that user added addons are not
+		// TODO Add test to ensure that user added addons are not
 		// deleted when the following is merged:
 		// https://github.com/kubernetes-sigs/controller-runtime/pull/800
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			objs := []ctrlruntimeclient.Object{test.cluster}
 			for _, a := range test.existingClusterAddons {
@@ -405,10 +354,16 @@ func TestUpdateAddon(t *testing.T) {
 
 			client := ctrlruntimefakeclient.NewClientBuilder().WithObjects(objs...).Build()
 
+			config := createKubermaticConfiguration(addons)
+			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			if err != nil {
+				t.Fatalf("Failed to create Config Getter: %v", err)
+			}
+
 			reconciler := Reconciler{
-				log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:           client,
-				kubernetesAddons: addons,
+				log:          kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
+				Client:       client,
+				configGetter: configGetter,
 			}
 
 			if _, err := reconciler.reconcile(context.Background(), reconciler.log, test.cluster); err != nil {
@@ -426,7 +381,6 @@ func TestUpdateAddon(t *testing.T) {
 					t.Errorf("created addon is not equal to expected addon, diff: %v", diff)
 				}
 			}
-
 		})
 	}
 }

@@ -19,90 +19,85 @@ package rbacusercluster
 import (
 	"context"
 	"fmt"
+	"sync"
 
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
+	"go.uber.org/zap"
+
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// reconciler creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
+// reconciler reconciles Cluster Role and Cluster Role Binding objects.
 type reconciler struct {
-	client ctrlruntimeclient.Client
+	ctrlruntimeclient.Client
+
+	logger                     *zap.SugaredLogger
+	rLock                      *sync.Mutex
+	clusterIsPaused            userclustercontrollermanager.IsPausedChecker
+	reconciledSuccessfullyOnce bool
 }
 
-// Reconcile creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
-func (r *reconciler) Reconcile(ctx context.Context, resourceName string) error {
-	klog.V(4).Infof("Reconciling RBAC for %s", resourceName)
+// Reconcile makes changes in response to ClusterRole and ClusterRoleBinding related changes.
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	err := r.reconcile(ctx, request)
+	if err != nil {
+		r.logger.Errorw("Reconciling failed", zap.Error(err))
+	}
 
-	err := r.ensureRBACClusterRole(ctx, resourceName)
+	return reconcile.Result{}, err
+}
+
+func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) error {
+	paused, err := r.clusterIsPaused(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check cluster pause status: %w", err)
+	}
+	if paused {
+		return nil
+	}
+
+	err = r.ensureRBACClusterRole(ctx, request.Name)
 	if err != nil {
 		return err
 	}
-	err = r.ensureRBACClusterRoleBinding(ctx, resourceName)
+
+	err = r.ensureRBACClusterRoleBinding(ctx, request.Name)
 	if err != nil {
 		return err
 	}
+
+	r.rLock.Lock()
+	defer r.rLock.Unlock()
+	r.reconciledSuccessfullyOnce = true
 
 	return nil
 }
 
 func (r *reconciler) ensureRBACClusterRole(ctx context.Context, resourceName string) error {
-	defaultClusterRole, err := GenerateRBACClusterRole(resourceName)
+	creator, err := newClusterRoleCreator(resourceName)
 	if err != nil {
-		return fmt.Errorf("failed to generate the RBAC ClusterRole: %v", err)
+		return fmt.Errorf("failed to init ClusterRole creator: %w", err)
 	}
 
-	clusterRole := &rbacv1.ClusterRole{}
-	err = r.client.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, clusterRole)
-	if err != nil {
-		// create Cluster Role if not exist
-		if errors.IsNotFound(err) {
-			if err := r.client.Create(ctx, defaultClusterRole); err != nil {
-				return fmt.Errorf("failed to create the RBAC ClusterRole: %v", err)
-			}
-			klog.V(2).Infof("Created a new ClusterRole %s", defaultClusterRole.Name)
-			return nil
-		}
-		return err
-	}
-	// compare Cluster Role with default. If don't match update for default
-	if !ClusterRoleMatches(clusterRole, defaultClusterRole) {
-		clusterRole.Rules = defaultClusterRole.Rules
-		if err := r.client.Update(ctx, clusterRole); err != nil {
-			return fmt.Errorf("failed to update the RBAC ClusterRole: %v", err)
-		}
-		klog.V(2).Infof("Updated the ClusterRole %s", clusterRole.Name)
+	if err := reconciling.ReconcileClusterRoles(ctx, []reconciling.NamedClusterRoleCreatorGetter{creator}, "", r); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 
 	return nil
 }
 
 func (r *reconciler) ensureRBACClusterRoleBinding(ctx context.Context, resourceName string) error {
-	defaultClusterBinding, err := GenerateRBACClusterRoleBinding(resourceName)
+	creator, err := newClusterRoleBindingCreator(resourceName)
 	if err != nil {
-		return fmt.Errorf("failed to generate the RBAC Cluster Role Binding: %v", err)
+		return fmt.Errorf("failed to init ClusterRole creator: %w", err)
 	}
 
-	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	if err := r.client.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, clusterRoleBinding); err != nil {
-		if errors.IsNotFound(err) {
-			if err := r.client.Create(ctx, defaultClusterBinding); err != nil {
-				return fmt.Errorf("failed to create the RBAC ClusterRoleBinding: %v", err)
-			}
-			klog.V(2).Infof("Created a new ClusterRoleBinding %s", defaultClusterBinding.Name)
-			return nil
-		}
-		return err
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{creator}, "", r); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
-	// compare cluster role bindings with default. If don't match update for default
-	if !ClusterRoleBindingMatches(clusterRoleBinding, defaultClusterBinding) {
-		if err := r.client.Update(ctx, defaultClusterBinding); err != nil {
-			return fmt.Errorf("failed to update the RBAC ClusterRoleBinding: %v", err)
-		}
-		klog.V(2).Infof("Updated the ClusterColeBinding %s", defaultClusterBinding.Name)
-	}
 	return nil
 }
