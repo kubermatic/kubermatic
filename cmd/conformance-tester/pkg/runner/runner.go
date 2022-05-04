@@ -543,6 +543,15 @@ func (r *TestRunner) testCluster(
 		log.Errorf("failed to verify security context for control plane pods: %v", err)
 	}
 
+	// Check telemetry is working
+	if err := util.JUnitWrapper("[KKP] Test telemetry", report, func() error {
+		return util.RetryN(maxTestAttempts, func(attempt int) error {
+			return tests.TestTelemetry(ctx, log, r.opts)
+		})
+	}); err != nil {
+		log.Errorf("failed to verify telemetry is working: %v", err)
+	}
+
 	log.Info("All tests completed.")
 
 	return nil
