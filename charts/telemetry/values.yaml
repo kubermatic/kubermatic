@@ -42,3 +42,13 @@ telemetry:
     requests:
       cpu: "0.5"
       memory: 100Mi
+
+  # the URL telemetry reports are sent to
+  targetURL: https://telemetry.k8c.io/api/v1
+
+  # arguments for the reporter container
+  reporterArgs:
+    - http
+    - --client-uuid=$(CLIENT_UUID)
+    - --url=$(URL)
+    - --record-dir=$(RECORD_DIR)
