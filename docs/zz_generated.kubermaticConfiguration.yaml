@@ -455,17 +455,9 @@ spec:
         provider: ""
         # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
         version: 1.23.*
-      - condition: always
-        operation: CREATE
-        provider: vsphere
-        version: 1.24.*
-      - condition: externalCloudProvider
+      - condition: nonAMD64WithCanalAndIPVS
         operation: UPGRADE
-        provider: vsphere
-        version: 1.24.*
-      - condition: externalCloudProvider
-        operation: SUPPORT
-        provider: vsphere
+        provider: ""
         version: 1.24.*
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
@@ -505,6 +497,8 @@ spec:
         to: 1.23.*
       - from: 1.23.*
         to: 1.23.*
+      - from: 1.24.*
+        to: 1.24.*
     # Versions lists the available versions.
     versions:
       - v1.21.8
@@ -512,6 +506,7 @@ spec:
       - v1.22.5
       - v1.22.7
       - v1.23.5
+      - v1.24.0
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
