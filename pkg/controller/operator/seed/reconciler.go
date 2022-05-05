@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -107,14 +108,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	// get pre-constructed seed client
-	seedClient, exists := r.seedClients[seedName]
+	seedClient, exists := r.seedClients[seed.Name]
 	if !exists {
 		log.Debug("ignoring request for existing but uninitialized seed; the controller will be reloaded once the kubeconfig is available")
 		return nil
 	}
 
 	// get pre-constructed seed client
-	seedRecorder := r.seedRecorders[seedName]
+	seedRecorder := r.seedRecorders[seed.Name]
 
 	// find the owning KubermaticConfiguration
 	config, err := getKubermaticConfigurationForNamespace(ctx, r.masterClient, r.namespace, log)
@@ -133,7 +134,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	// into the seed cluster.
 	seedCopy := &kubermaticv1.Seed{}
 	name := types.NamespacedName{
-		Name:      seedName,
+		Name:      seed.Name,
 		Namespace: r.namespace,
 	}
 
@@ -141,9 +142,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		if kerrors.IsNotFound(err) {
 			err = errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
 
-			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seedName, err))
+			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seed.Name, err))
 			r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
 			seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
+
+			if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingSkipped", err.Error()); err != nil {
+				log.Errorw("Failed to update seed status", zap.Error(err))
+			}
+
 			return err
 		}
 
@@ -157,10 +163,19 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
 	if err := r.reconcileResources(ctx, defaulted, seedCopy, seedClient, log); err != nil {
-		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seedName, err))
+		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seed.Name, err))
 		r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+
+		if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingError", err.Error()); err != nil {
+			log.Errorw("Failed to update seed status", zap.Error(err))
+		}
+
 		return err
+	}
+
+	if err := r.setSeedCondition(ctx, seed, corev1.ConditionTrue, "ReconcilingSuccess", ""); err != nil {
+		log.Errorw("Failed to update seed status", zap.Error(err))
 	}
 
 	return nil
@@ -253,6 +268,12 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	return kubernetes.TryRemoveFinalizer(ctx, client, seed, common.CleanupFinalizer)
+}
+
+func (r *Reconciler) setSeedCondition(ctx context.Context, seed *kubermaticv1.Seed, status corev1.ConditionStatus, reason string, message string) error {
+	return kubermaticv1helper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
+		kubermaticv1helper.SetSeedCondition(s, kubermaticv1.SeedConditionResourcesReconciled, status, reason, message)
+	})
 }
 
 func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {

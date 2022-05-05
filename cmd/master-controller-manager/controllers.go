@@ -34,6 +34,7 @@ import (
 	projectsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
+	seedstatuscontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-status-controller"
 	seedsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-sync"
 	serviceaccount "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/serviceaccount-projectbinding-controller"
 	userprojectbinding "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding"
@@ -98,6 +99,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := serviceaccount.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
+	}
+	if err := seedstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.versions); err != nil {
+		return fmt.Errorf("failed to create seed status controller: %w", err)
 	}
 	if err := seedsync.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter, ctrlCtx.seedsGetter); err != nil {
 		return fmt.Errorf("failed to create seedsync controller: %w", err)

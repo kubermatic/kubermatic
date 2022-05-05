@@ -48,7 +48,7 @@ type Reconciler struct {
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := r.log.With("seed", request.Name)
-	logger.Info("Reconciling seed cluster")
+	logger.Debug("Reconciling")
 
 	seed := &kubermaticv1.Seed{}
 	if err := r.Get(ctx, request.NamespacedName, seed); err != nil {
