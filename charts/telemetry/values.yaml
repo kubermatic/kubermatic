@@ -23,17 +23,17 @@ telemetry:
   kubermaticAgent:
     image:
       repository: quay.io/kubermatic/telemetry-agent
-      tag: "v0.2.0"
+      tag: "v0.2.2"
 
   kubernetesAgent:
     image:
       repository: quay.io/kubermatic/telemetry-agent
-      tag: "v0.2.0"
+      tag: "v0.2.2"
 
   reporter:
     image:
       repository: quay.io/kubermatic/telemetry-agent
-      tag: "v0.2.0"
+      tag: "v0.2.2"
 
   resources:
     limits:
