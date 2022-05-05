@@ -16,9 +16,9 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: {{ .Release.Name }}-job
-  namespace:  {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
-  schedule:  {{ .Values.telemetry.schedule }}
+  schedule: {{ .Values.telemetry.schedule | quote }}
   jobTemplate:
     spec:
       template:
@@ -65,15 +65,12 @@ spec:
               command:
                 - reporter
               args:
-                - "http"
-                - "--client-uuid=$(CLIENT_UUID)"
-                - "--url=$(URL)"
-                - "--record-dir=$(RECORD_DIR)"
+                {{- toYaml .Values.telemetry.reporterArgs | nindent 16 }}
               env:
                 - name: RECORD_DIR
                   value: "/records"
                 - name: URL
-                  value: "https://telemetry.k8c.io/api/v1"
+                  value: {{ .Values.telemetry.targetURL | quote }}
                 - name: CLIENT_UUID
                   valueFrom:
                     secretKeyRef:
