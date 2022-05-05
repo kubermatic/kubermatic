@@ -862,6 +862,8 @@ items:
   kind: Addon
   metadata:
     name: kubelet-configmap
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
