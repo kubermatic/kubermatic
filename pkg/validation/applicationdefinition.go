@@ -72,7 +72,7 @@ func validateSemverRange(v string, f *field.Path) *field.Error {
 func ValidateApplicationDefinitionWithOpenAPI(ad appskubermaticv1.ApplicationDefinition, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	v, err := openapi.NewValidatorForType(&ad.TypeMeta)
+	v, err := openapi.NewValidatorForObject(&ad)
 	if err != nil {
 		allErrs = append(allErrs, field.InternalError(nil, fmt.Errorf("could not create OpenAPI Validator: %w", err)))
 		return allErrs

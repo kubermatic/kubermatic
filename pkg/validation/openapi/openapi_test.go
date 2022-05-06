@@ -20,13 +20,20 @@ import (
 	"strings"
 	"testing"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
+	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func TestValidatorFromCRD(t *testing.T) {
 	const v1crdMultiversion = `
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -91,7 +98,6 @@ spec:
       storage: true
 `
 	const v1crdSingleversion = `
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -131,47 +137,6 @@ spec:
       storage: true
 `
 
-	const v1beta1crd = `
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: samples.kubermatic.k8c.io
-spec:
-  group: kubermatic.k8c.io
-  names:
-    kind: Sample
-    listKind: SampleList
-    plural: Samples
-    singular: Sample
-  scope: Cluster
-  validation:
-    openAPIV3Schema:
-      description: ""
-      properties:
-        apiVersion:
-          description: ""
-          type: string
-        kind:
-          description: ""
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: spec
-          properties:
-            val1:
-              description: val1
-              type: string
-              enum:
-                - valid1
-    type: object
-  versions:
-    - name: v1
-      served: true
-      storage: true
-`
-
 	type sampleSpec struct {
 		Val1 string `json:"val1"`
 	}
@@ -191,84 +156,68 @@ spec:
 		expErr       bool
 	}{
 		"valid v1 sample": {
-			v1crdMultiversion,
-			"sample",
-			"kubermatic.k8c.io/v1",
-			"valid1",
-			0,
-			false,
+			crd:          v1crdMultiversion,
+			saKind:       "sample",
+			saAPIVersion: "kubermatic.k8c.io/v1",
+			saVal:        "valid1",
+			expValErrs:   0,
+			expErr:       false,
 		},
 		"valid v1 sample singleVersion": {
-			v1crdSingleversion,
-			"sample",
-			"kubermatic.k8c.io/v1",
-			"valid1",
-			0,
-			false,
+			crd:          v1crdSingleversion,
+			saKind:       "sample",
+			saAPIVersion: "kubermatic.k8c.io/v1",
+			saVal:        "valid1",
+			expValErrs:   0,
+			expErr:       false,
 		},
 		"invalid v1 sample": {
-			v1crdMultiversion,
-			"sample",
-			"kubermatic.k8c.io/v1",
-			"valid2",
-			1,
-			false,
+			crd:          v1crdMultiversion,
+			saKind:       "sample",
+			saAPIVersion: "kubermatic.k8c.io/v1",
+			saVal:        "valid2",
+			expValErrs:   1,
+			expErr:       false,
 		},
 		"invalid v1 sample singleVersion": {
-			v1crdSingleversion,
-			"sample",
-			"kubermatic.k8c.io/v1",
-			"valid2",
-			1,
-			false,
+			crd:          v1crdSingleversion,
+			saKind:       "sample",
+			saAPIVersion: "kubermatic.k8c.io/v1",
+			saVal:        "valid2",
+			expValErrs:   1,
+			expErr:       false,
 		},
 		"valid v2 sample": {
-			v1crdMultiversion,
-			"sample",
-			"kubermatic.k8c.io/v2",
-			"valid2",
-			0,
-			false,
+			crd:          v1crdMultiversion,
+			saKind:       "sample",
+			saAPIVersion: "kubermatic.k8c.io/v2",
+			saVal:        "valid2",
+			expValErrs:   0,
+			expErr:       false,
 		},
 		"unsupported APIVersion": {
-			v1crdMultiversion,
-			"sample",
-			"kubermatic.k8c.io/vInvalid",
-			"valid1",
-			0,
-			true,
-		},
-		"valid global validation sample": {
-			v1beta1crd,
-			"sample",
-			"kubermatic.k8c.io/v1",
-			"valid1",
-			0,
-			false,
-		},
-		"invalid global validation sample": {
-			v1beta1crd,
-			"sample",
-			"kubermatic.k8c.io/v1",
-			"valid2",
-			1,
-			false,
+			crd:          v1crdMultiversion,
+			saKind:       "sample",
+			saAPIVersion: "kubermatic.k8c.io/vInvalid",
+			saVal:        "valid1",
+			expValErrs:   0,
+			expErr:       true,
 		},
 		"empty desired version": {
-			v1crdMultiversion,
-			"sample",
-			"",
-			"",
-			0,
-			true,
+			crd:          v1crdMultiversion,
+			saKind:       "sample",
+			saAPIVersion: "",
+			saVal:        "",
+			expValErrs:   0,
+			expErr:       true,
 		},
 		"unsupported crd version": {
-			"apiVersion: apiextensions.k8s.io/vinvalid\nkind: CustomResourceDefinition",
-			"sample",
-			"kubermatic.k8c.io/v1",
-			"valid1",
-			0,
-			true,
+			crd:          "apiVersion: apiextensions.k8s.io/vinvalid\nkind: CustomResourceDefinition",
+			saKind:       "sample",
+			saAPIVersion: "kubermatic.k8c.io/v1",
+			saVal:        "valid1",
+			expValErrs:   0,
+			expErr:       true,
 		},
 	}
 
@@ -279,51 +228,71 @@ spec:
 				Spec:     sampleSpec{Val1: tc.saVal},
 			}
 
-			v, err := NewValidatorFromCRD(strings.NewReader(tc.crd), s.GetObjectKind().GroupVersionKind().Version)
-			res := validation.ValidateCustomResource(nil, s, v)
-
-			if tc.expValErrs != len(res) {
-				t.Errorf("Exp Errorlist length to be %d, got %d", tc.expValErrs, len(res))
+			u := &unstructured.Unstructured{}
+			dec := yaml.NewYAMLOrJSONDecoder(strings.NewReader(tc.crd), 1024)
+			if err := dec.Decode(u); err != nil {
+				t.Fatal(err)
 			}
 
+			crd := &apiextensionsv1.CustomResourceDefinition{}
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), crd); err != nil {
+				t.Fatal(err)
+			}
+
+			v, err := NewValidatorForCRD(crd, s.GetObjectKind().GroupVersionKind().Version)
 			if err != nil && !tc.expErr {
-				t.Errorf("Exp err to be nil, but got %q", err)
+				t.Fatalf("Exp err to be nil, but got %q", err)
+			}
+
+			res := validation.ValidateCustomResource(nil, s, v)
+			if tc.expValErrs != len(res) {
+				t.Errorf("Exp Errorlist length to be %d, got %d", tc.expValErrs, len(res))
 			}
 		})
 	}
 }
 
-func TestValidatorForType(t *testing.T) {
+func TestValidatorForObject(t *testing.T) {
 	tt := map[string]struct {
-		in           *metav1.TypeMeta
+		in           runtime.Object
 		expValidator bool
 		expErr       bool
 	}{
 		"k8c.io crd": {
-			&metav1.TypeMeta{Kind: "Cluster", APIVersion: "kubermatic.k8c.io/v1"},
-			true,
-			false,
+			in: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kubermatic.k8c.io/v1",
+					Kind:       "Cluster",
+				},
+			},
+			expValidator: true,
+			expErr:       false,
 		},
 		"apps.k8c.io crd": {
-			&metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"},
-			true,
-			false,
+			in: &appskubermaticv1.ApplicationDefinition{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "apps.kubermatic.k8c.io/v1",
+					Kind:       "ApplicationDefinition",
+				},
+			},
+			expValidator: true,
+			expErr:       false,
 		},
 		"invalid kind": {
-			&metav1.TypeMeta{Kind: "Invalid", APIVersion: "kubermatic.k8c.io/v1"},
-			false,
-			true,
-		},
-		"invalid apiversion": {
-			&metav1.TypeMeta{Kind: "Cluster", APIVersion: "Invalid"},
-			false,
-			true,
+			in: &corev1.Pod{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Pod",
+				},
+			},
+			expValidator: false,
+			expErr:       true,
 		},
 	}
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			res, err := NewValidatorForType(tc.in)
+			res, err := NewValidatorForObject(tc.in)
 
 			if res != nil {
 				if tc.expValidator && res.Schema == nil {

@@ -19,38 +19,33 @@ package applications
 import (
 	"fmt"
 
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"sigs.k8s.io/yaml"
 )
 
 // ApplicationInstallationCRDCreator returns the ApplicationInstallation CRD definition.
 func ApplicationInstallationCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.ApplicationInstallationCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			f, err := openapi.Efs.ReadFile(resources.ApplicationInstallationCRDFilePath)
+		return resources.ApplicationInstallationCRDName, func(crdObj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			c, err := crd.CRDForObject(&appkubermaticv1.ApplicationDefinition{})
 			if err != nil {
-				return nil, fmt.Errorf("failed to get crd file: %w", err)
+				return nil, fmt.Errorf("failed to get CRD: %w", err)
 			}
 
-			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			if err := yaml.UnmarshalStrict(f, &fileCRD); err != nil {
-				return nil, err
-			}
+			crdObj.Labels = c.Labels
+			crdObj.Annotations = c.Annotations
+			crdObj.Spec = c.Spec
 
-			crd.Labels = fileCRD.Labels
-			crd.Annotations = fileCRD.Annotations
-			crd.Spec = fileCRD.Spec
-
-			if fileCRD.Spec.Conversion == nil {
+			if c.Spec.Conversion == nil {
 				// reconcile fails if conversion is not set as it's set by default to None
-				crd.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+				crdObj.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
 			}
 
-			return crd, nil
+			return crdObj, nil
 		}
 	}
 }
