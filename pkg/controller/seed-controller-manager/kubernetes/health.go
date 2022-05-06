@@ -45,8 +45,13 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.ApiserverDeploymentName:             {healthStatus: &extendedHealth.Apiserver, minReady: 1},
 		resources.ControllerManagerDeploymentName:     {healthStatus: &extendedHealth.Controller, minReady: 1},
 		resources.SchedulerDeploymentName:             {healthStatus: &extendedHealth.Scheduler, minReady: 1},
-		resources.OpenVPNServerDeploymentName:         {healthStatus: &extendedHealth.OpenVPN, minReady: 1},
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
+	}
+
+	if r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+		healthMapping[resources.KonnectivityDeploymentName] = &depInfo{healthStatus: extendedHealth.Konnectivity, minReady: 1}
+	} else {
+		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: extendedHealth.OpenVPN, minReady: 1}
 	}
 
 	for name := range healthMapping {

@@ -55,6 +55,7 @@ func init() {
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
+	up := kubermaticv1.HealthStatusUp
 	return kubermaticv1.ExtendedClusterHealth{
 		Apiserver:                    kubermaticv1.HealthStatusUp,
 		ApplicationController:        kubermaticv1.HealthStatusUp,
@@ -62,7 +63,7 @@ func healthy() kubermaticv1.ExtendedClusterHealth {
 		Controller:                   kubermaticv1.HealthStatusUp,
 		MachineController:            kubermaticv1.HealthStatusUp,
 		Etcd:                         kubermaticv1.HealthStatusUp,
-		OpenVPN:                      kubermaticv1.HealthStatusUp,
+		OpenVPN:                      &up,
 		CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 		UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 	}
