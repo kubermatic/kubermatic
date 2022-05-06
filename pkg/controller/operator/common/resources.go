@@ -22,6 +22,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 const (
@@ -100,6 +101,23 @@ func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcili
 			return createSecretData(s, map[string]string{
 				corev1.DockerConfigJsonKey: cfg.Spec.ImagePullSecret,
 			}), nil
+		}
+	}
+}
+
+func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			obj.Labels = crd.Labels
+			obj.Annotations = crd.Annotations
+			obj.Spec = crd.Spec
+
+			if crd.Spec.Conversion == nil {
+				// reconcile fails if conversion is not set as it's set by default to None
+				obj.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+			}
+
+			return obj, nil
 		}
 	}
 }
