@@ -8,12 +8,6 @@
 .env
 .idea
 .kubeconfig
-/client-gen
-/codecgen_binary
-/deepcopy-gen
-/defaulter-gen
-/kubermatic-api
-/kubermatic-cluster-controller
 /reports
 /vendor
 _artifacts/*
