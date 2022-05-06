@@ -17,35 +17,25 @@ limitations under the License.
 package applications
 
 import (
-	"fmt"
-
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 // ApplicationInstallationCRDCreator returns the ApplicationInstallation CRD definition.
-func ApplicationInstallationCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func ApplicationInstallationCRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.ApplicationInstallationCRDName, func(crdObj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			c, err := crd.CRDForObject(&appkubermaticv1.ApplicationDefinition{})
-			if err != nil {
-				return nil, fmt.Errorf("failed to get CRD: %w", err)
-			}
+		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			obj.Labels = crd.Labels
+			obj.Annotations = crd.Annotations
+			obj.Spec = crd.Spec
 
-			crdObj.Labels = c.Labels
-			crdObj.Annotations = c.Annotations
-			crdObj.Spec = c.Spec
-
-			if c.Spec.Conversion == nil {
+			if crd.Spec.Conversion == nil {
 				// reconcile fails if conversion is not set as it's set by default to None
-				crdObj.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+				obj.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
 			}
 
-			return crdObj, nil
+			return obj, nil
 		}
 	}
 }

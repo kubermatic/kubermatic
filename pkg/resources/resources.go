@@ -459,9 +459,6 @@ const (
 
 	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
-
-	// ApplicationInstallationCRDName defines the CRD name for application installation objects.
-	ApplicationInstallationCRDName = "applicationinstallations.apps.kubermatic.k8c.io"
 )
 
 const (
