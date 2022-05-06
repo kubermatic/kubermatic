@@ -229,9 +229,15 @@ groups:
           message: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubecpuovercommit
         expr: |
-          sum(namespace_cpu:kube_pod_container_resource_requests:sum{%(ignoringOverprovisionedWorkloadSelector)s}) - (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"})) > 0
-            and
-          (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"})) > 0
+          sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
+            -
+          (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"}))
+            > 0
+          and
+          (sum(kube_node_status_allocatable{resource="cpu"})
+            -
+          max(kube_node_status_allocatable{resource="cpu"}))
+            > 0
         for: 10m
         labels:
           severity: warning
@@ -256,9 +262,15 @@ groups:
           message: Cluster has overcommitted memory resource requests for Pods by {{ $value }} bytes and cannot tolerate node failure.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubememovercommit
         expr: |
-          sum(namespace_memory:kube_pod_container_resource_requests:sum{%(ignoringOverprovisionedWorkloadSelector)s}) - (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"})) > 0
-            and
-          (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"})) > 0
+          sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
+            -
+          (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"}))
+            > 0
+          and
+          (sum(kube_node_status_allocatable{resource="memory"})
+            -
+          max(kube_node_status_allocatable{resource="memory"}))
+            > 0
         for: 10m
         labels:
           severity: warning
