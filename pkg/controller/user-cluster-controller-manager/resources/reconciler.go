@@ -596,7 +596,12 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 }
 
 func (r *reconciler) reconcileCRDs(ctx context.Context) error {
-	c, err := crd.CRDForObject(&appkubermaticv1.ApplicationDefinition{})
+	c, err := crd.CRDForObject(&appkubermaticv1.ApplicationDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: appkubermaticv1.SchemeGroupVersion.String(),
+			Kind:       "ApplicationDefinition",
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to get ApplicationDefinition CRD: %w", err)
 	}
