@@ -49,7 +49,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 
 	if r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
-		healthMapping[resources.KonnectivityDeploymentName] = &depInfo{healthStatus: extendedHealth.Konnectivity, minReady: 1}
+		healthMapping[resources.KonnectivityDeploymentName] = &depInfo{healthStatus: &extendedHealth.Apiserver, minReady: 1} // because konnectivity server is in apiserver pod
 	} else {
 		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: extendedHealth.OpenVPN, minReady: 1}
 	}
