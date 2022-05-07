@@ -156,6 +156,12 @@ func CreateEndpoint(
 	return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), nil
 }
 
+func makeClusterName() string {
+	alpha := "abcdefghijklmnopqrstuvwxyz"
+	r := rand.Intn(len(alpha))
+	return fmt.Sprintf("%c%s", alpha[r], rand.String(9))
+}
+
 func GenerateCluster(
 	ctx context.Context,
 	projectID string,
@@ -229,7 +235,7 @@ func GenerateCluster(
 	}
 
 	// Generate the name here so that it can be used below.
-	partialCluster.Name = rand.String(10)
+	partialCluster.Name = makeClusterName()
 
 	// Serialize initial machine deployment request into annotation if it is in the body and provider different than
 	// BringYourOwn was selected. The request will be transformed into machine deployment by the controller once cluster
