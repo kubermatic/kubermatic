@@ -774,8 +774,6 @@ func TestReconcile(t *testing.T) {
 				},
 			}
 
-			up := kubermaticv1.HealthStatusUp
-
 			if tt.healthy {
 				cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 					Apiserver:                    kubermaticv1.HealthStatusUp,
@@ -784,7 +782,7 @@ func TestReconcile(t *testing.T) {
 					Controller:                   kubermaticv1.HealthStatusUp,
 					MachineController:            kubermaticv1.HealthStatusUp,
 					Etcd:                         kubermaticv1.HealthStatusUp,
-					OpenVPN:                      &up,
+					OpenVPN:                      kubermaticv1.HealthStatusUp,
 					CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 					UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 				}

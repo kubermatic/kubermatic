@@ -181,8 +181,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed to create testcluster: %v", err)
 	}
 
-	up := kubermaticv1.HealthStatusUp
-
 	testCluster.Status = kubermaticv1.ClusterStatus{
 		UserEmail:              "test@example.com",
 		CloudMigrationRevision: 2,
@@ -193,7 +191,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			Controller:                   kubermaticv1.HealthStatusUp,
 			MachineController:            kubermaticv1.HealthStatusUp,
 			Etcd:                         kubermaticv1.HealthStatusUp,
-			OpenVPN:                      &up,
+			OpenVPN:                      kubermaticv1.HealthStatusUp,
 			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 		},
