@@ -272,7 +272,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 	)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			if externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status != kubermaticv1.StatusError {
+			if externalCluster.Status.Condition.Status != kubermaticv1.ConditionStatusError {
 				if currentVersion != wantedVersion {
 					log.Debugw("Upgrading kubeone cluster", "from", currentVersion, "to", wantedVersion)
 					if err := r.upgradeCluster(ctx, log, externalCluster); err != nil {
@@ -304,7 +304,7 @@ func (r *reconciler) checkPodStatus(ctx context.Context, log *zap.SugaredLogger,
 	for pod.Status.Phase == corev1.PodSucceeded {
 		oldexternalCluster := externalCluster.DeepCopy()
 		// update kubeone externalcluster status.
-		externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusRunning
+		externalCluster.Status.Condition.Status = kubermaticv1.ConditionStatusRunning
 
 		if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 			return fmt.Errorf("failed to add kubeconfig reference to %s: %w", externalCluster.Name, err)
@@ -317,9 +317,9 @@ func (r *reconciler) checkPodStatus(ctx context.Context, log *zap.SugaredLogger,
 	if pod.Status.Phase == corev1.PodFailed {
 		upgradeErr := fmt.Sprintf("Failed to upgrade kubeone cluster %s", externalCluster.Name)
 		oldexternalCluster := externalCluster.DeepCopy()
-		externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus = kubermaticv1.KubeOneExternalClusterStatus{
-			Status:        kubermaticv1.StatusError,
-			StatusMessage: upgradeErr,
+		externalCluster.Status.Condition = kubermaticv1.ExternalClusterCondition{
+			Status:  kubermaticv1.ConditionStatusError,
+			Message: upgradeErr,
 		}
 		if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 			return fmt.Errorf("failed to update kubeone cluster status %s: %w", externalCluster.Name, err)
@@ -353,9 +353,9 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 		if generatedPod.Status.Phase == corev1.PodFailed {
 			importErr := fmt.Sprintf("Failed to import kubeone cluster %s, see Pod %s/%s logs for more details", externalCluster.Name, KubeOneKubeconfigPod, generatedPod.Namespace)
 			oldexternalCluster := externalCluster.DeepCopy()
-			externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus = kubermaticv1.KubeOneExternalClusterStatus{
-				Status:        kubermaticv1.StatusError,
-				StatusMessage: importErr,
+			externalCluster.Status.Condition = kubermaticv1.ExternalClusterCondition{
+				Status:  kubermaticv1.ConditionStatusError,
+				Message: importErr,
 			}
 			if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 				return fmt.Errorf("failed to update kubeone cluster status %s: %w", externalCluster.Name, err)
@@ -411,7 +411,7 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 	}
 	log.Debug("Kubeconfig reference created!")
 	// update kubeone externalcluster status.
-	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusRunning
+	externalCluster.Status.Condition.Status = kubermaticv1.ConditionStatusRunning
 
 	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		return fmt.Errorf("failed to add kubeconfig reference to %s: %w", externalCluster.Name, err)
@@ -740,7 +740,7 @@ func (r *reconciler) upgradeCluster(ctx context.Context, log *zap.SugaredLogger,
 	log.Debug("Waiting kubeone upgrade to complete...")
 	oldexternalCluster := externalCluster.DeepCopy()
 	// update kubeone externalcluster status.
-	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusReconciling
+	externalCluster.Status.Condition.Status = kubermaticv1.ConditionStatusReconciling
 
 	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		return fmt.Errorf("failed to add kubeconfig reference to %s: %w", externalCluster.Name, err)

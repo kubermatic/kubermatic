@@ -221,17 +221,6 @@ spec:
                     type: object
                   kubeone:
                     properties:
-                      clusterStatus:
-                        description: KubeOneExternalClusterStatus defines the kubeone
-                          external cluster status.
-                        properties:
-                          status:
-                            type: string
-                          statusMessage:
-                            type: string
-                        required:
-                        - status
-                        type: object
                       credentialsReference:
                         description: GlobalObjectKeySelector is needed as we can not
                           use v1.SecretKeySelector because it is not cross namespace
@@ -359,7 +348,6 @@ spec:
                             type: string
                         type: object
                     required:
-                    - clusterStatus
                     - credentialsReference
                     - manifestReference
                     - providerName
@@ -411,6 +399,24 @@ spec:
                 type: object
             required:
             - humanReadableName
+            type: object
+          status:
+            description: ExternalClusterStatus denotes status information about an
+              ExternalCluster.
+            properties:
+              conditions:
+                description: Conditions contains conditions an externalcluster is
+                  in, its primary use case is status signaling for controller
+                properties:
+                  message:
+                    description: Human readable message indicating details about last
+                      transition.
+                    type: string
+                  status:
+                    type: string
+                required:
+                - status
+                type: object
             type: object
         type: object
     served: true

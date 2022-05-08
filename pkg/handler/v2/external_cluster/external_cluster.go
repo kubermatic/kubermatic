@@ -980,7 +980,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster := convertClusterToAPI(internalCluster)
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
-
+	kubeOneCondtion := internalCluster.Status.Condition
 	if cloud == nil {
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
@@ -1019,8 +1019,8 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		}
 		if cloud.KubeOne != nil {
 			kubeoneStatus := &apiv2.ExternalClusterStatus{
-				State:         apiv2.ExternalClusterState(cloud.KubeOne.ClusterStatus.Status),
-				StatusMessage: cloud.KubeOne.ClusterStatus.StatusMessage,
+				State:         apiv2.ExternalClusterState(kubeOneCondtion.Status),
+				StatusMessage: kubeOneCondtion.Message,
 			}
 			apiCluster.Status = *kubeoneStatus
 		}
