@@ -87,6 +87,14 @@ func NewTestClient(token string, t *testing.T) *TestClient {
 	}
 }
 
+func (r *TestClient) GetKKPAPIClient() *apiclient.KubermaticKubernetesPlatformAPI {
+	return r.client
+}
+
+func (r *TestClient) GetBearerToken() runtime.ClientAuthInfoWriter {
+	return r.bearerToken
+}
+
 // CreateProject creates a new project and waits for it to become active (ready).
 func (r *TestClient) CreateProject(name string, ignoredStatusCodes ...int) (*apiv1.Project, error) {
 	before := time.Now()

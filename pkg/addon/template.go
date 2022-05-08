@@ -139,10 +139,6 @@ func NewTemplateData(
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
 				Version: cluster.Spec.CNIPlugin.Version,
-				CiliumOptions: &CiliumOptions{
-					ClusterID:   "20",
-					ClusterName: "something",
-				},
 			},
 			CSI: csiOptions,
 			MLA: MLASettings{
@@ -222,15 +218,9 @@ type ClusterNetwork struct {
 	NodeCIDRMaskSizeIPv6 int32
 }
 
-type CiliumOptions struct {
-	ClusterID   string
-	ClusterName string
-}
-
 type CNIPlugin struct {
-	Type          string
-	Version       string
-	CiliumOptions *CiliumOptions
+	Type    string
+	Version string
 }
 
 type MLASettings struct {

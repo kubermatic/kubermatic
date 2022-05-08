@@ -41,15 +41,17 @@ const (
 )
 
 var (
-	userconfig string
-	ipFamily   string
-	skipNodes  bool
+	userconfig          string
+	ipFamily            string
+	skipNodes           bool
+	skipHostNetworkPods bool
 )
 
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
 	flag.StringVar(&ipFamily, "ipFamily", "IPv4", "IP family")
 	flag.BoolVar(&skipNodes, "skipNodes", true, "Set false to test nodes")
+	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", true, "Set false to test pods in host network")
 }
 
 func TestClusterIPFamily(t *testing.T) {
@@ -71,10 +73,10 @@ func TestClusterIPFamily(t *testing.T) {
 		t.Fatalf("failed to create usercluster client: %s", err)
 	}
 
-	testUserCluster(t, userclusterClient, util.IPFamily(ipFamily), skipNodes)
+	testUserCluster(t, userclusterClient, util.IPFamily(ipFamily), skipNodes, skipHostNetworkPods)
 }
 
-func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFamily util.IPFamily, skipNodes bool) {
+func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFamily util.IPFamily, skipNodes, skipHostNetworkPods bool) {
 	t.Logf("testing with IP family: %q", ipFamily)
 	ctx := context.Background()
 
@@ -113,6 +115,10 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 		}
 
 		for _, pod := range pods.Items {
+			if pod.Spec.HostNetwork && skipHostNetworkPods {
+				t.Logf("skipping host network pod: %s", pod.Name)
+				continue
+			}
 			var podAddrs []string
 			for _, addr := range pod.Status.PodIPs {
 				podAddrs = append(podAddrs, addr.IP)
