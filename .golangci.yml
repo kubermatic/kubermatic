@@ -109,3 +109,5 @@ linters-settings:
         alias: apiextensionsv1
       - pkg: k8s.io/apimachinery/pkg/api/errors
         alias: apierrors
+      - pkg: k8s.io/apimachinery/pkg/util/errors
+        alias: kerrors
