@@ -58,7 +58,7 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{"../../../validation/openapi/crd/k8c.io"},
+		CRDDirectoryPaths:     []string{"../../../crd/k8c.io"},
 		ErrorIfCRDPathMissing: true,
 	}
 
