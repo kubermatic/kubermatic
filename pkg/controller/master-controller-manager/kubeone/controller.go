@@ -233,7 +233,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 		return reconcile.Result{}, err
 	}
 
-	clusterStatus := externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status
+	clusterStatus := externalCluster.Status.Condition.Status
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(r.ImpersonationClient, r.Client)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -273,8 +273,8 @@ func (r *reconciler) initiateImportAction(ctx context.Context, log *zap.SugaredL
 				return err
 			}
 			// update kubeone externalcluster status.
-			if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.KubeOneExternalClusterStatus{
-				Status: kubermaticv1.StatusRunning,
+			if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
+				Status: kubermaticv1.ConditionStatusRunning,
 			}); err != nil {
 				return err
 			}
@@ -303,9 +303,9 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 	for generatedPod.Status.Phase != corev1.PodSucceeded {
 		if generatedPod.Status.Phase == corev1.PodFailed {
 			importErr := fmt.Sprintf("failed to import kubeone cluster, see Pod %s/%s logs for more details", KubeOneImportPod, generatedPod.Namespace)
-			if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.KubeOneExternalClusterStatus{
-				Status:        kubermaticv1.StatusError,
-				StatusMessage: importErr,
+			if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
+				Status:  kubermaticv1.ConditionStatusError,
+				Message: importErr,
 			}); err != nil {
 				return err
 			}
@@ -345,7 +345,7 @@ func (r *reconciler) initiateUpgradeAction(ctx context.Context,
 	externalCluster *kubermaticv1.ExternalCluster,
 	externalClusterProvider *kubernetesprovider.ExternalClusterProvider,
 	currentManifest []byte,
-	clusterStatus kubermaticv1.Status,
+	clusterStatus kubermaticv1.ConditionStatus,
 ) (*corev1.Pod, error) {
 	upgradePod := &corev1.Pod{}
 	version, err := externalClusterProvider.GetVersion(ctx, externalCluster)
@@ -357,7 +357,7 @@ func (r *reconciler) initiateUpgradeAction(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	if clusterStatus != kubermaticv1.StatusRunning || currentVersion == wantedVersion {
+	if clusterStatus != kubermaticv1.ConditionStatusRunning || currentVersion == wantedVersion {
 		return nil, nil
 	}
 	err = r.Get(ctx, ctrlruntimeclient.ObjectKey{
@@ -381,8 +381,8 @@ func (r *reconciler) initiateUpgradeAction(ctx context.Context,
 		return nil, err
 	}
 	// update kubeone externalcluster status.
-	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.KubeOneExternalClusterStatus{
-		Status: kubermaticv1.StatusReconciling,
+	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
+		Status: kubermaticv1.ConditionStatusReconciling,
 	}); err != nil {
 		return nil, err
 	}
@@ -395,7 +395,7 @@ func (r *reconciler) initiateMigrateAction(ctx context.Context,
 	externalCluster *kubermaticv1.ExternalCluster,
 	externalClusterProvider *kubernetesprovider.ExternalClusterProvider,
 	currentManifest []byte,
-	clusterStatus kubermaticv1.Status,
+	clusterStatus kubermaticv1.ConditionStatus,
 ) (*corev1.Pod, error) {
 	currentContainerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, externalCluster, externalClusterProvider)
 	if err != nil {
@@ -407,7 +407,7 @@ func (r *reconciler) initiateMigrateAction(ctx context.Context,
 	}
 	pod := &corev1.Pod{}
 
-	if clusterStatus != kubermaticv1.StatusRunning || currentContainerRuntime == wantedContainerRuntime || wantedContainerRuntime == "" || wantedContainerRuntime != resources.ContainerRuntimeContainerd {
+	if clusterStatus != kubermaticv1.ConditionStatusRunning || currentContainerRuntime == wantedContainerRuntime || wantedContainerRuntime != resources.ContainerRuntimeContainerd {
 		return nil, nil
 	}
 
@@ -433,8 +433,8 @@ func (r *reconciler) initiateMigrateAction(ctx context.Context,
 		return nil, err
 	}
 	// update kubeone externalcluster status.
-	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.KubeOneExternalClusterStatus{
-		Status: kubermaticv1.StatusReconciling,
+	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
+		Status: kubermaticv1.ConditionStatusReconciling,
 	}); err != nil {
 		return nil, err
 	}
@@ -491,9 +491,9 @@ func returnWantedContainerRuntime(currentManifest []byte) (string, error) {
 
 func (r *reconciler) updateClusterStatus(ctx context.Context,
 	externalCluster *kubermaticv1.ExternalCluster,
-	status kubermaticv1.KubeOneExternalClusterStatus) error {
+	status kubermaticv1.ExternalClusterCondition) error {
 	oldexternalCluster := externalCluster.DeepCopy()
-	externalCluster.Spec.CloudSpec.KubeOne.ClusterStatus = status
+	externalCluster.Status.Condition = status
 	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		r.log.Debugf("failed to update external cluster status %w", err)
 		return err
@@ -510,8 +510,8 @@ func (r *reconciler) checkPodStatus(ctx context.Context,
 	log.Debugw("Checking kubeone pod status", "Pod", pod.Name)
 	if pod.Status.Phase == corev1.PodSucceeded {
 		// update kubeone externalcluster status.
-		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.KubeOneExternalClusterStatus{
-			Status: kubermaticv1.StatusRunning,
+		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
+			Status: kubermaticv1.ConditionStatusRunning,
 		}); err != nil {
 			return err
 		}
@@ -524,9 +524,9 @@ func (r *reconciler) checkPodStatus(ctx context.Context,
 		actionErr := fmt.Sprintf("failed to %s kubeone cluster, see Pod %s/%s logs for more details", action, pod.Name, pod.Namespace)
 		log.Debug(actionErr)
 		// update kubeone externalcluster status.
-		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.KubeOneExternalClusterStatus{
-			Status:        kubermaticv1.StatusError,
-			StatusMessage: actionErr,
+		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
+			Status:  kubermaticv1.ConditionStatusError,
+			Message: actionErr,
 		}); err != nil {
 			return err
 		}

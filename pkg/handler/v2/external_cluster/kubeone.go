@@ -75,7 +75,7 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	newCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusProvisioning
+	newCluster.Status.Condition.Status = kubermaticv1.ConditionStatusProvisioning
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
@@ -86,9 +86,8 @@ func patchKubeOneCluster(ctx context.Context,
 	secretKeySelector provider.SecretKeySelectorValueFunc,
 	clusterProvider provider.ExternalClusterProvider,
 	masterClient ctrlruntimeclient.Client) (*apiv2.ExternalCluster, error) {
-	kubeOneSpec := cluster.Spec.CloudSpec.KubeOne
-	operation := kubeOneSpec.ClusterStatus.Status
-	if operation == kubermaticv1.StatusReconciling {
+	operation := cluster.Status.Condition.Status
+	if operation == kubermaticv1.ConditionStatusReconciling {
 		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (%s) is in progress, please wait for it to finish before starting a new operation.", operation)
 	}
 
@@ -168,7 +167,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	manifest := kubeOneSpec.ManifestReference
 	wantedContainerRuntime := newCluster.Cloud.KubeOne.ContainerRuntime
 
-	if kubeOneSpec.ClusterStatus.Status == kubermaticv1.StatusReconciling {
+	if externalCluster.Status.Condition.Status == kubermaticv1.ConditionStatusReconciling {
 		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
 	}
 
