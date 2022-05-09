@@ -22,8 +22,8 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
-// ApplicationInstallationCRDCreator returns the ApplicationInstallation CRD definition.
-func ApplicationInstallationCRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionCreatorGetter {
+// CRDCreator returns a creator that will reconcile a CustomResourceDefition.
+func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			obj.Labels = crd.Labels

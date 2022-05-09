@@ -596,14 +596,14 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 }
 
 func (r *reconciler) reconcileCRDs(ctx context.Context) error {
-	c, err := crd.CRDForObject(&appkubermaticv1.ApplicationDefinition{
+	c, err := crd.CRDForObject(&appkubermaticv1.ApplicationInstallation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: appkubermaticv1.SchemeGroupVersion.String(),
-			Kind:       "ApplicationDefinition",
+			Kind:       "ApplicationInstallation",
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get ApplicationDefinition CRD: %w", err)
+		return fmt.Errorf("failed to get ApplicationInstallation CRD: %w", err)
 	}
 
 	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
@@ -611,7 +611,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
 		machinecontroller.ClusterCRDCreator(),
-		applications.ApplicationInstallationCRDCreator(c),
+		applications.CRDCreator(c),
 	}
 
 	if r.opaIntegration {
