@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -82,7 +82,7 @@ func GetNodeUpgrades(configGetter provider.KubermaticConfigurationGetter) endpoi
 			return nil, err
 		}
 
-		controlPlaneVersion, err := semver.NewVersion(req.ControlPlaneVersion)
+		controlPlaneVersion, err := semverlib.NewVersion(req.ControlPlaneVersion)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse control plane version: %w", err)
 		}
@@ -101,7 +101,7 @@ func GetNodeUpgrades(configGetter provider.KubermaticConfigurationGetter) endpoi
 	}
 }
 
-func filterIncompatibleVersions(possibleKubeletVersions []*version.Version, controlPlaneVersion *semver.Version) ([]*version.Version, error) {
+func filterIncompatibleVersions(possibleKubeletVersions []*version.Version, controlPlaneVersion *semverlib.Version) ([]*version.Version, error) {
 	var compatibleVersions []*version.Version
 	for _, v := range possibleKubeletVersions {
 		if err := nodeupdate.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -51,7 +51,7 @@ func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserIn
 
 	clusterVersion := cluster.Spec.Version.Semver()
 	for _, ver := range kubeletVersions {
-		kubeletVersion, parseErr := semver.NewVersion(ver)
+		kubeletVersion, parseErr := semverlib.NewVersion(ver)
 		if parseErr != nil {
 			return nil, fmt.Errorf("failed to parse kubelet version: %w", parseErr)
 		}

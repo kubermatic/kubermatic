@@ -26,7 +26,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -137,7 +137,7 @@ func Add(
 	}
 
 	var err error
-	if r.clusterSemVer, err = semver.NewVersion(r.version); err != nil {
+	if r.clusterSemVer, err = semverlib.NewVersion(r.version); err != nil {
 		return err
 	}
 	r.Client = mgr.GetClient()
@@ -277,7 +277,7 @@ type reconciler struct {
 	ctrlruntimeclient.Client
 	seedClient                   ctrlruntimeclient.Client
 	version                      string
-	clusterSemVer                *semver.Version
+	clusterSemVer                *semverlib.Version
 	cache                        cache.Cache
 	namespace                    string
 	clusterURL                   *url.URL

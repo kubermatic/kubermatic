@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
@@ -43,7 +43,7 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 				To:                  "1.6.0",
 				AutomaticNodeUpdate: true,
 			}},
-			expectedVersion: &Version{Version: semver.MustParse("1.6.0")},
+			expectedVersion: &Version{Version: semverlib.MustParse("1.6.0")},
 		},
 		{
 			name:                "Node compatibility check fails, error",
@@ -55,8 +55,8 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 				AutomaticNodeUpdate: true,
 			}},
 			expectedError: nodeupdate.VersionSkewError{
-				ControlPlane: semver.MustParse("1.5.0"),
-				Kubelet:      semver.MustParse("1.6.0"),
+				ControlPlane: semverlib.MustParse("1.5.0"),
+				Kubelet:      semverlib.MustParse("1.6.0"),
 			},
 		},
 	}
@@ -66,7 +66,7 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 			m := &Manager{
 				updates: tc.updates,
 				versions: []*Version{
-					{Version: semver.MustParse(tc.updates[0].To)},
+					{Version: semverlib.MustParse(tc.updates[0].To)},
 				},
 			}
 			version, err := m.AutomaticNodeUpdate(tc.fromVersion, tc.controlPlaneVersion)

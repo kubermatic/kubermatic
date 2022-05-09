@@ -128,3 +128,5 @@ linters-settings:
       # Misc
       - pkg: github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1
         alias: clusterv1alpha1
+      - pkg: github.com/Masterminds/semver/v3
+        alias: semverlib

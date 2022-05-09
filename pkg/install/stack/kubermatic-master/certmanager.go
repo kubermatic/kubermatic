@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/sirupsen/logrus"
@@ -80,8 +80,8 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	// if a pre-2.0 version of the chart is installed, we must perform a
 	// larger migration to bring the cluster from cert-manager 0.16 to 1.x
 	// (and its CRD from v1alpha2 to v1)
-	v2 := semver.MustParse("2.0.0")  // New CRDs - migration required
-	v21 := semver.MustParse("2.1.0") // Updated to use upstream chart - different label selectors
+	v2 := semverlib.MustParse("2.0.0")  // New CRDs - migration required
+	v21 := semverlib.MustParse("2.1.0") // Updated to use upstream chart - different label selectors
 
 	if release != nil && release.Version.LessThan(v2) && !chart.Version.LessThan(v2) {
 		if !opt.EnableCertManagerV2Migration {

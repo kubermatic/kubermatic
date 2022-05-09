@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -66,7 +66,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 
 	// if version older than 1.3.0 is installed, we must perform a migration
 	// by deleting the old deployment object for the controller
-	v13 := semver.MustParse("1.3.0")
+	v13 := semverlib.MustParse("1.3.0")
 	backupTS := time.Now().Format("2006-01-02T150405")
 
 	isUpgrading := false

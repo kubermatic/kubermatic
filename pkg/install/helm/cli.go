@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -161,7 +161,7 @@ func (c *cli) ListReleases(namespace string) ([]Release, error) {
 	return releases, nil
 }
 
-func guessChartName(fullChart string) (*semver.Version, string, error) {
+func guessChartName(fullChart string) (*semverlib.Version, string, error) {
 	parts := strings.Split(fullChart, "-")
 	if len(parts) == 1 {
 		return nil, "", fmt.Errorf("%q is too short to be <chart>-<version>", fullChart)
@@ -174,7 +174,7 @@ func guessChartName(fullChart string) (*semver.Version, string, error) {
 		versionString := strings.Join(parts, "-")
 
 		// have we found a valid version?
-		version, err := semver.NewVersion(versionString)
+		version, err := semverlib.NewVersion(versionString)
 		if err == nil {
 			return version, chartName, nil
 		}
@@ -217,7 +217,7 @@ func (c *cli) GetValues(namespace string, releaseName string) (*yamled.Document,
 	return yamled.Load(bytes.NewReader(output))
 }
 
-func (c *cli) Version() (*semver.Version, error) {
+func (c *cli) Version() (*semverlib.Version, error) {
 	// add --client to gracefully handle Helm 2 (Helm 3 ignores the flag, thankfully);
 	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
 	// Helm-2-style templating string "{{ .Client.SemVer }}"
@@ -231,7 +231,7 @@ func (c *cli) Version() (*semver.Version, error) {
 		out = "v2.99.99"
 	}
 
-	return semver.NewVersion(out)
+	return semverlib.NewVersion(out)
 }
 
 func (c *cli) run(namespace string, args ...string) ([]byte, error) {

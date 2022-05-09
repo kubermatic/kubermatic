@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -63,7 +63,7 @@ func (p *AdmissionPluginsProvider) ListPluginNamesFromVersion(ctx context.Contex
 	}
 
 	plugins := []string{}
-	v, err := semver.NewVersion(fromVersion)
+	v, err := semverlib.NewVersion(fromVersion)
 	if err != nil {
 		return nil, err
 	}

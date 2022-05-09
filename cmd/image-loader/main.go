@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -538,7 +538,7 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 	}
 
 	log.Debug("Filtering versions")
-	constraint, err := semver.NewConstraint(versionFilter)
+	constraint, err := semverlib.NewConstraint(versionFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version filter %q: %w", versionFilter, err)
 	}

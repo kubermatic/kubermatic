@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/pmezard/go-difflib/difflib"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -108,7 +108,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 
 type testCase struct {
 	provider string
-	version  semver.Version
+	version  semverlib.Version
 	features map[string]bool
 }
 
@@ -150,13 +150,13 @@ func (tc testCase) fixturePath(resType, resName string) string {
 func TestLoadFiles(t *testing.T) {
 	versions := []*version.Version{
 		{
-			Version: semver.MustParse("1.21.0"),
+			Version: semverlib.MustParse("1.21.0"),
 		},
 		{
-			Version: semver.MustParse("1.22.1"),
+			Version: semverlib.MustParse("1.22.1"),
 		},
 		{
-			Version: semver.MustParse("1.23.5"),
+			Version: semverlib.MustParse("1.23.5"),
 		},
 	}
 

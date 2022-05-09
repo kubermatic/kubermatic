@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 
@@ -431,7 +431,7 @@ func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string,
 
 // CreateAWSCluster creates cluster for AWS provider.
 func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone, proxyMode string, replicas int32, konnectivityEnabled bool, cniSettings *models.CNIPluginSettings) (*apiv1.Cluster, error) {
-	_, err := semver.NewVersion(version)
+	_, err := semverlib.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
@@ -506,7 +506,7 @@ func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, acce
 
 // CreateKubevirtCluster creates cluster for Kubevirt provider.
 func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
-	_, err := semver.NewVersion(version)
+	_, err := semverlib.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
@@ -576,7 +576,7 @@ func (r *TestClient) CreateKubevirtCluster(projectID, dc, name, credential, vers
 
 // CreateHetznerCluster creates cluster for Hetzner provider.
 func (r *TestClient) CreateHetznerCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
-	_, err := semver.NewVersion(version)
+	_, err := semverlib.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}
@@ -1680,7 +1680,7 @@ func (r *TestClient) DeleteConstraint(name string) error {
 
 // CreateClusterTemplate method creates cluster template object.
 func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, version, location string) (*apiv2.ClusterTemplate, error) {
-	_, err := semver.NewVersion(version)
+	_, err := semverlib.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
 	}

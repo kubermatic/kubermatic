@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -124,7 +124,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 		return nil, err
 	}
 
-	requestedKubeletVersion, err := semver.NewVersion(version.Version.String())
+	requestedKubeletVersion, err := semverlib.NewVersion(version.Version.String())
 	if err != nil {
 		return nil, utilerrors.NewBadRequest(err.Error())
 	}
@@ -160,7 +160,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 
 func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
 	for _, md := range mds {
-		kubeletVersion, err := semver.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
+		kubeletVersion, err := semverlib.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
 		if err != nil {
 			return false, err
 		}

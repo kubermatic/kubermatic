@@ -23,7 +23,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -102,10 +102,10 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 	return errs
 }
 
-func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfiguration) ([]*semver.Constraints, []error) {
+func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfiguration) ([]*semverlib.Constraints, []error) {
 	var errs []error
 
-	upgradeConstraints := []*semver.Constraints{}
+	upgradeConstraints := []*semverlib.Constraints{}
 
 	for i, update := range defaultedConfig.Spec.Versions.Updates {
 		// only consider automated updates, otherwise we might accept an unsupported
@@ -114,7 +114,7 @@ func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfigurat
 			continue
 		}
 
-		from, err := semver.NewConstraint(update.From)
+		from, err := semverlib.NewConstraint(update.From)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
 			continue
@@ -126,7 +126,7 @@ func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfigurat
 	return upgradeConstraints, errs
 }
 
-func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semver.Constraints) bool {
+func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semverlib.Constraints) bool {
 	// is this version still straight up supported?
 	for _, configured := range defaultedConfig.Spec.Versions.Versions {
 		if configured.Equal(&version) {

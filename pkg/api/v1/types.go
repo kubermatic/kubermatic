@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
@@ -790,8 +790,8 @@ type VersionList []MasterVersion
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
-	Version *semver.Version `json:"version"`
-	Default bool            `json:"default,omitempty"`
+	Version *semverlib.Version `json:"version"`
+	Default bool               `json:"default,omitempty"`
 
 	// If true, then given version control plane version is not compatible
 	// with one of the kubelets inside cluster and shouldn't be used.

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -163,7 +163,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 		return nil
 	}
 
-	lastUsedVersion, err := semver.NewVersion(currSnapshot.GetVersion(envoyresourcev3.ClusterType))
+	lastUsedVersion, err := semverlib.NewVersion(currSnapshot.GetVersion(envoyresourcev3.ClusterType))
 	if err != nil {
 		return fmt.Errorf("failed to parse version from last snapshot: %w", err)
 	}

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
@@ -464,7 +464,7 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion *semver.Version) (*exec.Cmd, error) {
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion *semverlib.Version) (*exec.Cmd, error) {
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine kubectl binary to use: %w", err)

@@ -19,7 +19,7 @@ package version
 import (
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
@@ -40,11 +40,11 @@ func TestAutomaticUpdate(t *testing.T) {
 			expectedVersion: "1.10.1",
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.10.0"),
+					Version: semverlib.MustParse("1.10.0"),
 					Default: false,
 				},
 				{
-					Version: semver.MustParse("1.10.1"),
+					Version: semverlib.MustParse("1.10.1"),
 					Default: true,
 				},
 			}, []*Update{
@@ -61,11 +61,11 @@ func TestAutomaticUpdate(t *testing.T) {
 			expectedVersion: "1.10.1",
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.10.0"),
+					Version: semverlib.MustParse("1.10.0"),
 					Default: false,
 				},
 				{
-					Version: semver.MustParse("1.10.1"),
+					Version: semverlib.MustParse("1.10.1"),
 					Default: true,
 				},
 			}, []*Update{
@@ -115,11 +115,11 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			provider: kubermaticv1.AWSCloudProvider,
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 					Default: true,
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 					Default: false,
 				},
 			}, nil,
@@ -132,10 +132,10 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 				}),
 			expectedVersions: []*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 				},
 			},
 		},
@@ -144,11 +144,11 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			provider: kubermaticv1.VSphereCloudProvider,
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 					Default: true,
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 					Default: false,
 				},
 			}, nil,
@@ -162,7 +162,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 				}),
 			expectedVersions: []*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 				},
 			},
 		},
@@ -172,11 +172,11 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			conditions: []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 					Default: true,
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 					Default: false,
 				},
 			}, nil,
@@ -190,7 +190,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 				}),
 			expectedVersions: []*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 				},
 			},
 		},
@@ -199,11 +199,11 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			provider: kubermaticv1.VSphereCloudProvider,
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 					Default: true,
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 					Default: false,
 				},
 			}, nil,
@@ -223,7 +223,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 				}),
 			expectedVersions: []*Version{
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 				},
 			},
 		},
@@ -280,11 +280,11 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 			fromVersion: "1.21.0",
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 					Default: true,
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 					Default: false,
 				},
 			}, []*Update{
@@ -303,7 +303,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 			}),
 			expectedVersions: []*Version{
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 				},
 			},
 		},
@@ -314,11 +314,11 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 					Default: true,
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 					Default: false,
 				},
 			}, []*Update{
@@ -343,11 +343,11 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 			fromVersion: "1.21.0",
 			manager: New([]*Version{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 					Default: true,
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 					Default: false,
 				},
 			}, []*Update{
@@ -365,7 +365,7 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 			}),
 			expectedVersions: []*Version{
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 				},
 			},
 		},

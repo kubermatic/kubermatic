@@ -20,13 +20,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 )
 
 // VersionSkewError denotes an error condition where a given kubelet/controlplane version pair is not supported.
 type VersionSkewError struct {
-	ControlPlane *semver.Version
-	Kubelet      *semver.Version
+	ControlPlane *semverlib.Version
+	Kubelet      *semverlib.Version
 }
 
 // Error returns a string representation of the error.
@@ -42,7 +42,7 @@ var _ error = VersionSkewError{}
 
 // EnsureVersionCompatible checks whether the given kubelet version
 // is deemed compatible with the given version of the control plane.
-func EnsureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Version) error {
+func EnsureVersionCompatible(controlPlane *semverlib.Version, kubelet *semverlib.Version) error {
 	if controlPlane == nil {
 		return errors.New("ensureVersionCompatible: controlPlane is nil")
 	}

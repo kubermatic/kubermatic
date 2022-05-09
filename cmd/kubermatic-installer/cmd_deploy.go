@@ -24,7 +24,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -46,7 +46,7 @@ import (
 )
 
 var (
-	MinHelmVersion = semver.MustParse("v3.0.0")
+	MinHelmVersion = semverlib.MustParse("v3.0.0")
 )
 
 type DeployOptions struct {
