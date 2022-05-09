@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,7 +46,7 @@ func NewValidator(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *
 var _ admission.CustomValidator = &validator{}
 
 func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	machine, ok := obj.(*v1alpha1.Machine)
+	machine, ok := obj.(*clusterv1alpha1.Machine)
 	if !ok {
 		return errors.New("object is not a Machine")
 	}

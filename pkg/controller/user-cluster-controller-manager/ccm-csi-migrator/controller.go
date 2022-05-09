@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
@@ -77,7 +77,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 
 	// Watch for changes to Machines
 	if err = c.Watch(
-		&source.Kind{Type: &v1alpha1.Machine{}},
+		&source.Kind{Type: &clusterv1alpha1.Machine{}},
 		handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
 			return []reconcile.Request{
 				{
@@ -125,7 +125,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	machines := &v1alpha1.MachineList{}
+	machines := &clusterv1alpha1.MachineList{}
 	if err := r.userClient.List(ctx, machines); err != nil {
 		return fmt.Errorf("failed to list machines in user cluster: %w", err)
 	}

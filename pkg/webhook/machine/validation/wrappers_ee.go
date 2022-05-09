@@ -23,12 +23,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	eemachinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, machine *v1alpha1.Machine) error {
+func validateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine) error {
 	return eemachinevalidation.ValidateQuota(ctx, log, seedClient, machine)
 }

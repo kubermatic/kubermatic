@@ -22,7 +22,6 @@ import (
 
 	"github.com/Azure/go-autorest/autorest/to"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -259,7 +258,7 @@ func getKubeOneMachineDeployments(ctx context.Context, cluster *kubermaticv1.Ext
 	return mdList, nil
 }
 
-func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *clusterv1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
 	currentVersion := oldmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	desiredVersion := newmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredVersion != currentVersion {

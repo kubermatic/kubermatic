@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -42,14 +42,14 @@ func TestReconcile(t *testing.T) {
 	testCases := []struct {
 		name                     string
 		clusterName              string
-		machines                 []*v1alpha1.Machine
+		machines                 []*clusterv1alpha1.Machine
 		userCluster              *kubermaticv1.Cluster
 		expectedClusterCondition *kubermaticv1.ClusterCondition
 	}{
 		{
 			name:        "Machines not migrate",
 			clusterName: "clusterNotToMigrate",
-			machines: []*v1alpha1.Machine{
+			machines: []*clusterv1alpha1.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "Machine",
@@ -69,7 +69,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:        "Some machines migrated",
 			clusterName: "clusterToMigrate",
-			machines: []*v1alpha1.Machine{
+			machines: []*clusterv1alpha1.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "migratedMachine",
@@ -98,7 +98,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:        "All machines migrated",
 			clusterName: "clusterToMigrate",
-			machines: []*v1alpha1.Machine{
+			machines: []*clusterv1alpha1.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "migratedMachine1",
@@ -136,7 +136,7 @@ func TestReconcile(t *testing.T) {
 
 			scheme := runtime.NewScheme()
 			_ = kubermaticv1.AddToScheme(scheme)
-			_ = v1alpha1.AddToScheme(scheme)
+			_ = clusterv1alpha1.AddToScheme(scheme)
 
 			seedClientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme)
 			seedClientBuilder.WithObjects(tc.userCluster)
