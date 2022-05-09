@@ -112,7 +112,7 @@ func (c *clusterBackupCollector) collect(ctx context.Context, ch chan<- promethe
 		return nil
 	}
 
-	var clusterList *kubermaticv1.ClusterList
+	clusterList := &kubermaticv1.ClusterList{}
 	if err := c.client.List(ctx, clusterList); err != nil {
 		return fmt.Errorf("failed to list clusters: %w", err)
 	}
@@ -171,8 +171,13 @@ func (c *clusterBackupCollector) setMetricsForCluster(ch chan<- prometheus.Metri
 
 	labelValues := []string{destName, clusterName}
 
+	lastModTimestamp := int64(0)
+	if lastMod := getLastModifiedTimestamp(clusterObjects); !lastMod.IsZero() {
+		lastModTimestamp = lastMod.Unix()
+	}
+
 	ch <- prometheus.MustNewConstMetric(c.ObjectCount, prometheus.GaugeValue, float64(len(clusterObjects)), labelValues...)
-	ch <- prometheus.MustNewConstMetric(c.ObjectLastModifiedDate, prometheus.GaugeValue, float64(getLastModifiedTimestamp(clusterObjects).UnixNano()), labelValues...)
+	ch <- prometheus.MustNewConstMetric(c.ObjectLastModifiedDate, prometheus.GaugeValue, float64(lastModTimestamp), labelValues...)
 	ch <- prometheus.MustNewConstMetric(c.EmptyObjectCount, prometheus.GaugeValue, float64(getEmptyObjectCount(clusterObjects)), labelValues...)
 }
 
@@ -182,7 +187,7 @@ func (c *clusterBackupCollector) getS3Client(ctx context.Context, destination *k
 		Namespace: destination.Credentials.Namespace,
 	}
 
-	var creds *corev1.Secret
+	creds := &corev1.Secret{}
 	if err := c.client.Get(ctx, key, creds); err != nil {
 		return nil, fmt.Errorf("failed to retrieve credentials secret: %w", err)
 	}
