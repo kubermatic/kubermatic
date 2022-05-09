@@ -1770,7 +1770,8 @@ func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string,
 // ListClusters method lists user clusters.
 func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
 	params := &project.ListClustersV2Params{
-		ProjectID: projectID,
+		ProjectID:                  projectID,
+		ShowDeploymentMachineCount: pointer.Bool(true),
 	}
 
 	SetupRetryParams(r.test, params, Backoff{
