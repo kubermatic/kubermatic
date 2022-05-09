@@ -43,7 +43,30 @@ type ExternalCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ExternalClusterSpec `json:"spec,omitempty"`
+	Spec   ExternalClusterSpec   `json:"spec"`
+	Status ExternalClusterStatus `json:"status,omitempty"`
+}
+
+// ExternalClusterStatus denotes status information about an ExternalCluster.
+type ExternalClusterStatus struct {
+	// Conditions contains conditions an externalcluster is in, its primary use case is status signaling for controller
+	Condition ExternalClusterCondition `json:"condition,omitempty"`
+}
+
+type ExternalClusterCondition struct {
+	Phase ExternalClusterPhase `json:"phase"`
+	// Human readable message indicating details about last transition.
+	Message string `json:"message,omitempty"`
+}
+
+type ExternalClusterKubeOneCloudSpec struct {
+	// ProviderName is the name of the cloud provider used, one of
+	// "aws", "azure", "digitalocean", "gcp",
+	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
+	ProviderName         string                                 `json:"providerName"`
+	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
+	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
 }
 
 // +kubebuilder:object:generate=true
@@ -74,46 +97,29 @@ type ExternalClusterCloudSpec struct {
 	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
 }
 
-type Status string
+type ExternalClusterPhase string
 
 const (
-	// StatusProvisioning status indicates the cluster is being imported.
-	StatusProvisioning Status = "Provisioning"
+	// ExternalClusterPhaseProvisioning status indicates the cluster is being imported.
+	ExternalClusterPhaseProvisioning ExternalClusterPhase = "Provisioning"
 
-	// StatusRunning status indicates the cluster is fully usable.
-	StatusRunning Status = "Running"
+	// ExternalClusterPhaseRunning status indicates the cluster is fully usable.
+	ExternalClusterPhaseRunning ExternalClusterPhase = "Running"
 
-	// StatusReconciling status indicates that some work is actively being done on the cluster, such as upgrading the master or
+	// ExternalClusterPhaseReconciling status indicates that some work is actively being done on the cluster, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
-	StatusReconciling Status = "Reconciling"
+	ExternalClusterPhaseReconciling ExternalClusterPhase = "Reconciling"
 
-	// StatusDeleting status indicates the cluster is being deleted.
-	StatusDeleting Status = "Deleting"
+	// ExternalClusterPhaseDeleting status indicates the cluster is being deleted.
+	ExternalClusterPhaseDeleting ExternalClusterPhase = "Deleting"
 
-	// StatusUnknown Not set.
-	StatusUnknown Status = "Unknown"
+	// ExternalClusterPhaseUnknown Not set.
+	ExternalClusterPhaseUnknown ExternalClusterPhase = "Unknown"
 
-	// StatusError status indicates the cluster is unusable. Details can be found in the
+	// ExternalClusterPhaseError status indicates the cluster is unusable. Details can be found in the
 	// `statusMessage` field.
-	StatusError Status = "Error"
+	ExternalClusterPhaseError ExternalClusterPhase = "Error"
 )
-
-// KubeOneExternalClusterStatus defines the kubeone external cluster status.
-type KubeOneExternalClusterStatus struct {
-	Status        Status `json:"status"`
-	StatusMessage string `json:"statusMessage,omitempty"`
-}
-
-type ExternalClusterKubeOneCloudSpec struct {
-	ClusterStatus KubeOneExternalClusterStatus `json:"clusterStatus"`
-	// ProviderName is the name of the cloud provider used, one of
-	// "aws", "azure", "digitalocean", "gcp",
-	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
-	ProviderName         string                                 `json:"providerName"`
-	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
-	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
-}
 
 type ExternalClusterGKECloudSpec struct {
 	Name                 string                                  `json:"name"`
