@@ -22,7 +22,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	api "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/watcher"
@@ -36,7 +36,7 @@ func WriteSettings(ctx context.Context, providers watcher.Providers, ws *websock
 		return
 	}
 
-	initialResponse, err := json.Marshal(api.GlobalSettings(initialSettings.Spec))
+	initialResponse, err := json.Marshal(apiv1.GlobalSettings(initialSettings.Spec))
 	if err != nil {
 		log.Logger.Debug(err)
 		return
@@ -50,10 +50,10 @@ func WriteSettings(ctx context.Context, providers watcher.Providers, ws *websock
 	unSub := providers.SettingsWatcher.Subscribe(func(settings interface{}) {
 		var response []byte
 		if settings != nil {
-			var externalSettings api.GlobalSettings
+			var externalSettings apiv1.GlobalSettings
 			internalSettings, ok := settings.(*kubermaticv1.KubermaticSetting)
 			if ok {
-				externalSettings = api.GlobalSettings(internalSettings.Spec)
+				externalSettings = apiv1.GlobalSettings(internalSettings.Spec)
 			} else {
 				log.Logger.Debug("cannot convert settings: %v", settings)
 			}

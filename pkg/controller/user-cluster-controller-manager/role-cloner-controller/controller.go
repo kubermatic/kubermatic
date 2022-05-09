@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -151,7 +151,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 }
 
 func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger, oldRole *rbacv1.Role, namespaces []string) error {
-	finalizer := kubermaticapiv1.UserClusterRoleCleanupFinalizer
+	finalizer := apiv1.UserClusterRoleCleanupFinalizer
 
 	if oldRole.DeletionTimestamp != nil {
 		if kuberneteshelper.HasFinalizer(oldRole, finalizer) {

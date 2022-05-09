@@ -27,7 +27,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -239,13 +239,13 @@ type terminalReq struct {
 	ClusterID string
 }
 
-func (req terminalReq) GetSeedCluster() v1.SeedCluster {
-	return v1.SeedCluster{
+func (req terminalReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
 }
 
-func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier, tokenExtractor auth.TokenExtractor) (*v1.User, error) {
+func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier, tokenExtractor auth.TokenExtractor) (*apiv1.User, error) {
 	token, err := tokenExtractor.Extract(req)
 	if err != nil {
 		return nil, err
@@ -265,8 +265,8 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 		return nil, utilerrors.NewNotAuthorized()
 	}
 
-	user := &v1.User{
-		ObjectMeta: v1.ObjectMeta{
+	user := &apiv1.User{
+		ObjectMeta: apiv1.ObjectMeta{
 			ID:   id,
 			Name: claims.Name,
 		},

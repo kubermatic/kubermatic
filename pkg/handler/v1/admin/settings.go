@@ -25,7 +25,7 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -40,7 +40,7 @@ func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endp
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return v1.GlobalSettings(globalSettings.Spec), nil
+		return apiv1.GlobalSettings(globalSettings.Spec), nil
 	}
 }
 
@@ -52,7 +52,7 @@ func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) e
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return v1.GlobalCustomLinks(globalSettings.Spec.CustomLinks), nil
+		return apiv1.GlobalCustomLinks(globalSettings.Spec.CustomLinks), nil
 	}
 }
 
@@ -90,7 +90,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return v1.GlobalSettings(globalSettings.Spec), nil
+		return apiv1.GlobalSettings(globalSettings.Spec), nil
 	}
 }
 

@@ -31,7 +31,7 @@ import (
 	"strings"
 	"testing"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
@@ -60,7 +60,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 		name                   string
 		reportName             string
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingAPIUser        *v1.User
+		existingAPIUser        *apiv1.User
 		httpStatus             int
 		expectedResponse       string
 	}{
@@ -155,7 +155,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 		reportName             string
 		body                   string
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingAPIUser        *v1.User
+		existingAPIUser        *apiv1.User
 		httpStatus             int
 		expectedResponse       string
 	}{
@@ -282,7 +282,7 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 		reportName             string
 		body                   string
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingAPIUser        *v1.User
+		existingAPIUser        *apiv1.User
 		httpStatus             int
 		expectedResponse       string
 	}{
@@ -378,7 +378,7 @@ func TestDeleteMeteringReportConfigEndpoint(t *testing.T) {
 		name                   string
 		reportName             string
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingAPIUser        *v1.User
+		existingAPIUser        *apiv1.User
 		httpStatus             int
 		expectedResponse       string
 	}{

@@ -22,7 +22,7 @@ import (
 	"context"
 	"net/http"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -41,7 +41,7 @@ func getMeteringReportConfiguration(_ provider.SeedsGetter, _ interface{}) (*kub
 	return nil, nil
 }
 
-func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]v1.MeteringReportConfiguration, error) {
+func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]apiv1.MeteringReportConfiguration, error) {
 	return nil, nil
 }
 
@@ -57,7 +57,7 @@ func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlr
 	return nil
 }
 
-func listMeteringReports(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func listMeteringReports(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) ([]apiv1.MeteringReport, error) {
 	return nil, nil
 }
 

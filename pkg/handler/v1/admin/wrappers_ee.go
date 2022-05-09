@@ -22,7 +22,7 @@ import (
 	"context"
 	"net/http"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -37,11 +37,11 @@ func createOrUpdateMeteringConfigurations(ctx context.Context, request interface
 	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
 }
 
-func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*v1.MeteringReportConfiguration, error) {
+func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*apiv1.MeteringReportConfiguration, error) {
 	return metering.GetMeteringReportConfiguration(seedsGetter, request)
 }
 
-func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]v1.MeteringReportConfiguration, error) {
+func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1.MeteringReportConfiguration, error) {
 	return metering.ListMeteringReportConfigurations(seedsGetter)
 }
 
@@ -57,7 +57,7 @@ func deleteMeteringReportConfiguration(ctx context.Context, request interface{},
 	return metering.DeleteMeteringReportConfiguration(ctx, request, masterClient)
 }
 
-func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]apiv1.MeteringReport, error) {
 	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
 }
 

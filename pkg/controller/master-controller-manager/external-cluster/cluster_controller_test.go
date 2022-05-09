@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -118,7 +118,7 @@ func genExternalCluster(name string, deletionTimestamp metav1.Time) *kubermaticv
 		},
 	}
 
-	kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(cluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 
 	cluster.Spec.KubeconfigReference = &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{

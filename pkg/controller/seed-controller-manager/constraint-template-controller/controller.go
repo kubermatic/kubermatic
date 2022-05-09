@@ -23,7 +23,7 @@ import (
 	v1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -134,7 +134,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, constraintTemplate *kubermaticv1.ConstraintTemplate) error {
 	if constraintTemplate.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
+		if !kuberneteshelper.HasFinalizer(constraintTemplate, apiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
 			return nil
 		}
 
@@ -151,10 +151,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return err
 		}
 
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, constraintTemplate, apiv1.GatekeeperConstraintTemplateCleanupFinalizer)
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, constraintTemplate, apiv1.GatekeeperConstraintTemplateCleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 

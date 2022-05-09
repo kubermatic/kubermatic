@@ -24,7 +24,7 @@ import (
 	"github.com/go-openapi/errors"
 	"go.uber.org/zap"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -85,7 +85,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(v1.InitialApplicationInstallationsRequestAnnotation, "", false)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(apiv1.InitialApplicationInstallationsRequestAnnotation, "", false)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
@@ -131,7 +131,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// there is no annotation anymore
-	request := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]
+	request := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]
 	if request == "" {
 		return nil, nil
 	}
@@ -175,7 +175,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, client ctrlruntimeclient.Client, application v1.Application, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, client ctrlruntimeclient.Client, application apiv1.Application, cluster *kubermaticv1.Cluster) error {
 	applicationInstallation := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
@@ -212,8 +212,8 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 	return nil
 }
 
-func (r *Reconciler) parseApplications(cluster *kubermaticv1.Cluster, request string) ([]v1.Application, error) {
-	var applications []v1.Application
+func (r *Reconciler) parseApplications(cluster *kubermaticv1.Cluster, request string) ([]apiv1.Application, error) {
+	var applications []apiv1.Application
 	if err := json.Unmarshal([]byte(request), &applications); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal initial Applications request: %w", err)
 	}
@@ -222,6 +222,6 @@ func (r *Reconciler) parseApplications(cluster *kubermaticv1.Cluster, request st
 
 func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	oldCluster := cluster.DeepCopy()
-	delete(cluster.Annotations, v1.InitialApplicationInstallationsRequestAnnotation)
+	delete(cluster.Annotations, apiv1.InitialApplicationInstallationsRequestAnnotation)
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

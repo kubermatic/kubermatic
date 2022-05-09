@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -73,7 +73,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
 			Annotations: map[string]string{
-				v1.InitialMachineDeploymentRequestAnnotation: annotation,
+				apiv1.InitialMachineDeploymentRequestAnnotation: annotation,
 			},
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
@@ -121,21 +121,21 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "vanilla case, create a MachineDeployment from the annotation",
 			cluster: func() *kubermaticv1.Cluster {
-				nd := v1.NodeDeployment{
-					ObjectMeta: v1.ObjectMeta{
+				nd := apiv1.NodeDeployment{
+					ObjectMeta: apiv1.ObjectMeta{
 						Name: "test",
 					},
-					Spec: v1.NodeDeploymentSpec{
+					Spec: apiv1.NodeDeploymentSpec{
 						Replicas: 1,
-						Template: v1.NodeSpec{
-							Versions: v1.NodeVersionInfo{
+						Template: apiv1.NodeSpec{
+							Versions: apiv1.NodeVersionInfo{
 								Kubelet: kubernetesVersion,
 							},
-							OperatingSystem: v1.OperatingSystemSpec{
-								Ubuntu: &v1.UbuntuSpec{},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{},
 							},
-							Cloud: v1.NodeCloudSpec{
-								Hetzner: &v1.HetznerNodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								Hetzner: &apiv1.HetznerNodeSpec{
 									Type:    "big",
 									Network: "test",
 								},
@@ -156,7 +156,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -181,7 +181,7 @@ func TestReconcile(t *testing.T) {
 					return errors.New("reconciling a bad annotation should have produced an error, but got nil")
 				}
 
-				if ann, ok := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]; ok {
 					return fmt.Errorf("bad annotation should be have been removed, but found %q on the cluster", ann)
 				}
 

@@ -24,7 +24,7 @@ import (
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -205,7 +205,7 @@ func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTe
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
-		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperConstraintTemplateCleanupFinalizer)
+		ct.Finalizers = append(ct.Finalizers, apiv1.GatekeeperConstraintTemplateCleanupFinalizer)
 	}
 
 	return ct

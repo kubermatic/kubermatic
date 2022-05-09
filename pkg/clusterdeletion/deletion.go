@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -62,8 +62,8 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	// If cleanup didn't finish we have to go back, because if there are controllers running
 	// inside the cluster and we delete the nodes, we get stuck.
 	if kuberneteshelper.HasAnyFinalizer(cluster,
-		kubermaticapiv1.InClusterLBCleanupFinalizer,
-		kubermaticapiv1.InClusterPVCleanupFinalizer) {
+		apiv1.InClusterLBCleanupFinalizer,
+		apiv1.InClusterPVCleanupFinalizer) {
 		return nil
 	}
 
@@ -81,7 +81,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	}
 
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
-	if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
+	if kuberneteshelper.HasFinalizer(cluster, apiv1.NodeDeletionFinalizer) {
 		return nil
 	}
 
@@ -89,7 +89,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	// finalizers, we need to ensure that the credentials are not removed until the cloud provider is cleaned
 	// up, or in other words, all other finalizers have been removed from the cluster, and the
 	// CredentialsSecretsCleanupFinalizer is the only finalizer left.
-	if kuberneteshelper.HasOnlyFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
+	if kuberneteshelper.HasOnlyFinalizer(cluster, apiv1.CredentialsSecretsCleanupFinalizer) {
 		if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
 			return err
 		}
@@ -101,8 +101,8 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	log = log.Named("in-cluster-resources")
 
-	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
-	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
+	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, apiv1.InClusterLBCleanupFinalizer)
+	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, apiv1.InClusterPVCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs {
@@ -149,5 +149,5 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		return nil
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.InClusterLBCleanupFinalizer, kubermaticapiv1.InClusterPVCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.InClusterLBCleanupFinalizer, apiv1.InClusterPVCleanupFinalizer)
 }

@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -86,7 +86,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(v1.InitialMachineDeploymentRequestAnnotation, "", false)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(apiv1.InitialMachineDeploymentRequestAnnotation, "", false)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
@@ -126,7 +126,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// there is no annotation anymore
-	request := cluster.Annotations[v1.InitialMachineDeploymentRequestAnnotation]
+	request := cluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
 	if request == "" {
 		return nil, nil
 	}
@@ -163,8 +163,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster, request string) (*v1.NodeDeployment, error) {
-	var nodeDeployment *v1.NodeDeployment
+func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster, request string) (*apiv1.NodeDeployment, error) {
+	var nodeDeployment *apiv1.NodeDeployment
 	if err := json.Unmarshal([]byte(request), &nodeDeployment); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal initial MachineDeployment request: %w", err)
 	}
@@ -177,7 +177,7 @@ func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster, request 
 	return nodeDeployment, nil
 }
 
-func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDeployment *v1.NodeDeployment, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
+func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
 	datacenter, err := r.getTargetDatacenter(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get target datacenter: %w", err)
@@ -255,6 +255,6 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 
 func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	oldCluster := cluster.DeepCopy()
-	delete(cluster.Annotations, v1.InitialMachineDeploymentRequestAnnotation)
+	delete(cluster.Annotations, apiv1.InitialMachineDeploymentRequestAnnotation)
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -139,7 +139,7 @@ func generateProject(name string, deleted bool) *kubermaticv1.Project {
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		project.DeletionTimestamp = &deleteTime
-		project.Finalizers = append(project.Finalizers, v1.SeedProjectCleanupFinalizer)
+		project.Finalizers = append(project.Finalizers, apiv1.SeedProjectCleanupFinalizer)
 	}
 	return project
 }
