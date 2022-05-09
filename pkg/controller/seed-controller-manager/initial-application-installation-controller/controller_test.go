@@ -28,7 +28,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -53,7 +53,7 @@ const (
 )
 
 func init() {
-	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme.Scheme))
 }
 
@@ -142,7 +142,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
-				apps := appkubermaticv1.ApplicationInstallationList{}
+				apps := appskubermaticv1.ApplicationInstallationList{}
 				if err := userClusterClient.List(context.Background(), &apps); err != nil {
 					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
 				}
@@ -176,7 +176,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
-				apps := appkubermaticv1.ApplicationInstallationList{}
+				apps := appskubermaticv1.ApplicationInstallationList{}
 				if err := userClusterClient.List(context.Background(), &apps); err != nil {
 					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
 				}
@@ -293,7 +293,7 @@ func generateApplication(name string) v1.Application {
 			},
 			ApplicationRef: v1.ApplicationRef{
 				Name:    name,
-				Version: appkubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
 			},
 			Values: values,
 		},

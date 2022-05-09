@@ -19,7 +19,7 @@ package validation
 import (
 	"context"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -29,12 +29,12 @@ import (
 )
 
 // ValidateApplicationInstallationSpec validates the ApplicationInstallation Spec.
-func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntimeclient.Client, spec appkubermaticv1.ApplicationInstallationSpec) field.ErrorList {
+func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntimeclient.Client, spec appskubermaticv1.ApplicationInstallationSpec) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 
 	// Ensure that the referenced ApplicationDefinition exists
-	ad := &appkubermaticv1.ApplicationDefinition{}
+	ad := &appskubermaticv1.ApplicationDefinition{}
 	err := client.Get(ctx, types.NamespacedName{Name: spec.ApplicationRef.Name}, ad)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -62,7 +62,7 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 }
 
 // ValidateApplicationInstallationUpdate validates the new ApplicationInstallation for immutable fields.
-func ValidateApplicationInstallationUpdate(ctx context.Context, client ctrlruntimeclient.Client, newAI, oldAI appkubermaticv1.ApplicationInstallation) field.ErrorList {
+func ValidateApplicationInstallationUpdate(ctx context.Context, client ctrlruntimeclient.Client, newAI, oldAI appskubermaticv1.ApplicationInstallation) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 

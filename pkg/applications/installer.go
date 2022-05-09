@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -34,10 +34,10 @@ import (
 // ApplicationInstaller handles the installation / uninstallation of an Application on the user cluster.
 type ApplicationInstaller interface {
 	// Apply function installs the application on the user-cluster and returns an error if the installation has failed; this is idempotent.
-	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appkubermaticv1.ApplicationInstallation) error
+	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
 
 	// Delete function uninstalls the application on the user-cluster and returns an error if the uninstallation has failed; this is idempotent.
-	Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appkubermaticv1.ApplicationInstallation) error
+	Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
 }
 
 // ApplicationManager handles the installation / uninstallation of an Application on the user-cluster.
@@ -45,7 +45,7 @@ type ApplicationManager struct {
 }
 
 // Apply creates the namespace where the application will be installed (if necessary) and installs the application.
-func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appkubermaticv1.ApplicationInstallation) error {
+func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	if err := a.reconcileNamespace(ctx, log, applicationInstallation, userClient); err != nil {
 		return err
 	}
@@ -54,13 +54,13 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 }
 
 // Delete uninstalls the application and deletes the namespace where the application was installed if necessary.
-func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appkubermaticv1.ApplicationInstallation) error {
+func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	// todo logic to uninstall application
 	return a.deleteNamespace(ctx, log, applicationInstallation, userClient)
 }
 
 // reconcileNamespace ensures namespace is created and has desired labels and annotations if applicationInstallation.Spec.Namespace.Create flag is set.
-func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.SugaredLogger, applicationInstallation *appkubermaticv1.ApplicationInstallation, userClient ctrlruntimeclient.Client) error {
+func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.SugaredLogger, applicationInstallation *appskubermaticv1.ApplicationInstallation, userClient ctrlruntimeclient.Client) error {
 	desiredNs := applicationInstallation.Spec.Namespace
 	if desiredNs.Create {
 		log.Infof("reconciling namespace '%s'", desiredNs.Name)
@@ -98,7 +98,7 @@ func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.Su
 }
 
 // deleteNamespace delete the namespace if applicationInstallation.Spec.Namespace.Create flag is set.
-func (a *ApplicationManager) deleteNamespace(ctx context.Context, log *zap.SugaredLogger, applicationInstallation *appkubermaticv1.ApplicationInstallation, userClient ctrlruntimeclient.Client) error {
+func (a *ApplicationManager) deleteNamespace(ctx context.Context, log *zap.SugaredLogger, applicationInstallation *appskubermaticv1.ApplicationInstallation, userClient ctrlruntimeclient.Client) error {
 	desiredNs := applicationInstallation.Spec.Namespace
 	if desiredNs.Create {
 		log.Infof("deleting namespace '%s'", desiredNs.Name)

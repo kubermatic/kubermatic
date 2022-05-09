@@ -23,7 +23,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,14 +42,14 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 	testCases := []struct {
 		name          string
 		userClient    ctrlruntimeclient.Client
-		namespaceSpec appkubermaticv1.NamespaceSpec
+		namespaceSpec appskubermaticv1.NamespaceSpec
 	}{
 		{
 			name: "scenario 1: when Namespace.create=true and no labels or annotations are defined then namespace should be cretated without labels or annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appkubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.NamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      nil,
@@ -61,7 +61,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appkubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.NamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      map[string]string{"label-1": "value-1", "label-2": "value-2"},
@@ -73,7 +73,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appkubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.NamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      nil,
@@ -85,7 +85,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appkubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.NamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      map[string]string{"label-1": "value-1", "label-2": "value-2"},
@@ -124,7 +124,7 @@ func TestApplicationManager_applyNamespaceDoNotCreateNsWhenCreateNamespaceFlagIs
 		NewClientBuilder().
 		Build()
 
-	namespaceSpec := appkubermaticv1.NamespaceSpec{
+	namespaceSpec := appskubermaticv1.NamespaceSpec{
 		Name:        "foo",
 		Create:      false,
 		Labels:      nil,
@@ -156,7 +156,7 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 			genNamespace(nsName), genNamespace(defaultNamespace)).
 		Build()
 
-	namespaceSpec := appkubermaticv1.NamespaceSpec{
+	namespaceSpec := appskubermaticv1.NamespaceSpec{
 		Name:        nsName,
 		Create:      false,
 		Labels:      nil,
@@ -216,7 +216,7 @@ func TestApplicationManager_deleteNamespace(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			app := genApplicationInstallation(appkubermaticv1.NamespaceSpec{
+			app := genApplicationInstallation(appskubermaticv1.NamespaceSpec{
 				Name:        nsName,
 				Create:      tc.createNamespace,
 				Labels:      nil,
@@ -272,20 +272,20 @@ func contains(actual map[string]string, expected map[string]string) error {
 	return nil
 }
 
-func genApplicationInstallation(namspaceSpec appkubermaticv1.NamespaceSpec) *appkubermaticv1.ApplicationInstallation {
-	return &appkubermaticv1.ApplicationInstallation{
+func genApplicationInstallation(namspaceSpec appskubermaticv1.NamespaceSpec) *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-",
 			Namespace:    defaultNamespace,
 		},
-		Spec: appkubermaticv1.ApplicationInstallationSpec{
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: namspaceSpec,
-			ApplicationRef: appkubermaticv1.ApplicationRef{
+			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    "applicationDef1",
-				Version: appkubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
 			},
 		},
-		Status: appkubermaticv1.ApplicationInstallationStatus{},
+		Status: appskubermaticv1.ApplicationInstallationStatus{},
 	}
 }
 

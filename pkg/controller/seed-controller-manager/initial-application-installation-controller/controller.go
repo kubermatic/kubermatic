@@ -25,7 +25,7 @@ import (
 	"go.uber.org/zap"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -176,20 +176,20 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, client ctrlruntimeclient.Client, application v1.Application, cluster *kubermaticv1.Cluster) error {
-	applicationInstallation := appkubermaticv1.ApplicationInstallation{
+	applicationInstallation := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
 			Namespace:   metav1.NamespaceSystem,
 			Annotations: application.Annotations,
 		},
-		Spec: appkubermaticv1.ApplicationInstallationSpec{
-			Namespace: appkubermaticv1.NamespaceSpec{
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.NamespaceSpec{
 				Name:        application.Spec.Namespace.Name,
 				Create:      application.Spec.Namespace.Create,
 				Labels:      application.Spec.Namespace.Labels,
 				Annotations: application.Spec.Namespace.Annotations,
 			},
-			ApplicationRef: appkubermaticv1.ApplicationRef{
+			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    application.Spec.ApplicationRef.Name,
 				Version: application.Spec.ApplicationRef.Version,
 			},

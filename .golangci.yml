@@ -96,6 +96,9 @@ linters-settings:
   importas:
     no-unaliased: true
     alias:
+      # KKP
+      - pkg: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1
+        alias: appskubermaticv1
       # Kubernetes
       - pkg: k8s.io/api/apps/v1
         alias: appsv1

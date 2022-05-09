@@ -19,7 +19,7 @@ package webhook
 import (
 	"fmt"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +44,7 @@ func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{appkubermaticv1.GroupName},
+					APIGroups: []string{appskubermaticv1.GroupName},
 					Resources: []string{"applicationdefinitions", "applicationdefinitions/status"},
 					Verbs: []string{
 						"get",

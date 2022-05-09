@@ -24,7 +24,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +45,7 @@ var (
 )
 
 func init() {
-	_ = appkubermaticv1.AddToScheme(testScheme)
+	_ = appskubermaticv1.AddToScheme(testScheme)
 }
 
 func TestValidateApplicationInsallation(t *testing.T) {
@@ -76,8 +76,8 @@ func TestValidateApplicationInsallation(t *testing.T) {
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
-						Group:   appkubermaticv1.GroupName,
-						Version: appkubermaticv1.GroupVersion,
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
 						Kind:    "ApplicationInstallation",
 					},
 					Name:   "default",
@@ -92,8 +92,8 @@ func TestValidateApplicationInsallation(t *testing.T) {
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
-						Group:   appkubermaticv1.GroupName,
-						Version: appkubermaticv1.GroupVersion,
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
 						Kind:    "ApplicationInstallation",
 					},
 					Name:   "default",
@@ -108,8 +108,8 @@ func TestValidateApplicationInsallation(t *testing.T) {
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Delete,
 					RequestKind: &metav1.GroupVersionKind{
-						Group:   appkubermaticv1.GroupName,
-						Version: appkubermaticv1.GroupVersion,
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
 						Kind:    "ApplicationInstallation",
 					},
 					Name:   "default",
@@ -124,8 +124,8 @@ func TestValidateApplicationInsallation(t *testing.T) {
 				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Update,
 					RequestKind: &metav1.GroupVersionKind{
-						Group:   appkubermaticv1.GroupName,
-						Version: appkubermaticv1.GroupVersion,
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
 						Kind:    "ApplicationInstallation",
 					},
 					Name:      "default",
@@ -158,14 +158,14 @@ func TestValidateApplicationInsallation(t *testing.T) {
 	}
 }
 
-func getApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinition {
-	return &appkubermaticv1.ApplicationDefinition{
+func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
+	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: appkubermaticv1.ApplicationDefinitionSpec{
+		Spec: appskubermaticv1.ApplicationDefinitionSpec{
 			Description: "Description",
-			Versions: []appkubermaticv1.ApplicationVersion{
+			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: defaultAppVersion,
 				},
@@ -174,26 +174,26 @@ func getApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 	}
 }
 
-func getApplicationInstallation(name string, appName string, appVersion string) *appkubermaticv1.ApplicationInstallation {
-	return &appkubermaticv1.ApplicationInstallation{
+func getApplicationInstallation(name string, appName string, appVersion string) *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "kube-system",
 		},
-		Spec: appkubermaticv1.ApplicationInstallationSpec{
-			Namespace: appkubermaticv1.NamespaceSpec{
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.NamespaceSpec{
 				Name:   "default",
 				Create: true,
 			},
-			ApplicationRef: appkubermaticv1.ApplicationRef{
+			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    appName,
-				Version: appkubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
 			},
 		},
 	}
 }
 
-func applicationInstallationToRawExt(ai appkubermaticv1.ApplicationInstallation) runtime.RawExtension {
+func applicationInstallationToRawExt(ai appskubermaticv1.ApplicationInstallation) runtime.RawExtension {
 	s := json.NewSerializer(json.DefaultMetaFactory, testScheme, testScheme, true)
 	buff := bytes.NewBuffer([]byte{})
 	_ = s.Encode(&ai, buff)
