@@ -78,7 +78,7 @@ func (e *s3Collector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *s3Collector) Collect(ch chan<- prometheus.Metric) {
-	var clusterList *kubermaticv1.ClusterList
+	clusterList := &kubermaticv1.ClusterList{}
 	if err := e.client.List(context.Background(), clusterList); err != nil {
 		e.logger.Errorw("Failed to list clusters", zap.Error(err))
 		ch <- prometheus.MustNewConstMetric(
