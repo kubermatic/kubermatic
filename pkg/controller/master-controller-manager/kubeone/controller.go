@@ -272,7 +272,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 	)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			if externalCluster.Status.Condition.Status != kubermaticv1.ConditionStatusError {
+			if externalCluster.Status.Condition.Phase != kubermaticv1.ExternalClusterPhaseError {
 				if currentVersion != wantedVersion {
 					log.Debugw("Upgrading kubeone cluster", "from", currentVersion, "to", wantedVersion)
 					if err := r.upgradeCluster(ctx, log, externalCluster); err != nil {
@@ -304,7 +304,7 @@ func (r *reconciler) checkPodStatus(ctx context.Context, log *zap.SugaredLogger,
 	for pod.Status.Phase == corev1.PodSucceeded {
 		oldexternalCluster := externalCluster.DeepCopy()
 		// update kubeone externalcluster status.
-		externalCluster.Status.Condition.Status = kubermaticv1.ConditionStatusRunning
+		externalCluster.Status.Condition.Phase = kubermaticv1.ExternalClusterPhaseRunning
 
 		if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 			return fmt.Errorf("failed to add kubeconfig reference to %s: %w", externalCluster.Name, err)
@@ -318,7 +318,7 @@ func (r *reconciler) checkPodStatus(ctx context.Context, log *zap.SugaredLogger,
 		upgradeErr := fmt.Sprintf("Failed to upgrade kubeone cluster %s", externalCluster.Name)
 		oldexternalCluster := externalCluster.DeepCopy()
 		externalCluster.Status.Condition = kubermaticv1.ExternalClusterCondition{
-			Status:  kubermaticv1.ConditionStatusError,
+			Phase:   kubermaticv1.ExternalClusterPhaseError,
 			Message: upgradeErr,
 		}
 		if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
@@ -354,7 +354,7 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 			importErr := fmt.Sprintf("Failed to import kubeone cluster %s, see Pod %s/%s logs for more details", externalCluster.Name, KubeOneKubeconfigPod, generatedPod.Namespace)
 			oldexternalCluster := externalCluster.DeepCopy()
 			externalCluster.Status.Condition = kubermaticv1.ExternalClusterCondition{
-				Status:  kubermaticv1.ConditionStatusError,
+				Phase:   kubermaticv1.ExternalClusterPhaseError,
 				Message: importErr,
 			}
 			if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
@@ -411,7 +411,7 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 	}
 	log.Debug("Kubeconfig reference created!")
 	// update kubeone externalcluster status.
-	externalCluster.Status.Condition.Status = kubermaticv1.ConditionStatusRunning
+	externalCluster.Status.Condition.Phase = kubermaticv1.ExternalClusterPhaseRunning
 
 	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		return fmt.Errorf("failed to add kubeconfig reference to %s: %w", externalCluster.Name, err)
@@ -740,7 +740,7 @@ func (r *reconciler) upgradeCluster(ctx context.Context, log *zap.SugaredLogger,
 	log.Debug("Waiting kubeone upgrade to complete...")
 	oldexternalCluster := externalCluster.DeepCopy()
 	// update kubeone externalcluster status.
-	externalCluster.Status.Condition.Status = kubermaticv1.ConditionStatusReconciling
+	externalCluster.Status.Condition.Phase = kubermaticv1.ExternalClusterPhaseReconciling
 
 	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		return fmt.Errorf("failed to add kubeconfig reference to %s: %w", externalCluster.Name, err)
