@@ -21,11 +21,11 @@ import (
 
 	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestValidateApplicationDefinition(t *testing.T) {
-	tm := v1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
+	tm := metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
 	cs := appkubermaticv1.ApplicationConstraints{K8sVersion: ">1.0.0", KKPVersion: ">1.0.0"}
 	helmv := appkubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appkubermaticv1.ApplicationTemplate{Method: "helm"}}
 	gitv := appkubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appkubermaticv1.ApplicationTemplate{Method: "helm"}}
