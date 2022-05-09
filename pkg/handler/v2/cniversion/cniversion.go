@@ -24,7 +24,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
@@ -50,7 +50,7 @@ func ListVersions() endpoint.Endpoint {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		return v2.CNIVersions{
+		return apiv2.CNIVersions{
 			CNIPluginType: req.CNIPluginType,
 			Versions:      versions.List(),
 		}, nil
@@ -103,7 +103,7 @@ func ListVersionsForCluster(userInfoGetter provider.UserInfoGetter, projectProvi
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		return v2.CNIVersions{
+		return apiv2.CNIVersions{
 			CNIPluginType: c.Spec.CNIPlugin.Type.String(),
 			Versions:      versions.List(),
 		}, nil

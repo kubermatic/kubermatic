@@ -24,7 +24,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -81,14 +81,14 @@ func GetNetworkDefaultsEndpoint() endpoint.Endpoint {
 		provider := kubermaticv1.ProviderType(req.ProviderName)
 		cni := kubermaticv1.CNIPluginType(req.CNIPluginType)
 
-		return v2.NetworkDefaults{
-			IPv4: &v2.NetworkDefaultsIPFamily{
+		return apiv2.NetworkDefaults{
+			IPv4: &apiv2.NetworkDefaultsIPFamily{
 				PodsCIDR:                resources.GetDefaultPodCIDRIPv4(provider),
 				ServicesCIDR:            resources.GetDefaultServicesCIDRIPv4(provider),
 				NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv4,
 				NodePortsAllowedIPRange: resources.IPv4MatchAnyCIDR,
 			},
-			IPv6: &v2.NetworkDefaultsIPFamily{
+			IPv6: &apiv2.NetworkDefaultsIPFamily{
 				PodsCIDR:                resources.DefaultClusterPodsCIDRIPv6,
 				ServicesCIDR:            resources.DefaultClusterServicesCIDRIPv6,
 				NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,

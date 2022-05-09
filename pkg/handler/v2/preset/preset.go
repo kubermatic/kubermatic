@@ -26,7 +26,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -65,7 +65,7 @@ func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
+		presetList := &apiv2.PresetList{Items: make([]apiv2.Preset, 0)}
 		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
@@ -227,7 +227,7 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
+		presetList := &apiv2.PresetList{Items: make([]apiv2.Preset, 0)}
 		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
 			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
@@ -268,7 +268,7 @@ type createPresetReq struct {
 	ProviderName string `json:"provider_name"`
 	// in: body
 	// required: true
-	Body v2.PresetBody
+	Body apiv2.PresetBody
 }
 
 // Validate validates createPresetReq request.
@@ -706,7 +706,7 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		stats := v2.PresetStats{}
+		stats := apiv2.PresetStats{}
 
 		seeds, err := seedsGetter()
 		if err != nil {
@@ -757,21 +757,21 @@ func mergePresets(oldPreset *kubermaticv1.Preset, newPreset *kubermaticv1.Preset
 	return oldPreset
 }
 
-func newAPIPreset(preset *kubermaticv1.Preset, enabled bool) v2.Preset {
-	providers := make([]v2.PresetProvider, 0)
+func newAPIPreset(preset *kubermaticv1.Preset, enabled bool) apiv2.Preset {
+	providers := make([]apiv2.PresetProvider, 0)
 	for _, providerType := range kubermaticv1.SupportedProviders {
 		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, providerType); hasProvider {
-			providers = append(providers, v2.PresetProvider{
+			providers = append(providers, apiv2.PresetProvider{
 				Name:    providerType,
 				Enabled: kubermaticv1helper.IsProviderEnabled(preset, providerType),
 			})
 		}
 	}
 
-	return v2.Preset{Name: preset.Name, Enabled: enabled, Providers: providers}
+	return apiv2.Preset{Name: preset.Name, Enabled: enabled, Providers: providers}
 }
 
-func convertAPIToInternalPreset(preset v2.PresetBody) *kubermaticv1.Preset {
+func convertAPIToInternalPreset(preset apiv2.PresetBody) *kubermaticv1.Preset {
 	return &kubermaticv1.Preset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: preset.Name,

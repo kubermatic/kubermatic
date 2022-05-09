@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -43,7 +43,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, err
 		}
 
-		var destinations v2.BackupDestinationNames
+		var destinations apiv2.BackupDestinationNames
 		if seed.Spec.EtcdBackupRestore == nil {
 			return destinations, nil
 		}
