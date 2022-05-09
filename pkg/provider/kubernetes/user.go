@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -93,11 +93,11 @@ func (p *UserProvider) UserByEmail(ctx context.Context, email string) (*kubermat
 // Thus decided to use sha256 as it produces fixed output and the hash collisions are very, very, very, very rare.
 func (p *UserProvider) CreateUser(ctx context.Context, id, name, email string) (*kubermaticv1.User, error) {
 	if len(id) == 0 || len(name) == 0 || len(email) == 0 {
-		return nil, kerrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
+		return nil, apierrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
 	}
 
 	if kubermaticv1helper.IsProjectServiceAccount(email) {
-		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
+		return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
 	}
 
 	user := &kubermaticv1.User{
@@ -147,10 +147,10 @@ func (p *UserProvider) UpdateUser(ctx context.Context, user *kubermaticv1.User) 
 
 func (p *UserProvider) InvalidateToken(ctx context.Context, user *kubermaticv1.User, token string, expiry apiv1.Time) error {
 	if user == nil {
-		return kerrors.NewBadRequest("user cannot be nil")
+		return apierrors.NewBadRequest("user cannot be nil")
 	}
 	if token == "" {
-		return kerrors.NewBadRequest("token cannot be empty")
+		return apierrors.NewBadRequest("token cannot be empty")
 	}
 
 	secret, err := ensureTokenBlacklistSecret(ctx, p.runtimeClient, user)
@@ -195,7 +195,7 @@ func (p *UserProvider) InvalidateToken(ctx context.Context, user *kubermaticv1.U
 func (p *UserProvider) GetInvalidatedTokens(ctx context.Context, user *kubermaticv1.User) ([]string, error) {
 	result := make([]string, 0)
 	if user == nil {
-		return nil, kerrors.NewBadRequest("user cannot be nil")
+		return nil, apierrors.NewBadRequest("user cannot be nil")
 	}
 	if user.Spec.InvalidTokensReference == nil {
 		return result, nil
@@ -233,7 +233,7 @@ func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Cl
 
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
-	if err := client.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+	if err := client.Get(ctx, namespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 	}
 

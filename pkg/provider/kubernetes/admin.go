@@ -24,7 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,7 +47,7 @@ var _ provider.AdminProvider = &AdminProvider{}
 func (a *AdminProvider) GetAdmins(ctx context.Context, userInfo *provider.UserInfo) ([]kubermaticv1.User, error) {
 	var adminList []kubermaticv1.User
 	if !userInfo.IsAdmin {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
 	users := &kubermaticv1.UserList{}
 	if err := a.client.List(ctx, users); err != nil {
@@ -66,10 +66,10 @@ func (a *AdminProvider) GetAdmins(ctx context.Context, userInfo *provider.UserIn
 // SetAdmin set/clear admin rights.
 func (a *AdminProvider) SetAdmin(ctx context.Context, userInfo *provider.UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error) {
 	if !userInfo.IsAdmin {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
 	if strings.EqualFold(userInfo.Email, email) {
-		return nil, kerrors.NewBadRequest("can not change own privileges")
+		return nil, apierrors.NewBadRequest("can not change own privileges")
 	}
 	userList := &kubermaticv1.UserList{}
 	if err := a.client.List(ctx, userList); err != nil {

@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
@@ -86,7 +86,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	icl := &kubermaticv1.ExternalCluster{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
 			return reconcile.Result{}, nil
 		}
@@ -214,7 +214,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
 	err := r.Get(ctx, name, secret)
 	// Its already gone
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return nil
 	}
 
@@ -309,7 +309,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: kubeconfigSecretName}
 
 	existingSecret := &corev1.Secret{}
-	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to probe for secret %v: %w", namespacedName, err)
 	}
 

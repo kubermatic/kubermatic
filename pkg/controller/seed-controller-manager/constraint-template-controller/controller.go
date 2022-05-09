@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	v1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -116,7 +116,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, constraintTemplate); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("constraint template not found, returning")
 			return reconcile.Result{}, nil
 		}

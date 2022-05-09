@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // CreateEndpoint defines an HTTP endpoint that creates a new project in the system.
@@ -311,7 +311,7 @@ func getAllProjectsForAdmin(ctx context.Context, userInfo *provider.UserInfo, pr
 }
 
 func isStatus(err error, status int32) bool {
-	var statusErr *kerrors.StatusError
+	var statusErr *apierrors.StatusError
 
 	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }

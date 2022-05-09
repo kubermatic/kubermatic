@@ -39,7 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -111,7 +111,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -180,7 +180,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	handleProviderError := func(err error) (*reconcile.Result, error) {
-		if kerrors.IsConflict(err) {
+		if apierrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
 			// processing without returning an error.
 			r.log.Infow("failed to run cloud provider", zap.Error(err))

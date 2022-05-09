@@ -30,7 +30,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -419,7 +419,7 @@ func TestDeleteToken(t *testing.T) {
 
 			// validate
 			_, err = target.Get(context.Background(), tc.userInfo, tc.tokenToDelete)
-			if !errors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
 				t.Fatalf("expected not found error")
 			}
 		})

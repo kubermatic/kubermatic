@@ -32,7 +32,7 @@ import (
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -234,8 +234,8 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("expected error status %s, instead got constraint: %v", tc.expectedGetErrStatus, reqLabel)
 				}
 
-				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
-					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
+				if tc.expectedGetErrStatus != apierrors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, apierrors.ReasonForError(err))
 				}
 				return
 			}

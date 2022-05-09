@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -104,7 +104,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, constraintTemplate); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("constraint template not found, returning")
 			return reconcile.Result{}, nil
 		}
@@ -132,7 +132,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 				},
 			})
 
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				log.Debug("constraint template not found, returning")
 				return nil
 			}

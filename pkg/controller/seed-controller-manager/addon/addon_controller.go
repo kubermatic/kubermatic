@@ -41,7 +41,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -178,7 +178,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	addon := &kubermaticv1.Addon{}
 	if err := r.Get(ctx, request.NamespacedName, addon); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -187,7 +187,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
 		// If it's not a NotFound err, return it
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		}
 

@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -133,7 +133,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Skipping because the cluster is already gone")
 			return reconcile.Result{}, nil
 		}
@@ -259,7 +259,7 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 		existingAddon := &kubermaticv1.Addon{}
 		err := r.Get(ctx, name, existingAddon)
 		if err != nil {
-			if !kerrors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
 				return fmt.Errorf("failed to get addon %q: %w", addon.Name, err)
 			}
 			if err := r.createAddon(ctx, addonLog, addon, cluster); err != nil {
@@ -315,7 +315,7 @@ func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, ad
 
 	// Swallow IsAlreadyExists, we have predictable names and our cache may not be
 	// up to date, leading us to think the addon wasn't installed yet.
-	if err := r.Create(ctx, &addon); err != nil && !kerrors.IsAlreadyExists(err) {
+	if err := r.Create(ctx, &addon); err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create addon: %w", err)
 	}
 
@@ -324,7 +324,7 @@ func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, ad
 	err := wait.Poll(10*time.Millisecond, 10*time.Second, func() (bool, error) {
 		err := r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}, &kubermaticv1.Addon{})
 		if err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return false, nil
 			}
 			return false, err
@@ -341,7 +341,7 @@ func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, ad
 func (r *Reconciler) deleteAddon(ctx context.Context, log *zap.SugaredLogger, addon kubermaticv1.Addon) error {
 	log.Infof("deleting addon %s from cluster %s", addon.Name, addon.Namespace)
 	err := r.Delete(ctx, &addon)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete addon %s from cluster %s: %w", addon.Name, addon.ClusterName, err)
 	}
 	return nil

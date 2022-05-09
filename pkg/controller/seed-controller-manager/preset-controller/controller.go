@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
@@ -88,7 +88,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	preset := &kubermaticv1.Preset{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, preset); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 

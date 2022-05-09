@@ -38,7 +38,7 @@ import (
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -186,7 +186,7 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 
 func createOrUpdateMeteringToolSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, secretData map[string][]byte) error {
 	existingSecret := &corev1.Secret{}
-	if err := seedClient.Get(ctx, secretNamespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+	if err := seedClient.Get(ctx, secretNamespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to probe for secret %q: %w", SecretName, err)
 	}
 

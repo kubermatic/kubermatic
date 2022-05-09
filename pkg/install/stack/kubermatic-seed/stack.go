@@ -34,7 +34,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -109,7 +109,7 @@ func (s *SeedStack) deployKubermatic(ctx context.Context, logger *logrus.Entry, 
 		},
 	}
 
-	if err := kubeClient.Create(ctx, ns); err != nil && !kerrors.IsAlreadyExists(err) {
+	if err := kubeClient.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create Namespace %s: %w", ns.Name, err)
 	}
 
@@ -142,7 +142,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		return nil
 	}
 
-	if !kerrors.IsNotFound(err) {
+	if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to check for StorageClass %s: %w", common.StorageClassName, err)
 	}
 

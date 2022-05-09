@@ -30,7 +30,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -112,7 +112,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	role := &rbacv1.Role{}
 	if err := r.client.Get(ctx, request.NamespacedName, role); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("role not found, returning")
 			return reconcile.Result{}, nil
 		}
@@ -162,7 +162,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 						Namespace: namespace,
 					},
 				}); err != nil {
-					if kerrors.IsNotFound(err) {
+					if apierrors.IsNotFound(err) {
 						continue
 					}
 					return fmt.Errorf("failed to delete Role in namespace %q: %w", namespace, err)

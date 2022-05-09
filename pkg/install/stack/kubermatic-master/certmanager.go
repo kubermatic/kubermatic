@@ -38,7 +38,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -214,7 +214,7 @@ func migrateCertManagerV2(
 		crd.Name = crdName(crdGVK)
 
 		if err := kubeClient.Delete(ctx, &crd); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				continue
 			}
 
@@ -260,7 +260,7 @@ func migrateCertManagerV2(
 		// only log errors, but continue, as the user can easily fix
 		// problems by using the YAML backup files
 		if err := kubeClient.Create(ctx, &object); err != nil {
-			if kerrors.IsAlreadyExists(err) {
+			if apierrors.IsAlreadyExists(err) {
 				logger.Warn("  already exists, please compare to backup")
 			} else {
 				logger.Errorf("  failed: %v", err)
@@ -359,7 +359,7 @@ func getSecretForCertificate(ctx context.Context, kubeClient ctrlruntimeclient.C
 		Name:      cert.Spec.SecretName,
 		Namespace: cert.Namespace,
 	}, secret); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
 
@@ -460,7 +460,7 @@ func deleteCertificate(ctx context.Context, kubeClient ctrlruntimeclient.Client,
 	}
 
 	if err := kubeClient.Get(ctx, key, cert); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

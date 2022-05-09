@@ -21,7 +21,7 @@ import (
 
 	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -37,7 +37,7 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 	ad := &appkubermaticv1.ApplicationDefinition{}
 	err := client.Get(ctx, types.NamespacedName{Name: spec.ApplicationRef.Name}, ad)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			allErrs = append(allErrs, field.NotFound(specPath.Child("applicationRef", "name"), spec.ApplicationRef.Name))
 		} else {
 			allErrs = append(allErrs, field.InternalError(specPath.Child("applicationRef", "name"), err))

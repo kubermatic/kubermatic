@@ -37,7 +37,7 @@ import (
 	batchv1beta "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -421,7 +421,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				err := seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob)
 				if err != nil {
 					// cron jobs should be created only when running enterprise edition
-					if edition == communityEdition && kerrors.IsNotFound(err) {
+					if edition == communityEdition && apierrors.IsNotFound(err) {
 						return nil
 					}
 					return fmt.Errorf("failed to find reporting cronjob: %w", err)
@@ -472,7 +472,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 					Namespace: "kubermatic",
 					Name:      "weekly-test",
 				}, &cronJob); err != nil {
-					if kerrors.IsNotFound(err) {
+					if apierrors.IsNotFound(err) {
 						return nil
 					}
 				}
@@ -530,7 +530,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 					Namespace: "kubermatic",
 					Name:      "weekly-test",
 				}, &cronJob); err != nil {
-					if !kerrors.IsNotFound(err) {
+					if !apierrors.IsNotFound(err) {
 						return fmt.Errorf("failed to remove reporting cron jobs")
 					}
 				}
@@ -539,7 +539,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 					Namespace: "kubermatic",
 					Name:      "kubermatic-metering",
 				}, &deployment); err != nil {
-					if !kerrors.IsNotFound(err) {
+					if !apierrors.IsNotFound(err) {
 						return fmt.Errorf("failed to remove metering deployment")
 					}
 				}

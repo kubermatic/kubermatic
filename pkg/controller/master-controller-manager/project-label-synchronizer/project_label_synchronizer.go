@@ -26,7 +26,7 @@ import (
 	helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
@@ -135,7 +135,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	project := &kubermaticv1.Project{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Didn't find project, returning")
 			return nil
 		}

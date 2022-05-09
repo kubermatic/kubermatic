@@ -42,7 +42,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -139,7 +139,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	}
 
 	if err := seedClient.Get(ctx, name, seedCopy); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			err = errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
 
 			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seed.Name, err))

@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -124,7 +124,7 @@ func (f *FakePrivilegedProjectProvider) UpdateUnsecured(ctx context.Context, pro
 }
 
 func createError(status int32, message string) error {
-	return &kerrors.StatusError{ErrStatus: metav1.Status{
+	return &apierrors.StatusError{ErrStatus: metav1.Status{
 		Status:  metav1.StatusFailure,
 		Code:    status,
 		Reason:  metav1.StatusReasonBadRequest,

@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -58,7 +58,7 @@ var _ provider.ProjectMemberProvider = &ProjectMemberProvider{}
 // Create creates a binding for the given member and the given project.
 func (p *ProjectMemberProvider) Create(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
 	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) {
-		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
+		return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
 	binding := genBinding(project, memberEmail, group)
@@ -167,7 +167,7 @@ func (p *ProjectMemberProvider) MapUserToGroup(ctx context.Context, userEmail st
 		}
 	}
 
-	return "", kerrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to project %s", userEmail, projectID))
+	return "", apierrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to project %s", userEmail, projectID))
 }
 
 // MappingsFor returns the list of projects (bindings) for the given user
@@ -192,7 +192,7 @@ func (p *ProjectMemberProvider) MappingsFor(ctx context.Context, userEmail strin
 // This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecured(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
 	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) {
-		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
+		return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
 	binding := genBinding(project, memberEmail, group)
@@ -207,7 +207,7 @@ func (p *ProjectMemberProvider) CreateUnsecured(ctx context.Context, project *ku
 // This function is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ProjectMemberProvider) CreateUnsecuredForServiceAccount(ctx context.Context, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error) {
 	if kubermaticv1helper.IsProjectServiceAccount(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
-		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
+		return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
 	binding := genBinding(project, memberEmail, group)

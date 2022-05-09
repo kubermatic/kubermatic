@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,17 +59,17 @@ var _ provider.PrivilegedServiceAccountTokenProvider = &ServiceAccountTokenProvi
 // Create creates a new token for service account.
 func (p *ServiceAccountTokenProvider) Create(ctx context.Context, userInfo *provider.UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) (*corev1.Secret, error) {
 	if userInfo == nil {
-		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+		return nil, apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if sa == nil {
-		return nil, kerrors.NewBadRequest("service account cannot be nil")
+		return nil, apierrors.NewBadRequest("service account cannot be nil")
 	}
 
 	secret := genToken(sa, projectID, tokenName, tokenID, token)
 	secret.Namespace = resources.KubermaticNamespace
 	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
-		return nil, kerrors.NewInternalError(err)
+		return nil, apierrors.NewInternalError(err)
 	}
 
 	if err := kubernetesImpersonatedClient.Create(ctx, secret); err != nil {
@@ -85,7 +85,7 @@ func (p *ServiceAccountTokenProvider) Create(ctx context.Context, userInfo *prov
 // is unsafe in a sense that it uses privileged account to create the resource.
 func (p *ServiceAccountTokenProvider) CreateUnsecured(ctx context.Context, sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) (*corev1.Secret, error) {
 	if sa == nil {
-		return nil, kerrors.NewBadRequest("service account cannot be nil")
+		return nil, apierrors.NewBadRequest("service account cannot be nil")
 	}
 
 	secret := genToken(sa, projectID, tokenName, tokenID, token)
@@ -122,13 +122,13 @@ func genToken(sa *kubermaticv1.User, projectID, tokenName, tokenID, token string
 // List  gets tokens for the given service account and project.
 func (p *ServiceAccountTokenProvider) List(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *provider.ServiceAccountTokenListOptions) ([]*corev1.Secret, error) {
 	if userInfo == nil {
-		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+		return nil, apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if project == nil {
-		return nil, kerrors.NewBadRequest("project cannot be nil")
+		return nil, apierrors.NewBadRequest("project cannot be nil")
 	}
 	if sa == nil {
-		return nil, kerrors.NewBadRequest("sa cannot be nil")
+		return nil, apierrors.NewBadRequest("sa cannot be nil")
 	}
 	if options == nil {
 		options = &provider.ServiceAccountTokenListOptions{}
@@ -220,7 +220,7 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(ctx context.Context, options
 				return []*corev1.Secret{token}, nil
 			}
 		}
-		return nil, kerrors.NewNotFound(corev1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenID)
+		return nil, apierrors.NewNotFound(corev1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenID)
 	}
 	if options.ServiceAccountID != "" {
 		resultList := make([]*corev1.Secret, 0)
@@ -263,16 +263,16 @@ func isToken(secret *corev1.Secret) bool {
 // Get method returns token by name.
 func (p *ServiceAccountTokenProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*corev1.Secret, error) {
 	if userInfo == nil {
-		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+		return nil, apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if len(name) == 0 {
-		return nil, kerrors.NewBadRequest("token name cannot be empty")
+		return nil, apierrors.NewBadRequest("token name cannot be empty")
 	}
 	name = addTokenPrefix(name)
 
 	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
-		return nil, kerrors.NewInternalError(err)
+		return nil, apierrors.NewInternalError(err)
 	}
 
 	token := &corev1.Secret{}
@@ -289,7 +289,7 @@ func (p *ServiceAccountTokenProvider) Get(ctx context.Context, userInfo *provide
 // is unsafe in a sense that it uses privileged account to get the resource.
 func (p *ServiceAccountTokenProvider) GetUnsecured(ctx context.Context, name string) (*corev1.Secret, error) {
 	if len(name) == 0 {
-		return nil, kerrors.NewBadRequest("token name cannot be empty")
+		return nil, apierrors.NewBadRequest("token name cannot be empty")
 	}
 	name = addTokenPrefix(name)
 
@@ -304,10 +304,10 @@ func (p *ServiceAccountTokenProvider) GetUnsecured(ctx context.Context, name str
 // Update method updates given token.
 func (p *ServiceAccountTokenProvider) Update(ctx context.Context, userInfo *provider.UserInfo, secret *corev1.Secret) (*corev1.Secret, error) {
 	if userInfo == nil {
-		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+		return nil, apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if secret == nil {
-		return nil, kerrors.NewBadRequest("secret cannot be empty")
+		return nil, apierrors.NewBadRequest("secret cannot be empty")
 	}
 	secretCpy := secret.DeepCopy()
 	secretCpy.Name = addTokenPrefix(secretCpy.Name)
@@ -315,7 +315,7 @@ func (p *ServiceAccountTokenProvider) Update(ctx context.Context, userInfo *prov
 
 	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
-		return nil, kerrors.NewInternalError(err)
+		return nil, apierrors.NewInternalError(err)
 	}
 
 	if err := kubernetesImpersonatedClient.Update(ctx, secretCpy); err != nil {
@@ -331,7 +331,7 @@ func (p *ServiceAccountTokenProvider) Update(ctx context.Context, userInfo *prov
 // is unsafe in a sense that it uses privileged account to get the resource.
 func (p *ServiceAccountTokenProvider) UpdateUnsecured(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error) {
 	if secret == nil {
-		return nil, kerrors.NewBadRequest("secret cannot be empty")
+		return nil, apierrors.NewBadRequest("secret cannot be empty")
 	}
 	secretCpy := secret.DeepCopy()
 	secretCpy.Name = addTokenPrefix(secretCpy.Name)
@@ -348,16 +348,16 @@ func (p *ServiceAccountTokenProvider) UpdateUnsecured(ctx context.Context, secre
 // Delete method deletes given token.
 func (p *ServiceAccountTokenProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, name string) error {
 	if userInfo == nil {
-		return kerrors.NewBadRequest("userInfo cannot be nil")
+		return apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if len(name) == 0 {
-		return kerrors.NewBadRequest("token name cannot be empty")
+		return apierrors.NewBadRequest("token name cannot be empty")
 	}
 	name = addTokenPrefix(name)
 
 	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
-		return kerrors.NewInternalError(err)
+		return apierrors.NewInternalError(err)
 	}
 	return kubernetesImpersonatedClient.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: resources.KubermaticNamespace}})
 }
@@ -368,7 +368,7 @@ func (p *ServiceAccountTokenProvider) Delete(ctx context.Context, userInfo *prov
 // is unsafe in a sense that it uses privileged account to delete the resource.
 func (p *ServiceAccountTokenProvider) DeleteUnsecured(ctx context.Context, name string) error {
 	if len(name) == 0 {
-		return kerrors.NewBadRequest("token name cannot be empty")
+		return apierrors.NewBadRequest("token name cannot be empty")
 	}
 	name = addTokenPrefix(name)
 	secret := &corev1.Secret{

@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -79,7 +79,7 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 
 	// Delete PVC's
 	for _, pvc := range pvcList.Items {
-		if err := userClusterClient.Delete(ctx, &pvc); err != nil && !kerrors.IsNotFound(err) {
+		if err := userClusterClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
 			return deletedSomeResource, fmt.Errorf("failed to delete PVC '%s/%s' from user cluster: %w", pvc.Namespace, pvc.Name, err)
 		}
 		deletedSomeResource = true
@@ -121,7 +121,7 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient ct
 	}
 
 	for _, pod := range pvUsingPods {
-		if err := userClusterClient.Delete(ctx, pod); err != nil && !kerrors.IsNotFound(err) {
+		if err := userClusterClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete pod %s/%s: %w", pod.Namespace, pod.Name, err)
 		}
 	}

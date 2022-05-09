@@ -43,7 +43,7 @@ import (
 	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -353,7 +353,7 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 		types.NamespacedName{Namespace: r.namespace, Name: resources.UserSSHKeys},
 		secret,
 	); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -420,7 +420,7 @@ func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespa
 		Name:      resources.DefaultServiceAccountName,
 	}, &serviceAccount)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

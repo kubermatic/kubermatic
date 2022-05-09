@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -108,7 +108,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("cluster not found, returning")
 			return reconcile.Result{}, nil
 		}

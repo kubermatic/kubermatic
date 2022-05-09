@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 			if tc.expectedClusterTemplate == nil {
 				if err == nil {
 					t.Fatal("failed clean up template on the seed cluster")
-				} else if !errors.IsNotFound(err) {
+				} else if !apierrors.IsNotFound(err) {
 					t.Fatalf("failed to get template: %v", err)
 				}
 			} else {

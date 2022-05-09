@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -96,7 +96,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -204,7 +204,7 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDep
 		// in case we created the MD before but then failed to cleanup the Cluster resource's
 		// annotations, we can silently ignore AlreadyExists errors here and then re-try removing
 		// the annotation afterwards
-		if kerrors.IsAlreadyExists(err) {
+		if apierrors.IsAlreadyExists(err) {
 			return nil
 		}
 

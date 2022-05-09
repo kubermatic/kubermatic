@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -101,7 +101,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	instance := &kubermaticv1.ClusterTemplateInstance{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, instance); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 

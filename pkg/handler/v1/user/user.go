@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // DeleteEndpoint deletes the given user/member from the given project.
@@ -351,18 +351,18 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 
 		existingSettingsJSON, err := json.Marshal(existingSettings)
 		if err != nil {
-			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
 		}
 
 		patchedSettingsJSON, err := jsonpatch.MergePatch(existingSettingsJSON, req.Patch)
 		if err != nil {
-			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
 		}
 
 		var patchedSettings *kubermaticv1.UserSettings
 		err = json.Unmarshal(patchedSettingsJSON, &patchedSettings)
 		if err != nil {
-			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
 		}
 
 		existingUser.Spec.Settings = patchedSettings

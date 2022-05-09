@@ -25,7 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -83,7 +83,7 @@ func (p *AdmissionPluginsProvider) ListPluginNamesFromVersion(ctx context.Contex
 
 func (p *AdmissionPluginsProvider) List(ctx context.Context, userInfo *provider.UserInfo) ([]kubermaticv1.AdmissionPlugin, error) {
 	if !userInfo.IsAdmin {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
 	admissionPluginList, err := p.admissionPluginsGetter(ctx)
 	if err != nil {
@@ -94,7 +94,7 @@ func (p *AdmissionPluginsProvider) List(ctx context.Context, userInfo *provider.
 
 func (p *AdmissionPluginsProvider) Get(ctx context.Context, userInfo *provider.UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error) {
 	if !userInfo.IsAdmin {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
 	admissionPluginList, err := p.admissionPluginsGetter(ctx)
 	if err != nil {
@@ -105,7 +105,7 @@ func (p *AdmissionPluginsProvider) Get(ctx context.Context, userInfo *provider.U
 			return &plugin, nil
 		}
 	}
-	return nil, kerrors.NewNotFound(schema.GroupResource{}, name)
+	return nil, apierrors.NewNotFound(schema.GroupResource{}, name)
 }
 
 func (p *AdmissionPluginsProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, name string) error {

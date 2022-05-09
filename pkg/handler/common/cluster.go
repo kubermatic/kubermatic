@@ -49,7 +49,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -1046,7 +1046,7 @@ func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserI
 }
 
 func isStatus(err error, status int32) bool {
-	var statusErr *kerrors.StatusError
+	var statusErr *apierrors.StatusError
 
 	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }

@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -130,7 +130,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	innerService := &corev1.Service{}
 	if err := r.innerClient.Get(ctx, request.NamespacedName, innerService); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Got request for service that doesn't exist, returning")
 			return nil
 		}

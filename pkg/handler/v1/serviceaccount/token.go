@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -106,7 +106,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 		options.LabelSelector = labelSelector
 		options.ServiceAccountID = sa.Name
 		tokens, err := privilegedServiceAccountTokenProvider.ListUnsecured(ctx, options)
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return make([]*corev1.Secret, 0), nil
 		}
 		return tokens, err

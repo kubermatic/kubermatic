@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -127,8 +127,8 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, ct)
 				}
 
-				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
-					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
+				if tc.expectedGetErrStatus != apierrors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, apierrors.ReasonForError(err))
 				}
 				return
 			}
@@ -192,8 +192,8 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	if errors.ReasonForError(err) != metav1.StatusReasonNotFound {
-		t.Fatalf("expected err: %v, got %v", metav1.StatusReasonNotFound, errors.ReasonForError(err))
+	if apierrors.ReasonForError(err) != metav1.StatusReasonNotFound {
+		t.Fatalf("expected err: %v, got %v", metav1.StatusReasonNotFound, apierrors.ReasonForError(err))
 	}
 }
 

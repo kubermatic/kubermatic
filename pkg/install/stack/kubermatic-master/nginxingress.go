@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 
 	networkingv1 "k8s.io/api/networking/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -225,7 +225,7 @@ func deleteIngress(ctx context.Context, kubeClient ctrlruntimeclient.Client, nam
 	}
 
 	if err := kubeClient.Get(ctx, key, ingress); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

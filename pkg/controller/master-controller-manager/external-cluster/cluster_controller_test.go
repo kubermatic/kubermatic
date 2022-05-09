@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -90,7 +90,7 @@ func TestReconcile(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected ExternalCluster to be gone, but found it anyway")
 			}
-			if !kerrors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
 				t.Fatalf("expected not-found error, but got %v", err)
 			}
 
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected secret to be gone, but found it anyway")
 			}
-			if !kerrors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
 				t.Fatalf("expected not-found error, but got %v", err)
 			}
 		})

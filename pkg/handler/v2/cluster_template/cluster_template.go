@@ -38,10 +38,10 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	kerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -81,7 +81,7 @@ func CreateEndpoint(
 
 		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, apierrors.NewBadRequest(err.Error())
 		}
 
 		return createClusterTemplate(ctx, userInfoGetter, seedsGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, credentialManager, exposeStrategy, caBundle, configGetter, features, clusterTemplateProvider, req.Body.CreateClusterSpec, req.ProjectID, req.Body.Name, req.Body.Scope, req.Body.UserSSHKeys)
@@ -160,7 +160,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listClusterTemplatesReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, apierrors.NewBadRequest(err.Error())
 		}
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
 		if err != nil {
@@ -188,7 +188,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			result = append(result, *externalClusterTemplate)
 		}
 		if len(errorList) > 0 {
-			return nil, kerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some cluster templates, please examine details field for more info", errorList)
+			return nil, kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some cluster templates, please examine details field for more info", errorList)
 		}
 		return result, nil
 	}
@@ -225,7 +225,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getClusterTemplatesReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, apierrors.NewBadRequest(err.Error())
 		}
 
 		return getClusterTemplate(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterTemplateProvider, req.ProjectID, req.ClusterTemplateID)
@@ -255,7 +255,7 @@ func ExportEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(exportClusterTemplatesReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, apierrors.NewBadRequest(err.Error())
 		}
 
 		clusterTemplate, err := getClusterTemplate(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterTemplateProvider, req.ProjectID, req.ClusterTemplateID)
@@ -301,7 +301,7 @@ func ImportEndpoint(
 
 		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, apierrors.NewBadRequest(err.Error())
 		}
 
 		var nd *apiv1.NodeDeployment
@@ -426,7 +426,7 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getClusterTemplatesReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, apierrors.NewBadRequest(err.Error())
 		}
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
 		if err != nil {
@@ -449,7 +449,7 @@ func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privileged
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createInstanceReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, apierrors.NewBadRequest(err.Error())
 		}
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
 		if err != nil {

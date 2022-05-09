@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -108,7 +108,7 @@ func (a *ApplicationManager) deleteNamespace(ctx context.Context, log *zap.Sugar
 			},
 		}
 
-		if err := userClient.Delete(ctx, ns); err != nil && !errors.IsNotFound(err) {
+		if err := userClient.Delete(ctx, ns); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete namespace: %w", err)
 		}
 	}

@@ -27,7 +27,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -142,7 +142,7 @@ func TestApplicationManager_applyNamespaceDoNotCreateNsWhenCreateNamespaceFlagIs
 	if err == nil {
 		t.Error("namespace should not have been created")
 	}
-	if !errors.IsNotFound(err) {
+	if !apierrors.IsNotFound(err) {
 		t.Errorf("can not check that namespace has not been created: %v", err)
 	}
 }
@@ -170,7 +170,7 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 	}
 
 	ns := &corev1.Namespace{}
-	if err := userClient.Get(ctx, types.NamespacedName{Name: nsName}, ns); err != nil && !errors.IsNotFound(err) {
+	if err := userClient.Get(ctx, types.NamespacedName{Name: nsName}, ns); err != nil && !apierrors.IsNotFound(err) {
 		t.Errorf("failed to get manually created namespace: %v", err)
 	}
 
@@ -233,11 +233,11 @@ func TestApplicationManager_deleteNamespace(t *testing.T) {
 				if err == nil {
 					t.Error("namespace should have been delete")
 				}
-				if !errors.IsNotFound(err) {
+				if !apierrors.IsNotFound(err) {
 					t.Errorf("can not check that namespace has been deleted: %v", err)
 				}
 			} else if err != nil {
-				if errors.IsNotFound(err) {
+				if apierrors.IsNotFound(err) {
 					t.Error("namespace should not have been delete")
 				} else {
 					t.Errorf("can not check that namespace has not been deleted: %v", err)

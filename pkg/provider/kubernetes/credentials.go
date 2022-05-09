@@ -45,7 +45,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -112,7 +112,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
-	if err := seedClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+	if err := seedClient.Get(ctx, namespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 	}
 
@@ -657,7 +657,7 @@ func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntime
 	kubeOneNamespaceName := GetKubeOneNamespaceName(externalcluster.Name)
 	namespacedName := types.NamespacedName{Namespace: kubeOneNamespaceName, Name: secretName}
 	existingSecret := &corev1.Secret{}
-	if err := masterClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+	if err := masterClient.Get(ctx, namespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for secret %q: %w", secretName, err)
 	}
 

@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -111,8 +111,8 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, constraint)
 				}
 
-				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
-					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
+				if tc.expectedGetErrStatus != apierrors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, apierrors.ReasonForError(err))
 				}
 				return
 			}

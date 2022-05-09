@@ -35,7 +35,7 @@ import (
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -181,7 +181,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 				// handling ErrNotFound
 				user, err = userProvider.CreateUser(ctx, authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
 				if err != nil {
-					if !kerrors.IsAlreadyExists(err) {
+					if !apierrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
 					}
 					if user, err = userProvider.UserByEmail(ctx, authenticatedUser.Email); err != nil {
@@ -203,7 +203,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			// Ignore conflict error during update of the lastSeen field as it is not super important.
 			// It can be updated next time.
-			if kerrors.IsConflict(err) {
+			if apierrors.IsConflict(err) {
 				return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
 			}
 

@@ -21,13 +21,13 @@ import (
 
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // kubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.
 // Otherwise unmodified err will be returned to the caller.
 func KubernetesErrorToHTTPError(err error) error {
-	var errStatus *kerrors.StatusError
+	var errStatus *apierrors.StatusError
 
 	if errors.As(err, &errStatus) {
 		httpCode := errStatus.Status().Code

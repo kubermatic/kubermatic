@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -48,7 +48,7 @@ func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Clust
 	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
 	err := d.seedClient.Get(ctx, name, secret)
 	// It's already gone
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return nil
 	}
 

@@ -107,3 +107,5 @@ linters-settings:
         alias: rbacv1
       - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
         alias: apiextensionsv1
+      - pkg: k8s.io/apimachinery/pkg/api/errors
+        alias: apierrors

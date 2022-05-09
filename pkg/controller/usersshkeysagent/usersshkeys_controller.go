@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
@@ -155,7 +155,7 @@ func (r *Reconciler) watchAuthorizedKeys(paths []string) error {
 func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: resources.UserSSHKeys, Namespace: namespace}, secret); err != nil {
-		if kubeapierrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			r.log.Debugw("Secret is not found", "secret", secret.Name)
 			return nil, nil
 		}

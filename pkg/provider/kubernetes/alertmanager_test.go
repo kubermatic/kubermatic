@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -287,7 +287,7 @@ func TestResetAlertmanager(t *testing.T) {
 					Name:      alertmanager.Spec.ConfigSecret.Name,
 					Namespace: alertmanager.Namespace,
 				}, configSecret)
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 				assert.Equal(t, tc.expectedAlertmanager, alertmanager)
 			} else {
 				if err == nil {

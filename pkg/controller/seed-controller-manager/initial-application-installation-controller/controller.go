@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -95,7 +95,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -200,7 +200,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 	err := client.Create(ctx, &applicationInstallation)
 	if err != nil {
 		// If the application already exists, we just ignore the error and move forward.
-		if kerrors.IsAlreadyExists(err) {
+		if apierrors.IsAlreadyExists(err) {
 			return nil
 		}
 

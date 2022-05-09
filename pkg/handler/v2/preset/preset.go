@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -341,11 +341,11 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
-		if k8serrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return presetProvider.CreatePreset(ctx, convertAPIToInternalPreset(req.Body))
 		}
 
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 
@@ -473,11 +473,11 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
-		if k8serrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, errors.NewNotFound("Preset", "preset was not found.")
 		}
 
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 
@@ -546,11 +546,11 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
-		if k8serrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, errors.NewNotFound("Preset", "preset was not found.")
 		}
 
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
 
@@ -626,11 +626,11 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
-		if k8serrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, errors.NewBadRequest("preset was not found.")
 		}
 
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 
@@ -700,7 +700,7 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if err != nil {
-			if k8serrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return nil, errors.NewBadRequest("preset was not found.")
 			}
 			return nil, common.KubernetesErrorToHTTPError(err)
