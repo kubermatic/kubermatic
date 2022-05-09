@@ -83,42 +83,47 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		ipFamily            util.IPFamily
 		skipNodes           bool
 		skipHostNetworkPods bool
+		disabledReason      string
 	}{
+
 		{
-			"azure",
-			"centos",
-			util.DualStack,
-			true,
-			true,
+			cloudName:           "azure",
+			osName:              "centos",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+			disabledReason:      "fails due to https://github.com/kubermatic/kubermatic/issues/9222",
 		},
 		{
-			"azure",
-			"flatcar",
-			util.DualStack,
-			true,
-			true,
+			cloudName:           "azure",
+			osName:              "flatcar",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+			disabledReason:      "cilium-agent crashing",
 		},
 		{
-			"azure",
-			"rhel",
-			util.DualStack,
-			true,
-			true,
+			cloudName:           "azure",
+			osName:              "rhel",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+			disabledReason:      "cilium-agent crashing",
 		},
-		// not supported yet
-		//{
-		//	"azure",
-		//	"sles",
-		//	util.DualStack,
-		//	true,
-		//	true,
-		//},
 		{
-			"azure",
-			"ubuntu",
-			util.DualStack,
-			true,
-			true,
+			cloudName:           "azure",
+			osName:              "sles",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+			disabledReason:      "not supported yet",
+		},
+		{
+			cloudName:           "azure",
+			osName:              "ubuntu",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
 		},
 	}
 
@@ -126,6 +131,12 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 	for _, test := range tests {
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.osName, test.ipFamily)
+
+		if test.disabledReason != "" {
+			t.Logf("test %q disabled because: %s", name, test.disabledReason)
+			continue
+		}
+
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
 		nodeSpec := cloud.NodeSpec()
