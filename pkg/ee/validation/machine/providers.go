@@ -211,7 +211,6 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 	}
 
 	// parse the KubeVirt resource requests
-	// memory is in MB and storage is given in GB
 	cpuReq, err := resource.ParseQuantity(cpu)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
