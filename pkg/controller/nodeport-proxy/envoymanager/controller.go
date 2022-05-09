@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -118,7 +117,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 	services := corev1.ServiceList{}
 	if err := r.List(ctx, &services,
 		ctrlruntimeclient.InNamespace(r.Namespace),
-		client.MatchingFields{r.ExposeAnnotationKey: "true"},
+		ctrlruntimeclient.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
 		return fmt.Errorf("failed to list services: %w", err)
 	}
@@ -199,7 +198,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 }
 
 func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw ctrlruntimeclient.Object) []string {
 		svc := raw.(*corev1.Service)
 		if isExposed(svc, r.ExposeAnnotationKey) {
 			return []string{"true"}

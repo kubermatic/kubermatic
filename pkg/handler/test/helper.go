@@ -74,7 +74,6 @@ import (
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -216,7 +215,7 @@ type newRoutingFunc func(
 	etcdRestoreProjectProviderGetter provider.EtcdRestoreProjectProviderGetter,
 	backupCredentialsProviderGetter provider.BackupCredentialsProviderGetter,
 	privilegedMLAAdminSettingProviderGetter provider.PrivilegedMLAAdminSettingProviderGetter,
-	masterClient client.Client,
+	masterClient ctrlruntimeclient.Client,
 	featureGatesProvider provider.FeatureGatesProvider,
 	seedProvider provider.SeedProvider,
 	features features.FeatureGate,

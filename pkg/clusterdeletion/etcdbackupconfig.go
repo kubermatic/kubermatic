@@ -24,7 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -34,7 +34,7 @@ func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kuberm
 
 	// always attempt to cleanup, even if the controllers might be disabled now
 	backupConfigs := &kubermaticv1.EtcdBackupConfigList{}
-	if err := d.seedClient.List(ctx, backupConfigs, controllerruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+	if err := d.seedClient.List(ctx, backupConfigs, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 		return fmt.Errorf("failed to get EtcdBackupConfigs: %w", err)
 	}
 

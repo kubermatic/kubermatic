@@ -111,3 +111,6 @@ linters-settings:
         alias: apierrors
       - pkg: k8s.io/apimachinery/pkg/util/errors
         alias: kerrors
+      # Controller Runtime
+      - pkg: sigs.k8s.io/controller-runtime/pkg/client
+        alias: ctrlruntimeclient

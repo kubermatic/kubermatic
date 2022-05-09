@@ -26,7 +26,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CreateOrUpdateMeteringCredentials creates or updates metering tool SecretReq.
@@ -49,7 +49,7 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 }
 
 // CreateOrUpdateMeteringConfigurations configures kkp metering tool.
-func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -108,7 +108,7 @@ func ListMeteringReportConfigurationsEndpoint(userInfoGetter provider.UserInfoGe
 }
 
 // CreateMeteringReportConfigurationEndpoint creates report configuration entry for kkp metering tool.
-func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -127,7 +127,7 @@ func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 }
 
 // UpdateMeteringReportConfigurationEndpoint updates existing report configuration entry for kkp metering tool.
-func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -146,7 +146,7 @@ func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 }
 
 // DeleteMeteringReportConfigurationEndpoint deletes report configuration entry for kkp metering tool.
-func DeleteMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func DeleteMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {

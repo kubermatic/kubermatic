@@ -37,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/email"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter.
@@ -253,7 +253,7 @@ func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 }
 
 // CreateEndpoint an HTTP endpoint that creates the specified apiv1.Datacenter.
-func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createDCReq)
 		if !ok {
@@ -305,7 +305,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 
 // UpdateEndpoint an HTTP endpoint that updates the specified apiv1.Datacenter.
 func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	masterClient client.Client) endpoint.Endpoint {
+	masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateDCReq)
 		if !ok {
@@ -365,7 +365,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 
 // PatchEndpoint an HTTP endpoint that patches the specified apiv1.Datacenter.
 func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	masterClient client.Client) endpoint.Endpoint {
+	masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(patchDCReq)
 		if !ok {
@@ -458,7 +458,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 
 // DeleteEndpoint an HTTP endpoint that deletes the specified apiv1.Datacenter.
 func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
-	masterClient client.Client) endpoint.Endpoint {
+	masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteDCReq)
 		if !ok {

@@ -30,7 +30,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // clusterIsReachable checks if the cluster is reachable via its external name.
@@ -64,7 +64,7 @@ func (r *Reconciler) etcdUseStrictTLS(ctx context.Context, c *kubermaticv1.Clust
 	pods := &corev1.PodList{}
 	labelSet := etcd.GetBasePodLabels(c)
 
-	err = r.Client.List(ctx, pods, &client.ListOptions{
+	err = r.Client.List(ctx, pods, &ctrlruntimeclient.ListOptions{
 		Namespace:     c.Status.NamespaceName,
 		LabelSelector: labels.SelectorFromSet(labelSet),
 	})

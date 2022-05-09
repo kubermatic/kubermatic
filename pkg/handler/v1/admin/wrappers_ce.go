@@ -26,14 +26,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func createOrUpdateMeteringCredentials(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) error {
 	return nil
 }
 
-func createOrUpdateMeteringConfigurations(_ context.Context, _ interface{}, masterClient client.Client) error {
+func createOrUpdateMeteringConfigurations(_ context.Context, _ interface{}, masterClient ctrlruntimeclient.Client) error {
 	return nil
 }
 
@@ -45,15 +45,15 @@ func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]v1.MeteringRepo
 	return nil, nil
 }
 
-func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 

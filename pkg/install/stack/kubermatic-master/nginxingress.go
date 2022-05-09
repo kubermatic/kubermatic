@@ -38,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -130,12 +129,12 @@ func upgradeNginxIngress(
 		Version: "v1",
 	})
 
-	nginxMatcher := client.MatchingLabels{
+	nginxMatcher := ctrlruntimeclient.MatchingLabels{
 		"app.kubernetes.io/name":       "ingress-nginx",
 		"app.kubernetes.io/managed-by": "Helm",
 		"app.kubernetes.io/instance":   release.Name,
 	}
-	if err := kubeClient.List(ctx, deploymentsList, client.InNamespace(NginxIngressControllerNamespace), nginxMatcher); err != nil {
+	if err := kubeClient.List(ctx, deploymentsList, ctrlruntimeclient.InNamespace(NginxIngressControllerNamespace), nginxMatcher); err != nil {
 		return fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
 	}
 	// 2: store the deployment for backup

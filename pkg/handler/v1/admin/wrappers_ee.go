@@ -26,14 +26,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
+func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
 }
 
@@ -45,15 +45,15 @@ func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]v1.Me
 	return metering.ListMeteringReportConfigurations(seedsGetter)
 }
 
-func createMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+func createMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.CreateMeteringReportConfiguration(ctx, request, masterClient)
 }
 
-func updateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+func updateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.UpdateMeteringReportConfiguration(ctx, request, masterClient)
 }
 
-func deleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+func deleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.DeleteMeteringReportConfiguration(ctx, request, masterClient)
 }
 

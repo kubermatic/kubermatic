@@ -44,7 +44,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -495,11 +494,11 @@ func preparePreV21CertManagerDeployment(
 		Version: "v1",
 	})
 
-	certManagerObjectsSelector := client.MatchingLabels{
+	certManagerObjectsSelector := ctrlruntimeclient.MatchingLabels{
 		"app.kubernetes.io/managed-by": "Helm",
 	}
 
-	if err := kubeClient.List(ctx, clusterIssuersList, client.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
+	if err := kubeClient.List(ctx, clusterIssuersList, ctrlruntimeclient.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
 		return fmt.Errorf("failed to query kubernetes API: %w", err)
 	}
 
