@@ -47,7 +47,7 @@ type Cluster struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// machine deployment count
-	MachineDeploymentCount int64 `json:"machine_deployment_count,omitempty"`
+	MachineDeploymentCount int64 `json:"machineDeploymentCount,omitempty"`
 
 	// Name represents human readable name for the resource
 	Name string `json:"name,omitempty"`

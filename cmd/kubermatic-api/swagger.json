@@ -21652,7 +21652,7 @@
           },
           "x-go-name": "Labels"
         },
-        "machine_deployment_count": {
+        "machineDeploymentCount": {
           "type": "integer",
           "format": "int64",
           "x-go-name": "MachineDeploymentCount"

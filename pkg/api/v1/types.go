@@ -827,7 +827,7 @@ type Cluster struct {
 	Credential             string        `json:"credential,omitempty"`
 	Spec                   ClusterSpec   `json:"spec"`
 	Status                 ClusterStatus `json:"status"`
-	MachineDeploymentCount *int          `json:"machine_deployment_count,omitempty"`
+	MachineDeploymentCount *int          `json:"machineDeploymentCount,omitempty"`
 }
 
 // ClusterSpec defines the cluster specification.
