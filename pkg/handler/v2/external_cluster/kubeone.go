@@ -287,7 +287,21 @@ func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alp
 	currentVersion := oldmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	desiredVersion := newmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredVersion != currentVersion {
-		machineDeployment.Spec.Template.Spec.Versions.Kubelet = newmd.NodeDeployment.Spec.Template.Versions.Kubelet
+		machineDeployment.Spec.Template.Spec.Versions.Kubelet = desiredVersion
+		userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
+		if err != nil {
+			return nil, err
+		}
+		if err := userClusterClient.Update(ctx, machineDeployment); err != nil && !meta.IsNoMatchError(err) {
+			return nil, fmt.Errorf("failed to update MachineDeployment: %w", err)
+		}
+		return newmd, nil
+	}
+
+	currentReplicas := oldmd.NodeDeployment.Spec.Replicas
+	desiredReplicas := newmd.NodeDeployment.Spec.Replicas
+	if desiredReplicas != currentReplicas {
+		machineDeployment.Spec.Replicas = &desiredReplicas
 		userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
 		if err != nil {
 			return nil, err
