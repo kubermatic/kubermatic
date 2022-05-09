@@ -55,7 +55,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/kube-scheduler","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--port","0","--profiling=false"]}'
+        - '{"command":"/usr/local/bin/kube-scheduler","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--profiling=false"]}'
         command:
         - /http-prober-bin/http-prober
         env:
