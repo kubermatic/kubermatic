@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
 
-	k8scorev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/meta/testrestmapper"
@@ -50,7 +50,7 @@ func getFakeRestMapper(t *testing.T) meta.RESTMapper {
 		t.Fatalf("getFakeRestMapper: %v", err)
 		t.FailNow()
 	}
-	if err := k8scorev1.AddToScheme(scheme); err != nil {
+	if err := corev1.AddToScheme(scheme); err != nil {
 		t.Fatalf("getFakeRestMapper: %v", err)
 		t.FailNow()
 	}
@@ -1189,7 +1189,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			seedClusters:             1,
 			projectResourcesToSync: []projectResource{
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1198,7 +1198,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					namespace: "kubermatic",
 				},
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1218,7 +1218,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1232,7 +1232,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1249,7 +1249,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1263,7 +1263,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1280,7 +1280,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			seedClusters:             1,
 			projectResourcesToSync: []projectResource{
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1289,7 +1289,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					namespace: "kubermatic",
 				},
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1309,7 +1309,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1323,7 +1323,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1339,7 +1339,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1353,7 +1353,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1368,7 +1368,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups: []string{corev1.SchemeGroupVersion.Group},
 							Resources: []string{"secrets"},
 							Verbs:     []string{"create"},
 						},
@@ -1492,7 +1492,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"create"},
 			projectResourcesToSync: []projectResource{
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1503,7 +1503,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				},
 
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1603,7 +1603,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"update"},
 			projectResourcesToSync: []projectResource{
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1613,7 +1613,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					namespace:   "kubermatic",
 				},
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1942,7 +1942,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			projectResourcesToSync: []projectResource{
 
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",
@@ -1952,7 +1952,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 					namespace:   "kubermatic",
 				},
 				{
-					object: &k8scorev1.Secret{
+					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
 							Kind:       "Secret",

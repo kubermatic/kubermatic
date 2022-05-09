@@ -28,7 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 
-	k8scorev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -950,7 +950,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for secrets in kubermatic namespace",
 			expectedActions: []string{"create", "create"},
 
-			dependantToSync: &k8scorev1.Secret{
+			dependantToSync: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "abcd",
 					Namespace: "kubermatic",
@@ -972,7 +972,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								APIVersion: corev1.SchemeGroupVersion.String(),
 								Kind:       "Secret",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
@@ -982,7 +982,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups:     []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups:     []string{corev1.SchemeGroupVersion.Group},
 							Resources:     []string{"secrets"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "delete"},
@@ -995,7 +995,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								APIVersion: corev1.SchemeGroupVersion.String(),
 								Kind:       "Secret",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
@@ -1005,7 +1005,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
-							APIGroups:     []string{k8scorev1.SchemeGroupVersion.Group},
+							APIGroups:     []string{corev1.SchemeGroupVersion.Group},
 							Resources:     []string{"secrets"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "delete"},
@@ -1021,7 +1021,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								APIVersion: corev1.SchemeGroupVersion.String(),
 								Kind:       "Secret",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
@@ -1048,7 +1048,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								APIVersion: corev1.SchemeGroupVersion.String(),
 								Kind:       "Secret",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually

@@ -46,6 +46,7 @@ linters:
     - gofmt
     - gosimple
     - govet
+    - importas
     - ineffassign
     - misspell
     - noctx
@@ -91,3 +92,10 @@ linters-settings:
     packages:
       - io/ioutil # https://go.dev/doc/go1.16#ioutil
       - github.com/ghodss/yaml # use sigs.k8s.io/yaml instead
+
+  importas:
+    no-unaliased: true
+    alias:
+      # Kubernetes
+      - pkg: k8s.io/api/core/v1
+        alias: corev1

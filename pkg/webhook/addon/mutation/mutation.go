@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -149,7 +149,7 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 		return fmt.Errorf("Cluster %s is in deletion already, cannot create a new addon", cluster.Name)
 	}
 
-	addon.Spec.Cluster = v1.ObjectReference{
+	addon.Spec.Cluster = corev1.ObjectReference{
 		Name:       cluster.Name,
 		Namespace:  "",
 		UID:        cluster.UID,

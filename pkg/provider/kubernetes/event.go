@@ -19,10 +19,10 @@ package kubernetes
 import (
 	"sync"
 
-	apicorev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	kubecorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 )
 
@@ -59,8 +59,8 @@ func (e *EventRecorder) getRecorderForClient(client kubernetes.Interface) record
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: coreV1Client.Events("")})
-	recorder = eventBroadcaster.NewRecorder(scheme.Scheme, apicorev1.EventSource{Component: componentName})
+	eventBroadcaster.StartRecordingToSink(&kubecorev1.EventSinkImpl{Interface: coreV1Client.Events("")})
+	recorder = eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: componentName})
 	e.seedClusterRecorderMap[host] = recorder
 
 	return recorder
