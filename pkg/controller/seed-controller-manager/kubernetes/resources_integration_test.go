@@ -86,7 +86,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		Paths: []string{
 			"../../../../charts/kubermatic-operator/crd/k8s.io",
 			"../../../../charts/kubermatic-operator/crd/operatingsystemmanager.k8c.io",
-			"../../../validation/openapi/crd/k8c.io",
+			"../../../crd/k8c.io",
 		},
 		ErrorIfPathMissing: true,
 	}
