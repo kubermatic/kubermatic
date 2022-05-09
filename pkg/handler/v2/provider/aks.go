@@ -30,7 +30,6 @@ import (
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -244,7 +243,7 @@ func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGet
 	if len(req.Credential) > 0 {
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
 		if credentials := preset.Spec.AKS; credentials != nil {
 			subscriptionID = credentials.SubscriptionID
@@ -266,7 +265,7 @@ func AKSSizesWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGett
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(aksNoCredentialReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		return externalcluster.AKSSizesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, settingsProvider, req.ProjectID, req.ClusterID, req.Location)
 	}

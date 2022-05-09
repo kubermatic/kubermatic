@@ -37,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
@@ -257,12 +257,12 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 	}
 
 	if claims.Subject == "" {
-		return nil, errors.NewNotAuthorized()
+		return nil, utilerrors.NewNotAuthorized()
 	}
 
 	id, err := hash.GetUserID(claims.Subject)
 	if err != nil {
-		return nil, errors.NewNotAuthorized()
+		return nil, utilerrors.NewNotAuthorized()
 	}
 
 	user := &v1.User{
@@ -274,7 +274,7 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 	}
 
 	if user.ID == "" {
-		return nil, errors.NewNotAuthorized()
+		return nil, utilerrors.NewNotAuthorized()
 	}
 
 	return user, nil

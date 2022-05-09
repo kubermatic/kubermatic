@@ -38,7 +38,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -188,7 +188,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			result = append(result, *externalClusterTemplate)
 		}
 		if len(errorList) > 0 {
-			return nil, kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some cluster templates, please examine details field for more info", errorList)
+			return nil, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some cluster templates, please examine details field for more info", errorList)
 		}
 		return result, nil
 	}

@@ -32,7 +32,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -91,7 +91,7 @@ func patchKubeOneCluster(ctx context.Context,
 	masterClient ctrlruntimeclient.Client) (*apiv2.ExternalCluster, error) {
 	operation := cluster.Status.Condition.Phase
 	if operation == kubermaticv1.ExternalClusterPhaseReconciling {
-		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (%s) is in progress, please wait for it to finish before starting a new operation.", operation)
+		return nil, utilerrors.NewBadRequest("Operation is not allowed: Another operation: (%s) is in progress, please wait for it to finish before starting a new operation.", operation)
 	}
 
 	if oldCluster.Spec.Version != newCluster.Spec.Version {
@@ -119,7 +119,7 @@ func UpgradeKubeOneCluster(ctx context.Context,
 
 	manifestSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
-		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
+		return nil, utilerrors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 
@@ -135,7 +135,7 @@ func UpgradeKubeOneCluster(ctx context.Context,
 	if oldCluster.Cloud.KubeOne.ContainerRuntime == resources.ContainerRuntimeDocker {
 		cluster.ContainerRuntime.Containerd = nil
 		if upgradeVersion >= "1.24" {
-			return nil, errors.NewBadRequest("container runtime is \"docker\". Support for docker will be removed with Kubernetes 1.24 release.")
+			return nil, utilerrors.NewBadRequest("container runtime is \"docker\". Support for docker will be removed with Kubernetes 1.24 release.")
 		} else if cluster.ContainerRuntime.Docker == nil {
 			cluster.ContainerRuntime.Docker = &kubeonev1beta2.ContainerRuntimeDocker{}
 		}
@@ -171,7 +171,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	wantedContainerRuntime := newCluster.Cloud.KubeOne.ContainerRuntime
 
 	if externalCluster.Status.Condition.Phase == kubermaticv1.ExternalClusterPhaseReconciling {
-		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
+		return nil, utilerrors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
 	}
 
 	// currently only migration to containerd is supported
@@ -181,7 +181,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 
 	manifestSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
-		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
+		return nil, utilerrors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 	cluster := &kubeonev1beta2.KubeOneCluster{}

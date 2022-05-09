@@ -25,7 +25,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -35,7 +35,7 @@ func DeleteBackupDestinationEndpoint(userInfoGetter provider.UserInfoGetter, see
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(backupDestinationReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		seed, err := getSeed(ctx, req.seedReq, userInfoGetter, seedsGetter)
 		if err != nil {
@@ -43,12 +43,12 @@ func DeleteBackupDestinationEndpoint(userInfoGetter provider.UserInfoGetter, see
 		}
 
 		if seed.Spec.EtcdBackupRestore == nil {
-			return nil, k8cerrors.New(http.StatusNotFound, fmt.Sprintf("backup destination %q does not exist for seed %q", req.BackupDestination, req.Name))
+			return nil, utilerrors.New(http.StatusNotFound, fmt.Sprintf("backup destination %q does not exist for seed %q", req.BackupDestination, req.Name))
 		}
 
 		_, ok = seed.Spec.EtcdBackupRestore.Destinations[req.BackupDestination]
 		if !ok {
-			return nil, k8cerrors.New(http.StatusNotFound, fmt.Sprintf("backup destination %q does not exist for seed %q", req.BackupDestination, req.Name))
+			return nil, utilerrors.New(http.StatusNotFound, fmt.Sprintf("backup destination %q does not exist for seed %q", req.BackupDestination, req.Name))
 		}
 
 		delete(seed.Spec.EtcdBackupRestore.Destinations, req.BackupDestination)

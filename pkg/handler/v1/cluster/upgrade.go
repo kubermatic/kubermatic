@@ -30,7 +30,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 )
@@ -39,7 +39,7 @@ func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetClusterReq)
 		if !ok {
-			return nil, kubermaticerrors.NewWrongMethod(request, common.GetClusterReq{})
+			return nil, utilerrors.NewWrongMethod(request, common.GetClusterReq{})
 		}
 		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, configGetter)
 	}
@@ -71,11 +71,11 @@ func GetNodeUpgrades(configGetter provider.KubermaticConfigurationGetter) endpoi
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(NodeUpgradesReq)
 		if !ok {
-			return nil, kubermaticerrors.NewWrongMethod(request, NodeUpgradesReq{})
+			return nil, utilerrors.NewWrongMethod(request, NodeUpgradesReq{})
 		}
 		err := req.TypeReq.Validate()
 		if err != nil {
-			return nil, kubermaticerrors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		config, err := configGetter(ctx)
 		if err != nil {
@@ -142,7 +142,7 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
-			return nil, kubermaticerrors.NewWrongMethod(request, common.GetClusterReq{})
+			return nil, utilerrors.NewWrongMethod(request, common.GetClusterReq{})
 		}
 		return handlercommon.UpgradeNodeDeploymentsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Body, projectProvider, privilegedProjectProvider)
 	}
@@ -153,7 +153,7 @@ func GetMasterVersionsEndpoint(configGetter provider.KubermaticConfigurationGett
 		req := request.(TypeReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, kubermaticerrors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		config, err := configGetter(ctx)

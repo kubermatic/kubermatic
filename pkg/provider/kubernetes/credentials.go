@@ -42,7 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/vsphere"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -757,7 +757,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx cont
 
 func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalcluster *kubermaticv1.ExternalCluster) error {
 	if cloud.AWS.AccessKeyID == "" || cloud.AWS.SecretAccessKey == "" {
-		return errors.NewBadRequest("kubeone aws credentials missing")
+		return utilerrors.NewBadRequest("kubeone aws credentials missing")
 	}
 
 	if err := awsprovider.ValidateCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey); err != nil {
@@ -782,7 +782,7 @@ func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneClou
 func createOrUpdateKubeOneGCPSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
 	encodedServiceAccount := cloud.GCP.ServiceAccount
 	if encodedServiceAccount == "" {
-		return errors.NewBadRequest("kubeone gcp credentials missing")
+		return utilerrors.NewBadRequest("kubeone gcp credentials missing")
 	}
 
 	if err := gcp.ValidateCredentials(ctx, encodedServiceAccount); err != nil {
@@ -814,7 +814,7 @@ func createOrUpdateKubeOneAzureSecret(ctx context.Context, cloud apiv2.KubeOneCl
 	clientSecret := cloud.Azure.ClientSecret
 
 	if tenantID == "" || subscriptionID == "" || clientID == "" || clientSecret == "" {
-		return errors.NewBadRequest("kubeone azure credentials missing")
+		return utilerrors.NewBadRequest("kubeone azure credentials missing")
 	}
 
 	if err := azure.ValidateCredentials(ctx, azure.Credentials{
@@ -847,7 +847,7 @@ func createOrUpdateKubeOneDigitaloceanSecret(ctx context.Context, cloud apiv2.Ku
 	token := cloud.DigitalOcean.Token
 
 	if token == "" {
-		return errors.NewBadRequest("kubeone DigitalOcean credentials missing")
+		return utilerrors.NewBadRequest("kubeone DigitalOcean credentials missing")
 	}
 
 	if err := digitalocean.ValidateCredentials(ctx, token); err != nil {
@@ -878,7 +878,7 @@ func createOrUpdateKubeOneOpenstackSecret(ctx context.Context, cloud apiv2.KubeO
 	region := cloud.OpenStack.Region
 
 	if username == "" || password == "" || domain == "" || authUrl == "" || project == "" || projectID == "" || region == "" {
-		return errors.NewBadRequest("kubeone Openstack credentials missing")
+		return utilerrors.NewBadRequest("kubeone Openstack credentials missing")
 	}
 
 	// move credentials into dedicated Secret
@@ -907,7 +907,7 @@ func createOrUpdateKubeOneVSphereSecret(ctx context.Context, cloud apiv2.KubeOne
 	server := cloud.VSphere.Server
 
 	if username == "" || password == "" || server == "" {
-		return errors.NewBadRequest("kubeone VSphere credentials missing")
+		return utilerrors.NewBadRequest("kubeone VSphere credentials missing")
 	}
 
 	// move credentials into dedicated Secret
@@ -931,7 +931,7 @@ func createOrUpdateKubeOneEquinixSecret(ctx context.Context, cloud apiv2.KubeOne
 	projectID := cloud.Equinix.ProjectID
 
 	if apiKey == "" || projectID == "" {
-		return errors.NewBadRequest("kubeone Packet credentials missing")
+		return utilerrors.NewBadRequest("kubeone Packet credentials missing")
 	}
 
 	if err := packet.ValidateCredentials(apiKey, projectID); err != nil {
@@ -957,7 +957,7 @@ func createOrUpdateKubeOneHetznerSecret(ctx context.Context, cloud apiv2.KubeOne
 	token := cloud.Hetzner.Token
 
 	if token == "" {
-		return errors.NewBadRequest("kubeone Hetzner credentials missing")
+		return utilerrors.NewBadRequest("kubeone Hetzner credentials missing")
 	}
 
 	if err := hetzner.ValidateCredentials(ctx, token); err != nil {
@@ -991,7 +991,7 @@ func createOrUpdateKubeOneNutanixSecret(ctx context.Context, cloud apiv2.KubeOne
 	allowInsecure := cloud.Nutanix.AllowInsecure
 
 	if endpoint == "" || port == "" || username == "" || password == "" || peEndpoint == "" || peUsername == "" || pePassword == "" {
-		return errors.NewBadRequest("kubeone Nutanix credentials missing")
+		return utilerrors.NewBadRequest("kubeone Nutanix credentials missing")
 	}
 
 	secretData := map[string][]byte{

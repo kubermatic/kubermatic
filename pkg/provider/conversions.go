@@ -22,7 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/email"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // DatacenterFromSeedMap returns datacenter from the seed:datacenter map.
@@ -35,7 +35,7 @@ import (
 func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
 	var matchingDatacenters []kubermaticv1.Datacenter
@@ -48,11 +48,11 @@ func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacent
 	}
 
 	if len(matchingDatacenters) == 0 {
-		return nil, nil, errors.New(http.StatusNotFound, fmt.Sprintf("datacenter %q not found", datacenterName))
+		return nil, nil, utilerrors.New(http.StatusNotFound, fmt.Sprintf("datacenter %q not found", datacenterName))
 	}
 
 	if count := len(matchingDatacenters); count > 1 {
-		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("expected to find exactly one datacenter with name %q, got %d", datacenterName, count))
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("expected to find exactly one datacenter with name %q, got %d", datacenterName, count))
 	}
 
 	matchingDatacenter := matchingDatacenters[0]
@@ -60,7 +60,7 @@ func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacent
 
 	if !userInfo.IsAdmin {
 		if !canAccessDatacenter(matchingDatacenter, userInfo.Email) {
-			return nil, nil, errors.New(http.StatusForbidden, fmt.Sprintf("cannot access %s datacenter due to email requirements", datacenterName))
+			return nil, nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("cannot access %s datacenter due to email requirements", datacenterName))
 		}
 	}
 

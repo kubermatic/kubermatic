@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // Minimal wrapper to implement the http.Handler interface.
@@ -57,18 +57,18 @@ func ProxyEndpoint(
 
 		settings, err := settingsProvider.GetGlobalSettings(ctx)
 		if err != nil {
-			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "could not read global settings"))
+			common.WriteHTTPError(log, w, utilerrors.New(http.StatusInternalServerError, "could not read global settings"))
 			return
 		}
 
 		if !settings.Spec.EnableDashboard {
-			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusForbidden, "Kubernetes Dashboard access is disabled by the global settings"))
+			common.WriteHTTPError(log, w, utilerrors.New(http.StatusForbidden, "Kubernetes Dashboard access is disabled by the global settings"))
 			return
 		}
 
 		request, err := common.DecodeGetClusterReq(ctx, r)
 		if err != nil {
-			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, err.Error()))
+			common.WriteHTTPError(log, w, utilerrors.New(http.StatusBadRequest, err.Error()))
 			return
 		}
 
@@ -88,18 +88,18 @@ func ProxyEndpoint(
 			}
 			req, ok := request.(common.GetClusterReq)
 			if !ok {
-				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, "invalid request"))
+				common.WriteHTTPError(log, w, utilerrors.New(http.StatusBadRequest, "invalid request"))
 				return nil, nil
 			}
 			userInfo, err := userInfoGetter(ctx, req.ProjectID)
 			if err != nil {
-				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "couldn't get userInfo"))
+				common.WriteHTTPError(log, w, utilerrors.New(http.StatusInternalServerError, "couldn't get userInfo"))
 				return nil, nil
 			}
 
 			token, err := clusterProvider.GetTokenForCustomerCluster(ctx, userInfo, userCluster)
 			if err != nil {
-				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, fmt.Sprintf("error getting token for user %q: %v", userInfo.Email, err)))
+				common.WriteHTTPError(log, w, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("error getting token for user %q: %v", userInfo.Email, err)))
 				return nil, nil
 			}
 

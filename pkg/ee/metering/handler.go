@@ -35,7 +35,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -88,11 +88,11 @@ func DecodeMeteringConfigurationsReq(r *http.Request) (interface{}, error) {
 func CreateOrUpdateConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(configurationReq)
 	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
+		return utilerrors.NewBadRequest("invalid request")
 	}
 	err := req.Validate()
 	if err != nil {
-		return k8cerrors.NewBadRequest(err.Error())
+		return utilerrors.NewBadRequest(err.Error())
 	}
 
 	seedList := &kubermaticv1.SeedList{}
@@ -156,7 +156,7 @@ func CreateOrUpdateCredentials(ctx context.Context, request interface{}, seedsGe
 
 	req, ok := request.(credentialReq)
 	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
+		return utilerrors.NewBadRequest("invalid request")
 	}
 
 	if err := req.Validate(); err != nil {

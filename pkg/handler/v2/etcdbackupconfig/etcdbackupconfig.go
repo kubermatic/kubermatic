@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -326,7 +326,7 @@ func (r *listProjectEtcdBackupConfigReq) validate() error {
 		if r.Type == automaticBackup || r.Type == snapshot {
 			return nil
 		}
-		return errors.NewBadRequest("wrong query parameter, unsupported type: %s", r.Type)
+		return utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s", r.Type)
 	}
 	return nil
 }
@@ -438,7 +438,7 @@ func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *a
 func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackupConfigSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfig, error) {
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
 	}
 
 	return &kubermaticv1.EtcdBackupConfig{
@@ -515,7 +515,7 @@ func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoG
 func listProjectEtcdBackupConfig(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdBackupConfigList, error) {
 	privilegedEtcdBackupConfigProjectProvider := ctx.Value(middleware.PrivilegedEtcdBackupConfigProjectProviderContextKey).(provider.PrivilegedEtcdBackupConfigProjectProvider)
 	if privilegedEtcdBackupConfigProjectProvider == nil {
-		return nil, errors.New(http.StatusInternalServerError, "error getting privileged provider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "error getting privileged provider")
 	}
 	return privilegedEtcdBackupConfigProjectProvider.ListUnsecured(ctx, projectID)
 }

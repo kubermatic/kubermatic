@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/email"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -45,7 +45,7 @@ func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.User
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -58,7 +58,7 @@ func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.User
 		if !userInfo.IsAdmin {
 			dcs, err = filterDCsByEmail(userInfo, dcs)
 			if err != nil {
-				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+				return apiv1.Datacenter{}, utilerrors.New(http.StatusInternalServerError,
 					fmt.Sprintf("failed to filter datacenters by email: %v", err))
 			}
 		}
@@ -77,12 +77,12 @@ func ListEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter pr
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(forProviderDCListReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -97,7 +97,7 @@ func ListEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter pr
 		if !userInfo.IsAdmin {
 			dcs, err = filterDCsByEmail(userInfo, dcs)
 			if err != nil {
-				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+				return apiv1.Datacenter{}, utilerrors.New(http.StatusInternalServerError,
 					fmt.Sprintf("failed to filter datacenters by email: %v", err))
 			}
 		}
@@ -140,7 +140,7 @@ func GetEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserI
 func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, datacenterToGet string) (apiv1.Datacenter, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
-		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		return apiv1.Datacenter{}, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
 	// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
@@ -148,7 +148,7 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 	if !userInfo.IsAdmin {
 		dcs, err = filterDCsByEmail(userInfo, dcs)
 		if err != nil {
-			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+			return apiv1.Datacenter{}, utilerrors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to filter datacenters by email: %v", err))
 		}
 	}
@@ -161,12 +161,12 @@ func GetEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter pro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(forProviderDCGetReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -181,7 +181,7 @@ func GetEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter pro
 		if !userInfo.IsAdmin {
 			dcs, err = filterDCsByEmail(userInfo, dcs)
 			if err != nil {
-				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+				return apiv1.Datacenter{}, utilerrors.New(http.StatusInternalServerError,
 					fmt.Sprintf("failed to filter datacenters by email: %v", err))
 			}
 		}
@@ -202,7 +202,7 @@ func filterDCsByName(dcs []apiv1.Datacenter, dcName string) (apiv1.Datacenter, e
 		return apiv1.Datacenter{}, fmt.Errorf("did not find one but %d datacenters for name %q", n, dcName)
 	}
 	if len(foundDCs) == 0 {
-		return apiv1.Datacenter{}, errors.NewNotFound("datacenter", dcName)
+		return apiv1.Datacenter{}, utilerrors.NewNotFound("datacenter", dcName)
 	}
 
 	return foundDCs[0], nil
@@ -257,12 +257,12 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createDCReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.validate()
 		if err != nil {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
 		}
 
 		if err := validateUser(ctx, userInfoGetter); err != nil {
@@ -272,17 +272,17 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		// Get the seed in which the dc should be created
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 		seed, ok := seeds[req.Body.Spec.Seed]
 		if !ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: seed %q does not exist", req.Body.Spec.Seed))
 		}
 
 		// Check if dc already exists
 		if _, ok = seed.Spec.Datacenters[req.Body.Name]; ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: datacenter %q already exists", req.Body.Name))
 		}
 
@@ -290,7 +290,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
 		if err = masterClient.Update(ctx, seed); err != nil {
-			return nil, errors.New(http.StatusInternalServerError,
+			return nil, utilerrors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.Body.Name, err))
 		}
 
@@ -309,12 +309,12 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateDCReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.validate()
 		if err != nil {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
 		}
 
 		if err := validateUser(ctx, userInfoGetter); err != nil {
@@ -324,24 +324,24 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		// Get the seed in which the dc should be updated
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 		seed, ok := seeds[req.Body.Spec.Seed]
 		if !ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: seed %q does not exist", req.Body.Spec.Seed))
 		}
 
 		// get the dc to update
 		if _, ok := seed.Spec.Datacenters[req.DCToUpdate]; !ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: datacenter %q does not exists", req.DCToUpdate))
 		}
 
 		// Do an extra check if name changed and remove old dc
 		if !strings.EqualFold(req.DCToUpdate, req.Body.Name) {
 			if _, ok := seed.Spec.Datacenters[req.Body.Name]; ok {
-				return nil, errors.New(http.StatusBadRequest,
+				return nil, utilerrors.New(http.StatusBadRequest,
 					fmt.Sprintf("Bad request: cannot change %q datacenter name to %q as it already exists",
 						req.DCToUpdate, req.Body.Name))
 			}
@@ -350,7 +350,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
 		if err = masterClient.Update(ctx, seed); err != nil {
-			return nil, errors.New(http.StatusInternalServerError,
+			return nil, utilerrors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToUpdate, err))
 		}
 
@@ -369,7 +369,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(patchDCReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		if err := req.validate(); err != nil {
@@ -383,53 +383,53 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 		// Get the seed in which the dc should be updated
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 		seed, ok := seeds[req.Seed]
 		if !ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: seed %q does not exist", req.Seed))
 		}
 
 		// get the dc to update
 		currentDC, ok := seed.Spec.Datacenters[req.DCToPatch]
 		if !ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: datacenter %q does not exists", req.DCToPatch))
 		}
 
 		// patch
 		currentAPIDC, err := convertInternalDCToExternal(&currentDC, req.DCToPatch, req.Seed)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current dc: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current dc: %v", err))
 		}
 
 		currentDCJSON, err := json.Marshal(currentAPIDC)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to marshal current dc: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to marshal current dc: %v", err))
 		}
 
 		patchedJSON, err := jsonpatch.MergePatch(currentDCJSON, req.Patch)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to merge patch dc: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to merge patch dc: %v", err))
 		}
 
 		var patched apiv1.Datacenter
 		err = json.Unmarshal(patchedJSON, &patched)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patched dc: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patched dc: %v", err))
 		}
 
 		// validate patched spec
 		if err := validateProvider(&patched.Spec); err != nil {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("patched dc validation failed: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("patched dc validation failed: %v", err))
 		}
 		kubermaticPatched := convertExternalDCToInternal(&patched.Spec)
 
 		// As provider field is extracted from providers, we need to make sure its set properly
 		providerName, err := provider.DatacenterCloudProviderName(kubermaticPatched.Spec.DeepCopy())
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed extracting provider name from dc: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed extracting provider name from dc: %v", err))
 		}
 		patched.Spec.Provider = providerName
 
@@ -437,7 +437,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 		// Do an extra check if name changed and remove old dc
 		if !strings.EqualFold(req.DCToPatch, patched.Metadata.Name) {
 			if _, ok := seed.Spec.Datacenters[patched.Metadata.Name]; ok {
-				return nil, errors.New(http.StatusBadRequest,
+				return nil, utilerrors.New(http.StatusBadRequest,
 					fmt.Sprintf("Bad request: cannot change %q datacenter name to %q as it already exists",
 						req.DCToPatch, patched.Metadata.Name))
 			}
@@ -448,7 +448,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 		seed.Spec.Datacenters[dcName] = kubermaticPatched
 
 		if err = masterClient.Update(ctx, seed); err != nil {
-			return nil, errors.New(http.StatusInternalServerError,
+			return nil, utilerrors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToPatch, err))
 		}
 
@@ -462,7 +462,7 @@ func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteDCReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		if err := validateUser(ctx, userInfoGetter); err != nil {
@@ -472,23 +472,23 @@ func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		// Get the seed in which the dc should be deleted
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 		seed, ok := seeds[req.Seed]
 		if !ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: seed %q does not exist", req.Seed))
 		}
 
 		// get the dc to delete
 		if _, ok := seed.Spec.Datacenters[req.DC]; !ok {
-			return nil, errors.New(http.StatusBadRequest,
+			return nil, utilerrors.New(http.StatusBadRequest,
 				fmt.Sprintf("Bad request: datacenter %q does not exists", req.DC))
 		}
 		delete(seed.Spec.Datacenters, req.DC)
 
 		if err = masterClient.Update(ctx, seed); err != nil {
-			return nil, errors.New(http.StatusInternalServerError,
+			return nil, utilerrors.New(http.StatusInternalServerError,
 				fmt.Sprintf("failed to delete seed %q datacenter %q: %v", seed.Name, req.DC, err))
 		}
 
@@ -501,12 +501,12 @@ func ListEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provid
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listDCForSeedReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -516,7 +516,7 @@ func ListEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provid
 
 		seed, ok := seeds[req.Seed]
 		if !ok {
-			return nil, errors.NewNotFound("seed", req.Seed)
+			return nil, utilerrors.NewNotFound("seed", req.Seed)
 		}
 
 		// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
@@ -524,7 +524,7 @@ func ListEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provid
 		if !userInfo.IsAdmin {
 			dcs, err = filterDCsByEmail(userInfo, dcs)
 			if err != nil {
-				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+				return apiv1.Datacenter{}, utilerrors.New(http.StatusInternalServerError,
 					fmt.Sprintf("failed to filter datacenters by email: %v", err))
 			}
 		}
@@ -543,12 +543,12 @@ func GetEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provide
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(getDCForSeedReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -558,7 +558,7 @@ func GetEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provide
 
 		seed, ok := seeds[req.Seed]
 		if !ok {
-			return nil, errors.NewNotFound("seed", req.Seed)
+			return nil, utilerrors.NewNotFound("seed", req.Seed)
 		}
 
 		// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
@@ -566,7 +566,7 @@ func GetEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provide
 		if !userInfo.IsAdmin {
 			dcs, err = filterDCsByEmail(userInfo, dcs)
 			if err != nil {
-				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+				return apiv1.Datacenter{}, utilerrors.New(http.StatusInternalServerError,
 					fmt.Sprintf("failed to filter datacenters by email: %v", err))
 			}
 		}
@@ -582,7 +582,7 @@ func validateUser(ctx context.Context, userInfoGetter provider.UserInfoGetter) e
 	}
 
 	if !userInfo.IsAdmin {
-		return errors.New(http.StatusForbidden,
+		return utilerrors.New(http.StatusForbidden,
 			fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
 	}
 	return nil
@@ -868,11 +868,11 @@ func (req patchDCReq) validate() error {
 
 	err := json.Unmarshal(req.Patch, &seedValidator)
 	if err != nil {
-		return errors.New(http.StatusBadRequest, fmt.Sprintf("failed to validate patch body seed: %v", err))
+		return utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to validate patch body seed: %v", err))
 	}
 
 	if seedValidator.Spec.Seed != "" && !strings.EqualFold(seedValidator.Spec.Seed, req.Seed) {
-		return errors.New(http.StatusBadRequest,
+		return utilerrors.New(http.StatusBadRequest,
 			fmt.Sprintf("patched dc validation failed: path seed name %q has to be equal to patch seed name %q",
 				req.Seed, seedValidator.Spec.Seed))
 	}

@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 type NutanixCommonReq struct {
@@ -216,7 +216,7 @@ func NutanixClusterEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 
 		clusters, err := client.ListNutanixClusters(ctx)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list clusters: %s", err.Error()))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list clusters: %s", err.Error()))
 		}
 
 		return clusters, nil
@@ -235,7 +235,7 @@ func NutanixProjectEndpoint(presetProvider provider.PresetProvider, seedsGetter 
 
 		projects, err := client.ListNutanixProjects(ctx)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list projects: %s", err.Error()))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list projects: %s", err.Error()))
 		}
 
 		return projects, nil
@@ -262,7 +262,7 @@ func NutanixSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 
 		subnets, err := client.ListNutanixSubnets(ctx, cluster, project)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list subnets: %s", err.Error()))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list subnets: %s", err.Error()))
 		}
 
 		return subnets, nil
@@ -280,7 +280,7 @@ func NutanixCategoryEndpoint(presetProvider provider.PresetProvider, seedsGetter
 
 		categories, err := client.ListNutanixCategories(ctx)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list categories: %s", err.Error()))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list categories: %s", err.Error()))
 		}
 
 		return categories, nil
@@ -298,7 +298,7 @@ func NutanixCategoryValuesEndpoint(presetProvider provider.PresetProvider, seeds
 
 		categories, err := client.ListNutanixCategoryValues(ctx, req.Category)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list category values for '%s': %s", req.Category, err.Error()))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot list category values for '%s': %s", req.Category, err.Error()))
 		}
 
 		return categories, nil
@@ -322,7 +322,7 @@ func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider 
 	if len(req.Credential) > 0 {
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 		if err != nil {
-			return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			return nil, nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
 		if credential = preset.Spec.Nutanix; credential != nil {
 			creds.ProxyURL = credential.ProxyURL
@@ -332,15 +332,15 @@ func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider 
 	}
 
 	if creds.Username == "" || creds.Password == "" {
-		return nil, nil, errors.NewBadRequest("no valid credentials found")
+		return nil, nil, utilerrors.NewBadRequest("no valid credentials found")
 	}
 
 	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 	if err != nil {
-		return nil, nil, errors.NewBadRequest(err.Error())
+		return nil, nil, utilerrors.NewBadRequest(err.Error())
 	}
 	if dc.Spec.Nutanix == nil {
-		return nil, nil, errors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
+		return nil, nil, utilerrors.NewBadRequest("datacenter '%s' is not a Nutanix datacenter", req.DC)
 	}
 
 	client := providercommon.NewNutanixClient(dc.Spec.Nutanix, &creds)

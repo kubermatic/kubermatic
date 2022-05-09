@@ -29,7 +29,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -37,7 +37,7 @@ func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privileged
 		req := request.(roleUserReq)
 
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
 		}
 
 		return handlercommon.BindUserToRoleEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID, req.Namespace)
@@ -49,7 +49,7 @@ func UnbindUserFromRoleBindingEndpoint(projectProvider provider.ProjectProvider,
 		req := request.(roleUserReq)
 
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
 		}
 
 		return handlercommon.UnbindUserFromRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID, req.Namespace)
@@ -100,7 +100,7 @@ func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, pri
 		req := request.(clusterRoleUserReq)
 
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
 		}
 
 		return handlercommon.BindUserToClusterRoleEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
@@ -112,7 +112,7 @@ func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectPr
 		req := request.(clusterRoleUserReq)
 
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
 		}
 
 		return handlercommon.UnbindUserFromClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)

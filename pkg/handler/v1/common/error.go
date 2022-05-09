@@ -19,7 +19,7 @@ package common
 import (
 	"errors"
 
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -33,7 +33,7 @@ func KubernetesErrorToHTTPError(err error) error {
 		httpCode := errStatus.Status().Code
 		httpMessage := errStatus.Status().Message
 
-		return kubermaticerrors.New(int(httpCode), httpMessage)
+		return utilerrors.New(int(httpCode), httpMessage)
 	}
 
 	return err

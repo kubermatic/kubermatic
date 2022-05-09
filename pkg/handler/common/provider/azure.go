@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // https://docs.microsoft.com/en-us/azure/virtual-machines/sizes-gpu
@@ -179,7 +179,7 @@ func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -188,17 +188,17 @@ func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter
 	}
 	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	if datacenter.Spec.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec (dc) for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
 	}
 
 	azureLocation := datacenter.Spec.Azure.Location
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -221,7 +221,7 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(ctx context.Context, u
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -230,17 +230,17 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(ctx context.Context, u
 	}
 	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	if datacenter.Spec.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec (dc) for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
 	}
 
 	azureLocation := datacenter.Spec.Azure.Location
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())

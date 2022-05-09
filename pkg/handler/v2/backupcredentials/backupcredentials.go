@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,26 +47,26 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return userInfo, errors.New(http.StatusForbidden, "Only admins are allowed to create backup credentials")
+			return userInfo, utilerrors.New(http.StatusForbidden, "Only admins are allowed to create backup credentials")
 		}
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting seeds: %v", err))
 		}
 		seed, ok := seeds[req.SeedName]
 		if !ok {
-			return nil, errors.NewBadRequest("seed %q not found", req.SeedName)
+			return nil, utilerrors.NewBadRequest("seed %q not found", req.SeedName)
 		}
 
 		backupDest, ok := seed.Spec.EtcdBackupRestore.Destinations[req.Body.BackupCredentials.Destination]
 		if !ok {
-			return nil, errors.NewBadRequest("backup destination %q in seed %q not found", req.Body.BackupCredentials.Destination, req.SeedName)
+			return nil, utilerrors.NewBadRequest("backup destination %q in seed %q not found", req.Body.BackupCredentials.Destination, req.SeedName)
 		}
 
 		backupCredentialsProvider, ok := ctx.Value(middleware.BackupCredentialsProviderContextKey).(provider.BackupCredentialsProvider)
 		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "can't find backup credentials provider")
+			return nil, utilerrors.New(http.StatusInternalServerError, "can't find backup credentials provider")
 		}
 
 		bc := convertAPIToInternalBackupCredentials(&req.Body.BackupCredentials, backupDest)
@@ -94,7 +94,7 @@ func CreateOrUpdateEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter 
 
 			_, err = seedProvider.UpdateUnsecured(ctx, seed)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error setting seed backup destination credentials: %v", err))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error setting seed backup destination credentials: %v", err))
 			}
 		}
 

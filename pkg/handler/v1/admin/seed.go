@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,7 +49,7 @@ func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if !userInfo.IsAdmin {
-			return nil, k8cerrors.New(http.StatusForbidden, fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
+			return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
 		}
 		seedMap, err := seedsGetter()
 		if err != nil {
@@ -73,7 +73,7 @@ func GetSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provide
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(seedReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		seed, err := getSeed(ctx, req, userInfoGetter, seedsGetter)
 		if err != nil {
@@ -91,11 +91,11 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateSeedReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, k8cerrors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		seed, err := getSeed(ctx, req.seedReq, userInfoGetter, seedsGetter)
 		if err != nil {
@@ -104,22 +104,22 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 
 		originalJSON, err := json.Marshal(seed.Spec)
 		if err != nil {
-			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current seed to JSON: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current seed to JSON: %v", err))
 		}
 		newJSON, err := json.Marshal(req.Body.Spec)
 		if err != nil {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to convert patch seed to JSON: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to convert patch seed to JSON: %v", err))
 		}
 
 		patchedJSON, err := jsonpatch.MergePatch(originalJSON, newJSON)
 		if err != nil {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch: %v", err))
 		}
 
 		var seedSpec *kubermaticv1.SeedSpec
 		err = json.Unmarshal(patchedJSON, &seedSpec)
 		if err != nil {
-			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed unmarshall patched seed: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed unmarshall patched seed: %v", err))
 		}
 		seed.Spec = *seedSpec
 
@@ -139,7 +139,7 @@ func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(seedReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		seed, err := getSeed(ctx, req, userInfoGetter, seedsGetter)
 		if err != nil {
@@ -160,7 +160,7 @@ func getSeed(ctx context.Context, req seedReq, userInfoGetter provider.UserInfoG
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if !userInfo.IsAdmin {
-		return nil, k8cerrors.New(http.StatusForbidden, fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
+		return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
 	}
 	seedMap, err := seedsGetter()
 	if err != nil {
@@ -169,7 +169,7 @@ func getSeed(ctx context.Context, req seedReq, userInfoGetter provider.UserInfoG
 
 	result, ok := seedMap[req.Name]
 	if !ok {
-		return nil, k8cerrors.NewNotFound("Seed", req.Name)
+		return nil, utilerrors.NewNotFound("Seed", req.Name)
 	}
 	return result, nil
 }

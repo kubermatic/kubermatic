@@ -26,7 +26,7 @@ import (
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, userProvider provider.UserProvider) endpoint.Endpoint {
@@ -37,7 +37,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, userProvider provider.
 		}
 
 		if !userInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
 		}
 

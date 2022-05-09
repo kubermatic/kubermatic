@@ -31,7 +31,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +57,7 @@ func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listPresetsReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -68,7 +68,7 @@ func ListPresets(presetProvider provider.PresetProvider, userInfoGetter provider
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
 		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		for _, preset := range presets {
@@ -130,12 +130,12 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updatePresetStatusReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -144,12 +144,12 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 		}
 
 		if !userInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden, "only admins can update presets")
+			return nil, utilerrors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		if len(req.Provider) == 0 {
@@ -159,7 +159,7 @@ func UpdatePresetStatus(presetProvider provider.PresetProvider, userInfoGetter p
 		}
 
 		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, kubermaticv1.ProviderType(req.Provider)); !hasProvider {
-			return nil, errors.New(http.StatusConflict, fmt.Sprintf("trying to update preset with missing provider configuration for: %s", req.Provider))
+			return nil, utilerrors.New(http.StatusConflict, fmt.Sprintf("trying to update preset with missing provider configuration for: %s", req.Provider))
 		}
 
 		kubermaticv1helper.SetProviderEnabled(preset, kubermaticv1.ProviderType(req.Provider), req.Body.Enabled)
@@ -215,11 +215,11 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderPresetsReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -230,7 +230,7 @@ func ListProviderPresets(presetProvider provider.PresetProvider, userInfoGetter 
 		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
 		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		for _, preset := range presets {
@@ -323,12 +323,12 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createPresetReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -337,7 +337,7 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		if !userInfo.IsAdmin {
-			return "", errors.New(http.StatusForbidden, "only admins can update presets")
+			return "", utilerrors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
@@ -350,7 +350,7 @@ func CreatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, kubermaticv1.ProviderType(req.ProviderName)); hasProvider {
-			return nil, errors.New(http.StatusConflict, fmt.Sprintf("%s provider configuration already exists for preset %s", req.ProviderName, preset.Name))
+			return nil, utilerrors.New(http.StatusConflict, fmt.Sprintf("%s provider configuration already exists for preset %s", req.ProviderName, preset.Name))
 		}
 
 		preset = mergePresets(preset, convertAPIToInternalPreset(req.Body), kubermaticv1.ProviderType(req.ProviderName))
@@ -392,12 +392,12 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updatePresetReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -406,7 +406,7 @@ func UpdatePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		if !userInfo.IsAdmin {
-			return "", errors.New(http.StatusForbidden, "only admins can update presets")
+			return "", utilerrors.New(http.StatusForbidden, "only admins can update presets")
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Body.Name)
@@ -455,12 +455,12 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deletePresetReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -469,12 +469,12 @@ func DeletePreset(presetProvider provider.PresetProvider, userInfoGetter provide
 		}
 
 		if !userInfo.IsAdmin {
-			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
+			return "", utilerrors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if apierrors.IsNotFound(err) {
-			return nil, errors.NewNotFound("Preset", "preset was not found.")
+			return nil, utilerrors.NewNotFound("Preset", "preset was not found.")
 		}
 
 		if err != nil && !apierrors.IsNotFound(err) {
@@ -528,12 +528,12 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deletePresetProviderReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -542,21 +542,21 @@ func DeletePresetProvider(presetProvider provider.PresetProvider, userInfoGetter
 		}
 
 		if !userInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden, "only admins can delete preset providers")
+			return nil, utilerrors.New(http.StatusForbidden, "only admins can delete preset providers")
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if apierrors.IsNotFound(err) {
-			return nil, errors.NewNotFound("Preset", "preset was not found.")
+			return nil, utilerrors.NewNotFound("Preset", "preset was not found.")
 		}
 
 		if err != nil && !apierrors.IsNotFound(err) {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		providerName := kubermaticv1.ProviderType(req.ProviderName)
 		if hasProvider, _ := kubermaticv1helper.HasProvider(preset, providerName); !hasProvider {
-			return nil, errors.NewNotFound("Preset", fmt.Sprintf("preset %s does not contain %s provider", req.PresetName, req.ProviderName))
+			return nil, utilerrors.NewNotFound("Preset", fmt.Sprintf("preset %s does not contain %s provider", req.PresetName, req.ProviderName))
 		}
 
 		preset = kubermaticv1helper.RemoveProvider(preset, providerName)
@@ -608,12 +608,12 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteProviderPresetReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -622,12 +622,12 @@ func DeleteProviderPreset(presetProvider provider.PresetProvider, userInfoGetter
 		}
 
 		if !userInfo.IsAdmin {
-			return "", errors.New(http.StatusForbidden, "only admins can delete presets")
+			return "", utilerrors.New(http.StatusForbidden, "only admins can delete presets")
 		}
 
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if apierrors.IsNotFound(err) {
-			return nil, errors.NewBadRequest("preset was not found.")
+			return nil, utilerrors.NewBadRequest("preset was not found.")
 		}
 
 		if err != nil && !apierrors.IsNotFound(err) {
@@ -685,12 +685,12 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(getPresetSatsReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -701,7 +701,7 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.PresetName)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				return nil, errors.NewBadRequest("preset was not found.")
+				return nil, utilerrors.NewBadRequest("preset was not found.")
 			}
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -710,7 +710,7 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 		presetLabelRequirement, err := labels.NewRequirement(kubermaticv1.IsCredentialPresetLabelKey, selection.Equals, []string{"true"})
 		if err != nil {
@@ -720,7 +720,7 @@ func GetPresetStats(presetProvider provider.PresetProvider, userInfoGetter provi
 		for datacenter, seed := range seeds {
 			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
-				return nil, errors.NewNotFound("cluster-provider", datacenter)
+				return nil, utilerrors.NewNotFound("cluster-provider", datacenter)
 			}
 			clusters, err := clusterProvider.ListAll(ctx, labels.NewSelector().Add(*presetLabelRequirement))
 			if err != nil {

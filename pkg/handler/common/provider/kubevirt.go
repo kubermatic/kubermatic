@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,12 +74,12 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 	}
 
 	if cluster.Spec.Cloud.Kubevirt == nil {
-		return "", errors.NewNotFound("cloud spec for ", clusterID)
+		return "", utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return "", errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return "", utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())

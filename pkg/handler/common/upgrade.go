@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -126,11 +126,11 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 
 	requestedKubeletVersion, err := semver.NewVersion(version.Version.String())
 	if err != nil {
-		return nil, kubermaticerrors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), requestedKubeletVersion); err != nil {
-		return nil, kubermaticerrors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
@@ -152,7 +152,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 
 	if len(updateErrors) > 0 {
-		return nil, kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
+		return nil, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
 	}
 
 	return nil, nil

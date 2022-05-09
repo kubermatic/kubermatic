@@ -29,7 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // KubermaticSettingsEndpoint returns global settings.
@@ -71,17 +71,17 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 		}
 		existingGlobalSettingsSpecJSON, err := json.Marshal(existingGlobalSettings.Spec)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode existing settings: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode existing settings: %v", err)
 		}
 
 		patchedGlobalSettingsSpecJSON, err := jsonpatch.MergePatch(existingGlobalSettingsSpecJSON, req.Patch)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot patch global settings: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot patch global settings: %v", err)
 		}
 		var patchedGlobalSettingsSpec *kubermaticv1.SettingSpec
 		err = json.Unmarshal(patchedGlobalSettingsSpecJSON, &patchedGlobalSettingsSpec)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode patched settings: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode patched settings: %v", err)
 		}
 
 		existingGlobalSettings.Spec = *patchedGlobalSettingsSpec

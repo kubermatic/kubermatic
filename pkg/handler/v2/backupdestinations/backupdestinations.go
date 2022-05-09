@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	errors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -77,7 +77,7 @@ func getSeed(ctx context.Context, userInfoGetter provider.UserInfoGetter, projec
 ) (*kubermaticv1.Seed, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
+		return nil, utilerrors.New(http.StatusInternalServerError, "no cluster in request")
 	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 
@@ -98,7 +98,7 @@ func getSeed(ctx context.Context, userInfoGetter provider.UserInfoGetter, projec
 
 	seed, ok := seeds[clusterProvider.GetSeedName()]
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("Seed %q not found", clusterProvider.GetSeedName()))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Seed %q not found", clusterProvider.GetSeedName()))
 	}
 	return seed, nil
 }
