@@ -55,6 +55,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -838,6 +839,9 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 	apiCluster.Name = cluster.Name
 	apiCluster.Type = cluster.Type
 	apiCluster.Labels = cluster.Labels
+	if cluster.MachineDeploymentCount > 0 {
+		apiCluster.MachineDeploymentCount = pointer.Int(int(cluster.MachineDeploymentCount))
+	}
 
 	creationTime, err := time.Parse(time.RFC3339, cluster.CreationTimestamp.String())
 	if err != nil {
