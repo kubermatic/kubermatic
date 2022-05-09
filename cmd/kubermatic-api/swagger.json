@@ -9885,7 +9885,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Lists clusters for the specified project.",
+        "summary": "Lists clusters for the specified project. If query parameter `show_dm_count` is set to `true` then the endpoint will also return the number of machine deployments of each cluster.",
         "operationId": "listClustersV2",
         "parameters": [
           {
@@ -9894,6 +9894,12 @@
             "name": "project_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "ShowDeploymentMachineCount",
+            "name": "show_dm_count",
+            "in": "query"
           }
         ],
         "responses": {
@@ -21645,6 +21651,11 @@
             "type": "string"
           },
           "x-go-name": "Labels"
+        },
+        "machineDeploymentCount": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MachineDeploymentCount"
         },
         "name": {
           "description": "Name represents human readable name for the resource",

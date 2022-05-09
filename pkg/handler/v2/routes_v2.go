@@ -970,7 +970,7 @@ func (r Routing) createCluster() http.Handler {
 
 // swagger:route GET /api/v2/projects/{project_id}/clusters project listClustersV2
 //
-//     Lists clusters for the specified project.
+//     Lists clusters for the specified project. If query parameter `show_dm_count` is set to `true` then the endpoint will also return the number of machine deployments of each cluster.
 //
 //     Produces:
 //     - application/json
@@ -986,7 +986,7 @@ func (r Routing) listClusters() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(cluster.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.clusterProviderGetter, r.userInfoGetter, r.kubermaticConfigGetter)),
-		common.DecodeGetProject,
+		cluster.DecodeListClustersReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
