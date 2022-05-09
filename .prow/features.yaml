@@ -126,6 +126,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-dualstack-e2e
+    always_run: true # TODO: remove before merging
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
