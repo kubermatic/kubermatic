@@ -50,11 +50,11 @@ type ExternalCluster struct {
 // ExternalClusterStatus denotes status information about an ExternalCluster.
 type ExternalClusterStatus struct {
 	// Conditions contains conditions an externalcluster is in, its primary use case is status signaling for controller
-	Condition ExternalClusterCondition `json:"conditions,omitempty"`
+	Condition ExternalClusterCondition `json:"condition,omitempty"`
 }
 
 type ExternalClusterCondition struct {
-	Phase ExternalClusterPhase `json:"status"`
+	Phase ExternalClusterPhase `json:"phase"`
 	// Human readable message indicating details about last transition.
 	Message string `json:"message,omitempty"`
 }
