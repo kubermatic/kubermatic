@@ -218,6 +218,8 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	// and return errors otherwise.
 	// Ideally, the cache wouldn't require the leader lease:
 	// https://github.com/kubernetes-sigs/controller-runtime/issues/677
+	log.Debug("Starting cluster backup collector")
+	collectors.MustRegisterClusterBackupCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader(), log, options.caBundle, seedGetter)
 	log.Debug("Starting clusters collector")
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 	log.Debug("Starting addons collector")
