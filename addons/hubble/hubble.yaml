@@ -1,4 +1,4 @@
-# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generated from:
-#   helm template cilium cilium/cilium --version 1.11.0 --namespace kube-system --set operator.replicas=1 \
-#     --set hubble.tls.auto.method=cronJob --set hubble.relay.enabled=true --set hubble.ui.enabled=true \
-#     --set kubeProxyReplacement=strict --set k8sServiceHost=CHANGEME --set k8sServicePort=CHANGEME
-#
-# Modifications:
-#   - Only templates/hubble, templates/hubble-relay and templates/hubble-ui components are placed here, the rest is part of the "cilium" addon
+# This file was generated, DO NOT EDIT.
+# Run `make hubble` instead.
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
-
----
-# Source: cilium/templates/hubble/tls-cronjob/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: "hubble-generate-certs"
-  namespace: kube-system
 ---
 # Source: cilium/templates/hubble-relay/serviceaccount.yaml
 apiVersion: v1
@@ -42,6 +29,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "hubble-ui"
+  namespace: kube-system
+---
+# Source: cilium/templates/hubble/tls-cronjob/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "hubble-generate-certs"
   namespace: kube-system
 ---
 # Source: cilium/templates/hubble-relay/configmap.yaml
@@ -70,7 +64,7 @@ metadata:
   name: hubble-ui-envoy
   namespace: kube-system
 data:
-
+  
   envoy.yaml: |
     static_resources:
       listeners:
@@ -144,6 +138,50 @@ data:
                           address: 127.0.0.1
                           port_value: 8090
 ---
+# Source: cilium/templates/hubble-ui/clusterrole.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: hubble-ui
+rules:
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - componentstatuses
+  - endpoints
+  - namespaces
+  - nodes
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cilium.io
+  resources:
+  - "*"
+  verbs:
+  - get
+  - list
+  - watch
+---
 # Source: cilium/templates/hubble/tls-cronjob/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -176,49 +214,19 @@ rules:
       - get
       - update
 ---
-# Source: cilium/templates/hubble-ui/clusterrole.yaml
-kind: ClusterRole
+# Source: cilium/templates/hubble-ui/clusterrolebinding.yaml
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: hubble-ui
-rules:
-  - apiGroups:
-      - networking.k8s.io
-    resources:
-      - networkpolicies
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - componentstatuses
-      - endpoints
-      - namespaces
-      - nodes
-      - pods
-      - services
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - apiextensions.k8s.io
-    resources:
-      - customresourcedefinitions
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - cilium.io
-    resources:
-      - "*"
-    verbs:
-      - get
-      - list
-      - watch
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hubble-ui
+subjects:
+- kind: ServiceAccount
+  name: "hubble-ui"
+  namespace: kube-system
 ---
 # Source: cilium/templates/hubble/tls-cronjob/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -230,23 +238,9 @@ roleRef:
   kind: ClusterRole
   name: hubble-generate-certs
 subjects:
-  - kind: ServiceAccount
-    name: "hubble-generate-certs"
-    namespace: kube-system
----
-# Source: cilium/templates/hubble-ui/clusterrolebinding.yaml
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: hubble-ui
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: hubble-ui
-subjects:
-  - kind: ServiceAccount
-    name: "hubble-ui"
-    namespace: kube-system
+- kind: ServiceAccount
+  name: "hubble-generate-certs"
+  namespace: kube-system
 ---
 # Source: cilium/templates/hubble-relay/service.yaml
 kind: Service
@@ -261,9 +255,9 @@ spec:
   selector:
     k8s-app: hubble-relay
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 4245
+  - protocol: TCP
+    port: 80
+    targetPort: 4245
 ---
 # Source: cilium/templates/hubble-ui/service.yaml
 kind: Service
@@ -308,16 +302,16 @@ spec:
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: "k8s-app"
-                    operator: In
-                    values:
-                      - cilium
-              topologyKey: "kubernetes.io/hostname"
+          - labelSelector:
+              matchExpressions:
+                - key: "k8s-app"
+                  operator: In
+                  values:
+                    - cilium
+            topologyKey: "kubernetes.io/hostname"
       containers:
         - name: hubble-relay
-          image: "quay.io/cilium/hubble-relay:v1.11.0@sha256:306ce38354a0a892b0c175ae7013cf178a46b79f51c52adb5465d87f14df0838"
+          image: "{{ Registry "quay.io" }}/cilium/hubble-relay:v1.11.0@sha256:306ce38354a0a892b0c175ae7013cf178a46b79f51c52adb5465d87f14df0838"
           imagePullPolicy: IfNotPresent
           command:
             - hubble-relay
@@ -333,46 +327,46 @@ spec:
             tcpSocket:
               port: grpc
           volumeMounts:
-            - name: hubble-sock-dir
-              mountPath: /var/run/cilium
-              readOnly: true
-            - name: config
-              mountPath: /etc/hubble-relay
-              readOnly: true
-            - name: tls
-              mountPath: /var/lib/hubble-relay/tls
-              readOnly: true
+          - name: hubble-sock-dir
+            mountPath: /var/run/cilium
+            readOnly: true
+          - name: config
+            mountPath: /etc/hubble-relay
+            readOnly: true
+          - name: tls
+            mountPath: /var/lib/hubble-relay/tls
+            readOnly: true
       restartPolicy: Always
-      priorityClassName:
+      priorityClassName: 
       serviceAccount: "hubble-relay"
       serviceAccountName: "hubble-relay"
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 0
       volumes:
-        - name: config
-          configMap:
-            name: hubble-relay-config
-            items:
-              - key: config.yaml
-                path: config.yaml
-        - name: hubble-sock-dir
-          hostPath:
-            path: /var/run/cilium
-            type: Directory
-        - name: tls
-          projected:
-            # note: the leading zero means this number is in octal representation: do not remove it
-            defaultMode: 0400
-            sources:
-              - secret:
-                  name: hubble-relay-client-certs
-                  items:
-                    - key: ca.crt
-                      path: hubble-server-ca.crt
-                    - key: tls.crt
-                      path: client.crt
-                    - key: tls.key
-                      path: client.key
+      - name: config
+        configMap:
+          name: hubble-relay-config
+          items:
+          - key: config.yaml
+            path: config.yaml
+      - name: hubble-sock-dir
+        hostPath:
+          path: /var/run/cilium
+          type: Directory
+      - name: tls
+        projected:
+          # note: the leading zero means this number is in octal representation: do not remove it
+          defaultMode: 0400
+          sources:
+          - secret:
+              name: hubble-relay-client-certs
+              items:
+                - key: ca.crt
+                  path: hubble-server-ca.crt
+                - key: tls.crt
+                  path: client.crt
+                - key: tls.key
+                  path: client.key
 ---
 # Source: cilium/templates/hubble-ui/deployment.yaml
 kind: Deployment
@@ -395,48 +389,48 @@ spec:
     spec:
       securityContext:
         runAsUser: 1001
-      priorityClassName:
+      priorityClassName: 
       serviceAccount: "hubble-ui"
       serviceAccountName: "hubble-ui"
       containers:
-        - name: frontend
-          image: "quay.io/cilium/hubble-ui:v0.8.3@sha256:018ed122968de658d8874e2982fa6b3a8ae64b43d2356c05f977004176a89310"
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 8080
-        - name: backend
-          image: "quay.io/cilium/hubble-ui-backend:v0.8.3@sha256:13a16ed3ae9749682c817d3b834b2f2de901da6fb41de7753d7dce16650982b3"
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: EVENTS_SERVER_PORT
-              value: "8090"
-            - name: FLOWS_API_ADDR
-              value: "hubble-relay:80"
-          ports:
-            - name: grpc
-              containerPort: 8090
-          volumeMounts:
-        - name: proxy
-          image: "docker.io/envoyproxy/envoy:v1.18.4@sha256:e5c2bb2870d0e59ce917a5100311813b4ede96ce4eb0c6bfa879e3fbe3e83935"
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 8081
-          command: [envoy]
-          args:
-            - -c
-            - /etc/envoy.yaml
-            - -l
-            - info
-          volumeMounts:
-            - name: hubble-ui-envoy-yaml
-              mountPath: /etc/envoy.yaml
-              subPath: envoy.yaml
-      volumes:
+      - name: frontend
+        image: "{{ Registry "quay.io" }}/cilium/hubble-ui:v0.8.3@sha256:018ed122968de658d8874e2982fa6b3a8ae64b43d2356c05f977004176a89310"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+      - name: backend
+        image: "{{ Registry "quay.io" }}/cilium/hubble-ui-backend:v0.8.3@sha256:13a16ed3ae9749682c817d3b834b2f2de901da6fb41de7753d7dce16650982b3"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: EVENTS_SERVER_PORT
+          value: "8090"
+        - name: FLOWS_API_ADDR
+          value: "hubble-relay:80"
+        ports:
+        - name: grpc
+          containerPort: 8090
+        volumeMounts:
+      - name: proxy
+        image: "docker.io/envoyproxy/envoy:v1.18.4@sha256:e5c2bb2870d0e59ce917a5100311813b4ede96ce4eb0c6bfa879e3fbe3e83935"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8081
+        command: [envoy]
+        args:
+        - -c
+        - /etc/envoy.yaml
+        - -l
+        - info
+        volumeMounts:
         - name: hubble-ui-envoy-yaml
-          configMap:
-            name: hubble-ui-envoy
+          mountPath: /etc/envoy.yaml
+          subPath: envoy.yaml
+      volumes:
+      - name: hubble-ui-envoy-yaml
+        configMap:
+          name: hubble-ui-envoy
 ---
 # Source: cilium/templates/hubble/tls-cronjob/job.yaml
 apiVersion: batch/v1
@@ -454,7 +448,7 @@ spec:
     spec:
       containers:
         - name: certgen
-          image: "quay.io/cilium/certgen:v0.1.5"
+          image: "{{ Registry "quay.io" }}/cilium/certgen:v0.1.5"
           imagePullPolicy: IfNotPresent
           command:
             - "/usr/bin/cilium-certgen"
@@ -477,7 +471,7 @@ spec:
   ttlSecondsAfterFinished: 1800
 ---
 # Source: cilium/templates/hubble/tls-cronjob/cronjob.yaml
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: hubble-generate-certs
@@ -496,7 +490,7 @@ spec:
         spec:
           containers:
             - name: certgen
-              image: "quay.io/cilium/certgen:v0.1.5"
+              image: "{{ Registry "quay.io" }}/cilium/certgen:v0.1.5"
               imagePullPolicy: IfNotPresent
               command:
                 - "/usr/bin/cilium-certgen"
@@ -517,5 +511,4 @@ spec:
           serviceAccountName: "hubble-generate-certs"
           restartPolicy: OnFailure
       ttlSecondsAfterFinished: 1800
-
 {{ end }}

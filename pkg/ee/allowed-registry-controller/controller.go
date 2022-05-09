@@ -39,7 +39,7 @@ import (
 
 const (
 	// This controller creates corresponding OPA Constraint Templates and Default Constraints based on AllowedRegistry data.
-	ControllerName = "allowed_registry_controller"
+	ControllerName = "kkp-allowed-registry-controller"
 )
 
 func Add(mgr manager.Manager,

@@ -24,6 +24,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"go.uber.org/zap"
@@ -82,7 +83,7 @@ func ListEndpoint(
 	configGetter provider.KubermaticConfigurationGetter,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(common.GetProjectRq)
+		req := request.(ListClustersReq)
 		allClusters := make([]*apiv1.Cluster, 0)
 
 		seeds, err := seedsGetter()
@@ -97,7 +98,7 @@ func ListEndpoint(
 				kubermaticlog.Logger.Errorw("failed to create cluster provider", "seed", seed.Name, zap.Error(err))
 				continue
 			}
-			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter)
+			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter, req.ShowDeploymentMachineCount)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -454,6 +455,32 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 			return nil, err
 		}
 		req.DeleteLoadBalancers = deleteLB
+	}
+
+	return req, nil
+}
+
+// ListClustersReq defines HTTP request for listClusters endpoint.
+// swagger:parameters listClustersV2
+type ListClustersReq struct {
+	common.ProjectReq
+
+	// in: query
+	ShowDeploymentMachineCount bool `json:"show_dm_count"`
+}
+
+func DecodeListClustersReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListClustersReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	showDeploymentMachineCount := r.URL.Query().Get("show_dm_count")
+	if strings.EqualFold(showDeploymentMachineCount, "true") {
+		req.ShowDeploymentMachineCount = true
 	}
 
 	return req, nil

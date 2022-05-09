@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -24,6 +25,9 @@ type KubevirtCloudSpec struct {
 	// kubeconfig
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
+	// pre allocated data volumes
+	PreAllocatedDataVolumes []*PreAllocatedDataVolume `json:"preAllocatedDataVolumes"`
+
 	// credentials reference
 	CredentialsReference *GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 }
@@ -32,6 +36,10 @@ type KubevirtCloudSpec struct {
 func (m *KubevirtCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validatePreAllocatedDataVolumes(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCredentialsReference(formats); err != nil {
 		res = append(res, err)
 	}
@@ -39,6 +47,32 @@ func (m *KubevirtCloudSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *KubevirtCloudSpec) validatePreAllocatedDataVolumes(formats strfmt.Registry) error {
+	if swag.IsZero(m.PreAllocatedDataVolumes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.PreAllocatedDataVolumes); i++ {
+		if swag.IsZero(m.PreAllocatedDataVolumes[i]) { // not required
+			continue
+		}
+
+		if m.PreAllocatedDataVolumes[i] != nil {
+			if err := m.PreAllocatedDataVolumes[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("preAllocatedDataVolumes" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("preAllocatedDataVolumes" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -65,6 +99,10 @@ func (m *KubevirtCloudSpec) validateCredentialsReference(formats strfmt.Registry
 func (m *KubevirtCloudSpec) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidatePreAllocatedDataVolumes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCredentialsReference(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -72,6 +110,26 @@ func (m *KubevirtCloudSpec) ContextValidate(ctx context.Context, formats strfmt.
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *KubevirtCloudSpec) contextValidatePreAllocatedDataVolumes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.PreAllocatedDataVolumes); i++ {
+
+		if m.PreAllocatedDataVolumes[i] != nil {
+			if err := m.PreAllocatedDataVolumes[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("preAllocatedDataVolumes" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("preAllocatedDataVolumes" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

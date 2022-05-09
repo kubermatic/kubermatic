@@ -15,11 +15,11 @@
 alertmanager:
   image:
     repository: quay.io/prometheus/alertmanager
-    tag: v0.22.2
+    tag: v0.24.0
     pullPolicy: IfNotPresent
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.3.0
+    tag: v0.7.1
     pullPolicy: IfNotPresent
   host: ""
   replicas: 3
@@ -36,8 +36,6 @@ alertmanager:
     #   port: 8080
     #   protocol: TCP
     #   targetPort: 8080
-
-
 
   config:
     global:

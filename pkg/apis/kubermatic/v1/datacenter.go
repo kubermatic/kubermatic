@@ -90,6 +90,66 @@ func IsProviderSupported(name string) bool {
 	return false
 }
 
+// +kubebuilder:validation:Enum="";Healthy;Unhealthy;Invalid;Terminating;Paused
+
+type SeedPhase string
+
+// These are the valid phases of a seed.
+const (
+	// SeedHealthyPhase means the seed is reachable and was successfully reconciled.
+	SeedHealthyPhase SeedPhase = "Healthy"
+
+	// SeedUnhealthyPhase means the KKP resources on the seed cluster could not be
+	// successfully reconciled.
+	SeedUnhealthyPhase SeedPhase = "Unhealthy"
+
+	// SeedInvalidPhase means the seed kubeconfig is defunct.
+	SeedInvalidPhase SeedPhase = "Invalid"
+
+	// SeedTerminatingPhase means the seed is currently being deleted.
+	SeedTerminatingPhase SeedPhase = "Terminating"
+
+	// SeedPausedPhase means the seed is not being reconciled because the SkipReconciling
+	// annotation is set.
+	SeedPausedPhase SeedPhase = "Paused"
+)
+
+// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled
+
+// SeedConditionType is used to indicate the type of a seed condition. For all condition
+// types, the `true` value must indicate success. All condition types must be registered
+// within the `AllSeedConditionTypes` variable.
+type SeedConditionType string
+
+const (
+	// SeedConditionKubeconfigValid indicates that the configured kubeconfig for the seed is valid.
+	// The seed-sync controller manages this condition.
+	SeedConditionKubeconfigValid SeedConditionType = "KubeconfigValid"
+	// SeedConditionResourcesReconciled indicates that the KKP operator has finished setting up the
+	// resources inside the seed cluster.
+	SeedConditionResourcesReconciled SeedConditionType = "ResourcesReconciled"
+)
+
+var AllSeedConditionTypes = []SeedConditionType{
+	SeedConditionResourcesReconciled,
+}
+
+type SeedCondition struct {
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// (brief) reason for the condition's last transition.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// Human readable message indicating details about last transition.
+	// +optional
+	Message string `json:"message,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
@@ -104,14 +164,23 @@ type SeedList struct {
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".status.clusters",name="Clusters",type="integer"
+// +kubebuilder:printcolumn:JSONPath=".spec.location",name="Location",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.versions.kubermatic",name="KKP Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.versions.cluster",name="Cluster Version",type="string"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a SeedDatacenter.
+// Seed is the type representing a Seed cluster.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec SeedSpec `json:"spec"`
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
+	Status SeedStatus `json:"status,omitempty,omitgenyaml"`
 }
 
 func (s *Seed) SetDefaults() {
@@ -128,7 +197,51 @@ func (s *Seed) SetDefaults() {
 	}
 }
 
-// The spec for a seed data.
+// SeedStatus contains runtime information regarding the seed.
+type SeedStatus struct {
+	// Phase contains a human readable text to indicate the seed cluster status. No logic should be tied
+	// to this field, as its content can change in between KKP releases.
+	Phase SeedPhase `json:"phase,omitempty"`
+
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum:=0
+
+	// Clusters is the total number of user clusters that exist on this seed.
+	Clusters int `json:"clusters"`
+
+	// Versions contains information regarding versions of components in the cluster and the cluster
+	// itself.
+	// +optional
+	Versions SeedVersionsStatus `json:"versions,omitempty"`
+
+	// Conditions contains conditions the seed is in, its primary use case is status signaling
+	// between controllers or between controllers and the API.
+	// +optional
+	Conditions map[SeedConditionType]SeedCondition `json:"conditions,omitempty"`
+}
+
+// SeedVersionsStatus contains information regarding versions of components in the cluster
+// and the cluster itself.
+type SeedVersionsStatus struct {
+	// Kubermatic is the version of the currently deployed KKP components. Note that a permanent
+	// version skew between master and seed is not supported and KKP setups should never run for
+	// longer times with a skew between the clusters.
+	Kubermatic string `json:"kubermatic,omitempty"`
+	// Cluster is the Kubernetes version of the cluster's control plane.
+	Cluster string `json:"cluster,omitempty"`
+}
+
+// HasConditionValue returns true if the seed status has the given condition with the given status.
+func (ss *SeedStatus) HasConditionValue(conditionType SeedConditionType, conditionStatus corev1.ConditionStatus) bool {
+	condition, exists := ss.Conditions[conditionType]
+	if !exists {
+		return false
+	}
+
+	return condition.Status == conditionStatus
+}
+
+// The spec for a seed cluster.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
@@ -175,6 +288,11 @@ type EtcdBackupRestore struct {
 	// Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty,
 	// it enables automatic backup and restore for the seed.
 	Destinations map[string]*BackupDestination `json:"destinations,omitempty"`
+
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
+
 	// DefaultDestination marks the default destination that will be used for the default etcd backup config which is
 	// created for every user cluster. Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.

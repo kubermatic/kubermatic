@@ -215,6 +215,10 @@ type ClusterSpec struct {
 	// Optional: MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
 
+	// Optional: Configures encryption-at-rest for Kubernetes API data. This needs the `encryptionAtRest` feature gate.
+	// THIS IS A PLACEHOLDER AND NOT FUNCTIONAL YET.
+	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
+
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	// +kubebuilder:default=false
@@ -296,6 +300,10 @@ const (
 	// KubeSystemNetworkPolicies enables the deployment of network policies to kube-system namespace that
 	// restrict traffic from all pods in the namespace.
 	KubeSystemNetworkPolicies = "kubeSystemNetworkPolicies"
+
+	// ClusterFeatureEncryptionAtRest enables the experimental "encryption-at-rest" feature, which allows encrypting
+	// Kubernetes data in etcd with a user-provided encryption key or KMS service.
+	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
 )
 
 // +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
@@ -319,22 +327,60 @@ type UpdateWindow struct {
 	Length string `json:"length,omitempty"`
 }
 
+// EncryptionConfiguration configures encryption-at-rest for Kubernetes API data.
+type EncryptionConfiguration struct {
+	// Enables encryption-at-rest on this cluster.
+	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:validation:MinItems=1
+
+	// List of resources that will be stored encrypted in etcd.
+	Resources []string `json:"resources"`
+	// Configuration for the `secretbox` static key encryption scheme as supported by Kubernetes.
+	// More info: https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#providers
+	Secretbox *SecretboxEncryptionConfiguration `json:"secretbox,omitempty"`
+}
+
+// SecretboxEncryptionConfiguration defines static key encryption based on the 'secretbox' solution for Kubernetes.
+type SecretboxEncryptionConfiguration struct {
+	// +kubebuilder:validation:MinItems=1
+
+	// List of 'secretbox' encryption keys. The first element of this list is considered
+	// the "primary" key which will be used for encrypting data while writing it. Additional
+	// keys will be used for decrypting data while reading it, if keys higher in the list
+	// did not succeed in decrypting it.
+	Keys []SecretboxKey `json:"keys"`
+}
+
+// SecretboxKey stores a key or key reference for encrypting Kubernetes API data at rest with a static key.
+type SecretboxKey struct {
+	// Identifier of a key, used in various places to refer to the key.
+	Name string `json:"name"`
+	// Value contains a 32-byte random key that is base64 encoded. This is the key used
+	// for encryption. Can be generated via `head -c 32 /dev/urandom | base64`, for example.
+	Value string `json:"value,omitempty"`
+	// Instead of passing the sensitive encryption key via the `value` field, a secret can be
+	// referenced. The key of the secret referenced here needs to hold a key equivalent to the `value` field.
+	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
+}
+
 const (
 	// ClusterConditionSeedResourcesUpToDate indicates that all controllers have finished setting up the
 	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
 	// the status of cloud provider resources for a given cluster.
 	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
-	ClusterConditionClusterControllerReconcilingSuccess           ClusterConditionType = "ClusterControllerReconciledSuccessfully"
-	ClusterConditionAddonControllerReconcilingSuccess             ClusterConditionType = "AddonControllerReconciledSuccessfully"
-	ClusterConditionAddonInstallerControllerReconcilingSuccess    ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
-	ClusterConditionBackupControllerReconcilingSuccess            ClusterConditionType = "BackupControllerReconciledSuccessfully"
-	ClusterConditionCloudControllerReconcilingSuccess             ClusterConditionType = "CloudControllerReconcilledSuccessfully"
-	ClusterConditionUpdateControllerReconcilingSuccess            ClusterConditionType = "UpdateControllerReconciledSuccessfully"
-	ClusterConditionMonitoringControllerReconcilingSuccess        ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
-	ClusterConditionMachineDeploymentControllerReconcilingSuccess ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
-	ClusterConditionMLAControllerReconcilingSuccess               ClusterConditionType = "MLAControllerReconciledSuccessfully"
-	ClusterConditionClusterInitialized                            ClusterConditionType = "ClusterInitialized"
+	ClusterConditionClusterControllerReconcilingSuccess                 ClusterConditionType = "ClusterControllerReconciledSuccessfully"
+	ClusterConditionAddonControllerReconcilingSuccess                   ClusterConditionType = "AddonControllerReconciledSuccessfully"
+	ClusterConditionAddonInstallerControllerReconcilingSuccess          ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
+	ClusterConditionBackupControllerReconcilingSuccess                  ClusterConditionType = "BackupControllerReconciledSuccessfully"
+	ClusterConditionCloudControllerReconcilingSuccess                   ClusterConditionType = "CloudControllerReconcilledSuccessfully"
+	ClusterConditionUpdateControllerReconcilingSuccess                  ClusterConditionType = "UpdateControllerReconciledSuccessfully"
+	ClusterConditionMonitoringControllerReconcilingSuccess              ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
+	ClusterConditionMachineDeploymentControllerReconcilingSuccess       ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
+	ClusterConditionApplicationInstallationControllerReconcilingSuccess ClusterConditionType = "ApplicationInstallationControllerReconciledSuccessfully"
+	ClusterConditionMLAControllerReconcilingSuccess                     ClusterConditionType = "MLAControllerReconciledSuccessfully"
+	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
@@ -450,6 +496,10 @@ type ClusterStatus struct {
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+
+	// Encryption describes the status of the encryption-at-rest feature for encrypted data in etcd.
+	// +optional
+	Encryption *ClusterEncryptionStatus `json:"encryption,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
@@ -496,6 +546,27 @@ const (
 	InvalidConfigurationClusterError ClusterStatusError = "InvalidConfiguration"
 	UnsupportedChangeClusterError    ClusterStatusError = "UnsupportedChange"
 	ReconcileClusterError            ClusterStatusError = "ReconcileError"
+)
+
+// ClusterEncryptionStatus holds status information about the encryption-at-rest feature on the user cluster.
+type ClusterEncryptionStatus struct {
+	// The current "primary" key used to encrypt data written to etcd. Secondary keys that can be used for decryption
+	// (but not encryption) might be configured in the ClusterSpec.
+	ActiveKey string `json:"activeKey"`
+	// The current phase of the encryption process. Can be one of `Pending`, `Failed`, `Active` or `EncryptionNeeded`.
+	// The `encryption_controller` logic will process the cluster based on the current phase and issue necessary changes
+	// to make sure encryption on the cluster is active and updated with what the ClusterSpec defines.
+	Phase ClusterEncryptionPhase `json:"phase"`
+}
+
+// +kubebuilder:validation:Enum=Pending;Active;EncryptionNeeded
+type ClusterEncryptionPhase string
+
+const (
+	ClusterEncryptionPhasePending          ClusterEncryptionPhase = "Pending"
+	ClusterEncryptionPhaseFailed           ClusterEncryptionPhase = "Failed"
+	ClusterEncryptionPhaseActive           ClusterEncryptionPhase = "Active"
+	ClusterEncryptionPhaseEncryptionNeeded ClusterEncryptionPhase = "EncryptionNeeded"
 )
 
 type OIDCSettings struct {
@@ -639,9 +710,28 @@ type LeaderElectionSettings struct {
 	RetryPeriodSeconds *int32 `json:"retryPeriodSeconds,omitempty"`
 }
 
+// +kubebuilder:validation:Enum="";IPv4;IPv4+IPv6
+type IPFamily string
+
+const (
+	// IPFamilyUnspecified represents unspecified IP address family, which is interpreted as IPv4.
+	IPFamilyUnspecified IPFamily = ""
+	// IPFamilyIPv4 represents IPv4-only address family.
+	IPFamilyIPv4 IPFamily = "IPv4"
+	// IPFamilyDualStack represents dual-stack address family with IPv4 as the primary address family.
+	IPFamilyDualStack IPFamily = "IPv4+IPv6"
+)
+
 // ClusterNetworkingConfig specifies the different networking
 // parameters for a cluster.
 type ClusterNetworkingConfig struct {
+	// Optional: IP family used for cluster networking. Supported values are "", "IPv4" or "IPv4+IPv6".
+	// Can be omitted / empty if pods and services network ranges are specified.
+	// In that case it defaults according to the IP families of the provided network ranges.
+	// If neither ipFamily nor pods & services network ranges are specified, defaults to "IPv4".
+	// +optional
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
+
 	// The network ranges from which service VIPs are allocated.
 	// It can contain one IPv4 and/or one IPv6 CIDR.
 	// If both address families are specified, the first one defines the primary address family.
@@ -1004,6 +1094,15 @@ type KubevirtCloudSpec struct {
 
 	Kubeconfig    string `json:"kubeconfig,omitempty"`
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
+
+	PreAllocatedDataVolumes []PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
+}
+
+type PreAllocatedDataVolume struct {
+	Name         string `json:"name"`
+	URL          string `json:"url"`
+	Size         string `json:"size"`
+	StorageClass string `json:"storageClass"`
 }
 
 // AlibabaCloudSpec specifies the access data to Alibaba.
@@ -1098,6 +1197,7 @@ type ExtendedClusterHealth struct {
 	Logging                      *HealthStatus `json:"logging,omitempty"`
 	AlertmanagerConfig           *HealthStatus `json:"alertmanagerConfig,omitempty"`
 	MLAGateway                   *HealthStatus `json:"mlaGateway,omitempty"`
+	ApplicationController        HealthStatus  `json:"applicationController,omitempty"`
 }
 
 // ControlPlaneHealthy returns if all Kubernetes control plane components are healthy.
@@ -1108,13 +1208,19 @@ func (h *ExtendedClusterHealth) ControlPlaneHealthy() bool {
 		h.Scheduler == HealthStatusUp
 }
 
-// AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not
+// AllHealthy returns true if all components are healthy. Gatekeeper components not included as they are optional and not
 // crucial for cluster functioning.
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.ControlPlaneHealthy() &&
 		h.MachineController == HealthStatusUp &&
 		h.CloudProviderInfrastructure == HealthStatusUp &&
 		h.UserClusterControllerManager == HealthStatusUp
+}
+
+// ApplicationControllerHealthy checks for health of all essential components and the ApplicationController.
+func (h *ExtendedClusterHealth) ApplicationControllerHealthy() bool {
+	return h.AllHealthy() &&
+		h.ApplicationController == HealthStatusUp
 }
 
 type Bytes []byte

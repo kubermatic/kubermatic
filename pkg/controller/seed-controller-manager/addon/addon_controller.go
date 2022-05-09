@@ -61,7 +61,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_addon_controller"
+	ControllerName = "kkp-addon-controller"
 
 	addonLabelKey        = "kubermatic-addon"
 	cleanupFinalizerName = "cleanup-manifests"

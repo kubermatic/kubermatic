@@ -50,8 +50,8 @@ import (
 )
 
 const (
-	// ControllerName is the name of this very controller.
-	ControllerName = "kubermatic-seed-operator"
+	// This controller is responsible for creating/updating/deleting all the required resources on the seed clusters.
+	ControllerName = "kkp-seed-operator"
 )
 
 func Add(

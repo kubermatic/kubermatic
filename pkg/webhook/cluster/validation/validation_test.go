@@ -467,6 +467,68 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
+			name: "Supported CNI for dual-stack",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					IPFamily:                 kubermaticv1.IPFamilyDualStack,
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd01::/48"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/120"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					KonnectivityEnabled:      pointer.BoolPtr(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "canal",
+					Version: "v3.22",
+				},
+			}.Build(),
+			wantAllowed: true,
+		},
+		{
+			name: "Unsupported CNI for dual-stack",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					IPFamily:                 kubermaticv1.IPFamilyDualStack,
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd01::/48"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/120"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					KonnectivityEnabled:      pointer.BoolPtr(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "canal",
+					Version: "v3.21",
+				},
+			}.Build(),
+			wantAllowed: false,
+		},
+		{
 			name: "Reject EnableUserSSHKey agent update",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{

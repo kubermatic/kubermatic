@@ -43,6 +43,9 @@ type ClusterNetworkingConfig struct {
 	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode,omitempty"`
 
+	// ip family
+	IPFamily IPFamily `json:"ipFamily,omitempty"`
+
 	// ipvs
 	Ipvs *IPVSConfiguration `json:"ipvs,omitempty"`
 
@@ -56,6 +59,10 @@ type ClusterNetworkingConfig struct {
 // Validate validates this cluster networking config
 func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateIPFamily(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateIpvs(formats); err != nil {
 		res = append(res, err)
@@ -72,6 +79,23 @@ func (m *ClusterNetworkingConfig) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterNetworkingConfig) validateIPFamily(formats strfmt.Registry) error {
+	if swag.IsZero(m.IPFamily) { // not required
+		return nil
+	}
+
+	if err := m.IPFamily.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipFamily")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipFamily")
+		}
+		return err
+	}
+
 	return nil
 }
 
@@ -136,6 +160,10 @@ func (m *ClusterNetworkingConfig) validateServices(formats strfmt.Registry) erro
 func (m *ClusterNetworkingConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateIPFamily(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateIpvs(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -151,6 +179,20 @@ func (m *ClusterNetworkingConfig) ContextValidate(ctx context.Context, formats s
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ClusterNetworkingConfig) contextValidateIPFamily(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.IPFamily.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("ipFamily")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("ipFamily")
+		}
+		return err
+	}
+
 	return nil
 }
 

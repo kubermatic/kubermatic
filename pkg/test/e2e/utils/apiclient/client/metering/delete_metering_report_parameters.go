@@ -59,6 +59,9 @@ func NewDeleteMeteringReportParamsWithHTTPClient(client *http.Client) *DeleteMet
 */
 type DeleteMeteringReportParams struct {
 
+	// ConfigurationName.
+	ConfigurationName *string
+
 	// ReportName.
 	ReportName string
 
@@ -115,6 +118,17 @@ func (o *DeleteMeteringReportParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithConfigurationName adds the configurationName to the delete metering report params
+func (o *DeleteMeteringReportParams) WithConfigurationName(configurationName *string) *DeleteMeteringReportParams {
+	o.SetConfigurationName(configurationName)
+	return o
+}
+
+// SetConfigurationName adds the configurationName to the delete metering report params
+func (o *DeleteMeteringReportParams) SetConfigurationName(configurationName *string) {
+	o.ConfigurationName = configurationName
+}
+
 // WithReportName adds the reportName to the delete metering report params
 func (o *DeleteMeteringReportParams) WithReportName(reportName string) *DeleteMeteringReportParams {
 	o.SetReportName(reportName)
@@ -133,6 +147,23 @@ func (o *DeleteMeteringReportParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
+
+	if o.ConfigurationName != nil {
+
+		// query param configuration_name
+		var qrConfigurationName string
+
+		if o.ConfigurationName != nil {
+			qrConfigurationName = *o.ConfigurationName
+		}
+		qConfigurationName := qrConfigurationName
+		if qConfigurationName != "" {
+
+			if err := r.SetQueryParam("configuration_name", qConfigurationName); err != nil {
+				return err
+			}
+		}
+	}
 
 	// path param report_name
 	if err := r.SetPathParam("report_name", o.ReportName); err != nil {

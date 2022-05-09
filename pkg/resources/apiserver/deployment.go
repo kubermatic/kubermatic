@@ -310,7 +310,15 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
-		"--kubelet-certificate-authority", "/etc/kubernetes/pki/ca/ca.crt",
+	}
+
+	// the "bring-your-own" provider does not support automatic TLS rotation in kubelets yet,
+	// and because of that certs might expire and kube-apiserver cannot validate the connection anymore.
+	if cluster.Spec.Cloud.BringYourOwn == nil {
+		flags = append(flags, "--kubelet-certificate-authority", "/etc/kubernetes/pki/ca/ca.crt")
+	}
+
+	flags = append(flags,
 		"--requestheader-client-ca-file", "/etc/kubernetes/pki/front-proxy/ca/ca.crt",
 		"--requestheader-allowed-names", "apiserver-aggregator",
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
@@ -318,7 +326,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-username-headers", "X-Remote-User",
 		// this can't be passed as two strings as the other parameters
 		"--profiling=false",
-	}
+	)
 
 	// pre-pend to have advertise-address as first argument and avoid
 	// triggering unneeded redeployments.

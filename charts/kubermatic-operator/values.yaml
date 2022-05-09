@@ -25,6 +25,7 @@ kubermaticOperator:
     }
 
   debug: false
+  leaderElection: true
   resources:
     requests:
       cpu: 50m

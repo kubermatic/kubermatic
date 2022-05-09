@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	ControllerName = "cluster_template_controller"
+	ControllerName = "kkp-cluster-template-controller"
 )
 
 type reconciler struct {

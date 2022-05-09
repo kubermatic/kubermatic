@@ -43,28 +43,21 @@ type ExternalCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ExternalClusterSpec   `json:"spec,omitempty"`
+	Spec   ExternalClusterSpec   `json:"spec"`
 	Status ExternalClusterStatus `json:"status,omitempty"`
 }
 
 // ExternalClusterStatus denotes status information about an ExternalCluster.
 type ExternalClusterStatus struct {
-	// Conditions contains conditions an externalcluster is in, its primary use case is status signaling between controllers
-	Condition ExternalClusterCondition `json:"conditions,omitempty"`
+	// Conditions contains conditions an externalcluster is in, its primary use case is status signaling for controller
+	Condition ExternalClusterCondition `json:"condition,omitempty"`
 }
 
-// KubeOne *ExternalClusterKubeOneStatus `json:"kubeone,omitempty"`
 type ExternalClusterCondition struct {
-	Status ConditionStatus `json:"status"`
+	Phase ExternalClusterPhase `json:"phase"`
 	// Human readable message indicating details about last transition.
 	Message string `json:"message,omitempty"`
 }
-
-// // ExternalClusterKubeOneStatus defines the kubeone external cluster status.
-// type ExternalClusterKubeOneStatus struct {
-// 	Status        Status `json:"status"`
-// 	StatusMessage string `json:"statusMessage,omitempty"`
-// }
 
 type ExternalClusterKubeOneCloudSpec struct {
 	// ProviderName is the name of the cloud provider used, one of
@@ -104,28 +97,28 @@ type ExternalClusterCloudSpec struct {
 	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
 }
 
-type ConditionStatus string
+type ExternalClusterPhase string
 
 const (
-	// ConditionStatusProvisioning status indicates the cluster is being imported.
-	ConditionStatusProvisioning ConditionStatus = "Provisioning"
+	// ExternalClusterPhaseProvisioning status indicates the cluster is being imported.
+	ExternalClusterPhaseProvisioning ExternalClusterPhase = "Provisioning"
 
-	// ConditionStatusRunning status indicates the cluster is fully usable.
-	ConditionStatusRunning ConditionStatus = "Running"
+	// ExternalClusterPhaseRunning status indicates the cluster is fully usable.
+	ExternalClusterPhaseRunning ExternalClusterPhase = "Running"
 
-	// ConditionStatusReconciling status indicates that some work is actively being done on the cluster, such as upgrading the master or
+	// ExternalClusterPhaseReconciling status indicates that some work is actively being done on the cluster, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
-	ConditionStatusReconciling ConditionStatus = "Reconciling"
+	ExternalClusterPhaseReconciling ExternalClusterPhase = "Reconciling"
 
-	// ConditionStatusDeleting status indicates the cluster is being deleted.
-	ConditionStatusDeleting ConditionStatus = "Deleting"
+	// ExternalClusterPhaseDeleting status indicates the cluster is being deleted.
+	ExternalClusterPhaseDeleting ExternalClusterPhase = "Deleting"
 
-	// ConditionStatusUnknown Not set.
-	ConditionStatusUnknown ConditionStatus = "Unknown"
+	// ExternalClusterPhaseUnknown Not set.
+	ExternalClusterPhaseUnknown ExternalClusterPhase = "Unknown"
 
-	// ConditionStatusError status indicates the cluster is unusable. Details can be found in the
+	// ExternalClusterPhaseError status indicates the cluster is unusable. Details can be found in the
 	// `statusMessage` field.
-	ConditionStatusError ConditionStatus = "Error"
+	ExternalClusterPhaseError ExternalClusterPhase = "Error"
 )
 
 type ExternalClusterGKECloudSpec struct {

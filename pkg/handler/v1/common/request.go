@@ -55,7 +55,7 @@ type ProjectIDGetter interface {
 }
 
 // GetProjectRq defines HTTP request for getProject endpoint
-// swagger:parameters getProject getUsersForProject listClustersForProject listServiceAccounts listClustersV2
+// swagger:parameters getProject getUsersForProject listClustersForProject listServiceAccounts
 type GetProjectRq struct {
 	ProjectReq
 }

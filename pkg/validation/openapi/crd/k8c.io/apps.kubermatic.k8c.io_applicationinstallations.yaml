@@ -13,7 +13,7 @@ spec:
     listKind: ApplicationInstallationList
     plural: applicationinstallations
     singular: applicationinstallation
-  scope: Cluster
+  scope: Namespaced
   versions:
   - name: v1
     schema:
@@ -40,7 +40,10 @@ spec:
                   should be deployed
                 properties:
                   name:
-                    description: Name of the Application
+                    description: Name of the Application. Should be a valid lowercase
+                      RFC1123 domain name
+                    maxLength: 63
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
                   version:
                     description: Version of the Application. Must be a valid SemVer
@@ -71,7 +74,10 @@ spec:
                     description: 'Labels of the namespace More info: http://kubernetes.io/docs/user-guide/labels'
                     type: object
                   name:
-                    description: Name is the namespace to deploy the Application into
+                    description: Name is the namespace to deploy the Application into.
+                      Should be a valid lowercase RFC1123 domain name
+                    maxLength: 63
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
                 required:
                 - create

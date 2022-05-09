@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -49,7 +50,7 @@ import (
 )
 
 const (
-	controllerName = "kubermatic-master-controller-manager"
+	controllerName = "kkp-master-controller-manager"
 )
 
 type controllerRunOptions struct {
@@ -75,12 +76,15 @@ type controllerContext struct {
 	seedKubeconfigGetter    provider.SeedKubeconfigGetter
 	labelSelectorFunc       func(*metav1.ListOptions)
 	namespace               string
+	versions                kubermatic.Versions
 
 	configGetter provider.KubermaticConfigurationGetter
 }
 
 func main() {
-	ctrlCtx := &controllerContext{}
+	ctrlCtx := &controllerContext{
+		versions: kubermatic.NewDefaultVersions(),
+	}
 	runOpts := controllerRunOptions{featureGates: features.FeatureGate{}}
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}

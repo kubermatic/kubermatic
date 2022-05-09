@@ -404,20 +404,22 @@ spec:
             description: ExternalClusterStatus denotes status information about an
               ExternalCluster.
             properties:
-              conditions:
+              condition:
                 description: Conditions contains conditions an externalcluster is
-                  in, its primary use case is status signaling between controllers
+                  in, its primary use case is status signaling for controller
                 properties:
                   message:
                     description: Human readable message indicating details about last
                       transition.
                     type: string
-                  status:
+                  phase:
                     type: string
                 required:
-                - status
+                - phase
                 type: object
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/anexia-it/go-anxcloud/pkg/client"
-	"github.com/anexia-it/go-anxcloud/pkg/vlan"
-	"github.com/anexia-it/go-anxcloud/pkg/vsphere/provisioning/templates"
+	"go.anx.io/go-anxcloud/pkg/client"
+	"go.anx.io/go-anxcloud/pkg/vlan"
+	"go.anx.io/go-anxcloud/pkg/vsphere/provisioning/templates"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"

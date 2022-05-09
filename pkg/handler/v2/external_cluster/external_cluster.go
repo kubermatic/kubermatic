@@ -43,7 +43,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -179,30 +178,16 @@ func CreateEndpoint(
 
 		// connect cluster by kubeconfig
 		if cloud == nil {
+			newCluster := genExternalCluster(req.Body.Name, project.Name)
+			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
 				return nil, errors.NewBadRequest(err.Error())
 			}
-
-			cfg, err := clientcmd.Load(config)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
+			if err := clusterProvider.ValidateKubeconfig(ctx, config); err != nil {
+				return nil, err
 			}
-
-			cli, err := clusterProvider.GenerateClient(cfg)
-			if err != nil {
-				return nil, errors.NewBadRequest(fmt.Sprintf("cannot connect to the kubernetes cluster: %v", err))
-			}
-			// check if kubeconfig can automatically authenticate and get resources.
-			if err := cli.List(ctx, &corev1.PodList{}); err != nil {
-				return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve data, check your kubeconfig: %v", err))
-			}
-
-			newCluster := genExternalCluster(req.Body.Name, project.Name)
-
-			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
-
-			if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, newCluster, req.Body.Kubeconfig); err != nil {
+			if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, newCluster, config); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
@@ -527,14 +512,10 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			if err != nil {
 				return nil, errors.NewBadRequest(err.Error())
 			}
-			cfg, err := clientcmd.Load(config)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
+			if err := clusterProvider.ValidateKubeconfig(ctx, config); err != nil {
+				return nil, err
 			}
-			if _, err := clusterProvider.GenerateClient(cfg); err != nil {
-				return nil, errors.NewBadRequest(fmt.Sprintf("cannot connect to the kubernetes cluster: %v", err))
-			}
-			if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, req.Body.Kubeconfig); err != nil {
+			if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, config); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
@@ -1038,7 +1019,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		}
 		if cloud.KubeOne != nil {
 			kubeoneStatus := &apiv2.ExternalClusterStatus{
-				State:         apiv2.ExternalClusterState(kubeOneCondtion.Status),
+				State:         apiv2.ExternalClusterState(kubeOneCondtion.Phase),
 				StatusMessage: kubeOneCondtion.Message,
 			}
 			apiCluster.Status = *kubeoneStatus

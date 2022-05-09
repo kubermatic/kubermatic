@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
@@ -62,7 +61,11 @@ type ApplicationInstallationSpec struct {
 
 // NamespaceSpec describe the desired state of the namespace where application will be created.
 type NamespaceSpec struct {
-	// Name is the namespace to deploy the Application into
+	// Name is the namespace to deploy the Application into.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`
 
 	// +kubebuilder:default:=true
@@ -82,7 +85,11 @@ type NamespaceSpec struct {
 
 // ApplicationRef describes a KKP-wide, unique reference to an Application.
 type ApplicationRef struct {
-	// Name of the Application
+	// Name of the Application.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`
 
 	// +kubebuilder:validation:Pattern:=v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?

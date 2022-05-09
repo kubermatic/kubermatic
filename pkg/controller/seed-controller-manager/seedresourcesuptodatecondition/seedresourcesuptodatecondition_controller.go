@@ -39,7 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "seed_resources_up_to_date_condition_controller"
+const ControllerName = "kkp-seed-up-to-date-synchronizer"
 
 type reconciler struct {
 	log        *zap.SugaredLogger

@@ -64,10 +64,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	switch req.Operation {
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, osc); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding osc: %w", err))
+			return webhook.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding osc: %w", err))
 		}
 		if err := h.decoder.DecodeRaw(req.OldObject, oldOSC); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding old osc: %w", err))
+			return webhook.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding old osc: %w", err))
 		}
 		err := h.validateUpdate(osc, oldOSC)
 		if err != nil {
@@ -75,7 +75,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 	case admissionv1.Create, admissionv1.Delete:
-		// NOP we always allow create, delete operarions at the moment
+		// NOP we always allow create, delete operations
 
 	default:
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on osc resources", req.Operation))

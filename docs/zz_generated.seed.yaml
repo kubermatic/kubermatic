@@ -59,6 +59,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
           # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
@@ -137,6 +138,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
           # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
@@ -158,6 +160,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
@@ -229,6 +232,7 @@ spec:
             centos: ""
             flatcar: ""
             rhel: ""
+            rockylinux: ""
             sles: ""
             ubuntu: ""
   # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used

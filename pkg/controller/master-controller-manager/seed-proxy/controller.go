@@ -38,8 +38,9 @@ import (
 )
 
 const (
-	// ControllerName is the name of this very controller.
-	ControllerName = "seed-proxy-controller"
+	// This controller is responsible for creating resources in master cluster required to proxy
+	// components like prometheus from seed clusters.
+	ControllerName = "kkp-seed-proxy-controller"
 
 	// MasterDeploymentName is the name used for deployments'
 	// NameLabel value.

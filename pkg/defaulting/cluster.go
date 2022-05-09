@@ -174,20 +174,30 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 }
 
 func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
-	if len(spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		if spec.Cloud.Kubevirt != nil {
-			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
-			// thus we have to avoid network collision
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.DefaultClusterServicesCIDRKubeVirt}
+	provider := kubermaticv1.ProviderType(spec.Cloud.ProviderName)
+
+	if spec.ClusterNetwork.IPFamily == "" {
+		if len(spec.ClusterNetwork.Pods.CIDRBlocks) < 2 {
+			// single / no pods CIDR means IPv4-only (IPv6-only is not supported yet and not allowed by cluster validation)
+			spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyIPv4
 		} else {
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.DefaultClusterServicesCIDR}
+			// more than one pods CIDR means dual-stack (multiple IPv4 CIDRs are not allowed by cluster validation)
+			spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 		}
 	}
+
 	if len(spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		if spec.Cloud.Kubevirt != nil {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.DefaultClusterPodsCIDRKubeVirt}
+		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack {
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider), resources.DefaultClusterPodsCIDRIPv6}
 		} else {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.DefaultClusterPodsCIDR}
+			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider)}
+		}
+	}
+	if len(spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack {
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider), resources.DefaultClusterServicesCIDRIPv6}
+		} else {
+			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider)}
 		}
 	}
 
@@ -199,23 +209,20 @@ func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
 	}
 
 	if spec.ClusterNetwork.ProxyMode == "" {
-		// IPVS causes issues with Hetzner's LoadBalancers, which should
-		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
-		if spec.Cloud.Hetzner != nil {
-			spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
-		} else {
-			spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
-		}
+		spec.ClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider, spec.CNIPlugin.Type)
 	}
 
-	if spec.ClusterNetwork.IPVS != nil {
+	if spec.ClusterNetwork.ProxyMode == resources.IPVSProxyMode {
+		if spec.ClusterNetwork.IPVS == nil {
+			spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{}
+		}
 		if spec.ClusterNetwork.IPVS.StrictArp == nil {
 			spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
 		}
 	}
 
 	if spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
+		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(resources.DefaultNodeLocalDNSCacheEnabled)
 	}
 
 	if spec.ClusterNetwork.DNSDomain == "" {

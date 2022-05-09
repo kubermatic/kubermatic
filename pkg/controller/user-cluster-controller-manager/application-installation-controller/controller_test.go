@@ -38,6 +38,10 @@ func init() {
 	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
 }
 
+const (
+	applicationNamespace = "apps"
+)
+
 func TestEnqueueApplicationInstallation(t *testing.T) {
 	testCases := []struct {
 		name                      string
@@ -56,8 +60,8 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0")).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-1"}},
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-3"}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-3", Namespace: applicationNamespace}},
 			},
 		},
 		{
@@ -147,7 +151,8 @@ func genApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 func genApplicationInstallation(name string, applicationDefName string, appVersion string) *appkubermaticv1.ApplicationInstallation {
 	return &appkubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: applicationNamespace,
 		},
 		Spec: appkubermaticv1.ApplicationInstallationSpec{
 			Namespace: appkubermaticv1.NamespaceSpec{
