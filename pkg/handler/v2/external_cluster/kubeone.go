@@ -28,7 +28,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -236,7 +235,7 @@ func createAPIMachineDeployment(md clusterv1alpha1.MachineDeployment) apiv2.Exte
 	return apimd
 }
 
-func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeployment, error) {
+func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeployment, error) {
 	machineDeployment := &clusterv1alpha1.MachineDeployment{}
 	userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
 	if err != nil {
@@ -248,7 +247,7 @@ func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1
 	return machineDeployment, nil
 }
 
-func getKubeOneMachineDeployments(ctx context.Context, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeploymentList, error) {
+func getKubeOneMachineDeployments(ctx context.Context, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeploymentList, error) {
 	mdList := &clusterv1alpha1.MachineDeploymentList{}
 	userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
 	if err != nil {
@@ -260,7 +259,7 @@ func getKubeOneMachineDeployments(ctx context.Context, cluster *v1.ExternalClust
 	return mdList, nil
 }
 
-func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
 	currentVersion := oldmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	desiredVersion := newmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredVersion != currentVersion {

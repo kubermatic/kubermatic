@@ -24,7 +24,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
@@ -305,14 +305,14 @@ func NutanixCategoryValuesEndpoint(presetProvider provider.PresetProvider, seeds
 	}
 }
 
-func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) (providercommon.NutanixClientSet, *v1.Nutanix, error) {
+func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) (providercommon.NutanixClientSet, *kubermaticv1.Nutanix, error) {
 	creds := providercommon.NutanixCredentials{
 		ProxyURL: req.NutanixProxyURL,
 		Username: req.NutanixUsername,
 		Password: req.NutanixPassword,
 	}
 
-	var credential *v1.Nutanix
+	var credential *kubermaticv1.Nutanix
 
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {

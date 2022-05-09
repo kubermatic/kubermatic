@@ -22,7 +22,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 var MeteringReportNameValidator = regexp.MustCompile(`^[A-Za-z0-9-]+$`)
@@ -31,7 +31,7 @@ func GetCronExpressionParser() cron.Parser {
 	return cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
 }
 
-func ValidateMeteringConfiguration(configuration *v1.MeteringConfiguration) error {
+func ValidateMeteringConfiguration(configuration *kubermaticv1.MeteringConfiguration) error {
 	if configuration != nil && len(configuration.ReportConfigurations) > 0 {
 		parser := GetCronExpressionParser()
 		for reportName, reportConfig := range configuration.ReportConfigurations {

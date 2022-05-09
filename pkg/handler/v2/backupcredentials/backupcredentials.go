@@ -27,7 +27,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -137,7 +137,7 @@ func DecodeBackupCredentialsReq(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials, backupDest *v1.BackupDestination) *corev1.Secret {
+func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials, backupDest *kubermaticv1.BackupDestination) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      GenBackupCredentialsSecretName(bc.Destination, backupDest),
@@ -151,7 +151,7 @@ func convertAPIToInternalBackupCredentials(bc *apiv2.BackupCredentials, backupDe
 }
 
 // GenBackupCredentialsSecretName generates etcd backup credentials secret name. If backup destination is not set, then use the legacy credentials secret.
-func GenBackupCredentialsSecretName(destinationName string, backupDestination *v1.BackupDestination) string {
+func GenBackupCredentialsSecretName(destinationName string, backupDestination *kubermaticv1.BackupDestination) string {
 	if backupDestination.Credentials != nil {
 		return backupDestination.Credentials.Name
 	}
