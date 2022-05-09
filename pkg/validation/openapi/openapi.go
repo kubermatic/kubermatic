@@ -27,7 +27,7 @@ import (
 	"github.com/gobuffalo/flect"
 
 	ext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,12 +97,12 @@ func v1beta1Validator(u *unstructured.Unstructured) (*validate.SchemaValidator, 
 }
 
 func v1Validator(u *unstructured.Unstructured, desVer string) (*validate.SchemaValidator, error) {
-	crdv1 := &extv1.CustomResourceDefinition{}
+	crdv1 := &apiextensionsv1.CustomResourceDefinition{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), crdv1); err != nil {
 		return nil, err
 	}
 	crdr := &ext.CustomResourceDefinition{}
-	if err := extv1.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(crdv1, crdr, nil); err != nil {
+	if err := apiextensionsv1.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(crdv1, crdr, nil); err != nil {
 		return nil, err
 	}
 
