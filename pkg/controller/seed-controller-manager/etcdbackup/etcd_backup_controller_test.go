@@ -1594,8 +1594,8 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{
-				genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, genDefaultBackupDestination()),
-				genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, genDefaultBackupDestination()),
+				genSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, genDefaultBackupDestination()),
+				genSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, genDefaultBackupDestination()),
 				{
 					Name:  bucketNameEnvVarKey,
 					Value: genDefaultBackupDestination().BucketName,

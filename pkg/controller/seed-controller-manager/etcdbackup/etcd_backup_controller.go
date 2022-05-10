@@ -86,10 +86,10 @@ const (
 	backupKeepCountEnvVarKey = "BACKUP_KEEP_COUNT"
 	// backupConfigEnvVarKey defines the environment variable key for the name of the backup configuration resource.
 	backupConfigEnvVarKey = "BACKUP_CONFIG"
-	// accessKeyIdEnvVarKey defines the environment variable key for the backup credentials access key id.
-	accessKeyIdEnvVarKey = "ACCESS_KEY_ID"
-	// secretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key.
-	secretAccessKeyEnvVarKey = "SECRET_ACCESS_KEY"
+	// AccessKeyIdEnvVarKey defines the environment variable key for the backup credentials access key id.
+	AccessKeyIdEnvVarKey = "ACCESS_KEY_ID"
+	// SecretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key.
+	SecretAccessKeyEnvVarKey = "SECRET_ACCESS_KEY"
 	// bucketNameEnvVarKey defines the environment variable key for the backup bucket name.
 	bucketNameEnvVarKey = "BUCKET_NAME"
 	// backupEndpointEnvVarKey defines the environment variable key for the backup endpoint.
@@ -840,8 +840,8 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 
 	// If destination is set, we need to set the credentials and backup bucket details to match the destination
 	if destination != nil {
-		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
-		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
+		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, destination))
+		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, destination))
 		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
 			Name:  bucketNameEnvVarKey,
 			Value: destination.BucketName,
@@ -994,8 +994,8 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 
 	// If destination is set, we need to set the credentials and backup bucket details to match the destination
 	if destination != nil {
-		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
-		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, destination))
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, destination))
 		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
 			Name:  bucketNameEnvVarKey,
 			Value: destination.BucketName,
