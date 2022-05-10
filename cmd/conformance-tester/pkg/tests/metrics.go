@@ -89,7 +89,6 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		"kubelet_runtime_operations_duration_seconds_count",
 		"machine_controller_machines",
 		"replicaset_controller_rate_limiter_use",
-		"scheduler_scheduling_attempt_duration_seconds_count",
 		"apiserver_request_total",
 		"workqueue_retries_total",
 	)
