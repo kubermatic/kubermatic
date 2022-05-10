@@ -25,10 +25,11 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/sirupsen/logrus"
 
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -50,6 +51,11 @@ import (
 func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying cert-manager…")
 	sublogger := log.Prefix(logger, "   ")
+
+	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
+		sublogger.Info("Headless installation requested, skipping.")
+		return nil
+	}
 
 	if opt.KubermaticConfiguration.Spec.Ingress.CertificateIssuer.Name == "" {
 		sublogger.Info("No CertificateIssuer configured in KubermaticConfiguration, skipping.")

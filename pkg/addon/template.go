@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/util/network"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -115,6 +114,7 @@ func NewTemplateData(
 			Labels:            cluster.Labels,
 			Annotations:       cluster.Annotations,
 			Kubeconfig:        kubeconfig,
+			// nolint:staticcheck
 			OwnerName:         cluster.Status.UserName,
 			OwnerEmail:        cluster.Status.UserEmail,
 			Address:           cluster.Address,
@@ -130,9 +130,9 @@ func NewTemplateData(
 				ServiceCIDRBlocks:    cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
 				ProxyMode:            cluster.Spec.ClusterNetwork.ProxyMode,
 				StrictArp:            ipvs.StrictArp,
-				DualStack:            network.IsDualStackCluster(cluster),
-				PodCIDRIPv4:          network.GetIPv4CIDR(cluster.Spec.ClusterNetwork.Pods),
-				PodCIDRIPv6:          network.GetIPv6CIDR(cluster.Spec.ClusterNetwork.Pods),
+				DualStack:            cluster.IsDualStack(),
+				PodCIDRIPv4:          cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(),
+				PodCIDRIPv6:          cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR(),
 				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),
 				NodeCIDRMaskSizeIPv6: resources.GetClusterNodeCIDRMaskSizeIPv6(cluster),
 			},
@@ -242,8 +242,13 @@ type CSIOptions struct {
 	SsSegmentedIscsiNetwork *bool
 }
 
-func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {
-	var allManifests []runtime.RawExtension
+type Manifest struct {
+	Content    runtime.RawExtension
+	SourceFile string
+}
+
+func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]Manifest, error) {
+	var allManifests []Manifest
 
 	infos, err := os.ReadDir(manifestPath)
 	if err != nil {
@@ -261,6 +266,11 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 				return nil, err
 			}
 			allManifests = append(allManifests, subManifests...)
+			continue
+		}
+
+		if !strings.HasSuffix(filename, ".yaml") {
+			infoLog.Debug("Ignoring non-YAML file")
 			continue
 		}
 
@@ -291,7 +301,13 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 		if err != nil {
 			return nil, fmt.Errorf("decoding failed for file %s: %w", filename, err)
 		}
-		allManifests = append(allManifests, addonManifests...)
+
+		for _, m := range addonManifests {
+			allManifests = append(allManifests, Manifest{
+				Content:    m,
+				SourceFile: filename,
+			})
+		}
 	}
 
 	return allManifests, nil

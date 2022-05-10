@@ -33,13 +33,13 @@ echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
-export DOCKER_CONFIG=/tmp/dockercfg
+export IMAGE_PULL_SECRET=/tmp/dockercfg
 export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
 
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
 vault kv get -field=europe-west3-c-values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
-vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${DOCKER_CONFIG}
+vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${IMAGE_PULL_SECRET}
 vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
 echodate "Successfully got secrets for dev from Vault"
 

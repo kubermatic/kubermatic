@@ -61,7 +61,7 @@ import (
 )
 
 const (
-	controllerName = "user-cluster-controller"
+	controllerName = "kkp-user-cluster-controller"
 )
 
 type UserClusterMLA struct {

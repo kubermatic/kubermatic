@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 

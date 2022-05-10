@@ -36,8 +36,8 @@ import (
 )
 
 const (
-	// ControllerName is the name of this very controller.
-	ControllerName = "seed-sync-controller"
+	// This controller is responsible for synchronizing the `Seed` custom resources across all seed clusters.
+	ControllerName = "kkp-seed-sync-controller"
 
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.

@@ -259,6 +259,12 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				}
 				machineDeployments = np
 			}
+			if cloud.KubeOne != nil {
+				machineDeployments, err = getKubeOneAPIMachineDeployments(ctx, cluster, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
 		}
 
 		return machineDeployments, nil
@@ -312,6 +318,13 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 		}
 		if cloud.AKS != nil {
 			n, err := getAKSNodes(ctx, cluster, machineDeploymentID, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodes = n
+		}
+		if cloud.KubeOne != nil {
+			n, err := getKubeOneNodes(ctx, cluster, machineDeploymentID, clusterProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -652,6 +665,13 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 				}
 				machineDeployment = *np
 			}
+			if cloud.KubeOne != nil {
+				md, err := getKubeOneAPIMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				machineDeployment = *md
+			}
 		}
 
 		return machineDeployment, nil
@@ -717,6 +737,18 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 					return nil, err
 				}
 				return patchAKSMachineDeployment(ctx, &mdToPatch, &patchedMD, secretKeySelector, cluster.Spec.CloudSpec)
+			}
+			if cloud.KubeOne != nil {
+				machineDeployment, err := getKubeOneMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
+				if err != nil {
+					return nil, err
+				}
+				md := createAPIMachineDeployment(*machineDeployment)
+				mdToPatch.NodeDeployment = md.NodeDeployment
+				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
+					return nil, err
+				}
+				return patchKubeOneMachineDeployment(ctx, machineDeployment, &mdToPatch, &patchedMD, cluster, clusterProvider)
 			}
 		}
 		return nil, fmt.Errorf("unsupported or missing cloud provider fields")

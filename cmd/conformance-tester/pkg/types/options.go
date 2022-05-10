@@ -216,7 +216,7 @@ func (o *Options) effectiveDistributions() (sets.String, error) {
 			return nil, fmt.Errorf("unknown distributions: %v", unsupported.List())
 		}
 	} else {
-		excluded := sets.NewString(strings.Split(o.distributionsFlag, ",")...)
+		excluded := sets.NewString(strings.Split(o.excludeDistributionsFlag, ",")...)
 		chosen = all.Difference(excluded)
 	}
 

@@ -40,7 +40,7 @@ import (
 )
 
 const (
-	ControllerName = "project-sync-controller"
+	ControllerName = "kkp-project-synchronizer"
 )
 
 type reconciler struct {

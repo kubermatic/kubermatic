@@ -12,15 +12,22 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// UpdateWindow update window
+// UpdateWindow UpdateWindow allows defining windows for maintenance tasks related to OS updates.
+//
+// This is only applied to cluster nodes using Flatcar Linux.
+// The reference time for this is the node system time and might differ from
+// the user's timezone, which needs to be considered when configuring a window.
 //
 // swagger:model UpdateWindow
 type UpdateWindow struct {
 
-	// length
+	// Sets the length of the update window beginning with the start time. This needs to be a valid duration
+	// as parsed by Go's time.ParseDuration (https://pkg.go.dev/time#ParseDuration), e.g. `2h`.
 	Length string `json:"length,omitempty"`
 
-	// start
+	// Sets the start time of the update window. This can be a time of day in 24h format, e.g. `22:30`,
+	// or a day of week plus a time of day, for example `Mon 21:00`. Only short names for week days are supported,
+	// i.e. `Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat` and `Sun`.
 	Start string `json:"start,omitempty"`
 }
 

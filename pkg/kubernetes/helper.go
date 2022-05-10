@@ -25,7 +25,9 @@ import (
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,6 +45,8 @@ import (
 const (
 	// RevisionAnnotation is the revision annotation of a deployment's replica sets which records its rollout sequence.
 	RevisionAnnotation = "deployment.kubernetes.io/revision"
+	// NodeControlPlaneLabel is the label on kubernetes control plane nodes.
+	NodeControlPlaneLabel = "node-role.kubernetes.io/control-plane"
 )
 
 var tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
@@ -358,4 +362,24 @@ func EnsureUniqueOwnerReference(o metav1.Object, ref metav1.OwnerReference) {
 	refs := o.GetOwnerReferences()
 	refs = append(refs, ref)
 	o.SetOwnerReferences(refs)
+}
+
+func CheckContainerRuntime(ctx context.Context,
+	externalCluster *kubermaticv1.ExternalCluster,
+	externalClusterProvider provider.ExternalClusterProvider,
+) (string, error) {
+	nodes, err := externalClusterProvider.ListNodes(ctx, externalCluster)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch container runtime: not able to list nodes %w", err)
+	}
+	for _, node := range nodes.Items {
+		if _, ok := node.Labels[NodeControlPlaneLabel]; ok {
+			containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
+			strSlice := strings.Split(containerRuntimeVersion, ":")
+			for _, containerRuntime := range strSlice {
+				return containerRuntime, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
 }

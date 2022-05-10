@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -216,8 +217,9 @@ func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *kubermatic
 func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ConfigMaps")
 
-	creators := []reconciling.NamedConfigMapCreatorGetter{
-		kubermatic.UIConfigConfigMapCreator(config),
+	creators := []reconciling.NamedConfigMapCreatorGetter{}
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		creators = append(creators, kubermatic.UIConfigConfigMapCreator(config))
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
@@ -322,10 +324,15 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	logger.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubermatic.APIDeploymentCreator(config, r.workerName, r.versions),
-		kubermatic.UIDeploymentCreator(config, r.versions),
 		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName, r.versions),
 		common.WebhookDeploymentCreator(config, r.versions, nil, false),
+	}
+
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		creators = append(creators,
+			kubermatic.APIDeploymentCreator(config, r.workerName, r.versions),
+			kubermatic.UIDeploymentCreator(config, r.versions),
+		)
 	}
 
 	modifiers := []reconciling.ObjectModifier{
@@ -349,9 +356,14 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *
 	logger.Debug("Reconciling PodDisruptionBudgets")
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
-		kubermatic.APIPDBCreator(config),
-		kubermatic.UIPDBCreator(config),
 		kubermatic.MasterControllerManagerPDBCreator(config),
+	}
+
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		creators = append(creators,
+			kubermatic.APIPDBCreator(config),
+			kubermatic.UIPDBCreator(config),
+		)
 	}
 
 	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
@@ -365,9 +377,14 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 	logger.Debug("Reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
-		kubermatic.APIServiceCreator(config),
-		kubermatic.UIServiceCreator(config),
 		common.WebhookServiceCreator(config, r.Client),
+	}
+
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		creators = append(creators,
+			kubermatic.APIServiceCreator(config),
+			kubermatic.UIServiceCreator(config),
+		)
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
@@ -380,6 +397,11 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	if config.Spec.Ingress.Disable {
 		logger.Debug("Skipping Ingress creation because it was explicitly disabled")
+		return nil
+	}
+
+	if config.Spec.FeatureGates[features.HeadlessInstallation] {
+		logger.Debug("Headless installation requested, skipping.")
 		return nil
 	}
 
@@ -404,6 +426,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		common.KubermaticConfigurationAdmissionWebhookCreator(ctx, config, r.Client),
 		kubermatic.UserValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 		kubermatic.UserSSHKeyValidatingWebhookConfigurationCreator(ctx, config, r.Client),
+		common.ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {

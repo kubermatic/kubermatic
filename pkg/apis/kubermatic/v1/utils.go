@@ -18,7 +18,10 @@ package v1
 
 import (
 	"fmt"
+	"net"
 	"strings"
+
+	netutils "k8s.io/utils/net"
 )
 
 // AllExposeStrategies is a set containing all the ExposeStrategy.
@@ -73,4 +76,86 @@ func (e ExposeStrategiesSet) Items() []string {
 		items = append(items, string(s))
 	}
 	return items
+}
+
+// IsIPv4Only returns true if the cluster networking is IPv4-only.
+func (c *Cluster) IsIPv4Only() bool {
+	return len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 1 && netutils.IsIPv4CIDRString(c.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
+}
+
+// IsIPv6Only returns true if the cluster networking is IPv6-only.
+func (c *Cluster) IsIPv6Only() bool {
+	return len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 1 && netutils.IsIPv6CIDRString(c.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
+}
+
+// IsDualStack returns true if the cluster networking is dual-stack (IPv4 + IPv6).
+func (c *Cluster) IsDualStack() bool {
+	res, err := netutils.IsDualStackCIDRStrings(c.Spec.ClusterNetwork.Pods.CIDRBlocks)
+	if err != nil {
+		return false
+	}
+	return res
+}
+
+// Validate validates the network ranges. Returns nil if valid, error otherwise.
+func (r *NetworkRanges) Validate() error {
+	if r == nil {
+		return nil
+	}
+	for _, cidr := range r.CIDRBlocks {
+		if _, _, err := net.ParseCIDR(cidr); err != nil {
+			return fmt.Errorf("unable to parse CIDR %q: %w", cidr, err)
+		}
+	}
+	return nil
+}
+
+// GetIPv4CIDR returns the first found IPv4 CIDR in the network ranges, or an empty string if no IPv4 CIDR is found.
+func (r *NetworkRanges) GetIPv4CIDR() string {
+	for _, cidr := range r.CIDRBlocks {
+		if netutils.IsIPv4CIDRString(cidr) {
+			return cidr
+		}
+	}
+	return ""
+}
+
+// GetIPv4CIDRs returns all IPv4 CIDRs in the network ranges, or an empty string if no IPv4 CIDR is found.
+func (r *NetworkRanges) GetIPv4CIDRs() (res []string) {
+	for _, cidr := range r.CIDRBlocks {
+		if netutils.IsIPv4CIDRString(cidr) {
+			res = append(res, cidr)
+		}
+	}
+	return
+}
+
+// HasIPv4CIDR returns true if the network ranges contain any IPv4 CIDR, false otherwise.
+func (r *NetworkRanges) HasIPv4CIDR() bool {
+	return r.GetIPv4CIDR() != ""
+}
+
+// GetIPv6CIDR returns the first found IPv6 CIDR in the network ranges, or an empty string if no IPv6 CIDR is found.
+func (r *NetworkRanges) GetIPv6CIDR() string {
+	for _, cidr := range r.CIDRBlocks {
+		if netutils.IsIPv6CIDRString(cidr) {
+			return cidr
+		}
+	}
+	return ""
+}
+
+// GetIPv6CIDRs returns all IPv6 CIDRs in the network ranges, or an empty string if no IPv6 CIDR is found.
+func (r *NetworkRanges) GetIPv6CIDRs() (res []string) {
+	for _, cidr := range r.CIDRBlocks {
+		if netutils.IsIPv6CIDRString(cidr) {
+			res = append(res, cidr)
+		}
+	}
+	return
+}
+
+// HasIPv6CIDR returns true if the network ranges contain any IPv6 CIDR, false otherwise.
+func (r *NetworkRanges) HasIPv6CIDR() bool {
+	return r.GetIPv6CIDR() != ""
 }

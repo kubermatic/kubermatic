@@ -52,7 +52,7 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_cloud_controller"
+	ControllerName = "kkp-cloud-controller"
 	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
 	// security group was migrated to contain allow rules for ICMP.
 	icmpMigrationRevision = 1

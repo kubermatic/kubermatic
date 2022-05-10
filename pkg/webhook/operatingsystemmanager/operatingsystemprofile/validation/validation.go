@@ -64,10 +64,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	switch req.Operation {
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, osp); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding osp: %w", err))
+			return webhook.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding osp: %w", err))
 		}
 		if err := h.decoder.DecodeRaw(req.OldObject, oldOSP); err != nil {
-			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding old osp: %w", err))
+			return webhook.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding old osp: %w", err))
 		}
 		err := h.validateUpdate(osp, oldOSP)
 		if err != nil {
@@ -75,10 +75,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 	case admissionv1.Create, admissionv1.Delete:
-		// NOP we always allow create, delete operarions at the moment
+		// NOP we always allow create, delete operations
 
 	default:
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on osp resources", req.Operation))
+		return webhook.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on osp resources", req.Operation))
 	}
 
 	return webhook.Allowed(fmt.Sprintf("operatingSystemProfile validation request %s allowed", req.UID))

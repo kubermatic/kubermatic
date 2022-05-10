@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
@@ -37,6 +38,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var resourceNameValidator = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 
 // ListSeedsEndpoint returns seed list.
 func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
@@ -221,6 +224,25 @@ func DecodeSeedReq(c context.Context, r *http.Request) (interface{}, error) {
 func (r updateSeedReq) Validate() error {
 	if r.Name != r.Body.Name {
 		return fmt.Errorf("seed name mismatch, you requested to update Seed %q but body contains Seed %q", r.Name, r.Body.Name)
+	}
+
+	if r.Body.Spec.EtcdBackupRestore == nil {
+		return nil
+	}
+
+	defaultDestination := r.Body.Spec.EtcdBackupRestore.DefaultDestination
+	if len(defaultDestination) > 0 {
+		if !resourceNameValidator.MatchString(defaultDestination) {
+			return fmt.Errorf("default destination name is invalid, must match %s", resourceNameValidator.String())
+		}
+	}
+
+	for k := range r.Body.Spec.EtcdBackupRestore.Destinations {
+		if len(k) > 0 {
+			if !resourceNameValidator.MatchString(k) {
+				return fmt.Errorf("destination name is invalid, must match %s", resourceNameValidator.String())
+			}
+		}
 	}
 	return nil
 }

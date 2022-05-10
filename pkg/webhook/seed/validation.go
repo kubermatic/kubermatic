@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"sync"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -53,6 +54,8 @@ func newSeedValidator(
 		lock:             &sync.Mutex{},
 	}, nil
 }
+
+var resourceNameValidator = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 
 var _ admission.CustomValidator = &validator{}
 
@@ -195,6 +198,10 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		}
 
 		for name, dest := range subject.Spec.EtcdBackupRestore.Destinations {
+			if !resourceNameValidator.MatchString(name) {
+				return fmt.Errorf("destination name is invalid, must match %s", resourceNameValidator.String())
+			}
+
 			if dest.Credentials != nil {
 				etcdBackupSecret := corev1.Secret{}
 				if err := seedClient.Get(ctx, types.NamespacedName{Name: dest.Credentials.Name,

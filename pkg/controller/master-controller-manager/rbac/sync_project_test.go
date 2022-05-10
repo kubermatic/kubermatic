@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
@@ -94,6 +95,7 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			target := projectController{
 				client:     masterClient,
 				restMapper: getFakeRestMapper(t),
+				log:        zap.NewNop().Sugar(),
 			}
 			err := target.ensureCleanupFinalizerExists(ctx, test.projectToSync)
 			assert.NoError(t, err)
@@ -540,6 +542,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureClusterRBACRoleBindingForResources(ctx, test.projectToSync)
 			assert.NoError(t, err)
@@ -834,6 +837,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				client:           fakeMasterClusterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureProjectCleanup(ctx, test.projectToSync)
 			assert.NoError(t, err)
@@ -1106,6 +1110,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				client:           fakeMasterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClients,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureClusterRBACRoleForResources(ctx)
 			assert.Nil(t, err)
@@ -1407,6 +1412,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureRBACRoleForResources(ctx)
 			assert.Nil(t, err)
@@ -1855,6 +1861,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err := target.ensureRBACRoleBindingForResources(ctx, test.projectToSync)
 			assert.Nil(t, err)
@@ -2153,6 +2160,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 				projectResources: test.projectResourcesToSync,
+				log:              zap.NewNop().Sugar(),
 			}
 			err = target.ensureProjectCleanup(ctx, test.projectToSync)
 			assert.NoError(t, err)

@@ -154,6 +154,13 @@ type PresetProvider struct {
 	Enabled bool                      `json:"enabled"`
 }
 
+// PresetStats represents a preset statistics
+// swagger:model PresetStats
+type PresetStats struct {
+	AssociatedClusters         int `json:"associatedClusters"`
+	AssociatedClusterTemplates int `json:"associatedClusterTemplates"`
+}
+
 // Alertmanager represents an Alertmanager Configuration
 // swagger:model Alertmanager
 type Alertmanager struct {
@@ -195,6 +202,7 @@ type ClusterTemplate struct {
 	UserSSHKeys    []ClusterTemplateSSHKey        `json:"userSshKeys,omitempty"`
 	Cluster        *ClusterTemplateInfo           `json:"cluster,omitempty"`
 	NodeDeployment *ClusterTemplateNodeDeployment `json:"nodeDeployment,omitempty"`
+	Applications   []apiv1.Application            `json:"applications,omitempty"`
 }
 
 // ClusterTemplateInfo represents a ClusterTemplateInfo object.
@@ -513,6 +521,7 @@ type KubeOneOpenStackCloudSpec struct {
 	ProjectID string `json:"projectID"`
 
 	Domain string `json:"domain"`
+	Region string `json:"region"`
 }
 
 // KubeOneVSphereCloudSpec credentials represents a credential for accessing vSphere.
@@ -1344,4 +1353,30 @@ type CNIVersions struct {
 	CNIPluginType string `json:"cniPluginType"`
 	// Versions represents the list of the CNI Plugin versions that are supported
 	Versions []string `json:"versions"`
+}
+
+// NetworkDefaults contains cluster network default settings.
+// swagger:model NetworkDefaults
+type NetworkDefaults struct {
+	// IPv4 contains cluster network default settings for IPv4 network family.
+	IPv4 *NetworkDefaultsIPFamily `json:"ipv4,omitempty"`
+	// IPv6 contains cluster network default settings for IPv6 network family.
+	IPv6 *NetworkDefaultsIPFamily `json:"ipv6,omitempty"`
+	// ProxyMode defines the default kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	ProxyMode string `json:"proxyMode,omitempty"`
+	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
+	NodeLocalDNSCacheEnabled bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
+}
+
+// NetworkDefaultsIPFamily contains cluster network default settings for an IP family.
+// swagger:model NetworkDefaultsIPFamily
+type NetworkDefaultsIPFamily struct {
+	// PodsCIDR contains the default network range from which POD networks are allocated.
+	PodsCIDR string `json:"podsCidr,omitempty"`
+	// ServicesCIDR contains the default network range from which service VIPs are allocated.
+	ServicesCIDR string `json:"servicesCidr,omitempty"`
+	// NodeCIDRMaskSize contains the default mask size used to address the nodes within provided Pods CIDR.
+	NodeCIDRMaskSize int32 `json:"nodeCidrMaskSize,omitempty"`
+	// NodePortsAllowedIPRange defines the default IP range from which access to NodePort services is allowed for applicable cloud providers.
+	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 }

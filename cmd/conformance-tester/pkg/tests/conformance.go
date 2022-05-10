@@ -36,12 +36,9 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,12 +60,21 @@ func TestKubernetesConformance(
 		return fmt.Errorf("failed to get Ginkgo runs: %w", err)
 	}
 
+	// Since we retry failed conformance tests up to 3 times, we want to ensure that the
+	// cluster is as clean as possible and so we remove stray webhooks and namespaces.
+	// In order not to have to maintain a list of default namespaces/webhooks, we scan the
+	// cluster now and whatever exists now is deemed to be "default".
+	namespaces, webhooks, err := getDefaultClusterContents(ctx, userClusterClient)
+	if err != nil {
+		return fmt.Errorf("failed to determine default cluster contents: %w", err)
+	}
+
 	failures := false
 
 	// Run the ginkgo tests
 	for _, run := range ginkgoRuns {
 		if err := util.JUnitWrapper(fmt.Sprintf("[Ginkgo] Run ginkgo %q tests", run.Name), report, func() error {
-			ginkgoRes, err := runGinkgoRunWithRetries(ctx, log, opts, scenario, run, userClusterClient)
+			ginkgoRes, err := runGinkgoRunWithRetries(ctx, log, opts, scenario, run, userClusterClient, namespaces, webhooks)
 			if ginkgoRes != nil {
 				// We append the report from Ginkgo to our scenario wide report
 				util.AppendReport(report, ginkgoRes.Report)
@@ -88,10 +94,43 @@ func TestKubernetesConformance(
 	return nil
 }
 
+func getDefaultClusterContents(ctx context.Context, client ctrlruntimeclient.Client) (sets.String, sets.String, error) {
+	namespaceList := &corev1.NamespaceList{}
+	if err := client.List(ctx, namespaceList); err != nil {
+		return nil, nil, fmt.Errorf("failed to list namespaces: %w", err)
+	}
+
+	namespaces := sets.NewString()
+	for _, ns := range namespaceList.Items {
+		namespaces.Insert(ns.Name)
+	}
+
+	webhookList := &admissionregistrationv1.ValidatingWebhookConfigurationList{}
+	if err := client.List(ctx, webhookList); err != nil {
+		return nil, nil, fmt.Errorf("failed to list webhooks: %w", err)
+	}
+
+	webhooks := sets.NewString()
+	for _, webhook := range webhookList.Items {
+		webhooks.Insert(webhook.Name)
+	}
+
+	return namespaces, webhooks, nil
+}
+
 // runGinkgoRunWithRetries executes the passed GinkgoRun and retries if it failed hard(Failed to execute the Ginkgo binary for example)
 // Or if the JUnit report from Ginkgo contains failed tests.
 // Only if Ginkgo failed hard, an error will be returned. If some tests still failed after retrying the run, the report will reflect that.
-func runGinkgoRunWithRetries(ctx context.Context, log *zap.SugaredLogger, opts *types.Options, scenario scenarios.Scenario, run *util.GinkgoRun, client ctrlruntimeclient.Client) (ginkgoRes *util.GinkgoResult, err error) {
+func runGinkgoRunWithRetries(
+	ctx context.Context,
+	log *zap.SugaredLogger,
+	opts *types.Options,
+	scenario scenarios.Scenario,
+	run *util.GinkgoRun,
+	client ctrlruntimeclient.Client,
+	namespacesToKeep sets.String,
+	webhooksToKeep sets.String,
+) (ginkgoRes *util.GinkgoResult, err error) {
 	const maxAttempts = 3
 
 	attempts := 1
@@ -104,7 +143,7 @@ func runGinkgoRunWithRetries(ctx context.Context, log *zap.SugaredLogger, opts *
 	}()
 
 	for attempts = 1; attempts <= maxAttempts; attempts++ {
-		ginkgoRes, err = runGinkgo(ctx, log, opts, run, client)
+		ginkgoRes, err = runGinkgo(ctx, log, opts, run, client, namespacesToKeep, webhooksToKeep)
 
 		if ginkgoRes != nil {
 			metrics.GinkgoRuntimeMetric.With(prometheus.Labels{
@@ -143,10 +182,18 @@ func runGinkgoRunWithRetries(ctx context.Context, log *zap.SugaredLogger, opts *
 	return ginkgoRes, err
 }
 
-func runGinkgo(ctx context.Context, parentLog *zap.SugaredLogger, opts *types.Options, run *util.GinkgoRun, client ctrlruntimeclient.Client) (*util.GinkgoResult, error) {
+func runGinkgo(
+	ctx context.Context,
+	parentLog *zap.SugaredLogger,
+	opts *types.Options,
+	run *util.GinkgoRun,
+	client ctrlruntimeclient.Client,
+	namespacesToKeep sets.String,
+	webhooksToKeep sets.String,
+) (*util.GinkgoResult, error) {
 	log := parentLog.With("reports-dir", run.ReportsDir)
 
-	if err := cleanupBeforeGinkgo(ctx, log, opts, client); err != nil {
+	if err := cleanupBeforeGinkgo(ctx, log, opts, client, namespacesToKeep, webhooksToKeep); err != nil {
 		return nil, fmt.Errorf("failed to cleanup before the Ginkgo run: %w", err)
 	}
 
@@ -262,19 +309,15 @@ func getGinkgoRuns(
 	return ginkgoRuns, nil
 }
 
-var (
-	protectedNamespaces = sets.NewString(
-		metav1.NamespaceDefault,
-		metav1.NamespaceSystem,
-		metav1.NamespacePublic,
-		corev1.NamespaceNodeLease,
-		kubernetesdashboard.Namespace,
-		resources.CloudInitSettingsNamespace,
-	)
-)
-
-func cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLogger, opts *types.Options, client ctrlruntimeclient.Client) error {
-	log.Info("Removing webhooks...")
+func cleanupBeforeGinkgo(
+	ctx context.Context,
+	log *zap.SugaredLogger,
+	opts *types.Options,
+	client ctrlruntimeclient.Client,
+	namespacesToKeep sets.String,
+	webhooksToKeep sets.String,
+) error {
+	log.Info("Removing non-default webhooks...")
 
 	if err := wait.PollImmediate(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (done bool, err error) {
 		webhookList := &admissionregistrationv1.ValidatingWebhookConfigurationList{}
@@ -283,11 +326,13 @@ func cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLogger, opts *type
 			return false, nil
 		}
 
-		if len(webhookList.Items) == 0 {
-			return true, nil
-		}
+		remaining := 0
 
 		for _, webhook := range webhookList.Items {
+			if webhooksToKeep.Has(webhook.Name) {
+				continue
+			}
+
 			if webhook.DeletionTimestamp == nil {
 				wlog := log.With("webhook", webhook.Name)
 
@@ -297,16 +342,18 @@ func cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLogger, opts *type
 					wlog.Debug("Deleted webhook.")
 				}
 			}
+
+			remaining++
 		}
 
-		return false, nil
+		return remaining == 0, nil
 	}); err != nil {
 		return err
 	}
 
 	log.Info("Removing non-default namespaces...")
 
-	// For these we do not wait for thhe deletion to be done, as it's enough to trigger
+	// For these we do not wait for the deletion to be done, as it's enough to trigger
 	// the deletion and have the resources disappear over time.
 
 	namespaceList := &corev1.NamespaceList{}
@@ -315,13 +362,8 @@ func cleanupBeforeGinkgo(ctx context.Context, log *zap.SugaredLogger, opts *type
 		return nil
 	}
 
-	// This check assumes no one deleted one of the protected namespaces
-	if len(namespaceList.Items) <= protectedNamespaces.Len() {
-		return nil
-	}
-
 	for _, namespace := range namespaceList.Items {
-		if protectedNamespaces.Has(namespace.Name) {
+		if namespacesToKeep.Has(namespace.Name) {
 			continue
 		}
 

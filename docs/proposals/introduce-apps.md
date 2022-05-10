@@ -272,6 +272,10 @@ The functionality of the ApplicationInstallationController depends on the select
 
   - Default Addons are distinct from Custom Addons and often require other components outside of the user cluster (e.g. kube-metrics)
   - We decided that decoupling Default Addons from KKP versions is very difficult to support. This is because it allows the usage of all combinations of KKP and Addon versions, which are hard to test for us in advance. As a result we could run into a variety of unexpected errors
+  - We decided to not embed KubeApps for the following reasons:
+    - uses a database to store state of the applications. This would lead to additional components we need to ship with KKP, which are not inline with our current architecture principle to store stateful information directly in k8s. Additionally the database would make it more difficult to enable GitOps for Applications natively
+    - no time-save on frontend development. After syncing with Product Management it became clear that a re-direct to the KubeApps dashboard is not desirable. Therefore we would need to implement a frontend for KubeApps API
+    - more difficult to integrate into cluster-templates in order to achieve clusters with pre-installed apps
 
 # Glossary
 

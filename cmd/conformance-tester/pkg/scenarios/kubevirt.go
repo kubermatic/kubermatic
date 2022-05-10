@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	kubevirtRegistryAddr  = "http://10.244.2.19"
+	kubevirtRegistryAddr  = "http://10.244.1.19"
 	kubevirtCPUs          = "2"
 	kubevirtMemory        = "4Gi"
 	kubevirtDiskSize      = "25Gi"

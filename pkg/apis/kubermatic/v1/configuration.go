@@ -73,7 +73,9 @@ type KubermaticConfigurationSpec struct {
 	CABundle corev1.TypedLocalObjectReference `json:"caBundle,omitempty"`
 	// ImagePullSecret is used to authenticate against Docker registries.
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
-	// Auth defines keys and URLs for Dex.
+	// Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
+	// feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
+	// +optional
 	Auth KubermaticAuthConfiguration `json:"auth"`
 	// FeatureGates are used to optionally enable certain features.
 	FeatureGates map[string]bool `json:"featureGates,omitempty"`

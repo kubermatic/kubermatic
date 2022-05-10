@@ -16,9 +16,9 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: {{ .Release.Name }}-job
-  namespace:  {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
-  schedule:  {{ .Values.telemetry.schedule }}
+  schedule: {{ .Values.telemetry.schedule | quote }}
   jobTemplate:
     spec:
       template:
@@ -31,6 +31,8 @@ spec:
             - name: kubernetes-agent
               image: "{{ .Values.telemetry.kubernetesAgent.image.repository }}:{{ .Values.telemetry.kubernetesAgent.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.telemetry.kubernetesAgent.image.pullPolicy }}
+              command:
+                - kubernetes-agent
               args:
                 - "--record-dir=$(RECORD_DIR)"
               env:
@@ -44,6 +46,8 @@ spec:
             - name: kubermatic-agent
               image: "{{ .Values.telemetry.kubermaticAgent.image.repository }}:{{ .Values.telemetry.kubermaticAgent.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.telemetry.kubermaticAgent.image.pullPolicy }}
+              command:
+                - kubermatic-agent
               args:
                 - "--record-dir=$(RECORD_DIR)"
               env:
@@ -58,16 +62,15 @@ spec:
             - name: reporter
               image: "{{ .Values.telemetry.reporter.image.repository }}:{{ .Values.telemetry.reporter.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.telemetry.reporter.image.pullPolicy }}
+              command:
+                - reporter
               args:
-                - "http"
-                - "--client-uuid=$(CLIENT_UUID)"
-                - "--url=$(URL)"
-                - "--record-dir=$(RECORD_DIR)"
+                {{- toYaml .Values.telemetry.reporterArgs | nindent 16 }}
               env:
                 - name: RECORD_DIR
                   value: "/records"
                 - name: URL
-                  value: "https://telemetry.k8c.io/api/v1"
+                  value: {{ .Values.telemetry.targetURL | quote }}
                 - name: CLIENT_UUID
                   valueFrom:
                     secretKeyRef:

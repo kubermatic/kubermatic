@@ -29,8 +29,6 @@ groups:
       service: helm-exporter
     runbook:
       steps:
-      - Check the installed Helm releases via `helm --tiller-namespace kubermtic-installer ls`.
-      - If all releases are status `DEPLOYED`, make sure the helme-exporter is looking at the correct Tiller by checking
-        the `values.yaml` flag `helmExporter.tillerNamespace`.
+      - Check the installed Helm releases via `helm --namespace monitoring ls --all`.
       - If Helm cannot repair the chart automatically, delete/purge the chart (`helm delete --purge [RELEASE]`) and
-        re-install the chart again. Re-installing charts will not affect any existing data in existing PersistentVolumeClaims.
+        re-install the chart again.

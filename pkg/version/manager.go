@@ -319,7 +319,7 @@ func (m *Manager) GetKubeOnePossibleUpdates(fromVersionRaw string, provider kube
 
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
-			if c.Check(v.Version) && !from.Equal(v.Version) {
+			if c.Check(v.Version) && !from.Equal(v.Version) && from.LessThan(v.Version) {
 				possibleVersions = append(possibleVersions, v)
 			}
 		}

@@ -101,7 +101,7 @@ func podFailedKubeletAdmissionDueToNodeAffinityPredicate(p *corev1.Pod, log *zap
 }
 
 func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, userClusterClient ctrlruntimeclient.Client, timeout time.Duration) error {
-	log.Debug("Waiting for all pods to be ready...")
+	log.Info("Waiting for all pods to be ready...")
 	started := time.Now()
 
 	err := wait.Poll(opts.UserClusterPollInterval, timeout, func() (done bool, err error) {

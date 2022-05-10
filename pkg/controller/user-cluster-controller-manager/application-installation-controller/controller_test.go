@@ -38,6 +38,10 @@ func init() {
 	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
 }
 
+const (
+	applicationNamespace = "apps"
+)
+
 func TestEnqueueApplicationInstallation(t *testing.T) {
 	testCases := []struct {
 		name                      string
@@ -56,12 +60,12 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0")).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-1"}},
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-3"}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-3", Namespace: applicationNamespace}},
 			},
 		},
 		{
-			name:                  "scenario 2: when no application reference ApplicationDef 'app-def-1' nothing is enqueued",
+			name:                  "scenario 2: when no application reference ApplicationDef 'app-def-1', nothing is enqueued",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -73,7 +77,7 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 			expectedReconcileRequests: []reconcile.Request{},
 		},
 		{
-			name:                  "scenario 3: when no application in cluster nothing is enqueued",
+			name:                  "scenario 3: when no application in cluster, nothing is enqueued",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -147,11 +151,15 @@ func genApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 func genApplicationInstallation(name string, applicationDefName string, appVersion string) *appkubermaticv1.ApplicationInstallation {
 	return &appkubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: applicationNamespace,
 		},
 		Spec: appkubermaticv1.ApplicationInstallationSpec{
-			TargetNamespace: "default",
-			CreateNamespace: false,
+			Namespace: appkubermaticv1.NamespaceSpec{
+				Name:   "default",
+				Create: false,
+			},
+
 			ApplicationRef: appkubermaticv1.ApplicationRef{
 				Name:    applicationDefName,
 				Version: appkubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},

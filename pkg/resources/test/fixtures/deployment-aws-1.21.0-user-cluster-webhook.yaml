@@ -1,0 +1,65 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  name: user-cluster-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-cluster-webhook
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        fluentbit.io/parser: json_iso
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: user-cluster-webhook
+    spec:
+      containers:
+      - args:
+        - -webhook-cert-dir=/opt/webhook-serving-cert/
+        - -webhook-cert-name=serving.crt
+        - -webhook-key-name=serving.key
+        - -v=2
+        command:
+        - user-cluster-webhook
+        image: quay.io/kubermatic/kubermatic:v0.0.0-test
+        name: usercluster-controller
+        ports:
+        - containerPort: 9443
+          name: admission
+          protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 3
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: metrics
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /opt/webhook-serving-cert/
+          name: webhook-serving-cert
+          readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
+      serviceAccountName: user-cluster-webhook
+      volumes:
+      - name: webhook-serving-cert
+        secret:
+          secretName: user-cluster-webhook-serving-cert
+status: {}

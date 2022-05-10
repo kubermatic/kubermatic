@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	ControllerName = "seedcontroller_lifecycle_manager"
+	ControllerName = "kp-seed-lifecycle-controller"
 
 	// We must only enqueue this one key.
 	queueKey = ControllerName
@@ -174,7 +174,8 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	for _, seed := range seeds {
 		cfg, err := r.seedKubeconfigGetter(seed)
 		if err != nil {
-			// Don't let a single broken kubeconfig break everything.
+			// Don't let a single broken kubeconfig break everything, just update the Seed
+			// status and continue with the other seeds.
 			r.log.Errorw("failed to get kubeconfig", "seed", seed.Name, zap.Error(err))
 			seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seed.Name).Set(0)
 			continue

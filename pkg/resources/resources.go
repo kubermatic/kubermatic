@@ -162,6 +162,8 @@ const (
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard.
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
+	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
+	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -338,6 +340,8 @@ const (
 
 	// KubermaticNamespace is the main kubermatic namespace.
 	KubermaticNamespace = "kubermatic"
+	// KubermaticWebhookServiceName is the name of the kuberamtic webhook service in seed cluster.
+	KubermaticWebhookServiceName = "kubermatic-webhook"
 	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment.
 	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
 	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment.
@@ -431,6 +435,9 @@ const (
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
 
+	// MachineValidatingWebhookConfigurationName is the name for the machine validating webhook.
+	MachineValidatingWebhookConfigurationName = "machine.kubermatic.k8c.io"
+
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
 	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
@@ -473,7 +480,7 @@ const (
 	// KubeletClientKeySecretKey kubelet-client.key.
 	KubeletClientKeySecretKey = "kubelet-client.key"
 	// KubeletClientCertSecretKey kubelet-client.crt.
-	KubeletClientCertSecretKey = "kubelet-client.crt" // FIXME confusing naming: s/CertSecretKey/CertSecretName/
+	KubeletClientCertSecretKey = "kubelet-client.crt"
 	// ServiceAccountKeySecretKey sa.key.
 	ServiceAccountKeySecretKey = "sa.key"
 	// ServiceAccountKeyPublicKey is the public key for the service account signer key.
@@ -551,8 +558,8 @@ const (
 )
 
 const (
-	// KubeOneNamespacePrefix is the main kubeone namespace prefix.
-	KubeOneNamespacePrefix = "kubeone"
+	// KubeOneNamespacePrefix is the kubeone namespace prefix.
+	KubeOneNamespacePrefix = "kubeone-"
 	// KubeOne secret names.
 	KubeOneSSHSecretName        = "ssh"
 	KubeOneManifestSecretName   = "manifest"
@@ -566,17 +573,17 @@ const (
 	ContainerRuntimeDocker     = "docker"
 	ContainerRuntimeContainerd = "containerd"
 	// KubeOne natively-supported providers.
-	KubeOneAWS              = "aws"
-	KubeOneGCP              = "gcp"
-	KubeOneAzure            = "azure"
-	KubeOneDigitalOcean     = "digitalocean"
-	KubeOneHetzner          = "hetzner"
-	KubeOneNutanix          = "nutanix"
-	KubeOneOpenStack        = "openstack"
-	KubeOneEquinix          = "equinix"
-	KubeOneVSphere          = "vsphere"
-	KubeOneImage            = "quay.io/kubermatic/kubeone"
-	KubeOneKubeConfigScript = `
+	KubeOneAWS          = "aws"
+	KubeOneGCP          = "gcp"
+	KubeOneAzure        = "azure"
+	KubeOneDigitalOcean = "digitalocean"
+	KubeOneHetzner      = "hetzner"
+	KubeOneNutanix      = "nutanix"
+	KubeOneOpenStack    = "openstack"
+	KubeOneEquinix      = "equinix"
+	KubeOneVSphere      = "vsphere"
+	KubeOneImage        = "quay.io/kubermatic/kubeone"
+	KubeOneScript       = `
 #!/usr/bin/env bash
 
 eval ` + "`" + "ssh-agent" + "`" + ` > /dev/null
@@ -584,7 +591,6 @@ printf "#!/bin/sh\necho $PASSPHRASE" > script_returning_pass
 chmod +x script_returning_pass
 DISPLAY=1 SSH_ASKPASS="./script_returning_pass" ssh-add ~/.ssh/id_rsa > /dev/null 2> /dev/null
 rm ${SSH_ASKPASS} -f
-kubeone kubeconfig -m kubeonemanifest/manifest
 			`
 )
 
@@ -615,6 +621,7 @@ const (
 	OpenstackToken                       = "token"
 	// Below OpenStack constant is added for KubeOne Clusters.
 	OpenstackAuthURL = "authURL"
+	OpenstackRegion  = "region"
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
@@ -669,9 +676,10 @@ const (
 )
 
 const (
-	NodeLocalDNSServiceAccountName = "node-local-dns"
-	NodeLocalDNSConfigMapName      = "node-local-dns"
-	NodeLocalDNSDaemonSetName      = "node-local-dns"
+	NodeLocalDNSServiceAccountName  = "node-local-dns"
+	NodeLocalDNSConfigMapName       = "node-local-dns"
+	NodeLocalDNSDaemonSetName       = "node-local-dns"
+	DefaultNodeLocalDNSCacheEnabled = true
 )
 
 const (
@@ -815,20 +823,37 @@ const (
 )
 
 const (
-	// DefaultClusterPodsCIDR is the default network range from which POD networks are allocated.
-	DefaultClusterPodsCIDR = "172.25.0.0/16"
-	// DefaultClusterPodsCIDRKubeVirt is the default network range from which POD networks are allocated for KubeVirt clusters.
-	DefaultClusterPodsCIDRKubeVirt = "172.26.0.0/16"
+	UserClusterWebhookDeploymentName        = "user-cluster-webhook"
+	UserClusterWebhookServiceName           = "user-cluster-webhook"
+	UserClusterWebhookServingCertSecretName = "user-cluster-webhook-serving-cert"
+)
 
-	// DefaultClusterServicesCIDR is the default network range from which service VIPs are allocated.
-	DefaultClusterServicesCIDR = "10.240.16.0/20"
-	// DefaultClusterServicesCIDRKubeVirt is the default network range from which service VIPs are allocated for KubeVirt clusters.
-	DefaultClusterServicesCIDRKubeVirt = "10.241.0.0/20"
+const (
+	// DefaultClusterPodsCIDRIPv4 is the default network range from which IPv4 POD networks are allocated.
+	DefaultClusterPodsCIDRIPv4 = "172.25.0.0/16"
+	// DefaultClusterPodsCIDRIPv4KubeVirt is the default network range from which IPv4 POD networks are allocated for KubeVirt clusters.
+	DefaultClusterPodsCIDRIPv4KubeVirt = "172.26.0.0/16"
+	// DefaultClusterPodsCIDRIPv6 is the default network range from which IPv6 POD networks are allocated.
+	DefaultClusterPodsCIDRIPv6 = "fd01::/48"
+
+	// DefaultClusterServicesCIDRIPv4 is the default network range from which IPv4 service VIPs are allocated.
+	DefaultClusterServicesCIDRIPv4 = "10.240.16.0/20"
+	// DefaultClusterServicesCIDRIPv4KubeVirt is the default network range from which IPv4 service VIPs are allocated for KubeVirt clusters.
+	DefaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
+	// DefaultClusterServicesCIDRIPv6 is the default network range from which IPv6 service VIPs are allocated.
+	DefaultClusterServicesCIDRIPv6 = "fd02::/120"
 
 	// DefaultNodeCIDRMaskSizeIPv4 is the default mask size used to address the nodes within provided IPv4 Pods CIDR.
 	DefaultNodeCIDRMaskSizeIPv4 = 24
 	// DefaultNodeCIDRMaskSizeIPv6 is the default mask size used to address the nodes within provided IPv6 Pods CIDR.
 	DefaultNodeCIDRMaskSizeIPv6 = 64
+)
+
+const (
+	// IPv4MatchAnyCIDR is the CIDR used for matching with any IPv4 address.
+	IPv4MatchAnyCIDR = "0.0.0.0/0"
+	// IPv6MatchAnyCIDR is the CIDR used for matching with any IPv6 address.
+	IPv6MatchAnyCIDR = "::/0"
 )
 
 // List of allowed TLS cipher suites.
@@ -1516,4 +1541,56 @@ func GetClusterNodeCIDRMaskSizeIPv6(cluster *kubermaticv1.Cluster) int32 {
 		return *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
 	}
 	return DefaultNodeCIDRMaskSizeIPv6
+}
+
+// GetNodePortsAllowedIPRanges returns effective CIDR range to be used for NodePort services for the given cluster
+// and provided allowed IP ranges coming from provider-specific API.
+func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges *kubermaticv1.NetworkRanges, allowedIPRange string) (res kubermaticv1.NetworkRanges) {
+	if allowedIPRanges != nil {
+		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRanges.CIDRBlocks...)
+	}
+	if allowedIPRange != "" {
+		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRange)
+	}
+	if len(res.CIDRBlocks) == 0 {
+		if cluster.IsIPv4Only() || cluster.IsDualStack() {
+			res.CIDRBlocks = append(res.CIDRBlocks, IPv4MatchAnyCIDR)
+		}
+		if cluster.IsIPv6Only() || cluster.IsDualStack() {
+			res.CIDRBlocks = append(res.CIDRBlocks, IPv6MatchAnyCIDR)
+		}
+	}
+	return
+}
+
+// GetDefaultPodCIDRIPv4 returns the default IPv4 pod CIDR for the given provider.
+func GetDefaultPodCIDRIPv4(provider kubermaticv1.ProviderType) string {
+	if provider == kubermaticv1.KubevirtCloudProvider {
+		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+		// thus we have to avoid network collision
+		return DefaultClusterPodsCIDRIPv4KubeVirt
+	}
+	return DefaultClusterPodsCIDRIPv4
+}
+
+// GetDefaultServicesCIDRIPv4 returns the default IPv4 services CIDR for the given provider.
+func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
+	if provider == kubermaticv1.KubevirtCloudProvider {
+		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+		// thus we have to avoid network collision
+		return DefaultClusterServicesCIDRIPv4KubeVirt
+	}
+	return DefaultClusterServicesCIDRIPv4
+}
+
+// GetDefaultProxyMode returns the default proxy mode for the given provider.
+func GetDefaultProxyMode(provider kubermaticv1.ProviderType, cni kubermaticv1.CNIPluginType) string {
+	// TODO: (rastislavs) make ebpf the default proxy mode for Cilium CNI after Konenctivity is GA
+
+	if provider == kubermaticv1.HetznerCloudProvider {
+		// IPVS causes issues with Hetzner's LoadBalancers, which should
+		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
+		return IPTablesProxyMode
+	}
+	return IPVSProxyMode
 }

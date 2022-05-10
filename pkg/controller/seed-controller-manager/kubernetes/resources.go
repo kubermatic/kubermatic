@@ -45,7 +45,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
+	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/user-cluster-webhook"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
+	webterminal "k8c.io/kubermatic/v2/pkg/resources/web-terminal"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -266,6 +268,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
 		etcd.ServiceCreator(data),
 		machinecontroller.ServiceCreator(),
+		userclusterwebhook.ServiceCreator(),
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -299,6 +302,8 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
+		userclusterwebhook.DeploymentCreator(data),
+		webterminal.DeploymentCreator(data),
 	}
 
 	if data.Cluster().Spec.KubernetesDashboard.Enabled {
@@ -359,6 +364,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.KubeletClientCertificateCreator(data),
 		apiserver.ServiceAccountKeyCreator(),
 		machinecontroller.TLSServingCertificateCreator(data),
+		userclusterwebhook.TLSServingCertificateCreator(data),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(namespace, resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data, r.log),
@@ -425,6 +431,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		usercluster.ServiceAccountCreator,
 		machinecontroller.ServiceAccountCreator,
 		machinecontroller.WebhookServiceAccountCreator,
+		userclusterwebhook.ServiceAccountCreator,
 	}
 
 	if c.Spec.EnableOperatingSystemManager {
@@ -486,6 +493,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
 	namedClusterRoleCreatorGetters := []reconciling.NamedClusterRoleCreatorGetter{
 		usercluster.ClusterRole(),
+		userclusterwebhook.ClusterRole(),
 	}
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
@@ -497,6 +505,7 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
 func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
 	namedClusterRoleBindingsCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		usercluster.ClusterRoleBinding(namespace),
+		userclusterwebhook.ClusterRoleBinding(namespace),
 	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Role Bindings: %w", err)

@@ -44,6 +44,7 @@ import (
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	mlaadminsetting "k8c.io/kubermatic/v2/pkg/handler/v2/mla_admin_setting"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/networkdefaults"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
@@ -681,6 +682,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/presets/{preset_name}").
 		Handler(r.deletePreset())
 
+	mux.Methods(http.MethodGet).
+		Path("/presets/{preset_name}/stats").
+		Handler(r.getPresetStats())
+
 	mux.Methods(http.MethodPut).
 		Path("/presets/{preset_name}/status").
 		Handler(r.updatePresetStatus())
@@ -926,6 +931,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/vpcs").
 		Handler(r.listEKSVPCsNoCredentials())
+
+	// Defines an endpoint to retrieve the cluster networking defaults for the given provider and CNI.
+	mux.Methods(http.MethodGet).
+		Path("/providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults").
+		Handler(r.getNetworkDefaults())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -960,7 +970,7 @@ func (r Routing) createCluster() http.Handler {
 
 // swagger:route GET /api/v2/projects/{project_id}/clusters project listClustersV2
 //
-//     Lists clusters for the specified project.
+//     Lists clusters for the specified project. If query parameter `show_dm_count` is set to `true` then the endpoint will also return the number of machine deployments of each cluster.
 //
 //     Produces:
 //     - application/json
@@ -976,7 +986,7 @@ func (r Routing) listClusters() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(cluster.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.clusterProviderGetter, r.userInfoGetter, r.kubermaticConfigGetter)),
-		common.DecodeGetProject,
+		cluster.DecodeListClustersReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -4277,6 +4287,31 @@ func (r Routing) deleteProviderPreset() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/presets/{preset_name}/stats preset getPresetStats
+//
+//     Gets presets stats.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: PresetStats
+//       401: empty
+//       403: empty
+//       404: empty
+func (r Routing) getPresetStats() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.GetPresetStats(r.presetProvider, r.userInfoGetter, r.clusterProviderGetter, r.seedsGetter, r.clusterTemplateProvider)),
+		preset.DecodeGetPresetStats,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/providers/{provider_name}/versions version listVersionsByProvider
 //
 // Lists all versions which don't result in automatic updates for a given provider
@@ -6367,6 +6402,30 @@ func (r Routing) listCNIPluginVersionsForCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cniversion.ListVersionsForCluster(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		cniversion.DecodeListCNIPluginVersionsForClusterReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults networkdefaults getNetworkDefaults
+//
+//     Retrieves the cluster networking defaults for the given provider and CNI.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NetworkDefaults
+//       401: empty
+//       403: empty
+func (r Routing) getNetworkDefaults() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(networkdefaults.GetNetworkDefaultsEndpoint()),
+		networkdefaults.DecodeGetNetworkDefaultsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

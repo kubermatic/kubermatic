@@ -33,7 +33,8 @@ boilerplate \
   -exclude pkg/ee \
   -exclude charts/kubermatic-operator/crd \
   -exclude pkg/validation/openapi/crd \
-  -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static
+  -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
+  -exclude .github
 
 echodate "Checking Kubermatic EE licenses..."
 boilerplate \

@@ -18,7 +18,6 @@ package externalcluster
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -51,7 +50,7 @@ import (
 )
 
 const (
-	ControllerName = "external_cluster_controller"
+	ControllerName = "kkp-external-cluster-controller"
 )
 
 // Reconciler is a controller which is responsible for managing clusters.
@@ -315,7 +314,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 	}
 
 	secretData := map[string][]byte{
-		resources.ExternalClusterKubeconfig: []byte(base64.StdEncoding.EncodeToString(kubeconfig)),
+		resources.ExternalClusterKubeconfig: kubeconfig,
 	}
 
 	// update if already exists

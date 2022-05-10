@@ -157,6 +157,21 @@ minio:
 nginx:
   controller:
     replicaCount: 1
+
+telemetry:
+  # this is a meaningless, random UUID; we use a static one to,
+  # if we ever had to, easily filter its data out of any data collector
+  uuid: "559a1b90-b5d0-40aa-a74d-bd9e808ec10f"
+
+  # ensure that we create at least one report
+  schedule: "* * * * *"
+
+  # instead of sending the data anywhere, we just print it to stdout
+  # and later check if telemetry pods exist and if they output something
+  reporterArgs:
+    - stdout
+    - --client-uuid=\$(CLIENT_UUID)
+    - --record-dir=\$(RECORD_DIR)
 EOF
 
 # append custom Dex configuration
@@ -166,7 +181,7 @@ cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 copy_crds_to_chart
 
 # install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy kubermatic-master --disable-telemetry \
+./_build/kubermatic-installer deploy kubermatic-master \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE"

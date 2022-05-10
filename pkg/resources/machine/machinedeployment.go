@@ -25,6 +25,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -49,7 +50,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	} else {
 		// GenerateName can be set only if Name is empty to avoid confusing error:
 		// https://github.com/kubernetes/kubernetes/issues/32220
-		md.GenerateName = fmt.Sprintf("%s-worker-", c.Spec.HumanReadableName)
+		md.GenerateName = fmt.Sprintf("%s-worker-", c.Name)
 	}
 
 	// Add Annotations to Machine Deployment
@@ -134,6 +135,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	return md, nil
 }
 
+//gocyclo:ignore
 func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*providerconfig.Config, error) {
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
@@ -241,6 +243,21 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		return nil, errors.New("unknown cloud provider")
 	}
 	config.CloudProviderSpec = *cloudExt
+
+	if config.Network == nil {
+		config.Network = &providerconfig.NetworkConfig{}
+	}
+
+	switch {
+	case c.IsIPv4Only():
+		config.Network.IPFamily = util.IPv4
+	case c.IsIPv6Only():
+		config.Network.IPFamily = util.IPv6
+	case c.IsDualStack():
+		config.Network.IPFamily = util.DualStack
+	default:
+		config.Network.IPFamily = util.Unspecified
+	}
 
 	return &config, nil
 }

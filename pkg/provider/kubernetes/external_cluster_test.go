@@ -129,17 +129,16 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			if err := provider.CreateOrUpdateKubeconfigSecretForCluster(context.Background(), tc.externalCluster, tc.kubeconfig); err != nil {
+			kubeconfig, err := base64.StdEncoding.DecodeString(tc.kubeconfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := provider.CreateOrUpdateKubeconfigSecretForCluster(context.Background(), tc.externalCluster, kubeconfig); err != nil {
 				t.Fatal(err)
 			}
 
 			secret := &corev1.Secret{}
 			if err := client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.externalCluster.GetKubeconfigSecretName(), Namespace: resources.KubermaticNamespace}, secret); err != nil {
-				t.Fatal(err)
-			}
-			kubeconfig, err := base64.StdEncoding.DecodeString(tc.kubeconfig)
-			if err != nil {
 				t.Fatal(err)
 			}
 			tc.expectedSecret.Data = map[string][]byte{resources.ExternalClusterKubeconfig: kubeconfig}

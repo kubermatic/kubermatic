@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
@@ -865,6 +866,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -1091,6 +1093,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -1731,7 +1734,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
-			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{
@@ -2260,7 +2263,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
-			err := ensureClusterRBACRoleForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{
@@ -2541,6 +2544,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -2949,6 +2953,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 				client:     fakeSeedClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
@@ -3256,6 +3261,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 				client:     fakeSeedClusterClient,
 				restMapper: getFakeRestMapper(t),
 				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+				log:        zap.NewNop().Sugar(),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)

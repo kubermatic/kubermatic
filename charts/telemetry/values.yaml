@@ -22,21 +22,18 @@ telemetry:
 
   kubermaticAgent:
     image:
-      repository: quay.io/kubermatic/telemetry-kubermatic-agent
-      pullPolicy: Always
-      tag: "v0.1.0"
+      repository: quay.io/kubermatic/telemetry-agent
+      tag: "v0.2.2"
 
   kubernetesAgent:
     image:
-      repository: quay.io/kubermatic/telemetry-kubernetes-agent
-      pullPolicy: Always
-      tag: "v0.1.0"
+      repository: quay.io/kubermatic/telemetry-agent
+      tag: "v0.2.2"
 
   reporter:
     image:
-      repository: quay.io/kubermatic/telemetry-reporter
-      pullPolicy: Always
-      tag: "v0.1.0"
+      repository: quay.io/kubermatic/telemetry-agent
+      tag: "v0.2.2"
 
   resources:
     limits:
@@ -45,3 +42,13 @@ telemetry:
     requests:
       cpu: "0.5"
       memory: 100Mi
+
+  # the URL telemetry reports are sent to
+  targetURL: https://telemetry.k8c.io/api/v1
+
+  # arguments for the reporter container
+  reporterArgs:
+    - http
+    - --client-uuid=$(CLIENT_UUID)
+    - --url=$(URL)
+    - --record-dir=$(RECORD_DIR)

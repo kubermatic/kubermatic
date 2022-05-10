@@ -64,6 +64,12 @@ const (
 	// enable OSM to be used as a provisioning tool, is via the enabling of the EnableOperatingSystemManager field in
 	// user cluster.
 	OperatingSystemManager = "OperatingSystemManager"
+
+	// HeadlessInstallation feature makes the KKP installer not install nginx and Dex. This is useful to create
+	// a KKP system without UI/API deployments, that will only be interacted with using kubectl or similar means.
+	// Setting this feature flag will make KKP ignore any UI/API/Ingress configuration.
+	// This feature is in preview and not yet ready for production.
+	HeadlessInstallation = "HeadlessInstallation"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

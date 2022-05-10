@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -201,6 +202,11 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")
 
+	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
+		sublogger.Info("Headless installation requested, skipping.")
+		return nil
+	}
+
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "oauth"))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
@@ -280,6 +286,11 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 		return err
 	}
 
+	// install OSM CRDs
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io")); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -322,6 +333,11 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	logger.Info("📡 Determining DNS settings…")
 	sublogger := log.Prefix(logger, "   ")
+
+	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
+		sublogger.Info("Headless installation requested, skipping.")
+		return
+	}
 
 	if opt.KubermaticConfiguration.Spec.Ingress.Disable {
 		sublogger.Info("Ingress creation has been disabled in the KubermaticConfiguration, skipping.")

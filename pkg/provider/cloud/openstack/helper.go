@@ -39,6 +39,7 @@ import (
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/utils/net"
@@ -161,7 +162,7 @@ type createKubermaticSecurityGroupRequest struct {
 	clusterName    string
 	ipv4Rules      bool
 	ipv6Rules      bool
-	nodePortsCIDRs []string
+	nodePortsCIDRs kubermaticv1.NetworkRanges
 	lowPort        int
 	highPort       int
 }
@@ -253,7 +254,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 		}...)
 	}
 
-	for _, cidr := range req.nodePortsCIDRs {
+	for _, cidr := range req.nodePortsCIDRs.CIDRBlocks {
 		tcp := ossecuritygrouprules.CreateOpts{
 			// Allows TCP traffic to nodePorts from external
 			Direction:      ossecuritygrouprules.DirIngress,

@@ -26,8 +26,8 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
+	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -546,12 +546,21 @@ func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSetti
 			}
 		}
 		if !bindingAlreadyExists {
-			groupPrefix := rbac.ExtractGroupPrefix(binding.Spec.Group)
+			groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
 			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
 		}
 	}
 
 	return apiUser
+}
+
+// ExtractGroupPrefix extracts only group prefix from the given group name.
+func ExtractGroupPrefix(groupName string) string {
+	ret := strings.Split(groupName, "-")
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	return groupName
 }
 
 // Admin represents admin user
@@ -794,6 +803,7 @@ type MasterVersion struct {
 type CreateClusterSpec struct {
 	Cluster        Cluster         `json:"cluster"`
 	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
+	Applications   []Application   `json:"applications,omitempty"`
 }
 
 const (
@@ -813,10 +823,11 @@ type Cluster struct {
 	Labels          map[string]string `json:"labels,omitempty"`
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
 	// Type is deprecated and not used anymore.
-	Type       string        `json:"type"`
-	Credential string        `json:"credential,omitempty"`
-	Spec       ClusterSpec   `json:"spec"`
-	Status     ClusterStatus `json:"status"`
+	Type                   string        `json:"type"`
+	Credential             string        `json:"credential,omitempty"`
+	Spec                   ClusterSpec   `json:"spec"`
+	Status                 ClusterStatus `json:"status"`
+	MachineDeploymentCount *int          `json:"machineDeploymentCount,omitempty"`
 }
 
 // ClusterSpec defines the cluster specification.
@@ -1191,6 +1202,7 @@ var (
 // swagger:model ClusterHealth
 type ClusterHealth struct {
 	Apiserver                    kubermaticv1.HealthStatus  `json:"apiserver"`
+	ApplicationController        kubermaticv1.HealthStatus  `json:"applicationController"`
 	Scheduler                    kubermaticv1.HealthStatus  `json:"scheduler"`
 	Controller                   kubermaticv1.HealthStatus  `json:"controller"`
 	MachineController            kubermaticv1.HealthStatus  `json:"machineController"`
@@ -1495,6 +1507,17 @@ type VSphereNodeSpec struct {
 	Memory     int    `json:"memory"`
 	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
 	Template   string `json:"template"`
+	// Additional metadata to set
+	// required: false
+	Tags []VSphereTag `json:"tags,omitempty"`
+}
+
+// VSphereTag represents vsphere tag.
+type VSphereTag struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// CategoryID when empty the default category will be used.
+	CategoryID string `json:"categoryID,omitempty"`
 }
 
 func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1521,15 +1544,17 @@ func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		CPUs       int    `json:"cpus"`
-		Memory     int    `json:"memory"`
-		DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
-		Template   string `json:"template"`
+		CPUs       int          `json:"cpus"`
+		Memory     int          `json:"memory"`
+		DiskSizeGB *int64       `json:"diskSizeGB,omitempty"`
+		Template   string       `json:"template"`
+		Tags       []VSphereTag `json:"tags,omitempty"`
 	}{
 		CPUs:       spec.CPUs,
 		Memory:     spec.Memory,
 		DiskSizeGB: spec.DiskSizeGB,
 		Template:   spec.Template,
+		Tags:       spec.Tags,
 	}
 
 	return json.Marshal(&res)
@@ -2153,6 +2178,49 @@ type NodeMetric struct {
 	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
+// Application represents a set of applications that are to be installed for the cluster
+// swagger:model Application
+type Application struct {
+	ObjectMeta `json:",inline"`
+
+	Spec ApplicationSpec `json:"spec"`
+}
+
+// ApplicationSpec represents the specification for an application
+// swagger:model ApplicationSpec
+type ApplicationSpec struct {
+	// Namespace describe the desired state of the namespace where application will be created.
+	Namespace NamespaceSpec `json:"namespace"`
+
+	// ApplicationRef is a reference to identify which Application should be deployed
+	ApplicationRef ApplicationRef `json:"applicationRef"`
+
+	// Values describe overrides for manifest-rendering
+	Values json.RawMessage `json:"values,omitempty"`
+}
+
+type NamespaceSpec struct {
+	// Name is the namespace to deploy the Application into
+	Name string `json:"name" required:"true"`
+
+	// Create defines whether the namespace should be created if it does not exist.
+	Create bool `json:"create" required:"true"`
+
+	// Labels of the namespace
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations of the namespace
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type ApplicationRef struct {
+	// Name of the Application
+	Name string `json:"name" required:"true"`
+
+	// Version of the Application. Must be a valid SemVer version
+	Version appkubermaticv1.Version `json:"version" required:"true"`
+}
+
 // NodeDeployment represents a set of worker nodes that is part of a cluster
 // swagger:model NodeDeployment
 type NodeDeployment struct {
@@ -2166,7 +2234,7 @@ type NodeDeployment struct {
 // swagger:model NodeDeploymentSpec
 type NodeDeploymentSpec struct {
 	// required: true
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas"`
 	// required: true
 	Template NodeSpec `json:"template"`
 	// required: false
@@ -2419,6 +2487,8 @@ const (
 	ExternalClusterKubeOneManifestSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-manifest-secret"
 	// ExternalClusterKubeOneSSHSecretCleanupFinalizer indicates that secrets for ssh secret still need cleanup.
 	ExternalClusterKubeOneSSHSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-ssh-secret"
+	// ExternalClusterKubeOneNamespaceCleanupFinalizer indicates that kubeone cluster namespace still need cleanup.
+	ExternalClusterKubeOneNamespaceCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeone-namespace"
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
 	UserClusterRoleCleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
 	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.
@@ -2455,5 +2525,6 @@ const (
 )
 
 const (
-	InitialMachineDeploymentRequestAnnotation = "kubermatic.io/initial-machinedeployment-request"
+	InitialMachineDeploymentRequestAnnotation        = "kubermatic.io/initial-machinedeployment-request"
+	InitialApplicationInstallationsRequestAnnotation = "kubermatic.io/initial-application-installations-request"
 )
