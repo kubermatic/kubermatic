@@ -26,7 +26,6 @@ import (
 	"github.com/gobuffalo/flect"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -116,14 +115,9 @@ func loadCRD(filename string) (*apiextensionsv1.CustomResourceDefinition, error)
 	}
 	defer f.Close()
 
-	u := &unstructured.Unstructured{}
-	dec := yaml.NewYAMLOrJSONDecoder(f, 1024)
-	if err := dec.Decode(u); err != nil {
-		return nil, err
-	}
-
 	crd := &apiextensionsv1.CustomResourceDefinition{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), crd); err != nil {
+	dec := yaml.NewYAMLOrJSONDecoder(f, 1024)
+	if err := dec.Decode(crd); err != nil {
 		return nil, err
 	}
 
