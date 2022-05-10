@@ -108,14 +108,10 @@ linters-settings:
       - pkg: k8c.io/kubermatic/v2/pkg/util/errors
         alias: utilerrors
       # Kubernetes
-      - pkg: k8s.io/api/apps/v1
-        alias: appsv1
-      - pkg: k8s.io/api/core/v1
-        alias: corev1
+      - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+        alias: $1$2
       - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
         alias: metav1
-      - pkg: k8s.io/api/rbac/v1
-        alias: rbacv1
       - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
         alias: apiextensionsv1
       - pkg: k8s.io/apimachinery/pkg/api/errors

@@ -34,7 +34,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta "k8s.io/api/batch/v1beta1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -417,7 +417,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 
 				seedClient := reconciler.seedClients[test.seedToReconcile]
 
-				cronJob := batchv1beta.CronJob{}
+				cronJob := batchv1beta1.CronJob{}
 				err := seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob)
 				if err != nil {
 					// cron jobs should be created only when running enterprise edition
@@ -452,7 +452,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				seedClient := reconciler.seedClients[test.seedToReconcile]
 
 				// asserting that reporting cron job exists
-				cronJob := batchv1beta.CronJob{}
+				cronJob := batchv1beta1.CronJob{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
 
 				seed := &kubermaticv1.Seed{}
@@ -503,7 +503,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				seedClient := reconciler.seedClients[test.seedToReconcile]
 
 				// asserting that reporting cron job exists
-				cronJob := batchv1beta.CronJob{}
+				cronJob := batchv1beta1.CronJob{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
 
 				// asserting that metering deployment exists
