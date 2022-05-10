@@ -376,10 +376,11 @@ data:
     - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
     volumeStatsAggPeriod: 1m0s
 ---
+{{- if and (eq .Cluster.Version.Major 1) (ge .Cluster.Version.Minor 24) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: kubelet-config-1.24
+  name: kubelet-config
   namespace: kube-system
 data:
   kubelet: |
@@ -466,3 +467,4 @@ data:
     - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
     - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
     volumeStatsAggPeriod: 1m0s
+  {{- end }}
