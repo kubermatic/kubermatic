@@ -27,6 +27,7 @@ import (
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -92,6 +93,14 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		"apiserver_request_total",
 		"workqueue_retries_total",
 	)
+
+	if cluster.Spec.Version.LessThan(semver.NewSemverOrDie("v1.23.0")) {
+		expected.Insert("scheduler_e2e_scheduling_duration_seconds_count")
+	} else {
+		// this metric is only available in 1.23 and replaces scheduler_e2e_scheduling_duration_seconds_counts
+		expected.Insert("scheduler_scheduling_attempt_duration_seconds_count")
+	}
+
 	fetched := sets.NewString(data.Data...)
 	missing := expected.Difference(fetched)
 
