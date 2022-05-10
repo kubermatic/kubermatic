@@ -45,8 +45,14 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.ApiserverDeploymentName:             {healthStatus: &extendedHealth.Apiserver, minReady: 1},
 		resources.ControllerManagerDeploymentName:     {healthStatus: &extendedHealth.Controller, minReady: 1},
 		resources.SchedulerDeploymentName:             {healthStatus: &extendedHealth.Scheduler, minReady: 1},
-		resources.OpenVPNServerDeploymentName:         {healthStatus: &extendedHealth.OpenVPN, minReady: 1},
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
+	}
+
+	if r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+		// because konnectivity server is in apiserver pod
+		healthMapping[resources.KonnectivityDeploymentName] = &depInfo{healthStatus: &extendedHealth.Apiserver, minReady: 1}
+	} else {
+		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: &extendedHealth.OpenVPN, minReady: 1}
 	}
 
 	for name := range healthMapping {
@@ -54,6 +60,9 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		status, err := resources.HealthyDeployment(ctx, r, key, healthMapping[name].minReady)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %w", name, err)
+		}
+		if healthMapping[name].healthStatus == nil {
+			healthMapping[name].healthStatus = new(kubermaticv1.HealthStatus)
 		}
 		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	}

@@ -2237,6 +2237,12 @@ spec:
                     - HealthStatusUp
                     - HealthStatusProvisioning
                     type: string
+                  konnectivity:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
                   logging:
                     enum:
                     - HealthStatusDown
