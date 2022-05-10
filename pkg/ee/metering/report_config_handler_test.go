@@ -49,8 +49,9 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 			StorageSize:      "10Gi",
 			ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
 				"weekly": {
-					Schedule: "0 1 * * 6",
-					Interval: 7,
+					Schedule:  "0 1 * * 6",
+					Interval:  7,
+					Retention: 14,
 				},
 			},
 		}
@@ -71,7 +72,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusOK,
-			expectedResponse:       `[{"name":"weekly","schedule":"0 1 * * 6","interval":7}]`,
+			expectedResponse:       `[{"name":"weekly","schedule":"0 1 * * 6","interval":7,"retention":14}]`,
 		},
 		// scenario 2
 		{
@@ -80,7 +81,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusOK,
-			expectedResponse:       `{"name":"weekly","schedule":"0 1 * * 6","interval":7}`,
+			expectedResponse:       `{"name":"weekly","schedule":"0 1 * * 6","interval":7,"retention":14}`,
 		},
 		// scenario 3
 		{
@@ -165,7 +166,8 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			reportName: "monthly",
 			body: `{
 				"interval": 30,
-				"schedule": "1 1 1 * *"
+				"schedule": "1 1 1 * *",
+				"retention": 60
 			}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
@@ -178,7 +180,8 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			reportName: "",
 			body: `{
 				"interval": 30,
-				"schedule": "1 1 1 * *"
+				"schedule": "1 1 1 * *",
+				"retention": 60
 			}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
@@ -236,6 +239,20 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			httpStatus:             http.StatusBadRequest,
 			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name can contain only alphanumeric characters or '-'"}}`,
 		},
+		// scenario 7
+		{
+			name:       "Create new metering report configuration. Invalid retention.",
+			reportName: "monthly",
+			body: `{
+				"interval": 30,
+				"schedule": "1 1 1 * *",
+				"retention": -1
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"retention value cannot be negative."}}`,
+		},
 	}
 
 	for _, tc := range testcases {
@@ -270,8 +287,9 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			StorageSize:      "10Gi",
 			ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
 				"weekly": {
-					Schedule: "0 1 * * 6",
-					Interval: 7,
+					Schedule:  "0 1 * * 6",
+					Interval:  7,
+					Retention: 30,
 				},
 			},
 		}
@@ -292,7 +310,8 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			reportName: "weekly",
 			body: `{
 				"interval": 30,
-				"schedule": "1 1 1 * *"
+				"schedule": "1 1 1 * *",
+				"retention": 180
 			}`,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
@@ -313,7 +332,31 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 		},
 		// scenario 3
 		{
-			name:       "Update existing metering report configuration.",
+			name:       "Update existing metering report configuration. Invalid interval.",
+			reportName: "weekly",
+			body: `{
+				"interval": -1
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"interval value cannot be smaller than 1."}}`,
+		},
+		// scenario 4
+		{
+			name:       "Update existing metering report configuration. Invalid retention.",
+			reportName: "weekly",
+			body: `{
+				"retention": -2
+			}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
+			existingAPIUser:        test.GenDefaultAdminAPIUser(),
+			httpStatus:             http.StatusBadRequest,
+			expectedResponse:       `{"error":{"code":400,"message":"retention value cannot be negative."}}`,
+		},
+		// scenario 5
+		{
+			name:       "Update existing metering report configuration. Invalid name.",
 			reportName: "invalid_name_",
 			body: `{
 				"interval": 30,
@@ -324,7 +367,7 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			httpStatus:             http.StatusBadRequest,
 			expectedResponse:       `{"error":{"code":400,"message":"metering report configuration name can contain only alphanumeric characters or '-'"}}`,
 		},
-		// scenario 4
+		// scenario 6
 		{
 			name:       "Update non-existing metering report configuration.",
 			reportName: "monthly",

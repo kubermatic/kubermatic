@@ -28,6 +28,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/minio/minio-go/v7/pkg/lifecycle"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -84,23 +86,26 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		common.OwnershipModifierFactory(seed, scheme),
 	}
 
-	if err := reconcileMeteringReports(ctx, client, seed, overwriter, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile metering reports: %w", err)
-	}
-
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
 		deploymentCreator(seed, overwriter),
 	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering Deployment: %w", err)
 	}
 
+	if err := reconcileMeteringReportConfigurations(ctx, client, seed, overwriter, modifiers...); err != nil {
+		return fmt.Errorf("failed to reconcile metering report configurations: %w", err)
+	}
+
 	return nil
 }
 
-func reconcileMeteringReports(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
+func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
 	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
+
+	config := lifecycle.NewConfiguration()
+
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
 		if err := reconciling.ReconcileCronJobs(
 			ctx,
@@ -111,7 +116,29 @@ func reconcileMeteringReports(ctx context.Context, client ctrlruntimeclient.Clie
 		); err != nil {
 			return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
 		}
+
+		if reportConf.Retention != 0 {
+			config.Rules = append(config.Rules, lifecycle.Rule{
+				ID:     reportName,
+				Status: "Enabled",
+				Expiration: lifecycle.Expiration{
+					Days: lifecycle.ExpirationDays(reportConf.Retention),
+				},
+				RuleFilter: lifecycle.Filter{
+					Prefix: reportName,
+				},
+			})
+		}
 	}
+
+	mc, bucket, err := getS3DataFromSeed(ctx, client)
+	if err != nil {
+		return err
+	}
+	if err := mc.SetBucketLifecycle(ctx, bucket, config); err != nil {
+		return fmt.Errorf("failed to update bucket lifecycle: %w", err)
+	}
+
 	return nil
 }
 

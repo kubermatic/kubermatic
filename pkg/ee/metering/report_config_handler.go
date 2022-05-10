@@ -65,8 +65,9 @@ type createReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule string `json:"schedule"`
-		Interval int    `json:"interval"`
+		Schedule  string `json:"schedule"`
+		Interval  int    `json:"interval"`
+		Retention int    `json:"retention,omitempty"`
 	}
 }
 
@@ -84,6 +85,10 @@ func (m createReportConfigurationReq) Validate() error {
 		return k8cerrors.NewBadRequest("interval value cannot be smaller than 1.")
 	}
 
+	if m.Body.Retention < 0 {
+		return k8cerrors.NewBadRequest("retention value cannot be negative.")
+	}
+
 	return nil
 }
 
@@ -95,8 +100,9 @@ type updateReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule string `json:"schedule,omitempty"`
-		Interval int    `json:"interval,omitempty"`
+		Schedule  string `json:"schedule,omitempty"`
+		Interval  int    `json:"interval,omitempty"`
+		Retention int    `json:"retention,omitempty"`
 	}
 }
 
@@ -110,6 +116,14 @@ func (m updateReportConfigurationReq) Validate() error {
 		if _, err := cronExpressionParser.Parse(m.Body.Schedule); err != nil {
 			return k8cerrors.NewBadRequest("invalid cron expression format: %s", m.Body.Schedule)
 		}
+	}
+
+	if m.Body.Interval < 0 { // not 1 because 0 is a defaulted value
+		return k8cerrors.NewBadRequest("interval value cannot be smaller than 1.")
+	}
+
+	if m.Body.Retention < 0 {
+		return k8cerrors.NewBadRequest("retention value cannot be negative.")
 	}
 
 	return nil
@@ -196,9 +210,10 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 			// Metering configuration is replicated across all seeds.
 			// We can return after finding configuration in the first seed.
 			return &apiv1.MeteringReportConfiguration{
-				Name:     req.Name,
-				Schedule: report.Schedule,
-				Interval: report.Interval,
+				Name:      req.Name,
+				Schedule:  report.Schedule,
+				Interval:  report.Interval,
+				Retention: report.Retention,
 			}, nil
 		}
 	}
@@ -225,9 +240,10 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 		}
 		for reportConfigName, reportConfig := range seed.Spec.Metering.ReportConfigurations {
 			resp = append(resp, apiv1.MeteringReportConfiguration{
-				Name:     reportConfigName,
-				Schedule: reportConfig.Schedule,
-				Interval: reportConfig.Interval,
+				Name:      reportConfigName,
+				Schedule:  reportConfig.Schedule,
+				Interval:  reportConfig.Interval,
+				Retention: reportConfig.Retention,
 			})
 		}
 		// Metering configuration is replicated across all seeds.
@@ -325,8 +341,9 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 	}
 
 	seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
-		Interval: reportCfgReq.Body.Interval,
-		Schedule: reportCfgReq.Body.Schedule,
+		Interval:  reportCfgReq.Body.Interval,
+		Schedule:  reportCfgReq.Body.Schedule,
+		Retention: reportCfgReq.Body.Retention,
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
@@ -355,6 +372,10 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 
 	if reportCfgReq.Body.Interval > 0 {
 		reportConfiguration.Interval = reportCfgReq.Body.Interval
+	}
+
+	if reportCfgReq.Body.Retention > 0 {
+		reportConfiguration.Retention = reportCfgReq.Body.Retention
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {

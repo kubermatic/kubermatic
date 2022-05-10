@@ -542,6 +542,11 @@
                   "format": "int64",
                   "x-go-name": "Interval"
                 },
+                "retention": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Retention"
+                },
                 "schedule": {
                   "type": "string",
                   "x-go-name": "Schedule"
@@ -598,6 +603,11 @@
                   "type": "integer",
                   "format": "int64",
                   "x-go-name": "Interval"
+                },
+                "retention": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Retention"
                 },
                 "schedule": {
                   "type": "string",
@@ -13485,6 +13495,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13496,13 +13513,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -26010,6 +26020,12 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "Interval"
+        },
+        "retention": {
+          "description": "Retention defines the number of days after which reports are queued for removal. The default value of \"0\" keeps reports forever.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Retention"
         },
         "schedule": {
           "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",

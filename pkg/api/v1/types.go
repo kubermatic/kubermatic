@@ -2464,9 +2464,10 @@ type MeteringReport struct {
 // MeteringReportConfiguration holds report configuration
 // swagger:model MeteringReportConfiguration
 type MeteringReportConfiguration struct {
-	Name     string `json:"name"`
-	Schedule string `json:"schedule"`
-	Interval int    `json:"interval"`
+	Name      string `json:"name"`
+	Schedule  string `json:"schedule"`
+	Interval  int    `json:"interval"`
+	Retention int    `json:"retention"`
 }
 
 // ReportURL represent an S3 pre signed URL to download a report

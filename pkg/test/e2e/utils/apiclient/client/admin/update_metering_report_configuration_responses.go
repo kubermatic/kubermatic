@@ -167,6 +167,9 @@ type UpdateMeteringReportConfigurationBody struct {
 	// interval
 	Interval int64 `json:"interval,omitempty"`
 
+	// retention
+	Retention int64 `json:"retention,omitempty"`
+
 	// schedule
 	Schedule string `json:"schedule,omitempty"`
 }

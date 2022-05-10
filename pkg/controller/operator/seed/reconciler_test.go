@@ -20,12 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -66,6 +68,10 @@ func must(t *testing.T, err error) {
 	if err != nil {
 		t.Fatalf("Failed: %v", err)
 	}
+}
+
+func meteringCredsNotFound(err error) bool {
+	return kerrors.IsNotFound(err) && strings.Contains(err.Error(), metering.SecretName)
 }
 
 // nolint:gocyclo
@@ -123,8 +129,9 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 					StorageClassName: "test",
 					ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
 						"weekly-test": {
-							Schedule: "0 1 * * 6",
-							Interval: 7,
+							Schedule:  "0 1 * * 6",
+							Interval:  7,
+							Retention: 14,
 						},
 					},
 				},
@@ -412,7 +419,10 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
-					return fmt.Errorf("reconciliation failed: %w", err)
+					// ignore missing secret to avoid http call to S3
+					if !meteringCredsNotFound(err) {
+						return fmt.Errorf("reconciliation failed: %w", err)
+					}
 				}
 
 				seedClient := reconciler.seedClients[test.seedToReconcile]
@@ -445,7 +455,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				ctx := context.Background()
 
 				// reconciling to the initial state
-				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil && !meteringCredsNotFound(err) {
 					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
@@ -463,7 +473,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				must(t, seedClient.Update(ctx, seed))
 
 				// letting the controller clean up
-				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil && !meteringCredsNotFound(err) {
 					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
@@ -496,7 +506,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				ctx := context.Background()
 
 				// reconciling to the initial state
-				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil && !meteringCredsNotFound(err) {
 					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 
@@ -521,7 +531,7 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 				must(t, seedClient.Update(ctx, seed))
 
 				// letting the controller clean up
-				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil && !meteringCredsNotFound(err) {
 					return fmt.Errorf("reconciliation failed: %w", err)
 				}
 

@@ -693,6 +693,11 @@ type MeteringReportConfiguration struct {
 
 	// Interval defines the number of days consulted in the metering report.
 	Interval int `json:"interval,omitempty"`
+
+	// +optional
+
+	// Retention defines the number of days after which reports are queued for removal. The default value of "0" keeps reports forever.
+	Retention int `json:"retention,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

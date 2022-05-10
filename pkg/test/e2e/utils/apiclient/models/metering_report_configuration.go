@@ -20,6 +20,9 @@ type MeteringReportConfiguration struct {
 	// Interval defines the number of days consulted in the metering report.
 	Interval int64 `json:"interval,omitempty"`
 
+	// Retention defines the number of days after which reports are queued for removal. The default value of "0" keeps reports forever.
+	Retention int64 `json:"retention,omitempty"`
+
 	// Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
 	// only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
 	Schedule string `json:"schedule,omitempty"`

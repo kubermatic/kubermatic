@@ -1051,6 +1051,11 @@ spec:
                             in the metering report.
                           minimum: 1
                           type: integer
+                        retention:
+                          description: Retention defines the number of days after
+                            which reports are queued for removal. The default value
+                            of "0" keeps reports forever.
+                          type: integer
                         schedule:
                           default: 0 1 * * 6
                           description: Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
