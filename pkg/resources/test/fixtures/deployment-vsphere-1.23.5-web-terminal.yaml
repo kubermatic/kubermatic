@@ -30,7 +30,7 @@ spec:
         env:
         - name: KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: quay.io/kubermatic/util:2.0.0
+        image: quay.io/kubermatic/util:2.1.0
         name: web-terminal
         resources:
           limits:
