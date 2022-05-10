@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-nutanix-ubuntu-1.23
+  - name: pre-kubermatic-e2e-nutanix-ubuntu-1.24
     decorate: true
     run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -35,7 +35,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.23.5"
+              value: "v1.24.0"
             - name: PROVIDER
               value: "nutanix"
             - name: DISTRIBUTIONS
@@ -57,7 +57,7 @@ presubmits:
             limits:
               memory: 4Gi
 
-  - name: pre-kubermatic-e2e-nutanix-centos-1.23
+  - name: pre-kubermatic-e2e-nutanix-centos-1.24
     decorate: true
     run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -79,7 +79,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.23.5"
+              value: "v1.24.0"
             - name: PROVIDER
               value: "nutanix"
             - name: DISTRIBUTIONS
