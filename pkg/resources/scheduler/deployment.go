@@ -19,6 +19,8 @@ package scheduler
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -30,8 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-
-	"github.com/Masterminds/semver/v3"
 )
 
 var (
