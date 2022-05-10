@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
@@ -376,7 +376,7 @@ func getClusterForOpenstack(ctx context.Context, projectProvider provider.Projec
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Openstack == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 	return cluster, nil
 }
@@ -402,7 +402,7 @@ func getCredentials(ctx context.Context, cloudSpec kubermaticv1.CloudSpec) (*res
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())

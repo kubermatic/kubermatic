@@ -22,7 +22,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -53,7 +53,7 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 	}
 
 	configuredVersions := defaulted.Spec.Versions
-	upgradeConstraints := []*semver.Constraints{}
+	upgradeConstraints := []*semverlib.Constraints{}
 
 	// do not parse and check the validity of constraints for each usercluster, but just once
 	for i, update := range configuredVersions.Updates {
@@ -63,7 +63,7 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 			continue
 		}
 
-		from, err := semver.NewConstraint(update.From)
+		from, err := semverlib.NewConstraint(update.From)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
 			continue

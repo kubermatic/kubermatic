@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // serviceAccountGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for service account.
@@ -47,7 +47,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		req := request.(addReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		saFromRequest := req.Body
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -62,7 +62,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 
 		if len(existingSAList) > 0 {
-			return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
+			return nil, utilerrors.NewAlreadyExists("service account", saFromRequest.Name)
 		}
 
 		sa, err := createSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, saFromRequest)
@@ -119,11 +119,11 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		if len(req.ProjectID) == 0 {
-			return nil, errors.NewBadRequest("the name of the project cannot be empty")
+			return nil, utilerrors.NewBadRequest("the name of the project cannot be empty")
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -153,7 +153,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			}
 		}
 		if len(errorList) > 0 {
-			return response, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some service accounts, please examine details field for more info", errorList)
+			return response, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some service accounts, please examine details field for more info", errorList)
 		}
 
 		return response, nil
@@ -165,11 +165,11 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		saFromRequest := req.Body
 
@@ -192,7 +192,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			}
 
 			if len(existingSAList) > 0 {
-				return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
+				return nil, utilerrors.NewAlreadyExists("service account", saFromRequest.Name)
 			}
 			sa.Spec.Name = saFromRequest.Name
 		}
@@ -260,11 +260,11 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, priv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		// check if project exist

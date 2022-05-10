@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/sirupsen/logrus"
@@ -38,13 +38,12 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -81,8 +80,8 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	// if a pre-2.0 version of the chart is installed, we must perform a
 	// larger migration to bring the cluster from cert-manager 0.16 to 1.x
 	// (and its CRD from v1alpha2 to v1)
-	v2 := semver.MustParse("2.0.0")  // New CRDs - migration required
-	v21 := semver.MustParse("2.1.0") // Updated to use upstream chart - different label selectors
+	v2 := semverlib.MustParse("2.0.0")  // New CRDs - migration required
+	v21 := semverlib.MustParse("2.1.0") // Updated to use upstream chart - different label selectors
 
 	if release != nil && release.Version.LessThan(v2) && !chart.Version.LessThan(v2) {
 		if !opt.EnableCertManagerV2Migration {
@@ -214,7 +213,7 @@ func migrateCertManagerV2(
 		crd.Name = crdName(crdGVK)
 
 		if err := kubeClient.Delete(ctx, &crd); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				continue
 			}
 
@@ -260,7 +259,7 @@ func migrateCertManagerV2(
 		// only log errors, but continue, as the user can easily fix
 		// problems by using the YAML backup files
 		if err := kubeClient.Create(ctx, &object); err != nil {
-			if kerrors.IsAlreadyExists(err) {
+			if apierrors.IsAlreadyExists(err) {
 				logger.Warn("  already exists, please compare to backup")
 			} else {
 				logger.Errorf("  failed: %v", err)
@@ -359,7 +358,7 @@ func getSecretForCertificate(ctx context.Context, kubeClient ctrlruntimeclient.C
 		Name:      cert.Spec.SecretName,
 		Namespace: cert.Namespace,
 	}, secret); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
 
@@ -460,7 +459,7 @@ func deleteCertificate(ctx context.Context, kubeClient ctrlruntimeclient.Client,
 	}
 
 	if err := kubeClient.Get(ctx, key, cert); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 
@@ -495,11 +494,11 @@ func preparePreV21CertManagerDeployment(
 		Version: "v1",
 	})
 
-	certManagerObjectsSelector := client.MatchingLabels{
+	certManagerObjectsSelector := ctrlruntimeclient.MatchingLabels{
 		"app.kubernetes.io/managed-by": "Helm",
 	}
 
-	if err := kubeClient.List(ctx, clusterIssuersList, client.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
+	if err := kubeClient.List(ctx, clusterIssuersList, ctrlruntimeclient.InNamespace(CertManagerNamespace), certManagerObjectsSelector); err != nil {
 		return fmt.Errorf("failed to query kubernetes API: %w", err)
 	}
 

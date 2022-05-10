@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -228,7 +228,7 @@ func (o *Options) effectiveDistributions() (sets.String, error) {
 }
 
 func getLatestMinorVersions(versions []kubermativsemver.Semver) []string {
-	minorMap := map[uint64]*semver.Version{}
+	minorMap := map[uint64]*semverlib.Version{}
 
 	for _, version := range versions {
 		sversion := version.Semver()

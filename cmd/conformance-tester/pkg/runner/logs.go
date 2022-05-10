@@ -27,7 +27,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 
 	corev1 "k8s.io/api/core/v1"
-	utilerror "k8s.io/apimachinery/pkg/util/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -54,12 +54,12 @@ func printEventsAndLogsForAllPods(ctx context.Context, log *zap.SugaredLogger, c
 		}
 		log.Info("Printing logs for pod")
 		if err := printLogsForPod(ctx, log, k8sclient, &pod); err != nil {
-			log.Errorw("Failed to print logs for pod", zap.Error(utilerror.NewAggregate(err)))
+			log.Errorw("Failed to print logs for pod", zap.Error(kerrors.NewAggregate(err)))
 			errs = append(errs, err...)
 		}
 	}
 
-	return utilerror.NewAggregate(errs)
+	return kerrors.NewAggregate(errs)
 }
 
 func printLogsForPod(ctx context.Context, log *zap.SugaredLogger, k8sclient kubernetes.Interface, pod *corev1.Pod) []error {

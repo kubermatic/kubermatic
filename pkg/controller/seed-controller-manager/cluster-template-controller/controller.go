@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -101,7 +101,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	instance := &kubermaticv1.ClusterTemplateInstance{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, instance); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 
@@ -204,7 +204,7 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
 		return err
 	}
-	kuberneteshelper.AddFinalizer(newCluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
 	// re-use our reconciling framework, because this is a special place where right after the Cluster
 	// creation, we must set some status fields and this requires us to wait for the Cluster object

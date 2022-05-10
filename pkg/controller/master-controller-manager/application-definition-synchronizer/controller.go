@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -71,7 +71,7 @@ func Add(
 	}
 
 	// Watch for changes to ApplicationDefinition
-	if err := c.Watch(&source.Kind{Type: &appkubermaticv1.ApplicationDefinition{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationDefinition{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for applicationDefinitions: %w", err)
 	}
 
@@ -92,7 +92,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
-	applicationDef := &appkubermaticv1.ApplicationDefinition{}
+	applicationDef := &appskubermaticv1.ApplicationDefinition{}
 
 	if err := r.masterClient.Get(ctx, request.NamespacedName, applicationDef); err != nil {
 		return ctrlruntimeclient.IgnoreNotFound(err)
@@ -106,16 +106,16 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, applicationDef, appkubermaticv1.ApplicationDefinitionSeedCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, applicationDef, appskubermaticv1.ApplicationDefinitionSeedCleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	applicationDefCreatorGetters := []reconciling.NamedAppKubermaticV1ApplicationDefinitionCreatorGetter{
+	applicationDefCreatorGetters := []reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter{
 		applicationDefCreatorGetter(applicationDef),
 	}
 
-	err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, appDef *appkubermaticv1.ApplicationDefinition) error {
-		return reconciling.ReconcileAppKubermaticV1ApplicationDefinitions(ctx, applicationDefCreatorGetters, "", seedClient)
+	err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, appDef *appskubermaticv1.ApplicationDefinition) error {
+		return reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, applicationDefCreatorGetters, "", seedClient)
 	})
 	if err != nil {
 		r.recorder.Eventf(applicationDef, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -125,10 +125,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	return nil
 }
 
-func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, applicationDef *appkubermaticv1.ApplicationDefinition) error {
-	if kuberneteshelper.HasFinalizer(applicationDef, appkubermaticv1.ApplicationDefinitionSeedCleanupFinalizer) {
-		if err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, applicationDef *appkubermaticv1.ApplicationDefinition) error {
-			err := seedClient.Delete(ctx, &appkubermaticv1.ApplicationDefinition{
+func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, applicationDef *appskubermaticv1.ApplicationDefinition) error {
+	if kuberneteshelper.HasFinalizer(applicationDef, appskubermaticv1.ApplicationDefinitionSeedCleanupFinalizer) {
+		if err := r.syncAllSeeds(log, applicationDef, func(seedClient ctrlruntimeclient.Client, applicationDef *appskubermaticv1.ApplicationDefinition) error {
+			err := seedClient.Delete(ctx, &appskubermaticv1.ApplicationDefinition{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: applicationDef.Name,
 				},
@@ -139,14 +139,14 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, applicationDef, appkubermaticv1.ApplicationDefinitionSeedCleanupFinalizer); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, applicationDef, appskubermaticv1.ApplicationDefinitionSeedCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove application definition finalizer %s: %w", applicationDef.Name, err)
 		}
 	}
 	return nil
 }
 
-func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, applicationDef *appkubermaticv1.ApplicationDefinition, action func(seedClient ctrlruntimeclient.Client, applicationDef *appkubermaticv1.ApplicationDefinition) error) error {
+func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, applicationDef *appskubermaticv1.ApplicationDefinition, action func(seedClient ctrlruntimeclient.Client, applicationDef *appskubermaticv1.ApplicationDefinition) error) error {
 	for seedName, seedClient := range r.seedClients {
 		log := log.With("seed", seedName)
 
@@ -161,9 +161,9 @@ func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, applicationDef *appkub
 	return nil
 }
 
-func applicationDefCreatorGetter(applicationDef *appkubermaticv1.ApplicationDefinition) reconciling.NamedAppKubermaticV1ApplicationDefinitionCreatorGetter {
-	return func() (string, reconciling.AppKubermaticV1ApplicationDefinitionCreator) {
-		return applicationDef.Name, func(a *appkubermaticv1.ApplicationDefinition) (*appkubermaticv1.ApplicationDefinition, error) {
+func applicationDefCreatorGetter(applicationDef *appskubermaticv1.ApplicationDefinition) reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter {
+	return func() (string, reconciling.AppsKubermaticV1ApplicationDefinitionCreator) {
+		return applicationDef.Name, func(a *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			a.Labels = applicationDef.Labels
 			a.Annotations = applicationDef.Annotations
 			a.Spec = applicationDef.Spec

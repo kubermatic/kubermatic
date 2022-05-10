@@ -22,11 +22,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
@@ -790,8 +790,8 @@ type VersionList []MasterVersion
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
-	Version *semver.Version `json:"version"`
-	Default bool            `json:"default,omitempty"`
+	Version *semverlib.Version `json:"version"`
+	Default bool               `json:"default,omitempty"`
 
 	// If true, then given version control plane version is not compatible
 	// with one of the kubelets inside cluster and shouldn't be used.
@@ -2218,7 +2218,7 @@ type ApplicationRef struct {
 	Name string `json:"name" required:"true"`
 
 	// Version of the Application. Must be a valid SemVer version
-	Version appkubermaticv1.Version `json:"version" required:"true"`
+	Version appskubermaticv1.Version `json:"version" required:"true"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster
@@ -2226,8 +2226,8 @@ type ApplicationRef struct {
 type NodeDeployment struct {
 	ObjectMeta `json:",inline"`
 
-	Spec   NodeDeploymentSpec               `json:"spec"`
-	Status v1alpha1.MachineDeploymentStatus `json:"status"`
+	Spec   NodeDeploymentSpec                      `json:"spec"`
+	Status clusterv1alpha1.MachineDeploymentStatus `json:"status"`
 }
 
 // NodeDeploymentSpec node deployment specification

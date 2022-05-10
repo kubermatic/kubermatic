@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 type NutanixCredentials struct {
@@ -164,14 +164,14 @@ func getClientSetFromCluster(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, "", "", err
 	}
 	if cluster.Spec.Cloud.Nutanix == nil {
-		return nil, "", "", errors.NewNotFound("no cloud spec for %s", clusterID)
+		return nil, "", "", utilerrors.NewNotFound("no cloud spec for %s", clusterID)
 	}
 
 	datacenterName := cluster.Spec.Cloud.DatacenterName
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, "", "", errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, "", "", utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")

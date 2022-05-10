@@ -21,14 +21,14 @@ import (
 	"testing"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -90,7 +90,7 @@ func TestReconcile(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected ExternalCluster to be gone, but found it anyway")
 			}
-			if !kerrors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
 				t.Fatalf("expected not-found error, but got %v", err)
 			}
 
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected secret to be gone, but found it anyway")
 			}
-			if !kerrors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
 				t.Fatalf("expected not-found error, but got %v", err)
 			}
 		})
@@ -118,7 +118,7 @@ func genExternalCluster(name string, deletionTimestamp metav1.Time) *kubermaticv
 		},
 	}
 
-	kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(cluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 
 	cluster.Spec.KubeconfigReference = &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{

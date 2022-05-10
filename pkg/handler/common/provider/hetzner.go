@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 var reStandardSize = regexp.MustCompile("(^cx|^cpx)")
@@ -47,12 +47,12 @@ func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 	}
 
 	if cluster.Spec.Cloud.Hetzner == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())

@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,17 +32,17 @@ func TestFilterEventsByType(t *testing.T) {
 	testcases := []struct {
 		Name           string
 		Filter         string
-		ExpectedEvents []v1.Event
-		InputEvents    []v1.Event
+		ExpectedEvents []apiv1.Event
+		InputEvents    []apiv1.Event
 	}{
 		{
 			Name:   "scenario 1, filter out warning event types",
 			Filter: corev1.EventTypeWarning,
-			ExpectedEvents: []v1.Event{
+			ExpectedEvents: []apiv1.Event{
 				genEvent("test1", corev1.EventTypeWarning),
 				genEvent("test2", corev1.EventTypeWarning),
 			},
-			InputEvents: []v1.Event{
+			InputEvents: []apiv1.Event{
 				genEvent("test1", corev1.EventTypeWarning),
 				genEvent("test2", corev1.EventTypeWarning),
 				genEvent("test3", corev1.EventTypeNormal),
@@ -52,11 +52,11 @@ func TestFilterEventsByType(t *testing.T) {
 		{
 			Name:   "scenario 2, filter out normal event types",
 			Filter: corev1.EventTypeNormal,
-			ExpectedEvents: []v1.Event{
+			ExpectedEvents: []apiv1.Event{
 				genEvent("test3", corev1.EventTypeNormal),
 				genEvent("test4", corev1.EventTypeNormal),
 			},
-			InputEvents: []v1.Event{
+			InputEvents: []apiv1.Event{
 				genEvent("test1", corev1.EventTypeWarning),
 				genEvent("test2", corev1.EventTypeWarning),
 				genEvent("test3", corev1.EventTypeNormal),
@@ -76,7 +76,7 @@ func TestFilterEventsByType(t *testing.T) {
 
 // equal tells whether a and b contain the same elements.
 // A nil argument is equivalent to an empty slice.
-func equal(a, b []v1.Event) bool {
+func equal(a, b []apiv1.Event) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -88,8 +88,8 @@ func equal(a, b []v1.Event) bool {
 	return true
 }
 
-func genEvent(message, eventType string) v1.Event {
-	return v1.Event{
+func genEvent(message, eventType string) apiv1.Event {
+	return apiv1.Event{
 		Type:    eventType,
 		Message: message,
 	}

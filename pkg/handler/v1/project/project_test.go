@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -520,7 +520,7 @@ func TestListProjectMethod(t *testing.T) {
 				if err == nil {
 					t.Fatal("expected error")
 				}
-				var kubermaticError kubermaticerrors.HTTPError
+				var kubermaticError utilerrors.HTTPError
 				if !errors.As(err, &kubermaticError) {
 					t.Fatal("expected HTTPError")
 				}

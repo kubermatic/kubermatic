@@ -40,7 +40,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -173,7 +172,7 @@ func getAKSCredentialsFromReq(ctx context.Context, req AKSCommonReq, userInfoGet
 	if len(req.Credential) > 0 {
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
 		if credentials := preset.Spec.AKS; credentials != nil {
 			subscriptionID = credentials.SubscriptionID
@@ -245,7 +244,7 @@ func createNewAKSCluster(ctx context.Context, aksclusterSpec *apiv2.AKSClusterSp
 
 func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) error {
 	if aksMD == nil {
-		return errors.NewBadRequest("AKS MachineDeploymentSpec cannot be nil")
+		return utilerrors.NewBadRequest("AKS MachineDeploymentSpec cannot be nil")
 	}
 	basicSettings := aksMD.BasicSettings
 	// check whether required fields for nodepool creation are provided
@@ -253,17 +252,17 @@ func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) erro
 	for i := 0; i < fields.NumField(); i++ {
 		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
 		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
-			return errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
+			return utilerrors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
 		}
 	}
 	if basicSettings.EnableAutoScaling {
 		maxCount := basicSettings.ScalingConfig.MaxCount
 		minCount := basicSettings.ScalingConfig.MinCount
 		if maxCount == 0 {
-			return errors.NewBadRequest("InvalidParameter: value of maxCount for enabled autoscaling is invalid")
+			return utilerrors.NewBadRequest("InvalidParameter: value of maxCount for enabled autoscaling is invalid")
 		}
 		if minCount == 0 {
-			return errors.NewBadRequest("InvalidParameter: value of minCount for enabled autoscaling is invalid")
+			return utilerrors.NewBadRequest("InvalidParameter: value of minCount for enabled autoscaling is invalid")
 		}
 	}
 	return nil
@@ -271,11 +270,11 @@ func checkCreatePoolReqValidity(aksMD *apiv2.AKSMachineDeploymentCloudSpec) erro
 
 func checkCreateClusterReqValidity(aksclusterSpec *apiv2.AKSClusterSpec) error {
 	if len(aksclusterSpec.Location) == 0 {
-		return errors.NewBadRequest("required field is missing: Location")
+		return utilerrors.NewBadRequest("required field is missing: Location")
 	}
 	agentPoolProfiles := aksclusterSpec.MachineDeploymentSpec
 	if agentPoolProfiles == nil || agentPoolProfiles.BasicSettings.Mode != AgentPoolModeSystem {
-		return errors.NewBadRequest("Must define at least one system pool!")
+		return utilerrors.NewBadRequest("Must define at least one system pool!")
 	}
 	return checkCreatePoolReqValidity(agentPoolProfiles)
 }
@@ -286,7 +285,7 @@ func createOrImportAKSCluster(ctx context.Context, name string, userInfoGetter p
 	for i := 0; i < fields.NumField(); i++ {
 		yourjsonTags := fields.Type().Field(i).Tag.Get("required")
 		if strings.Contains(yourjsonTags, "true") && fields.Field(i).IsZero() {
-			return nil, errors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
+			return nil, utilerrors.NewBadRequest("required field is missing: %v", fields.Type().Field(i).Name)
 		}
 	}
 
@@ -692,12 +691,12 @@ func createAKSNodePool(ctx context.Context, cloud *kubermaticv1.ExternalClusterC
 func AKSNodeVersionsWithClusterCredentialsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -711,7 +710,7 @@ func AKSNodeVersionsWithClusterCredentialsEndpoint(userInfoGetter provider.UserI
 		}
 		cloud := cluster.Spec.CloudSpec
 		if cloud.AKS == nil {
-			return nil, errors.NewNotFound("cloud spec for %s", req.ClusterID)
+			return nil, utilerrors.NewNotFound("cloud spec for %s", req.ClusterID)
 		}
 
 		resourceGroup := cloud.AKS.ResourceGroup
@@ -765,7 +764,7 @@ func AKSSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter 
 	}
 	cloud := cluster.Spec.CloudSpec
 	if cloud.AKS == nil {
-		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetMasterClient())

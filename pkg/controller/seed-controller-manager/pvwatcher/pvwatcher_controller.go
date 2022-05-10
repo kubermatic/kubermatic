@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
@@ -100,7 +100,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	cluster := &kubermaticv1.Cluster{}
 	clusterName := kubernetes.ClusterNameFromNamespace(request.Namespace)
 	if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Skipping because the cluster is already gone")
 			return reconcile.Result{}, nil
 		}
@@ -124,7 +124,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) (reconcile.Result, error) {
 	pvc := &corev1.PersistentVolumeClaim{}
 	if err := r.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, pvc); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -139,7 +139,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	if err := r.Get(ctx, types.NamespacedName{Name: podName, Namespace: pvc.Namespace}, pvcPod); err != nil {
 		return reconcile.Result{}, err
 	}
-	if err := r.Delete(ctx, pvcPod); err != nil && !kerrors.IsNotFound(err) {
+	if err := r.Delete(ctx, pvcPod); err != nil && !apierrors.IsNotFound(err) {
 		return reconcile.Result{}, err
 	}
 
@@ -154,13 +154,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	// delete the pvc, make sure it's deleted
-	if err := r.Delete(ctx, pvc); err != nil && !kerrors.IsNotFound(err) {
+	if err := r.Delete(ctx, pvc); err != nil && !apierrors.IsNotFound(err) {
 		return reconcile.Result{}, err
 	}
 
 	if err := wait.Poll(5*time.Second, 30*time.Second, func() (bool, error) {
 		err := r.Get(ctx, types.NamespacedName{Name: pvc.Name, Namespace: pvc.Namespace}, pvc)
-		if err != nil && kerrors.IsNotFound(err) {
+		if err != nil && apierrors.IsNotFound(err) {
 			return true, nil
 		}
 		return false, err

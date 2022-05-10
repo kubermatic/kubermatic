@@ -23,7 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,7 +47,7 @@ func (s *SettingsProvider) GetGlobalSettings(ctx context.Context) (*kubermaticv1
 	settings := &kubermaticv1.KubermaticSetting{}
 	err := s.runtimeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: kubermaticv1.GlobalSettingsName}, settings)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return s.createDefaultGlobalSettings(ctx)
 		}
 		return nil, err
@@ -57,7 +57,7 @@ func (s *SettingsProvider) GetGlobalSettings(ctx context.Context) (*kubermaticv1
 
 func (s *SettingsProvider) UpdateGlobalSettings(ctx context.Context, userInfo *provider.UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error) {
 	if !userInfo.IsAdmin {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+		return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
 	if err := s.runtimeClient.Update(ctx, settings); err != nil {
 		return nil, err

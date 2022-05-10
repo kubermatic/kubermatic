@@ -27,7 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -260,7 +260,7 @@ func ensureClusterRBACRoleForNamedResource(ctx context.Context, log *zap.Sugared
 		var sharedExistingRole rbacv1.ClusterRole
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name}
 		if err := cli.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := cli.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -309,7 +309,7 @@ func ensureClusterRBACRoleBindingForNamedResource(ctx context.Context, log *zap.
 		var sharedExistingRoleBinding rbacv1.ClusterRoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name}
 		if err := cli.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := cli.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
@@ -372,7 +372,7 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(ctx context.Context
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return nil
 				}
@@ -421,7 +421,7 @@ func (c *resourcesController) ensureRBACRoleBindingForNamedResource(ctx context.
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return nil
 				}
@@ -498,7 +498,7 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(ctx context.Context
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -548,7 +548,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(ctx context.
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
@@ -592,7 +592,7 @@ func (c *resourcesController) ensureRBACRoleForEtcdLauncher(ctx context.Context,
 	var sharedExistingRole rbacv1.Role
 	key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 	if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			if err := c.client.Create(ctx, generatedRole); err != nil {
 				return err
 			}
@@ -624,7 +624,7 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdLauncher(ctx context.C
 	var sharedExistingRoleBinding rbacv1.RoleBinding
 	key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 	if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 				return err
 			}
@@ -716,7 +716,7 @@ func (c *resourcesController) ensureClusterRBACRoleBindingForEtcdLauncher(ctx co
 	var sharedExistingRoleBinding rbacv1.ClusterRoleBinding
 	key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name}
 	if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 				return err
 			}
@@ -765,7 +765,7 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagers(ctx context.
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -817,7 +817,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx c
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
@@ -867,7 +867,7 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagerConfigSecrets(
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -919,7 +919,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagerConfigS
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
@@ -968,7 +968,7 @@ func (c *resourcesController) ensureRBACRoleForClusterConstraints(ctx context.Co
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -1018,7 +1018,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterConstraints(ctx con
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
@@ -1067,7 +1067,7 @@ func (c *resourcesController) ensureRBACRoleForClusterRuleGroups(ctx context.Con
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -1111,7 +1111,7 @@ func (c *resourcesController) ensureClusterRBACRoleForEtcdLauncher(ctx context.C
 	var existingClusterRole rbacv1.ClusterRole
 	key := ctrlruntimeclient.ObjectKey{Name: generatedClusterRole.Name}
 	if err := c.client.Get(ctx, key, &existingClusterRole); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			if err := c.client.Create(ctx, generatedClusterRole); err != nil {
 				return err
 			}
@@ -1158,7 +1158,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterRuleGroups(ctx cont
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
@@ -1245,7 +1245,7 @@ func (c *resourcesController) ensureRBACRoleForEtcdBackupConfigs(ctx context.Con
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -1295,7 +1295,7 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdBackupConfigs(ctx cont
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
@@ -1344,7 +1344,7 @@ func (c *resourcesController) ensureRBACRoleForEtcdRestores(ctx context.Context,
 		var sharedExistingRole rbacv1.Role
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
 					return err
 				}
@@ -1394,7 +1394,7 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdRestores(ctx context.C
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}

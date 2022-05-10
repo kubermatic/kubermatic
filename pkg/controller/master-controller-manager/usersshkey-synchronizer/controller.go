@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
-	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -146,7 +146,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
-		if kubeapierrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find cluster")
 			return nil
 		}

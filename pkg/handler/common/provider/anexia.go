@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func ListAnexiaVlans(ctx context.Context, token string) (apiv1.AnexiaVlanList, error) {
@@ -40,12 +40,12 @@ func ListAnexiaVlans(ctx context.Context, token string) (apiv1.AnexiaVlanList, e
 
 	cli, err := getClient(token)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	v := vlan.NewAPI(cli)
 	vlans, err := v.List(ctx, 1, 1000, "")
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	for _, vlan := range vlans {
@@ -63,12 +63,12 @@ func ListAnexiaTemplates(ctx context.Context, token, locationID string) (apiv1.A
 
 	cli, err := getClient(token)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	t := templates.NewAPI(cli)
 	templates, err := t.List(ctx, locationID, "templates", 1, 1000)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	for _, template := range templates {
@@ -89,11 +89,11 @@ func AnexiaVlansWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Anexia == nil {
-		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
 	}
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -113,14 +113,14 @@ func AnexiaTemplatesWithClusterCredentialsEndpoint(ctx context.Context, userInfo
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Anexia == nil {
-		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
 	}
 
 	datacenterName := cluster.Spec.Cloud.DatacenterName
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -134,7 +134,7 @@ func AnexiaTemplatesWithClusterCredentialsEndpoint(ctx context.Context, userInfo
 	}
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to find Datacenter %q: %v", datacenterName, err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to find Datacenter %q: %v", datacenterName, err))
 	}
 
 	return ListAnexiaTemplates(ctx, token, datacenter.Spec.Anexia.LocationID)

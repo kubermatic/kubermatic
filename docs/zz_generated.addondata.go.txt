@@ -42,7 +42,7 @@ type ClusterData struct {
 	// the configured datacenters.
 	CloudProviderName string
 	// Version is the exact current cluster version.
-	Version *semver.Version
+	Version *semverlib.Version
 	// MajorMinorVersion is a shortcut for common testing on "Major.Minor" on the
 	// current cluster version.
 	MajorMinorVersion string

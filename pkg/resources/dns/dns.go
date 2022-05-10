@@ -19,7 +19,7 @@ package dns
 import (
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -48,7 +48,7 @@ var (
 )
 
 // source: https://github.com/kubernetes/kubernetes/blob/vX.YY.0/cmd/kubeadm/app/constants/constants.go
-func GetCoreDNSImage(kubernetesVersion *semver.Version) string {
+func GetCoreDNSImage(kubernetesVersion *semverlib.Version) string {
 	switch fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor()) {
 	case "1.20":
 		return "coredns/coredns:v1.7.0"

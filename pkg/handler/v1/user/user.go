@@ -36,9 +36,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // DeleteEndpoint deletes the given user/member from the given project.
@@ -46,10 +46,10 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DeleteReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		if len(req.UserID) == 0 {
-			return nil, k8cerrors.NewBadRequest("the user ID cannot be empty")
+			return nil, utilerrors.NewBadRequest("the user ID cannot be empty")
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -66,10 +66,10 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(memberList) == 0 {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot delete the user %s from the project %s because the user is not a member of the project", user.Spec.Email, req.ProjectID))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot delete the user %s from the project %s because the user is not a member of the project", user.Spec.Email, req.ProjectID))
 		}
 		if len(memberList) != 1 {
-			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot delete the user user %s from the project, inconsistent state in database", user.Spec.Email))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot delete the user user %s from the project, inconsistent state in database", user.Spec.Email))
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -78,7 +78,7 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 		bindingForRequestedMember := memberList[0]
 		if strings.EqualFold(bindingForRequestedMember.Spec.UserEmail, userInfo.Email) {
-			return nil, k8cerrors.New(http.StatusForbidden, "you cannot delete yourself from the project")
+			return nil, utilerrors.New(http.StatusForbidden, "you cannot delete yourself from the project")
 		}
 
 		if err = deleteBinding(ctx, userInfoGetter, memberProvider, privilegedMemberProvider, req.ProjectID, bindingForRequestedMember.Name); err != nil {
@@ -134,7 +134,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(EditReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -153,7 +153,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 		}
 		memberToUpdate, err := userProvider.UserByEmail(ctx, currentMemberFromRequest.Email)
 		if err != nil && errors.Is(err, provider.ErrNotFound) {
-			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
+			return nil, utilerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", currentMemberFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -163,10 +163,10 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(memberList) == 0 {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot change the membership of the user %s for the project %s because the user is not a member of the project", currentMemberFromRequest.Email, req.ProjectID))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot change the membership of the user %s for the project %s because the user is not a member of the project", currentMemberFromRequest.Email, req.ProjectID))
 		}
 		if len(memberList) != 1 {
-			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot change the membershp of the user %s, inconsistent state in database", currentMemberFromRequest.Email))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot change the membershp of the user %s, inconsistent state in database", currentMemberFromRequest.Email))
 		}
 
 		currentMemberBinding := memberList[0]
@@ -204,10 +204,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
+			return nil, utilerrors.NewBadRequest("the name of the project cannot be empty")
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -252,7 +252,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 
 		userToInvite, err := userProvider.UserByEmail(ctx, apiUserFromRequest.Email)
 		if err != nil && errors.Is(err, provider.ErrNotFound) {
-			return nil, k8cerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
+			return nil, utilerrors.NewBadRequest("cannot add the user %s to the project %s because the user doesn't exist.", apiUserFromRequest.Email, projectFromRequest.ID)
 		} else if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -266,7 +266,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(memberList) > 0 {
-			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
 		}
 
 		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
@@ -289,12 +289,12 @@ func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 		t := ctx.Value(middleware.RawTokenContextKey)
 		token, ok := t.(string)
 		if !ok || token == "" {
-			return nil, k8cerrors.NewNotAuthorized()
+			return nil, utilerrors.NewNotAuthorized()
 		}
 		e := ctx.Value(middleware.TokenExpiryContextKey)
 		expiry, ok := e.(apiv1.Time)
 		if !ok {
-			return nil, k8cerrors.NewNotAuthorized()
+			return nil, utilerrors.NewNotAuthorized()
 		}
 		return nil, userProvider.InvalidateToken(ctx, authenticatedUser, token, expiry)
 	}
@@ -351,18 +351,18 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 
 		existingSettingsJSON, err := json.Marshal(existingSettings)
 		if err != nil {
-			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
 		}
 
 		patchedSettingsJSON, err := jsonpatch.MergePatch(existingSettingsJSON, req.Patch)
 		if err != nil {
-			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
 		}
 
 		var patchedSettings *kubermaticv1.UserSettings
 		err = json.Unmarshal(patchedSettingsJSON, &patchedSettings)
 		if err != nil {
-			return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
+			return nil, apierrors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
 		}
 
 		existingUser.Spec.Settings = patchedSettings
@@ -398,27 +398,27 @@ type AddReq struct {
 // Validate validates AddReq request.
 func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	if len(r.ProjectID) == 0 {
-		return k8cerrors.NewBadRequest("the name of the project cannot be empty")
+		return utilerrors.NewBadRequest("the name of the project cannot be empty")
 	}
 	apiUserFromRequest := r.Body
 	if len(apiUserFromRequest.Email) == 0 {
-		return k8cerrors.NewBadRequest("the email address cannot be empty")
+		return utilerrors.NewBadRequest("the email address cannot be empty")
 	}
 	if _, err := mail.ParseAddress(apiUserFromRequest.Email); err != nil {
-		return k8cerrors.NewBadRequest("incorrect email format: %v", err)
+		return utilerrors.NewBadRequest("incorrect email format: %v", err)
 	}
 	if len(r.Body.Projects) != 1 {
-		return k8cerrors.NewBadRequest("expected exactly one entry in \"Projects\" field, but received %d", len(apiUserFromRequest.Projects))
+		return utilerrors.NewBadRequest("expected exactly one entry in \"Projects\" field, but received %d", len(apiUserFromRequest.Projects))
 	}
 	projectFromRequest := apiUserFromRequest.Projects[0]
 	if len(projectFromRequest.ID) == 0 || len(projectFromRequest.GroupPrefix) == 0 {
-		return k8cerrors.NewBadRequest("both the project name and the group name fields are required")
+		return utilerrors.NewBadRequest("both the project name and the group name fields are required")
 	}
 	if projectFromRequest.ID != r.ProjectID {
-		return k8cerrors.New(http.StatusForbidden, fmt.Sprintf("you can only assign the user to %s project", r.ProjectID))
+		return utilerrors.New(http.StatusForbidden, fmt.Sprintf("you can only assign the user to %s project", r.ProjectID))
 	}
 	if strings.EqualFold(apiUserFromRequest.Email, authenticatesUserInfo.Email) {
-		return k8cerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
+		return utilerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
 	}
 	isRequestedGroupPrefixValid := false
 	for _, existingGroupPrefix := range rbac.AllGroupsPrefixes {
@@ -428,7 +428,7 @@ func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 		}
 	}
 	if !isRequestedGroupPrefixValid {
-		return k8cerrors.NewBadRequest("invalid group name %s", projectFromRequest.GroupPrefix)
+		return utilerrors.NewBadRequest("invalid group name %s", projectFromRequest.GroupPrefix)
 	}
 	return nil
 }
@@ -482,7 +482,7 @@ func (r EditReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 		return err
 	}
 	if r.UserID != r.Body.ID {
-		return k8cerrors.NewBadRequest(fmt.Sprintf("userID mismatch, you requested to update user %q but body contains user %q", r.UserID, r.Body.ID))
+		return utilerrors.NewBadRequest(fmt.Sprintf("userID mismatch, you requested to update user %q but body contains user %q", r.UserID, r.Body.ID))
 	}
 	return nil
 }

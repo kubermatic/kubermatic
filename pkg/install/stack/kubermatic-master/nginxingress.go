@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -32,13 +32,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 
 	networkingv1 "k8s.io/api/networking/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -67,7 +66,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 
 	// if version older than 1.3.0 is installed, we must perform a migration
 	// by deleting the old deployment object for the controller
-	v13 := semver.MustParse("1.3.0")
+	v13 := semverlib.MustParse("1.3.0")
 	backupTS := time.Now().Format("2006-01-02T150405")
 
 	isUpgrading := false
@@ -130,12 +129,12 @@ func upgradeNginxIngress(
 		Version: "v1",
 	})
 
-	nginxMatcher := client.MatchingLabels{
+	nginxMatcher := ctrlruntimeclient.MatchingLabels{
 		"app.kubernetes.io/name":       "ingress-nginx",
 		"app.kubernetes.io/managed-by": "Helm",
 		"app.kubernetes.io/instance":   release.Name,
 	}
-	if err := kubeClient.List(ctx, deploymentsList, client.InNamespace(NginxIngressControllerNamespace), nginxMatcher); err != nil {
+	if err := kubeClient.List(ctx, deploymentsList, ctrlruntimeclient.InNamespace(NginxIngressControllerNamespace), nginxMatcher); err != nil {
 		return fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
 	}
 	// 2: store the deployment for backup
@@ -225,7 +224,7 @@ func deleteIngress(ctx context.Context, kubeClient ctrlruntimeclient.Client, nam
 	}
 
 	if err := kubeClient.Get(ctx, key, ingress); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

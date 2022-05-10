@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -68,10 +68,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
 				{
-					Version: semver.MustParse("1.6.1"),
+					Version: semverlib.MustParse("1.6.1"),
 				},
 				{
-					Version: semver.MustParse("1.7.0"),
+					Version: semverlib.MustParse("1.7.0"),
 				},
 			},
 			versions: []k8csemver.Semver{
@@ -111,10 +111,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 			apiUser: *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
 				{
-					Version: semver.MustParse("1.6.1"),
+					Version: semverlib.MustParse("1.6.1"),
 				},
 				{
-					Version:                    semver.MustParse("1.7.0"),
+					Version:                    semverlib.MustParse("1.7.0"),
 					RestrictedByKubeletVersion: true,
 				},
 			},
@@ -151,7 +151,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			apiUser: *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
 				{
-					Version: semver.MustParse("1.21.1"),
+					Version: semverlib.MustParse("1.21.1"),
 				},
 			},
 			versions: []k8csemver.Semver{
@@ -218,10 +218,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 			apiUser:                    *test.GenAPIUser("John", "john@acme.com"),
 			wantUpdates: []*apiv1.MasterVersion{
 				{
-					Version: semver.MustParse("1.6.1"),
+					Version: semverlib.MustParse("1.6.1"),
 				},
 				{
-					Version: semver.MustParse("1.7.0"),
+					Version: semverlib.MustParse("1.7.0"),
 				},
 			},
 			versions: []k8csemver.Semver{

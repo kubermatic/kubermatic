@@ -9,7 +9,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -1288,28 +1288,28 @@ func ReconcileKubermaticV1RuleGroups(ctx context.Context, namedGetters []NamedKu
 	return nil
 }
 
-// AppKubermaticV1ApplicationDefinitionCreator defines an interface to create/update ApplicationDefinitions
-type AppKubermaticV1ApplicationDefinitionCreator = func(existing *appkubermaticv1.ApplicationDefinition) (*appkubermaticv1.ApplicationDefinition, error)
+// AppsKubermaticV1ApplicationDefinitionCreator defines an interface to create/update ApplicationDefinitions
+type AppsKubermaticV1ApplicationDefinitionCreator = func(existing *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error)
 
-// NamedAppKubermaticV1ApplicationDefinitionCreatorGetter returns the name of the resource and the corresponding creator function
-type NamedAppKubermaticV1ApplicationDefinitionCreatorGetter = func() (name string, create AppKubermaticV1ApplicationDefinitionCreator)
+// NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter = func() (name string, create AppsKubermaticV1ApplicationDefinitionCreator)
 
-// AppKubermaticV1ApplicationDefinitionObjectWrapper adds a wrapper so the AppKubermaticV1ApplicationDefinitionCreator matches ObjectCreator.
+// AppsKubermaticV1ApplicationDefinitionObjectWrapper adds a wrapper so the AppsKubermaticV1ApplicationDefinitionCreator matches ObjectCreator.
 // This is needed as Go does not support function interface matching.
-func AppKubermaticV1ApplicationDefinitionObjectWrapper(create AppKubermaticV1ApplicationDefinitionCreator) ObjectCreator {
+func AppsKubermaticV1ApplicationDefinitionObjectWrapper(create AppsKubermaticV1ApplicationDefinitionCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*appkubermaticv1.ApplicationDefinition))
+			return create(existing.(*appskubermaticv1.ApplicationDefinition))
 		}
-		return create(&appkubermaticv1.ApplicationDefinition{})
+		return create(&appskubermaticv1.ApplicationDefinition{})
 	}
 }
 
-// ReconcileAppKubermaticV1ApplicationDefinitions will create and update the AppKubermaticV1ApplicationDefinitions coming from the passed AppKubermaticV1ApplicationDefinitionCreator slice
-func ReconcileAppKubermaticV1ApplicationDefinitions(ctx context.Context, namedGetters []NamedAppKubermaticV1ApplicationDefinitionCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+// ReconcileAppsKubermaticV1ApplicationDefinitions will create and update the AppsKubermaticV1ApplicationDefinitions coming from the passed AppsKubermaticV1ApplicationDefinitionCreator slice
+func ReconcileAppsKubermaticV1ApplicationDefinitions(ctx context.Context, namedGetters []NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		createObject := AppKubermaticV1ApplicationDefinitionObjectWrapper(create)
+		createObject := AppsKubermaticV1ApplicationDefinitionObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
 
@@ -1317,7 +1317,7 @@ func ReconcileAppKubermaticV1ApplicationDefinitions(ctx context.Context, namedGe
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appkubermaticv1.ApplicationDefinition{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appskubermaticv1.ApplicationDefinition{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ApplicationDefinition %s/%s: %w", namespace, name, err)
 		}
 	}

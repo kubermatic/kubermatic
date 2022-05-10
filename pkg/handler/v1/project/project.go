@@ -34,9 +34,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // CreateEndpoint defines an HTTP endpoint that creates a new project in the system.
@@ -44,11 +44,11 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectRq, ok := request.(projectReq)
 		if !ok {
-			return nil, kubermaticerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		if len(projectRq.Body.Name) == 0 {
-			return nil, kubermaticerrors.NewBadRequest("the name of the project cannot be empty")
+			return nil, utilerrors.NewBadRequest("the name of the project cannot be empty")
 		}
 
 		settings, err := settingsProvider.GetGlobalSettings(ctx)
@@ -105,11 +105,11 @@ func createProjectByServiceAccount(ctx context.Context, saEmail string, projectR
 	}
 
 	if len(bindings) == 0 {
-		return nil, kubermaticerrors.New(http.StatusInternalServerError, fmt.Sprintf("no bindings for service account user %s", saEmail))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("no bindings for service account user %s", saEmail))
 	}
 	saBinding := bindings[0]
 	if !strings.HasPrefix(saBinding.Spec.Group, rbac.ProjectManagerGroupNamePrefix) {
-		return nil, kubermaticerrors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
+		return nil, utilerrors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
 	}
 
 	// determine regular (human) users that will own the project
@@ -117,7 +117,7 @@ func createProjectByServiceAccount(ctx context.Context, saEmail string, projectR
 
 	for _, userEmail := range projectReq.Body.Users {
 		if kubermaticv1helper.IsProjectServiceAccount(userEmail) {
-			return nil, kubermaticerrors.New(http.StatusBadRequest, "user email list should contain only human users")
+			return nil, utilerrors.New(http.StatusBadRequest, "user email list should contain only human users")
 		}
 		humanUserOwner, err := userProvider.UserByEmail(ctx, userEmail)
 		if err != nil {
@@ -127,7 +127,7 @@ func createProjectByServiceAccount(ctx context.Context, saEmail string, projectR
 	}
 
 	if len(humanUserOwnerList) == 0 {
-		return nil, kubermaticerrors.New(http.StatusBadRequest, "owner user email list required for project creation by Service Account")
+		return nil, utilerrors.New(http.StatusBadRequest, "owner user email list required for project creation by Service Account")
 	}
 
 	// create the project
@@ -170,7 +170,7 @@ func checkProjectRestriction(user *kubermaticv1.User, settings *kubermaticv1.Kub
 		return nil
 	}
 	if settings.Spec.RestrictProjectCreation {
-		return kubermaticerrors.New(http.StatusForbidden, "project creation is restricted")
+		return utilerrors.New(http.StatusForbidden, "project creation is restricted")
 	}
 	return nil
 }
@@ -218,11 +218,11 @@ func validateUserProjectsLimit(ctx context.Context, user *kubermaticv1.User, set
 		}
 	}
 	if len(errorList) > 0 {
-		return kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
+		return utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
 	}
 
 	if projectsCounter >= settings.Spec.UserProjectsLimit {
-		return kubermaticerrors.New(http.StatusForbidden, "reached maximum number of projects")
+		return utilerrors.New(http.StatusForbidden, "reached maximum number of projects")
 	}
 	return nil
 }
@@ -232,7 +232,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(ListReq)
 		if !ok {
-			return nil, kubermaticerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -281,7 +281,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		}
 
 		if len(errorList) > 0 {
-			return nil, kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
+			return nil, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
 		}
 		return projects, nil
 	}
@@ -311,7 +311,7 @@ func getAllProjectsForAdmin(ctx context.Context, userInfo *provider.UserInfo, pr
 }
 
 func isStatus(err error, status int32) bool {
-	var statusErr *kerrors.StatusError
+	var statusErr *apierrors.StatusError
 
 	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }
@@ -321,10 +321,10 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteRq)
 		if !ok {
-			return nil, kubermaticerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-			return nil, kubermaticerrors.NewBadRequest("the id of the project cannot be empty")
+			return nil, utilerrors.NewBadRequest("the id of the project cannot be empty")
 		}
 
 		// check if admin user
@@ -357,11 +357,11 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateRq)
 		if !ok {
-			return nil, kubermaticerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.validate()
 		if err != nil {
-			return nil, kubermaticerrors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -414,10 +414,10 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
-			return nil, kubermaticerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-			return nil, kubermaticerrors.NewBadRequest("the id of the project cannot be empty")
+			return nil, utilerrors.NewBadRequest("the id of the project cannot be empty")
 		}
 
 		adminUserInfo, err := userInfoGetter(ctx, "")
@@ -545,13 +545,13 @@ func getNumberOfClustersForProject(ctx context.Context, clusterProviderGetter pr
 	var clustersNumber int
 	seeds, err := seedsGetter()
 	if err != nil {
-		return clustersNumber, kubermaticerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		return clustersNumber, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
 	for datacenter, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
-			return clustersNumber, kubermaticerrors.NewNotFound("cluster-provider", datacenter)
+			return clustersNumber, utilerrors.NewNotFound("cluster-provider", datacenter)
 		}
 		clusters, err := clusterProvider.List(ctx, project, nil)
 		if err != nil {
@@ -567,13 +567,13 @@ func getNumberOfClusters(ctx context.Context, clusterProviderGetter provider.Clu
 	clustersNumber := map[string]int{}
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, kubermaticerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
 	for datacenter, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
-			return nil, kubermaticerrors.NewNotFound("cluster-provider", datacenter)
+			return nil, utilerrors.NewNotFound("cluster-provider", datacenter)
 		}
 		clusters, err := clusterProvider.ListAll(ctx, nil)
 		if err != nil {

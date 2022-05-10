@@ -20,7 +20,7 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -60,7 +60,7 @@ func ApplicationInstallationValidatingWebhookConfigurationCreator(caCert *x509.C
 					Rules: []admissionregistrationv1.RuleWithOperations{
 						{
 							Rule: admissionregistrationv1.Rule{
-								APIGroups:   []string{appkubermaticv1.GroupName},
+								APIGroups:   []string{appskubermaticv1.GroupName},
 								APIVersions: []string{"*"},
 								Resources:   []string{"applicationinstallations"},
 								Scope:       &scope,

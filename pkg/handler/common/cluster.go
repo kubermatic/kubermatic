@@ -44,12 +44,12 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -117,7 +117,7 @@ func CreateEndpoint(
 	}
 
 	if len(existingClusters.Items) > 0 {
-		return nil, kubermaticerrors.NewAlreadyExists("cluster", partialCluster.Spec.HumanReadableName)
+		return nil, utilerrors.NewAlreadyExists("cluster", partialCluster.Spec.HumanReadableName)
 	}
 
 	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
@@ -150,7 +150,7 @@ func CreateEndpoint(
 		return true, nil
 	}); err != nil {
 		log.Error("Timed out waiting for cluster to become ready")
-		return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), kubermaticerrors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
+		return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), utilerrors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
 	}
 
 	return ConvertInternalClusterToExternal(newCluster, dc, true, supportManager.GetIncompatibilities()...), nil
@@ -195,7 +195,7 @@ func GenerateCluster(
 	if len(credentialName) > 0 {
 		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
 		if err != nil {
-			return nil, kubermaticerrors.NewBadRequest("invalid credentials: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid credentials: %v", err)
 		}
 		body.Cluster.Spec.Cloud = *cloudSpec
 		partialCluster.Labels[kubermaticv1.IsCredentialPresetLabelKey] = "true"
@@ -213,7 +213,7 @@ func GenerateCluster(
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
 	spec, err := cluster.Spec(ctx, body.Cluster, defaultingTemplate, seed, dc, config, secretKeyGetter, caBundle, features)
 	if err != nil {
-		return nil, kubermaticerrors.NewBadRequest("invalid cluster: %v", err)
+		return nil, utilerrors.NewBadRequest("invalid cluster: %v", err)
 	}
 
 	if err = validation.ValidateUpdateWindow(spec.UpdateWindow); err != nil {
@@ -239,7 +239,7 @@ func GenerateCluster(
 	if body.NodeDeployment != nil {
 		isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
 		if err != nil {
-			return nil, kubermaticerrors.NewBadRequest("cannot verify the provider due to an invalid spec: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot verify the provider due to an invalid spec: %v", err)
 		}
 		if !isBYO {
 			if body.NodeDeployment.Name == "" {
@@ -323,7 +323,7 @@ func GetClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 		_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, internalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			// Ignore 403 errors and omit clusters with not accessible datacenters in the result.
-			var errHttp *kubermaticerrors.HTTPError
+			var errHttp *utilerrors.HTTPError
 			if errors.As(err, &errHttp) && errHttp.StatusCode() == http.StatusForbidden {
 				continue
 			}
@@ -384,7 +384,7 @@ func listClusterMachineDeployments(ctx context.Context, userInfoGetter func(ctx 
 func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
-		return nil, kubermaticerrors.New(http.StatusInternalServerError, "no cluster in request")
+		return nil, utilerrors.New(http.StatusInternalServerError, "no cluster in request")
 	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
@@ -473,7 +473,7 @@ func PatchEndpoint(
 
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	seed, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, oldInternalCluster.Spec.Cloud.DatacenterName)
 	if err != nil {
@@ -499,18 +499,18 @@ func PatchEndpoint(
 
 	existingClusterJSON, err := json.Marshal(clusterToPatch)
 	if err != nil {
-		return nil, kubermaticerrors.NewBadRequest("cannot decode existing cluster: %v", err)
+		return nil, utilerrors.NewBadRequest("cannot decode existing cluster: %v", err)
 	}
 
 	patchedClusterJSON, err := jsonpatch.MergePatch(existingClusterJSON, patch)
 	if err != nil {
-		return nil, kubermaticerrors.NewBadRequest("cannot patch cluster: %v", err)
+		return nil, utilerrors.NewBadRequest("cannot patch cluster: %v", err)
 	}
 
 	var patchedCluster *apiv1.Cluster
 	err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 	if err != nil {
-		return nil, kubermaticerrors.NewBadRequest("cannot decode patched cluster: %v", err)
+		return nil, utilerrors.NewBadRequest("cannot decode patched cluster: %v", err)
 	}
 
 	// Only specific fields from old internal cluster will be updated by a patch.
@@ -543,7 +543,7 @@ func PatchEndpoint(
 		return nil, fmt.Errorf("failed to check existing nodes' version skew: %w", err)
 	}
 	if len(incompatibleKubelets) > 0 {
-		return nil, kubermaticerrors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
+		return nil, utilerrors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 	}
 
 	// find the defaulting template
@@ -588,7 +588,7 @@ func PatchEndpoint(
 
 	// validate the new cluster
 	if errs := validation.ValidateClusterUpdate(ctx, newInternalCluster, oldInternalCluster, dc, cloudProvider, features).ToAggregate(); errs != nil {
-		return nil, kubermaticerrors.NewBadRequest("invalid cluster: %v", errs)
+		return nil, utilerrors.NewBadRequest("invalid cluster: %v", errs)
 	}
 	if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -743,11 +743,11 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 	}
 
 	if !cloudcontroller.MigrationToExternalCloudControllerSupported(dc, oldCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
-		return nil, kubermaticerrors.NewBadRequest("external CCM not supported by the given provider")
+		return nil, utilerrors.NewBadRequest("external CCM not supported by the given provider")
 	}
 
 	if ok := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
-		return nil, kubermaticerrors.NewBadRequest("external CCM already enabled, cannot be disabled")
+		return nil, utilerrors.NewBadRequest("external CCM already enabled, cannot be disabled")
 	}
 
 	newCluster := oldCluster.DeepCopy()
@@ -799,7 +799,7 @@ func AssignSSHKeyEndpoint(ctx context.Context, userInfoGetter provider.UserInfoG
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 	if len(keyID) == 0 {
-		return nil, kubermaticerrors.NewBadRequest("please provide an SSH key")
+		return nil, utilerrors.NewBadRequest("please provide an SSH key")
 	}
 
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
@@ -884,7 +884,7 @@ func DetachSSHKeyEndpoint(ctx context.Context, userInfoGetter provider.UserInfoG
 			}
 		}
 		if !found {
-			return nil, kubermaticerrors.NewNotFound("sshkey", keyID)
+			return nil, utilerrors.NewNotFound("sshkey", keyID)
 		}
 	}
 
@@ -923,7 +923,7 @@ func ListSSHKeysEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	if adminUserInfo.IsAdmin {
 		if _, err := privilegedSSHKeyProvider.UpdateUnsecured(ctx, clusterSSHKey); err != nil {
@@ -933,7 +933,7 @@ func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGe
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	if _, err = sshKeyProvider.Update(ctx, userInfo, clusterSSHKey); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
@@ -959,7 +959,7 @@ func updateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 func updateAndDeleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	if adminUserInfo.IsAdmin {
 		cluster, err := privilegedClusterProvider.UpdateUnsecured(ctx, project, cluster)
@@ -979,7 +979,7 @@ func updateAndDeleteCluster(ctx context.Context, userInfoGetter provider.UserInf
 func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
-		return kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	if _, err = clusterProvider.Update(ctx, project, userInfo, cluster); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
@@ -1046,7 +1046,7 @@ func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserI
 }
 
 func isStatus(err error, status int32) bool {
-	var statusErr *kerrors.StatusError
+	var statusErr *apierrors.StatusError
 
 	return errors.As(err, &statusErr) && status == statusErr.Status().Code
 }
@@ -1201,14 +1201,14 @@ func ConvertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectID, keyName string) (*kubermaticv1.UserSSHKey, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	if adminUserInfo.IsAdmin {
 		return privilegedSSHKeyProvider.GetUnsecured(ctx, keyName)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 	return sshKeyProvider.Get(ctx, userInfo, keyName)
 }

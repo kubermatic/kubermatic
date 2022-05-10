@@ -20,21 +20,21 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, apiv1.EtcdBackupConfigCleanupFinalizer) {
 		return nil
 	}
 
 	// always attempt to cleanup, even if the controllers might be disabled now
 	backupConfigs := &kubermaticv1.EtcdBackupConfigList{}
-	if err := d.seedClient.List(ctx, backupConfigs, controllerruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+	if err := d.seedClient.List(ctx, backupConfigs, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 		return fmt.Errorf("failed to get EtcdBackupConfigs: %w", err)
 	}
 
@@ -48,5 +48,5 @@ func (d *Deletion) cleanupEtcdBackupConfigs(ctx context.Context, cluster *kuberm
 		return nil
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.EtcdBackupConfigCleanupFinalizer)
 }

@@ -27,7 +27,7 @@ import (
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // GCPZoneReq represent a request for GCP zones.
@@ -186,7 +186,7 @@ func GCPDiskTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credentials := preset.Spec.GCP; credentials != nil {
 				sa = credentials.ServiceAccount
@@ -217,7 +217,7 @@ func GCPSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter prov
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credentials := preset.Spec.GCP; credentials != nil {
 				sa = credentials.ServiceAccount
@@ -251,7 +251,7 @@ func GCPZoneEndpoint(presetProvider provider.PresetProvider, seedsGetter provide
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credentials := preset.Spec.GCP; credentials != nil {
 				sa = credentials.ServiceAccount
@@ -281,7 +281,7 @@ func GCPNetworkEndpoint(presetProvider provider.PresetProvider, userInfoGetter p
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credentials := preset.Spec.GCP; credentials != nil {
 				sa = credentials.ServiceAccount
@@ -311,7 +311,7 @@ func GCPSubnetworkEndpoint(presetProvider provider.PresetProvider, seedsGetter p
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credentials := preset.Spec.GCP; credentials != nil {
 				sa = credentials.ServiceAccount

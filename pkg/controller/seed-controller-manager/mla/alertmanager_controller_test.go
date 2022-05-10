@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -330,7 +330,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 					assert.False(t, alertmanager.Status.ConfigStatus.LastUpdated.IsZero())
 				}
 			} else {
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 				secretList := &corev1.SecretList{}
 				err = reconciler.List(ctx, secretList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
 				assert.Nil(t, err)

@@ -32,10 +32,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -169,7 +169,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			rawAuthenticatesUser := ctx.Value(AuthenticatedUserContextKey)
 			if rawAuthenticatesUser == nil {
-				return nil, k8cerrors.New(http.StatusInternalServerError, "no user in context found")
+				return nil, utilerrors.New(http.StatusInternalServerError, "no user in context found")
 			}
 			authenticatedUser := rawAuthenticatesUser.(apiv1.User)
 
@@ -181,7 +181,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 				// handling ErrNotFound
 				user, err = userProvider.CreateUser(ctx, authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
 				if err != nil {
-					if !kerrors.IsAlreadyExists(err) {
+					if !apierrors.IsAlreadyExists(err) {
 						return nil, common.KubernetesErrorToHTTPError(err)
 					}
 					if user, err = userProvider.UserByEmail(ctx, authenticatedUser.Email); err != nil {
@@ -203,7 +203,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 
 			// Ignore conflict error during update of the lastSeen field as it is not super important.
 			// It can be updated next time.
-			if kerrors.IsConflict(err) {
+			if apierrors.IsConflict(err) {
 				return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
 			}
 
@@ -223,11 +223,11 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			userIDGetter, ok := request.(common.UserIDGetter)
 			if !ok {
-				return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddlewareUnauthorized for endpoints that accepts user ID")
+				return nil, utilerrors.NewBadRequest("you can only use userInfoMiddlewareUnauthorized for endpoints that accepts user ID")
 			}
 			prjIDGetter, ok := request.(common.ProjectIDGetter)
 			if !ok {
-				return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddlewareUnauthorized for endpoints that accepts project ID")
+				return nil, utilerrors.NewBadRequest("you can only use userInfoMiddlewareUnauthorized for endpoints that accepts project ID")
 			}
 			userID := userIDGetter.GetUserID()
 			projectID := prjIDGetter.GetProjectID()
@@ -256,31 +256,31 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 			if rawTokenNotFoundErr := ctx.Value(noTokenFoundKey); rawTokenNotFoundErr != nil {
 				tokenNotFoundErr, ok := rawTokenNotFoundErr.(error)
 				if !ok {
-					return nil, k8cerrors.NewNotAuthorized()
+					return nil, utilerrors.NewNotAuthorized()
 				}
-				return nil, k8cerrors.NewWithDetails(http.StatusUnauthorized, "not authorized", []string{tokenNotFoundErr.Error()})
+				return nil, utilerrors.NewWithDetails(http.StatusUnauthorized, "not authorized", []string{tokenNotFoundErr.Error()})
 			}
 
 			t := ctx.Value(RawTokenContextKey)
 			token, ok := t.(string)
 			if !ok || token == "" {
-				return nil, k8cerrors.NewNotAuthorized()
+				return nil, utilerrors.NewNotAuthorized()
 			}
 
 			verifyCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
 			claims, err := tokenVerifier.Verify(verifyCtx, token)
 			if err != nil {
-				return nil, k8cerrors.New(http.StatusUnauthorized, fmt.Sprintf("access denied, invalid token: %v", err))
+				return nil, utilerrors.New(http.StatusUnauthorized, fmt.Sprintf("access denied, invalid token: %v", err))
 			}
 
 			if claims.Subject == "" {
-				return nil, k8cerrors.NewNotAuthorized()
+				return nil, utilerrors.NewNotAuthorized()
 			}
 
 			id, err := hash.GetUserID(claims.Subject)
 			if err != nil {
-				return nil, k8cerrors.NewNotAuthorized()
+				return nil, utilerrors.NewNotAuthorized()
 			}
 
 			user := apiv1.User{
@@ -292,7 +292,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 			}
 
 			if user.ID == "" {
-				return nil, k8cerrors.NewNotAuthorized()
+				return nil, utilerrors.NewNotAuthorized()
 			}
 
 			if err := checkBlockedTokens(ctx, claims.Email, token, userProvider); err != nil {
@@ -347,7 +347,7 @@ func getAddonProvider(ctx context.Context, clusterProviderGetter provider.Cluste
 		for _, seed := range seeds {
 			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
-				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
+				return nil, utilerrors.NewNotFound("cluster-provider", clusterID)
 			}
 			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
@@ -395,7 +395,7 @@ func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 	}
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, ctx, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		return nil, ctx, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 	if getter.GetSeedCluster().ClusterID != "" {
 		return getClusterProviderByClusterID(ctx, seeds, clusterProviderGetter, getter.GetSeedCluster().ClusterID)
@@ -403,13 +403,13 @@ func GetClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 
 	seed, exists := seeds[getter.GetSeedCluster().SeedName]
 	if !exists {
-		return nil, ctx, k8cerrors.NewNotFound("seed", getter.GetSeedCluster().SeedName)
+		return nil, ctx, utilerrors.NewNotFound("seed", getter.GetSeedCluster().SeedName)
 	}
 	ctx = context.WithValue(ctx, datacenterContextKey, seed)
 
 	clusterProvider, err := clusterProviderGetter(seed)
 	if err != nil {
-		return nil, ctx, k8cerrors.NewNotFound("cluster-provider", getter.GetSeedCluster().SeedName)
+		return nil, ctx, utilerrors.NewNotFound("cluster-provider", getter.GetSeedCluster().SeedName)
 	}
 
 	return clusterProvider, ctx, nil
@@ -419,13 +419,13 @@ func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kuberm
 	for _, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
-			return nil, ctx, k8cerrors.NewNotFound("cluster-provider", clusterID)
+			return nil, ctx, utilerrors.NewNotFound("cluster-provider", clusterID)
 		}
 		if clusterProvider.IsCluster(ctx, clusterID) {
 			return clusterProvider, ctx, nil
 		}
 	}
-	return nil, ctx, k8cerrors.NewNotFound("cluster-provider", clusterID)
+	return nil, ctx, utilerrors.NewNotFound("cluster-provider", clusterID)
 }
 
 func checkBlockedTokens(ctx context.Context, email, token string, userProvider provider.UserProvider) error {
@@ -442,7 +442,7 @@ func checkBlockedTokens(ctx context.Context, email, token string, userProvider p
 	}
 	tokenSet := sets.NewString(blockedTokens...)
 	if tokenSet.Has(token) {
-		return k8cerrors.NewNotAuthorized()
+		return utilerrors.NewNotAuthorized()
 	}
 
 	return nil
@@ -497,7 +497,7 @@ func getConstraintProvider(ctx context.Context, clusterProviderGetter provider.C
 		for _, seed := range seeds {
 			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
-				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
+				return nil, utilerrors.NewNotFound("cluster-provider", clusterID)
 			}
 			if clusterProvider.IsCluster(ctx, clusterID) {
 				seedName = seed.Name
@@ -839,7 +839,7 @@ func BackupCredentials(backupCredentialsProviderGetter provider.BackupCredential
 
 			seed, found := seeds[seedCluster.SeedName]
 			if !found {
-				return nil, k8cerrors.NewBadRequest("couldn't find seed %q", seedCluster.SeedName)
+				return nil, utilerrors.NewBadRequest("couldn't find seed %q", seedCluster.SeedName)
 			}
 
 			backupCredentialsProvider, err := backupCredentialsProviderGetter(seed)

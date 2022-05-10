@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -108,7 +108,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, preset, kubermaticapiv1.PresetSeedCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, preset, apiv1.PresetSeedCleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -127,7 +127,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, preset *kubermaticv1.Preset) error {
-	if kuberneteshelper.HasFinalizer(preset, kubermaticapiv1.PresetSeedCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(preset, apiv1.PresetSeedCleanupFinalizer) {
 		if err := r.syncAllSeeds(log, preset, func(seedClient ctrlruntimeclient.Client, preset *kubermaticv1.Preset) error {
 			err := seedClient.Delete(ctx, &kubermaticv1.Preset{
 				ObjectMeta: metav1.ObjectMeta{
@@ -140,7 +140,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			return err
 		}
 
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, preset, kubermaticapiv1.PresetSeedCleanupFinalizer); err != nil {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, preset, apiv1.PresetSeedCleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove preset finalizer %s: %w", preset.Name, err)
 		}
 	}

@@ -27,7 +27,7 @@ import (
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
@@ -39,7 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -111,7 +111,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -158,7 +158,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		log.Debug("Cleaning up cloud provider")
 
 		// in-cluster resources, like nodes, are still being cleaned up
-		if kuberneteshelper.HasAnyFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer, kubermaticapiv1.InClusterPVCleanupFinalizer, kubermaticapiv1.NodeDeletionFinalizer) {
+		if kuberneteshelper.HasAnyFinalizer(cluster, apiv1.InClusterLBCleanupFinalizer, apiv1.InClusterPVCleanupFinalizer, apiv1.NodeDeletionFinalizer) {
 			log.Debug("Cluster still has in-cluster cleanup finalizers, retrying later")
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
@@ -180,7 +180,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	handleProviderError := func(err error) (*reconcile.Result, error) {
-		if kerrors.IsConflict(err) {
+		if apierrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
 			// processing without returning an error.
 			r.log.Infow("failed to run cloud provider", zap.Error(err))

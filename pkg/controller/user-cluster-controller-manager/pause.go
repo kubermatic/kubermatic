@@ -22,18 +22,18 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type IsPausedChecker func(context.Context) (bool, error)
 
-func NewClusterPausedChecker(seedClient client.Client, clusterName string) IsPausedChecker {
+func NewClusterPausedChecker(seedClient ctrlruntimeclient.Client, clusterName string) IsPausedChecker {
 	return func(ctx context.Context) (bool, error) {
 		cluster := &kubermaticv1.Cluster{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return false, nil
 			}
 

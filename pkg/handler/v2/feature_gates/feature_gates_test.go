@@ -25,7 +25,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -44,7 +44,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 		Name                      string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
-		ExpectedResponse          v2.FeatureGates
+		ExpectedResponse          apiv2.FeatureGates
 		ExpectedHTTPStatusCode    int
 	}{
 		{
@@ -52,7 +52,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode:    http.StatusOK,
-			ExpectedResponse: v2.FeatureGates{
+			ExpectedResponse: apiv2.FeatureGates{
 				KonnectivityService: &valTrue,
 			},
 		},
@@ -88,7 +88,7 @@ func TestFeatureGatesEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, resp.Code, resp.Body.String())
 			}
 			if resp.Code == http.StatusOK {
-				var featureGates v2.FeatureGates
+				var featureGates apiv2.FeatureGates
 				if err := json.Unmarshal(resp.Body.Bytes(), &featureGates); err != nil {
 					t.Fatalf("failed to unmarshal response: %v", err)
 				}

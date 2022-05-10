@@ -22,7 +22,7 @@ import (
 	"sort"
 	"testing"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -104,8 +104,8 @@ func TestReconcile(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected error status %v", tc.expectedGetErrStatus)
 				}
-				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
-					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
+				if tc.expectedGetErrStatus != apierrors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, apierrors.ReasonForError(err))
 				}
 				return
 			}
@@ -119,7 +119,7 @@ func TestReconcile(t *testing.T) {
 				// ignore clusters that only have a deletion timestampa and
 				// the CredentialsSecretsCleanupFinalizer finalizer, as those
 				// would be cleaned up by another controller
-				if kuberneteshelper.HasOnlyFinalizer(&cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) && !cluster.DeletionTimestamp.IsZero() {
+				if kuberneteshelper.HasOnlyFinalizer(&cluster, apiv1.CredentialsSecretsCleanupFinalizer) && !cluster.DeletionTimestamp.IsZero() {
 					continue
 				}
 
@@ -161,7 +161,7 @@ func genCluster(name, userEmail string, instance kubermaticv1.ClusterTemplateIns
 			Name:            name,
 			Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: instance.Spec.ProjectID, kubernetes.ClusterTemplateInstanceLabelKey: instance.Name},
 			ResourceVersion: "1",
-			Finalizers:      []string{kubermaticapiv1.CredentialsSecretsCleanupFinalizer},
+			Finalizers:      []string{apiv1.CredentialsSecretsCleanupFinalizer},
 			Annotations:     map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},
 		Spec: kubermaticv1.ClusterSpec{

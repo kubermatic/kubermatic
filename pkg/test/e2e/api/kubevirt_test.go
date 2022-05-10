@@ -22,7 +22,7 @@ import (
 	"context"
 	"testing"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -124,7 +124,7 @@ func TestDeleteKubevirtClusterBeforeIsUp(t *testing.T) {
 	}
 }
 
-func createKubevirtProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
+func createKubevirtProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, credential, version, location string, replicas int32) (*apiv1.Project, *apiv1.Cluster) {
 	project, err := testClient.CreateProject(rand.String(10))
 	if err != nil {
 		t.Fatalf("failed to create project %v", err)

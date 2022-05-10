@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -48,8 +48,8 @@ type ProviderIncompatibility struct {
 
 // Version is the object representing a Kubernetes version.
 type Version struct {
-	Version *semver.Version `json:"version"`
-	Default bool            `json:"default,omitempty"`
+	Version *semverlib.Version `json:"version"`
+	Default bool               `json:"default,omitempty"`
 }
 
 // Update represents an update option for a cluster.
@@ -118,7 +118,7 @@ func (m *Manager) GetDefault() (*Version, error) {
 
 // GetVersion returns the Versions for s.
 func (m *Manager) GetVersion(s string) (*Version, error) {
-	sv, err := semver.NewVersion(s)
+	sv, err := semverlib.NewVersion(s)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", s, err)
 	}
@@ -180,7 +180,7 @@ func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, controlPlaneVersion string
 	if err != nil || version == nil {
 		return version, err
 	}
-	controlPlaneSemver, err := semver.NewVersion(controlPlaneVersion)
+	controlPlaneSemver, err := semverlib.NewVersion(controlPlaneVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse controlplane version: %w", err)
 	}
@@ -199,7 +199,7 @@ func (m *Manager) AutomaticControlplaneUpdate(fromVersionRaw string) (*Version, 
 }
 
 func (m *Manager) automaticUpdate(fromVersionRaw string, isForNode bool) (*Version, error) {
-	from, err := semver.NewVersion(fromVersionRaw)
+	from, err := semverlib.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
 	}
@@ -217,7 +217,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw string, isForNode bool) (*Versi
 			continue
 		}
 
-		uFrom, err := semver.NewConstraint(u.From)
+		uFrom, err := semverlib.NewConstraint(u.From)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
 		}
@@ -226,7 +226,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw string, isForNode bool) (*Versi
 		}
 
 		// Automatic updates must not be a constraint. They must be version.
-		if _, err = semver.NewVersion(u.To); err != nil {
+		if _, err = semverlib.NewVersion(u.To); err != nil {
 			return nil, fmt.Errorf("failed to parse to version %s: %w", u.To, err)
 		}
 		toVersions = append(toVersions, u.To)
@@ -249,15 +249,15 @@ func (m *Manager) automaticUpdate(fromVersionRaw string, isForNode bool) (*Versi
 
 // GetPossibleUpdates returns possible updates for the version passed in.
 func (m *Manager) GetPossibleUpdates(fromVersionRaw string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
-	from, err := semver.NewVersion(fromVersionRaw)
+	from, err := semverlib.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
 	}
 	var possibleVersions []*Version
 
-	var toConstraints []*semver.Constraints
+	var toConstraints []*semverlib.Constraints
 	for _, u := range m.updates {
-		uFrom, err := semver.NewConstraint(u.From)
+		uFrom, err := semverlib.NewConstraint(u.From)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
 		}
@@ -265,7 +265,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw string, provider kubermaticv
 			continue
 		}
 
-		uTo, err := semver.NewConstraint(u.To)
+		uTo, err := semverlib.NewConstraint(u.To)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse to constraint %s: %w", u.To, err)
 		}
@@ -294,15 +294,15 @@ func (m *Manager) GetIncompatibilities() []*ProviderIncompatibility {
 }
 
 func (m *Manager) GetKubeOnePossibleUpdates(fromVersionRaw string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
-	from, err := semver.NewVersion(fromVersionRaw)
+	from, err := semverlib.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
 	}
 	var possibleVersions []*Version
 
-	var toConstraints []*semver.Constraints
+	var toConstraints []*semverlib.Constraints
 	for _, u := range m.updates {
-		uFrom, err := semver.NewConstraint(u.From)
+		uFrom, err := semverlib.NewConstraint(u.From)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse from constraint %s: %w", u.From, err)
 		}
@@ -310,7 +310,7 @@ func (m *Manager) GetKubeOnePossibleUpdates(fromVersionRaw string, provider kube
 			continue
 		}
 
-		uTo, err := semver.NewConstraint(u.To)
+		uTo, err := semverlib.NewConstraint(u.To)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse to constraint %s: %w", u.To, err)
 		}

@@ -28,7 +28,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -144,11 +144,11 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 	key := types.NamespacedName{Name: resources.MachineControllerMutatingWebhookConfigurationName}
 	webhookMutatingConf := &admissionregistrationv1.MutatingWebhookConfiguration{}
 	err = userClient.Get(ctx, key, webhookMutatingConf)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, err
 	}
 	// if the mutatingWebhookConfiguration doesn't exist yet, return StatusDown
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, nil
 	}
 
@@ -190,11 +190,11 @@ func (r *Reconciler) applicationControllerHealthCheck(ctx context.Context, clust
 	key := types.NamespacedName{Name: applications.ApplicationInstallationAdmissionWebhookName}
 	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{}
 	err = userClient.Get(ctx, key, webhook)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, err
 	}
 	// if the ValidatingWebhookConfiguration doesn't exist yet, return StatusDown
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, nil
 	}
 
@@ -230,7 +230,7 @@ func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1
 
 	if err != nil {
 		// if the StatefulSet for etcd doesn't exist yet, there's nothing to worry about
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return true, nil
 		} else {
 			return false, err

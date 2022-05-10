@@ -32,18 +32,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func GetUpgradesEndpoint(configGetter provider.KubermaticConfigurationGetter, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -97,7 +97,7 @@ func GetMachineDeploymentUpgradesEndpoint(userInfoGetter provider.UserInfoGetter
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(machineDeploymentReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})

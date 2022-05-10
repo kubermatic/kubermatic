@@ -24,12 +24,12 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 )
 
@@ -38,19 +38,19 @@ func ListVersions() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listCNIPluginVersionsReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		versions, err := cni.GetSupportedCNIPluginVersions(kubermaticv1.CNIPluginType(req.CNIPluginType))
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		return v2.CNIVersions{
+		return apiv2.CNIVersions{
 			CNIPluginType: req.CNIPluginType,
 			Versions:      versions.List(),
 		}, nil
@@ -90,7 +90,7 @@ func ListVersionsForCluster(userInfoGetter provider.UserInfoGetter, projectProvi
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listCNIPluginVersionsForClusterReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
@@ -100,10 +100,10 @@ func ListVersionsForCluster(userInfoGetter provider.UserInfoGetter, projectProvi
 
 		versions, err := cni.GetSupportedCNIPluginVersions(c.Spec.CNIPlugin.Type)
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
-		return v2.CNIVersions{
+		return apiv2.CNIVersions{
 			CNIPluginType: c.Spec.CNIPlugin.Type.String(),
 			Versions:      versions.List(),
 		}, nil

@@ -31,7 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,7 +45,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvi
 			return nil, err
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
@@ -98,7 +98,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvider
 			return nil, err
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
@@ -138,7 +138,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvide
 			return nil, err
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
@@ -172,7 +172,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvi
 			return nil, err
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
@@ -219,7 +219,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
@@ -234,23 +234,23 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, allowedRegistryProvid
 		// patch
 		originalJSON, err := json.Marshal(originalAPIAR)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current allowedRegistry: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current allowedRegistry: %v", err))
 		}
 
 		patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
 		if err != nil {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch alloweddRegistry: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch alloweddRegistry: %v", err))
 		}
 
 		var patched *apiv2.AllowedRegistry
 		err = json.Unmarshal(patchedJSON, &patched)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch allowedRegistry: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch allowedRegistry: %v", err))
 		}
 
 		// validate
 		if patched.Name != allowedRegistry.Name {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing allowedRegistry name is not allowed: %q to %q", allowedRegistry.Name, patched.Name))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing allowedRegistry name is not allowed: %q to %q", allowedRegistry.Name, patched.Name))
 		}
 
 		allowedRegistry.Spec = patched.Spec

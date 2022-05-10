@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -121,7 +121,7 @@ func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
-		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !kerrors.IsNotFound(err) {
+		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
 			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
 		}
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {

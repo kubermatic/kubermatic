@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -36,7 +36,7 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1
 		return err
 	}
 
-	// `kubermaticapiv1.GatekeeperConstraintCleanupFinalizer` is added by user-cluster-controller-manager/constraints-syncer.
+	// `apiv1.GatekeeperConstraintCleanupFinalizer` is added by user-cluster-controller-manager/constraints-syncer.
 	// It could be the case that during cluster deletion, user-cluster-controller-manager is deleted before it removes
 	// the finalizer from constraints object, in this case, the user-cluster namespace will get stuck on deletion.
 	// So here we just remove the finalizer from constraints so that user-cluster namespace can be garbage-collected.
@@ -47,11 +47,11 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1
 	}
 
 	for _, constraint := range constraintList.Items {
-		err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
+		err := kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, &constraint, apiv1.GatekeeperConstraintCleanupFinalizer)
 		if err != nil {
 			return fmt.Errorf("failed to remove constraint finalizer %s: %w", constraint.Name, err)
 		}
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.KubermaticConstraintCleanupFinalizer)
 }

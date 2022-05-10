@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	jsonpatch "github.com/evanphx/json-patch"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	machineresource "k8c.io/kubermatic/v2/pkg/resources/machine"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +78,7 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if isBYO {
-		return nil, k8cerrors.NewBadRequest("You cannot create a node deployment for KubeAdm provider")
+		return nil, utilerrors.NewBadRequest("You cannot create a node deployment for KubeAdm provider")
 	}
 
 	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: clusterID})
@@ -102,12 +102,12 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 
 	nd, err := machineresource.Validate(&machineDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
-		return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
+		return nil, utilerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
+		return nil, utilerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
 	}
 
 	data := common.CredentialsData{
@@ -202,7 +202,7 @@ func DeleteMachineNode(ctx context.Context, userInfoGetter provider.UserInfoGett
 		return nil, err
 	}
 	if machine == nil && node == nil {
-		return nil, k8cerrors.NewNotFound("Node", machineID)
+		return nil, utilerrors.NewNotFound("Node", machineID)
 	}
 
 	if machine != nil {
@@ -477,12 +477,12 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 		return nil, fmt.Errorf("cannot decode patched cluster: %w", err)
 	}
 
-	kversion, err := semver.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
+	kversion, err := semverlib.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
 	if err != nil {
-		return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
+		return nil, utilerrors.NewBadRequest("failed to parse kubelet version: %v", err)
 	}
 	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
-		return nil, k8cerrors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
@@ -497,7 +497,7 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create nodeDeployment")
+		return nil, utilerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create nodeDeployment")
 	}
 	data := common.CredentialsData{
 		Ctx:               ctx,

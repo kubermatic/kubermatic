@@ -22,7 +22,7 @@ import (
 	"net/http"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // TokenClaims holds various claims extracted from the id_token.
@@ -87,7 +87,7 @@ func (p *TokenVerifierPlugins) Verify(ctx context.Context, token string) (TokenC
 
 		errList = append(errList, err)
 	}
-	return TokenClaims{}, k8cerrors.NewAggregate(errList)
+	return TokenClaims{}, utilerrors.NewAggregate(errList)
 }
 
 var _ TokenExtractor = &TokenExtractorPlugins{}
@@ -118,5 +118,5 @@ func (p *TokenExtractorPlugins) Extract(r *http.Request) (string, error) {
 		}
 		errList = append(errList, err)
 	}
-	return "", k8cerrors.NewAggregate(errList)
+	return "", utilerrors.NewAggregate(errList)
 }

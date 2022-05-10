@@ -22,12 +22,12 @@ import (
 	"testing"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -116,7 +116,7 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 				objCopy := object.DeepCopyObject().(ctrlruntimeclient.Object)
 
 				err := client.Get(ctx, nn, objCopy)
-				if kerrors.IsNotFound(err) != tc.objDeletionExpected {
+				if apierrors.IsNotFound(err) != tc.objDeletionExpected {
 					t.Errorf("Expected object %q to be deleted=%t", nn.String(), tc.objDeletionExpected)
 				}
 			}
@@ -133,14 +133,14 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 	}{
 		{
 			name:    "Nodes remain because LB finalizer exists",
-			cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterLBCleanupFinalizer),
+			cluster: getClusterWithFinalizer(clusterName, apiv1.InClusterLBCleanupFinalizer),
 			objects: []ctrlruntimeclient.Object{&corev1.Service{
 				Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeLoadBalancer},
 			}},
 		},
 		{
 			name:    "Nodes remain because PV finalizer exists",
-			cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterPVCleanupFinalizer),
+			cluster: getClusterWithFinalizer(clusterName, apiv1.InClusterPVCleanupFinalizer),
 			objects: []ctrlruntimeclient.Object{&corev1.PersistentVolume{}},
 		},
 	}

@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/distribution/distribution/v3/reference"
 	"go.uber.org/zap"
 
@@ -609,7 +609,7 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 	var featureFlags []string
-	gte23, _ := semver.NewConstraint(">= 1.23.0")
+	gte23, _ := semverlib.NewConstraint(">= 1.23.0")
 	ccm := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
 	curVersion := cluster.Status.Versions.ControlPlane
@@ -633,7 +633,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
-			lessThan21, _ := semver.NewConstraint("< 1.21.0")
+			lessThan21, _ := semverlib.NewConstraint("< 1.21.0")
 			if cluster.Spec.Cloud.Openstack != nil {
 				if lessThan21.Check(curVersion.Semver()) {
 					featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")

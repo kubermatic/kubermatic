@@ -19,13 +19,13 @@ package helm
 import (
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 )
 
 func TestGuessReleaseVersion(t *testing.T) {
 	testcases := []struct {
 		input           string
-		expectedVersion *semver.Version
+		expectedVersion *semverlib.Version
 		expectedChart   string
 	}{
 		{
@@ -40,22 +40,22 @@ func TestGuessReleaseVersion(t *testing.T) {
 		},
 		{
 			input:           "foo-1.2.3",
-			expectedVersion: semver.MustParse("1.2.3"),
+			expectedVersion: semverlib.MustParse("1.2.3"),
 			expectedChart:   "foo",
 		},
 		{
 			input:           "foo-bar-1.2.3",
-			expectedVersion: semver.MustParse("1.2.3"),
+			expectedVersion: semverlib.MustParse("1.2.3"),
 			expectedChart:   "foo-bar",
 		},
 		{
 			input:           "foo-bar-super-long-release-name-1.2.3",
-			expectedVersion: semver.MustParse("1.2.3"),
+			expectedVersion: semverlib.MustParse("1.2.3"),
 			expectedChart:   "foo-bar-super-long-release-name",
 		},
 		{
 			input:           "foo-bar-super-long-release-name-1.2.3-suffix-really-long",
-			expectedVersion: semver.MustParse("1.2.3-suffix-really-long"),
+			expectedVersion: semverlib.MustParse("1.2.3-suffix-really-long"),
 			expectedChart:   "foo-bar-super-long-release-name",
 		},
 		{

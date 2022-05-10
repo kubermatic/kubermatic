@@ -26,7 +26,7 @@ import (
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // PacketSizesReq represent a request for Packet sizes.
@@ -85,7 +85,7 @@ func PacketSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter 
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credentials := preset.Spec.Packet; credentials != nil {
 				projectID = credentials.ProjectID

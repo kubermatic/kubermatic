@@ -25,7 +25,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -108,7 +108,7 @@ func getHelmClient(binary string) (helm.Client, error) {
 		return nil, fmt.Errorf("failed to check Helm version: %w", err)
 	}
 
-	if helmVersion.LessThan(semver.MustParse("3.0.0")) {
+	if helmVersion.LessThan(semverlib.MustParse("3.0.0")) {
 		return nil, fmt.Errorf("the image-loader requires Helm 3, detected %s", helmVersion.String())
 	}
 

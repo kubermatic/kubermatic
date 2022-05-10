@@ -23,14 +23,14 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	errors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -43,7 +43,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, err
 		}
 
-		var destinations v2.BackupDestinationNames
+		var destinations apiv2.BackupDestinationNames
 		if seed.Spec.EtcdBackupRestore == nil {
 			return destinations, nil
 		}
@@ -77,7 +77,7 @@ func getSeed(ctx context.Context, userInfoGetter provider.UserInfoGetter, projec
 ) (*kubermaticv1.Seed, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
+		return nil, utilerrors.New(http.StatusInternalServerError, "no cluster in request")
 	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 
@@ -98,7 +98,7 @@ func getSeed(ctx context.Context, userInfoGetter provider.UserInfoGetter, projec
 
 	seed, ok := seeds[clusterProvider.GetSeedName()]
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("Seed %q not found", clusterProvider.GetSeedName()))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Seed %q not found", clusterProvider.GetSeedName()))
 	}
 	return seed, nil
 }

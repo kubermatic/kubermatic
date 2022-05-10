@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
@@ -41,7 +41,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -178,7 +178,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	addon := &kubermaticv1.Addon{}
 	if err := r.Get(ctx, request.NamespacedName, addon); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -187,7 +187,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
 		// If it's not a NotFound err, return it
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		}
 
@@ -464,7 +464,7 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion *semver.Version) (*exec.Cmd, error) {
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion *semverlib.Version) (*exec.Cmd, error) {
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine kubectl binary to use: %w", err)
