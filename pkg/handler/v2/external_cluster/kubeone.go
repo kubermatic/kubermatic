@@ -19,7 +19,6 @@ package externalcluster
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/Azure/go-autorest/autorest/to"
 
@@ -46,8 +45,7 @@ import (
 )
 
 const (
-	NodeControlPlaneLabel = "node-role.kubernetes.io/control-plane"
-	NodeWorkerLabel       = "workerset"
+	NodeWorkerLabel = "workerset"
 )
 
 func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(ctx context.Context, projectID string) (*provider.UserInfo, error), project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
@@ -213,26 +211,6 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	return newCluster, nil
 }
 
-func checkContainerRuntime(ctx context.Context,
-	externalCluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider provider.ExternalClusterProvider,
-) (string, error) {
-	nodes, err := externalClusterProvider.ListNodes(ctx, externalCluster)
-	if err != nil {
-		return "", fmt.Errorf("Failed to fetch container runtime: not able to list nodes %w", err)
-	}
-	for _, node := range nodes.Items {
-		if _, ok := node.Labels[NodeControlPlaneLabel]; ok {
-			containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
-			strSlice := strings.Split(containerRuntimeVersion, ":")
-			for _, containerRuntime := range strSlice {
-				return containerRuntime, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("Failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
-}
-
 func createAPIMachineDeployment(md clusterv1alpha1.MachineDeployment) apiv2.ExternalClusterMachineDeployment {
 	apimd := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
@@ -249,8 +227,8 @@ func createAPIMachineDeployment(md clusterv1alpha1.MachineDeployment) apiv2.Exte
 				},
 			},
 			Status: clusterv1alpha1.MachineDeploymentStatus{
-				Replicas:      md.Status.Replicas,
-				ReadyReplicas: md.Status.ReadyReplicas,
+				Replicas:      to.Int32(md.Spec.Replicas),
+				ReadyReplicas: to.Int32(md.Spec.Replicas),
 			},
 		},
 	}
