@@ -38,7 +38,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.22.4
+        image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.22.6
         name: cloud-controller-manager
         resources:
           limits:
