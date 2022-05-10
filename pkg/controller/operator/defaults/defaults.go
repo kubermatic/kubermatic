@@ -295,19 +295,19 @@ var (
 			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
+				Version:   "1.24.*",
 				Condition: kubermaticv1.AlwaysCondition,
 				Operation: kubermaticv1.CreateOperation,
 			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
+				Version:   "1.24.*",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
 			{
 				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
+				Version:   "1.24.*",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
 				Operation: kubermaticv1.SupportOperation,
 			},
