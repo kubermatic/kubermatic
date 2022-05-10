@@ -33,22 +33,23 @@ import (
 )
 
 type createCluster struct {
-	name                           string
-	dc                             string
-	location                       string
-	version                        string
-	credential                     string
-	replicas                       int32
-	patch                          utils.PatchCluster
-	patchAdmin                     utils.PatchCluster
-	expectedName                   string
-	expectedAdminName              string
-	expectedLabels                 map[string]string
-	sshKeyName                     string
-	publicKey                      string
-	expectedRoleNames              []string
-	expectedClusterRoleNames       []string
-	expectedMachineDeploymentCount int
+	name                             string
+	dc                               string
+	location                         string
+	version                          string
+	credential                       string
+	replicas                         int32
+	patch                            utils.PatchCluster
+	patchAdmin                       utils.PatchCluster
+	expectedName                     string
+	expectedAdminName                string
+	expectedLabels                   map[string]string
+	sshKeyName                       string
+	publicKey                        string
+	expectedRoleNames                []string
+	expectedClusterRoleNames         []string
+	isToReturnMachineDeploymentCount bool
+	expectedMachineDeploymentCount   int
 }
 
 func cleanupProject(t *testing.T, id string) {
@@ -181,21 +182,23 @@ func testCluster(ctx context.Context, project *v1.Project, cluster *v1.Cluster, 
 		t.Fatalf("expected new name %q, but got %q", tc.expectedAdminName, updatedCluster.Name)
 	}
 
-	clustersList, err := testClient.ListClusters(project.ID)
-	if err != nil {
-		t.Fatalf("failed to get clusters list: %v", err)
-	}
+	if tc.isToReturnMachineDeploymentCount {
+		clustersList, err := testClient.ListClusters(project.ID, tc.isToReturnMachineDeploymentCount)
+		if err != nil {
+			t.Fatalf("failed to get clusters list: %v", err)
+		}
 
-	if len(clustersList) != 1 {
-		t.Fatalf("expected one cluster from list, got %v", len(clustersList))
-	}
+		if len(clustersList) != 1 {
+			t.Fatalf("expected one cluster from list, got %v", len(clustersList))
+		}
 
-	if clustersList[0].MachineDeploymentCount == nil {
-		t.Fatal("expected machine deployment count value, got nil")
-	}
+		if clustersList[0].MachineDeploymentCount == nil {
+			t.Fatal("expected machine deployment count value, got nil")
+		}
 
-	if *clustersList[0].MachineDeploymentCount != tc.expectedMachineDeploymentCount {
-		t.Fatalf("expected machine deployment count %d, but got %d", tc.expectedMachineDeploymentCount, *clustersList[0].MachineDeploymentCount)
+		if *clustersList[0].MachineDeploymentCount != tc.expectedMachineDeploymentCount {
+			t.Fatalf("expected machine deployment count %d, but got %d", tc.expectedMachineDeploymentCount, *clustersList[0].MachineDeploymentCount)
+		}
 	}
 
 	testClient.CleanupCluster(t, project.ID, tc.dc, cluster.ID)
