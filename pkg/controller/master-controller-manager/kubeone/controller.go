@@ -267,7 +267,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 func (r *reconciler) initiateImportAction(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) error {
 	kubeconfigSecret := &corev1.Secret{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name), Name: resources.KubeOneKubeconfigSecretName}, kubeconfigSecret); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			if err := r.importCluster(ctx, log, externalCluster); err != nil {
 				log.Debug("failed to import kubeone cluster %w", err)
 				return err
@@ -367,7 +367,7 @@ func (r *reconciler) initiateUpgradeAction(ctx context.Context,
 		upgradePod,
 	)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 	} else {
@@ -419,7 +419,7 @@ func (r *reconciler) initiateMigrateAction(ctx context.Context,
 		migratePod,
 	)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 	} else {
@@ -464,7 +464,7 @@ func (r *reconciler) checkPodStatusIfExists(ctx context.Context,
 		pod,
 	)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	} else {
@@ -748,7 +748,7 @@ func (r *reconciler) upgradeCluster(ctx context.Context, log *zap.SugaredLogger,
 
 	log.Debug("Create kubeone pod to upgrade kubeone")
 	if err := r.Create(ctx, generatedPod); err != nil {
-		if !kerrors.IsAlreadyExists(err) {
+		if !apierrors.IsAlreadyExists(err) {
 			return nil, err
 		}
 	}
@@ -766,7 +766,7 @@ func (r *reconciler) migrateCluster(ctx context.Context, log *zap.SugaredLogger,
 
 	log.Debug("Create kubeone pod to migrate kubeone")
 	if err := r.Create(ctx, generatedPod); err != nil {
-		if !kerrors.IsAlreadyExists(err) {
+		if !apierrors.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("could not create kubeone pod %s/%s to migrate kubeone cluster: %w", generatedPod.Name, generatedPod.Namespace, err)
 		}
 	}
