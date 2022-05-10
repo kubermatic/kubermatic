@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"strconv"
 
+	kubevirtv1 "kubevirt.io/api/core/v1"
+
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
@@ -46,7 +48,6 @@ import (
 )
 
 func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := awstypes.GetConfig(*config)
 	if err != nil {
@@ -82,7 +83,6 @@ func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 }
 
 func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := gcptypes.GetConfig(*config)
 	if err != nil {
@@ -126,7 +126,6 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 }
 
 func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := azuretypes.GetConfig(*config)
 	if err != nil {
@@ -189,35 +188,57 @@ func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.
 }
 
 func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting kubevirt raw config: %w", err)
 	}
 
-	cpu, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.CPUs)
+	// KubeVirt machine size can be configured either directly or through a flavor
+	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Flavor.Name)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Kubevirt cpu request from machine config: %w", err)
+		return nil, fmt.Errorf("error getting KubeVirt flavor from machine config: %w", err)
 	}
-	memory, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.Memory)
-	if err != nil {
-		return nil, fmt.Errorf("error getting Kubevirt memory request from machine config: %w", err)
+
+	var cpuReq, memReq resource.Quantity
+	// if flavor is set, then take the resource details from the vmi preset, otherwise take it from the config
+	if len(flavor) != 0 {
+		kubeconfig, err := configVarResolver.GetConfigVarStringValue(rawConfig.Auth.Kubeconfig)
+		if err != nil {
+			return nil, fmt.Errorf("error getting KubeVirt kubeconfig from machine config: %w", err)
+		}
+		preset, err := provider.KubeVirtVMIPreset(ctx, kubeconfig, flavor)
+		if err != nil {
+			return nil, fmt.Errorf("error getting KubeVirt VMI Preset: %w", err)
+		}
+
+		cpuReq, memReq, err = getKubeVirtPresetResourceDetails(preset)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cpu, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.CPUs)
+		if err != nil {
+			return nil, fmt.Errorf("error getting KubeVirt cpu request from machine config: %w", err)
+		}
+		memory, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.Memory)
+		if err != nil {
+			return nil, fmt.Errorf("error getting KubeVirt memory request from machine config: %w", err)
+		}
+		// parse the KubeVirt resource requests
+		cpuReq, err = resource.ParseQuantity(cpu)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
+		}
+		memReq, err = resource.ParseQuantity(memory)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+		}
 	}
 
 	storage, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.PrimaryDisk.Size)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Kubevirt primary disk size from machine config: %w", err)
-	}
-
-	// parse the KubeVirt resource requests
-	cpuReq, err := resource.ParseQuantity(cpu)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(memory)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+		return nil, fmt.Errorf("error getting KubeVirt primary disk size from machine config: %w", err)
 	}
 	storageReq, err := resource.ParseQuantity(storage)
 	if err != nil {
@@ -228,7 +249,7 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 	for _, d := range rawConfig.VirtualMachine.Template.SecondaryDisks {
 		secondaryStorage, err := configVarResolver.GetConfigVarStringValue(d.Size)
 		if err != nil {
-			return nil, fmt.Errorf("error getting Kubevirt secondary disk size from machine config: %w", err)
+			return nil, fmt.Errorf("error getting KubeVirt secondary disk size from machine config: %w", err)
 		}
 		secondaryStorageReq, err := resource.ParseQuantity(secondaryStorage)
 		if err != nil {
@@ -238,6 +259,56 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 	}
 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+}
+
+// getKubeVirtPresetResourceDetails extracts cpu and mem resource requests from the kubevirt preset
+// for CPU, take the value by priority:
+// - if resource limit is set, use that
+// - check if resource request is set, use that
+// - check if spec.cpu is set, if socket and threads are set then do the calculation, use that
+// - if nothing from above, consider its 1
+// for memory, take the value by priority:
+// - if resource limit is set, use that
+// - if resource request is set, use that
+// - if nothing from above, consider it 1Gi.
+func getKubeVirtPresetResourceDetails(preset *kubevirtv1.VirtualMachineInstancePreset) (resource.Quantity, resource.Quantity, error) {
+	var err error
+	// Get CPU
+	cpuReq := resource.MustParse("1")
+	if preset.Spec.Domain.CPU != nil && preset.Spec.Domain.CPU.Cores != 0 {
+		cores := preset.Spec.Domain.CPU.Cores
+		// if threads and sockets are set, calculate VCPU
+		threads := preset.Spec.Domain.CPU.Threads
+		if threads == 0 {
+			threads = 1
+		}
+		sockets := preset.Spec.Domain.CPU.Sockets
+		if sockets == 0 {
+			sockets = 1
+		}
+
+		cpuReq, err = resource.ParseQuantity(strconv.Itoa(int(cores * threads * sockets)))
+		if err != nil {
+			return resource.Quantity{}, resource.Quantity{}, fmt.Errorf("error parsing calculated KubeVirt VCPU: %w", err)
+		}
+	}
+	if !preset.Spec.Domain.Resources.Requests.Cpu().IsZero() {
+		cpuReq = *preset.Spec.Domain.Resources.Requests.Cpu()
+	}
+	if !preset.Spec.Domain.Resources.Limits.Cpu().IsZero() {
+		cpuReq = *preset.Spec.Domain.Resources.Limits.Cpu()
+	}
+
+	// get MEM
+	memReq := resource.MustParse("1Gi")
+	if !preset.Spec.Domain.Resources.Requests.Memory().IsZero() {
+		memReq = *preset.Spec.Domain.Resources.Requests.Memory()
+	}
+	if !preset.Spec.Domain.Resources.Limits.Memory().IsZero() {
+		memReq = *preset.Spec.Domain.Resources.Limits.Memory()
+	}
+
+	return cpuReq, memReq, nil
 }
 
 func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, error) {

@@ -20,7 +20,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
@@ -151,6 +153,28 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 	}
 
 	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster)
+}
+
+func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
+	client, err := NewKubeVirtClient(kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	vmiPresets := &kubevirtv1.VirtualMachineInstancePresetList{}
+	if err := client.List(ctx, vmiPresets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
+		return nil, err
+	}
+
+	// Add a standard preset to the list
+	vmiPresets.Items = append(vmiPresets.Items, *kubevirt.GetKubermaticStandardPreset())
+
+	for _, vmiPreset := range vmiPresets.Items {
+		if strings.EqualFold(vmiPreset.Name, flavor) {
+			return &vmiPreset, nil
+		}
+	}
+	return nil, fmt.Errorf("KubeVirt VMI preset %q not found", flavor)
 }
 
 func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) (*apiv2.VirtualMachineInstancePreset, error) {
