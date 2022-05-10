@@ -23,7 +23,7 @@ import (
 	"net"
 	"strings"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
@@ -596,9 +596,9 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 }
 
 func (r *reconciler) reconcileCRDs(ctx context.Context) error {
-	c, err := crd.CRDForObject(&appkubermaticv1.ApplicationInstallation{
+	c, err := crd.CRDForObject(&appskubermaticv1.ApplicationInstallation{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: appkubermaticv1.SchemeGroupVersion.String(),
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
 			Kind:       "ApplicationInstallation",
 		},
 	})
