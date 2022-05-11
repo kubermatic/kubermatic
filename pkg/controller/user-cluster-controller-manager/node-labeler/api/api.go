@@ -34,14 +34,18 @@ const (
 
 	// FlatcarLabelValue is the value of the label for Flatcar Linux.
 	FlatcarLabelValue = "flatcar"
+
+	// RockyLinuxLabelValue is the value of the label for RockyLinux.
+	RockyLinuxLabelValue = "rockylinux"
 )
 
 // OSLabelMatchValues is a mapping between OS labels and the strings to match on in OSImage.
 // Note that these are all lower case.
 var OSLabelMatchValues = map[string]string{
-	CentOSLabelValue:  "centos",
-	UbuntuLabelValue:  "ubuntu",
-	SLESLabelValue:    "sles",
-	RHELLabelValue:    "rhel",
-	FlatcarLabelValue: "flatcar container linux",
+	CentOSLabelValue:     "centos",
+	UbuntuLabelValue:     "ubuntu",
+	SLESLabelValue:       "sles",
+	RHELLabelValue:       "rhel",
+	FlatcarLabelValue:    "flatcar container linux",
+	RockyLinuxLabelValue: "rockylinux",
 }

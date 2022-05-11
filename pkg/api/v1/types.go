@@ -1321,14 +1321,22 @@ type RHELSpec struct {
 	RHSMOfflineToken                string `json:"rhsmOfflineToken,omitempty"`
 }
 
+// RockyLinuxSpec contains rocky-linux specific settings
+// swagger:model RockyLinuxSpec
+type RockyLinuxSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
+}
+
 // OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.
 // swagger:model OperatingSystemSpec
 type OperatingSystemSpec struct {
-	Ubuntu  *UbuntuSpec  `json:"ubuntu,omitempty"`
-	CentOS  *CentOSSpec  `json:"centos,omitempty"`
-	SLES    *SLESSpec    `json:"sles,omitempty"`
-	RHEL    *RHELSpec    `json:"rhel,omitempty"`
-	Flatcar *FlatcarSpec `json:"flatcar,omitempty"`
+	Ubuntu     *UbuntuSpec     `json:"ubuntu,omitempty"`
+	CentOS     *CentOSSpec     `json:"centos,omitempty"`
+	SLES       *SLESSpec       `json:"sles,omitempty"`
+	RHEL       *RHELSpec       `json:"rhel,omitempty"`
+	Flatcar    *FlatcarSpec    `json:"flatcar,omitempty"`
+	RockyLinux *RockyLinuxSpec `json:"rockyLinux,omitempty"`
 }
 
 // NodeVersionInfo node version information

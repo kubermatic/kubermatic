@@ -38,6 +38,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
+	"github.com/kubermatic/machine-controller/pkg/userdata/rockylinux"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -65,6 +66,9 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 	}
 	if nodeSpec.OperatingSystem.Flatcar != nil {
 		return providerconfig.OperatingSystemFlatcar, nil
+	}
+	if nodeSpec.OperatingSystem.RockyLinux != nil {
+		return providerconfig.OperatingSystemRockyLinux, nil
 	}
 
 	return "", errors.New("unknown operating system")
@@ -633,6 +637,21 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 	// This should be temporary until the new operating system manager is added to KKP.
 	if nodeSpec.Cloud.Anexia != nil || nodeSpec.Cloud.AWS != nil {
 		config.ProvisioningUtility = flatcar.CloudInit
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getRockyLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+	config := rockylinux.Config{
+		DistUpgradeOnBoot: nodeSpec.OperatingSystem.RockyLinux.DistUpgradeOnBoot,
 	}
 
 	ext := &runtime.RawExtension{}
