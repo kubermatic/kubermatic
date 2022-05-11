@@ -48,12 +48,14 @@ type reconciler struct {
 	log          *zap.SugaredLogger
 	recorder     record.EventRecorder
 	masterClient ctrlruntimeclient.Client
+	namespace    string
 	seedClients  map[string]ctrlruntimeclient.Client
 }
 
 func Add(
 	masterManager manager.Manager,
 	seedManagers map[string]manager.Manager,
+	namespace string,
 	log *zap.SugaredLogger,
 	numWorkers int,
 ) error {
@@ -73,7 +75,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &k8scorev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(secretTypeAnnotation, "", false)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &k8scorev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(secretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 

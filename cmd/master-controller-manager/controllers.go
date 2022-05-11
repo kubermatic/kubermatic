@@ -248,6 +248,7 @@ func applicationSecretSynchronizerFactoryCreator(ctrlCtx *controllerContext) see
 		return applicationsecretsynchronizer.ControllerName, applicationsecretsynchronizer.Add(
 			masterMgr,
 			seedManagerMap,
+			ctrlCtx.namespace,
 			ctrlCtx.log,
 			ctrlCtx.workerCount,
 		)
