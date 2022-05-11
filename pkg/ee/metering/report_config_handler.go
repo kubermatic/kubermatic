@@ -86,7 +86,7 @@ func (m createReportConfigurationReq) Validate() error {
 	}
 
 	if m.Body.Retention < 0 {
-		return k8cerrors.NewBadRequest("retention value cannot be negative.")
+		return utilerrors.NewBadRequest("retention value cannot be negative.")
 	}
 
 	return nil
@@ -120,12 +120,12 @@ func (m updateReportConfigurationReq) Validate() error {
 
 	if m.Body.Interval != 0 { // checking if value was defaulted
 		if m.Body.Interval < 1 {
-			return k8cerrors.NewBadRequest("interval value cannot be smaller than 1.")
+			return utilerrors.NewBadRequest("interval value cannot be smaller than 1.")
 		}
 	}
 
 	if m.Body.Retention < 0 {
-		return k8cerrors.NewBadRequest("retention value cannot be negative.")
+		return utilerrors.NewBadRequest("retention value cannot be negative.")
 	}
 
 	return nil

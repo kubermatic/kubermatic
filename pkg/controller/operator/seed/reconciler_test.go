@@ -71,7 +71,7 @@ func must(t *testing.T, err error) {
 }
 
 func meteringCredsNotFound(err error) bool {
-	return kerrors.IsNotFound(err) && strings.Contains(err.Error(), metering.SecretName)
+	return apierrors.IsNotFound(err) && strings.Contains(err.Error(), metering.SecretName)
 }
 
 // nolint:gocyclo
