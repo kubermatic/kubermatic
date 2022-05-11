@@ -23,6 +23,7 @@ import (
 	"net"
 	"strings"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
@@ -55,6 +56,7 @@ import (
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -594,12 +596,22 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 }
 
 func (r *reconciler) reconcileCRDs(ctx context.Context) error {
+	c, err := crd.CRDForObject(&appskubermaticv1.ApplicationInstallation{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+			Kind:       "ApplicationInstallation",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get ApplicationInstallation CRD: %w", err)
+	}
+
 	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
 		machinecontroller.MachineCRDCreator(),
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
 		machinecontroller.ClusterCRDCreator(),
-		applications.ApplicationInstallationCRDCreator(),
+		applications.CRDCreator(c),
 	}
 
 	if r.opaIntegration {

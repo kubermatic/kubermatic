@@ -17,40 +17,25 @@ limitations under the License.
 package applications
 
 import (
-	"fmt"
-
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"sigs.k8s.io/yaml"
 )
 
-// ApplicationInstallationCRDCreator returns the ApplicationInstallation CRD definition.
-func ApplicationInstallationCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+// CRDCreator returns a creator that will reconcile a CustomResourceDefition.
+func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.ApplicationInstallationCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			f, err := openapi.Efs.ReadFile(resources.ApplicationInstallationCRDFilePath)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get crd file: %w", err)
-			}
+		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			obj.Labels = crd.Labels
+			obj.Annotations = crd.Annotations
+			obj.Spec = crd.Spec
 
-			var fileCRD *apiextensionsv1.CustomResourceDefinition
-			if err := yaml.UnmarshalStrict(f, &fileCRD); err != nil {
-				return nil, err
-			}
-
-			crd.Labels = fileCRD.Labels
-			crd.Annotations = fileCRD.Annotations
-			crd.Spec = fileCRD.Spec
-
-			if fileCRD.Spec.Conversion == nil {
+			if crd.Spec.Conversion == nil {
 				// reconcile fails if conversion is not set as it's set by default to None
-				crd.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+				obj.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
 			}
 
-			return crd, nil
+			return obj, nil
 		}
 	}
 }

@@ -437,7 +437,7 @@ set_helm_charts_version() {
 # operator chart.
 copy_crds_to_chart() {
   chartCRDs=charts/kubermatic-operator/crd/k8c.io
-  sourceCRDs=pkg/validation/openapi/crd/k8c.io
+  sourceCRDs=pkg/crd/k8c.io
 
   mkdir -p $chartCRDs
   cp $sourceCRDs/* $chartCRDs

@@ -76,7 +76,7 @@ import (
 func ValidateApplicationDefinition(ad *appskubermaticv1.ApplicationDefinition) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	v, _ := openapi.ValidatorForType(&ad.TypeMeta)
+	v, _ := openapi.NewValidatorForObject(ad)
 	allErrs = append(allErrs, validation.ValidateCustomResource(nil, ad, v)...)
 
 	// your custom validation code
@@ -96,7 +96,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, ...) field.ErrorList {
 
 	cwrap := &kubermaticv1.Cluster{}
 	cwrap.Spec = *spec
-	v, _ := openapi.ValidatorForType(&cwrap.TypeMeta)
+	v, _ := openapi.NewValidatorForObject(cwrap)
 
 	res := validation.ValidateCustomResource(nil, cwrap, v)
 	for _, e := range res {
