@@ -83,7 +83,7 @@ func Add(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("resource", request.Name)
+	log := r.log.With("request", request)
 	log.Debug("Processing")
 
 	err := r.reconcile(ctx, log, request)
@@ -118,7 +118,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	namedSecretCreatorGetter := []reconciling.NamedSecretCreatorGetter{
 		secretCreator(seedsecret),
 	}
-	err = r.reconcileAllSeeds(ctx, log, seedsecret, func(ctx context.Context, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
+	err = r.reconcileAllSeeds(ctx, log, seedsecret, func(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
 		return reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetter, seedNS, c)
 	})
 	if err != nil {
@@ -138,11 +138,11 @@ func secretCreator(s *k8scorev1.Secret) reconciling.NamedSecretCreatorGetter {
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, secret *k8scorev1.Secret) error {
-	delfunc := func(ctx context.Context, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
+	delfunc := func(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
 		err := c.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, &k8scorev1.Secret{})
 		if err != nil {
 			if kerrors.IsNotFound(err) {
-				log.Infof("Secret %q already deleted", secret.Name)
+				log.Info("Secret already deleted")
 				return nil
 			}
 			return err
@@ -154,7 +154,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return r.reconcileAllSeeds(ctx, log, secret, delfunc)
 }
 
-func (r *reconciler) reconcileAllSeeds(ctx context.Context, log *zap.SugaredLogger, obj ctrlruntimeclient.Object, action func(context.Context, ctrlruntimeclient.Client, ctrlruntimeclient.Object) error) error {
+func (r *reconciler) reconcileAllSeeds(ctx context.Context, log *zap.SugaredLogger, obj ctrlruntimeclient.Object, action func(context.Context, *zap.SugaredLogger, ctrlruntimeclient.Client, ctrlruntimeclient.Object) error) error {
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 	name := obj.GetName()
 
@@ -163,7 +163,7 @@ func (r *reconciler) reconcileAllSeeds(ctx context.Context, log *zap.SugaredLogg
 
 		log.Debug("Reconciling %s %s with seed", kind, name)
 
-		err := action(ctx, seedClient, obj)
+		err := action(ctx, log, seedClient, obj)
 		if err != nil {
 			return fmt.Errorf("failed syncing %s %q for seed %q: %w", kind, name, seedName, err) // we need seedName here, as we don't have it wrapped via log.With
 		}
