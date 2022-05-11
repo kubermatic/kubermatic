@@ -78,7 +78,7 @@ func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
 
 // Gets resource quota for the project. Not implemented yet because the ResourceQuota CRD is not implemented.
 // For now this just stops resource quota check, as there are no resource quotas.
-// TODO implement when ResourceQuota CRD is available
+// TODO implement when ResourceQuota CRD is available.
 func getResourceQuota() runtime.Object {
 	return nil
 }
