@@ -51,6 +51,7 @@ linters:
     - misspell
     - noctx
     - nolintlint
+    - nosprintfhostport
     - predeclared
     - promlinter
     - staticcheck

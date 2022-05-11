@@ -141,7 +141,7 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 	}
 	log.Debug("The Service has an external IP/Name")
 
-	hostURL := fmt.Sprintf("http://%s:80", host)
+	hostURL := fmt.Sprintf("http://%s", net.JoinHostPort(host, "80"))
 	log.Debug("Waiting until the pod is available via the LoadBalancer...")
 	err = wait.Poll(3*time.Second, opts.CustomTestTimeout, func() (done bool, err error) {
 		request, err := http.NewRequestWithContext(ctx, "GET", hostURL, nil)
