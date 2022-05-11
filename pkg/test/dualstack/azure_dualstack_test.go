@@ -100,7 +100,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "cilium-agent crashing",
+			disabledReason:      "fails due to https://github.com/kubermatic/kubermatic/issues/9798",
 		},
 		{
 			cloudName:           "azure",
@@ -116,7 +116,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "not supported yet",
+			disabledReason:      "not supported",
 		},
 		{
 			cloudName:           "azure",
@@ -376,6 +376,7 @@ func defaultClusterRequest() createClusterRequest {
 		Spec: &models.NodeDeploymentSpec{
 			Replicas: pointer.Int32(1),
 			Template: &models.NodeSpec{
+				SSHUserName: "root",
 				Cloud: &models.NodeCloudSpec{
 					Azure: &models.AzureNodeSpec{
 						AssignAvailabilitySet: true,
