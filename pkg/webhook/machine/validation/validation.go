@@ -59,7 +59,11 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	log := v.log.With("machine", machine.Name)
 	log.Debug("validating create")
 
-	return validateQuota(ctx, log, v.seedClient, v.userClient, machine, v.caBundle)
+	quota := getResourceQuota()
+	if quota != nil {
+		return validateQuota(ctx, log, v.seedClient, v.userClient, machine, v.caBundle)
+	}
+	return nil
 }
 
 // ValidateUpdate validates Machine updates. As mutating Machine spec is disallowed by the Machine Mutating webhook,
@@ -69,5 +73,12 @@ func (v *validator) ValidateUpdate(_ context.Context, _, _ runtime.Object) error
 }
 
 func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
+	return nil
+}
+
+// Gets resource quota for the project. Not implemented yet because the ResourceQuota CRD is not implemented.
+// For now this just stops resource quota check, as there are no resource quotas.
+// TODO implement when ResourceQuota CRD is available
+func getResourceQuota() runtime.Object {
 	return nil
 }
