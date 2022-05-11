@@ -229,18 +229,20 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
+	cloud := externalCluster.Spec.CloudSpec
+	if cloud == nil || cloud.KubeOne == nil {
+		return reconcile.Result{}, nil
+	}
 	if err := r.initiateImportAction(ctx, log, externalCluster); err != nil {
 		return reconcile.Result{}, err
 	}
-
-	clusterPhase := externalCluster.Status.Condition.Phase
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(r.ImpersonationClient, r.Client)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
+	clusterPhase := externalCluster.Status.Condition.Phase
 	manifestSecret := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: externalCluster.Spec.CloudSpec.KubeOne.ManifestReference.Namespace, Name: externalCluster.Spec.CloudSpec.KubeOne.ManifestReference.Name}, manifestSecret); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Namespace: cloud.KubeOne.ManifestReference.Namespace, Name: cloud.KubeOne.ManifestReference.Name}, manifestSecret); err != nil {
 		return reconcile.Result{}, fmt.Errorf("can not retrieve kubeone manifest secret: %w", err)
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
