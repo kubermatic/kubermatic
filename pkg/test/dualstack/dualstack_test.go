@@ -28,7 +28,7 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -93,7 +93,7 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 			var addrs []string
 			for _, addr := range node.Status.Addresses {
 				fmt.Println(addr)
-				if addr.Type == v1.NodeHostName {
+				if addr.Type == corev1.NodeHostName {
 					continue
 				}
 				addrs = append(addrs, addr.Address)
@@ -140,20 +140,20 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 				continue
 			}
 			switch *svc.Spec.IPFamilyPolicy {
-			case v1.IPFamilyPolicySingleStack:
+			case corev1.IPFamilyPolicySingleStack:
 				if ipFamily == util.DualStack {
 					t.Logf("skipping %q test for %q because IP family policy is %q", ipFamily, svc.Name, *svc.Spec.IPFamilyPolicy)
 					continue
 				}
-			case v1.IPFamilyPolicyPreferDualStack, v1.IPFamilyPolicyRequireDualStack:
+			case corev1.IPFamilyPolicyPreferDualStack, corev1.IPFamilyPolicyRequireDualStack:
 			}
 
 			switch svc.Spec.Type {
-			case v1.ServiceTypeClusterIP:
+			case corev1.ServiceTypeClusterIP:
 				validate(t, svc.Name, ipFamily, svc.Spec.ClusterIPs)
-			case v1.ServiceTypeNodePort:
-			case v1.ServiceTypeExternalName:
-			case v1.ServiceTypeLoadBalancer:
+			case corev1.ServiceTypeNodePort:
+			case corev1.ServiceTypeExternalName:
+			case corev1.ServiceTypeLoadBalancer:
 				validate(t, svc.Name, ipFamily, svc.Spec.ClusterIPs)
 				validate(t, svc.Name, ipFamily, svc.Spec.ExternalIPs)
 			}
@@ -209,18 +209,18 @@ func validateEgressConnectivity(t *testing.T, userclusterClient *kubernetes.Clie
 	}
 }
 
-func checkPodHealth(pod *v1.Pod) error {
-	if pod.Status.Phase != v1.PodRunning {
+func checkPodHealth(pod *corev1.Pod) error {
+	if pod.Status.Phase != corev1.PodRunning {
 		return fmt.Errorf("pod %q has phase not running: %s", pod.Name, pod.Status.Phase)
 	}
 
 	for _, c := range pod.Status.Conditions {
-		if c.Type == v1.PodReady {
-			if c.Status != v1.ConditionTrue {
+		if c.Type == corev1.PodReady {
+			if c.Status != corev1.ConditionTrue {
 				return fmt.Errorf("pod %q not ready", pod.Name)
 			}
-		} else if c.Type == v1.ContainersReady {
-			if c.Status != v1.ConditionTrue {
+		} else if c.Type == corev1.ContainersReady {
+			if c.Status != corev1.ConditionTrue {
 				return fmt.Errorf("container not ready for pod %q", pod.Name)
 			}
 		}
@@ -270,8 +270,8 @@ func all(ipFamily util.IPFamily, addrs []string) bool {
 	return true
 }
 
-func egressValidatorPod(ipVersion int) *v1.Pod {
-	return &v1.Pod{
+func egressValidatorPod(ipVersion int) *corev1.Pod {
+	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
 			APIVersion: "v1",
@@ -279,10 +279,10 @@ func egressValidatorPod(ipVersion int) *v1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("egress-validator-%d", ipVersion),
 		},
-		Spec: v1.PodSpec{
+		Spec: corev1.PodSpec{
 			Volumes:        nil,
 			InitContainers: nil,
-			Containers: []v1.Container{
+			Containers: []corev1.Container{
 				{
 					Name:  fmt.Sprintf("egress-validator-%d-container", ipVersion),
 					Image: "docker.io/byrnedo/alpine-curl:0.1.8",
@@ -291,9 +291,9 @@ func egressValidatorPod(ipVersion int) *v1.Pod {
 						"-c",
 						"sleep 1000000000",
 					},
-					LivenessProbe: &v1.Probe{
-						ProbeHandler: v1.ProbeHandler{
-							Exec: &v1.ExecAction{
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							Exec: &corev1.ExecAction{
 								Command: []string{
 									"curl",
 									"-sS",
@@ -309,9 +309,9 @@ func egressValidatorPod(ipVersion int) *v1.Pod {
 						},
 						TimeoutSeconds: 7,
 					},
-					ReadinessProbe: &v1.Probe{
-						ProbeHandler: v1.ProbeHandler{
-							Exec: &v1.ExecAction{
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							Exec: &corev1.ExecAction{
 								Command: []string{
 									"curl",
 									"-sS",

@@ -2,10 +2,13 @@
 
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +20,7 @@ package dualstack
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -28,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	utilErrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,13 +44,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/pointer"
-)
-
-const (
-	seed            = "kubermatic"
-	projectName     = "dualstack-test-project"
-	userclusterName = "dualstack-test-usercluster"
-	dualstackTestNs = "dualstack-test"
 )
 
 var operatingSystems = map[string]models.OperatingSystemSpec{
@@ -69,6 +67,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	// export KUBERMATIC_API_ENDPOINT=https://dev.kubermatic.io
 	// export KKP_API_TOKEN=<steal token>
 	token := os.Getenv("KKP_API_TOKEN")
+
+	_ = cnis
 
 	if token == "" {
 		var err error
@@ -174,6 +174,10 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			config, _, cleanup, err := createUsercluster(t, apicli, name, spec)
 			mu.Unlock()
 			if err != nil {
+				httpErr := new(utilErrors.HTTPError)
+				if errors.As(err, httpErr) {
+					t.Fatal("http err: ", httpErr.StatusCode(), httpErr.Error(), httpErr.Details())
+				}
 				t.Fatalf("failed to create cluster: %v", err)
 			}
 			defer func() {
@@ -494,7 +498,6 @@ func canal() models.CNIPluginSettings {
 	}
 }
 
-// creates a usercluster
 func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, func(), error) {
 	var teardowns []func()
 	cleanup := func() {
