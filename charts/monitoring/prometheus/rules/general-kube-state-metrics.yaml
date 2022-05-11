@@ -236,7 +236,7 @@ groups:
           (count(node:node_num_cpu:sum)-1) / count(node:node_num_cpu:sum)
         for: 5m
         labels:
-          severity: warning
+          severity: critical
           resource: cluster
           service: kube-state-metrics
       - alert: KubeMemOvercommit
@@ -267,7 +267,7 @@ groups:
           count(node:node_num_cpu:sum)
         for: 5m
         labels:
-          severity: warning
+          severity: critical
           resource: cluster
           service: kube-state-metrics
       - alert: KubeQuotaExceeded
