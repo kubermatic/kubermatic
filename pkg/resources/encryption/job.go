@@ -34,6 +34,16 @@ const (
 	ClusterLabelKey        = "kubermatic.k8c.io/cluster"
 	SecretRevisionLabelKey = "kubermatic.k8c.io/secret-revision"
 	AppLabelValue          = "encryption-runner"
+
+	encryptionJobScript = `
+resources=$(kubectl get %s --all-namespaces --output json | jq -r '.items[] | "\(.metadata.namespace // "default"):\(.kind):\(.metadata.name)"');
+for res in $resources; do
+    ns=$(cut -d':' -f1 <<< $res);
+    kind=$(cut -d':' -f2 <<< $res);
+    name=$(cut -d':' -f3 <<< $res);
+    kubectl get $kind/$name --namespace $ns --output json | kubectl replace --filename -;
+done
+`
 )
 
 type encryptionData interface {
@@ -65,10 +75,9 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 						{
 							Name:    "encryption-runner",
 							Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/util:2.0.0",
-							Command: []string{"/bin/bash"},
+							Command: []string{"/bin/bash", "-c"},
 							Args: []string{
-								"-c",
-								fmt.Sprintf("kubectl get %s --all-namespaces --output json | jq -r '.items[] | \"\\(.metadata.namespace // \"default\") \\(.kind) \\(.metadata.name)\"' | xargs -n3 bash -c 'kubectl get $1/$2 -n $0 -o json | kubectl replace -f -'", resourceList),
+								fmt.Sprintf(encryptionJobScript, resourceList),
 							},
 							Env: []corev1.EnvVar{
 								{
