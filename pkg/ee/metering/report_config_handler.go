@@ -118,8 +118,10 @@ func (m updateReportConfigurationReq) Validate() error {
 		}
 	}
 
-	if m.Body.Interval < 0 { // not 1 because 0 is a defaulted value
-		return k8cerrors.NewBadRequest("interval value cannot be smaller than 1.")
+	if m.Body.Interval != 0 { // checking if value was defaulted
+		if m.Body.Interval < 1 {
+			return k8cerrors.NewBadRequest("interval value cannot be smaller than 1.")
+		}
 	}
 
 	if m.Body.Retention < 0 {
@@ -370,11 +372,11 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 		reportConfiguration.Schedule = reportCfgReq.Body.Schedule
 	}
 
-	if reportCfgReq.Body.Interval > 0 {
+	if reportCfgReq.Body.Interval >= 1 {
 		reportConfiguration.Interval = reportCfgReq.Body.Interval
 	}
 
-	if reportCfgReq.Body.Retention > 0 {
+	if reportCfgReq.Body.Retention >= 0 {
 		reportConfiguration.Retention = reportCfgReq.Body.Retention
 	}
 

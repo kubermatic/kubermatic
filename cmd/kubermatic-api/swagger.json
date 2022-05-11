@@ -26022,7 +26022,7 @@
           "x-go-name": "Interval"
         },
         "retention": {
-          "description": "Retention defines the number of days after which reports are queued for removal. The default value of \"0\" keeps reports forever.",
+          "description": "Retention defines the number of days after which reports are queued for removal. The default value of \"0\" does not\ncreate any lifecycle rule which results in keeping reports forever. Please note that this functionality works only\nfor object storage that supports an object lifecycle management mechanism.",
           "type": "integer",
           "format": "int64",
           "x-go-name": "Retention"

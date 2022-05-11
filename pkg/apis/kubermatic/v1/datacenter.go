@@ -695,8 +695,11 @@ type MeteringReportConfiguration struct {
 	Interval int `json:"interval,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:Minimum:=0
 
-	// Retention defines the number of days after which reports are queued for removal. The default value of "0" keeps reports forever.
+	// Retention defines the number of days after which reports are queued for removal. The default value of "0" does not
+	// create any lifecycle rule which results in keeping reports forever. Please note that this functionality works only
+	// for object storage that supports an object lifecycle management mechanism.
 	Retention int `json:"retention,omitempty"`
 }
 
