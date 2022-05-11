@@ -75,11 +75,11 @@ groups:
       resource: '{{ $labels.instance }}'
       service: kubelet
 
-  - alert: KubeClientErrors
+  - alert: KubeletClientErrors
     annotations:
       message:
         The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeclienterrors
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeletclienterrors
     expr: |
       (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="kubelet"}[5m])) by (instance)
         /

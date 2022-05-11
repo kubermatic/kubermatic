@@ -279,7 +279,7 @@ groups:
         > 0
     for: 10m
     labels:
-      severity: warning
+      severity: critical
       resource: cluster
       service: kube-state-metrics
 
@@ -314,7 +314,7 @@ groups:
         > 0
     for: 10m
     labels:
-      severity: warning
+      severity: critical
       resource: cluster
       service: kube-state-metrics
 

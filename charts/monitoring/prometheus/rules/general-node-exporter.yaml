@@ -226,6 +226,19 @@ groups:
           severity: critical
           resource: '{{ $labels.instance }} {{ $labels.device }}'
           service: 'node-exporter'
+      - alert: NodeFilesystemFilesOutOfSpace
+        annotations:
+          message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemfilesoutofspace
+        expr: |
+          node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
+          and
+          node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+        for: 1h
+        labels:
+          severity: critical
+          resource: '{{ $labels.instance }} {{ $labels.device }}'
+          service: 'node-exporter'
       - alert: NodeFilesystemFilesFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 24 hours.
@@ -253,7 +266,7 @@ groups:
           node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
         for: 1h
         labels:
-          severity: warning
+          severity: critical
           resource: '{{ $labels.instance }} {{ $labels.device }}'
           service: 'node-exporter'
       - alert: NodeFilesystemOutOfFiles
@@ -267,19 +280,6 @@ groups:
         for: 1h
         labels:
           severity: warning
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
-      - alert: NodeFilesystemOutOfSpace
-        annotations:
-          message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemoutofspace
-        expr: |
-          node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
-          and
-          node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
-        for: 1h
-        labels:
-          severity: critical
           resource: '{{ $labels.instance }} {{ $labels.device }}'
           service: 'node-exporter'
       - alert: NodeNetworkReceiveErrs
