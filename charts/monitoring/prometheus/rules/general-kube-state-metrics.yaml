@@ -227,7 +227,7 @@ groups:
       - alert: KubeCPUOvercommit
         annotations:
           message: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubecpuovercommit
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubecpuovercommit
         expr: |
           sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
             -
@@ -260,7 +260,7 @@ groups:
       - alert: KubeMemOvercommit
         annotations:
           message: Cluster has overcommitted memory resource requests for Pods by {{ $value }} bytes and cannot tolerate node failure.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubememovercommit
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubememovercommit
         expr: |
           sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
             -
