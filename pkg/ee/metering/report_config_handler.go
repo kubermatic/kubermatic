@@ -66,8 +66,8 @@ type createReportConfigurationReq struct {
 	// in: body
 	Body struct {
 		Schedule  string `json:"schedule"`
-		Interval  int    `json:"interval"`
-		Retention int    `json:"retention,omitempty"`
+		Interval  int32  `json:"interval"`
+		Retention *int32 `json:"retention,omitempty"`
 	}
 }
 
@@ -85,8 +85,10 @@ func (m createReportConfigurationReq) Validate() error {
 		return utilerrors.NewBadRequest("interval value cannot be smaller than 1.")
 	}
 
-	if m.Body.Retention < 0 {
-		return utilerrors.NewBadRequest("retention value cannot be negative.")
+	if m.Body.Retention != nil {
+		if *m.Body.Retention < 1 {
+			return utilerrors.NewBadRequest("retention value cannot be smaller than 1.")
+		}
 	}
 
 	return nil
@@ -101,8 +103,8 @@ type updateReportConfigurationReq struct {
 	// in: body
 	Body struct {
 		Schedule  string `json:"schedule,omitempty"`
-		Interval  int    `json:"interval,omitempty"`
-		Retention int    `json:"retention,omitempty"`
+		Interval  *int32 `json:"interval,omitempty"`
+		Retention *int32 `json:"retention,omitempty"`
 	}
 }
 
@@ -118,14 +120,16 @@ func (m updateReportConfigurationReq) Validate() error {
 		}
 	}
 
-	if m.Body.Interval != 0 { // checking if value was defaulted
-		if m.Body.Interval < 1 {
+	if m.Body.Interval != nil {
+		if *m.Body.Interval < 1 {
 			return utilerrors.NewBadRequest("interval value cannot be smaller than 1.")
 		}
 	}
 
-	if m.Body.Retention < 0 {
-		return utilerrors.NewBadRequest("retention value cannot be negative.")
+	if m.Body.Retention != nil {
+		if *m.Body.Retention < 1 {
+			return utilerrors.NewBadRequest("retention value cannot be smaller than 1.")
+		}
 	}
 
 	return nil
@@ -342,10 +346,14 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 			fmt.Sprintf("report configuration %q already exists", reportCfgReq.Name))
 	}
 
+	var retention uint32
+	if reportCfgReq.Body.Retention != nil {
+		retention = uint32(*reportCfgReq.Body.Retention)
+	}
 	seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
-		Interval:  reportCfgReq.Body.Interval,
+		Interval:  uint32(reportCfgReq.Body.Interval),
 		Schedule:  reportCfgReq.Body.Schedule,
-		Retention: reportCfgReq.Body.Retention,
+		Retention: &retention,
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
@@ -372,12 +380,13 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 		reportConfiguration.Schedule = reportCfgReq.Body.Schedule
 	}
 
-	if reportCfgReq.Body.Interval >= 1 {
-		reportConfiguration.Interval = reportCfgReq.Body.Interval
+	if reportCfgReq.Body.Interval != nil && *reportCfgReq.Body.Interval >= 1 {
+		reportConfiguration.Interval = uint32(*reportCfgReq.Body.Interval)
 	}
 
-	if reportCfgReq.Body.Retention >= 0 {
-		reportConfiguration.Retention = reportCfgReq.Body.Retention
+	if reportCfgReq.Body.Retention != nil && *reportCfgReq.Body.Retention >= 1 {
+		retention := uint32(*reportCfgReq.Body.Retention)
+		reportConfiguration.Retention = &retention
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {

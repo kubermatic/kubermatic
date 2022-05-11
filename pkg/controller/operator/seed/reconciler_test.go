@@ -129,9 +129,8 @@ func testBasicReconciling(t *testing.T, edition KubermaticEdition) {
 					StorageClassName: "test",
 					ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
 						"weekly-test": {
-							Schedule:  "0 1 * * 6",
-							Interval:  7,
-							Retention: 14,
+							Schedule: "0 1 * * 6",
+							Interval: 7,
 						},
 					},
 				},

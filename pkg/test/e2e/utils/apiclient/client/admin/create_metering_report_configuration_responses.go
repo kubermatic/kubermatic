@@ -165,10 +165,10 @@ swagger:model CreateMeteringReportConfigurationBody
 type CreateMeteringReportConfigurationBody struct {
 
 	// interval
-	Interval int64 `json:"interval,omitempty"`
+	Interval int32 `json:"interval,omitempty"`
 
 	// retention
-	Retention int64 `json:"retention,omitempty"`
+	Retention int32 `json:"retention,omitempty"`
 
 	// schedule
 	Schedule string `json:"schedule,omitempty"`

@@ -539,12 +539,12 @@
               "properties": {
                 "interval": {
                   "type": "integer",
-                  "format": "int64",
+                  "format": "int32",
                   "x-go-name": "Interval"
                 },
                 "retention": {
                   "type": "integer",
-                  "format": "int64",
+                  "format": "int32",
                   "x-go-name": "Retention"
                 },
                 "schedule": {
@@ -601,12 +601,12 @@
               "properties": {
                 "interval": {
                   "type": "integer",
-                  "format": "int64",
+                  "format": "int32",
                   "x-go-name": "Interval"
                 },
                 "retention": {
                   "type": "integer",
-                  "format": "int64",
+                  "format": "int32",
                   "x-go-name": "Retention"
                 },
                 "schedule": {
@@ -13501,13 +13501,6 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -13519,6 +13512,13 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
           }
         ],
         "responses": {
@@ -26029,13 +26029,13 @@
         "interval": {
           "description": "Interval defines the number of days consulted in the metering report.",
           "type": "integer",
-          "format": "int64",
+          "format": "uint32",
           "x-go-name": "Interval"
         },
         "retention": {
-          "description": "Retention defines the number of days after which reports are queued for removal. The default value of \"0\" does not\ncreate any lifecycle rule which results in keeping reports forever. Please note that this functionality works only\nfor object storage that supports an object lifecycle management mechanism.",
+          "description": "Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.\nPlease note that this functionality works only for object storage that supports an object lifecycle management mechanism.",
           "type": "integer",
-          "format": "int64",
+          "format": "uint32",
           "x-go-name": "Retention"
         },
         "schedule": {

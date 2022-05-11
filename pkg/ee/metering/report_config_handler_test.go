@@ -42,6 +42,7 @@ import (
 func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 	t.Parallel()
 
+	var retention uint32 = 14
 	testSeed := test.GenTestSeed(func(seed *kubermaticv1.Seed) {
 		seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
 			Enabled:          true,
@@ -51,7 +52,7 @@ func TestGetMeteringReportConfigEndpoint(t *testing.T) {
 				"weekly": {
 					Schedule:  "0 1 * * 6",
 					Interval:  7,
-					Retention: 14,
+					Retention: &retention,
 				},
 			},
 		}
@@ -251,7 +252,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusBadRequest,
-			expectedResponse:       `{"error":{"code":400,"message":"retention value cannot be negative."}}`,
+			expectedResponse:       `{"error":{"code":400,"message":"retention value cannot be smaller than 1."}}`,
 		},
 	}
 
@@ -280,6 +281,7 @@ func TestCreateMeteringReportConfigEndpoint(t *testing.T) {
 func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 	t.Parallel()
 
+	var retention uint32 = 30
 	testSeed := test.GenTestSeed(func(seed *kubermaticv1.Seed) {
 		seed.Spec.Metering = &kubermaticv1.MeteringConfiguration{
 			Enabled:          true,
@@ -289,7 +291,7 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 				"weekly": {
 					Schedule:  "0 1 * * 6",
 					Interval:  7,
-					Retention: 30,
+					Retention: &retention,
 				},
 			},
 		}
@@ -352,7 +354,7 @@ func TestUpdateMeteringReportConfigEndpoint(t *testing.T) {
 			existingKubermaticObjs: []ctrlruntimeclient.Object{testSeed},
 			existingAPIUser:        test.GenDefaultAdminAPIUser(),
 			httpStatus:             http.StatusBadRequest,
-			expectedResponse:       `{"error":{"code":400,"message":"retention value cannot be negative."}}`,
+			expectedResponse:       `{"error":{"code":400,"message":"retention value cannot be smaller than 1."}}`,
 		},
 		// scenario 5
 		{

@@ -46,7 +46,7 @@ import (
 )
 
 var (
-	MeteringLabelKey = "kubermatic-metering"
+	LabelKey = "kubermatic-metering"
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
@@ -117,12 +117,12 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 			return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
 		}
 
-		if reportConf.Retention != 0 {
+		if reportConf.Retention != nil {
 			config.Rules = append(config.Rules, lifecycle.Rule{
 				ID:     reportName,
 				Status: "Enabled",
 				Expiration: lifecycle.Expiration{
-					Days: lifecycle.ExpirationDays(reportConf.Retention),
+					Days: lifecycle.ExpirationDays(*reportConf.Retention),
 				},
 				RuleFilter: lifecycle.Filter{
 					Prefix: reportName,
@@ -196,7 +196,7 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 	existingReportingCronJobs := &batchv1beta1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
 		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
-		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{MeteringLabelKey}),
+		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{LabelKey}),
 	}
 	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
 		if !apierrors.IsNotFound(err) {
