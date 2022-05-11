@@ -295,7 +295,7 @@ func (p *ClusterProvider) IsCluster(ctx context.Context, clusterName string) boo
 }
 
 // Delete deletes the given cluster.
-func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, clusterName string) error {
+func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) error {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
@@ -307,7 +307,7 @@ func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInf
 	delOpts := &ctrlruntimeclient.DeleteOptions{
 		PropagationPolicy: &policy,
 	}
-	return seedImpersonatedClient.Delete(ctx, &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}}, delOpts)
+	return seedImpersonatedClient.Delete(ctx, cluster, delOpts)
 }
 
 // Update updates a cluster.
