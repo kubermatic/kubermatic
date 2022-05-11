@@ -38,7 +38,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,7 +57,7 @@ func ListReports(ctx context.Context, req interface{}, seedsGetter provider.Seed
 
 	request, ok := req.(listReportReq)
 	if !ok {
-		return nil, k8cerrors.NewBadRequest("invalid request")
+		return nil, utilerrors.NewBadRequest("invalid request")
 	}
 
 	seedsMap, err := seedsGetter()
@@ -100,7 +100,7 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 
 	request, ok := req.(getReportReq)
 	if !ok {
-		return "", k8cerrors.NewBadRequest("invalid request")
+		return "", utilerrors.NewBadRequest("invalid request")
 	}
 
 	reportPath := request.ReportName
@@ -138,7 +138,7 @@ func GetReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsG
 		return urlString, nil
 	}
 
-	return "", k8cerrors.New(404, "report not found")
+	return "", utilerrors.New(404, "report not found")
 }
 
 func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
@@ -148,7 +148,7 @@ func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.See
 
 	request, ok := req.(deleteReportReq)
 	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
+		return utilerrors.NewBadRequest("invalid request")
 	}
 
 	reportPath := request.ReportName
@@ -180,7 +180,7 @@ func DeleteReport(ctx context.Context, req interface{}, seedsGetter provider.See
 		return nil
 	}
 
-	return k8cerrors.New(404, "report not found")
+	return utilerrors.New(404, "report not found")
 }
 
 func getReportsForSeed(ctx context.Context, options minio.ListObjectsOptions, seedClient ctrlruntimeclient.Client) ([]apiv1.MeteringReport, error) {
@@ -284,7 +284,7 @@ func DecodeListMeteringReportReq(r *http.Request) (interface{}, error) {
 	} else {
 		mK, err := strconv.Atoi(maxKeys)
 		if err != nil {
-			return nil, k8cerrors.NewBadRequest("invalid value for `may_keys`")
+			return nil, utilerrors.NewBadRequest("invalid value for `may_keys`")
 		}
 		req.MaxKeys = mK
 	}
@@ -301,7 +301,7 @@ func DecodeGetMeteringReportReq(r *http.Request) (interface{}, error) {
 	req.ReportName = mux.Vars(r)["report_name"]
 
 	if req.ReportName == "" {
-		return nil, k8cerrors.NewBadRequest("`report_name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`report_name` cannot be empty")
 	}
 
 	req.ConfigurationName = r.URL.Query().Get("configuration_name")
@@ -314,7 +314,7 @@ func DecodeDeleteMeteringReportReq(r *http.Request) (interface{}, error) {
 	req.ReportName = mux.Vars(r)["report_name"]
 
 	if req.ReportName == "" {
-		return nil, k8cerrors.NewBadRequest("`report_name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`report_name` cannot be empty")
 	}
 
 	req.ConfigurationName = r.URL.Query().Get("configuration_name")

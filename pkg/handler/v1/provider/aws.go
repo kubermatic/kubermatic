@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // AWSCommonReq represent a request with common parameters for AWS.
@@ -221,7 +221,7 @@ func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provi
 		if len(req.Credential) > 0 {
 			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 			if credential := preset.Spec.AWS; credential != nil {
 				accessKeyID = credential.AccessKeyID
@@ -234,7 +234,7 @@ func AWSSubnetEndpoint(presetProvider provider.PresetProvider, seedsGetter provi
 
 		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		subnetList, err := providercommon.ListAWSSubnets(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, vpcID, dc)
@@ -274,7 +274,7 @@ func AWSVPCEndpoint(presetProvider provider.PresetProvider, seedsGetter provider
 
 		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		return listAWSVPCS(ctx, credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter)
@@ -298,7 +298,7 @@ func AWSSecurityGroupsEndpoint(presetProvider provider.PresetProvider, seedsGett
 
 		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		return listSecurityGroup(ctx, credentials.accessKeyID, credentials.secretAccessKey, credentials.assumeRoleARN, credentials.assumeRoleExternalID, datacenter.Spec.AWS.Region, credentials.vpcID)
@@ -310,7 +310,7 @@ func listSecurityGroup(ctx context.Context, accessKeyID, secretAccessKey, assume
 
 	securityGroups, err := awsprovider.GetSecurityGroups(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, region, vpc)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get Security Groups: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get Security Groups: %v", err))
 	}
 
 	for _, sg := range securityGroups {
@@ -343,7 +343,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 	if len(req.Credential) > 0 {
 		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}
 		if credential := preset.Spec.AWS; credential != nil {
 			accessKeyID = credential.AccessKeyID
@@ -365,7 +365,7 @@ func getAWSCredentialsFromRequest(ctx context.Context, req AWSCommonReq, userInf
 
 func listAWSVPCS(ctx context.Context, accessKeyID, secretAccessKey string, assumeRoleARN string, assumeRoleExternalID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSVPCList, error) {
 	if datacenter.Spec.AWS == nil {
-		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
+		return nil, utilerrors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
 	vpcsResults, err := awsprovider.GetVPCS(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, datacenter.Spec.AWS.Region)

@@ -52,7 +52,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "v1.48.0"
+	Tag  = "v1.49.0"
 )
 
 type machinecontrollerData interface {
@@ -135,7 +135,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller"
+			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/machine-controller"
 			if r := data.MachineControllerImageRepository(); r != "" {
 				repository = r
 			}

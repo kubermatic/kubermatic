@@ -23,7 +23,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -57,16 +57,16 @@ func TestGetClusterUpgrades(t *testing.T) {
 			provider: kubermaticv1.AWSCloudProvider,
 			wantVersions: []*apiv1.MasterVersion{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 				},
 				{
-					Version: semver.MustParse("1.21.1"),
+					Version: semverlib.MustParse("1.21.1"),
 				},
 				{
-					Version: semver.MustParse("1.22.0"),
+					Version: semverlib.MustParse("1.22.0"),
 				},
 				{
-					Version: semver.MustParse("1.22.1"),
+					Version: semverlib.MustParse("1.22.1"),
 				},
 			},
 			versions: []k8csemver.Semver{
@@ -107,10 +107,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 			provider: kubermaticv1.VSphereCloudProvider,
 			wantVersions: []*apiv1.MasterVersion{
 				{
-					Version: semver.MustParse("1.21.0"),
+					Version: semverlib.MustParse("1.21.0"),
 				},
 				{
-					Version: semver.MustParse("1.21.1"),
+					Version: semverlib.MustParse("1.21.1"),
 				},
 			},
 			versions: []k8csemver.Semver{

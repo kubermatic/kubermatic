@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,7 +43,7 @@ var _ = Describe("application Installation controller", func() {
 			def := createApplicationDef(appDefName)
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0"))).To(Succeed())
 
-			app := &appkubermaticv1.ApplicationInstallation{}
+			app := &appskubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
 				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, app); err != nil {
 					return false
@@ -67,7 +67,7 @@ var _ = Describe("application Installation controller", func() {
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, "app-def-not-exist", "1.0.0"))).To(Succeed())
 
 			By("wait for application to be created")
-			app := appkubermaticv1.ApplicationInstallation{}
+			app := appskubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
 				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 				return err == nil
@@ -94,7 +94,7 @@ var _ = Describe("application Installation controller", func() {
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0-not-exist"))).To(Succeed())
 
 			By("wait for application to be created")
-			app := appkubermaticv1.ApplicationInstallation{}
+			app := appskubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
 				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 				return err == nil
@@ -121,7 +121,7 @@ var _ = Describe("application Installation controller", func() {
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0"))).To(Succeed())
 
 			By("wait for application to be created")
-			app := &appkubermaticv1.ApplicationInstallation{}
+			app := &appskubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
 				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, app); err != nil {
 					return false
@@ -136,7 +136,7 @@ var _ = Describe("application Installation controller", func() {
 
 			By("Checking application Installation CR is removed")
 			Eventually(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appkubermaticv1.ApplicationInstallation{})
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
 
 				return err != nil && apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
@@ -154,7 +154,7 @@ var _ = Describe("application Installation controller", func() {
 			Expect(userClient.Create(ctx, genApplicationInstallation(appInstallName, appDefName, "1.0.0"))).To(Succeed())
 
 			By("wait for application to be created")
-			app := &appkubermaticv1.ApplicationInstallation{}
+			app := &appskubermaticv1.ApplicationInstallation{}
 			Eventually(func() bool {
 				if err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, app); err != nil {
 					return false
@@ -167,16 +167,16 @@ var _ = Describe("application Installation controller", func() {
 			previousVersion := def.Spec.Versions[0]
 
 			By("removing applicationVersion from applicationDefinition")
-			def.Spec.Versions = []appkubermaticv1.ApplicationVersion{
+			def.Spec.Versions = []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "3.0.0",
-					Constraints: appkubermaticv1.ApplicationConstraints{
+					Constraints: appskubermaticv1.ApplicationConstraints{
 						K8sVersion: "> 1.19",
 						KKPVersion: "> 2.0",
 					},
-					Template: appkubermaticv1.ApplicationTemplate{
-						Source: appkubermaticv1.ApplicationSource{
-							Helm: &appkubermaticv1.HelmSource{
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
 								URL:          "http://helmrepo.local",
 								ChartName:    "someChartName",
 								ChartVersion: "12",
@@ -191,7 +191,7 @@ var _ = Describe("application Installation controller", func() {
 
 			By("Checking application Installation CR is removed")
 			Eventually(func() bool {
-				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appkubermaticv1.ApplicationInstallation{})
+				err := userClient.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
 
 				return err != nil && apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
@@ -202,10 +202,10 @@ var _ = Describe("application Installation controller", func() {
 
 })
 
-func createApplicationDef(appDefName string) *appkubermaticv1.ApplicationDefinition {
+func createApplicationDef(appDefName string) *appskubermaticv1.ApplicationDefinition {
 	Expect(userClient.Create(ctx, genApplicationDefinition(appDefName))).To(Succeed())
 
-	def := &appkubermaticv1.ApplicationDefinition{}
+	def := &appskubermaticv1.ApplicationDefinition{}
 	EventuallyWithOffset(1, func(g Gomega) {
 		g.Expect(userClient.Get(ctx, types.NamespacedName{Name: appDefName}, def)).To(Succeed())
 	}, timeout, interval).Should(Succeed())
@@ -213,24 +213,24 @@ func createApplicationDef(appDefName string) *appkubermaticv1.ApplicationDefinit
 	return def
 }
 
-func expectApplicationInstalledWithVersion(appName string, expectedVersion appkubermaticv1.ApplicationVersion) {
+func expectApplicationInstalledWithVersion(appName string, expectedVersion appskubermaticv1.ApplicationVersion) {
 	By("check application has been installed")
 	EventuallyWithOffset(1, func(g Gomega) {
 		result, found := applicationInstallerRecorder.ApplyEvents.Load(appName)
 		g.Expect(found).To(BeTrue(), "Application "+appName+" has not been installed")
 
-		currentVersion := result.(appkubermaticv1.ApplicationInstallation)
+		currentVersion := result.(appskubermaticv1.ApplicationInstallation)
 		g.Expect(*currentVersion.Status.ApplicationVersion).To(Equal(expectedVersion))
 	}, timeout, interval).Should(Succeed())
 }
 
-func expectApplicationUninstalledWithVersion(appName string, expectedVersion appkubermaticv1.ApplicationVersion) {
+func expectApplicationUninstalledWithVersion(appName string, expectedVersion appskubermaticv1.ApplicationVersion) {
 	By("Checking application Installation has been uninstalled")
 	EventuallyWithOffset(1, func(g Gomega) {
 		result, found := applicationInstallerRecorder.DeleteEvents.Load(appName)
 		g.Expect(found).To(BeTrue(), "Application "+appName+" has not been uninstalled")
 
-		currentVersion := result.(appkubermaticv1.ApplicationInstallation)
+		currentVersion := result.(appskubermaticv1.ApplicationInstallation)
 		g.Expect(*currentVersion.Status.ApplicationVersion).To(Equal(expectedVersion))
 	}, timeout, interval).Should(Succeed())
 }

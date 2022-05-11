@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -70,7 +70,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	projectBinding := &kubermaticv1.UserProjectBinding{}
 	if err := r.Get(ctx, request.NamespacedName, projectBinding); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -90,7 +90,7 @@ func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request rec
 func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.SugaredLogger, projectBinding *kubermaticv1.UserProjectBinding) error {
 	project, err := r.getProjectForBinding(ctx, projectBinding)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return r.removeFinalizerFromBinding(ctx, projectBinding)
 		}
 
@@ -99,7 +99,7 @@ func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.Su
 
 	user, err := r.getUserForBinding(ctx, projectBinding)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return r.removeFinalizerFromBinding(ctx, projectBinding)
 		}
 

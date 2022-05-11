@@ -26,12 +26,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -76,7 +75,7 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		&source.Kind{Type: &corev1.Service{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.Factory(
-			func(o client.Object) bool {
+			func(o ctrlruntimeclient.Object) bool {
 				if _, exists := o.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
 					return true
 				}
@@ -91,7 +90,7 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	if err := outerServiceWatch.InjectCache(outer.GetCache()); err != nil {
 		return fmt.Errorf("failed to inject cache into outer service watch: %w", err)
 	}
-	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
 		if !exists {
 			return nil
@@ -106,7 +105,7 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 			NamespacedName: types.NamespacedName{Namespace: split[0], Name: split[1]},
 		}}
 	})
-	outerServicePredicate := predicate.Factory(func(o client.Object) bool {
+	outerServicePredicate := predicate.Factory(func(o ctrlruntimeclient.Object) bool {
 		return o.GetLabels()[labelKey] == jobID
 	})
 	if err := c.Watch(outerServiceWatch, outererServiceMapper, outerServicePredicate); err != nil {
@@ -130,7 +129,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	innerService := &corev1.Service{}
 	if err := r.innerClient.Get(ctx, request.NamespacedName, innerService); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Got request for service that doesn't exist, returning")
 			return nil
 		}

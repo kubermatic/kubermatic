@@ -19,45 +19,45 @@ package validation
 import (
 	"testing"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestValidateApplicationDefinition(t *testing.T) {
-	tm := v1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
-	cs := appkubermaticv1.ApplicationConstraints{K8sVersion: ">1.0.0", KKPVersion: ">1.0.0"}
-	helmv := appkubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appkubermaticv1.ApplicationTemplate{Method: "helm"}}
-	gitv := appkubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appkubermaticv1.ApplicationTemplate{Method: "helm"}}
-	spec := appkubermaticv1.ApplicationDefinitionSpec{Versions: []appkubermaticv1.ApplicationVersion{helmv, gitv}}
+	tm := metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
+	cs := appskubermaticv1.ApplicationConstraints{K8sVersion: ">1.0.0", KKPVersion: ">1.0.0"}
+	helmv := appskubermaticv1.ApplicationVersion{Version: "v1", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: "helm"}}
+	gitv := appskubermaticv1.ApplicationVersion{Version: "v2", Constraints: cs, Template: appskubermaticv1.ApplicationTemplate{Method: "helm"}}
+	spec := appskubermaticv1.ApplicationDefinitionSpec{Versions: []appskubermaticv1.ApplicationVersion{helmv, gitv}}
 
 	tt := map[string]struct {
-		ad        appkubermaticv1.ApplicationDefinition
+		ad        appskubermaticv1.ApplicationDefinition
 		expErrLen int
 	}{
 		"valid source helm": {
-			appkubermaticv1.ApplicationDefinition{
-				Spec: func() appkubermaticv1.ApplicationDefinitionSpec {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Source = appkubermaticv1.ApplicationSource{Helm: &appkubermaticv1.HelmSource{URL: "kubermatic.io", ChartName: "test", ChartVersion: "1.0.0"}}
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{URL: "kubermatic.io", ChartName: "test", ChartVersion: "1.0.0"}}
 					return *s
 				}(),
 			},
 			0,
 		},
 		"valid source git": {
-			appkubermaticv1.ApplicationDefinition{
-				Spec: func() appkubermaticv1.ApplicationDefinitionSpec {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
-					s.Versions[0].Template.Source = appkubermaticv1.ApplicationSource{Git: &appkubermaticv1.GitSource{}}
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{}}
 					return *s
 				}(),
 			},
 			0,
 		},
 		"mixed sources": {
-			appkubermaticv1.ApplicationDefinition{
-				Spec: func() appkubermaticv1.ApplicationDefinitionSpec {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = gitv.Template.Source
 					s.Versions[1].Template.Source = helmv.Template.Source
@@ -67,8 +67,8 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			0,
 		},
 		"invalid method": {
-			appkubermaticv1.ApplicationDefinition{
-				Spec: func() appkubermaticv1.ApplicationDefinitionSpec {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Method = "invalid"
 					return *s
@@ -77,8 +77,8 @@ func TestValidateApplicationDefinition(t *testing.T) {
 			1,
 		},
 		"valid method": {
-			appkubermaticv1.ApplicationDefinition{
-				Spec: func() appkubermaticv1.ApplicationDefinitionSpec {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Method = "helm"
 					return *s
@@ -102,25 +102,25 @@ func TestValidateApplicationDefinition(t *testing.T) {
 
 func TestValidateApplicationVersions(t *testing.T) {
 	tt := map[string]struct {
-		vs        []appkubermaticv1.ApplicationVersion
+		vs        []appskubermaticv1.ApplicationVersion
 		expErrLen int
 	}{
 		"duplicate version": {
-			[]appkubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appkubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}},
-				{Version: "v1", Constraints: appkubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}},
+			[]appskubermaticv1.ApplicationVersion{
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}},
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "1"}},
 			},
 			1,
 		},
 		"invalid kkp version": {
-			[]appkubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appkubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "not-semver"}},
+			[]appskubermaticv1.ApplicationVersion{
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "1", KKPVersion: "not-semver"}},
 			},
 			1,
 		},
 		"invalid k8s version": {
-			[]appkubermaticv1.ApplicationVersion{
-				{Version: "v1", Constraints: appkubermaticv1.ApplicationConstraints{K8sVersion: "not-semver", KKPVersion: "1"}},
+			[]appskubermaticv1.ApplicationVersion{
+				{Version: "v1", Constraints: appskubermaticv1.ApplicationConstraints{K8sVersion: "not-semver", KKPVersion: "1"}},
 			},
 			1,
 		},

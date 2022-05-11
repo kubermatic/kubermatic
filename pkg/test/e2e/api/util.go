@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -70,7 +70,7 @@ func getErrorResponse(err error) string {
 	return string(rawData)
 }
 
-func testCluster(ctx context.Context, project *v1.Project, cluster *v1.Cluster, testClient *utils.TestClient, tc createCluster, t *testing.T) {
+func testCluster(ctx context.Context, project *apiv1.Project, cluster *apiv1.Cluster, testClient *utils.TestClient, tc createCluster, t *testing.T) {
 	sshKey, err := testClient.CreateUserSSHKey(project.ID, tc.sshKeyName, tc.publicKey)
 	if err != nil {
 		t.Fatalf("failed to get create SSH key: %v", err)
@@ -109,7 +109,7 @@ func testCluster(ctx context.Context, project *v1.Project, cluster *v1.Cluster, 
 
 	// wait for controller to provision the roles
 	var roleErr error
-	roleNameList := []v1.RoleName{}
+	roleNameList := []apiv1.RoleName{}
 	if err := wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
 		roleNameList, roleErr = testClient.GetRoles(project.ID, tc.dc, cluster.ID)
 		return len(roleNameList) >= len(tc.expectedRoleNames), nil
@@ -128,7 +128,7 @@ func testCluster(ctx context.Context, project *v1.Project, cluster *v1.Cluster, 
 
 	// wait for controller to provision the cluster roles
 	var clusterRoleErr error
-	clusterRoleNameList := []v1.ClusterRoleName{}
+	clusterRoleNameList := []apiv1.ClusterRoleName{}
 	if err := wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
 		clusterRoleNameList, clusterRoleErr = testClient.GetClusterRoles(project.ID, tc.dc, cluster.ID)
 		return len(clusterRoleNameList) >= len(tc.expectedClusterRoleNames), nil

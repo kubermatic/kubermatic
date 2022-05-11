@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -122,7 +122,7 @@ func newAlertmanagerReconciler(
 			Name:      resources.AlertmanagerName,
 			Namespace: a.GetNamespace(),
 		}, alertmanager); err != nil {
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return []reconcile.Request{}
 			}
 			log.Errorw("Failed to get alertmanager object", zap.Error(err))
@@ -251,7 +251,7 @@ func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *ku
 		// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
 		err := r.cleanUpAlertmanagerConfiguration(ctx, cluster)
 		// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
-		if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil && !errors.IsNotFound(errC) {
+		if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil && !apierrors.IsNotFound(errC) {
 			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
 		}
 		if err != nil {
@@ -300,7 +300,7 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx cont
 	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Remove the alertmanager config status in Cluster CR
 		c.Status.ExtendedHealth.AlertmanagerConfig = nil
-		if errC != nil && !errors.IsNotFound(errC) {
+		if errC != nil && !apierrors.IsNotFound(errC) {
 			down := kubermaticv1.HealthStatusDown
 			c.Status.ExtendedHealth.AlertmanagerConfig = &down
 		}
@@ -327,7 +327,7 @@ func (r *alertmanagerController) cleanUpAlertmanagerObjects(ctx context.Context,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		}
-		if err := r.Delete(ctx, secret); err != nil && !errors.IsNotFound(err) {
+		if err := r.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
@@ -391,7 +391,7 @@ func (r *alertmanagerController) getAlertmanagerForCluster(ctx context.Context, 
 			Namespace: alertNamespacedName.Namespace,
 		},
 	}
-	if err := r.Get(ctx, alertNamespacedName, alertmanager); err != nil && !errors.IsNotFound(err) {
+	if err := r.Get(ctx, alertNamespacedName, alertmanager); err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get alertmanager: %w", err)
 	}
 	return alertmanager, nil
@@ -424,7 +424,7 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 			Namespace: secretNamespacedName.Namespace,
 		},
 	}
-	if err := r.Get(ctx, secretNamespacedName, secret); err != nil && !errors.IsNotFound(err) {
+	if err := r.Get(ctx, secretNamespacedName, secret); err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get alertmanager config secret: %w", err)
 	}
 

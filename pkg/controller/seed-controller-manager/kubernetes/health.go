@@ -28,7 +28,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -45,8 +45,14 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.ApiserverDeploymentName:             {healthStatus: &extendedHealth.Apiserver, minReady: 1},
 		resources.ControllerManagerDeploymentName:     {healthStatus: &extendedHealth.Controller, minReady: 1},
 		resources.SchedulerDeploymentName:             {healthStatus: &extendedHealth.Scheduler, minReady: 1},
-		resources.OpenVPNServerDeploymentName:         {healthStatus: &extendedHealth.OpenVPN, minReady: 1},
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
+	}
+
+	if r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+		// because konnectivity server is in apiserver pod
+		healthMapping[resources.KonnectivityDeploymentName] = &depInfo{healthStatus: &extendedHealth.Apiserver, minReady: 1}
+	} else {
+		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: &extendedHealth.OpenVPN, minReady: 1}
 	}
 
 	for name := range healthMapping {
@@ -54,6 +60,9 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		status, err := resources.HealthyDeployment(ctx, r, key, healthMapping[name].minReady)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %w", name, err)
+		}
+		if healthMapping[name].healthStatus == nil {
+			healthMapping[name].healthStatus = new(kubermaticv1.HealthStatus)
 		}
 		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	}
@@ -135,11 +144,11 @@ func (r *Reconciler) machineControllerHealthCheck(ctx context.Context, cluster *
 	key := types.NamespacedName{Name: resources.MachineControllerMutatingWebhookConfigurationName}
 	webhookMutatingConf := &admissionregistrationv1.MutatingWebhookConfiguration{}
 	err = userClient.Get(ctx, key, webhookMutatingConf)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, err
 	}
 	// if the mutatingWebhookConfiguration doesn't exist yet, return StatusDown
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, nil
 	}
 
@@ -181,11 +190,11 @@ func (r *Reconciler) applicationControllerHealthCheck(ctx context.Context, clust
 	key := types.NamespacedName{Name: applications.ApplicationInstallationAdmissionWebhookName}
 	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{}
 	err = userClient.Get(ctx, key, webhook)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, err
 	}
 	// if the ValidatingWebhookConfiguration doesn't exist yet, return StatusDown
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return kubermaticv1.HealthStatusDown, nil
 	}
 
@@ -221,7 +230,7 @@ func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1
 
 	if err != nil {
 		// if the StatefulSet for etcd doesn't exist yet, there's nothing to worry about
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return true, nil
 		} else {
 			return false, err

@@ -23,6 +23,7 @@ import (
 	"net"
 	"strings"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
@@ -55,6 +56,7 @@ import (
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -62,7 +64,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -594,12 +596,22 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 }
 
 func (r *reconciler) reconcileCRDs(ctx context.Context) error {
+	c, err := crd.CRDForObject(&appskubermaticv1.ApplicationInstallation{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+			Kind:       "ApplicationInstallation",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get ApplicationInstallation CRD: %w", err)
+	}
+
 	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
 		machinecontroller.MachineCRDCreator(),
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
 		machinecontroller.ClusterCRDCreator(),
-		applications.ApplicationInstallationCRDCreator(),
+		applications.CRDCreator(c),
 	}
 
 	if r.opaIntegration {
@@ -1076,7 +1088,7 @@ func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 		if errC := r.cleanUpOPAHealthStatus(ctx, err); errC != nil {
 			return fmt.Errorf("failed to update OPA health status in cluster: %w", errC)
 		}
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OPA integration is removed/not present: %w", err)
 		}
 	}
@@ -1087,7 +1099,7 @@ func (r *reconciler) ensureOPAExperimentalMutationWebhookIsRemoved(ctx context.C
 	if err := r.Client.Delete(ctx, &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resources.GatekeeperMutatingWebhookConfigurationName,
-		}}); err != nil && !errors.IsNotFound(err) {
+		}}); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to remove Mutation Webhook: %w", err)
 	}
 	return nil
@@ -1205,7 +1217,7 @@ func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
 		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
 			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
 		}
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure promtail is removed/not present: %w", err)
 		}
 	}
@@ -1218,7 +1230,7 @@ func (r *reconciler) ensureUserClusterPrometheusIsRemoved(ctx context.Context) e
 		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
 		}
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure user cluster prometheus is removed/not present: %w", err)
 		}
 	}
@@ -1231,7 +1243,7 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 		if errC := r.cleanUpMLAHealthStatus(ctx, true, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla health status in cluster: %w", errC)
 		}
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure mla is removed/not present: %w", err)
 		}
 	}
@@ -1241,7 +1253,7 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 func (r *reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context) error {
 	for _, resource := range openvpn.ResourcesForDeletion() {
 		err := r.Client.Delete(ctx, resource)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %w", err)
 		}
 	}
@@ -1251,13 +1263,13 @@ func (r *reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context) error {
 func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error {
 	for _, resource := range konnectivity.ResourcesForDeletion() {
 		err := r.Client.Delete(ctx, resource)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
 		}
 	}
 	for _, resource := range metricsserver.UserClusterResourcesForDeletion() {
 		err := r.Client.Delete(ctx, resource)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
 		}
 	}
@@ -1267,7 +1279,7 @@ func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error
 func (r *reconciler) ensureOSMResourcesAreRemoved(ctx context.Context) error {
 	for _, resource := range operatingsystemmanager.ResourcesForDeletion() {
 		err := r.Client.Delete(ctx, resource)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
 		}
 	}
@@ -1317,7 +1329,7 @@ func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) err
 	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.GatekeeperAudit = nil
 		c.Status.ExtendedHealth.GatekeeperController = nil
-		if errC != nil && !errors.IsNotFound(errC) {
+		if errC != nil && !apierrors.IsNotFound(errC) {
 			c.Status.ExtendedHealth.GatekeeperAudit = &down
 			c.Status.ExtendedHealth.GatekeeperController = &down
 		}
@@ -1336,14 +1348,14 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		if !r.userClusterMLA.Logging && logging {
 			c.Status.ExtendedHealth.Logging = nil
-			if errC != nil && !errors.IsNotFound(errC) {
+			if errC != nil && !apierrors.IsNotFound(errC) {
 				c.Status.ExtendedHealth.Logging = &down
 			}
 		}
 
 		if !r.userClusterMLA.Monitoring && monitoring {
 			c.Status.ExtendedHealth.Monitoring = nil
-			if errC != nil && !errors.IsNotFound(errC) {
+			if errC != nil && !apierrors.IsNotFound(errC) {
 				c.Status.ExtendedHealth.Monitoring = &down
 			}
 		}

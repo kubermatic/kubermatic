@@ -32,10 +32,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -46,7 +46,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 		req := request.(addTokenReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
@@ -64,14 +64,14 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(existingTokenList) > 0 {
-			return nil, errors.NewAlreadyExists("token", req.Body.Name)
+			return nil, utilerrors.NewAlreadyExists("token", req.Body.Name)
 		}
 
 		tokenID := rand.String(10)
 
 		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, project.Name, tokenID))
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "can not generate token data")
+			return nil, utilerrors.New(http.StatusInternalServerError, "can not generate token data")
 		}
 
 		secret, err := createSAToken(ctx, userInfoGetter, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, sa, project.Name, req.Body.Name, tokenID, token)
@@ -81,7 +81,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 
 		externalToken, err := convertInternalTokenToPrivateExternal(secret, tokenAuthenticator)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		return externalToken, nil
@@ -106,7 +106,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 		options.LabelSelector = labelSelector
 		options.ServiceAccountID = sa.Name
 		tokens, err := privilegedServiceAccountTokenProvider.ListUnsecured(ctx, options)
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return make([]*corev1.Secret, 0), nil
 		}
 		return tokens, err
@@ -142,7 +142,7 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProje
 		req := request.(commonTokenReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -171,7 +171,7 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProje
 		}
 
 		if len(errorList) > 0 {
-			return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some service account tokens, please examine details field for more info", errorList)
+			return nil, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some service account tokens, please examine details field for more info", errorList)
 		}
 
 		return resultList, nil
@@ -184,7 +184,7 @@ func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 		req := request.(updateTokenReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		secret, err := updateEndpoint(ctx, projectProvider, privilegedProjectProvider, serviceAccountProvider, privilegedServiceAccount, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, userInfoGetter, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, req.Body.Name, true)
@@ -194,7 +194,7 @@ func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 
 		externalToken, err := convertInternalTokenToPrivateExternal(secret, tokenAuthenticator)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		return externalToken, nil
@@ -207,15 +207,15 @@ func PatchTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 		req := request.(patchTokenReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		tokenReq := &apiv1.PublicServiceAccountToken{}
 		if err := json.Unmarshal(req.Body, tokenReq); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		if len(tokenReq.Name) == 0 {
-			return nil, errors.NewBadRequest("new name can not be empty")
+			return nil, utilerrors.NewBadRequest("new name can not be empty")
 		}
 
 		secret, err := updateEndpoint(ctx, projectProvider, privilegedProjectProvider, serviceAccountProvider, privilegedServiceAccount, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, userInfoGetter, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, tokenReq.Name, false)
@@ -225,7 +225,7 @@ func PatchTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 
 		externalToken, err := convertInternalTokenToPublicExternal(secret, tokenAuthenticator)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		return externalToken, nil
@@ -238,7 +238,7 @@ func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 		req := request.(deleteTokenReq)
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -324,7 +324,7 @@ func updateEndpoint(ctx context.Context, projectProvider provider.ProjectProvide
 			return nil, err
 		}
 		if len(existingTokenList) > 0 {
-			return nil, errors.NewAlreadyExists("token", newName)
+			return nil, utilerrors.NewAlreadyExists("token", newName)
 		}
 		existingSecret.Labels["name"] = newName
 	}

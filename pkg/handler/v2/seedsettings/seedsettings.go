@@ -28,7 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // getSeedSettingsReq defines HTTP request for getSeedSettings
@@ -54,7 +54,7 @@ func GetSeedSettingsEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(getSeedSettingsReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		seedMap, err := seedsGetter()
@@ -63,7 +63,7 @@ func GetSeedSettingsEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint
 		}
 		seed, ok := seedMap[req.Name]
 		if !ok {
-			return nil, k8cerrors.NewNotFound("Seed", req.Name)
+			return nil, utilerrors.NewNotFound("Seed", req.Name)
 		}
 		return convertSeedToSeedSettings(seed), nil
 	}

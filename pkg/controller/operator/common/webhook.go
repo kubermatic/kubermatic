@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -514,7 +514,7 @@ func ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx context.Cont
 					Rules: []admissionregistrationv1.RuleWithOperations{
 						{
 							Rule: admissionregistrationv1.Rule{
-								APIGroups:   []string{appkubermaticv1.GroupName},
+								APIGroups:   []string{appskubermaticv1.GroupName},
 								APIVersions: []string{"*"},
 								Resources:   []string{"applicationdefinitions"},
 								Scope:       &scope,

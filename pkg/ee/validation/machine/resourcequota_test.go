@@ -29,7 +29,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -40,7 +40,7 @@ func TestResourceQuotaValidation(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		machine     *v1alpha1.Machine
+		machine     *clusterv1alpha1.Machine
 		expectedErr bool
 	}{
 		{
@@ -81,7 +81,7 @@ func TestResourceQuotaValidation(t *testing.T) {
 	}
 }
 
-func genFakeMachine(cpu, memory, storage string) *v1alpha1.Machine {
+func genFakeMachine(cpu, memory, storage string) *clusterv1alpha1.Machine {
 	return test.GenTestMachine("fake",
 		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s"}}`, cpu, memory, storage),
 		nil, nil)

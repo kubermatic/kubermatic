@@ -27,7 +27,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	appsv1 "k8s.io/api/apps/v1"
-	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -84,7 +84,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	exists := true
 	existingObject := emptyObject.DeepCopyObject().(ctrlruntimeclient.Object)
 	if err := client.Get(ctx, namespacedName, existingObject); err != nil {
-		if !kubeerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get Object(%T): %w", existingObject, err)
 		}
 		exists = false
@@ -197,7 +197,7 @@ func WaitUntilObjectExistsInCacheConditionFunc(
 	return func() (bool, error) {
 		newObj := obj.DeepCopyObject().(ctrlruntimeclient.Object)
 		if err := client.Get(ctx, namespacedName, newObj); err != nil {
-			if kubeerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return false, nil
 			}
 

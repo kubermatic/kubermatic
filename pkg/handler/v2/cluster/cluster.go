@@ -24,6 +24,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"go.uber.org/zap"
@@ -37,8 +38,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
 )
 
@@ -64,7 +64,7 @@ func CreateEndpoint(
 
 		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider,
@@ -82,7 +82,7 @@ func ListEndpoint(
 	configGetter provider.KubermaticConfigurationGetter,
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(common.GetProjectRq)
+		req := request.(ListClustersReq)
 		allClusters := make([]*apiv1.Cluster, 0)
 
 		seeds, err := seedsGetter()
@@ -97,7 +97,7 @@ func ListEndpoint(
 				kubermaticlog.Logger.Errorw("failed to create cluster provider", "seed", seed.Name, zap.Error(err))
 				continue
 			}
-			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter)
+			apiClusters, err := handlercommon.GetClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, configGetter, req.ShowDeploymentMachineCount)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -459,6 +459,32 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// ListClustersReq defines HTTP request for listClusters endpoint.
+// swagger:parameters listClustersV2
+type ListClustersReq struct {
+	common.ProjectReq
+
+	// in: query
+	ShowDeploymentMachineCount bool `json:"show_dm_count"`
+}
+
+func DecodeListClustersReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListClustersReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	showDeploymentMachineCount := r.URL.Query().Get("show_dm_count")
+	if strings.EqualFold(showDeploymentMachineCount, "true") {
+		req.ShowDeploymentMachineCount = true
+	}
+
+	return req, nil
+}
+
 // GetClusterReq defines HTTP request for getCluster endpoint.
 // swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2 getClusterMetricsV2 listNamespaceV2 getClusterUpgradesV2 listAWSSizesNoCredentialsV2 listAWSSubnetsNoCredentialsV2 listGCPNetworksNoCredentialsV2 listGCPZonesNoCredentialsV2 listHetznerSizesNoCredentialsV2 listDigitaloceanSizesNoCredentialsV2 migrateClusterToExternalCCM getClusterOidc listKubevirtVmiPresetsNoCredentials getKubevirtVmiPresetNoCredentials listKubevirtStorageClassesNoCredentials getKubevirtStorageClassesNoCredentials
 type GetClusterReq struct {
@@ -571,21 +597,21 @@ func GetClusterProviderFromRequest(
 ) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 	req, ok := request.(GetClusterReq)
 	if !ok {
-		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
+		return nil, nil, utilerrors.New(http.StatusBadRequest, "invalid request")
 	}
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 	if err != nil {
-		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	rawClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 	if !ok {
-		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
 	}
 	clusterProvider, ok := rawClusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 	return cluster, clusterProvider, nil
 }

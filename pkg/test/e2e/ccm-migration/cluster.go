@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -301,7 +301,7 @@ func (c *ClusterJig) CleanUp(ctx context.Context) error {
 				return false, fmt.Errorf("failed to delete user cluster machinedeployment: %w", err)
 			}
 			return false, nil
-		} else if err != nil && !k8serrors.IsNotFound(err) {
+		} else if err != nil && !apierrors.IsNotFound(err) {
 			return false, fmt.Errorf("failed to get user cluster machinedeployment: %w", err)
 		}
 

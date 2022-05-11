@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -104,7 +104,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, constraintTemplate); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("constraint template not found, returning")
 			return reconcile.Result{}, nil
 		}
@@ -121,7 +121,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, constraintTemplate *kubermaticv1.ConstraintTemplate) error {
 	if constraintTemplate.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
+		if !kuberneteshelper.HasFinalizer(constraintTemplate, apiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
 			return nil
 		}
 
@@ -132,7 +132,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 				},
 			})
 
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				log.Debug("constraint template not found, returning")
 				return nil
 			}
@@ -143,10 +143,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return err
 		}
 
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraintTemplate, apiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraintTemplate, apiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 

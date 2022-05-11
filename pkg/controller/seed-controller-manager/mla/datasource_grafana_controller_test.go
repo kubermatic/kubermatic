@@ -38,7 +38,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -552,7 +552,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			if tc.hasResources {
 				assert.Nil(t, err)
 			} else {
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			}
 
 			dp := &appsv1.Deployment{}
@@ -561,7 +561,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			if tc.hasResources {
 				assert.Nil(t, err)
 			} else {
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			}
 
 			svc := &corev1.Service{}
@@ -570,7 +570,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			if tc.hasResources {
 				assert.Nil(t, err)
 			} else {
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			}
 			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayExternalName, Namespace: cluster.Status.NamespaceName}}
 			err = controller.Get(ctx, request.NamespacedName, svc)
@@ -578,7 +578,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				assert.Nil(t, err)
 				assert.EqualValues(t, tc.expectExposeAnnotations, svc.Annotations)
 			} else {
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			}
 
 			secret := &corev1.Secret{}
@@ -587,14 +587,14 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			if tc.hasResources {
 				assert.Nil(t, err)
 			} else {
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			}
 			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: resources.MLAGatewayCertificatesSecretName, Namespace: cluster.Status.NamespaceName}}
 			err = controller.Get(ctx, request.NamespacedName, secret)
 			if tc.hasResources {
 				assert.Nil(t, err)
 			} else {
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			}
 
 			assertExpectation()

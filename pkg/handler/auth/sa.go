@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // ServiceAccountAuthClient implements TokenExtractorVerifier interface.
@@ -56,7 +56,7 @@ func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (To
 
 	tokenExpiredMsg := fmt.Sprintf("sa: the token %s has been revoked for %s", customClaims.TokenID, customClaims.Email)
 	tokenList, err := s.saTokenProvider.ListUnsecured(ctx, &provider.ServiceAccountTokenListOptions{TokenID: customClaims.TokenID})
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return TokenClaims{}, &TokenExpiredError{msg: tokenExpiredMsg}
 	}
 	if len(tokenList) > 1 {

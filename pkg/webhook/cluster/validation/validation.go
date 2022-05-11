@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -153,7 +153,7 @@ func (v *validator) validateProjectRelation(ctx context.Context, cluster *kuberm
 
 	project := &kubermaticv1.Project{}
 	if err := v.client.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			// during cluster creation, we enforce the project label;
 			// during updates we are more relaxed and only require that the label isn't changed,
 			// so that if a project gets removed before the cluster (for whatever reason), then

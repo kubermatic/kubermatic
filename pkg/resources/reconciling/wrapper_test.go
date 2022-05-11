@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 	utilpointer "k8s.io/utils/pointer"
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -508,7 +508,7 @@ func TestDefaultDeployment(t *testing.T) {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
+	key := ctrlruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualDeployment := &appsv1.Deployment{}
 	if err := client.Get(context.Background(), key, actualDeployment); err != nil {
@@ -581,7 +581,7 @@ func TestDefaultStatefulSet(t *testing.T) {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
+	key := ctrlruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualStatefulSet := &appsv1.StatefulSet{}
 	if err := client.Get(context.Background(), key, actualStatefulSet); err != nil {
@@ -654,7 +654,7 @@ func TestDefaultDaemonSet(t *testing.T) {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
+	key := ctrlruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualDaemonSet := &appsv1.DaemonSet{}
 	if err := client.Get(context.Background(), key, actualDaemonSet); err != nil {
@@ -735,7 +735,7 @@ func TestDefaultCronJob(t *testing.T) {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
+	key := ctrlruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualCronJob := &batchv1beta1.CronJob{}
 	if err := client.Get(context.Background(), key, actualCronJob); err != nil {
@@ -863,7 +863,7 @@ func TestImagePullSecretsWrapper(t *testing.T) {
 	tests := []struct {
 		name            string
 		secretNames     []string
-		inputObj        controllerruntimeclient.Object
+		inputObj        ctrlruntimeclient.Object
 		wantSecretNames []string
 		wantErr         bool
 	}{
@@ -937,6 +937,6 @@ func TestImagePullSecretsWrapper(t *testing.T) {
 // identityCreator is an ObjectModifier that returns the input object
 // untouched.
 // TODO May be useful to move this in a test package?
-func identityCreator(obj controllerruntimeclient.Object) (controllerruntimeclient.Object, error) {
+func identityCreator(obj ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 	return obj, nil
 }

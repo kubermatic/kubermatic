@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	seed := &kubermaticv1.Seed{}
 	if err := r.Get(ctx, request.NamespacedName, seed); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 
@@ -169,14 +169,14 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *kub
 	seedInSeed := &kubermaticv1.Seed{}
 
 	err := seedClient.Get(ctx, seedKey, seedInSeed)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for %s: %w", seedKey, err)
 	}
 
 	configInSeed := &kubermaticv1.KubermaticConfiguration{}
 
 	err = seedClient.Get(ctx, configKey, configInSeed)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for %s: %w", configKey, err)
 	}
 

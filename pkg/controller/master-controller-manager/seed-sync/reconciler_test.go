@@ -27,7 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -254,7 +254,7 @@ func TestReconcilingSeed(t *testing.T) {
 			key := ctrlruntimeclient.ObjectKeyFromObject(test.seed)
 
 			result := &kubermaticv1.Seed{}
-			if err := seedClient.Get(ctx, key, result); err != nil && kerrors.IsNotFound(err) {
+			if err := seedClient.Get(ctx, key, result); err != nil && apierrors.IsNotFound(err) {
 				t.Fatalf("could not find seed CR in seed cluster: %v", err)
 			}
 			if test.validate != nil {

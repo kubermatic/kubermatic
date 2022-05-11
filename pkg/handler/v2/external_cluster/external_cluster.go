@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,7 +103,7 @@ func DecodeManifestFromKubeOneReq(encodedManifest string) (*kubeonev1beta2.KubeO
 
 	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
 	if err != nil {
-		return nil, errors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 	if err := yaml.UnmarshalStrict(manifest, kubeOneCluster); err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func validatKubeOneReq(kubeOne *apiv2.KubeOneSpec) error {
 		}
 
 		if manifest.APIVersion == "" || manifest.Kind == "" {
-			return errors.NewBadRequest("apiVersion and kind must be present in the manifest")
+			return utilerrors.NewBadRequest("apiVersion and kind must be present in the manifest")
 		}
 	}
 	// validate sshKey
@@ -148,12 +148,12 @@ func CreateEndpoint(
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(createClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -169,7 +169,7 @@ func CreateEndpoint(
 		if len(req.Credential) > 0 {
 			preset, err = presetProvider.GetPreset(ctx, userInfo, req.Credential)
 			if err != nil {
-				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
 		}
 
@@ -182,7 +182,7 @@ func CreateEndpoint(
 			kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
-				return nil, errors.NewBadRequest(err.Error())
+				return nil, utilerrors.NewBadRequest(err.Error())
 			}
 			if err := clusterProvider.ValidateKubeconfig(ctx, config); err != nil {
 				return nil, err
@@ -255,7 +255,7 @@ func CreateEndpoint(
 		// import KubeOne cluster
 		if cloud.KubeOne != nil {
 			if err := validatKubeOneReq(cloud.KubeOne); err != nil {
-				return nil, errors.NewBadRequest(err.Error())
+				return nil, utilerrors.NewBadRequest(err.Error())
 			}
 			createdCluster, err := importKubeOneCluster(ctx, req.Body.Name, userInfoGetter, project, cloud, clusterProvider, privilegedClusterProvider)
 			if err != nil {
@@ -266,19 +266,19 @@ func CreateEndpoint(
 			apiCluster.Status = apiv2.ExternalClusterStatus{State: apiv2.PROVISIONING}
 			return apiCluster, nil
 		}
-		return nil, errors.NewBadRequest("kubeconfig or cloud provider structure missing")
+		return nil, utilerrors.NewBadRequest("kubeconfig or cloud provider structure missing")
 	}
 }
 
 func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(deleteClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -336,12 +336,12 @@ func (req deleteClusterReq) Validate() error {
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(listClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -392,12 +392,12 @@ func (req listClusterReq) Validate() error {
 func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -490,12 +490,12 @@ func (req GetClusterReq) Validate() error {
 func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(updateClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -510,7 +510,7 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if req.Body.Kubeconfig != "" {
 			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
 			if err != nil {
-				return nil, errors.NewBadRequest(err.Error())
+				return nil, utilerrors.NewBadRequest(err.Error())
 			}
 			if err := clusterProvider.ValidateKubeconfig(ctx, config); err != nil {
 				return nil, err
@@ -524,7 +524,7 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			cluster.Spec.HumanReadableName = req.Body.Name
 			cluster, err = updateCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, cluster)
 			if err != nil {
-				return nil, errors.NewBadRequest(err.Error())
+				return nil, utilerrors.NewBadRequest(err.Error())
 			}
 		}
 
@@ -540,12 +540,12 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 ) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(patchClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -590,7 +590,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 				return patchAKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud)
 			}
 			if cloud.KubeOne != nil {
-				containerRuntime, err := checkContainerRuntime(ctx, cluster, clusterProvider)
+				containerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, cluster, clusterProvider)
 				if err != nil {
 					return nil, err
 				}
@@ -608,15 +608,15 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 func patchCluster(clusterToPatch, patchedCluster *apiv2.ExternalCluster, patchJson json.RawMessage) error {
 	existingClusterJSON, err := json.Marshal(clusterToPatch)
 	if err != nil {
-		return errors.NewBadRequest("cannot decode existing cluster: %v", err)
+		return utilerrors.NewBadRequest("cannot decode existing cluster: %v", err)
 	}
 	patchedClusterJSON, err := jsonpatch.MergePatch(existingClusterJSON, patchJson)
 	if err != nil {
-		return errors.NewBadRequest("cannot patch cluster: %v, %v", err, patchJson)
+		return utilerrors.NewBadRequest("cannot patch cluster: %v, %v", err, patchJson)
 	}
 	err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 	if err != nil {
-		return errors.NewBadRequest("cannot decode patched cluster: %v", err)
+		return utilerrors.NewBadRequest("cannot decode patched cluster: %v", err)
 	}
 	return nil
 }
@@ -717,12 +717,12 @@ func (req updateClusterReq) Validate() error {
 func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -777,12 +777,12 @@ func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(listEventsReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -980,7 +980,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	apiCluster := convertClusterToAPI(internalCluster)
 	apiCluster.Status = status
 	cloud := internalCluster.Spec.CloudSpec
-
+	kubeOneCondtion := internalCluster.Status.Condition
 	if cloud == nil {
 		apiCluster.Status.State = apiv2.RUNNING
 	} else {
@@ -1019,8 +1019,8 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		}
 		if cloud.KubeOne != nil {
 			kubeoneStatus := &apiv2.ExternalClusterStatus{
-				State:         apiv2.ExternalClusterState(cloud.KubeOne.ClusterStatus.Status),
-				StatusMessage: cloud.KubeOne.ClusterStatus.StatusMessage,
+				State:         apiv2.ExternalClusterState(kubeOneCondtion.Phase),
+				StatusMessage: kubeOneCondtion.Message,
 			}
 			apiCluster.Status = *kubeoneStatus
 		}
@@ -1097,12 +1097,12 @@ func AreExternalClustersEnabled(ctx context.Context, provider provider.SettingsP
 func GetKubeconfigEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(GetClusterReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)

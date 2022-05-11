@@ -22,42 +22,42 @@ import (
 	"context"
 	"net/http"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func createOrUpdateMeteringCredentials(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) error {
 	return metering.CreateOrUpdateCredentials(ctx, request, seedsGetter, seedClientGetter)
 }
 
-func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient client.Client) error {
+func createOrUpdateMeteringConfigurations(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.CreateOrUpdateConfigurations(ctx, request, masterClient)
 }
 
-func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*v1.MeteringReportConfiguration, error) {
+func getMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request interface{}) (*apiv1.MeteringReportConfiguration, error) {
 	return metering.GetMeteringReportConfiguration(seedsGetter, request)
 }
 
-func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]v1.MeteringReportConfiguration, error) {
+func listMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1.MeteringReportConfiguration, error) {
 	return metering.ListMeteringReportConfigurations(seedsGetter)
 }
 
-func createMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+func createMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.CreateMeteringReportConfiguration(ctx, request, masterClient)
 }
 
-func updateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+func updateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.UpdateMeteringReportConfiguration(ctx, request, masterClient)
 }
 
-func deleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient client.Client) error {
+func deleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	return metering.DeleteMeteringReportConfiguration(ctx, request, masterClient)
 }
 
-func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func listMeteringReports(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) ([]apiv1.MeteringReport, error) {
 	return metering.ListReports(ctx, request, seedsGetter, seedClientGetter)
 }
 

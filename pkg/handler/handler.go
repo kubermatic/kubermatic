@@ -24,7 +24,7 @@ import (
 	"reflect"
 
 	"k8c.io/kubermatic/v2/pkg/log"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 const (
@@ -66,7 +66,7 @@ func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	errorCode := http.StatusInternalServerError
 	msg := err.Error()
 
-	var httpErr kubermaticerrors.HTTPError
+	var httpErr utilerrors.HTTPError
 	if errors.As(err, &httpErr) {
 		errorCode = httpErr.StatusCode()
 		msg = httpErr.Error()

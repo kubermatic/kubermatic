@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
@@ -86,7 +86,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	icl := &kubermaticv1.ExternalCluster{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
 			return reconcile.Result{}, nil
 		}
@@ -94,13 +94,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if icl.DeletionTimestamp != nil {
-		if kuberneteshelper.HasFinalizer(icl, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer) {
+		if kuberneteshelper.HasFinalizer(icl, apiv1.ExternalClusterKubeconfigCleanupFinalizer) {
 			if err := r.cleanUpKubeconfigSecret(ctx, icl); err != nil {
 				log.Errorf("Could not delete kubeconfig secret, %v", err)
 				return reconcile.Result{}, err
 			}
 		}
-		if kuberneteshelper.HasFinalizer(icl, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
+		if kuberneteshelper.HasFinalizer(icl, apiv1.CredentialsSecretsCleanupFinalizer) {
 			if err := r.cleanUpCredentialsSecret(ctx, icl); err != nil {
 				log.Errorf("Could not delete credentials secret, %v", err)
 				return reconcile.Result{}, err
@@ -194,7 +194,7 @@ func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kuber
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 }
 
 func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
@@ -202,7 +202,7 @@ func (r *Reconciler) cleanUpCredentialsSecret(ctx context.Context, cluster *kube
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, apiv1.CredentialsSecretsCleanupFinalizer)
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error {
@@ -214,7 +214,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
 	err := r.Get(ctx, name, secret)
 	// Its already gone
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return nil
 	}
 
@@ -309,7 +309,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: kubeconfigSecretName}
 
 	existingSecret := &corev1.Secret{}
-	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+	if err := r.Get(ctx, namespacedName, existingSecret); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to probe for secret %v: %w", namespacedName, err)
 	}
 
@@ -330,7 +330,7 @@ func (r *Reconciler) updateKubeconfigSecret(ctx context.Context, config *api.Con
 		return err
 	}
 	cluster.Spec.KubeconfigReference = keyRef
-	kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(cluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 
 	return r.Update(ctx, cluster)
 }

@@ -29,7 +29,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -90,7 +90,7 @@ func (r *Reconciler) reconcile(ctx context.Context, seedName string, log *zap.Su
 
 	err = client.Get(ctx, types.NamespacedName{Name: seed.Namespace}, &corev1.Namespace{})
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to check for namespace %s in seed cluster: %w", seed.Namespace, err)
 		}
 
@@ -222,7 +222,7 @@ func (r *Reconciler) reconcileSeedRoleBindings(ctx context.Context, seed *kuberm
 func (r *Reconciler) reconcileSeedRBAC(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	err := client.Get(ctx, types.NamespacedName{Name: SeedMonitoringNamespace}, &corev1.Namespace{})
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debugw("skipping RBAC setup because monitoring namespace does not exist in master", "namespace", SeedMonitoringNamespace)
 			return nil
 		}
@@ -345,7 +345,7 @@ func (r *Reconciler) reconcileMasterServices(ctx context.Context, seed *kubermat
 func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, seeds map[string]*kubermaticv1.Seed, log *zap.SugaredLogger) error {
 	err := r.Get(ctx, types.NamespacedName{Name: MasterGrafanaNamespace}, &corev1.Namespace{})
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to check for namespace %s: %w", MasterGrafanaNamespace, err)
 		}
 
@@ -368,7 +368,7 @@ func (r *Reconciler) deleteResource(ctx context.Context, client ctrlruntimeclien
 	key := types.NamespacedName{Name: name, Namespace: namespace}
 
 	if err := client.Get(ctx, key, obj); err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to probe for %s: %w", key, err)
 		}
 

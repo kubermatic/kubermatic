@@ -33,7 +33,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -45,7 +45,7 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listNodesReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -83,12 +83,12 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 func ListNodesMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(listNodesReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		return getClusterNodesMetrics(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, req.ProjectID, req.ClusterID)
 	}
@@ -190,7 +190,7 @@ func GetNodeEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider pro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getNodeReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -215,7 +215,7 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMachineDeploymentsReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -259,6 +259,12 @@ func ListMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proje
 				}
 				machineDeployments = np
 			}
+			if cloud.KubeOne != nil {
+				machineDeployments, err = getKubeOneAPIMachineDeployments(ctx, cluster, clusterProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+			}
 		}
 
 		return machineDeployments, nil
@@ -269,7 +275,7 @@ func ListMachineDeploymentNodesEndpoint(userInfoGetter provider.UserInfoGetter, 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMachineDeploymentNodesReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		return getMachineDeploymentNodes(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, clusterProvider, privilegedClusterProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
@@ -317,6 +323,13 @@ func getMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.User
 			}
 			nodes = n
 		}
+		if cloud.KubeOne != nil {
+			n, err := getKubeOneNodes(ctx, cluster, machineDeploymentID, clusterProvider)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodes = n
+		}
 	}
 
 	return nodes, nil
@@ -326,7 +339,7 @@ func DeleteMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(machineDeploymentReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -370,7 +383,7 @@ func ListMachineDeploymentMetricsEndpoint(userInfoGetter provider.UserInfoGetter
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(machineDeploymentReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		nodeMetrics := make([]apiv1.NodeMetric, 0)
 
@@ -613,7 +626,7 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(machineDeploymentReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -653,11 +666,11 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 				machineDeployment = *np
 			}
 			if cloud.KubeOne != nil {
-				md, err := getKubeOneMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
+				md, err := getKubeOneAPIMachineDeployment(ctx, req.MachineDeploymentID, cluster, clusterProvider)
 				if err != nil {
-					return nil, err
+					return nil, common.KubernetesErrorToHTTPError(err)
 				}
-				machineDeployment = *createAPIMachineDeployment(md)
+				machineDeployment = *md
 			}
 		}
 
@@ -668,13 +681,13 @@ func GetMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projec
 func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		if !AreExternalClustersEnabled(ctx, settingsProvider) {
-			return nil, errors.New(http.StatusForbidden, "external cluster functionality is disabled")
+			return nil, utilerrors.New(http.StatusForbidden, "external cluster functionality is disabled")
 		}
 
 		req := request.(patchMachineDeploymentReq)
 
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -730,7 +743,7 @@ func PatchMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, proj
 				if err != nil {
 					return nil, err
 				}
-				md := createAPIMachineDeployment(machineDeployment)
+				md := createAPIMachineDeployment(*machineDeployment)
 				mdToPatch.NodeDeployment = md.NodeDeployment
 				if err := patchMD(&mdToPatch, &patchedMD, req.Patch); err != nil {
 					return nil, err
@@ -746,7 +759,7 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createMachineDeploymentsReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
@@ -780,15 +793,15 @@ func CreateMachineDeploymentEndpoint(userInfoGetter provider.UserInfoGetter, pro
 func patchMD(mdToPatch, patchedMD *apiv2.ExternalClusterMachineDeployment, patchJson json.RawMessage) error {
 	existingMDJSON, err := json.Marshal(mdToPatch)
 	if err != nil {
-		return errors.NewBadRequest("cannot decode existing md: %v", err)
+		return utilerrors.NewBadRequest("cannot decode existing md: %v", err)
 	}
 	patchedMDJSON, err := jsonpatch.MergePatch(existingMDJSON, patchJson)
 	if err != nil {
-		return errors.NewBadRequest("cannot patch md: %v, %v", err, patchJson)
+		return utilerrors.NewBadRequest("cannot patch md: %v, %v", err, patchJson)
 	}
 	err = json.Unmarshal(patchedMDJSON, &patchedMD)
 	if err != nil {
-		return errors.NewBadRequest("cannot decode patched md: %v", err)
+		return utilerrors.NewBadRequest("cannot decode patched md: %v", err)
 	}
 	return nil
 }

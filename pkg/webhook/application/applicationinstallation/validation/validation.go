@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	admissionv1 "k8s.io/api/admission/v1"
@@ -65,8 +65,8 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
 	allErrs := field.ErrorList{}
-	ad := &appkubermaticv1.ApplicationInstallation{}
-	oldAD := &appkubermaticv1.ApplicationInstallation{}
+	ad := &appskubermaticv1.ApplicationInstallation{}
+	oldAD := &appskubermaticv1.ApplicationInstallation{}
 
 	switch req.Operation {
 	case admissionv1.Create:

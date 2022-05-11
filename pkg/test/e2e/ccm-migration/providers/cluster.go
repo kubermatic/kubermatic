@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -143,7 +143,7 @@ func (ccj *CommonClusterJig) cleanUp(ctx context.Context, userClient ctrlruntime
 	return wait.PollImmediate(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		cluster := &kubermaticv1.Cluster{}
 		var err error
-		if err = ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); kerrors.IsNotFound(err) {
+		if err = ccj.SeedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: ccj.name, Namespace: ""}, cluster); apierrors.IsNotFound(err) {
 			return true, nil
 		}
 		if err != nil {

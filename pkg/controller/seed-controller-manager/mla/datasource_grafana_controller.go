@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
@@ -189,7 +189,7 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	project := &kubermaticv1.Project{}
 	err = r.Get(ctx, types.NamespacedName{Name: projectID}, project)
 	if err != nil {
-		if apiErrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			// if project removed before cluster we need only to remove resources and finalizer
 			if err := r.handleDeletion(ctx, cluster, nil); err != nil {
 				return nil, fmt.Errorf("handling deletion: %w", err)
@@ -230,7 +230,7 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		Build()
 
 	settings := &kubermaticv1.MLAAdminSetting{}
-	if err := r.Get(ctx, types.NamespacedName{Name: resources.MLAAdminSettingsName, Namespace: cluster.Status.NamespaceName}, settings); err != nil && !apiErrors.IsNotFound(err) {
+	if err := r.Get(ctx, types.NamespacedName{Name: resources.MLAAdminSettingsName, Namespace: cluster.Status.NamespaceName}, settings); err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get MLAAdminSetting: %w", err)
 	}
 
@@ -368,7 +368,7 @@ func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.
 	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Remove the health status in Cluster CR
 		c.Status.ExtendedHealth.MLAGateway = nil
-		if resourceDeletionErr != nil && !apiErrors.IsNotFound(resourceDeletionErr) {
+		if resourceDeletionErr != nil && !apierrors.IsNotFound(resourceDeletionErr) {
 			down := kubermaticv1.HealthStatusDown
 			c.Status.ExtendedHealth.MLAGateway = &down
 		}
@@ -397,7 +397,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluste
 			if errH := r.cleanUpMlaGatewayHealthStatus(ctx, cluster, err); errH != nil {
 				return fmt.Errorf("failed to update mlaGateway status in cluster: %w", errH)
 			}
-			if err != nil && !apiErrors.IsNotFound(err) {
+			if err != nil && !apierrors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete %s: %w", resource.GetName(), err)
 			}
 		}

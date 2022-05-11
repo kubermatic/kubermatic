@@ -25,7 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -131,10 +131,10 @@ func (p *ClusterTemplateProvider) Get(ctx context.Context, userInfo *provider.Us
 	}
 
 	if result.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.UserClusterTemplateScope && !strings.EqualFold(result.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey], userInfo.Email) {
-		return nil, kubermaticerrors.New(http.StatusForbidden, fmt.Sprintf("user %s can't access template %s", userInfo.Email, templateID))
+		return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("user %s can't access template %s", userInfo.Email, templateID))
 	}
 	if projectID != "" && result.Labels[kubermaticv1.ProjectIDLabelKey] != projectID && result.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.ProjectClusterTemplateScope {
-		return nil, kubermaticerrors.New(http.StatusForbidden, fmt.Sprintf("cluster template doesn't belong to the project %s", projectID))
+		return nil, utilerrors.New(http.StatusForbidden, fmt.Sprintf("cluster template doesn't belong to the project %s", projectID))
 	}
 
 	return result, nil
@@ -155,7 +155,7 @@ func (p *ClusterTemplateProvider) Delete(ctx context.Context, userInfo *provider
 
 	// only admin can delete global templates
 	if !userInfo.IsAdmin && result.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.GlobalClusterTemplateScope {
-		return kubermaticerrors.New(http.StatusForbidden, fmt.Sprintf("user %s can't delete template %s", userInfo.Email, templateID))
+		return utilerrors.New(http.StatusForbidden, fmt.Sprintf("user %s can't delete template %s", userInfo.Email, templateID))
 	}
 
 	return p.clientPrivileged.Delete(ctx, result)

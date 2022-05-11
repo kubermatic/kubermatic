@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -46,14 +46,14 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx context.Context, use
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Alibaba == nil {
-		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
 	}
 
 	datacenterName := cluster.Spec.Cloud.DatacenterName
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -90,7 +90,7 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
 	}
 
 	// get all families that are available for the Region
@@ -100,7 +100,7 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 
 	instTypeFamilies, err := client.DescribeInstanceTypeFamilies(requestFamilies)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %v", err))
 	}
 
 	if quota.EnableGPU {
@@ -119,7 +119,7 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 
 	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
 	}
 
 	for _, instType := range instTypes.InstanceTypes.InstanceType {
@@ -168,14 +168,14 @@ func AlibabaZonesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGet
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Alibaba == nil {
-		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
 	}
 
 	datacenterName := cluster.Spec.Cloud.DatacenterName
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -201,7 +201,7 @@ func ListAlibabaZones(accessKeyID string, accessKeySecret string, region string)
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
 	}
 
 	requestZones := ecs.CreateDescribeZonesRequest()
@@ -209,7 +209,7 @@ func ListAlibabaZones(accessKeyID string, accessKeySecret string, region string)
 
 	responseZones, err := client.DescribeZones(requestZones)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list zones: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list zones: %v", err))
 	}
 
 	for _, zone := range responseZones.Zones.Zone {
@@ -227,7 +227,7 @@ func ListAlibabaVSwitches(accessKeyID string, accessKeySecret string, region str
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
 	}
 
 	requestVSwitches := ecs.CreateDescribeVSwitchesRequest()
@@ -235,7 +235,7 @@ func ListAlibabaVSwitches(accessKeyID string, accessKeySecret string, region str
 
 	responseVswitches, err := client.DescribeVSwitches(requestVSwitches)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list vSwitches: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list vSwitches: %v", err))
 	}
 
 	for _, vSwitch := range responseVswitches.VSwitches.VSwitch {
@@ -256,14 +256,14 @@ func AlibabaVswitchesWithClusterCredentialsEndpoint(ctx context.Context, userInf
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Alibaba == nil {
-		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for %s", clusterID)
 	}
 
 	datacenterName := cluster.Spec.Cloud.DatacenterName
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")

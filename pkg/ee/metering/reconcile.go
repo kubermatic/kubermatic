@@ -38,7 +38,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -199,7 +199,7 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{MeteringLabelKey}),
 	}
 	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to list reporting cronjobs: %w", err)
 		}
 	}
@@ -208,7 +208,7 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 
 func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key types.NamespacedName, obj ctrlruntimeclient.Object) error {
 	if err := client.Get(ctx, key, obj); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

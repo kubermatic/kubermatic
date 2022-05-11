@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
@@ -169,7 +169,7 @@ func (r *orgUserGrafanaController) CleanUp(ctx context.Context) error {
 func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding, grafanaClient *grafanasdk.Client) error {
 	if grafanaClient != nil {
 		project := &kubermaticv1.Project{}
-		if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
+		if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get project: %w", err)
 		}
 		org, err := getOrgByProject(ctx, grafanaClient, project)

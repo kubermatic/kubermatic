@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/email"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -138,7 +138,7 @@ func (m *PresetProvider) GetPreset(ctx context.Context, userInfo *provider.UserI
 		}
 	}
 
-	return nil, errors.NewNotFound(kubermaticv1.Resource("preset"), name)
+	return nil, apierrors.NewNotFound(kubermaticv1.Resource("preset"), name)
 }
 
 // DeletePreset delete Preset.

@@ -25,7 +25,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig/v3"
 	"go.uber.org/zap"
 
@@ -119,7 +119,7 @@ func NewTemplateData(
 			OwnerEmail:        cluster.Status.UserEmail,
 			Address:           cluster.Address,
 			CloudProviderName: providerName,
-			Version:           semver.MustParse(cluster.Status.Versions.ControlPlane.String()),
+			Version:           semverlib.MustParse(cluster.Status.Versions.ControlPlane.String()),
 			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),
 			Features:          sets.StringKeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
@@ -185,7 +185,7 @@ type ClusterData struct {
 	// the configured datacenters.
 	CloudProviderName string
 	// Version is the exact current cluster version.
-	Version *semver.Version
+	Version *semverlib.Version
 	// MajorMinorVersion is a shortcut for common testing on "Major.Minor" on the
 	// current cluster version.
 	MajorMinorVersion string

@@ -32,7 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -57,7 +57,7 @@ func GetEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider)
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(constraintTemplateReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		constraintTemplate, err := constraintTemplateProvider.Get(ctx, req.Name)
@@ -112,7 +112,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePr
 			return nil, err
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
@@ -124,7 +124,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePr
 		}
 
 		if err := validateConstraintTemplate(ct); err != nil {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("create ct validation failed: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("create ct validation failed: %v", err))
 		}
 
 		ct, err = constraintTemplateProvider.Create(ctx, ct)
@@ -164,7 +164,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchConstraintTemplateReq)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		adminUserInfo, err := userInfoGetter(ctx, "")
@@ -172,7 +172,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
@@ -187,23 +187,23 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 		// patch
 		originalJSON, err := json.Marshal(originalAPICT)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current ct: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current ct: %v", err))
 		}
 
 		patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
 		if err != nil {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch ct: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch ct: %v", err))
 		}
 
 		var patched *apiv2.ConstraintTemplate
 		err = json.Unmarshal(patchedJSON, &patched)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch ct: %v", err))
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch ct: %v", err))
 		}
 
 		// validate
 		if patched.Name != originalCT.Name {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing ct name is not allowed: %q to %q", originalCT.Name, patched.Name))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing ct name is not allowed: %q to %q", originalCT.Name, patched.Name))
 		}
 
 		patchedCT := &kubermaticv1.ConstraintTemplate{
@@ -215,7 +215,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 		}
 
 		if err := validateConstraintTemplate(patchedCT); err != nil {
-			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("patched ct validation failed: %v", err))
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("patched ct validation failed: %v", err))
 		}
 
 		// apply patch
@@ -281,7 +281,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePr
 			return nil, err
 		}
 		if !adminUserInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
+			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 

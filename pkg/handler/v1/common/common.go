@@ -33,7 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -124,7 +124,7 @@ func GetReadyPod(ctx context.Context, client corev1interface.PodInterface, label
 
 	readyPods := getReadyPods(pods)
 	if len(readyPods.Items) < 1 {
-		return nil, kubermaticerrors.New(http.StatusBadRequest, "pod is not ready")
+		return nil, utilerrors.New(http.StatusBadRequest, "pod is not ready")
 	}
 
 	return &readyPods.Items[0], nil
@@ -222,9 +222,9 @@ func WaitForPortForwarder(duration time.Duration, p *portforward.PortForwarder, 
 func WriteHTTPError(log *zap.SugaredLogger, w http.ResponseWriter, err error) {
 	log.Debugw("Encountered error", zap.Error(err))
 
-	var httpErr kubermaticerrors.HTTPError
+	var httpErr utilerrors.HTTPError
 	if !errors.As(err, &httpErr) {
-		httpErr = kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		httpErr = utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	w.WriteHeader(httpErr.StatusCode())

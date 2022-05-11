@@ -24,15 +24,15 @@ import (
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -127,8 +127,8 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, ct)
 				}
 
-				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
-					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
+				if tc.expectedGetErrStatus != apierrors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, apierrors.ReasonForError(err))
 				}
 				return
 			}
@@ -192,8 +192,8 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	if errors.ReasonForError(err) != metav1.StatusReasonNotFound {
-		t.Fatalf("expected err: %v, got %v", metav1.StatusReasonNotFound, errors.ReasonForError(err))
+	if apierrors.ReasonForError(err) != metav1.StatusReasonNotFound {
+		t.Fatalf("expected err: %v, got %v", metav1.StatusReasonNotFound, apierrors.ReasonForError(err))
 	}
 }
 
@@ -205,7 +205,7 @@ func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTe
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
-		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperConstraintTemplateCleanupFinalizer)
+		ct.Finalizers = append(ct.Finalizers, apiv1.GatekeeperConstraintTemplateCleanupFinalizer)
 	}
 
 	return ct
@@ -231,12 +231,12 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 					ShortNames: []string{"lc"},
 				},
 				Validation: &constrainttemplatev1.Validation{
-					OpenAPIV3Schema: &apiextensionv1.JSONSchemaProps{
-						Properties: map[string]apiextensionv1.JSONSchemaProps{
+					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							"labels": {
 								Type: "array",
-								Items: &apiextensionv1.JSONSchemaPropsOrArray{
-									Schema: &apiextensionv1.JSONSchemaProps{
+								Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+									Schema: &apiextensionsv1.JSONSchemaProps{
 										Type: "string",
 									},
 								},

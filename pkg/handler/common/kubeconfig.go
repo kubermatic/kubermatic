@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	kcerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"
@@ -181,22 +181,22 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	if req.phase == exchangeCodePhase {
 		// validate the state
 		if req.decodedState.Nonce != req.cookieNonceValue {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter: %s", req.decodedState.Nonce)
+			return nil, utilerrors.NewBadRequest("incorrect value of state parameter: %s", req.decodedState.Nonce)
 		}
 		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("error while exchanging oidc code for token: %v", err)
+			return nil, utilerrors.NewBadRequest("error while exchanging oidc code for token: %v", err)
 		}
 		if len(oidcTokens.RefreshToken) == 0 {
-			return nil, kcerrors.NewBadRequest("the refresh token is missing but required, try setting/unsetting \"oidc-offline-access-as-scope\" command line flag")
+			return nil, utilerrors.NewBadRequest("the refresh token is missing but required, try setting/unsetting \"oidc-offline-access-as-scope\" command line flag")
 		}
 
 		claims, err := oidcVerifier.Verify(ctx, oidcTokens.IDToken)
 		if err != nil {
-			return nil, kcerrors.New(http.StatusUnauthorized, err.Error())
+			return nil, utilerrors.New(http.StatusUnauthorized, err.Error())
 		}
 		if len(claims.Email) == 0 {
-			return nil, kcerrors.NewBadRequest("the token doesn't contain the mandatory \"email\" claim")
+			return nil, utilerrors.NewBadRequest("the token doesn't contain the mandatory \"email\" claim")
 		}
 
 		adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(ctx, cluster)
@@ -215,7 +215,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 				}
 			}
 			if clusterFromAdminKubeCfg == nil {
-				return nil, kcerrors.New(http.StatusInternalServerError, fmt.Sprintf("unable to construct kubeconfig because couldn't find %s cluster entry in existing kubecfg", req.ClusterID))
+				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("unable to construct kubeconfig because couldn't find %s cluster entry in existing kubecfg", req.ClusterID))
 			}
 
 			// create cluster entry
@@ -255,7 +255,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 	// PHASE initial handles request from the end-user that wants to authenticate
 	// and kicksoff the process of kubeconfig generation
 	if req.phase != initialPhase {
-		return nil, kcerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase %d, expected phase %d, did you forget to set the phase while decoding the request?", req.phase, initialPhase))
+		return nil, utilerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase %d, expected phase %d, did you forget to set the phase while decoding the request?", req.phase, initialPhase))
 	}
 
 	rsp := createOIDCKubeconfigRsp{}
@@ -373,15 +373,15 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 	if len(req.code) != 0 && len(req.encodedState) != 0 {
 		unescapedState, err := url.QueryUnescape(req.encodedState)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected url encoded value: %v", err)
+			return nil, utilerrors.NewBadRequest("incorrect value of state parameter, expected url encoded value: %v", err)
 		}
 		rawState, err := base64.StdEncoding.DecodeString(unescapedState)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value: %v", err)
+			return nil, utilerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value: %v", err)
 		}
 		oidcState := OIDCState{}
 		if err := json.Unmarshal(rawState, &oidcState); err != nil {
-			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value: %v", err)
+			return nil, utilerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value: %v", err)
 		}
 		// handle cookie when new endpoint is created and secureCookie was initialized
 		if secureCookie != nil {
@@ -392,7 +392,7 @@ func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 					req.cookieNonceValue = value
 				}
 			} else {
-				return nil, kcerrors.NewBadRequest("incorrect value of cookie or cookie not set: %v", err)
+				return nil, utilerrors.NewBadRequest("incorrect value of cookie or cookie not set: %v", err)
 			}
 		}
 		req.phase = exchangeCodePhase
@@ -453,11 +453,11 @@ func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int)
 func getClusterForOIDCEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (*kubermaticv1.Cluster, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
-		return nil, kcerrors.New(http.StatusInternalServerError, "no cluster provider in request")
+		return nil, utilerrors.New(http.StatusInternalServerError, "no cluster provider in request")
 	}
 	privilegedClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 	if !ok {
-		return nil, kcerrors.New(http.StatusInternalServerError, "no privileged cluster provider in request")
+		return nil, utilerrors.New(http.StatusInternalServerError, "no privileged cluster provider in request")
 	}
 	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 

@@ -3426,7 +3426,7 @@ func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, au
 }
 
 /*
-  ListClustersV2 lists clusters for the specified project
+  ListClustersV2 lists clusters for the specified project if query parameter show dm count is set to true then the endpoint will also return the number of machine deployments of each cluster
 */
 func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersV2OK, error) {
 	// TODO: Validate the params before sending

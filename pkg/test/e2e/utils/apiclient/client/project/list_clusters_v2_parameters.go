@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewListClustersV2Params creates a new ListClustersV2Params object,
@@ -61,6 +62,9 @@ type ListClustersV2Params struct {
 
 	// ProjectID.
 	ProjectID string
+
+	// ShowDmCount.
+	ShowDeploymentMachineCount *bool
 
 	timeout    time.Duration
 	Context    context.Context
@@ -126,6 +130,17 @@ func (o *ListClustersV2Params) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
+// WithShowDeploymentMachineCount adds the showDmCount to the list clusters v2 params
+func (o *ListClustersV2Params) WithShowDeploymentMachineCount(showDmCount *bool) *ListClustersV2Params {
+	o.SetShowDeploymentMachineCount(showDmCount)
+	return o
+}
+
+// SetShowDeploymentMachineCount adds the showDmCount to the list clusters v2 params
+func (o *ListClustersV2Params) SetShowDeploymentMachineCount(showDmCount *bool) {
+	o.ShowDeploymentMachineCount = showDmCount
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListClustersV2Params) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -137,6 +152,23 @@ func (o *ListClustersV2Params) WriteToRequest(r runtime.ClientRequest, reg strfm
 	// path param project_id
 	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
 		return err
+	}
+
+	if o.ShowDeploymentMachineCount != nil {
+
+		// query param show_dm_count
+		var qrShowDmCount bool
+
+		if o.ShowDeploymentMachineCount != nil {
+			qrShowDmCount = *o.ShowDeploymentMachineCount
+		}
+		qShowDmCount := swag.FormatBool(qrShowDmCount)
+		if qShowDmCount != "" {
+
+			if err := r.SetQueryParam("show_dm_count", qShowDmCount); err != nil {
+				return err
+			}
+		}
 	}
 
 	if len(res) > 0 {

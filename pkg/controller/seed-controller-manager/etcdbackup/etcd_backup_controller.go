@@ -42,7 +42,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -86,10 +86,10 @@ const (
 	backupKeepCountEnvVarKey = "BACKUP_KEEP_COUNT"
 	// backupConfigEnvVarKey defines the environment variable key for the name of the backup configuration resource.
 	backupConfigEnvVarKey = "BACKUP_CONFIG"
-	// accessKeyIdEnvVarKey defines the environment variable key for the backup credentials access key id.
-	accessKeyIdEnvVarKey = "ACCESS_KEY_ID"
-	// secretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key.
-	secretAccessKeyEnvVarKey = "SECRET_ACCESS_KEY"
+	// AccessKeyIdEnvVarKey defines the environment variable key for the backup credentials access key id.
+	AccessKeyIdEnvVarKey = "ACCESS_KEY_ID"
+	// SecretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key.
+	SecretAccessKeyEnvVarKey = "SECRET_ACCESS_KEY"
 	// bucketNameEnvVarKey defines the environment variable key for the backup bucket name.
 	bucketNameEnvVarKey = "BUCKET_NAME"
 	// backupEndpointEnvVarKey defines the environment variable key for the backup endpoint.
@@ -199,7 +199,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	backupConfig := &kubermaticv1.EtcdBackupConfig{}
 	if err := r.Get(ctx, request.NamespacedName, backupConfig); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -234,7 +234,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		kubermaticv1.ClusterConditionNone,
 		func() (*reconcile.Result, error) {
 			result, err := r.reconcile(ctx, log, backupConfig, cluster, seed, config)
-			if kerrors.IsConflict(err) {
+			if apierrors.IsConflict(err) {
 				// benign update conflict -- remember this so we can
 				// suppress log.Error and event generation below
 				suppressedError = err
@@ -522,7 +522,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				job := &batchv1.Job{}
 				err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.JobName}, job)
 				if err != nil {
-					if !kerrors.IsNotFound(err) {
+					if !apierrors.IsNotFound(err) {
 						return nil, fmt.Errorf("error getting job for backup %s: %w", backup.BackupName, err)
 					}
 					// job not found. Apparently deleted externally.
@@ -545,7 +545,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				}
 			} else if backup.BackupPhase == "" && r.clock.Now().Sub(backup.ScheduledTime.Time) >= 0 && backupConfig.DeletionTimestamp == nil {
 				job := r.backupJob(backupConfig, cluster, backup, destination, storeContainer)
-				if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
+				if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
 					return nil, fmt.Errorf("error creating job for backup %s: %w", backup.BackupName, err)
 				}
 				backup.BackupPhase = kubermaticv1.BackupStatusPhaseRunning
@@ -628,7 +628,7 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 	destination *kubermaticv1.BackupDestination, deleteContainer *corev1.Container) error {
 	if deleteContainer != nil {
 		job := r.backupDeleteJob(backupConfig, cluster, backup, destination, deleteContainer)
-		if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
+		if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
 			return fmt.Errorf("error creating delete job for backup %s: %w", backup.BackupName, err)
 		}
 		backup.DeletePhase = kubermaticv1.BackupStatusPhaseRunning
@@ -660,7 +660,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 			job := &batchv1.Job{}
 			err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.DeleteJobName}, job)
 			if err != nil {
-				if !kerrors.IsNotFound(err) {
+				if !apierrors.IsNotFound(err) {
 					return nil, fmt.Errorf("error getting delete job for backup %s: %w", backup.BackupName, err)
 				}
 				// job not found. Apparently deleted, either externally or by us in a previous cycle.
@@ -677,7 +677,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 					// delete jobs are the only things that know how to delete a backup.
 					// Ideally jobs would support recreating failed or hanging pods themselves, but
 					// they don't under all circumstances -- see https://github.com/kubernetes/kubernetes/issues/95431
-					if err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
+					if err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !apierrors.IsNotFound(err) {
 						return nil, fmt.Errorf("backup %s: failed to delete failed delete job %s: %w", backup.BackupName, backup.JobName, err)
 					}
 					deleteJobsToRestart = append(deleteJobsToRestart, DeleteJobToRestart{backup, fmt.Sprintf("Job failed: %s. Restarted.", cond.Message)})
@@ -749,15 +749,15 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 
 				err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.JobName}, job)
 				switch {
-				case kerrors.IsNotFound(err):
+				case apierrors.IsNotFound(err):
 					backupJobDeleted = true
 				case err == nil:
 					err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground))
-					if err != nil && !kerrors.IsNotFound(err) {
+					if err != nil && !apierrors.IsNotFound(err) {
 						return nil, fmt.Errorf("backup %s: failed to delete backup job %s: %w", backup.BackupName, backup.JobName, err)
 					}
 					backupJobDeleted = true
-				case !kerrors.IsNotFound(err):
+				case !apierrors.IsNotFound(err):
 					return nil, fmt.Errorf("backup %s: failed to get backup job %s: %w", backup.BackupName, backup.JobName, err)
 				}
 			}
@@ -783,15 +783,15 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 
 				err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.DeleteJobName}, job)
 				switch {
-				case kerrors.IsNotFound(err):
+				case apierrors.IsNotFound(err):
 					deleteJobDeleted = true
 				case err == nil:
 					err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground))
-					if err != nil && !kerrors.IsNotFound(err) {
+					if err != nil && !apierrors.IsNotFound(err) {
 						return nil, fmt.Errorf("backup %s: failed to delete job %s: %w", backup.BackupName, backup.DeleteJobName, err)
 					}
 					deleteJobDeleted = true
-				case !kerrors.IsNotFound(err):
+				case !apierrors.IsNotFound(err):
 					return nil, fmt.Errorf("backup %s: failed to get job %s: %w", backup.BackupName, backup.DeleteJobName, err)
 				}
 			}
@@ -840,8 +840,8 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 
 	// If destination is set, we need to set the credentials and backup bucket details to match the destination
 	if destination != nil {
-		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
-		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
+		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, destination))
+		storeContainer.Env = setEnvVar(storeContainer.Env, genSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, destination))
 		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
 			Name:  bucketNameEnvVarKey,
 			Value: destination.BucketName,
@@ -994,8 +994,8 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 
 	// If destination is set, we need to set the credentials and backup bucket details to match the destination
 	if destination != nil {
-		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, destination))
-		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, destination))
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, destination))
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, genSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, destination))
 		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
 			Name:  bucketNameEnvVarKey,
 			Value: destination.BucketName,

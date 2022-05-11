@@ -29,14 +29,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func CreateEndpoint(keyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(CreateReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -49,7 +49,7 @@ func CreateEndpoint(keyProvider provider.SSHKeyProvider, privilegedSSHKeyProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(existingKeys) > 0 {
-			return nil, errors.NewAlreadyExists("ssh key", req.Key.Name)
+			return nil, utilerrors.NewAlreadyExists("ssh key", req.Key.Name)
 		}
 
 		key, err := createUserSSHKey(ctx, userInfoGetter, keyProvider, privilegedSSHKeyProvider, project, req.Key.Name, req.Key.Spec.PublicKey)
@@ -91,7 +91,7 @@ func DeleteEndpoint(keyProvider provider.SSHKeyProvider, privilegedSSHKeyProvide
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DeleteReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
@@ -123,10 +123,10 @@ func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(ListReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
+			return nil, utilerrors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
@@ -203,7 +203,7 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	req.Key = apiv1.SSHKey{}
 	if err := json.NewDecoder(r.Body).Decode(&req.Key); err != nil {
-		return nil, errors.NewBadRequest("unable to parse the input: %v", err)
+		return nil, utilerrors.NewBadRequest("unable to parse the input: %v", err)
 	}
 
 	if len(req.Key.Name) == 0 {

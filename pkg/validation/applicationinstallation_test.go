@@ -23,7 +23,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,7 +42,7 @@ var (
 )
 
 func init() {
-	_ = appkubermaticv1.AddToScheme(testScheme)
+	_ = appskubermaticv1.AddToScheme(testScheme)
 }
 
 // TestValidateApplicationInstallationSpec tests the validation for ApplicationInstallation creation.
@@ -58,7 +58,7 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		ai            *appkubermaticv1.ApplicationInstallation
+		ai            *appskubermaticv1.ApplicationInstallation
 		expectedError string
 	}{
 		{
@@ -68,8 +68,8 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 		},
 		{
 			name: "Create ApplicationInstallation Failure - ApplicationDefinitation doesn't exist",
-			ai: &appkubermaticv1.ApplicationInstallation{
-				Spec: func() appkubermaticv1.ApplicationInstallationSpec {
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
 					spec.ApplicationRef.Name = invalidResource
 					return *spec
@@ -78,10 +78,10 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 		},
 		{
 			name: "Create ApplicationInstallation Failure - Invalid Version",
-			ai: &appkubermaticv1.ApplicationInstallation{
-				Spec: func() appkubermaticv1.ApplicationInstallationSpec {
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
-					spec.ApplicationRef.Version = appkubermaticv1.Version{Version: *semverlib.MustParse("3.2.3")}
+					spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse("3.2.3")}
 					return *spec
 				}(),
 			}, expectedError: `[spec.applicationRef.version: Not found: 3.2.3]`,
@@ -115,15 +115,15 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		ai            *appkubermaticv1.ApplicationInstallation
-		updatedAI     *appkubermaticv1.ApplicationInstallation
+		ai            *appskubermaticv1.ApplicationInstallation
+		updatedAI     *appskubermaticv1.ApplicationInstallation
 		expectedError string
 	}{
 		{
 			name: "Update ApplicationInstallation Success",
 			ai:   ai,
-			updatedAI: &appkubermaticv1.ApplicationInstallation{
-				Spec: func() appkubermaticv1.ApplicationInstallationSpec {
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
 					spec.Namespace.Labels = map[string]string{"key": "value"}
 					return *spec
@@ -134,8 +134,8 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 		{
 			name: "Update ApplicationInstallation Failure - .Namespace.Name is immutable",
 			ai:   ai,
-			updatedAI: &appkubermaticv1.ApplicationInstallation{
-				Spec: func() appkubermaticv1.ApplicationInstallationSpec {
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
 					spec.Namespace.Name = invalidResource
 					return *spec
@@ -146,8 +146,8 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 		{
 			name: "Update ApplicationInstallation Failure - .ApplicationRef.Name is immutable",
 			ai:   ai,
-			updatedAI: &appkubermaticv1.ApplicationInstallation{
-				Spec: func() appkubermaticv1.ApplicationInstallationSpec {
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
 					spec.ApplicationRef.Name = "updated-app"
 					return *spec
@@ -158,10 +158,10 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 		{
 			name: "Update ApplicationInstallation Failure - .ApplicationRef.Version is immutable",
 			ai:   ai,
-			updatedAI: &appkubermaticv1.ApplicationInstallation{
-				Spec: func() appkubermaticv1.ApplicationInstallationSpec {
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
-					spec.ApplicationRef.Version = appkubermaticv1.Version{Version: *semverlib.MustParse(defaultAppSecondaryVersion)}
+					spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse(defaultAppSecondaryVersion)}
 					return *spec
 				}(),
 			},
@@ -182,14 +182,14 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 	}
 }
 
-func getApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinition {
-	return &appkubermaticv1.ApplicationDefinition{
+func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
+	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: appkubermaticv1.ApplicationDefinitionSpec{
+		Spec: appskubermaticv1.ApplicationDefinitionSpec{
 			Description: "Description",
-			Versions: []appkubermaticv1.ApplicationVersion{
+			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: defaultAppVersion,
 				},
@@ -201,20 +201,20 @@ func getApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 	}
 }
 
-func getApplicationInstallation(name string, appName string, appVersion string) *appkubermaticv1.ApplicationInstallation {
-	return &appkubermaticv1.ApplicationInstallation{
+func getApplicationInstallation(name string, appName string, appVersion string) *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "kube-system",
 		},
-		Spec: appkubermaticv1.ApplicationInstallationSpec{
-			Namespace: appkubermaticv1.NamespaceSpec{
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.NamespaceSpec{
 				Name:   "default",
 				Create: true,
 			},
-			ApplicationRef: appkubermaticv1.ApplicationRef{
+			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    appName,
-				Version: appkubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
 			},
 		},
 	}

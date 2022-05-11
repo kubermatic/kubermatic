@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
@@ -90,7 +90,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
 
 	if nd.Spec.DynamicConfig != nil && *nd.Spec.DynamicConfig {
-		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
+		kubeletVersion, err := semverlib.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
 		}
@@ -310,7 +310,7 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 
 // Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
 // kubelet version if it wasn't specified.
-func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*apiv1.NodeDeployment, error) {
+func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semverlib.Version) (*apiv1.NodeDeployment, error) {
 	if nd.Spec.Template.Cloud.Openstack == nil &&
 		nd.Spec.Template.Cloud.Digitalocean == nil &&
 		nd.Spec.Template.Cloud.AWS == nil &&
@@ -327,7 +327,7 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 	}
 
 	if nd.Spec.Template.Versions.Kubelet != "" {
-		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
+		kubeletVersion, err := semverlib.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
 		}

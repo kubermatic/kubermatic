@@ -36,7 +36,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -167,7 +167,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		return nil
 	}
 
-	if !kerrors.IsNotFound(err) {
+	if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to check for StorageClass %s: %w", StorageClassName, err)
 	}
 
@@ -304,7 +304,7 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 	}
 
 	err := kubeClient.Get(ctx, name, existingConfig)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to check for existing KubermaticConfiguration: %w", err)
 	}
 

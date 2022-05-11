@@ -20,13 +20,13 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -35,7 +35,7 @@ func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kuber
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.CredentialsSecretsCleanupFinalizer)
 }
 
 func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -48,7 +48,7 @@ func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Clust
 	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
 	err := d.seedClient.Get(ctx, name, secret)
 	// It's already gone
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return nil
 	}
 

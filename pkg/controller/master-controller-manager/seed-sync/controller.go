@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -79,7 +79,7 @@ func Add(
 	}
 
 	// watch all KubermaticConfigurations in the given namespace
-	configHandler := func(o client.Object) []reconcile.Request {
+	configHandler := func(o ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to retrieve seeds", zap.Error(err))

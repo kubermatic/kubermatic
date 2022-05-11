@@ -19,22 +19,19 @@ package externalcluster
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/Azure/go-autorest/autorest/to"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -46,7 +43,7 @@ import (
 )
 
 const (
-	NodeControlPlaneLabel = "node-role.kubernetes.io/control-plane"
+	NodeWorkerLabel = "workerset"
 )
 
 func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(ctx context.Context, projectID string) (*provider.UserInfo, error), project *kubermaticv1.Project, cloud *apiv2.ExternalClusterCloudSpec, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
@@ -80,7 +77,7 @@ func importKubeOneCluster(ctx context.Context, name string, userInfoGetter func(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	newCluster.Spec.CloudSpec.KubeOne.ClusterStatus.Status = kubermaticv1.StatusProvisioning
+	newCluster.Status.Condition.Phase = kubermaticv1.ExternalClusterPhaseProvisioning
 	return createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, newCluster, project)
 }
 
@@ -91,10 +88,9 @@ func patchKubeOneCluster(ctx context.Context,
 	secretKeySelector provider.SecretKeySelectorValueFunc,
 	clusterProvider provider.ExternalClusterProvider,
 	masterClient ctrlruntimeclient.Client) (*apiv2.ExternalCluster, error) {
-	kubeOneSpec := cluster.Spec.CloudSpec.KubeOne
-	operation := kubeOneSpec.ClusterStatus.Status
-	if operation == kubermaticv1.StatusReconciling {
-		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (%s) is in progress, please wait for it to finish before starting a new operation.", operation)
+	operation := cluster.Status.Condition.Phase
+	if operation == kubermaticv1.ExternalClusterPhaseReconciling {
+		return nil, utilerrors.NewBadRequest("Operation is not allowed: Another operation: (%s) is in progress, please wait for it to finish before starting a new operation.", operation)
 	}
 
 	if oldCluster.Spec.Version != newCluster.Spec.Version {
@@ -122,7 +118,7 @@ func UpgradeKubeOneCluster(ctx context.Context,
 
 	manifestSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
-		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
+		return nil, utilerrors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 
@@ -138,7 +134,7 @@ func UpgradeKubeOneCluster(ctx context.Context,
 	if oldCluster.Cloud.KubeOne.ContainerRuntime == resources.ContainerRuntimeDocker {
 		cluster.ContainerRuntime.Containerd = nil
 		if upgradeVersion >= "1.24" {
-			return nil, errors.NewBadRequest("container runtime is \"docker\". Support for docker will be removed with Kubernetes 1.24 release.")
+			return nil, utilerrors.NewBadRequest("container runtime is \"docker\". Support for docker will be removed with Kubernetes 1.24 release.")
 		} else if cluster.ContainerRuntime.Docker == nil {
 			cluster.ContainerRuntime.Docker = &kubeonev1beta2.ContainerRuntimeDocker{}
 		}
@@ -173,8 +169,8 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	manifest := kubeOneSpec.ManifestReference
 	wantedContainerRuntime := newCluster.Cloud.KubeOne.ContainerRuntime
 
-	if kubeOneSpec.ClusterStatus.Status == kubermaticv1.StatusReconciling {
-		return nil, errors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
+	if externalCluster.Status.Condition.Phase == kubermaticv1.ExternalClusterPhaseReconciling {
+		return nil, utilerrors.NewBadRequest("Operation is not allowed: Another operation: (Upgrading) is in progress, please wait for it to finish before starting a new operation.")
 	}
 
 	// currently only migration to containerd is supported
@@ -184,7 +180,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 
 	manifestSecret := &corev1.Secret{}
 	if err := masterClient.Get(ctx, types.NamespacedName{Namespace: manifest.Namespace, Name: manifest.Name}, manifestSecret); err != nil {
-		return nil, errors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
+		return nil, utilerrors.NewBadRequest(fmt.Sprintf("can not retrieve kubeone manifest secret: %v", err))
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 	cluster := &kubeonev1beta2.KubeOneCluster{}
@@ -213,27 +209,7 @@ func MigrateKubeOneToContainerd(ctx context.Context,
 	return newCluster, nil
 }
 
-func checkContainerRuntime(ctx context.Context,
-	externalCluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider provider.ExternalClusterProvider,
-) (string, error) {
-	nodes, err := externalClusterProvider.ListNodes(ctx, externalCluster)
-	if err != nil {
-		return "", fmt.Errorf("Failed to fetch container runtime: not able to list nodes %w", err)
-	}
-	for _, node := range nodes.Items {
-		if _, ok := node.Labels[NodeControlPlaneLabel]; ok {
-			containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
-			strSlice := strings.Split(containerRuntimeVersion, ":")
-			for _, containerRuntime := range strSlice {
-				return containerRuntime, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("Failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
-}
-
-func createAPIMachineDeployment(md *clusterv1alpha1.MachineDeployment) *apiv2.ExternalClusterMachineDeployment {
+func createAPIMachineDeployment(md clusterv1alpha1.MachineDeployment) apiv2.ExternalClusterMachineDeployment {
 	apimd := apiv2.ExternalClusterMachineDeployment{
 		NodeDeployment: apiv1.NodeDeployment{
 			ObjectMeta: apiv1.ObjectMeta{
@@ -249,16 +225,16 @@ func createAPIMachineDeployment(md *clusterv1alpha1.MachineDeployment) *apiv2.Ex
 				},
 			},
 			Status: clusterv1alpha1.MachineDeploymentStatus{
-				Replicas:      md.Status.Replicas,
-				ReadyReplicas: md.Status.ReadyReplicas,
+				Replicas:      to.Int32(md.Spec.Replicas),
+				ReadyReplicas: to.Int32(md.Spec.Replicas),
 			},
 		},
 	}
 
-	return &apimd
+	return apimd
 }
 
-func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeployment, error) {
+func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeployment, error) {
 	machineDeployment := &clusterv1alpha1.MachineDeployment{}
 	userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
 	if err != nil {
@@ -270,11 +246,37 @@ func getKubeOneMachineDeployment(ctx context.Context, mdName string, cluster *v1
 	return machineDeployment, nil
 }
 
-func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *v1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+func getKubeOneMachineDeployments(ctx context.Context, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*clusterv1alpha1.MachineDeploymentList, error) {
+	mdList := &clusterv1alpha1.MachineDeploymentList{}
+	userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+	if err := userClusterClient.List(ctx, mdList); err != nil {
+		return nil, fmt.Errorf("failed to list MachineDeployment: %w", err)
+	}
+	return mdList, nil
+}
+
+func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *clusterv1alpha1.MachineDeployment, oldmd, newmd *apiv2.ExternalClusterMachineDeployment, cluster *kubermaticv1.ExternalCluster, clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
 	currentVersion := oldmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	desiredVersion := newmd.NodeDeployment.Spec.Template.Versions.Kubelet
 	if desiredVersion != currentVersion {
-		machineDeployment.Spec.Template.Spec.Versions.Kubelet = newmd.NodeDeployment.Spec.Template.Versions.Kubelet
+		machineDeployment.Spec.Template.Spec.Versions.Kubelet = desiredVersion
+		userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
+		if err != nil {
+			return nil, err
+		}
+		if err := userClusterClient.Update(ctx, machineDeployment); err != nil && !meta.IsNoMatchError(err) {
+			return nil, fmt.Errorf("failed to update MachineDeployment: %w", err)
+		}
+		return newmd, nil
+	}
+
+	currentReplicas := oldmd.NodeDeployment.Spec.Replicas
+	desiredReplicas := newmd.NodeDeployment.Spec.Replicas
+	if desiredReplicas != currentReplicas {
+		machineDeployment.Spec.Replicas = &desiredReplicas
 		userClusterClient, err := clusterProvider.GetClient(ctx, cluster)
 		if err != nil {
 			return nil, err
@@ -286,4 +288,52 @@ func patchKubeOneMachineDeployment(ctx context.Context, machineDeployment *v1alp
 	}
 
 	return oldmd, nil
+}
+
+func getKubeOneAPIMachineDeployment(ctx context.Context,
+	mdName string,
+	cluster *kubermaticv1.ExternalCluster,
+	clusterProvider provider.ExternalClusterProvider) (*apiv2.ExternalClusterMachineDeployment, error) {
+	md, err := getKubeOneMachineDeployment(ctx, mdName, cluster, clusterProvider)
+	if err != nil {
+		return nil, err
+	}
+	apiMD := createAPIMachineDeployment(*md)
+	return &apiMD, nil
+}
+
+func getKubeOneAPIMachineDeployments(ctx context.Context, cluster *kubermaticv1.ExternalCluster,
+	clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterMachineDeployment, error) {
+	mdList, err := getKubeOneMachineDeployments(ctx, cluster, clusterProvider)
+	machineDeployments := make([]apiv2.ExternalClusterMachineDeployment, 0, len(mdList.Items))
+	if err != nil {
+		return nil, err
+	}
+	for _, md := range mdList.Items {
+		machineDeployments = append(machineDeployments, createAPIMachineDeployment(md))
+	}
+
+	return machineDeployments, nil
+}
+
+func getKubeOneNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, mdName string, clusterProvider provider.ExternalClusterProvider) ([]apiv2.ExternalClusterNode, error) {
+	var nodesV1 []apiv2.ExternalClusterNode
+
+	nodes, err := clusterProvider.ListNodes(ctx, cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	for _, n := range nodes.Items {
+		if n.Labels != nil {
+			if n.Labels[NodeWorkerLabel] == mdName {
+				outNode, err := outputNode(n)
+				if err != nil {
+					return nil, fmt.Errorf("failed to output node %s: %w", n.Name, err)
+				}
+				nodesV1 = append(nodesV1, *outNode)
+			}
+		}
+	}
+
+	return nodesV1, err
 }

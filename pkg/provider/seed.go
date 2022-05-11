@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -96,7 +96,7 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, see
 		seed := &kubermaticv1.Seed{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
 			// allow callers to handle this gracefully
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return nil, err
 			}
 
@@ -113,7 +113,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 	return func() (map[string]*kubermaticv1.Seed, error) {
 		seed := &kubermaticv1.Seed{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: DefaultSeedName}, seed); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				// We should not fail if no seed exists and just return an
 				// empty map.
 				return emptySeedMap, nil

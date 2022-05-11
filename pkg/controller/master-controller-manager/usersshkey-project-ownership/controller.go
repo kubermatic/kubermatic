@@ -27,7 +27,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -108,7 +108,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	sshKey := &kubermaticv1.UserSSHKey{}
 	if err := r.Get(ctx, request.NamespacedName, sshKey); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -138,7 +138,7 @@ func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.Su
 	project := &kubermaticv1.Project{}
 	err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: sshKey.Spec.Project}, project)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debugw("Project does not exist", "project", sshKey.Spec.Project)
 			return nil
 		}
