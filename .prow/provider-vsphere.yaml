@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.23
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -35,7 +35,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.22.7"
+              value: "v1.23.5"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
@@ -57,7 +57,7 @@ presubmits:
             limits:
               memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22-customfolder
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.23-customfolder
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -79,7 +79,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.22.7"
+              value: "v1.23.5"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
@@ -103,7 +103,7 @@ presubmits:
             limits:
               memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.22-datastore-cluster
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.23-datastore-cluster
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -125,7 +125,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.22.7"
+              value: "v1.23.5"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
