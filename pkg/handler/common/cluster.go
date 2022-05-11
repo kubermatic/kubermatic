@@ -981,11 +981,11 @@ func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter pr
 	if err != nil {
 		return utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
-	if _, err = clusterProvider.Update(ctx, project, userInfo, cluster); err != nil {
+	if cluster, err = clusterProvider.Update(ctx, project, userInfo, cluster); err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
 
-	err = clusterProvider.Delete(ctx, userInfo, cluster.Name)
+	err = clusterProvider.Delete(ctx, userInfo, cluster)
 	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}

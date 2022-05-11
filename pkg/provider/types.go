@@ -180,7 +180,7 @@ type ClusterProvider interface {
 	Update(ctx context.Context, project *kubermaticv1.Project, userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// Delete deletes the given cluster
-	Delete(ctx context.Context, userInfo *UserInfo, clusterName string) error
+	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.Cluster) error
 
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 	GetAdminKubeconfigForCustomerCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
