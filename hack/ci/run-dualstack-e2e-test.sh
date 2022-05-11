@@ -64,6 +64,6 @@ appendTrap print_kubermatic_logs EXIT
 
 echodate "Running dualstack tests..."
 
-go test -race -timeout 1h -tags e2e -v ./pkg/test/dualstack/...
+go test -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
 
 echodate "Dualstack tests done."
