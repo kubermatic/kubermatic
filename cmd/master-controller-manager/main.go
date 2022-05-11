@@ -27,6 +27,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/collectors"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -189,6 +190,9 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
+
+	log.Debug("Starting external clusters collector")
+	collectors.MustRegisterExternalClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
 	if err := createAllControllers(ctrlCtx); err != nil {
 		log.Fatalw("could not create all controllers", zap.Error(err))

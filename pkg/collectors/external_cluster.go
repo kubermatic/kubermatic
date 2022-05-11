@@ -23,18 +23,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	clusterPrefix = "kubermatic_cluster_"
+	externalClusterPrefix = "kubermatic_external_cluster_"
 )
 
-// ClusterCollector exports metrics for cluster resources.
-type ClusterCollector struct {
+// ExternalClusterCollector exports metrics for external cluster resources.
+type ExternalClusterCollector struct {
 	client ctrlruntimeclient.Reader
 
 	clusterCreated *prometheus.Desc
@@ -42,34 +41,29 @@ type ClusterCollector struct {
 	clusterInfo    *prometheus.Desc
 }
 
-// MustRegisterClusterCollector registers the cluster collector at the given prometheus registry.
-func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
-	cc := &ClusterCollector{
+// MustRegisterExternalClusterCollector registers the cluster collector at the given prometheus registry.
+func MustRegisterExternalClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
+	cc := &ExternalClusterCollector{
 		client: client,
 		clusterCreated: prometheus.NewDesc(
-			clusterPrefix+"created",
+			externalClusterPrefix+"created",
 			"Unix creation timestamp",
 			[]string{"cluster"},
 			nil,
 		),
 		clusterDeleted: prometheus.NewDesc(
-			clusterPrefix+"deleted",
+			externalClusterPrefix+"deleted",
 			"Unix deletion timestamp",
 			[]string{"cluster"},
 			nil,
 		),
 		clusterInfo: prometheus.NewDesc(
-			clusterPrefix+"info",
-			"Additional cluster information",
+			externalClusterPrefix+"info",
+			"Additional external cluster information",
 			[]string{
 				"name",
 				"display_name",
-				"ip",
-				"spec_version",
-				"current_version",
-				"cloud_provider",
-				"datacenter",
-				"pause",
+				"provider",
 				"phase",
 			},
 			nil,
@@ -80,17 +74,17 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 }
 
 // Describe returns the metrics descriptors.
-func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
+func (cc ExternalClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- cc.clusterCreated
 	ch <- cc.clusterDeleted
 	ch <- cc.clusterInfo
 }
 
 // Collect gets called by prometheus to collect the metrics.
-func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
-	clusters := &kubermaticv1.ClusterList{}
+func (cc ExternalClusterCollector) Collect(ch chan<- prometheus.Metric) {
+	clusters := &kubermaticv1.ExternalClusterList{}
 	if err := cc.client.List(context.Background(), clusters); err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list clusters in ClusterCollector: %w", err))
+		utilruntime.HandleError(fmt.Errorf("failed to list external clusters in ExternalClusterCollector: %w", err))
 		return
 	}
 
@@ -99,7 +93,7 @@ func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster) {
+func (cc *ExternalClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.ExternalCluster) {
 	ch <- prometheus.MustNewConstMetric(
 		cc.clusterCreated,
 		prometheus.GaugeValue,
@@ -129,26 +123,24 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 	}
 }
 
-func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
-	provider, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
-	if err != nil {
-		return nil, err
-	}
+func (cc *ExternalClusterCollector) clusterLabels(cluster *kubermaticv1.ExternalCluster) ([]string, error) {
+	providerName := ""
 
-	pause := "false"
-	if cluster.Spec.Pause {
-		pause = "true"
+	switch {
+	case cluster.Spec.CloudSpec.AKS != nil:
+		providerName = "aks"
+	case cluster.Spec.CloudSpec.EKS != nil:
+		providerName = "eks"
+	case cluster.Spec.CloudSpec.GKE != nil:
+		providerName = "gke"
+	case cluster.Spec.CloudSpec.KubeOne != nil:
+		providerName = "kubeone"
 	}
 
 	return []string{
 		cluster.Name,
 		cluster.Spec.HumanReadableName,
-		cluster.Address.IP,
-		cluster.Spec.Version.String(),
-		cluster.Status.Versions.ControlPlane.String(),
-		provider,
-		cluster.Spec.Cloud.DatacenterName,
-		pause,
-		string(cluster.Status.Phase),
+		providerName,
+		string(cluster.Status.Condition.Phase),
 	}, nil
 }
