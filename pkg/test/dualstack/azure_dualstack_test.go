@@ -60,6 +60,11 @@ var cloudProviders = map[string]cloudProvider{
 	"azure": azure{},
 }
 
+var cnis = map[string]models.CNIPluginSettings{
+	"cilium": cilium(),
+	"canal":  canal(),
+}
+
 func TestCloudClusterIPFamily(t *testing.T) {
 	// export KUBERMATIC_API_ENDPOINT=https://dev.kubermatic.io
 	// export KKP_API_TOKEN=<steal token>
@@ -80,6 +85,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	tests := []struct {
 		cloudName           string
 		osName              string
+		cni                 string
 		ipFamily            util.IPFamily
 		skipNodes           bool
 		skipHostNetworkPods bool
@@ -89,6 +95,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName:           "azure",
 			osName:              "centos",
+			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
@@ -96,7 +103,16 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName:           "azure",
+			osName:              "centos",
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName:           "azure",
 			osName:              "flatcar",
+			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
@@ -105,6 +121,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName:           "azure",
 			osName:              "rhel",
+			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
@@ -113,6 +130,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName:           "azure",
 			osName:              "sles",
+			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
@@ -121,6 +139,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName:           "azure",
 			osName:              "ubuntu",
+			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
@@ -399,6 +418,11 @@ func defaultClusterRequest() createClusterRequest {
 	return createClusterRequest(clusterSpec)
 }
 
+func (c createClusterRequest) WithCNI(cni models.CNIPluginSettings) createClusterRequest {
+	c.Cluster.Spec.CniPlugin = &cni
+	return c
+}
+
 func (c createClusterRequest) WithOS(os models.OperatingSystemSpec) createClusterRequest {
 	c.NodeDeployment.Spec.Template.OperatingSystem = &os
 	return c
@@ -453,6 +477,20 @@ func centos() models.OperatingSystemSpec {
 func flatcar() models.OperatingSystemSpec {
 	return models.OperatingSystemSpec{
 		Flatcar: &models.FlatcarSpec{},
+	}
+}
+
+func cilium() models.CNIPluginSettings {
+	return models.CNIPluginSettings{
+		Version: "v1.11",
+		Type:    "cilium",
+	}
+}
+
+func canal() models.CNIPluginSettings {
+	return models.CNIPluginSettings{
+		Type:    "canal",
+		Version: "v3.22",
 	}
 }
 

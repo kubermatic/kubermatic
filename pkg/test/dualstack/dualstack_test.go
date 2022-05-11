@@ -135,6 +135,10 @@ func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFa
 		}
 
 		for _, svc := range svcs.Items {
+			if svc.Spec.IPFamilyPolicy == nil {
+				t.Logf("skipping %q because Spec.IPFamilyPolicy set", svc.Name)
+				continue
+			}
 			switch *svc.Spec.IPFamilyPolicy {
 			case v1.IPFamilyPolicySingleStack:
 				if ipFamily == util.DualStack {
