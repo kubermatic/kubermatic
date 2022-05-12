@@ -24,6 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -268,7 +269,7 @@ func testUserCluster(t *testing.T, config *rest.Config) {
 		}
 
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet,
-			fmt.Sprintf("http://%s:%d", nodeIP, 30007), nil)
+			fmt.Sprintf("http://%s", net.JoinHostPort(nodeIP, "30007")), nil)
 		if err != nil {
 			t.Logf("failed to construct request to hubble ui: %v", err)
 			return false, nil

@@ -144,7 +144,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedExternalName: loadbBalancerHostName,
 			expectedIP:           externalIP,
 			expectedPort:         int32(443),
-			expectedURL:          fmt.Sprintf("https://%s:443", loadbBalancerHostName),
+			expectedURL:          fmt.Sprintf("https://%s", net.JoinHostPort(loadbBalancerHostName, "443")),
 		},
 		{
 			name: "Verify properties for service type NodePort",

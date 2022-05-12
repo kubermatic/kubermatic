@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -321,12 +322,12 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 			// if both plaintext and TLS peer URLs are supposed to be present
 			// update the member to include both plaintext and TLS peer URLs
 			if !e.usePeerTLSOnly && (len(member.PeerURLs) == 1 || peerURL.Scheme != "http") {
-				plainPeerURL, err := url.Parse(fmt.Sprintf("http://%s:2380", peerURL.Hostname()))
+				plainPeerURL, err := url.Parse(fmt.Sprintf("http://%s", net.JoinHostPort(peerURL.Hostname(), "2380")))
 				if err != nil {
 					return err
 				}
 
-				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
+				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s", net.JoinHostPort(peerURL.Hostname(), "2381")))
 				if err != nil {
 					return err
 				}
@@ -344,7 +345,7 @@ func (e *etcdCluster) updatePeerURLs(log *zap.SugaredLogger) error {
 			// if we're supposed to run with TLS peer endpoints only, two peer URLs are
 			// not a valid configuration and should be replaced with TLS only
 			if len(member.PeerURLs) == 2 && e.usePeerTLSOnly {
-				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s:2381", peerURL.Hostname()))
+				tlsPeerURL, err := url.Parse(fmt.Sprintf("https://%s", net.JoinHostPort(peerURL.Hostname(), "2381")))
 				if err != nil {
 					return err
 				}
