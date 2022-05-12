@@ -126,7 +126,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-dualstack-e2e
-    run_if_changed: ".*(cilium|canal|api|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow.yaml|go.mod|proxy|network).*"
+    run_if_changed: ".*(cilium|canal|dualstack|api|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow.yaml|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
