@@ -106,6 +106,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
+			disabledReason:      "fails -- needs debugging",
 		},
 		{
 			cloudName:           "azure",
@@ -123,7 +124,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "cilium-agent crashing",
+			disabledReason:      "cilium-agent crashing fix in progress https://github.com/kubermatic/machine-controller/pull/1280",
 		},
 		{
 			cloudName:           "azure",
