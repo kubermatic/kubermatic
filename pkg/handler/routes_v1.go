@@ -173,6 +173,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listOpenstackAvailabilityZones())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/subnetpools").
+		Handler(r.listOpenstackSubnetPools())
+
+	mux.Methods(http.MethodGet).
 		Path("/version").
 		Handler(r.getKubermaticVersion())
 
@@ -1243,6 +1247,28 @@ func (r Routing) listOpenstackAvailabilityZones() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackAvailabilityZoneEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
+		provider.DecodeOpenstackReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/openstack/subnetpools openstack listOpenstackSubnetPools
+//
+// Lists subnet pools from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSubnetPool
+func (r Routing) listOpenstackSubnetPools() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.OpenstackSubnetPoolEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
 		provider.DecodeOpenstackReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

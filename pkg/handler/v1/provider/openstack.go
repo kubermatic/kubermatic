@@ -249,6 +249,21 @@ func OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(projectProvider pro
 	}
 }
 
+func OpenstackSubnetPoolEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
+	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(OpenstackReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
+		}
+		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
+		if err != nil {
+			return nil, err
+		}
+		return providercommon.GetOpenstackSubnetPools(ctx, userInfo, seedsGetter, cred, req.DatacenterName, caBundle)
+	}
+}
+
 func DecodeOpenstackReq(_ context.Context, r *http.Request) (interface{}, error) {
 	var req OpenstackReq
 

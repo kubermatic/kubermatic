@@ -249,6 +249,31 @@ func GetOpenstackNetworks(ctx context.Context, userInfo *provider.UserInfo, seed
 	return apiNetworks, nil
 }
 
+func GetOpenstackSubnetPools(ctx context.Context, userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackSubnetPool, error) {
+	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, err
+	}
+
+	subnetPools, err := openstack.GetSubnetPools(ctx, authURL, region, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	apiSubnetPools := make([]apiv1.OpenstackSubnetPool, len(subnetPools))
+	for i, subnetPool := range subnetPools {
+		apiSubnetPools[i] = apiv1.OpenstackSubnetPool{
+			ID:        subnetPool.ID,
+			Name:      subnetPool.Name,
+			IPversion: subnetPool.IPversion,
+			IsDefault: subnetPool.IsDefault,
+			Prefixes:  subnetPool.Prefixes,
+		}
+	}
+
+	return apiSubnetPools, nil
+}
+
 func GetOpenstackProjects(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackTenant, error) {
 	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
 	if err != nil {
