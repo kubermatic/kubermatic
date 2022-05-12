@@ -79,7 +79,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.23.5"
+              value: "v1.24.0"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
