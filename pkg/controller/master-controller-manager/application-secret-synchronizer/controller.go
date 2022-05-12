@@ -41,7 +41,6 @@ import (
 const (
 	ControllerName       = "kkp-application-secret-synchronizer"
 	secretTypeAnnotation = "apps.kubermatic.k8c.io/secret-type"
-	seedNS               = "kubermatic"
 )
 
 type reconciler struct {
@@ -103,7 +102,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			return err
 		} else {
 			// handling deletion
-			delSecret := &k8scorev1.Secret{ObjectMeta: v1.ObjectMeta{Name: request.Name, Namespace: seedNS}}
+			delSecret := &k8scorev1.Secret{ObjectMeta: v1.ObjectMeta{Name: request.Name, Namespace: r.namespace}}
 			if err := r.handleDeletion(ctx, log, delSecret); err != nil {
 				return fmt.Errorf("failed to delete secret: %w", err)
 			}
@@ -112,14 +111,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	seedsecret := secret.DeepCopy()
-	seedsecret.Namespace = seedNS
 	seedsecret.SetResourceVersion("")
 
 	namedSecretCreatorGetter := []reconciling.NamedSecretCreatorGetter{
 		secretCreator(seedsecret),
 	}
 	err = r.reconcileAllSeeds(ctx, log, seedsecret, func(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
-		return reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetter, seedNS, c)
+		return reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetter, r.namespace, c)
 	})
 	if err != nil {
 		r.recorder.Eventf(secret, k8scorev1.EventTypeWarning, "ReconcilingError", err.Error())

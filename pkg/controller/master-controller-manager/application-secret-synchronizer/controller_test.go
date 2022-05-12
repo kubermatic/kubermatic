@@ -69,6 +69,7 @@ func TestReconcile(t *testing.T) {
 				recorder:     &record.FakeRecorder{},
 				masterClient: tc.masterClient,
 				seedClients:  map[string]ctrlruntimeclient.Client{"first": tc.seedClient},
+				namespace:    seedNamespace,
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: masterSecret.Name, Namespace: masterSecret.Namespace}}
