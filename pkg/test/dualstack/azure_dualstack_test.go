@@ -381,8 +381,6 @@ func defaultClusterRequest() createClusterRequest {
 			},
 			ClusterNetwork: &models.ClusterNetworkingConfig{
 				NodeCIDRMaskSizeIPV4: 24,
-				// {"cidrBlocks":["172.25.0.0/16","fd00::/104"]},
-				// "services":{"cidrBlocks":["10.240.16.0/20","fd03::/120"]}
 				NodeCIDRMaskSizeIPV6: 105,
 				ProxyMode:            "ebpf",
 				IPFamily:             "IPv4+IPv6",
