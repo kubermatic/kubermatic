@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -92,7 +93,7 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 	return base64.StdEncoding.EncodeToString([]byte(kvKubeconfig)), nil
 }
 
-func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster) (apiv2.VirtualMachineInstancePresetList, error) {
+func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (apiv2.VirtualMachineInstancePresetList, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
@@ -126,8 +127,11 @@ func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kuberma
 			}
 		}
 	}
-
-	return res, nil
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return filterVMIPresets(res, settings.Spec.MachineDeploymentVMResourceQuota), nil
 }
 
 func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter {
@@ -141,7 +145,7 @@ func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.
 }
 
 func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string) (interface{}, error) {
+	projectID, clusterID string, settingsProvider provider.SettingsProvider) (interface{}, error) {
 	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, err
@@ -152,7 +156,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 		return nil, err
 	}
 
-	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster)
+	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster, settingsProvider)
 }
 
 func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
@@ -223,4 +227,46 @@ func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, u
 	}
 
 	return KubeVirtStorageClasses(ctx, kvKubeconfig)
+}
+
+func filterVMIPresets(vmiPresets apiv2.VirtualMachineInstancePresetList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv2.VirtualMachineInstancePresetList {
+	filteredVMIPresets := apiv2.VirtualMachineInstancePresetList{}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, vmiPreset := range vmiPresets {
+		presetSpec := kubevirtv1.VirtualMachineInstancePresetSpec{}
+		if err := json.Unmarshal([]byte(vmiPreset.Spec), &presetSpec); err != nil {
+			return filteredVMIPresets
+		}
+
+		var cpu int
+		if presetSpec.Domain.CPU != nil && presetSpec.Domain.CPU.Cores != 0 {
+			cores := presetSpec.Domain.CPU.Cores
+			// if threads and sockets are set, calculate VCPU
+			threads := presetSpec.Domain.CPU.Threads
+			if threads == 0 {
+				threads = 1
+			}
+			sockets := presetSpec.Domain.CPU.Sockets
+			if sockets == 0 {
+				sockets = 1
+			}
+			cpu = int(cores * threads * sockets)
+		}
+		if !presetSpec.Domain.Resources.Requests.Cpu().IsZero() {
+			cpu = int(presetSpec.Domain.Resources.Requests.Cpu().AsApproximateFloat64())
+		}
+
+		// if memory is not specified in VMIPreset, default 1Gi is considered
+		memory := 1
+		if !presetSpec.Domain.Resources.Requests.Memory().IsZero() {
+			memory = int(presetSpec.Domain.Resources.Requests.Memory().Value() / (1 << 30))
+		}
+
+		if handlercommon.FilterCPU(cpu, quota.MinCPU, quota.MaxCPU) && handlercommon.FilterMemory(memory, quota.MinRAM, quota.MaxRAM) {
+			filteredVMIPresets = append(filteredVMIPresets, vmiPreset)
+		}
+	}
+	return filteredVMIPresets
 }

@@ -3697,7 +3697,7 @@ func (r Routing) listKubeVirtVMIPresetsNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.KubeVirtVMIPresetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.KubeVirtVMIPresetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeKubeVirtGenericNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -5874,7 +5874,7 @@ func (r Routing) listKubeVirtVMIPresets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.KubeVirtVMIPresetsEndpoint(r.presetProvider, r.userInfoGetter)),
+		)(provider.KubeVirtVMIPresetsEndpoint(r.presetProvider, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeKubeVirtGenericReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
