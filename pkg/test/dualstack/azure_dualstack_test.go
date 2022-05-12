@@ -32,7 +32,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
-	utilErrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,7 +90,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		skipHostNetworkPods bool
 		disabledReason      string
 	}{
-
 		{
 			cloudName:           "azure",
 			osName:              "centos",
@@ -174,9 +172,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			config, _, cleanup, err := createUsercluster(t, apicli, name, spec)
 			mu.Unlock()
 			if err != nil {
-				httpErr := new(utilErrors.HTTPError)
-				if errors.As(err, httpErr) {
-					t.Fatal("http err: ", httpErr.StatusCode(), httpErr.Error(), httpErr.Details())
+				respErr := new(project.CreateClusterV2Default)
+				if errors.As(err, &respErr) {
+					errData, err := respErr.GetPayload().MarshalBinary()
+					if err != nil {
+						t.Fatalf("failed to marshal error response")
+					}
+					t.Fatalf(string(errData))
 				}
 				t.Fatalf("failed to create cluster: %v", err)
 			}
@@ -390,6 +392,7 @@ func defaultClusterRequest() createClusterRequest {
 				Services: &models.NetworkRanges{
 					CIDRBlocks: []string{"10.240.16.0/20", "fd03::/120"},
 				},
+				KonnectivityEnabled: true,
 			},
 			Version: "1.22.7",
 		},
