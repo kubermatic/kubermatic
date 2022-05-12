@@ -25,9 +25,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	k8scorev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,7 +74,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &k8scorev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(secretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(secretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
@@ -94,15 +94,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
-	secret := &k8scorev1.Secret{}
+	secret := &corev1.Secret{}
 
 	var err error
 	if err = r.masterClient.Get(ctx, request.NamespacedName, secret); err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		} else {
 			// handling deletion
-			delSecret := &k8scorev1.Secret{ObjectMeta: v1.ObjectMeta{Name: request.Name, Namespace: r.namespace}}
+			delSecret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: request.Name, Namespace: r.namespace}}
 			if err := r.handleDeletion(ctx, log, delSecret); err != nil {
 				return fmt.Errorf("failed to delete secret: %w", err)
 			}
@@ -120,26 +120,26 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetter, r.namespace, c)
 	})
 	if err != nil {
-		r.recorder.Eventf(secret, k8scorev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(secret, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return fmt.Errorf("reconciling secret %s failed: %w", seedsecret.Name, err)
 	}
 
 	return nil
 }
 
-func secretCreator(s *k8scorev1.Secret) reconciling.NamedSecretCreatorGetter {
+func secretCreator(s *corev1.Secret) reconciling.NamedSecretCreatorGetter {
 	return func() (name string, create reconciling.SecretCreator) {
-		return s.Name, func(existing *k8scorev1.Secret) (*k8scorev1.Secret, error) {
+		return s.Name, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			return s, nil
 		}
 	}
 }
 
-func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, secret *k8scorev1.Secret) error {
+func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, secret *corev1.Secret) error {
 	delfunc := func(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, o ctrlruntimeclient.Object) error {
-		err := c.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, &k8scorev1.Secret{})
+		err := c.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, &corev1.Secret{})
 		if err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				log.Info("Secret already deleted")
 				return nil
 			}

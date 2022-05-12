@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package applicationsecretsynchronizer
 
 import (
@@ -5,13 +21,13 @@ import (
 	"reflect"
 	"testing"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	k8scorev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -23,7 +39,7 @@ import (
 
 func init() {
 	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
 }
 
 const secretName = "secret-1"
@@ -38,7 +54,7 @@ func TestReconcile(t *testing.T) {
 		name         string
 		masterClient ctrlruntimeclient.Client
 		seedClient   ctrlruntimeclient.Client
-		expSecret    *k8scorev1.Secret
+		expSecret    *corev1.Secret
 	}{
 		{
 			name:         "scenario 1: secret in master, but not in seed",
@@ -77,11 +93,11 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			resSecret := &k8scorev1.Secret{}
+			resSecret := &corev1.Secret{}
 			err := tc.seedClient.Get(ctx, types.NamespacedName{Name: seedSecret.Name, Namespace: seedSecret.Namespace}, resSecret)
 
 			if err != nil {
-				if kerrors.IsNotFound(err) && tc.expSecret == nil {
+				if apierrors.IsNotFound(err) && tc.expSecret == nil {
 					return
 				}
 				t.Fatalf("could not fetch result secret: %q", err)
@@ -100,9 +116,9 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func generateSecret(name, namespace string) *k8scorev1.Secret {
-	return &k8scorev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+func generateSecret(name, namespace string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
