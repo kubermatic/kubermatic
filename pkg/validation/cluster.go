@@ -109,7 +109,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
-	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryption")); len(errs) > 0 {
+	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryptionConfiguration")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -354,10 +354,38 @@ func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kube
 			if oldCluster.Status.Encryption.Phase != "" && oldCluster.Status.Encryption.Phase != kubermaticv1.ClusterEncryptionPhaseActive {
 				if !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration, newCluster.Spec.EncryptionConfiguration) {
 					allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "encryptionConfiguration"),
-						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase)))
+						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase),
+					))
+				}
+			}
+
+			encryptionConfigExists :=
+				oldCluster.Spec.EncryptionConfiguration != nil &&
+					newCluster.Spec.EncryptionConfiguration != nil
+
+			if encryptionConfigExists {
+				encryptionConfigEnabled :=
+					oldCluster.Spec.EncryptionConfiguration.Enabled &&
+						newCluster.Spec.EncryptionConfiguration.Enabled
+
+				if encryptionConfigEnabled && !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration.Resources, newCluster.Spec.EncryptionConfiguration.Resources) {
+					allErrs = append(
+						allErrs,
+						field.Forbidden(
+							field.NewPath("spec", "encryptionConfiguration", "resources"),
+							"list of encrypted resources cannot be changed. Please disable encryption and re-configure",
+						),
+					)
 				}
 			}
 		}
+	}
+
+	// prevent removing the feature flag while the cluster is still in some encryption-active configuration or state
+	if enabled, ok := newCluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]; (!ok || !enabled) && (newCluster.IsEncryptionEnabled() || newCluster.IsEncryptionActive()) {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("features"),
+			fmt.Sprintf("cannot disable %q feature flag while encryption is still configured or active", kubermaticv1.ClusterFeatureEncryptionAtRest),
+		))
 	}
 
 	return allErrs

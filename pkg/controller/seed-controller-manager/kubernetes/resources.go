@@ -186,6 +186,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	}
 
+	// Ensure that encryption-at-rest is completely removed when no longer enabled or active
+	if !cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
+		if err := r.ensureEncryptionConfigurationIsRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	}
+
 	return &reconcile.Result{}, nil
 }
 
@@ -400,6 +407,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 			resources.GetInternalKubeconfigCreator(namespace, resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data, r.log),
 			resources.GetInternalKubeconfigCreator(namespace, resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data, r.log),
 		)
+	}
+
+	if data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive() {
+		creators = append(creators, apiserver.EncryptionConfigurationSecretCreator(data))
 	}
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
@@ -786,6 +797,15 @@ func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data 
 	for _, resource := range konnectivity.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureEncryptionConfigurationIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range apiserver.EncryptionResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure encryption-at-rest resources are removed/not present: %w", err)
 		}
 	}
 	return nil
