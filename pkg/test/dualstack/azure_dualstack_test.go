@@ -212,7 +212,6 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			}
 
 			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods)
-
 		})
 	}
 }
