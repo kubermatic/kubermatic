@@ -289,7 +289,7 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 	flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 	flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 
-	if version.LessThan(semver.MustParse("1.24.0")) {
+	if version.LessThan(semverlib.MustParse("1.24.0")) {
 		// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
 		// Not supported (and needed) in Kubernetes 1.24 anymore
 		flags = append(flags, "--port", "0")
