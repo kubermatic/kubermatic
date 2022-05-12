@@ -50,24 +50,24 @@ func TestResourceQuotaValidation(t *testing.T) {
 		},
 		{
 			name:        "should fail with CPU quota exceeded",
-			machine:     genFakeMachine("5", "2G", "10G"),
+			machine:     genFakeMachine("50", "2G", "10G"),
 			expectedErr: true,
 		},
 		{
 			name:        "should fail with Memory quota exceeded",
-			machine:     genFakeMachine("2", "5G", "10G"),
+			machine:     genFakeMachine("2", "50G", "10G"),
 			expectedErr: true,
 		},
 		{
 			name:        "should fail with Storage quota exceeded",
-			machine:     genFakeMachine("2", "2G", "50G"),
+			machine:     genFakeMachine("2", "2G", "5000G"),
 			expectedErr: true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := machine.ValidateQuota(context.Background(), l, nil, tc.machine)
+			err := machine.ValidateQuota(context.Background(), l, nil, nil, tc.machine, nil)
 			if err != nil {
 				if !tc.expectedErr {
 					t.Fatalf("unexpected error: %v", err)

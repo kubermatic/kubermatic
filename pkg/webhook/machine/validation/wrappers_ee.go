@@ -25,10 +25,12 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	eemachinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine) error {
-	return eemachinevalidation.ValidateQuota(ctx, log, seedClient, machine)
+func validateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client,
+	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) error {
+	return eemachinevalidation.ValidateQuota(ctx, log, seedClient, userClient, machine, caBundle)
 }

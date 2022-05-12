@@ -320,3 +320,20 @@ type AWSCredential struct {
 	AssumeRoleARN        string
 	AssumeRoleExternalID string
 }
+
+func GetAWSInstance(instanceType string) (*apiv1.AWSSize, error) {
+	if data == nil {
+		return nil, fmt.Errorf("AWS instance type data not initialized")
+	}
+
+	for _, i := range *data {
+		if strings.EqualFold(i.InstanceType, instanceType) {
+			return &apiv1.AWSSize{
+				Memory: i.Memory,
+				VCPUs:  i.VCPU,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find instance %q in aws instance type data", instanceType)
+}
