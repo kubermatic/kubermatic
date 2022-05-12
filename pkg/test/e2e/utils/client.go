@@ -28,6 +28,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/gorilla/websocket"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -1910,4 +1911,23 @@ func (r *TestClient) SetMonitoringMLARateLimits(clusterID, projectID string, rat
 		return nil, err
 	}
 	return updateResponse.Payload, nil
+}
+
+func (r *TestClient) ConnectClusterTerminal(token, clusterID, projectID string) (*websocket.Conn, error) {
+	endpoint, err := APIEndpoint()
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint = strings.Replace(endpoint, "http", "ws", 1)
+	endpoint = fmt.Sprintf("%s/api/v1/ws/projects/%s/clusters/%s/terminal", endpoint, projectID, clusterID)
+	fmt.Println(endpoint)
+
+	header := http.Header{}
+	header.Add("authorization", fmt.Sprintf("Bearer %s", token))
+
+	conn, resp, err := websocket.DefaultDialer.Dial(endpoint, header)
+	defer resp.Body.Close()
+
+	return conn, err
 }
