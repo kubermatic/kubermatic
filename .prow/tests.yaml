@@ -91,10 +91,9 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: golangci/golangci-lint:v1.43.0
+        - image: quay.io/kubermatic/build:go-1.18-node-16-4
           command:
             - make
-          args:
             - lint
           resources:
             requests:
