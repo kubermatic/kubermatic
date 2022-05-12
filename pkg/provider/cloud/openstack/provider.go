@@ -572,13 +572,13 @@ func GetAvailabilityZones(authURL, region string, credentials *resources.Opensta
 }
 
 // GetSubnetPools lists all available subnet pools.
-func GetSubnetPools(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossubnetpools.SubnetPool, error) {
+func GetSubnetPools(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, ipVersion int, caBundle *x509.CertPool) ([]ossubnetpools.SubnetPool, error) {
 	authClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %w", err)
 	}
 
-	subnetPools, err := getAllSubnetPools(authClient, ossubnetpools.ListOpts{ /*TODO: filtering param "ipv4" or "ipv6"*/ })
+	subnetPools, err := getAllSubnetPools(authClient, ossubnetpools.ListOpts{IPVersion: ipVersion})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get subnet pools: %w", err)
 	}

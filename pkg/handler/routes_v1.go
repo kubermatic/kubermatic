@@ -1269,7 +1269,7 @@ func (r Routing) listOpenstackSubnetPools() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSubnetPoolEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
-		provider.DecodeOpenstackReq,
+		provider.DecodeOpenstackSubnetPoolReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

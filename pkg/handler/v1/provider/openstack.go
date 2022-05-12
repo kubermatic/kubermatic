@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
@@ -252,15 +253,15 @@ func OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(projectProvider pro
 func OpenstackSubnetPoolEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
 	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(OpenstackReq)
+		req, ok := request.(OpenstackSubnetPoolReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
+		userInfo, cred, err := getAuthInfo(ctx, req.OpenstackReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
-		return providercommon.GetOpenstackSubnetPools(ctx, userInfo, seedsGetter, cred, req.DatacenterName, caBundle)
+		return providercommon.GetOpenstackSubnetPools(ctx, userInfo, seedsGetter, cred, req.DatacenterName, req.IPVersion, caBundle)
 	}
 }
 
@@ -348,6 +349,34 @@ func DecodeOpenstackSubnetNoCredentialsReq(c context.Context, r *http.Request) (
 	if req.NetworkID == "" {
 		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
 	}
+	return req, nil
+}
+
+// OpenstackSubnetPoolReq represent a request for openstack subnet pools
+// swagger:parameters listOpenstackSubnetPools
+type OpenstackSubnetPoolReq struct {
+	OpenstackReq
+	// in: query
+	IPVersion int `json:"ip_version,omitempty"`
+}
+
+func DecodeOpenstackSubnetPoolReq(_ context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSubnetPoolReq
+
+	openstackReq, err := DecodeOpenstackReq(context.Background(), r)
+	if err != nil {
+		return nil, err
+	}
+	req.OpenstackReq = openstackReq.(OpenstackReq)
+
+	ipVersion := r.URL.Query().Get("ip_version")
+	if ipVersion != "" {
+		req.IPVersion, err = strconv.Atoi(ipVersion)
+		if err != nil || (req.IPVersion != 4 && req.IPVersion != 6) {
+			return nil, utilerrors.NewBadRequest("invalid value for `ip_version` (should be 4 or 6)")
+		}
+	}
+
 	return req, nil
 }
 
