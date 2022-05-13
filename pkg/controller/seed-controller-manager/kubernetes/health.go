@@ -48,10 +48,9 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
 	}
 
-	if r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
-		// because konnectivity server is in apiserver pod
-		healthMapping[resources.KonnectivityDeploymentName] = &depInfo{healthStatus: &extendedHealth.Apiserver, minReady: 1}
-	} else {
+	showKonnectivity := r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
+
+	if !showKonnectivity {
 		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: &extendedHealth.OpenVPN, minReady: 1}
 	}
 
@@ -65,6 +64,11 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 			healthMapping[name].healthStatus = new(kubermaticv1.HealthStatus)
 		}
 		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+	}
+
+	if showKonnectivity {
+		// because konnectivity server is in apiserver pod
+		extendedHealth.Konnectivity = extendedHealth.Apiserver
 	}
 
 	var err error
