@@ -65,8 +65,9 @@ type createReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule string `json:"schedule"`
-		Interval int    `json:"interval"`
+		Schedule  string `json:"schedule"`
+		Interval  int32  `json:"interval"`
+		Retention *int32 `json:"retention,omitempty"`
 	}
 }
 
@@ -84,6 +85,12 @@ func (m createReportConfigurationReq) Validate() error {
 		return utilerrors.NewBadRequest("interval value cannot be smaller than 1.")
 	}
 
+	if m.Body.Retention != nil {
+		if *m.Body.Retention < 1 {
+			return utilerrors.NewBadRequest("retention value cannot be smaller than 1.")
+		}
+	}
+
 	return nil
 }
 
@@ -95,8 +102,9 @@ type updateReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule string `json:"schedule,omitempty"`
-		Interval int    `json:"interval,omitempty"`
+		Schedule  string `json:"schedule,omitempty"`
+		Interval  *int32 `json:"interval,omitempty"`
+		Retention *int32 `json:"retention,omitempty"`
 	}
 }
 
@@ -109,6 +117,18 @@ func (m updateReportConfigurationReq) Validate() error {
 		cronExpressionParser := validation.GetCronExpressionParser()
 		if _, err := cronExpressionParser.Parse(m.Body.Schedule); err != nil {
 			return utilerrors.NewBadRequest("invalid cron expression format: %s", m.Body.Schedule)
+		}
+	}
+
+	if m.Body.Interval != nil {
+		if *m.Body.Interval < 1 {
+			return utilerrors.NewBadRequest("interval value cannot be smaller than 1.")
+		}
+	}
+
+	if m.Body.Retention != nil {
+		if *m.Body.Retention < 1 {
+			return utilerrors.NewBadRequest("retention value cannot be smaller than 1.")
 		}
 	}
 
@@ -196,9 +216,10 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 			// Metering configuration is replicated across all seeds.
 			// We can return after finding configuration in the first seed.
 			return &apiv1.MeteringReportConfiguration{
-				Name:     req.Name,
-				Schedule: report.Schedule,
-				Interval: report.Interval,
+				Name:      req.Name,
+				Schedule:  report.Schedule,
+				Interval:  report.Interval,
+				Retention: report.Retention,
 			}, nil
 		}
 	}
@@ -225,9 +246,10 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 		}
 		for reportConfigName, reportConfig := range seed.Spec.Metering.ReportConfigurations {
 			resp = append(resp, apiv1.MeteringReportConfiguration{
-				Name:     reportConfigName,
-				Schedule: reportConfig.Schedule,
-				Interval: reportConfig.Interval,
+				Name:      reportConfigName,
+				Schedule:  reportConfig.Schedule,
+				Interval:  reportConfig.Interval,
+				Retention: reportConfig.Retention,
 			})
 		}
 		// Metering configuration is replicated across all seeds.
@@ -324,9 +346,14 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 			fmt.Sprintf("report configuration %q already exists", reportCfgReq.Name))
 	}
 
+	var retention uint32
+	if reportCfgReq.Body.Retention != nil {
+		retention = uint32(*reportCfgReq.Body.Retention)
+	}
 	seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
-		Interval: reportCfgReq.Body.Interval,
-		Schedule: reportCfgReq.Body.Schedule,
+		Interval:  uint32(reportCfgReq.Body.Interval),
+		Schedule:  reportCfgReq.Body.Schedule,
+		Retention: &retention,
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
@@ -353,8 +380,13 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 		reportConfiguration.Schedule = reportCfgReq.Body.Schedule
 	}
 
-	if reportCfgReq.Body.Interval > 0 {
-		reportConfiguration.Interval = reportCfgReq.Body.Interval
+	if reportCfgReq.Body.Interval != nil && *reportCfgReq.Body.Interval >= 1 {
+		reportConfiguration.Interval = uint32(*reportCfgReq.Body.Interval)
+	}
+
+	if reportCfgReq.Body.Retention != nil && *reportCfgReq.Body.Retention >= 1 {
+		retention := uint32(*reportCfgReq.Body.Retention)
+		reportConfiguration.Retention = &retention
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {

@@ -692,7 +692,14 @@ type MeteringReportConfiguration struct {
 	// +kubebuilder:validation:Minimum:=1
 
 	// Interval defines the number of days consulted in the metering report.
-	Interval int `json:"interval,omitempty"`
+	Interval uint32 `json:"interval,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:Minimum:=1
+
+	// Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.
+	// Please note that this functionality works only for object storage that supports an object lifecycle management mechanism.
+	Retention *uint32 `json:"retention,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
