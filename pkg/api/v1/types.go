@@ -704,21 +704,6 @@ type OpenstackAvailabilityZone struct {
 	Name string `json:"name"`
 }
 
-// OpenstackSubnetPool is the object representing a openstack subnet pool.
-// swagger:model OpenstackSubnetPool
-type OpenstackSubnetPool struct {
-	// Id uniquely identifies the subnet pool
-	ID string `json:"id"`
-	// Name is the name of the subnet pool
-	Name string `json:"name"`
-	// IPversion is the IP protocol version (4 or 6)
-	IPversion int `json:"ipVersion"`
-	// IsDefault indicates if the subnetpool is default pool or not
-	IsDefault bool `json:"isDefault"`
-	// Prefixes is the list of subnet prefixes
-	Prefixes []string `json:"prefixes"`
-}
-
 // VSphereNetwork is the object representing a vsphere network.
 // swagger:model VSphereNetwork
 type VSphereNetwork struct {

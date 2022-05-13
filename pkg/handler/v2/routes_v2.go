@@ -564,6 +564,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listOpenstackAvailabilityZonesNoCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/subnetpools").
+		Handler(r.listOpenstackSubnetPools())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/azure/sizes").
 		Handler(r.listAzureSizesNoCredentials())
 
@@ -3435,6 +3439,28 @@ func (r Routing) listOpenstackAvailabilityZonesNoCredentials() http.Handler {
 		)(provider.OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
 			r.userInfoGetter, r.caBundle)),
 		provider.DecodeOpenstackNoCredentialsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/openstack/subnetpools openstack listOpenstackSubnetPools
+//
+// Lists subnet pools from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSubnetPool
+func (r Routing) listOpenstackSubnetPools() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.OpenstackSubnetPoolEndpoint(r.seedsGetter, r.presetProvider, r.userInfoGetter, r.caBundle)),
+		provider.DecodeOpenstackSubnetPoolReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
