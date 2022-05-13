@@ -52,6 +52,8 @@ type ClientService interface {
 
 	ListOpenstackSizesNoCredentialsV2(params *ListOpenstackSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSizesNoCredentialsV2OK, error)
 
+	ListOpenstackSubnetPools(params *ListOpenstackSubnetPoolsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetPoolsOK, error)
+
 	ListOpenstackSubnets(params *ListOpenstackSubnetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetsOK, error)
 
 	ListOpenstackSubnetsNoCredentials(params *ListOpenstackSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetsNoCredentialsOK, error)
@@ -520,6 +522,44 @@ func (a *Client) ListOpenstackSizesNoCredentialsV2(params *ListOpenstackSizesNoC
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListOpenstackSizesNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListOpenstackSubnetPools Lists subnet pools from openstack
+*/
+func (a *Client) ListOpenstackSubnetPools(params *ListOpenstackSubnetPoolsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOpenstackSubnetPoolsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackSubnetPoolsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listOpenstackSubnetPools",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/openstack/subnetpools",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackSubnetPoolsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackSubnetPoolsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackSubnetPoolsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
