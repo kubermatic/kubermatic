@@ -42,7 +42,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -449,7 +449,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
-			if err := reconciler.Get(context.Background(), client.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
+			if err := reconciler.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
@@ -622,7 +622,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []client.Object{
+			initObjs := []ctrlruntimeclient.Object{
 				cluster,
 				backupConfig,
 			}
@@ -649,7 +649,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
-			if err := reconciler.Get(context.Background(), client.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
+			if err := reconciler.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
@@ -937,7 +937,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			backupConfig.Spec.Keep = intPtr(tc.keep)
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []client.Object{
+			initObjs := []ctrlruntimeclient.Object{
 				cluster,
 				backupConfig,
 			}
@@ -964,7 +964,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
-			if err := reconciler.Get(context.Background(), client.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
+			if err := reconciler.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
@@ -1205,7 +1205,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []client.Object{
+			initObjs := []ctrlruntimeclient.Object{
 				cluster,
 				backupConfig,
 			}
@@ -1231,7 +1231,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
-			if err := reconciler.Get(context.Background(), client.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
+			if err := reconciler.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
@@ -1502,7 +1502,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []client.Object{
+			initObjs := []ctrlruntimeclient.Object{
 				cluster,
 				backupConfig,
 			}
@@ -1528,7 +1528,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
-			if err := reconciler.Get(context.Background(), client.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
+			if err := reconciler.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: backupConfig.GetNamespace(), Name: backupConfig.GetName()}, readbackBackupConfig); err != nil {
 				t.Fatalf("Error reading back completed backupConfig: %v", err)
 			}
 
@@ -1594,8 +1594,8 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{
-				genSecretEnvVar(accessKeyIdEnvVarKey, accessKeyIdEnvVarKey, genDefaultBackupDestination()),
-				genSecretEnvVar(secretAccessKeyEnvVarKey, secretAccessKeyEnvVarKey, genDefaultBackupDestination()),
+				genSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, genDefaultBackupDestination()),
+				genSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, genDefaultBackupDestination()),
 				{
 					Name:  bucketNameEnvVarKey,
 					Value: genDefaultBackupDestination().BucketName,
@@ -1630,7 +1630,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initObjs := []client.Object{
+			initObjs := []ctrlruntimeclient.Object{
 				genTestCluster(),
 				tc.backupConfig,
 				genClusterRootCaSecret(),

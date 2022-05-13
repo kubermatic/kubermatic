@@ -22,18 +22,18 @@ import (
 	"context"
 	"net/http"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func createOrUpdateMeteringCredentials(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) error {
 	return nil
 }
 
-func createOrUpdateMeteringConfigurations(_ context.Context, _ interface{}, masterClient client.Client) error {
+func createOrUpdateMeteringConfigurations(_ context.Context, _ interface{}, masterClient ctrlruntimeclient.Client) error {
 	return nil
 }
 
@@ -41,23 +41,23 @@ func getMeteringReportConfiguration(_ provider.SeedsGetter, _ interface{}) (*kub
 	return nil, nil
 }
 
-func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]v1.MeteringReportConfiguration, error) {
+func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]apiv1.MeteringReportConfiguration, error) {
 	return nil, nil
 }
 
-func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ client.Client) error {
+func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ ctrlruntimeclient.Client) error {
 	return nil
 }
 
-func listMeteringReports(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) ([]v1.MeteringReport, error) {
+func listMeteringReports(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ provider.SeedClientGetter) ([]apiv1.MeteringReport, error) {
 	return nil, nil
 }
 

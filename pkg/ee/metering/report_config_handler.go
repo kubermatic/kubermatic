@@ -37,7 +37,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,23 +65,30 @@ type createReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule string `json:"schedule"`
-		Interval int    `json:"interval"`
+		Schedule  string `json:"schedule"`
+		Interval  int32  `json:"interval"`
+		Retention *int32 `json:"retention,omitempty"`
 	}
 }
 
 func (m createReportConfigurationReq) Validate() error {
 	if !validation.MeteringReportNameValidator.MatchString(m.Name) {
-		return k8cerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
+		return utilerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
 	}
 
 	cronExpressionParser := validation.GetCronExpressionParser()
 	if _, err := cronExpressionParser.Parse(m.Body.Schedule); err != nil {
-		return k8cerrors.NewBadRequest("invalid cron expression format: %s", m.Body.Schedule)
+		return utilerrors.NewBadRequest("invalid cron expression format: %s", m.Body.Schedule)
 	}
 
 	if m.Body.Interval < 1 {
-		return k8cerrors.NewBadRequest("interval value cannot be smaller than 1.")
+		return utilerrors.NewBadRequest("interval value cannot be smaller than 1.")
+	}
+
+	if m.Body.Retention != nil {
+		if *m.Body.Retention < 1 {
+			return utilerrors.NewBadRequest("retention value cannot be smaller than 1.")
+		}
 	}
 
 	return nil
@@ -95,20 +102,33 @@ type updateReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule string `json:"schedule,omitempty"`
-		Interval int    `json:"interval,omitempty"`
+		Schedule  string `json:"schedule,omitempty"`
+		Interval  *int32 `json:"interval,omitempty"`
+		Retention *int32 `json:"retention,omitempty"`
 	}
 }
 
 func (m updateReportConfigurationReq) Validate() error {
 	if !validation.MeteringReportNameValidator.MatchString(m.Name) {
-		return k8cerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
+		return utilerrors.NewBadRequest("metering report configuration name can contain only alphanumeric characters or '-'")
 	}
 
 	if m.Body.Schedule != "" {
 		cronExpressionParser := validation.GetCronExpressionParser()
 		if _, err := cronExpressionParser.Parse(m.Body.Schedule); err != nil {
-			return k8cerrors.NewBadRequest("invalid cron expression format: %s", m.Body.Schedule)
+			return utilerrors.NewBadRequest("invalid cron expression format: %s", m.Body.Schedule)
+		}
+	}
+
+	if m.Body.Interval != nil {
+		if *m.Body.Interval < 1 {
+			return utilerrors.NewBadRequest("interval value cannot be smaller than 1.")
+		}
+	}
+
+	if m.Body.Retention != nil {
+		if *m.Body.Retention < 1 {
+			return utilerrors.NewBadRequest("retention value cannot be smaller than 1.")
 		}
 	}
 
@@ -121,7 +141,7 @@ func DecodeGetMeteringReportConfigurationReq(r *http.Request) (interface{}, erro
 	req.Name = mux.Vars(r)["name"]
 
 	if req.Name == "" {
-		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`name` cannot be empty")
 	}
 
 	return req, nil
@@ -133,7 +153,7 @@ func DecodeCreateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 	req.Name = mux.Vars(r)["name"]
 
 	if req.Name == "" {
-		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`name` cannot be empty")
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
@@ -149,7 +169,7 @@ func DecodeUpdateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 	req.Name = mux.Vars(r)["name"]
 
 	if req.Name == "" {
-		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`name` cannot be empty")
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
@@ -165,7 +185,7 @@ func DecodeDeleteMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 	req.Name = mux.Vars(r)["name"]
 
 	if req.Name == "" {
-		return nil, k8cerrors.NewBadRequest("`name` cannot be empty")
+		return nil, utilerrors.NewBadRequest("`name` cannot be empty")
 	}
 
 	return req, nil
@@ -180,7 +200,7 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 
 	req, ok := request.(getMeteringReportConfig)
 	if !ok {
-		return nil, k8cerrors.NewBadRequest("invalid request")
+		return nil, utilerrors.NewBadRequest("invalid request")
 	}
 
 	seeds, err := seedsGetter()
@@ -196,14 +216,15 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 			// Metering configuration is replicated across all seeds.
 			// We can return after finding configuration in the first seed.
 			return &apiv1.MeteringReportConfiguration{
-				Name:     req.Name,
-				Schedule: report.Schedule,
-				Interval: report.Interval,
+				Name:      req.Name,
+				Schedule:  report.Schedule,
+				Interval:  report.Interval,
+				Retention: report.Retention,
 			}, nil
 		}
 	}
 
-	return nil, k8cerrors.NewNotFound("MeteringReportConfiguration", req.Name)
+	return nil, utilerrors.NewNotFound("MeteringReportConfiguration", req.Name)
 }
 
 // ListMeteringReportConfigurations lists metering report configurations.
@@ -225,9 +246,10 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 		}
 		for reportConfigName, reportConfig := range seed.Spec.Metering.ReportConfigurations {
 			resp = append(resp, apiv1.MeteringReportConfiguration{
-				Name:     reportConfigName,
-				Schedule: reportConfig.Schedule,
-				Interval: reportConfig.Interval,
+				Name:      reportConfigName,
+				Schedule:  reportConfig.Schedule,
+				Interval:  reportConfig.Interval,
+				Retention: reportConfig.Retention,
 			})
 		}
 		// Metering configuration is replicated across all seeds.
@@ -242,11 +264,11 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 func CreateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(createReportConfigurationReq)
 	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
+		return utilerrors.NewBadRequest("invalid request")
 	}
 
 	if err := req.Validate(); err != nil {
-		return k8cerrors.NewBadRequest(err.Error())
+		return utilerrors.NewBadRequest(err.Error())
 	}
 
 	seedList := &kubermaticv1.SeedList{}
@@ -267,11 +289,11 @@ func CreateMeteringReportConfiguration(ctx context.Context, request interface{},
 func UpdateMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(updateReportConfigurationReq)
 	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
+		return utilerrors.NewBadRequest("invalid request")
 	}
 
 	if err := req.Validate(); err != nil {
-		return k8cerrors.NewBadRequest(err.Error())
+		return utilerrors.NewBadRequest(err.Error())
 	}
 
 	seedList := &kubermaticv1.SeedList{}
@@ -292,7 +314,7 @@ func UpdateMeteringReportConfiguration(ctx context.Context, request interface{},
 func DeleteMeteringReportConfiguration(ctx context.Context, request interface{}, masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(deleteMeteringReportConfig)
 	if !ok {
-		return k8cerrors.NewBadRequest("invalid request")
+		return utilerrors.NewBadRequest("invalid request")
 	}
 
 	seedList := &kubermaticv1.SeedList{}
@@ -319,14 +341,19 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 	}
 
 	if _, exists := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]; exists {
-		return k8cerrors.New(
+		return utilerrors.New(
 			http.StatusConflict,
 			fmt.Sprintf("report configuration %q already exists", reportCfgReq.Name))
 	}
 
+	var retention uint32
+	if reportCfgReq.Body.Retention != nil {
+		retention = uint32(*reportCfgReq.Body.Retention)
+	}
 	seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
-		Interval: reportCfgReq.Body.Interval,
-		Schedule: reportCfgReq.Body.Schedule,
+		Interval:  uint32(reportCfgReq.Body.Interval),
+		Schedule:  reportCfgReq.Body.Schedule,
+		Retention: &retention,
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
@@ -342,7 +369,7 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 	}
 
 	if _, exists := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]; !exists {
-		return k8cerrors.New(
+		return utilerrors.New(
 			http.StatusNotFound,
 			fmt.Sprintf("report configuration %q does not exists", reportCfgReq.Name))
 	}
@@ -353,8 +380,13 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 		reportConfiguration.Schedule = reportCfgReq.Body.Schedule
 	}
 
-	if reportCfgReq.Body.Interval > 0 {
-		reportConfiguration.Interval = reportCfgReq.Body.Interval
+	if reportCfgReq.Body.Interval != nil && *reportCfgReq.Body.Interval >= 1 {
+		reportConfiguration.Interval = uint32(*reportCfgReq.Body.Interval)
+	}
+
+	if reportCfgReq.Body.Retention != nil && *reportCfgReq.Body.Retention >= 1 {
+		retention := uint32(*reportCfgReq.Body.Retention)
+		reportConfiguration.Retention = &retention
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {

@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -99,7 +99,7 @@ func ClusterReconcileWrapper(
 		}
 	}
 
-	return result, utilerrors.NewAggregate(errs)
+	return result, kerrors.NewAggregate(errs)
 }
 
 // SetClusterCondition sets a condition on the given cluster using the provided type, status,

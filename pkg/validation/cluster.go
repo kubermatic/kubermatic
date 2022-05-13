@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/coreos/locksmith/pkg/timeutil"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -80,8 +80,8 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 		// Dual-stack is not supported on Canal < v3.22
 		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack && spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
-			gte322Constraint, _ := semver.NewConstraint(">= 3.22")
-			cniVer, _ := semver.NewVersion(spec.CNIPlugin.Version)
+			gte322Constraint, _ := semverlib.NewConstraint(">= 3.22")
+			cniVer, _ := semverlib.NewVersion(spec.CNIPlugin.Version)
 			if cniVer != nil && !gte322Constraint.Check(cniVer) {
 				allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("cniPlugin"), "dual-stack not allowed on Canal CNI version lower than 3.22"))
 			}
@@ -109,7 +109,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
-	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryption")); len(errs) > 0 {
+	if errs := validateEncryptionConfiguration(spec, parentFieldPath.Child("encryptionConfiguration")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -354,10 +354,38 @@ func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kube
 			if oldCluster.Status.Encryption.Phase != "" && oldCluster.Status.Encryption.Phase != kubermaticv1.ClusterEncryptionPhaseActive {
 				if !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration, newCluster.Spec.EncryptionConfiguration) {
 					allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "encryptionConfiguration"),
-						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase)))
+						fmt.Sprintf("no changes to encryption configuration are allowed while encryption phase is '%s'", oldCluster.Status.Encryption.Phase),
+					))
+				}
+			}
+
+			encryptionConfigExists :=
+				oldCluster.Spec.EncryptionConfiguration != nil &&
+					newCluster.Spec.EncryptionConfiguration != nil
+
+			if encryptionConfigExists {
+				encryptionConfigEnabled :=
+					oldCluster.Spec.EncryptionConfiguration.Enabled &&
+						newCluster.Spec.EncryptionConfiguration.Enabled
+
+				if encryptionConfigEnabled && !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration.Resources, newCluster.Spec.EncryptionConfiguration.Resources) {
+					allErrs = append(
+						allErrs,
+						field.Forbidden(
+							field.NewPath("spec", "encryptionConfiguration", "resources"),
+							"list of encrypted resources cannot be changed. Please disable encryption and re-configure",
+						),
+					)
 				}
 			}
 		}
+	}
+
+	// prevent removing the feature flag while the cluster is still in some encryption-active configuration or state
+	if enabled, ok := newCluster.Spec.Features[kubermaticv1.ClusterFeatureEncryptionAtRest]; (!ok || !enabled) && (newCluster.IsEncryptionEnabled() || newCluster.IsEncryptionActive()) {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("features"),
+			fmt.Sprintf("cannot disable %q feature flag while encryption is still configured or active", kubermaticv1.ClusterFeatureEncryptionAtRest),
+		))
 	}
 
 	return allErrs
@@ -847,7 +875,7 @@ func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
 	}
 
 	// Docker is supported until 1.24.0, excluding 1.24.0
-	gteKube124Condition, _ := semver.NewConstraint(">= 1.24")
+	gteKube124Condition, _ := semverlib.NewConstraint(">= 1.24")
 	if spec.ContainerRuntime == "docker" && gteKube124Condition.Check(spec.Version.Semver()) {
 		return fmt.Errorf("docker not supported from version 1.24: %s", spec.ContainerRuntime)
 	}
@@ -978,12 +1006,12 @@ func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermati
 			return nil // allowed for automated migration from deprecated CNI
 		}
 
-		newV, err := semver.NewVersion(newCni.Version)
+		newV, err := semverlib.NewVersion(newCni.Version)
 		if err != nil {
 			return field.Invalid(basePath.Child("version"), newCni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", newCni.Version, err))
 		}
 
-		oldV, err := semver.NewVersion(oldCni.Version)
+		oldV, err := semverlib.NewVersion(oldCni.Version)
 		if err != nil {
 			return field.Invalid(basePath.Child("version"), oldCni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))
 		}

@@ -539,8 +539,13 @@
               "properties": {
                 "interval": {
                   "type": "integer",
-                  "format": "int64",
+                  "format": "int32",
                   "x-go-name": "Interval"
+                },
+                "retention": {
+                  "type": "integer",
+                  "format": "int32",
+                  "x-go-name": "Retention"
                 },
                 "schedule": {
                   "type": "string",
@@ -596,8 +601,13 @@
               "properties": {
                 "interval": {
                   "type": "integer",
-                  "format": "int64",
+                  "format": "int32",
                   "x-go-name": "Interval"
+                },
+                "retention": {
+                  "type": "integer",
+                  "format": "int32",
+                  "x-go-name": "Retention"
                 },
                 "schedule": {
                   "type": "string",
@@ -26019,8 +26029,14 @@
         "interval": {
           "description": "Interval defines the number of days consulted in the metering report.",
           "type": "integer",
-          "format": "int64",
+          "format": "uint32",
           "x-go-name": "Interval"
+        },
+        "retention": {
+          "description": "Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.\nPlease note that this functionality works only for object storage that supports an object lifecycle management mechanism.",
+          "type": "integer",
+          "format": "uint32",
+          "x-go-name": "Retention"
         },
         "schedule": {
           "description": "Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible\nonly for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.",

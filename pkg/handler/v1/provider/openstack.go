@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*provider.UserInfo, *resources.OpenstackCredentials, error) {
@@ -43,7 +43,7 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 	t := ctx.Value(middleware.RawTokenContextKey)
 	token, ok := t.(string)
 	if !ok || token == "" {
-		return nil, nil, k8cerrors.NewNotAuthorized()
+		return nil, nil, utilerrors.NewNotAuthorized()
 	}
 
 	// No preset is used

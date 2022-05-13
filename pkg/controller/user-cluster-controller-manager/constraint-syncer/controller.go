@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
@@ -99,7 +99,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	constraint := &kubermaticv1.Constraint{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, constraint); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("constraint not found, returning")
 			return reconcile.Result{}, nil
 		}
@@ -140,7 +140,7 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermat
 	})
 	toDelete.SetName(constraint.Name)
 
-	if err := r.userClient.Delete(ctx, toDelete); err != nil && !kerrors.IsNotFound(err) {
+	if err := r.userClient.Delete(ctx, toDelete); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete constraint: %w", err)
 	}
 	log.Debugw("constraint deleted")

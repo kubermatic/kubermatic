@@ -47,7 +47,7 @@ If no initial defaults are set, keep in mind that a change later will again trig
 Default values in `Cluster` objects are persisted, so that changed defaults **do not**
 affect existing clusters. This is different to the `KubermaticConfiguration`/`Seed`, where defaulting
 happens only at runtime, because we do want new defaults (like new `spec.versions` in the `KubermaticConfiguration`)
-to also apply to existing KKP installations. 
+to also apply to existing KKP installations.
 
 ## Validation
 
@@ -67,21 +67,21 @@ The openapi package can be easily integrated into your custom validation funcs. 
 
 ```Go
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-func ValidateApplicationDefinition(ad *kubermaticv1.ApplicationDefinition) field.ErrorList {
+func ValidateApplicationDefinition(ad *appskubermaticv1.ApplicationDefinition) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	v, _ := openapi.ValidatorForType(&ad.TypeMeta)
+	v, _ := openapi.NewValidatorForObject(ad)
 	allErrs = append(allErrs, validation.ValidateCustomResource(nil, ad, v)...)
 
 	// your custom validation code
 	// ...
-	
+
 	return allErrs
 ```
 
@@ -96,7 +96,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, ...) field.ErrorList {
 
 	cwrap := &kubermaticv1.Cluster{}
 	cwrap.Spec = *spec
-	v, _ := openapi.ValidatorForType(&cwrap.TypeMeta)
+	v, _ := openapi.NewValidatorForObject(cwrap)
 
 	res := validation.ValidateCustomResource(nil, cwrap, v)
 	for _, e := range res {
@@ -107,7 +107,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, ...) field.ErrorList {
 
 	// your custom validation code
 	// ...
-	
+
 	return allErrs
 ```
 

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -124,13 +124,13 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 		return nil, err
 	}
 
-	requestedKubeletVersion, err := semver.NewVersion(version.Version.String())
+	requestedKubeletVersion, err := semverlib.NewVersion(version.Version.String())
 	if err != nil {
-		return nil, kubermaticerrors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), requestedKubeletVersion); err != nil {
-		return nil, kubermaticerrors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	client, err := clusterProvider.GetAdminClientForCustomerCluster(ctx, cluster)
@@ -152,7 +152,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 
 	if len(updateErrors) > 0 {
-		return nil, kubermaticerrors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
+		return nil, utilerrors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
 	}
 
 	return nil, nil
@@ -160,7 +160,7 @@ func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider
 
 func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
 	for _, md := range mds {
-		kubeletVersion, err := semver.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
+		kubeletVersion, err := semverlib.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
 		if err != nil {
 			return false, err
 		}

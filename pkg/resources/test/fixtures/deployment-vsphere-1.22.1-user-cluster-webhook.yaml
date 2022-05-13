@@ -21,9 +21,12 @@ spec:
     spec:
       containers:
       - args:
+        - -kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - -webhook-cert-dir=/opt/webhook-serving-cert/
         - -webhook-cert-name=serving.crt
         - -webhook-key-name=serving.key
+        - -ca-bundle=/opt/ca-bundle/ca-bundle.pem
         - -v=2
         command:
         - user-cluster-webhook
@@ -55,6 +58,12 @@ spec:
         - mountPath: /opt/webhook-serving-cert/
           name: webhook-serving-cert
           readOnly: true
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: internal-admin-kubeconfig
+          readOnly: true
+        - mountPath: /opt/ca-bundle/
+          name: ca-bundle
+          readOnly: true
       imagePullSecrets:
       - name: dockercfg
       serviceAccountName: user-cluster-webhook
@@ -62,4 +71,10 @@ spec:
       - name: webhook-serving-cert
         secret:
           secretName: user-cluster-webhook-serving-cert
+      - name: internal-admin-kubeconfig
+        secret:
+          secretName: internal-admin-kubeconfig
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
 status: {}

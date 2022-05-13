@@ -25,7 +25,7 @@ grafana:
     tag: 8.1.2
   utilImage:
     repository: quay.io/kubermatic/util
-    tag: 2.0.0
+    tag: 2.1.0
   pluginImage:
     repository: quay.io/kubermatic/grafana-plugins
     tag: 1.3.1
@@ -120,10 +120,10 @@ grafana:
       # the dashboards.
       viewers_can_edit: false
 
-      # Change this to the URL that will be used to expose 
+      # Change this to the URL that will be used to expose
       # your Grafana installation. This is needed for Grafana to be aware
-      # where it is hosted. This address is used in some redirects 
-      # or for sharing dashboards. 
+      # where it is hosted. This address is used in some redirects
+      # or for sharing dashboards.
       root_url: ""
 
   # If you manage your dashboards via your own configmaps,

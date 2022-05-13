@@ -26,7 +26,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -40,10 +40,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/api/policy/v1beta1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -137,7 +137,7 @@ func Add(
 	}
 
 	var err error
-	if r.clusterSemVer, err = semver.NewVersion(r.version); err != nil {
+	if r.clusterSemVer, err = semverlib.NewVersion(r.version); err != nil {
 		return err
 	}
 	r.Client = mgr.GetClient()
@@ -179,7 +179,7 @@ func Add(
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		&apiextensionsv1.CustomResourceDefinition{},
 		&appsv1.Deployment{},
-		&v1beta1.PodDisruptionBudget{},
+		&policyv1beta1.PodDisruptionBudget{},
 		&networkingv1.NetworkPolicy{},
 		&appsv1.DaemonSet{},
 	}
@@ -277,7 +277,7 @@ type reconciler struct {
 	ctrlruntimeclient.Client
 	seedClient                   ctrlruntimeclient.Client
 	version                      string
-	clusterSemVer                *semver.Version
+	clusterSemVer                *semverlib.Version
 	cache                        cache.Cache
 	namespace                    string
 	clusterURL                   *url.URL
@@ -353,7 +353,7 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 		types.NamespacedName{Namespace: r.namespace, Name: resources.UserSSHKeys},
 		secret,
 	); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -420,7 +420,7 @@ func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespa
 		Name:      resources.DefaultServiceAccountName,
 	}, &serviceAccount)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

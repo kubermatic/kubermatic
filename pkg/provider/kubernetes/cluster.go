@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -279,7 +279,7 @@ func (p *ClusterProvider) Get(ctx context.Context, userInfo *provider.UserInfo, 
 	}
 	if options.CheckInitStatus {
 		if !cluster.Status.ExtendedHealth.AllHealthy() {
-			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
+			return nil, apierrors.NewServiceUnavailable("Cluster components are not ready yet")
 		}
 	}
 
@@ -295,7 +295,7 @@ func (p *ClusterProvider) IsCluster(ctx context.Context, clusterName string) boo
 }
 
 // Delete deletes the given cluster.
-func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, clusterName string) error {
+func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) error {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
@@ -307,7 +307,7 @@ func (p *ClusterProvider) Delete(ctx context.Context, userInfo *provider.UserInf
 	delOpts := &ctrlruntimeclient.DeleteOptions{
 		PropagationPolicy: &policy,
 	}
-	return seedImpersonatedClient.Delete(ctx, &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}}, delOpts)
+	return seedImpersonatedClient.Delete(ctx, cluster, delOpts)
 }
 
 // Update updates a cluster.
@@ -457,13 +457,13 @@ func (p *ClusterProvider) GetUnsecured(ctx context.Context, project *kubermaticv
 	if cluster.Labels[kubermaticv1.ProjectIDLabelKey] == project.Name {
 		if options.CheckInitStatus {
 			if !cluster.Status.ExtendedHealth.AllHealthy() {
-				return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
+				return nil, apierrors.NewServiceUnavailable("Cluster components are not ready yet")
 			}
 		}
 		return cluster, nil
 	}
 
-	return nil, kerrors.NewNotFound(schema.GroupResource{}, clusterName)
+	return nil, apierrors.NewNotFound(schema.GroupResource{}, clusterName)
 }
 
 // UpdateUnsecured updates a cluster.

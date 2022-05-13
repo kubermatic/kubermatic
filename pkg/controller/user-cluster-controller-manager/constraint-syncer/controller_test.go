@@ -25,14 +25,14 @@ import (
 	"testing"
 	"time"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -101,7 +101,7 @@ func TestReconcile(t *testing.T) {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
-					c.Finalizers = []string{kubermaticapiv1.GatekeeperConstraintCleanupFinalizer}
+					c.Finalizers = []string{apiv1.GatekeeperConstraintCleanupFinalizer}
 					return c
 				}()).
 				Build(),
@@ -129,7 +129,7 @@ func TestReconcile(t *testing.T) {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
-					c.Finalizers = []string{kubermaticapiv1.GatekeeperConstraintCleanupFinalizer}
+					c.Finalizers = []string{apiv1.GatekeeperConstraintCleanupFinalizer}
 					return c
 				}()).
 				Build(),
@@ -234,8 +234,8 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("expected error status %s, instead got constraint: %v", tc.expectedGetErrStatus, reqLabel)
 				}
 
-				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
-					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
+				if tc.expectedGetErrStatus != apierrors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, apierrors.ReasonForError(err))
 				}
 				return
 			}

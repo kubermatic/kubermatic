@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/distribution/distribution/v3/reference"
 	"go.uber.org/zap"
 
@@ -485,6 +485,20 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 	return provider.SecretKeySelectorValueFuncFactory(d.ctx, d.client)(configVar, key)
 }
 
+func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte, error) {
+	secret := corev1.Secret{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ref.Name, Namespace: d.cluster.Status.NamespaceName}, &secret); err != nil {
+		return nil, err
+	}
+
+	val, ok := secret.Data[ref.Key]
+	if !ok {
+		return nil, fmt.Errorf("key %q not found in secret", ref.Key)
+	}
+
+	return val, nil
+}
+
 func (d *TemplateData) GetCloudProviderName() (string, error) {
 	return provider.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
@@ -609,7 +623,7 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 	var featureFlags []string
-	gte23, _ := semver.NewConstraint(">= 1.23.0")
+	gte23, _ := semverlib.NewConstraint(">= 1.23.0")
 	ccm := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
 	curVersion := cluster.Status.Versions.ControlPlane
@@ -633,7 +647,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
-			lessThan21, _ := semver.NewConstraint("< 1.21.0")
+			lessThan21, _ := semverlib.NewConstraint("< 1.21.0")
 			if cluster.Spec.Cloud.Openstack != nil {
 				if lessThan21.Check(curVersion.Semver()) {
 					featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")

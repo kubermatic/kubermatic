@@ -211,7 +211,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	}
 
 	// URL
-	url := fmt.Sprintf("https://%s:%d", externalName, port)
+	url := fmt.Sprintf("https://%s", net.JoinHostPort(externalName, fmt.Sprintf("%d", port)))
 	if m.cluster.Address.URL != url {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.URL = url

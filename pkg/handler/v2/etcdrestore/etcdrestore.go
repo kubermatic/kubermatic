@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -96,7 +96,7 @@ type erBody struct {
 
 func (r *createEtcdRestoreReq) validate() error {
 	if r.Body.Spec.BackupName == "" {
-		return errors.NewBadRequest("backup name cannot be empty")
+		return utilerrors.NewBadRequest("backup name cannot be empty")
 	}
 	// NOTE we can check if the backup really exists on S3 or if the backup secret exists (if set), but the restore status will give this info as well
 	return nil
@@ -220,7 +220,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 
 		if er.Status.Phase != kubermaticv1.EtcdRestorePhaseCompleted && er.Status.Phase != "" {
-			return nil, errors.New(http.StatusConflict, fmt.Sprintf("Restore is in progress (phase: %q), cannot delete at this moment", er.Status.Phase))
+			return nil, utilerrors.New(http.StatusConflict, fmt.Sprintf("Restore is in progress (phase: %q), cannot delete at this moment", er.Status.Phase))
 		}
 
 		err = deleteEtcdRestore(ctx, userInfoGetter, c, req.ProjectID, req.EtcdRestoreName)
@@ -311,7 +311,7 @@ func convertInternalToAPIEtcdRestore(er *kubermaticv1.EtcdRestore) *apiv2.EtcdRe
 func convertAPIToInternalEtcdRestore(name string, erSpec *apiv2.EtcdRestoreSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdRestore, error) {
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
 	}
 
 	return &kubermaticv1.EtcdRestore{
@@ -377,7 +377,7 @@ func listEtcdRestore(ctx context.Context, userInfoGetter provider.UserInfoGetter
 func listProjectEtcdRestore(ctx context.Context, projectID string) ([]*kubermaticv1.EtcdRestoreList, error) {
 	privilegedEtcdRestoreProjectProvider := ctx.Value(middleware.PrivilegedEtcdRestoreProjectProviderContextKey).(provider.PrivilegedEtcdRestoreProjectProvider)
 	if privilegedEtcdRestoreProjectProvider == nil {
-		return nil, errors.New(http.StatusInternalServerError, "error getting privileged provider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "error getting privileged provider")
 	}
 	return privilegedEtcdRestoreProjectProvider.ListUnsecured(ctx, projectID)
 }

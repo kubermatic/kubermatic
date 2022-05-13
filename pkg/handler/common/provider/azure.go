@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
@@ -35,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // https://docs.microsoft.com/en-us/azure/virtual-machines/sizes-gpu
@@ -179,7 +180,7 @@ func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -188,17 +189,17 @@ func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter
 	}
 	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	if datacenter.Spec.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec (dc) for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
 	}
 
 	azureLocation := datacenter.Spec.Azure.Location
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -221,7 +222,7 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(ctx context.Context, u
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -230,17 +231,17 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(ctx context.Context, u
 	}
 	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	if datacenter.Spec.Azure == nil {
-		return nil, errors.NewNotFound("cloud spec (dc) for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
 	}
 
 	azureLocation := datacenter.Spec.Azure.Location
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -300,6 +301,31 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	}
 
 	return true
+}
+
+func GetAzureVMSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, vmName string) (*apiv1.AzureSize, error) {
+	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for size client: %w", err)
+	}
+
+	// get all available VM size types for given location
+	listVMSize, err := sizesClient.ListVMSize(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sizes: %w", err)
+	}
+
+	for _, vm := range listVMSize {
+		if strings.EqualFold(*vm.Name, vmName) {
+			return &apiv1.AzureSize{
+				NumberOfCores:        *vm.NumberOfCores,
+				ResourceDiskSizeInMB: *vm.ResourceDiskSizeInMB,
+				MemoryInMB:           *vm.MemoryInMB,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("could not find Azure VM Size named %q", vmName)
 }
 
 func AzureSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 )
 
 // BinaryForClusterVersion returns the full path to a kubectl binary
@@ -28,7 +28,7 @@ import (
 // returned if no suitable kubectl can be determined.
 // We take advantage of version skew policy for kubectl, v1.1.1 would support v1.2.x and v1.0.x, to ship
 // only mandatory variants for kubectl.
-func BinaryForClusterVersion(version *semver.Version) (string, error) {
+func BinaryForClusterVersion(version *semverlib.Version) (string, error) {
 	var binary string
 
 	switch version.Minor() {

@@ -27,10 +27,10 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // clusterIsReachable checks if the cluster is reachable via its external name.
@@ -54,7 +54,7 @@ func (r *Reconciler) etcdUseStrictTLS(ctx context.Context, c *kubermaticv1.Clust
 
 	if err != nil {
 		// if the StatefulSet for etcd doesn't exist yet, a new one can be deployed with strict TLS peers
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return true, nil
 		} else {
 			return false, err
@@ -64,7 +64,7 @@ func (r *Reconciler) etcdUseStrictTLS(ctx context.Context, c *kubermaticv1.Clust
 	pods := &corev1.PodList{}
 	labelSet := etcd.GetBasePodLabels(c)
 
-	err = r.Client.List(ctx, pods, &client.ListOptions{
+	err = r.Client.List(ctx, pods, &ctrlruntimeclient.ListOptions{
 		Namespace:     c.Status.NamespaceName,
 		LabelSelector: labels.SelectorFromSet(labelSet),
 	})

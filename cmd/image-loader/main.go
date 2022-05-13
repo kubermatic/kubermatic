@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -44,7 +44,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -240,7 +240,7 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
 	templateData, err := getTemplateData(clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -328,7 +328,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -511,8 +511,8 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
-	var versions []*kubermaticversion.Version
+func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*version.Version, error) {
+	var versions []*version.Version
 
 	log = log.With("versions-filter", versionFilter)
 
@@ -527,7 +527,7 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 		var err error
 
 		log.Debugw("Loading versions", "file", versionsFile)
-		versions, err = kubermaticversion.LoadVersions(versionsFile)
+		versions, err = version.LoadVersions(versionsFile)
 		if err != nil {
 			return nil, err
 		}
@@ -538,12 +538,12 @@ func getVersions(log *zap.SugaredLogger, config *kubermaticv1.KubermaticConfigur
 	}
 
 	log.Debug("Filtering versions")
-	constraint, err := semver.NewConstraint(versionFilter)
+	constraint, err := semverlib.NewConstraint(versionFilter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version filter %q: %w", versionFilter, err)
 	}
 
-	var filteredVersions []*kubermaticversion.Version
+	var filteredVersions []*version.Version
 	for _, ver := range versions {
 		if constraint.Check(ver.Version) {
 			filteredVersions = append(filteredVersions, ver)

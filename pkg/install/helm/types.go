@@ -21,16 +21,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v2"
 )
 
 type Release struct {
-	Name      string          `json:"name"`
-	Namespace string          `json:"namespace"`
-	Chart     string          `json:"chart"`
-	Revision  string          `json:"revision"`
-	Version   *semver.Version `json:"-"`
+	Name      string             `json:"name"`
+	Namespace string             `json:"namespace"`
+	Chart     string             `json:"chart"`
+	Revision  string             `json:"revision"`
+	Version   *semverlib.Version `json:"-"`
 	// AppVersion is not a semver, for example Minio has date-based versions.
 	AppVersion string        `json:"app_version"`
 	Status     ReleaseStatus `json:"status"`
@@ -38,15 +38,15 @@ type Release struct {
 
 func (r *Release) Clone() Release {
 	releaseCopy := *r
-	releaseCopy.Version = semver.MustParse(r.Version.Original())
+	releaseCopy.Version = semverlib.MustParse(r.Version.Original())
 
 	return releaseCopy
 }
 
 type Chart struct {
-	Name       string          `yaml:"name"`
-	Version    *semver.Version `yaml:"-"`
-	VersionRaw string          `yaml:"version"`
+	Name       string             `yaml:"name"`
+	Version    *semverlib.Version `yaml:"-"`
+	VersionRaw string             `yaml:"version"`
 	// AppVersion is not a semver, for example Minio has date-based versions.
 	AppVersion   string `yaml:"appVersion"`
 	Directory    string
@@ -55,7 +55,7 @@ type Chart struct {
 
 func (c *Chart) Clone() Chart {
 	chartCopy := *c
-	chartCopy.Version = semver.MustParse(c.Version.Original())
+	chartCopy.Version = semverlib.MustParse(c.Version.Original())
 
 	return chartCopy
 }
@@ -72,7 +72,7 @@ func LoadChart(directory string) (*Chart, error) {
 		return nil, fmt.Errorf("failed to read Chart.yaml: %w", err)
 	}
 
-	version, err := semver.NewVersion(chart.VersionRaw)
+	version, err := semverlib.NewVersion(chart.VersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %q: %w", chart.VersionRaw, err)
 	}

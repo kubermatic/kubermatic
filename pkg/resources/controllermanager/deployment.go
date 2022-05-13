@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -208,7 +208,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
-func getFlags(data *resources.TemplateData, version *semver.Version) ([]string, error) {
+func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]string, error) {
 	cluster := data.Cluster()
 	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
 
@@ -259,7 +259,7 @@ func getFlags(data *resources.TemplateData, version *semver.Version) ([]string, 
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
 	// starting with k8s 1.21, this is always true and cannot be toggled anymore
-	if version.LessThan(semver.MustParse("1.21.0")) {
+	if version.LessThan(semverlib.MustParse("1.21.0")) {
 		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
 	}
 

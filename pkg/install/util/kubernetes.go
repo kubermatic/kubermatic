@@ -22,7 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,7 +36,7 @@ func EnsureNamespace(ctx context.Context, log logrus.FieldLogger, kubeClient ctr
 		},
 	}
 
-	if err := kubeClient.Create(ctx, &ns); err != nil && !kerrors.IsAlreadyExists(err) {
+	if err := kubeClient.Create(ctx, &ns); err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 

@@ -24,9 +24,9 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CreateOrUpdateMeteringCredentials creates or updates metering tool SecretReq.
@@ -37,7 +37,7 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		if err := createOrUpdateMeteringCredentials(ctx, req, seedsGetter, seedClientGetter); err != nil {
@@ -49,14 +49,14 @@ func CreateOrUpdateMeteringCredentials(userInfoGetter provider.UserInfoGetter, s
 }
 
 // CreateOrUpdateMeteringConfigurations configures kkp metering tool.
-func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func CreateOrUpdateMeteringConfigurations(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		if err := createOrUpdateMeteringConfigurations(ctx, req, masterClient); err != nil {
@@ -75,7 +75,7 @@ func GetMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGett
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		resp, err := getMeteringReportConfiguration(seedsGetter, req)
@@ -95,7 +95,7 @@ func ListMeteringReportConfigurationsEndpoint(userInfoGetter provider.UserInfoGe
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		resp, err := listMeteringReportConfigurations(seedsGetter)
@@ -108,14 +108,14 @@ func ListMeteringReportConfigurationsEndpoint(userInfoGetter provider.UserInfoGe
 }
 
 // CreateMeteringReportConfigurationEndpoint creates report configuration entry for kkp metering tool.
-func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		if err := createMeteringReportConfiguration(ctx, req, masterClient); err != nil {
@@ -127,14 +127,14 @@ func CreateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 }
 
 // UpdateMeteringReportConfigurationEndpoint updates existing report configuration entry for kkp metering tool.
-func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		if err := updateMeteringReportConfiguration(ctx, req, masterClient); err != nil {
@@ -146,14 +146,14 @@ func UpdateMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoG
 }
 
 // DeleteMeteringReportConfigurationEndpoint deletes report configuration entry for kkp metering tool.
-func DeleteMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient client.Client) endpoint.Endpoint {
+func DeleteMeteringReportConfigurationEndpoint(userInfoGetter provider.UserInfoGetter, masterClient ctrlruntimeclient.Client) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		if err := deleteMeteringReportConfiguration(ctx, req, masterClient); err != nil {
@@ -172,7 +172,7 @@ func ListMeteringReportsEndpoint(userInfoGetter provider.UserInfoGetter, seedsGe
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		exports, err := listMeteringReports(ctx, req, seedsGetter, seedClientGetter)
@@ -192,7 +192,7 @@ func GetMeteringReportEndpoint(userInfoGetter provider.UserInfoGetter, seedsGett
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		report, err := getMeteringReport(ctx, req, seedsGetter, seedClientGetter)
@@ -212,7 +212,7 @@ func DeleteMeteringReportEndpoint(userInfoGetter provider.UserInfoGetter, seedsG
 			return nil, err
 		}
 		if !userInfo.IsAdmin {
-			return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+			return nil, apierrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 		}
 
 		err = deleteMeteringReport(ctx, req, seedsGetter, seedClientGetter)

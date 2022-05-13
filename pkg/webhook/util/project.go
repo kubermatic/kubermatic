@@ -23,7 +23,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,7 +37,7 @@ func OptimisticallyCheckIfProjectIsValid(ctx context.Context, client ctrlruntime
 	if err := client.Get(ctx, types.NamespacedName{Name: projectName}, project); err != nil {
 		// We rely on eventual consistency; this webhook should only check if the UserSSHKey
 		// object is consistent in itself.
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

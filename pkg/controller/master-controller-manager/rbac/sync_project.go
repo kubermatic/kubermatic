@@ -27,7 +27,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +40,7 @@ const (
 func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {
 	project := &kubermaticv1.Project{}
 	if err := c.client.Get(ctx, key, project); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 
@@ -194,7 +194,7 @@ func ensureClusterRBACRoleForResource(ctx context.Context, log *zap.SugaredLogge
 	var sharedExistingClusterRole rbacv1.ClusterRole
 	key := types.NamespacedName{Name: generatedClusterRole.Name}
 	if err := c.Get(ctx, key, &sharedExistingClusterRole); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return c.Create(ctx, generatedClusterRole)
 		}
 
@@ -216,7 +216,7 @@ func ensureClusterRBACRoleBindingForResource(ctx context.Context, c ctrlruntimec
 	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
 	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
 	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return c.Create(ctx, generatedClusterRoleBinding)
 		}
 
@@ -304,7 +304,7 @@ func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ct
 	var sharedExistingRole rbacv1.Role
 	key := types.NamespacedName{Name: generatedRole.Name, Namespace: generatedRole.Namespace}
 	if err := c.Get(ctx, key, &sharedExistingRole); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return c.Create(ctx, generatedRole)
 		}
 		return err
@@ -373,7 +373,7 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.C
 	var sharedExistingRoleBinding rbacv1.RoleBinding
 	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: generatedRoleBinding.Namespace}
 	if err := c.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return c.Create(ctx, generatedRoleBinding)
 		}
 		return err

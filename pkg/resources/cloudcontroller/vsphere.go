@@ -166,16 +166,14 @@ func getCPIContainer(version string, data *resources.TemplateData) corev1.Contai
 
 func getVsphereCPIVersion(version semver.Semver) string {
 	switch version.Semver().Minor() {
-	case 20:
-		return "1.20.0"
 	case 21:
-		return "1.21.1"
+		return "1.21.3"
 	case 22:
-		fallthrough
+		return "1.22.6"
 	case 23:
 		fallthrough
 	//	By default return latest version
 	default:
-		return "1.22.4"
+		return "1.23.0"
 	}
 }

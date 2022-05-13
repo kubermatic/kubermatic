@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -198,7 +198,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	externalCluster := &kubermaticv1.ExternalCluster{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: request.Name}, externalCluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
 			return reconcile.Result{}, nil
 		}
@@ -210,7 +210,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		ns := &corev1.Namespace{}
 		name := types.NamespacedName{Name: kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name)}
 		if err := r.Get(ctx, name, ns); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				log.Debug("Could not find external cluster namespace")
 				return reconcile.Result{}, nil
 			}
@@ -229,18 +229,20 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) (reconcile.Result, error) {
+	cloud := externalCluster.Spec.CloudSpec
+	if cloud == nil || cloud.KubeOne == nil {
+		return reconcile.Result{}, nil
+	}
 	if err := r.initiateImportAction(ctx, log, externalCluster); err != nil {
 		return reconcile.Result{}, err
 	}
-
-	clusterPhase := externalCluster.Status.Condition.Phase
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(r.ImpersonationClient, r.Client)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
+	clusterPhase := externalCluster.Status.Condition.Phase
 	manifestSecret := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: externalCluster.Spec.CloudSpec.KubeOne.ManifestReference.Namespace, Name: externalCluster.Spec.CloudSpec.KubeOne.ManifestReference.Name}, manifestSecret); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Namespace: cloud.KubeOne.ManifestReference.Namespace, Name: cloud.KubeOne.ManifestReference.Name}, manifestSecret); err != nil {
 		return reconcile.Result{}, fmt.Errorf("can not retrieve kubeone manifest secret: %w", err)
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
@@ -267,7 +269,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, exte
 func (r *reconciler) initiateImportAction(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) error {
 	kubeconfigSecret := &corev1.Secret{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name), Name: resources.KubeOneKubeconfigSecretName}, kubeconfigSecret); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			if err := r.importCluster(ctx, log, externalCluster); err != nil {
 				log.Debug("failed to import kubeone cluster %w", err)
 				return err
@@ -295,7 +297,7 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	log.Debug("Create kubeone pod to fetch kubeconfig")
 	if err := r.Create(ctx, generatedPod); err != nil {
-		if !kerrors.IsAlreadyExists(err) {
+		if !apierrors.IsAlreadyExists(err) {
 			return fmt.Errorf("could not create kubeone pod %s/%s: %w", KubeOneImportPod, generatedPod.Namespace, err)
 		}
 	}
@@ -367,7 +369,7 @@ func (r *reconciler) initiateUpgradeAction(ctx context.Context,
 		upgradePod,
 	)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 	} else {
@@ -419,7 +421,7 @@ func (r *reconciler) initiateMigrateAction(ctx context.Context,
 		migratePod,
 	)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, err
 		}
 	} else {
@@ -464,7 +466,7 @@ func (r *reconciler) checkPodStatusIfExists(ctx context.Context,
 		pod,
 	)
 	if err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	} else {
@@ -582,7 +584,7 @@ func (r *reconciler) ensureKubeconfigSecret(ctx context.Context, log *zap.Sugare
 	existingSecret := &corev1.Secret{}
 
 	if err := r.Get(ctx, namespacedName, existingSecret); err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to probe for secret %q: %w", secretName, err)
 		}
 		return r.createKubeconfigSecret(ctx, log, secretData, secretName, projectID, namespace)
@@ -636,7 +638,7 @@ func (r *reconciler) createKubeconfigSecret(ctx context.Context, log *zap.Sugare
 		Data: secretData,
 	}
 	if err := r.Create(ctx, secret); err != nil {
-		if kerrors.IsAlreadyExists(err) {
+		if apierrors.IsAlreadyExists(err) {
 			log.Debug("kubeone kubeconfig secret already exists")
 		} else {
 			return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
@@ -748,7 +750,7 @@ func (r *reconciler) upgradeCluster(ctx context.Context, log *zap.SugaredLogger,
 
 	log.Debug("Create kubeone pod to upgrade kubeone")
 	if err := r.Create(ctx, generatedPod); err != nil {
-		if !kerrors.IsAlreadyExists(err) {
+		if !apierrors.IsAlreadyExists(err) {
 			return nil, err
 		}
 	}
@@ -766,7 +768,7 @@ func (r *reconciler) migrateCluster(ctx context.Context, log *zap.SugaredLogger,
 
 	log.Debug("Create kubeone pod to migrate kubeone")
 	if err := r.Create(ctx, generatedPod); err != nil {
-		if !kerrors.IsAlreadyExists(err) {
+		if !apierrors.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("could not create kubeone pod %s/%s to migrate kubeone cluster: %w", generatedPod.Name, generatedPod.Namespace, err)
 		}
 	}
@@ -793,7 +795,7 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 
 	cm := generateConfigMap(kubeOneNamespace, action)
 	if err := r.Create(ctx, cm); err != nil {
-		if !kerrors.IsAlreadyExists(err) {
+		if !apierrors.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("failed to create kubeone script configmap: %w", err)
 		}
 	}

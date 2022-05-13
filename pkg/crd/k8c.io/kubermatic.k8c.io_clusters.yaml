@@ -2156,6 +2156,11 @@ spec:
                       to etcd. Secondary keys that can be used for decryption (but
                       not encryption) might be configured in the ClusterSpec.
                     type: string
+                  encryptedResources:
+                    description: List of resources currently encrypted.
+                    items:
+                      type: string
+                    type: array
                   phase:
                     description: The current phase of the encryption process. Can
                       be one of `Pending`, `Failed`, `Active` or `EncryptionNeeded`.
@@ -2165,11 +2170,13 @@ spec:
                       ClusterSpec defines.
                     enum:
                     - Pending
+                    - Failed
                     - Active
                     - EncryptionNeeded
                     type: string
                 required:
                 - activeKey
+                - encryptedResources
                 - phase
                 type: object
               errorMessage:
@@ -2232,6 +2239,12 @@ spec:
                     - HealthStatusProvisioning
                     type: string
                   gatekeeperController:
+                    enum:
+                    - HealthStatusDown
+                    - HealthStatusUp
+                    - HealthStatusProvisioning
+                    type: string
+                  konnectivity:
                     enum:
                     - HealthStatusDown
                     - HealthStatusUp

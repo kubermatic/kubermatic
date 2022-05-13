@@ -17,7 +17,7 @@ limitations under the License.
 package helm
 
 import (
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
@@ -26,7 +26,7 @@ import (
 // the installer. This is the minimum set of operations required to
 // perform a Kubermatic installation.
 type Client interface {
-	Version() (*semver.Version, error)
+	Version() (*semverlib.Version, error)
 	BuildChartDependencies(chartDirectory string, flags []string) error
 	InstallChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) error
 	GetRelease(namespace string, name string) (*Release, error)

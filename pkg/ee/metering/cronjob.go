@@ -45,7 +45,7 @@ func cronJobCreator(seedName, reportName string, mrc *kubermaticv1.MeteringRepor
 			if labels == nil {
 				labels = make(map[string]string)
 			}
-			labels[MeteringLabelKey] = reportName
+			labels[LabelKey] = reportName
 			job.SetLabels(labels)
 
 			job.Spec.Schedule = mrc.Schedule
@@ -134,7 +134,7 @@ mc mirror --newer-than "65d0h0m" s3/$S3_BUCKET /metering-data || true`,
 kubermatic-metering-report \
   -workdir=/metering-data \
   -reportdir=/report/` + reportName + ` \
-  -last-number-of-days=` + strconv.Itoa(mrc.Interval) + ` \
+  -last-number-of-days=` + strconv.FormatUint(uint64(mrc.Interval), 10) + ` \
   -seed=` + seedName + ` \
   -scrape-interval=300
 touch /report/finished`,

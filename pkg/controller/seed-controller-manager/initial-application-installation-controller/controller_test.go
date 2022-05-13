@@ -27,8 +27,8 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -53,7 +53,7 @@ const (
 )
 
 func init() {
-	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme.Scheme))
 }
 
@@ -76,7 +76,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
 			Annotations: map[string]string{
-				v1.InitialApplicationInstallationsRequestAnnotation: annotation,
+				apiv1.InitialApplicationInstallationsRequestAnnotation: annotation,
 			},
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
@@ -124,7 +124,7 @@ func TestReconcile(t *testing.T) {
 			name: "create a single ApplicationInstallation from the annotation",
 			cluster: func() *kubermaticv1.Cluster {
 				app := generateApplication(applicationName)
-				applications := []v1.Application{app}
+				applications := []apiv1.Application{app}
 
 				data, err := json.Marshal(applications)
 				if err != nil {
@@ -138,11 +138,11 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
-				apps := appkubermaticv1.ApplicationInstallationList{}
+				apps := appskubermaticv1.ApplicationInstallationList{}
 				if err := userClusterClient.List(context.Background(), &apps); err != nil {
 					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
 				}
@@ -159,7 +159,7 @@ func TestReconcile(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				app := generateApplication(applicationName)
 				app2 := generateApplication("kold")
-				applications := []v1.Application{app, app2}
+				applications := []apiv1.Application{app, app2}
 
 				data, err := json.Marshal(applications)
 				if err != nil {
@@ -172,11 +172,11 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
-				apps := appkubermaticv1.ApplicationInstallationList{}
+				apps := appskubermaticv1.ApplicationInstallationList{}
 				if err := userClusterClient.List(context.Background(), &apps); err != nil {
 					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
 				}
@@ -196,7 +196,7 @@ func TestReconcile(t *testing.T) {
 					return errors.New("reconciling a bad annotation should have produced an error, but got nil")
 				}
 
-				if ann, ok := cluster.Annotations[v1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("bad annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -273,27 +273,27 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func generateApplication(name string) v1.Application {
+func generateApplication(name string) apiv1.Application {
 	var values json.RawMessage
 	_ = json.Unmarshal([]byte(`{
 		"key": "value",
 		"key2": "value2",
 	}`), &values)
 
-	return v1.Application{
-		ObjectMeta: v1.ObjectMeta{
+	return apiv1.Application{
+		ObjectMeta: apiv1.ObjectMeta{
 			Name: name,
 		},
-		Spec: v1.ApplicationSpec{
-			Namespace: v1.NamespaceSpec{
+		Spec: apiv1.ApplicationSpec{
+			Namespace: apiv1.NamespaceSpec{
 				Name:        fmt.Sprintf("app-%s", name),
 				Create:      true,
 				Labels:      map[string]string{"key": "value"},
 				Annotations: map[string]string{"key": "value"},
 			},
-			ApplicationRef: v1.ApplicationRef{
+			ApplicationRef: apiv1.ApplicationRef{
 				Name:    name,
-				Version: appkubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
 			},
 			Values: values,
 		},

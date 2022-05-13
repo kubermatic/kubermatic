@@ -26,7 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/crd"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,7 +63,7 @@ func DeployCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crd ctr
 	}
 
 	// CRD does not exist already, but creating failed for another reason
-	if !kerrors.IsAlreadyExists(err) {
+	if !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -107,7 +107,7 @@ func HasReadyCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdNa
 	if err := kubeClient.Get(ctx, name, retrievedCRD); err != nil {
 		// in theory this should never happen after the .Create() call above
 		// has succeeded, but it can happen temporarily
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
 
@@ -135,7 +135,7 @@ func WaitForCRDGone(ctx context.Context, kubeClient ctrlruntimeclient.Client, cr
 		name := types.NamespacedName{Name: crdName}
 
 		if err := kubeClient.Get(ctx, name, retrievedCRD); err != nil {
-			if kerrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
 

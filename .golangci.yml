@@ -46,10 +46,12 @@ linters:
     - gofmt
     - gosimple
     - govet
+    - importas
     - ineffassign
     - misspell
     - noctx
     - nolintlint
+    - nosprintfhostport
     - predeclared
     - promlinter
     - staticcheck
@@ -91,3 +93,37 @@ linters-settings:
     packages:
       - io/ioutil # https://go.dev/doc/go1.16#ioutil
       - github.com/ghodss/yaml # use sigs.k8s.io/yaml instead
+
+  importas:
+    no-unaliased: true
+    alias:
+      # KKP
+      - pkg: k8c.io/kubermatic/v2/pkg/api/v1
+        alias: apiv1
+      - pkg: k8c.io/kubermatic/v2/pkg/api/v2
+        alias: apiv2
+      - pkg: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1
+        alias: appskubermaticv1
+      - pkg: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1
+        alias: kubermaticv1
+      - pkg: k8c.io/kubermatic/v2/pkg/util/errors
+        alias: utilerrors
+      # Kubernetes
+      - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+        alias: $1$2
+      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+        alias: metav1
+      - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+        alias: apiextensionsv1
+      - pkg: k8s.io/apimachinery/pkg/api/errors
+        alias: apierrors
+      - pkg: k8s.io/apimachinery/pkg/util/errors
+        alias: kerrors
+      # Controller Runtime
+      - pkg: sigs.k8s.io/controller-runtime/pkg/client
+        alias: ctrlruntimeclient
+      # Misc
+      - pkg: github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1
+        alias: clusterv1alpha1
+      - pkg: github.com/Masterminds/semver/v3
+        alias: semverlib

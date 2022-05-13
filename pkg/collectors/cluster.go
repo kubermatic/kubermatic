@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	prefix = "kubermatic_cluster_"
+	clusterPrefix = "kubermatic_cluster_"
 )
 
 // ClusterCollector exports metrics for cluster resources.
@@ -47,29 +47,30 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 	cc := &ClusterCollector{
 		client: client,
 		clusterCreated: prometheus.NewDesc(
-			prefix+"created",
+			clusterPrefix+"created",
 			"Unix creation timestamp",
 			[]string{"cluster"},
 			nil,
 		),
 		clusterDeleted: prometheus.NewDesc(
-			prefix+"deleted",
+			clusterPrefix+"deleted",
 			"Unix deletion timestamp",
 			[]string{"cluster"},
 			nil,
 		),
 		clusterInfo: prometheus.NewDesc(
-			prefix+"info",
-			"Cluster information like owner or version",
+			clusterPrefix+"info",
+			"Additional cluster information",
 			[]string{
 				"name",
 				"display_name",
 				"ip",
-				"master_version",
+				"spec_version",
+				"current_version",
 				"cloud_provider",
 				"datacenter",
 				"pause",
-				"type",
+				"phase",
 			},
 			nil,
 		),
@@ -89,7 +90,7 @@ func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := cc.client.List(context.Background(), clusters); err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %w", err))
+		utilruntime.HandleError(fmt.Errorf("failed to list clusters in ClusterCollector: %w", err))
 		return
 	}
 
@@ -144,9 +145,10 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		cluster.Spec.HumanReadableName,
 		cluster.Address.IP,
 		cluster.Spec.Version.String(),
+		cluster.Status.Versions.ControlPlane.String(),
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
-		"kubernetes",
+		string(cluster.Status.Phase),
 	}, nil
 }

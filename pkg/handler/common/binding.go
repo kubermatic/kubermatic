@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,10 +77,10 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 	oldBinding := existingRoleBinding.DeepCopy()
 	for _, subject := range existingRoleBinding.Subjects {
 		if roleUser.UserEmail != "" && strings.EqualFold(subject.Name, roleUser.UserEmail) {
-			return nil, errors.NewBadRequest("user %s already connected to role %s", roleUser.UserEmail, roleID)
+			return nil, utilerrors.NewBadRequest("user %s already connected to role %s", roleUser.UserEmail, roleID)
 		}
 		if roleUser.Group != "" && subject.Name == roleUser.Group {
-			return nil, errors.NewBadRequest("group %s already connected to role %s", roleUser.Group, roleID)
+			return nil, utilerrors.NewBadRequest("group %s already connected to role %s", roleUser.Group, roleID)
 		}
 	}
 
@@ -145,10 +145,10 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 	oldBinding := existingClusterRoleBinding.DeepCopy()
 	for _, subject := range existingClusterRoleBinding.Subjects {
 		if clusterRoleUser.UserEmail != "" && strings.EqualFold(subject.Name, clusterRoleUser.UserEmail) {
-			return nil, errors.NewBadRequest("user %s already connected to the cluster role %s", clusterRoleUser.UserEmail, roleID)
+			return nil, utilerrors.NewBadRequest("user %s already connected to the cluster role %s", clusterRoleUser.UserEmail, roleID)
 		}
 		if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
-			return nil, errors.NewBadRequest("group %s already connected to the cluster role %s", clusterRoleUser.Group, roleID)
+			return nil, utilerrors.NewBadRequest("group %s already connected to the cluster role %s", clusterRoleUser.Group, roleID)
 		}
 	}
 
@@ -207,7 +207,7 @@ func UnbindUserFromRoleBindingEndpoint(ctx context.Context, userInfoGetter provi
 	}
 
 	if existingRoleBinding == nil {
-		return nil, errors.NewBadRequest("the role binding not found in namespace %s", namespace)
+		return nil, utilerrors.NewBadRequest("the role binding not found in namespace %s", namespace)
 	}
 
 	binding := existingRoleBinding.DeepCopy()
@@ -261,7 +261,7 @@ func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGette
 	}
 
 	if existingClusterRoleBinding == nil {
-		return nil, errors.NewBadRequest("the cluster role binding not found")
+		return nil, utilerrors.NewBadRequest("the cluster role binding not found")
 	}
 
 	binding := existingClusterRoleBinding.DeepCopy()

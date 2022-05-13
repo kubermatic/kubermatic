@@ -29,7 +29,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -40,7 +40,7 @@ func TestResourceQuotaValidation(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		machine     *v1alpha1.Machine
+		machine     *clusterv1alpha1.Machine
 		expectedErr bool
 	}{
 		{
@@ -50,24 +50,24 @@ func TestResourceQuotaValidation(t *testing.T) {
 		},
 		{
 			name:        "should fail with CPU quota exceeded",
-			machine:     genFakeMachine("5", "2G", "10G"),
+			machine:     genFakeMachine("50", "2G", "10G"),
 			expectedErr: true,
 		},
 		{
 			name:        "should fail with Memory quota exceeded",
-			machine:     genFakeMachine("2", "5G", "10G"),
+			machine:     genFakeMachine("2", "50G", "10G"),
 			expectedErr: true,
 		},
 		{
 			name:        "should fail with Storage quota exceeded",
-			machine:     genFakeMachine("2", "2G", "50G"),
+			machine:     genFakeMachine("2", "2G", "5000G"),
 			expectedErr: true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := machine.ValidateQuota(context.Background(), l, nil, tc.machine)
+			err := machine.ValidateQuota(context.Background(), l, nil, nil, tc.machine, nil)
 			if err != nil {
 				if !tc.expectedErr {
 					t.Fatalf("unexpected error: %v", err)
@@ -81,7 +81,7 @@ func TestResourceQuotaValidation(t *testing.T) {
 	}
 }
 
-func genFakeMachine(cpu, memory, storage string) *v1alpha1.Machine {
+func genFakeMachine(cpu, memory, storage string) *clusterv1alpha1.Machine {
 	return test.GenTestMachine("fake",
 		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s"}}`, cpu, memory, storage),
 		nil, nil)

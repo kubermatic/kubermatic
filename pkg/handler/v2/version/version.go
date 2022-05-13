@@ -27,7 +27,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
 )
 
@@ -74,11 +74,11 @@ func ListVersions(configGetter provider.KubermaticConfigurationGetter) endpoint.
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(listProviderVersionsReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		config, err := configGetter(ctx)
@@ -88,7 +88,7 @@ func ListVersions(configGetter provider.KubermaticConfigurationGetter) endpoint.
 
 		versions, err := version.NewFromConfiguration(config).GetVersionsForProvider(kubermaticv1.ProviderType(req.ProviderName))
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		masterVersions := make([]*apiv1.MasterVersion, len(versions))

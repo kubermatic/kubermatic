@@ -21,7 +21,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	discovery "k8s.io/api/discovery/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -40,7 +40,7 @@ func EndpointsCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.N
 		return serviceName, func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
 			// our controller is reconciling the endpoint slice, do not mirror with EndpointSliceMirroring controller
 			ep.Labels = map[string]string{
-				discovery.LabelSkipMirror: "true",
+				discoveryv1.LabelSkipMirror: "true",
 			}
 			ep.Subsets = []corev1.EndpointSubset{
 				{
@@ -66,23 +66,23 @@ func EndpointsCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.N
 // EndpointSliceCreator returns the func to create/update the endpoint slice of the kubernetes service.
 func EndpointSliceCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointSliceCreatorGetter {
 	return func() (string, reconciling.EndpointSliceCreator) {
-		return endpointSliceName, func(es *discovery.EndpointSlice) (*discovery.EndpointSlice, error) {
-			es.AddressType = discovery.AddressTypeIPv4
+		return endpointSliceName, func(es *discoveryv1.EndpointSlice) (*discoveryv1.EndpointSlice, error) {
+			es.AddressType = discoveryv1.AddressTypeIPv4
 			es.Labels = map[string]string{
-				discovery.LabelServiceName: serviceName,
+				discoveryv1.LabelServiceName: serviceName,
 			}
-			es.Endpoints = []discovery.Endpoint{
+			es.Endpoints = []discoveryv1.Endpoint{
 				{
 					Addresses: []string{
 						clusterAddress.IP,
 					},
-					Conditions: discovery.EndpointConditions{
+					Conditions: discoveryv1.EndpointConditions{
 						Ready: pointer.BoolPtr(true),
 					},
 				},
 			}
 			protoTCP := corev1.ProtocolTCP
-			es.Ports = []discovery.EndpointPort{
+			es.Ports = []discoveryv1.EndpointPort{
 				{
 					Name:     pointer.String("https"),
 					Port:     pointer.Int32Ptr(clusterAddress.Port),

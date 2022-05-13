@@ -22,7 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -31,7 +31,7 @@ import (
 func HealthyDeployment(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
 	deployment := &appsv1.Deployment{}
 	if err := client.Get(ctx, nn, deployment); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return kubermaticv1.HealthStatusDown, nil
 		}
 		return kubermaticv1.HealthStatusDown, err
@@ -51,7 +51,7 @@ func HealthyDeployment(ctx context.Context, client ctrlruntimeclient.Client, nn 
 func HealthyStatefulSet(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
 	statefulSet := &appsv1.StatefulSet{}
 	if err := client.Get(ctx, nn, statefulSet); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return kubermaticv1.HealthStatusDown, nil
 		}
 		return kubermaticv1.HealthStatusDown, err
@@ -70,7 +70,7 @@ func HealthyStatefulSet(ctx context.Context, client ctrlruntimeclient.Client, nn
 func HealthyDaemonSet(ctx context.Context, client ctrlruntimeclient.Client, nn types.NamespacedName, minReady int32) (kubermaticv1.HealthStatus, error) {
 	daemonSet := &appsv1.DaemonSet{}
 	if err := client.Get(ctx, nn, daemonSet); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return kubermaticv1.HealthStatusDown, nil
 		}
 		return kubermaticv1.HealthStatusDown, err

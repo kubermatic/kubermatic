@@ -28,7 +28,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
@@ -44,7 +44,7 @@ func ShutdownDeployment(ctx context.Context, logger logrus.FieldLogger, client c
 	key := types.NamespacedName{Name: name, Namespace: namespace}
 
 	if err := client.Get(ctx, key, &deployment); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			depLogger.Debug("Deployment not found.")
 			return nil
 		}
@@ -126,7 +126,7 @@ func removeWebhook(ctx context.Context, logger logrus.FieldLogger, client ctrlru
 	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(obj), obj); err != nil {
 		// not all webhooks need to exist in all clusters / maybe we already cleaned up
 		// because the user ran the "shutdown" command twice
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			logger.Debug("Webhook not found.")
 			return nil
 		}

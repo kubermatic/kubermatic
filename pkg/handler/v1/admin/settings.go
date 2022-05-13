@@ -25,11 +25,11 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // KubermaticSettingsEndpoint returns global settings.
@@ -40,7 +40,7 @@ func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endp
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return v1.GlobalSettings(globalSettings.Spec), nil
+		return apiv1.GlobalSettings(globalSettings.Spec), nil
 	}
 }
 
@@ -52,7 +52,7 @@ func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) e
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return v1.GlobalCustomLinks(globalSettings.Spec.CustomLinks), nil
+		return apiv1.GlobalCustomLinks(globalSettings.Spec.CustomLinks), nil
 	}
 }
 
@@ -71,17 +71,17 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 		}
 		existingGlobalSettingsSpecJSON, err := json.Marshal(existingGlobalSettings.Spec)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode existing settings: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode existing settings: %v", err)
 		}
 
 		patchedGlobalSettingsSpecJSON, err := jsonpatch.MergePatch(existingGlobalSettingsSpecJSON, req.Patch)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot patch global settings: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot patch global settings: %v", err)
 		}
 		var patchedGlobalSettingsSpec *kubermaticv1.SettingSpec
 		err = json.Unmarshal(patchedGlobalSettingsSpecJSON, &patchedGlobalSettingsSpec)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode patched settings: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode patched settings: %v", err)
 		}
 
 		existingGlobalSettings.Spec = *patchedGlobalSettingsSpec
@@ -90,7 +90,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return v1.GlobalSettings(globalSettings.Spec), nil
+		return apiv1.GlobalSettings(globalSettings.Spec), nil
 	}
 }
 

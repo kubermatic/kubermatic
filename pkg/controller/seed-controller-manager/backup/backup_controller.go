@@ -42,7 +42,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -195,7 +195,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -247,7 +247,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 				if err := r.Create(ctx, r.cleanupJob(cluster, backupCleanupContainer)); err != nil {
 					// Otherwise we end up in a loop when we are able to create the job but not
 					// remove the finalizer.
-					if !kerrors.IsAlreadyExists(err) {
+					if !apierrors.IsAlreadyExists(err) {
 						return err
 					}
 				}
@@ -552,12 +552,12 @@ func (r *Reconciler) deleteCronJob(ctx context.Context, cluster *kubermaticv1.Cl
 	cj := &batchv1beta1.CronJob{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, cj)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	if err := r.Delete(ctx, cj, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
+	if err := r.Delete(ctx, cj, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete cronjob %s: %w", name, err)
 	}
 	return nil

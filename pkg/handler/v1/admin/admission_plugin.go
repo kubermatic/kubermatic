@@ -29,7 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // ListAdmissionPluginEndpoint returns admission plugin list.
@@ -57,7 +57,7 @@ func GetAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admissio
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(admissionPluginReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -77,7 +77,7 @@ func DeleteAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(admissionPluginReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -97,11 +97,11 @@ func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateAdmissionPluginReq)
 		if !ok {
-			return nil, k8cerrors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, k8cerrors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {

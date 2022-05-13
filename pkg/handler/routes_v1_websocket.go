@@ -27,7 +27,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -37,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubermaticcontext "k8c.io/kubermatic/v2/pkg/util/context"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
@@ -239,13 +239,13 @@ type terminalReq struct {
 	ClusterID string
 }
 
-func (req terminalReq) GetSeedCluster() v1.SeedCluster {
-	return v1.SeedCluster{
+func (req terminalReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
 }
 
-func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier, tokenExtractor auth.TokenExtractor) (*v1.User, error) {
+func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier, tokenExtractor auth.TokenExtractor) (*apiv1.User, error) {
 	token, err := tokenExtractor.Extract(req)
 	if err != nil {
 		return nil, err
@@ -257,16 +257,16 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 	}
 
 	if claims.Subject == "" {
-		return nil, errors.NewNotAuthorized()
+		return nil, utilerrors.NewNotAuthorized()
 	}
 
 	id, err := hash.GetUserID(claims.Subject)
 	if err != nil {
-		return nil, errors.NewNotAuthorized()
+		return nil, utilerrors.NewNotAuthorized()
 	}
 
-	user := &v1.User{
-		ObjectMeta: v1.ObjectMeta{
+	user := &apiv1.User{
+		ObjectMeta: apiv1.ObjectMeta{
 			ID:   id,
 			Name: claims.Name,
 		},
@@ -274,7 +274,7 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 	}
 
 	if user.ID == "" {
-		return nil, errors.NewNotAuthorized()
+		return nil, utilerrors.NewNotAuthorized()
 	}
 
 	return user, nil

@@ -28,6 +28,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/minio/minio-go/v7/pkg/lifecycle"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -36,7 +38,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -44,7 +46,7 @@ import (
 )
 
 var (
-	MeteringLabelKey = "kubermatic-metering"
+	LabelKey = "kubermatic-metering"
 )
 
 func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
@@ -84,23 +86,26 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		common.OwnershipModifierFactory(seed, scheme),
 	}
 
-	if err := reconcileMeteringReports(ctx, client, seed, overwriter, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile metering reports: %w", err)
-	}
-
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
 		deploymentCreator(seed, overwriter),
 	}, resources.KubermaticNamespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering Deployment: %w", err)
 	}
 
+	if err := reconcileMeteringReportConfigurations(ctx, client, seed, overwriter, modifiers...); err != nil {
+		return fmt.Errorf("failed to reconcile metering report configurations: %w", err)
+	}
+
 	return nil
 }
 
-func reconcileMeteringReports(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
+func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
 	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
+
+	config := lifecycle.NewConfiguration()
+
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
 		if err := reconciling.ReconcileCronJobs(
 			ctx,
@@ -111,7 +116,29 @@ func reconcileMeteringReports(ctx context.Context, client ctrlruntimeclient.Clie
 		); err != nil {
 			return fmt.Errorf("failed to reconcile reporting cronjob: %w", err)
 		}
+
+		if reportConf.Retention != nil {
+			config.Rules = append(config.Rules, lifecycle.Rule{
+				ID:     reportName,
+				Status: "Enabled",
+				Expiration: lifecycle.Expiration{
+					Days: lifecycle.ExpirationDays(*reportConf.Retention),
+				},
+				RuleFilter: lifecycle.Filter{
+					Prefix: reportName,
+				},
+			})
+		}
 	}
+
+	mc, bucket, err := getS3DataFromSeed(ctx, client)
+	if err != nil {
+		return err
+	}
+	if err := mc.SetBucketLifecycle(ctx, bucket, config); err != nil {
+		return fmt.Errorf("failed to update bucket lifecycle: %w", err)
+	}
+
 	return nil
 }
 
@@ -169,10 +196,10 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 	existingReportingCronJobs := &batchv1beta1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
 		ctrlruntimeclient.InNamespace(resources.KubermaticNamespace),
-		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{MeteringLabelKey}),
+		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{LabelKey}),
 	}
 	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to list reporting cronjobs: %w", err)
 		}
 	}
@@ -181,7 +208,7 @@ func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclien
 
 func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key types.NamespacedName, obj ctrlruntimeclient.Object) error {
 	if err := client.Get(ctx, key, obj); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 

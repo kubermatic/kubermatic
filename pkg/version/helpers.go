@@ -19,16 +19,16 @@ package version
 import (
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func IsSupported(version *semver.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
+func IsSupported(version *semverlib.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
 	return checkProviderCompatibility(version, provider, kubermaticv1.SupportOperation, incompatibilities, conditions...)
 }
 
-func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.ProviderType, operation kubermaticv1.OperationType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
+func checkProviderCompatibility(version *semverlib.Version, provider kubermaticv1.ProviderType, operation kubermaticv1.OperationType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
 	var compatible = true
 	var err error
 	for _, pi := range incompatibilities {
@@ -60,8 +60,8 @@ func checkProviderCompatibility(version *semver.Version, provider kubermaticv1.P
 	return compatible, nil
 }
 
-func CheckUnconstrained(baseVersion *semver.Version, version string) (bool, error) {
-	c, err := semver.NewConstraint(version)
+func CheckUnconstrained(baseVersion *semverlib.Version, version string) (bool, error) {
+	c, err := semverlib.NewConstraint(version)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse to constraint %s: %w", c, err)
 	}

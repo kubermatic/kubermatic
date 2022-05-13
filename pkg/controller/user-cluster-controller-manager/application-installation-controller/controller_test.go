@@ -23,7 +23,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/onsi/gomega"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,7 +35,7 @@ import (
 )
 
 func init() {
-	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
 }
 
 const (
@@ -45,7 +45,7 @@ const (
 func TestEnqueueApplicationInstallation(t *testing.T) {
 	testCases := []struct {
 		name                      string
-		applicationDefinition     *appkubermaticv1.ApplicationDefinition
+		applicationDefinition     *appskubermaticv1.ApplicationDefinition
 		userClient                ctrlruntimeclient.Client
 		expectedReconcileRequests []reconcile.Request
 	}{
@@ -98,22 +98,22 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 	}
 }
 
-func genApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinition {
-	return &appkubermaticv1.ApplicationDefinition{
+func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
+	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: appkubermaticv1.ApplicationDefinitionSpec{
-			Versions: []appkubermaticv1.ApplicationVersion{
+		Spec: appskubermaticv1.ApplicationDefinitionSpec{
+			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "1.0.0",
-					Constraints: appkubermaticv1.ApplicationConstraints{
+					Constraints: appskubermaticv1.ApplicationConstraints{
 						K8sVersion: "> 1.19",
 						KKPVersion: "> 2.0",
 					},
-					Template: appkubermaticv1.ApplicationTemplate{
-						Source: appkubermaticv1.ApplicationSource{
-							Helm: &appkubermaticv1.HelmSource{
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
 								URL:          "http://helmrepo.local",
 								ChartName:    "someChartName",
 								ChartVersion: "12",
@@ -126,13 +126,13 @@ func genApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 				},
 				{
 					Version: "2.0.0",
-					Constraints: appkubermaticv1.ApplicationConstraints{
+					Constraints: appskubermaticv1.ApplicationConstraints{
 						K8sVersion: ">= 1.21",
 						KKPVersion: "> 2.0",
 					},
-					Template: appkubermaticv1.ApplicationTemplate{
-						Source: appkubermaticv1.ApplicationSource{
-							Git: &appkubermaticv1.GitSource{
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Git: &appskubermaticv1.GitSource{
 								Remote:      "git@somerepo.local",
 								Ref:         "v13",
 								Path:        "/",
@@ -148,23 +148,23 @@ func genApplicationDefinition(name string) *appkubermaticv1.ApplicationDefinitio
 	}
 }
 
-func genApplicationInstallation(name string, applicationDefName string, appVersion string) *appkubermaticv1.ApplicationInstallation {
-	return &appkubermaticv1.ApplicationInstallation{
+func genApplicationInstallation(name string, applicationDefName string, appVersion string) *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: applicationNamespace,
 		},
-		Spec: appkubermaticv1.ApplicationInstallationSpec{
-			Namespace: appkubermaticv1.NamespaceSpec{
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.NamespaceSpec{
 				Name:   "default",
 				Create: false,
 			},
 
-			ApplicationRef: appkubermaticv1.ApplicationRef{
+			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    applicationDefName,
-				Version: appkubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
 			},
 		},
-		Status: appkubermaticv1.ApplicationInstallationStatus{},
+		Status: appskubermaticv1.ApplicationInstallationStatus{},
 	}
 }

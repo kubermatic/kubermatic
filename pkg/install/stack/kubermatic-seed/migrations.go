@@ -28,7 +28,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -77,7 +77,7 @@ func deleteCSIDriver(ctx context.Context, kubeClient ctrlruntimeclient.Client, n
 	drv := storagev1.CSIDriver{}
 
 	err := kubeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: name}, &drv)
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return nil
 	}
 	if err != nil {
@@ -108,7 +108,7 @@ func deleteLogrotateAddon(ctx context.Context, kubeClient ctrlruntimeclient.Clie
 	addon := kubermaticv1.Addon{}
 
 	err := kubeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: name, Namespace: namespace}, &addon)
-	if kerrors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return nil
 	}
 	if err != nil {

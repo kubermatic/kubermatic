@@ -20,7 +20,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
@@ -32,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,12 +76,12 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 	}
 
 	if cluster.Spec.Cloud.Kubevirt == nil {
-		return "", errors.NewNotFound("cloud spec for ", clusterID)
+		return "", utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return "", errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return "", utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -151,6 +153,28 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 	}
 
 	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster)
+}
+
+func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
+	client, err := NewKubeVirtClient(kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	vmiPresets := &kubevirtv1.VirtualMachineInstancePresetList{}
+	if err := client.List(ctx, vmiPresets, ctrlruntimeclient.InNamespace(metav1.NamespaceDefault)); err != nil {
+		return nil, err
+	}
+
+	// Add a standard preset to the list
+	vmiPresets.Items = append(vmiPresets.Items, *kubevirt.GetKubermaticStandardPreset())
+
+	for _, vmiPreset := range vmiPresets.Items {
+		if strings.EqualFold(vmiPreset.Name, flavor) {
+			return &vmiPreset, nil
+		}
+	}
+	return nil, fmt.Errorf("KubeVirt VMI preset %q not found", flavor)
 }
 
 func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInstancePreset) (*apiv2.VirtualMachineInstancePreset, error) {

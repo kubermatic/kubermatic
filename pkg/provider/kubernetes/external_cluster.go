@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -340,7 +340,7 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 	existingSecret := &corev1.Secret{}
 
 	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
-		if !kerrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
 		}
 		return createKubeconfigSecret(ctx, p.clientPrivileged, name, projectID, secretData)

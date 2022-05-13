@@ -30,7 +30,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -58,7 +58,7 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{"../../../validation/openapi/crd/k8c.io"},
+		CRDDirectoryPaths:     []string{"../../../crd/k8c.io"},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -112,13 +112,13 @@ var _ = AfterSuite(func() {
 func cleanupAppsNamespace() {
 	ns := &corev1.Namespace{}
 	err := userClient.Get(ctx, types.NamespacedName{Name: applicationNamespace}, ns)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		Fail(err.Error())
 	}
 
 	// Delete ns if it exists
 	err = userClient.Delete(ctx, ns)
-	if err != nil && !kerrors.IsNotFound(err) {
+	if err != nil && !apierrors.IsNotFound(err) {
 		Fail(err.Error())
 	}
 }

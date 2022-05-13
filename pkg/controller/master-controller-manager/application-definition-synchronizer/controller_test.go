@@ -22,12 +22,12 @@ import (
 	"testing"
 	"time"
 
-	appkubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -41,7 +41,7 @@ import (
 
 func init() {
 	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(appkubermaticv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
 }
 
 const applicationDefinitionName = "app-def-1"
@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 	testCases := []struct {
 		name                          string
 		requestName                   string
-		expectedApplicationDefinition *appkubermaticv1.ApplicationDefinition
+		expectedApplicationDefinition *appskubermaticv1.ApplicationDefinition
 		masterClient                  ctrlruntimeclient.Client
 		seedClient                    ctrlruntimeclient.Client
 	}{
@@ -96,13 +96,13 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			seedApplicationDef := &appkubermaticv1.ApplicationDefinition{}
+			seedApplicationDef := &appskubermaticv1.ApplicationDefinition{}
 			err := tc.seedClient.Get(ctx, request.NamespacedName, seedApplicationDef)
 
 			if tc.expectedApplicationDefinition == nil {
 				if err == nil {
 					t.Fatal("failed clean up application definition on the seed cluster")
-				} else if !errors.IsNotFound(err) {
+				} else if !apierrors.IsNotFound(err) {
 					t.Fatalf("failed to get application definition: %v", err)
 				}
 			} else {
@@ -127,8 +127,8 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func generateApplicationDef(name string, deleted bool) *appkubermaticv1.ApplicationDefinition {
-	applicationDef := &appkubermaticv1.ApplicationDefinition{
+func generateApplicationDef(name string, deleted bool) *appskubermaticv1.ApplicationDefinition {
+	applicationDef := &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Labels: map[string]string{
@@ -138,18 +138,18 @@ func generateApplicationDef(name string, deleted bool) *appkubermaticv1.Applicat
 				"someAnnotationKey": "someAnnotationValue",
 			},
 		},
-		Spec: appkubermaticv1.ApplicationDefinitionSpec{
+		Spec: appskubermaticv1.ApplicationDefinitionSpec{
 			Description: "sample app",
-			Versions: []appkubermaticv1.ApplicationVersion{
+			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "version 1",
-					Constraints: appkubermaticv1.ApplicationConstraints{
+					Constraints: appskubermaticv1.ApplicationConstraints{
 						K8sVersion: "> 1.0.0",
 						KKPVersion: "> 1.1.1",
 					},
-					Template: appkubermaticv1.ApplicationTemplate{
-						Source: appkubermaticv1.ApplicationSource{
-							Helm: &appkubermaticv1.HelmSource{
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
 								URL:          "https://my-chart-repo.local",
 								ChartName:    "sample-app",
 								ChartVersion: "1.0",
@@ -163,7 +163,7 @@ func generateApplicationDef(name string, deleted bool) *appkubermaticv1.Applicat
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		applicationDef.DeletionTimestamp = &deleteTime
-		applicationDef.Finalizers = append(applicationDef.Finalizers, appkubermaticv1.ApplicationDefinitionSeedCleanupFinalizer)
+		applicationDef.Finalizers = append(applicationDef.Finalizers, appskubermaticv1.ApplicationDefinitionSeedCleanupFinalizer)
 	}
 
 	return applicationDef

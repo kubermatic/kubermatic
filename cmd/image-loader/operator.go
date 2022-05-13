@@ -24,7 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	"sigs.k8s.io/yaml"
 )
@@ -50,11 +50,11 @@ func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*kube
 	return defaulted, nil
 }
 
-func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []*kubermaticversion.Version {
-	versions := []*kubermaticversion.Version{}
+func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []*version.Version {
+	versions := []*version.Version{}
 
 	for _, v := range config.Spec.Versions.Versions {
-		versions = append(versions, &kubermaticversion.Version{
+		versions = append(versions, &version.Version{
 			Version: v.Semver(),
 		})
 	}

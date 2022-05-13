@@ -24,7 +24,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,10 +61,10 @@ var _ provider.PrivilegedServiceAccountProvider = &ServiceAccountProvider{}
 // CreateProjectServiceAccount creates a new service account for the project.
 func (p *ServiceAccountProvider) CreateProjectServiceAccount(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
 	if project == nil {
-		return nil, kerrors.NewBadRequest("Project cannot be nil")
+		return nil, apierrors.NewBadRequest("Project cannot be nil")
 	}
 	if len(name) == 0 || len(group) == 0 {
-		return nil, kerrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
+		return nil, apierrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
 	}
 
 	sa := genProjectServiceAccount(project, name, group, p.domain)
@@ -87,10 +87,10 @@ func (p *ServiceAccountProvider) CreateProjectServiceAccount(ctx context.Context
 // is unsafe in a sense that it uses privileged account to create the resources.
 func (p *ServiceAccountProvider) CreateUnsecuredProjectServiceAccount(ctx context.Context, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
 	if project == nil {
-		return nil, kerrors.NewBadRequest("Project cannot be nil")
+		return nil, apierrors.NewBadRequest("Project cannot be nil")
 	}
 	if len(name) == 0 || len(group) == 0 {
-		return nil, kerrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
+		return nil, apierrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
 	}
 
 	sa := genProjectServiceAccount(project, name, group, p.domain)
@@ -120,10 +120,10 @@ func genProjectServiceAccount(project *kubermaticv1.Project, name, group, domain
 // ListProjectServiceAccount gets service accounts for the project.
 func (p *ServiceAccountProvider) ListProjectServiceAccount(ctx context.Context, userInfo *provider.UserInfo, project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if userInfo == nil {
-		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+		return nil, apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if project == nil {
-		return nil, kerrors.NewBadRequest("project cannot be nil")
+		return nil, apierrors.NewBadRequest("project cannot be nil")
 	}
 	if options == nil {
 		options = &provider.ServiceAccountListOptions{}
@@ -175,7 +175,7 @@ func (p *ServiceAccountProvider) ListProjectServiceAccount(ctx context.Context, 
 // is unsafe in a sense that it uses privileged account to get the resources.
 func (p *ServiceAccountProvider) ListUnsecuredProjectServiceAccount(ctx context.Context, project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if project == nil {
-		return nil, kerrors.NewBadRequest("project cannot be nil")
+		return nil, apierrors.NewBadRequest("project cannot be nil")
 	}
 	if options == nil {
 		options = &provider.ServiceAccountListOptions{}
@@ -224,10 +224,10 @@ func (p *ServiceAccountProvider) listProjectSA(ctx context.Context, project *kub
 // GetProjectServiceAccount method returns project service account with given name.
 func (p *ServiceAccountProvider) GetProjectServiceAccount(ctx context.Context, userInfo *provider.UserInfo, name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	if userInfo == nil {
-		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+		return nil, apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if len(name) == 0 {
-		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+		return nil, apierrors.NewBadRequest("service account name cannot be empty")
 	}
 	if options == nil {
 		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
@@ -256,7 +256,7 @@ func (p *ServiceAccountProvider) GetProjectServiceAccount(ctx context.Context, u
 // is unsafe in a sense that it uses privileged account to get the resource.
 func (p *ServiceAccountProvider) GetUnsecuredProjectServiceAccount(ctx context.Context, name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	if len(name) == 0 {
-		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+		return nil, apierrors.NewBadRequest("service account name cannot be empty")
 	}
 	if options == nil {
 		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
@@ -277,10 +277,10 @@ func (p *ServiceAccountProvider) GetUnsecuredProjectServiceAccount(ctx context.C
 // UpdateProjectServiceAccount simply updates the given project service account.
 func (p *ServiceAccountProvider) UpdateProjectServiceAccount(ctx context.Context, userInfo *provider.UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
 	if userInfo == nil {
-		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+		return nil, apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if serviceAccount == nil {
-		return nil, kerrors.NewBadRequest("service account name cannot be nil")
+		return nil, apierrors.NewBadRequest("service account name cannot be nil")
 	}
 
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
@@ -303,7 +303,7 @@ func (p *ServiceAccountProvider) UpdateProjectServiceAccount(ctx context.Context
 // is unsafe in a sense that it uses privileged account to update the resource.
 func (p *ServiceAccountProvider) UpdateUnsecuredProjectServiceAccount(ctx context.Context, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
 	if serviceAccount == nil {
-		return nil, kerrors.NewBadRequest("service account name cannot be nil")
+		return nil, apierrors.NewBadRequest("service account name cannot be nil")
 	}
 
 	serviceAccount.Name = kubermaticv1helper.EnsureProjectServiceAccountPrefix(serviceAccount.Name)
@@ -318,10 +318,10 @@ func (p *ServiceAccountProvider) UpdateUnsecuredProjectServiceAccount(ctx contex
 // DeleteProjectServiceAccount simply deletes the given project service account.
 func (p *ServiceAccountProvider) DeleteProjectServiceAccount(ctx context.Context, userInfo *provider.UserInfo, name string) error {
 	if userInfo == nil {
-		return kerrors.NewBadRequest("userInfo cannot be nil")
+		return apierrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if len(name) == 0 {
-		return kerrors.NewBadRequest("service account name cannot be empty")
+		return apierrors.NewBadRequest("service account name cannot be empty")
 	}
 
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
@@ -339,7 +339,7 @@ func (p *ServiceAccountProvider) DeleteProjectServiceAccount(ctx context.Context
 // is unsafe in a sense that it uses privileged account to delete the resource.
 func (p *ServiceAccountProvider) DeleteUnsecuredProjectServiceAccount(ctx context.Context, name string) error {
 	if len(name) == 0 {
-		return kerrors.NewBadRequest("service account name cannot be empty")
+		return apierrors.NewBadRequest("service account name cannot be empty")
 	}
 
 	name = kubermaticv1helper.EnsureProjectServiceAccountPrefix(name)

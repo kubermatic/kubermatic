@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-1
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
@@ -65,7 +65,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-1
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
@@ -102,7 +102,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-1
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
@@ -141,7 +141,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-1
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
           command:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
@@ -175,7 +175,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-1
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
           command:
             - ./hack/run-nodeport-proxy-e2e-test-in-kind.sh
           securityContext:
@@ -203,7 +203,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-1
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
@@ -237,7 +237,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.12-1
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
           command:
             - ./hack/run-expose-strategy-e2e-test-in-kind.sh
           securityContext:

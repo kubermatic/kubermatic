@@ -265,17 +265,21 @@ groups:
 
   - alert: KubeCPUOvercommit
     annotations:
-      message: Cluster has overcommitted CPU resource requests for pods and cannot tolerate node failure.
+      message: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
       runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubecpuovercommit
     expr: |
       sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
-        /
-      sum(node:node_num_cpu:sum)
-        >
-      (count(node:node_num_cpu:sum)-1) / count(node:node_num_cpu:sum)
-    for: 5m
+        -
+      (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"}))
+        > 0
+      and
+      (sum(kube_node_status_allocatable{resource="cpu"})
+        -
+      max(kube_node_status_allocatable{resource="cpu"}))
+        > 0
+    for: 10m
     labels:
-      severity: warning
+      severity: critical
       resource: cluster
       service: kube-state-metrics
 
@@ -296,19 +300,21 @@ groups:
 
   - alert: KubeMemOvercommit
     annotations:
-      message: Cluster has overcommitted memory resource requests for pods and cannot tolerate node failure.
+      message: Cluster has overcommitted memory resource requests for Pods by {{ $value }} bytes and cannot tolerate node failure.
       runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubememovercommit
     expr: |
       sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
-        /
-      sum(node_memory_MemTotal_bytes)
-        >
-      (count(node:node_num_cpu:sum)-1)
-        /
-      count(node:node_num_cpu:sum)
-    for: 5m
+        -
+      (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"}))
+        > 0
+      and
+      (sum(kube_node_status_allocatable{resource="memory"})
+        -
+      max(kube_node_status_allocatable{resource="memory"}))
+        > 0
+    for: 10m
     labels:
-      severity: warning
+      severity: critical
       resource: cluster
       service: kube-state-metrics
 

@@ -18,6 +18,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -33,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -45,12 +46,12 @@ func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter p
 		return nil, err
 	}
 	if cluster.Spec.Cloud.GCP == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -74,12 +75,12 @@ func GCPZoneWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter p
 		return nil, err
 	}
 	if cluster.Spec.Cloud.GCP == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -101,12 +102,12 @@ func GCPNetworkWithClusterCredentialsEndpoint(ctx context.Context, userInfoGette
 		return nil, err
 	}
 	if cluster.Spec.Cloud.GCP == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -124,12 +125,12 @@ func GCPSubnetworkWithClusterCredentialsEndpoint(ctx context.Context, userInfoGe
 		return nil, err
 	}
 	if cluster.Spec.Cloud.GCP == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -152,12 +153,12 @@ func GCPDiskTypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGet
 		return nil, err
 	}
 	if cluster.Spec.Cloud.GCP == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -198,11 +199,11 @@ func ListGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 func ListGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datacenterName string, sa string, networkName string, seedsGetter provider.SeedsGetter) (apiv1.GCPSubnetworkList, error) {
 	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, errors.NewBadRequest("%v", err)
+		return nil, utilerrors.NewBadRequest("%v", err)
 	}
 
 	if datacenter.Spec.GCP == nil {
-		return nil, errors.NewBadRequest("%s is not a GCP datacenter", datacenterName)
+		return nil, utilerrors.NewBadRequest("%s is not a GCP datacenter", datacenterName)
 	}
 
 	subnetworks := apiv1.GCPSubnetworkList{}
@@ -277,11 +278,11 @@ func ListGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, erro
 func ListGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.GCPZoneList, error) {
 	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
 	if err != nil {
-		return nil, errors.NewBadRequest("%v", err)
+		return nil, utilerrors.NewBadRequest("%v", err)
 	}
 
 	if datacenter.Spec.GCP == nil {
-		return nil, errors.NewBadRequest("the %s is not GCP datacenter", datacenterName)
+		return nil, utilerrors.NewBadRequest("the %s is not GCP datacenter", datacenterName)
 	}
 
 	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
@@ -327,6 +328,24 @@ func ListGCPSizes(ctx context.Context, quota kubermaticv1.MachineDeploymentVMRes
 	})
 
 	return filterGCPByQuota(sizes, quota), err
+}
+
+func GetGCPInstanceSize(ctx context.Context, machineType, sa, zone string) (*apiv1.GCPMachineSize, error) {
+	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := computeService.MachineTypes.Get(project, zone, machineType)
+	m, err := req.Do()
+	if err != nil {
+		return nil, fmt.Errorf("error getting GCP Instance Size: %w", err)
+	}
+
+	return &apiv1.GCPMachineSize{
+		Memory: m.MemoryMb,
+		VCPUs:  m.GuestCpus,
+	}, nil
 }
 
 func filterGCPByQuota(instances apiv1.GCPMachineSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.GCPMachineSizeList {

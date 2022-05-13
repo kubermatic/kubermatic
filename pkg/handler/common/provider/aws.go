@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,7 +55,7 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 		return nil, err
 	}
 	if cluster.Spec.Cloud.AWS == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -64,11 +64,11 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 	}
 	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, errors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
@@ -101,7 +101,7 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 		return nil, err
 	}
 	if cluster.Spec.Cloud.AWS == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -110,11 +110,11 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 	}
 	dc, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	if dc.Spec.AWS == nil {
-		return nil, errors.NewNotFound("cloud spec (dc) for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
 	}
 
 	settings, err := settingsProvider.GetGlobalSettings(ctx)
@@ -127,7 +127,7 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 
 func ListAWSSubnets(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleID string, assumeRoleExternalID string, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
 	if datacenter.Spec.AWS == nil {
-		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
+		return nil, utilerrors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
 	subnetResults, err := awsprovider.GetSubnets(ctx, accessKeyID, secretAccessKey, assumeRoleID, assumeRoleExternalID, datacenter.Spec.AWS.Region, vpcID)
@@ -197,7 +197,7 @@ func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList,
 			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %w", err)
 		}
 		if cloudSpec.AWS == nil {
-			return nil, errors.NewBadRequest("cloud spec missing")
+			return nil, utilerrors.NewBadRequest("cloud spec missing")
 		}
 		if md.Spec.Replicas != nil {
 			replicas = *md.Spec.Replicas
@@ -319,4 +319,21 @@ type AWSCredential struct {
 	SecretAccessKey      string
 	AssumeRoleARN        string
 	AssumeRoleExternalID string
+}
+
+func GetAWSInstance(instanceType string) (*apiv1.AWSSize, error) {
+	if data == nil {
+		return nil, fmt.Errorf("AWS instance type data not initialized")
+	}
+
+	for _, i := range *data {
+		if strings.EqualFold(i.InstanceType, instanceType) {
+			return &apiv1.AWSSize{
+				Memory: i.Memory,
+				VCPUs:  i.VCPU,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find instance %q in aws instance type data", instanceType)
 }

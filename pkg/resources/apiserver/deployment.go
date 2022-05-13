@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	semver "github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -58,6 +58,8 @@ const (
 
 // DeploymentCreator returns the function to create and update the API server deployment.
 func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
+	enableEncryptionConfiguration := data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()
+
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ApiserverDeploymentName
@@ -73,8 +75,8 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled())
-			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled())
+			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
+			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
 
@@ -132,7 +134,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, version)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, version)
 			if err != nil {
 				return nil, err
 			}
@@ -248,7 +250,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool, version *semver.Version) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, enableEncryption bool, version *semverlib.Version) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not get components override flags: %w", err)
@@ -438,6 +440,11 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 			"/etc/kubernetes/konnectivity/egress-selector-configuration.yaml")
 	}
 
+	if enableEncryption {
+		flags = append(flags, "--encryption-provider-config",
+			"/etc/kubernetes/encryption-configuration/encryption-configuration.yaml")
+	}
+
 	return flags, nil
 }
 
@@ -457,7 +464,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(isKonnectivityEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -540,10 +547,18 @@ func getVolumeMounts(isKonnectivityEnabled bool) []corev1.VolumeMount {
 		}...)
 	}
 
+	if isEncryptionEnabled {
+		vms = append(vms, corev1.VolumeMount{
+			Name:      resources.EncryptionConfigurationSecretName,
+			MountPath: "/etc/kubernetes/encryption-configuration",
+			ReadOnly:  true,
+		})
+	}
+
 	return vms
 }
 
-func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+func getVolumes(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -721,6 +736,17 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 				},
 			},
 		}...)
+	}
+
+	if isEncryptionEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.EncryptionConfigurationSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.EncryptionConfigurationSecretName,
+				},
+			},
+		})
 	}
 
 	return vs

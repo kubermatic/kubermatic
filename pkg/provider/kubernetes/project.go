@@ -24,7 +24,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -134,7 +134,7 @@ func (p *ProjectProvider) Get(ctx context.Context, userInfo *provider.UserInfo, 
 		return nil, err
 	}
 	if !options.IncludeUninitialized && existingProject.Status.Phase != kubermaticv1.ProjectActive {
-		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
+		return nil, apierrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 
 	return existingProject, nil
@@ -151,7 +151,7 @@ func (p *PrivilegedProjectProvider) GetUnsecured(ctx context.Context, projectInt
 		return nil, err
 	}
 	if !options.IncludeUninitialized && project.Status.Phase != kubermaticv1.ProjectActive {
-		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
+		return nil, apierrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 	return project, nil
 }

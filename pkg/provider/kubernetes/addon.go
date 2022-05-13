@@ -24,7 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,7 +76,7 @@ func (p *AddonProvider) checkAddonAccessible(ctx context.Context, addonName stri
 	}
 
 	if !accessible.Has(addonName) {
-		return kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+		return apierrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
 	}
 
 	return nil

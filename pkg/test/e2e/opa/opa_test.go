@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -257,7 +257,7 @@ func waitForCTSync(ctx context.Context, userClient ctrlruntimeclient.Client, ctN
 		err := userClient.Get(ctx, types.NamespacedName{Name: ctName}, gatekeeperCT)
 
 		if deleted {
-			return kerrors.IsNotFound(err)
+			return apierrors.IsNotFound(err)
 		}
 		return err == nil
 	}) {
@@ -271,7 +271,7 @@ func waitForConstraintSync(ctx context.Context, client ctrlruntimeclient.Client,
 		constraint := &kubermaticv1.Constraint{}
 		err := client.Get(ctx, types.NamespacedName{Name: cName, Namespace: namespace}, constraint)
 		if deleted {
-			return kerrors.IsNotFound(err)
+			return apierrors.IsNotFound(err)
 		}
 		return err == nil
 	}) {

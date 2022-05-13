@@ -28,7 +28,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // providerNames holds a list of providers. They must stay in this order.
@@ -62,11 +62,11 @@ func CredentialEndpoint(presetProvider provider.PresetProvider, userInfoGetter p
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(providerReq)
 		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
+			return nil, utilerrors.NewBadRequest("invalid request")
 		}
 		err := req.Validate()
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		userInfo, err := userInfoGetter(ctx, "")
@@ -80,7 +80,7 @@ func CredentialEndpoint(presetProvider provider.PresetProvider, userInfoGetter p
 		providerN := parseProvider(req.ProviderName)
 		presets, err := presetProvider.GetPresets(ctx, userInfo)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		for _, preset := range presets {

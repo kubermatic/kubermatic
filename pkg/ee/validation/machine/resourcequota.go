@@ -30,15 +30,17 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ValidateQuota validates if the requested Machine resource consumption fits in the quota of the clusters project.
-func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, machine *v1alpha1.Machine) error {
+func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client,
+	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) error {
 	config, err := types.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
@@ -51,7 +53,37 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 	case types.CloudProviderFake:
 		quotaReq, err = getFakeQuotaRequest(config)
 		if err != nil {
-			return fmt.Errorf("error getting fake quota req: %w", err)
+			return fmt.Errorf("error getting fake resource requirements: %w", err)
+		}
+	case types.CloudProviderAWS:
+		quotaReq, err = getAWSResourceRequirements(ctx, userClient, config)
+		if err != nil {
+			return fmt.Errorf("error getting aws resource requirements: %w", err)
+		}
+	case types.CloudProviderGoogle:
+		quotaReq, err = getGCPResourceRequirements(ctx, userClient, config)
+		if err != nil {
+			return fmt.Errorf("error getting gcp resource requirements: %w", err)
+		}
+	case types.CloudProviderAzure:
+		quotaReq, err = getAzureResourceRequirements(ctx, userClient, config)
+		if err != nil {
+			return fmt.Errorf("error getting azure resource requirements: %w", err)
+		}
+	case types.CloudProviderKubeVirt:
+		quotaReq, err = getKubeVirtResourceRequirements(ctx, userClient, config)
+		if err != nil {
+			return fmt.Errorf("error getting kubevirt resource requirements: %w", err)
+		}
+	case types.CloudProviderVsphere:
+		quotaReq, err = getVsphereResourceRequirements(config)
+		if err != nil {
+			return fmt.Errorf("error getting vsphere resource requirements: %w", err)
+		}
+	case types.CloudProviderOpenstack:
+		quotaReq, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+		if err != nil {
+			return fmt.Errorf("error getting openstack resource requirements: %w", err)
 		}
 	default:
 		// TODO skip for now, when all providers are added, throw error
@@ -97,7 +129,8 @@ func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlr
 
 // TODO we should get it from the ResourceQuota CRD for the project, for now just some hardcoded values for tests.
 func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
-	cpu, err := resource.ParseQuantity("5")
+	cpu, err := resource.ParseQuantity("50")
+
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
@@ -106,7 +139,7 @@ func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
-	mem, err := resource.ParseQuantity("5G")
+	mem, err := resource.ParseQuantity("50G")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
@@ -115,7 +148,7 @@ func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
 
-	storage, err := resource.ParseQuantity("100G")
+	storage, err := resource.ParseQuantity("1000G")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
 	}

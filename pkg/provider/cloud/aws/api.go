@@ -28,7 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	httperror "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // The functions in this file are used throughout KKP, mostly in our REST API.
@@ -73,7 +73,7 @@ func GetVPCS(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleARN, a
 
 	if err != nil {
 		if ok, msg := isAuthFailure(err); ok {
-			return nil, httperror.New(401, fmt.Sprintf("failed to list VPCs: %s", msg))
+			return nil, utilerrors.New(401, fmt.Sprintf("failed to list VPCs: %s", msg))
 		}
 
 		return nil, fmt.Errorf("failed to list VPCs: %w", err)
@@ -92,7 +92,7 @@ func GetSecurityGroupsByVPC(ctx context.Context, accessKeyID, secretAccessKey, a
 
 	if err != nil {
 		if ok, msg := isAuthFailure(err); ok {
-			return nil, httperror.New(401, fmt.Sprintf("failed to list security groups: %s", msg))
+			return nil, utilerrors.New(401, fmt.Sprintf("failed to list security groups: %s", msg))
 		}
 
 		return nil, fmt.Errorf("failed to list security groups: %w", err)
@@ -131,7 +131,7 @@ func getSecurityGroupsWithClient(ctx context.Context, client ec2iface.EC2API) ([
 
 	if err != nil {
 		if ok, msg := isAuthFailure(err); ok {
-			return nil, httperror.New(401, fmt.Sprintf("failed to list security groups: %s", msg))
+			return nil, utilerrors.New(401, fmt.Sprintf("failed to list security groups: %s", msg))
 		}
 
 		return nil, fmt.Errorf("failed to list security groups: %w", err)

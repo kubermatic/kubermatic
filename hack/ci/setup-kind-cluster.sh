@@ -58,6 +58,10 @@ EOF
 
 # Create kind cluster
 TEST_NAME="Create kind cluster"
+
+echodate "Preloading the kindest/node image"
+docker load --input /kindest.tar
+
 echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 

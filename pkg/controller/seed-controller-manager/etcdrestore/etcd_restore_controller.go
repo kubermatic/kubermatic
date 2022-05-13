@@ -35,7 +35,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -133,7 +133,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	restore := &kubermaticv1.EtcdRestore{}
 	if err := r.Get(ctx, request.NamespacedName, restore); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -227,7 +227,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 		}
 		cluster.Annotations[ActiveRestoreAnnotationName] = thisRestore
 		if err := r.Client.Update(ctx, cluster); err != nil {
-			if kerrors.IsConflict(err) {
+			if apierrors.IsConflict(err) {
 				return &reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 			}
 			return nil, fmt.Errorf("error updating cluster active restore annotation: %w", err)
@@ -255,10 +255,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	sts := &appsv1.StatefulSet{}
 	err = r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, sts)
 	if err == nil {
-		if err := r.Delete(ctx, sts); err != nil && !kerrors.IsNotFound(err) {
+		if err := r.Delete(ctx, sts); err != nil && !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to delete etcd statefulset: %w", err)
 		}
-	} else if !kerrors.IsNotFound(err) {
+	} else if !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get etcd statefulset: %w", err)
 	}
 

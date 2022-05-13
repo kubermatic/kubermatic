@@ -38,8 +38,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
-	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version"
 )
 
@@ -65,7 +64,7 @@ func CreateEndpoint(
 
 		err = req.Validate(version.NewFromConfiguration(config))
 		if err != nil {
-			return nil, errors.NewBadRequest(err.Error())
+			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		return handlercommon.CreateEndpoint(ctx, req.ProjectID, req.Body, projectProvider, privilegedProjectProvider, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle, configGetter, features)
@@ -549,21 +548,21 @@ func GetClusterProviderFromRequest(
 ) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 	req, ok := request.(common.GetClusterReq)
 	if !ok {
-		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
+		return nil, nil, utilerrors.New(http.StatusBadRequest, "invalid request")
 	}
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 	if err != nil {
-		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, err.Error())
 	}
 
 	rawClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 	if !ok {
-		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
 	}
 	clusterProvider, ok := rawClusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 	return cluster, clusterProvider, nil
 }

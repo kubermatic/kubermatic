@@ -32,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +44,7 @@ func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 		req := request.(createClusterRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
 		}
 		userInfo, err := userInfoGetter(ctx, req.ProjectID)
 		if err != nil {
@@ -64,7 +64,7 @@ func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 
 		clusterRole, err := generateRBACClusterRole(userClusterAPIRole.Name, userClusterAPIRole.Rules)
 		if err != nil {
-			return nil, errors.NewBadRequest("invalid cluster role: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid cluster role: %v", err)
 		}
 
 		if err := client.Create(ctx, clusterRole); err != nil {
@@ -79,7 +79,7 @@ func CreateRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 		req := request.(createRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid request: %v", err)
 		}
 		userInfo, err := userInfoGetter(ctx, req.ProjectID)
 		if err != nil {
@@ -99,7 +99,7 @@ func CreateRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 
 		role, err := generateRBACRole(apiRole.Name, apiRole.Namespace, apiRole.Rules)
 		if err != nil {
-			return nil, errors.NewBadRequest("invalid cluster role: %v", err)
+			return nil, utilerrors.NewBadRequest("invalid cluster role: %v", err)
 		}
 
 		if err := client.Create(ctx, role); err != nil {
@@ -480,18 +480,18 @@ func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint
 
 		existingRoleJSON, err := json.Marshal(existingRole)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode existing role: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode existing role: %v", err)
 		}
 
 		patchedRoleJSON, err := jsonpatch.MergePatch(existingRoleJSON, req.Patch)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot patch role: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot patch role: %v", err)
 		}
 
 		var patchedRole *rbacv1.Role
 		err = json.Unmarshal(patchedRoleJSON, &patchedRole)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode patched role: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode patched role: %v", err)
 		}
 
 		if err := client.Update(ctx, patchedRole); err != nil {
@@ -575,18 +575,18 @@ func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.E
 
 		existingClusterRoleJSON, err := json.Marshal(existingClusterRole)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode existing cluster role: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode existing cluster role: %v", err)
 		}
 
 		patchedClusterRoleJSON, err := jsonpatch.MergePatch(existingClusterRoleJSON, req.Patch)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot patch cluster role: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot patch cluster role: %v", err)
 		}
 
 		var patchedClusterRole *rbacv1.ClusterRole
 		err = json.Unmarshal(patchedClusterRoleJSON, &patchedClusterRole)
 		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode patched role: %v", err)
+			return nil, utilerrors.NewBadRequest("cannot decode patched role: %v", err)
 		}
 
 		if err := client.Update(ctx, patchedClusterRole); err != nil {

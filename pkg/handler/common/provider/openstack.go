@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"strings"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -31,7 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/errors"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
@@ -299,6 +300,30 @@ func GetOpenstackSizes(credentials *resources.OpenstackCredentials, datacenter *
 	return filterOpenStackByQuota(apiSizes, quota), nil
 }
 
+func GetOpenStackFlavorSize(credentials *resources.OpenstackCredentials, authURL, region string,
+	caBundle *x509.CertPool, flavorName string) (*apiv1.OpenstackSize, error) {
+	flavors, err := openstack.GetFlavors(authURL, region, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, flavor := range flavors {
+		if strings.EqualFold(flavor.Name, flavorName) {
+			return &apiv1.OpenstackSize{
+				Slug:     flavor.Name,
+				Memory:   flavor.RAM,
+				VCPUs:    flavor.VCPUs,
+				Disk:     flavor.Disk,
+				Swap:     flavor.Swap,
+				Region:   region,
+				IsPublic: flavor.IsPublic,
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find openstack flavor %q size", flavorName)
+}
+
 func filterOpenStackByQuota(instances []apiv1.OpenstackSize, quota kubermaticv1.MachineDeploymentVMResourceQuota) []apiv1.OpenstackSize {
 	var filteredRecords []apiv1.OpenstackSize
 
@@ -376,7 +401,7 @@ func getClusterForOpenstack(ctx context.Context, projectProvider provider.Projec
 		return nil, err
 	}
 	if cluster.Spec.Cloud.Openstack == nil {
-		return nil, errors.NewNotFound("cloud spec for ", clusterID)
+		return nil, utilerrors.NewNotFound("cloud spec for ", clusterID)
 	}
 	return cluster, nil
 }
@@ -402,7 +427,7 @@ func getCredentials(ctx context.Context, cloudSpec kubermaticv1.CloudSpec) (*res
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		return nil, utilerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 	}
 
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())

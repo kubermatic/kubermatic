@@ -306,7 +306,7 @@ const (
 	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
 )
 
-// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;
+// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;EncryptionControllerReconciledSuccessfully;
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered within
@@ -380,9 +380,11 @@ const (
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess       ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
 	ClusterConditionApplicationInstallationControllerReconcilingSuccess ClusterConditionType = "ApplicationInstallationControllerReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess                     ClusterConditionType = "MLAControllerReconciledSuccessfully"
+	ClusterConditionEncryptionControllerReconcilingSuccess              ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
+	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"
 
 	ClusterConditionUpdateProgress ClusterConditionType = "UpdateProgress"
 
@@ -553,13 +555,17 @@ type ClusterEncryptionStatus struct {
 	// The current "primary" key used to encrypt data written to etcd. Secondary keys that can be used for decryption
 	// (but not encryption) might be configured in the ClusterSpec.
 	ActiveKey string `json:"activeKey"`
+
+	// List of resources currently encrypted.
+	EncryptedResources []string `json:"encryptedResources"`
+
 	// The current phase of the encryption process. Can be one of `Pending`, `Failed`, `Active` or `EncryptionNeeded`.
 	// The `encryption_controller` logic will process the cluster based on the current phase and issue necessary changes
 	// to make sure encryption on the cluster is active and updated with what the ClusterSpec defines.
 	Phase ClusterEncryptionPhase `json:"phase"`
 }
 
-// +kubebuilder:validation:Enum=Pending;Active;EncryptionNeeded
+// +kubebuilder:validation:Enum=Pending;Failed;Active;EncryptionNeeded
 type ClusterEncryptionPhase string
 
 const (
@@ -1189,6 +1195,7 @@ type ExtendedClusterHealth struct {
 	MachineController            HealthStatus  `json:"machineController,omitempty"`
 	Etcd                         HealthStatus  `json:"etcd,omitempty"`
 	OpenVPN                      HealthStatus  `json:"openvpn,omitempty"`
+	Konnectivity                 HealthStatus  `json:"konnectivity,omitempty"`
 	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure,omitempty"`
 	UserClusterControllerManager HealthStatus  `json:"userClusterControllerManager,omitempty"`
 	GatekeeperController         *HealthStatus `json:"gatekeeperController,omitempty"`
@@ -1325,4 +1332,15 @@ func (cluster *Cluster) GetUserClusterOPAResourceRequirements() map[string]*core
 		"controller": cluster.Spec.OPAIntegration.ControllerResources,
 		"audit":      cluster.Spec.OPAIntegration.AuditResources,
 	}
+}
+
+// IsEncryptionConfigurationEnabled returns whether encryption-at-rest is configured on this cluster.
+func (cluster *Cluster) IsEncryptionEnabled() bool {
+	return cluster.Spec.Features[ClusterFeatureEncryptionAtRest] && cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled
+}
+
+// IsEncryptionActive returns whether encryption-at-rest is active on this cluster. This can still be
+// the case when encryption configuration has been disabled, as encrypted resources require a decryption.
+func (cluster *Cluster) IsEncryptionActive() bool {
+	return cluster.Status.HasConditionValue(ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
 }

@@ -50,7 +50,7 @@ import (
 	webterminal "k8c.io/kubermatic/v2/pkg/resources/web-terminal"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -186,6 +186,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	}
 
+	// Ensure that encryption-at-rest is completely removed when no longer enabled or active
+	if !cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
+		if err := r.ensureEncryptionConfigurationIsRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	}
+
 	return &reconcile.Result{}, nil
 }
 
@@ -237,7 +244,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 	if err == nil {
 		return ns, nil // found it
 	}
-	if !errors.IsNotFound(err) {
+	if !apierrors.IsNotFound(err) {
 		return nil, err // something bad happened when trying to get the namespace
 	}
 
@@ -400,6 +407,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 			resources.GetInternalKubeconfigCreator(namespace, resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data, r.log),
 			resources.GetInternalKubeconfigCreator(namespace, resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data, r.log),
 		)
+	}
+
+	if data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive() {
+		creators = append(creators, apiserver.EncryptionConfigurationSecretCreator(data))
 	}
 
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
@@ -716,7 +727,7 @@ func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv
 	ebc := &kubermaticv1.EtcdBackupConfig{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: resources.EtcdDefaultBackupConfigName, Namespace: c.Status.NamespaceName}, ebc)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return nil
 		}
 		return err
@@ -726,7 +737,7 @@ func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv
 
 func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete(data.Cluster().Status.NamespaceName) {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure old OPA integration version resources are removed/not present: %w", err)
 		}
 	}
@@ -737,7 +748,7 @@ func (r *Reconciler) ensureOldOPAIntegrationIsRemoved(ctx context.Context, data 
 func (r *Reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range kubernetesdashboard.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		err := r.Client.Delete(ctx, resource)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure kubernetes-dashboard resources are removed/not present: %w", err)
 		}
 	}
@@ -747,7 +758,7 @@ func (r *Reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Co
 func (r *Reconciler) ensureOSMResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range operatingsystemmanager.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
 		err := r.Client.Delete(ctx, resource)
-		if err != nil && !errors.IsNotFound(err) {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
 		}
 	}
@@ -756,17 +767,17 @@ func (r *Reconciler) ensureOSMResourcesAreRemoved(ctx context.Context, data *res
 
 func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range openvpn.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %w", err)
 		}
 	}
 	for _, resource := range metricsserver.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
 		}
 	}
 	for _, resource := range dns.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure dns-resolver resources are removed/not present: %w", err)
 		}
 	}
@@ -776,7 +787,7 @@ func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *reso
 			Namespace: data.Cluster().Status.NamespaceName,
 		},
 	}
-	if err := r.Client.Delete(ctx, dnatControllerSecret); err != nil && !errors.IsNotFound(err) {
+	if err := r.Client.Delete(ctx, dnatControllerSecret); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to ensure DNAT controller resources are removed/not present: %w", err)
 	}
 	return nil
@@ -784,8 +795,17 @@ func (r *Reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context, data *reso
 
 func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data *resources.TemplateData) error {
 	for _, resource := range konnectivity.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureEncryptionConfigurationIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range apiserver.EncryptionResourcesForDeletion(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure encryption-at-rest resources are removed/not present: %w", err)
 		}
 	}
 	return nil

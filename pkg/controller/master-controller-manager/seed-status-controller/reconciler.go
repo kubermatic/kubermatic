@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -75,7 +75,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	seed := &kubermaticv1.Seed{}
 	if err := r.Get(ctx, request.NamespacedName, seed); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 
@@ -131,7 +131,7 @@ func (r *Reconciler) updateKubeconfigValidCondition(ctx context.Context, log *za
 	ns := corev1.Namespace{}
 	key := types.NamespacedName{Name: seed.Namespace}
 	if err := client.Get(ctx, key, &ns); err != nil {
-		if kerrors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Debugw("KKP namespace does not exist", "namespace", seed.Namespace)
 			reason := fmt.Sprintf("namespace %q does not exist and must be created manually", seed.Namespace)
 			kubermaticv1helper.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedClusterUninitializedReason, reason)

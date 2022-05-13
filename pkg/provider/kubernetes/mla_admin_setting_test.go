@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -238,7 +238,7 @@ func TestDeleteMLAAdminSetting(t *testing.T) {
 					t.Fatal(err)
 				}
 				_, err = mlaAdminSettingProvider.GetUnsecured(context.Background(), tc.cluster)
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			} else {
 				if err == nil {
 					t.Fatalf("expected error message")

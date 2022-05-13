@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -376,7 +376,7 @@ func TestDeleteRuleGroup(t *testing.T) {
 					t.Fatal(err)
 				}
 				_, err = ruleGroupProvider.Get(context.Background(), tc.userInfo, tc.cluster, tc.ruleGroupName)
-				assert.True(t, errors.IsNotFound(err))
+				assert.True(t, apierrors.IsNotFound(err))
 			} else {
 				if err == nil {
 					t.Fatalf("expected error message")

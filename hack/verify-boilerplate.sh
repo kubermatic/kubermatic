@@ -32,7 +32,7 @@ boilerplate \
   -exclude pkg/resources/etcd/testdata \
   -exclude pkg/ee \
   -exclude charts/kubermatic-operator/crd \
-  -exclude pkg/validation/openapi/crd \
+  -exclude pkg/crd/k8c.io \
   -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
   -exclude .github
 
