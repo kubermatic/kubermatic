@@ -421,7 +421,7 @@ func TestController_getApplyCommand(t *testing.T) {
 
 	clusterVersion := defaults.DefaultKubernetesVersioning.Default
 	if clusterVersion == nil {
-		t.Fatalf("Should be able to determine default Kubernetes version, but got nil")
+		t.Fatal("Should be able to determine default Kubernetes version, but got nil")
 	}
 
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
