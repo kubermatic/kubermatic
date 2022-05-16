@@ -211,7 +211,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.22.7"),
+		Default: semver.NewSemverOrDie("v1.23.5"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.21
 			newSemver("v1.21.8"),
@@ -307,6 +307,14 @@ var (
 				Version:   "1.24.*",
 				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
 				Operation: kubermaticv1.UpdateOperation,
+			},
+			{
+				// TODO: 1.24 remove this once https://github.com/kubermatic/kubermatic/issues/9818 has finished.
+				// right now, CCM migration is risky given that no CCM officially supports 1.24 yet.
+				Provider:  "",
+				Version:   "1.24.*",
+				Condition: kubermaticv1.ExternalCloudProviderCondition,
+				Operation: kubermaticv1.SupportOperation,
 			},
 		},
 	}

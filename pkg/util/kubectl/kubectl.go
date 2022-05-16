@@ -23,6 +23,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 )
 
+const (
+	kubectl123 = "kubectl-1.23"
+)
+
 // BinaryForClusterVersion returns the full path to a kubectl binary
 // that shall be used to communicate with a usercluster. An error is
 // returned if no suitable kubectl can be determined.
@@ -37,11 +41,11 @@ func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	case "1.21":
 		binary = "kubectl-1.21"
 	case "1.22":
-		binary = "kubectl-1.23"
+		binary = kubectl123
 	case "1.23":
-		binary = "kubectl-1.23"
+		binary = kubectl123
 	case "1.24":
-		binary = "kubectl-1.23"
+		binary = kubectl123
 	default:
 		return "", fmt.Errorf("unsupported Kubernetes version %v", version)
 	}
