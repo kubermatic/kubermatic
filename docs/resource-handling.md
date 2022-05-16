@@ -1,6 +1,6 @@
 # Resource handling in the Kubermatic codebase
 
-One of Kubermatic's main task's is to reconcile Kubernetes resources.
+One of Kubermatic's main tasks is to reconcile Kubernetes resources.
 The following will describe how we structure the code in Kubermatic to achieve a unified handling of various Kubernetes resources from different controllers.
 
 ## Table of contents
@@ -22,8 +22,8 @@ The following will describe how we structure the code in Kubermatic to achieve a
 
 ## Introduction
 
-Our reconciling is designed in a way, that we got notified whenever an object change, compare it to a desired state and if there is a diff update it.
-The desired state comes from the [creators](#objectcreator) we define.
+Our reconciling is designed in a way, that we get notified whenever an object changes, compare it to a desired state and if there is a diff, update it.
+The desired state comes from the [ObjectCreators](#objectcreator) we define.
 
 Kubermatic is currently going through some heavy refactoring which moves all resource handling to the `Named*Creator` functions.
 Additionally we're migrating our code to use the [controller-runtime libraries](https://github.com/kubernetes-sigs/controller-runtime).
@@ -34,7 +34,7 @@ Additionally we're migrating our code to use the [controller-runtime libraries](
 
 ObjectCreator is a function definition to handle the create/update of a runtime.Object.
 It uses `runtime.Object` as that is the minimal interface which gets satisfied by all Kubernetes objects.
-That way we can have a single function to reconcile all Objects within a single function.
+That way we can reconcile all Objects within a single function.
 `existing` will be the already existing object coming from the cache. If no object is found in the cache `existing` is nil.
 ```go
 type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
@@ -44,11 +44,7 @@ type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
 
 `EnsureNamedObject` is a generic "reconcile" function which will update the existing object or create it.
 If the existing object does not differ from the "wanted" object, `EnsureNamedObject` will not issue any API call.
-```go
-func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error
-```
 
-The signature of `EnsureNamedObject` will change in the future to be more convenient for controller-runtime controllers:
 ```go
 func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject runtime.Object) error
 ```
@@ -94,13 +90,9 @@ It offers:
 - Automatic nil checks & struct initialization
 - Informer allocation from a passed in `InformerFactory`
 - Unified modifier functions to allow to apply certain modifications to all passed in `SecretCreator` functions
-- Sets resource name based the name coming from the `NamedSecretCreatorGetter`
+- Setting resource name based on the name coming from the `NamedSecretCreatorGetter`
 
-```go
-func ReconcileSecrets(namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error
-```
 
-The signature of all `Reconcile*` functions will change in the future to be more convenient for controller-runtime controllers:
 ```go
 func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error
 ```
@@ -121,14 +113,14 @@ This avoids the need to call the creator function twice (1st time to get the obj
 type NamedSecretCreatorGetter = func() (name string, create SecretCreator)
 ```
 
-
 ### Example NamedSecretCreator implementation
 
 ```go
-func MyWonderfulSecretCreator() resources.NamedSecretCreatorGetter {
-	return func() (string, resources.SecretCreator) {
-		return "my-name", func(existing *corev1.Secret) (*corev1.Secret, error) {
-			existing.Name = "wonderful-secret"
+func MyWonderfulSecretCreator() reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return "my-wonderful-secret", func(existing *corev1.Secret) (*corev1.Secret, error) {
+
+			// We don't need to set the object's name, as that's being done by the typed Reconcile function.
 			existing.Data = map[string][]byte{
 				"user":     []byte("foo"),
 				"password": []byte("bar"),
@@ -140,6 +132,8 @@ func MyWonderfulSecretCreator() resources.NamedSecretCreatorGetter {
 }
 ```
 
+The namespace of your object should not be set in the Creator, but rather passed in as an argument to the typed Reconcile func (in our example `ReconcileSecrets`)
+
 ### Template data
 
 Some resources require some dynamic data during reconciling (Such as other Services, Secrets, Configmaps, etc.).
@@ -147,11 +141,11 @@ As the creator function does not allow passing it arbitrary data, data must be i
 This avoids to have controller specific creator functions.
 
 ```go
-func MyWonderfulSecretCreator(data dataProvider) NamedSecretCreatorGetter {
-	return func() (string, SecretCreator) {
+func MyWonderfulSecretCreator(data dataProvider) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return "my-wonderful-secret", func(existing *corev1.Secret) (*corev1.Secret, error) {
 
-			// We don't need to the the objects name, as that's being done by the typed Reconcile function.
+			// We don't need to set the object's name, as that's being done by the typed Reconcile function.
 			existing.Data = map[string][]byte{
 				"user":     []byte(data.GetClusterUsername()),
 				"password": []byte(data.GetClusterPassword()),
@@ -196,6 +190,7 @@ Every `Reconcile*` functions has a variadic parameter called `objectModifiers`.
 All passed in `*Creator` functions are being wrapped by the passed in `objectModifiers`.
 
 Example:
+
 ```go
 // ClusterRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object
 func ClusterRefWrapper(c *kubermaticv1.Cluster) ObjectModifier {
@@ -216,6 +211,7 @@ func ClusterRefWrapper(c *kubermaticv1.Cluster) ObjectModifier {
 #### Wrap the typed creator
 
 To apply a modification only to single a resource function it can be wrapped:
+
 ```go
 func MyWonderfulMyNewTypeCreator(data dataProvider) MyNewTypeCreator {
 	return func(existing *myapiv1.MyNewType) (*myapiv1.MyNewType, error) {
