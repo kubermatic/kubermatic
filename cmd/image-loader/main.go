@@ -103,11 +103,6 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	if (o.configurationFile == "") == (o.versionsFile == "") {
 		log.Fatal("Either -configuration-file or -versions-file must be specified.")
