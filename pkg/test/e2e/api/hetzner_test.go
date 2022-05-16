@@ -68,7 +68,7 @@ func TestCreateUpdateHetznerCluster(t *testing.T) {
 			testClient := utils.NewTestClient(masterToken, t)
 			project, cluster := createProjectWithCluster(t, testClient, tc.dc, tc.credential, tc.version, tc.location, tc.replicas)
 			defer cleanupProject(t, project.ID)
-			testCluster(ctx, project, cluster, testClient, tc, t)
+			testCluster(ctx, masterToken, project, cluster, testClient, tc, t)
 		})
 	}
 }
