@@ -31,10 +31,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/client-go/tools/clientcmd/api"
-	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
 func getAWSSession(accessKeyID, secretAccessKey, region, endpoint string) (*session.Session, error) {
@@ -90,12 +90,12 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 		Contexts:   map[string]*api.Context{},
 	}
 
-	gen, err := token.NewGenerator(true, false)
+	gen, err := authenticator.NewGenerator(true)
 	if err != nil {
 		return nil, err
 	}
 
-	opts := &token.GetTokenOptions{
+	opts := &authenticator.GetTokenOptions{
 		ClusterID: *eksclusterName,
 		Session:   sess,
 	}

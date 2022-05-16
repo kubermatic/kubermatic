@@ -98,7 +98,6 @@ require (
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	kubevirt.io/api v0.53.0
 	kubevirt.io/containerized-data-importer-api v1.49.0
-	sigs.k8s.io/aws-iam-authenticator v0.5.8
 	sigs.k8s.io/controller-runtime v0.12.0
 	sigs.k8s.io/controller-tools v0.8.0
 	sigs.k8s.io/yaml v1.3.0
@@ -180,7 +179,6 @@ require (
 	github.com/go-openapi/loads v0.21.0 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
