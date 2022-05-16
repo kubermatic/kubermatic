@@ -25,6 +25,8 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
+// +kubebuilder:printcolumn:JSONPath=".spec.subject.name",name="Subject Name",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.subject.kind",name="Subject Kind",type="string"
 
 // ResourceQuota specifies the amount of cluster resources a project can use.
 type ResourceQuota struct {
@@ -37,30 +39,30 @@ type ResourceQuota struct {
 
 // ResourceQuotaSpec describes the desired state of a resource quota.
 type ResourceQuotaSpec struct {
-	// QuotaSubject specifies to which entity the quota applies to.
-	QuotaSubject QuotaSubject `json:"quotaSubject"`
+	// Subject specifies to which entity the quota applies to.
+	Subject Subject `json:"subject"`
 	// Quota specifies the current maximum allowed usage of resources.
 	Quota ResourceDetails `json:"quota"`
 }
 
 // ResourceQuotaStatus describes the current state of a resource quota.
 type ResourceQuotaStatus struct {
-	// ResourceConsumption is holds the current usage of resources for all seeds.
-	ResourceConsumption ResourceDetails `json:"globalUsage,omitempty"`
-	// LocalConsumption is holds the current usage of resources for the local seed.
-	LocalConsumption ResourceDetails `json:"localUsage,omitempty"`
+	// GlobalUsage is holds the current usage of resources for all seeds.
+	GlobalUsage ResourceDetails `json:"globalUsage,omitempty"`
+	// LocalUsage is holds the current usage of resources for the local seed.
+	LocalUsage ResourceDetails `json:"localUsage,omitempty"`
 }
 
-// QuotaSubject describes the entity to which the quota applies to.
-type QuotaSubject struct {
+// Subject describes the entity to which the quota applies to.
+type Subject struct {
 	// Name of the quota subject.
 	Name string `json:"name"`
 
 	// +kubebuilder:validation:Enum=project
 	// +kubebuilder:default=project
 
-	// Type of the quota subject. For now the only possible type is project
-	Type string `json:"type"`
+	// Kind of the quota subject. For now the only possible kind is project.
+	Kind string `json:"kind"`
 }
 
 // ResourceDetails holds the CPU, Memory and Storage quantities.

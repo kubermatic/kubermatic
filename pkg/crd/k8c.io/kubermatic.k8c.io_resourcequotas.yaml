@@ -19,6 +19,12 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - jsonPath: .spec.subject.name
+      name: Subject Name
+      type: string
+    - jsonPath: .spec.subject.kind
+      name: Subject Kind
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
@@ -70,35 +76,34 @@ spec:
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                 type: object
-              quotaSubject:
-                description: QuotaSubject specifies to which entity the quota applies
-                  to.
+              subject:
+                description: Subject specifies to which entity the quota applies to.
                 properties:
-                  name:
-                    description: Name of the quota subject.
-                    type: string
-                  type:
+                  kind:
                     default: project
-                    description: Type of the quota subject. For now the only possible
-                      type is project
+                    description: Kind of the quota subject. For now the only possible
+                      kind is project.
                     enum:
                     - project
                     type: string
+                  name:
+                    description: Name of the quota subject.
+                    type: string
                 required:
+                - kind
                 - name
-                - type
                 type: object
             required:
             - quota
-            - quotaSubject
+            - subject
             type: object
           status:
             description: ResourceQuotaStatus describes the current state of a resource
               quota.
             properties:
               globalUsage:
-                description: ResourceConsumption is holds the current usage of resources
-                  for all seeds.
+                description: GlobalUsage is holds the current usage of resources for
+                  all seeds.
                 properties:
                   cpu:
                     anyOf:
@@ -126,8 +131,8 @@ spec:
                     x-kubernetes-int-or-string: true
                 type: object
               localUsage:
-                description: LocalConsumption is holds the current usage of resources
-                  for the local seed.
+                description: LocalUsage is holds the current usage of resources for
+                  the local seed.
                 properties:
                   cpu:
                     anyOf:
