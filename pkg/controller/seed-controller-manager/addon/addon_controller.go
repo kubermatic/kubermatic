@@ -27,7 +27,6 @@ import (
 	"strings"
 	"time"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
@@ -37,6 +36,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -464,8 +464,8 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion *semverlib.Version) (*exec.Cmd, error) {
-	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, clusterVersion semver.Semver) (*exec.Cmd, error) {
+	binary, err := kubectl.BinaryForClusterVersion(&clusterVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine kubectl binary to use: %w", err)
 	}
@@ -501,7 +501,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
-	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Status.Versions.ControlPlane.Semver())
+	cmd, err := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.Status.Versions.ControlPlane)
 	if err != nil {
 		return fmt.Errorf("failed to create command: %w", err)
 	}
@@ -544,7 +544,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	}
 	defer done()
 
-	binary, err := kubectl.BinaryForClusterVersion(cluster.Status.Versions.ControlPlane.Semver())
+	binary, err := kubectl.BinaryForClusterVersion(&cluster.Status.Versions.ControlPlane)
 	if err != nil {
 		return fmt.Errorf("failed to determine kubectl binary to use: %w", err)
 	}
