@@ -1921,7 +1921,6 @@ func (r *TestClient) ConnectClusterTerminal(token, clusterID, projectID string) 
 
 	endpoint = strings.Replace(endpoint, "http", "ws", 1)
 	endpoint = fmt.Sprintf("%s/api/v1/ws/projects/%s/clusters/%s/terminal", endpoint, projectID, clusterID)
-	fmt.Println(endpoint)
 
 	header := http.Header{}
 	header.Add("authorization", fmt.Sprintf("Bearer %s", token))
