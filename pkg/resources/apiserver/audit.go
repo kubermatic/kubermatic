@@ -37,14 +37,24 @@ kind:  Policy
 omitStages:
   - "RequestReceived"
 rules:
-  # log all changes to workloads (Pods, Deployments, etc) in full, including request and response
   - level: RequestResponse
     verbs: ["create", "delete", "update", "patch"]
     resources:
+      # log all changes to workloads (Pods, Deployments, etc)
       - group: ""
         resources: ["pods"]
       - group: "apps"
         resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+      # log all changes to machines and higher level machine objects
+      - group: "cluster.k8s.io"
+        resources: ["machines", "machinesets", "machinedeployments"]
+      # log all changes to Gatekeeper templates
+      - group: "templates.gatekeeper.sh"
+      # this secret controls SSH access to nodes if user-ssh-keys-agent is enabled
+      # and it is included in audit logging because of that
+      - group: ""
+        resources: ["secrets"]
+        resourceNames: ["usersshkeys"]
   # log extended information for requests that access pods via shell or network proxying
   - level: RequestResponse
     resources:
@@ -61,14 +71,24 @@ kind: Policy
 omitStages:
   - "RequestReceived"
 rules:
-  # log all changes to workloads (Pods, Deployments, etc) in full, including request and response
   - level: RequestResponse
     verbs: ["create", "delete", "update", "patch"]
     resources:
+      # log all changes to workloads (Pods, Deployments, etc)
       - group: ""
         resources: ["pods"]
       - group: "apps"
         resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
+      # log all changes to machines and higher level machine objects
+      - group: "cluster.k8s.io"
+        resources: ["machines", "machinesets", "machinedeployments"]
+      # log all changes to Gatekeeper templates
+      - group: "templates.gatekeeper.sh"
+      # this secret controls SSH access to nodes if user-ssh-keys-agent is enabled
+      # and it is included in audit logging because of that
+      - group: ""
+        resources: ["secrets"]
+        resourceNames: ["usersshkeys"]
   # log extended information for requests that access pods in an way (shell or network)
   - level: Request
     resources:
