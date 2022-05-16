@@ -132,6 +132,8 @@ func MyWonderfulSecretCreator() reconciling.NamedSecretCreatorGetter {
 }
 ```
 
+The namespace of your object should not be set in the Creator, but rather passed in as an argument to the typed Reconcile func (in our example `ReconcileSecrets`)
+
 ### Template data
 
 Some resources require some dynamic data during reconciling (Such as other Services, Secrets, Configmaps, etc.).
