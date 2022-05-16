@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetesdashboard
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -25,7 +26,7 @@ import (
 )
 
 // ServiceCreator creates the service for the dashboard-metrics-scraper.
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsScraperServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Name = resources.MetricsScraperServiceName
@@ -37,6 +38,10 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 					Port:       8000,
 					TargetPort: intstr.FromInt(8000),
 				},
+			}
+			if ipFamily == kubermaticv1.IPFamilyDualStack {
+				dsPolicy := corev1.IPFamilyPolicyPreferDualStack
+				s.Spec.IPFamilyPolicy = &dsPolicy
 			}
 			return s, nil
 		}

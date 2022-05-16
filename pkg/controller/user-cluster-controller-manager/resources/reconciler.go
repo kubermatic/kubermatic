@@ -99,7 +99,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	data.clusterAddress, data.k8sServiceApiIP, data.reconcileK8sSvcEndpoints, err = r.networkingData(ctx)
+	data.clusterAddress, data.ipFamily, data.k8sServiceApiIP, data.reconcileK8sSvcEndpoints, err = r.networkingData(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get cluster address: %w", err)
 	}
@@ -672,7 +672,7 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 	}
 	if r.isKonnectivityEnabled {
 		// metrics-server running in user cluster - ClusterIP service
-		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ServiceCreator())
+		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ServiceCreator(data.ipFamily))
 	} else {
 		// metrics-server running in seed cluster - ExternalName service
 		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ExternalNameServiceCreator(r.namespace))
@@ -685,7 +685,7 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
 		creators := []reconciling.NamedServiceCreatorGetter{
-			kubernetesdashboard.ServiceCreator(),
+			kubernetesdashboard.ServiceCreator(data.ipFamily),
 		}
 		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Services in namespace %s: %w", kubernetesdashboard.Namespace, err)
@@ -1077,6 +1077,7 @@ type reconcileData struct {
 	gatekeeperAuditRequirements *corev1.ResourceRequirements
 	monitoringReplicas          *int32
 	clusterAddress              *kubermaticv1.ClusterAddress
+	ipFamily                    kubermaticv1.IPFamily
 	k8sServiceApiIP             *net.IP
 	reconcileK8sSvcEndpoints    bool
 	kubernetesDashboardEnabled  bool

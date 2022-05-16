@@ -17,6 +17,7 @@ limitations under the License.
 package metricsserver
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -25,7 +26,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the user cluster metrics-server service.
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.MetricsServerServiceName
@@ -40,6 +41,11 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt(443),
 				},
+			}
+
+			if ipFamily == kubermaticv1.IPFamilyDualStack {
+				dsPolicy := corev1.IPFamilyPolicyPreferDualStack
+				se.Spec.IPFamilyPolicy = &dsPolicy
 			}
 
 			return se, nil
