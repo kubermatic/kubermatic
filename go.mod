@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20211215163300-870699d61ec9
-	github.com/Azure/azure-sdk-for-go v64.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v64.1.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.27
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11
 	github.com/Azure/go-autorest/autorest/to v0.4.0
@@ -44,7 +44,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.33.2
 	github.com/imdario/mergo v0.3.12
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.49.0
+	github.com/kubermatic/machine-controller v1.50.0
 	github.com/minio/minio-go/v7 v7.0.26
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
