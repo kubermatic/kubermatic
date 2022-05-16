@@ -33,6 +33,7 @@ import (
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	osecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
+	ossubnetpools "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
@@ -568,6 +569,21 @@ func GetAvailabilityZones(authURL, region string, credentials *resources.Opensta
 	}
 
 	return availabilityZones, nil
+}
+
+// GetSubnetPools lists all available subnet pools.
+func GetSubnetPools(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, ipVersion int, caBundle *x509.CertPool) ([]ossubnetpools.SubnetPool, error) {
+	authClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get auth client: %w", err)
+	}
+
+	subnetPools, err := getAllSubnetPools(authClient, ossubnetpools.ListOpts{IPVersion: ipVersion})
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get subnet pools: %w", err)
+	}
+
+	return subnetPools, nil
 }
 
 func getAuthClient(authURL string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ProviderClient, error) {

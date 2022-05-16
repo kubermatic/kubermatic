@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -247,6 +248,31 @@ func GetOpenstackNetworks(ctx context.Context, userInfo *provider.UserInfo, seed
 	}
 
 	return apiNetworks, nil
+}
+
+func GetOpenstackSubnetPools(ctx context.Context, userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, ipVersion int, caBundle *x509.CertPool) ([]apiv2.OpenstackSubnetPool, error) {
+	authURL, region, err := getOpenstackAuthURLAndRegion(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, err
+	}
+
+	subnetPools, err := openstack.GetSubnetPools(ctx, authURL, region, credentials, ipVersion, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	apiSubnetPools := make([]apiv2.OpenstackSubnetPool, len(subnetPools))
+	for i, subnetPool := range subnetPools {
+		apiSubnetPools[i] = apiv2.OpenstackSubnetPool{
+			ID:        subnetPool.ID,
+			Name:      subnetPool.Name,
+			IPversion: subnetPool.IPversion,
+			IsDefault: subnetPool.IsDefault,
+			Prefixes:  subnetPool.Prefixes,
+		}
+	}
+
+	return apiSubnetPools, nil
 }
 
 func GetOpenstackProjects(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, credentials *resources.OpenstackCredentials, datacenterName string, caBundle *x509.CertPool) ([]apiv1.OpenstackTenant, error) {

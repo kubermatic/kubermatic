@@ -18823,6 +18823,104 @@
         }
       }
     },
+    "/api/v2/providers/openstack/subnetpools": {
+      "get": {
+        "description": "Lists subnet pools from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSubnetPools",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Domain",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Tenant",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Project",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialSecret",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "OIDCAuthentication",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "IPVersion",
+            "name": "ip_version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackSubnetPool",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSubnetPool"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/vsphere/datastores": {
       "get": {
         "description": "Lists datastores from vsphere datacenter",
@@ -27542,6 +27640,42 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "OpenstackSubnetPool": {
+      "type": "object",
+      "title": "OpenstackSubnetPool is the object representing a openstack subnet pool.",
+      "properties": {
+        "id": {
+          "description": "Id uniquely identifies the subnet pool",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "ipVersion": {
+          "description": "IPversion is the IP protocol version (4 or 6)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "IPversion"
+        },
+        "isDefault": {
+          "description": "IsDefault indicates if the subnetpool is default pool or not",
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
+        "name": {
+          "description": "Name is the name of the subnet pool",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "prefixes": {
+          "description": "Prefixes is the list of subnet prefixes",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Prefixes"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "OpenstackTenant": {
       "type": "object",

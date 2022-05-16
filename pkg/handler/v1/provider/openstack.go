@@ -33,7 +33,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*provider.UserInfo, *resources.OpenstackCredentials, error) {
+func GetOpenstackAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*provider.UserInfo, *resources.OpenstackCredentials, error) {
 	var cred *resources.OpenstackCredentials
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -78,7 +78,7 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetProvider prov
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
+		userInfo, cred, err := GetOpenstackAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +125,7 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetProvider pr
 			OIDCAuthentication:          reqTenant.OIDCAuthentication,
 		}
 
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
+		userInfo, cred, err := GetOpenstackAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +151,7 @@ func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
+		userInfo, cred, err := GetOpenstackAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +176,7 @@ func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, presetProv
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
+		userInfo, cred, err := GetOpenstackAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -201,7 +201,7 @@ func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req.OpenstackReq, userInfoGetter, presetProvider)
+		userInfo, cred, err := GetOpenstackAuthInfo(ctx, req.OpenstackReq, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -226,7 +226,7 @@ func OpenstackAvailabilityZoneEndpoint(seedsGetter provider.SeedsGetter, presetP
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got %T", request)
 		}
-		userInfo, cred, err := getAuthInfo(ctx, req, userInfoGetter, presetProvider)
+		userInfo, cred, err := GetOpenstackAuthInfo(ctx, req, userInfoGetter, presetProvider)
 		if err != nil {
 			return nil, err
 		}
