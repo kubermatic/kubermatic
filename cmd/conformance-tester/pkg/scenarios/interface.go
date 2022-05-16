@@ -90,6 +90,10 @@ func GetScenarios(opts *types.Options, log *zap.SugaredLogger) []Scenario {
 		log.Info("Adding Alibaba scenarios")
 		scenarios = append(scenarios, GetAlibabaScenarios(opts.Versions)...)
 	}
+	if opts.Providers.Has("anexia") {
+		log.Info("Adding Anexia scenarios")
+		scenarios = append(scenarios, GetAnexiaScenarios(opts.Versions)...)
+	}
 	if opts.Providers.Has("nutanix") {
 		log.Info("Adding Nutanix scenarios")
 		scenarios = append(scenarios, GetNutanixScenarios(opts.Versions)...)

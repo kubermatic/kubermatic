@@ -23,6 +23,12 @@ import (
 )
 
 type Secrets struct {
+	Anexia struct {
+		Token      string
+		TemplateID string
+		VlanID     string
+		LocationID string
+	}
 	AWS struct {
 		AccessKeyID     string
 		SecretAccessKey string
@@ -87,6 +93,10 @@ var (
 )
 
 func (s *Secrets) AddFlags() {
+	flag.StringVar(&s.Anexia.Token, "anexia-token", "", "Anexia: API Token")
+	flag.StringVar(&s.Anexia.TemplateID, "anexia-template-id", "", "Anexia: Template ID")
+	flag.StringVar(&s.Anexia.VlanID, "anexia-vlan-id", "", "Anexia: VLAN ID")
+	flag.StringVar(&s.Anexia.LocationID, "anexia-location-id", "", "Anexia: Location ID")
 	flag.StringVar(&s.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&s.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
 	flag.StringVar(&s.Digitalocean.Token, "digitalocean-token", "", "Digitalocean: API Token")

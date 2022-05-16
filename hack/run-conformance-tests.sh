@@ -63,6 +63,17 @@ alibaba)
       -alibaba-secret-access-key=$ALIBABA_SECRET"
   ;;
 
+anexia)
+  ANEXIA_TOKEN="${ANEXIA_TOKEN:-$(vault kv get -field=token dev/e2e-anexia)}"
+  ANEXIA_TEMPLATE_ID="${ANEXIA_TEMPLATE_ID:-$(vault kv get -field=templateID dev/e2e-anexia)}"
+  ANEXIA_VLAN_ID="${ANEXIA_VLAN_ID:-$(vault kv get -field=vlanID dev/e2e-anexia)}"
+  ANEXIA_LOCATION_ID="${ANEXIA_LOCATION_ID:-$(vault kv get -field=locationID dev/e2e-anexia)}"
+  extraArgs="-anexia-token=$ANEXIA_TOKEN"
+  extraArgs="-anexia-template-id=$ANEXIA_TEMPLATE_ID"
+  extraArgs="-anexia-vlan-id=$ANEXIA_VLAN_ID"
+  extraArgs="-anexia-location-id=$ANEXIA_LOCATION_ID"
+  ;;
+
 aws)
   AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$(vault kv get -field=accessKeyID dev/e2e-aws)}"
   AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$(vault kv get -field=secretAccessKey dev/e2e-aws)}"
