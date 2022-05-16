@@ -418,14 +418,18 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
-	clusterVersion := defaults.DefaultKubernetesVersioning.Default.Semver()
+
+	clusterVersion := defaults.DefaultKubernetesVersioning.Default
+	if clusterVersion == nil {
+		t.Fatal("Should be able to determine default Kubernetes version, but got nil")
+	}
 
 	binary, err := kubectl.BinaryForClusterVersion(clusterVersion)
 	if err != nil {
 		t.Fatalf("Should be able to determine a kubectl binary for %q, but got %v", clusterVersion, err)
 	}
 
-	cmd, err := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), clusterVersion)
+	cmd, err := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), *clusterVersion)
 	if err != nil {
 		t.Fatalf("Should be able to determine the command, but got %v", err)
 	}
