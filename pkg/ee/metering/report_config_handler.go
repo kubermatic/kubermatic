@@ -346,14 +346,19 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 			fmt.Sprintf("report configuration %q already exists", reportCfgReq.Name))
 	}
 
-	var retention uint32
 	if reportCfgReq.Body.Retention != nil {
-		retention = uint32(*reportCfgReq.Body.Retention)
-	}
-	seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
-		Interval:  uint32(reportCfgReq.Body.Interval),
-		Schedule:  reportCfgReq.Body.Schedule,
-		Retention: &retention,
+		retention := uint32(*reportCfgReq.Body.Retention)
+		seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
+			Interval:  uint32(reportCfgReq.Body.Interval),
+			Schedule:  reportCfgReq.Body.Schedule,
+			Retention: &retention,
+		}
+	} else {
+		seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
+			Interval:  uint32(reportCfgReq.Body.Interval),
+			Schedule:  reportCfgReq.Body.Schedule,
+			Retention: nil,
+		}
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
