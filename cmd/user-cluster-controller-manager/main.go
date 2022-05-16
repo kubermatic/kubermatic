@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -210,6 +211,9 @@ func main() {
 	rootCtx := signals.SetupSignalHandler()
 
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		LeaderElection:          true,
 		LeaderElectionNamespace: metav1.NamespaceSystem,
 		LeaderElectionID:        "user-cluster-controller-leader-lock",

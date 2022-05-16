@@ -84,21 +84,21 @@ require (
 	k8s.io/api v0.24.0
 	k8s.io/apiextensions-apiserver v0.24.0
 	k8s.io/apimachinery v0.24.0
-	k8s.io/apiserver v0.23.6
+	k8s.io/apiserver v0.24.0
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.10.0
-	k8s.io/cli-runtime v0.23.6
+	k8s.io/cli-runtime v0.24.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.24.0
 	k8s.io/klog/v2 v2.60.1
-	k8s.io/kube-aggregator v0.23.6
+	k8s.io/kube-aggregator v0.24.0
 	k8s.io/kube-openapi v0.0.0-20220413171646-5e7f5fdc6da6
-	k8s.io/kubectl v0.23.6
-	k8s.io/metrics v0.23.6
+	k8s.io/kubectl v0.24.0
+	k8s.io/metrics v0.24.0
 	k8s.io/test-infra v0.0.0-20210826180422-39483c498f0f
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	kubevirt.io/api v0.53.0
 	kubevirt.io/containerized-data-importer-api v1.49.0
-	sigs.k8s.io/controller-runtime v0.12.0
+	sigs.k8s.io/controller-runtime v0.12.1
 	sigs.k8s.io/controller-tools v0.8.0
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -106,19 +106,16 @@ require (
 replace (
 	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 	go.universe.tf/metallb => github.com/cilium/metallb v0.1.1-0.20210831235406-48667b93284d
-	k8s.io/api => k8s.io/api v0.23.6
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.6
-	k8s.io/apimachinery => k8s.io/apimachinery v0.23.6
-	k8s.io/client-go => k8s.io/client-go v0.23.6
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.23.6
-	k8s.io/code-generator => k8s.io/code-generator v0.23.6
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.6
-	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf
-	k8s.io/kubectl => k8s.io/kubectl v0.23.6
-	k8s.io/kubelet => k8s.io/kubelet v0.23.6
-	k8s.io/metrics => k8s.io/metrics v0.23.6
-	k8s.io/utils => k8s.io/utils v0.0.0-20211116205334-6203023598ed
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.11.2
+	k8s.io/api => k8s.io/api v0.24.0
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.24.0
+	k8s.io/apimachinery => k8s.io/apimachinery v0.24.0
+	k8s.io/client-go => k8s.io/client-go v0.24.0
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.24.0
+	k8s.io/code-generator => k8s.io/code-generator v0.24.0
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.24.0
+	k8s.io/kubectl => k8s.io/kubectl v0.24.0
+	k8s.io/kubelet => k8s.io/kubelet v0.24.0
+	k8s.io/metrics => k8s.io/metrics v0.24.0
 )
 
 require (
@@ -184,12 +181,12 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
+	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.1-0.20210504230335-f78f29fc09ea // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.3.0 // indirect
-	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/go-version v1.2.0 // indirect
@@ -224,6 +221,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -292,7 +290,7 @@ require (
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.0.0-20220329064328-f3cc58c6ed90 // indirect
 	sigs.k8s.io/gateway-api v0.4.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
-	sigs.k8s.io/kustomize/api v0.10.1 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.13.0 // indirect
+	sigs.k8s.io/kustomize/api v0.11.4 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )

@@ -50,10 +50,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
-	rootCtx := context.Background()
+	rootCtx := signals.SetupSignalHandler()
 
 	// /////////////////////////////////////////
 	// setup flags
@@ -89,6 +90,9 @@ func main() {
 	// create manager
 
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		Namespace: options.namespace,
 	})
 	if err != nil {
@@ -195,7 +199,7 @@ func main() {
 	// Here we go!
 
 	log.Info("Starting the webhook...")
-	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("The controller manager has failed", zap.Error(err))
 	}
 }

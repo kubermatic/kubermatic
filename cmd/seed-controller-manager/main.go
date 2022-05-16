@@ -52,6 +52,7 @@ import (
 	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 const (
@@ -101,7 +102,12 @@ func main() {
 
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
+	rootCtx := signals.SetupSignalHandler()
+
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		MetricsBindAddress:      "0",
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
@@ -141,7 +147,7 @@ func main() {
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
+	if err := mgr.GetAPIReader().List(rootCtx, &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
 		if meta.IsNoMatchError(err) {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
@@ -166,7 +172,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 	}
 
-	rootCtx := context.Background()
 	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
 	if err != nil {
 		log.Fatalw("Unable to create the seed getter", zap.Error(err))
@@ -240,7 +245,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	log.Info("Starting the seed-controller-manager")
-	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
 }
