@@ -187,6 +187,11 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 				},
 				{
 					Effect:   corev1.TaintEffectNoSchedule,
+					Key:      "node-role.kubernetes.io/control-plane",
+					Operator: corev1.TolerationOpExists,
+				},
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
 					Operator: corev1.TolerationOpExists,
 				},
 				{

@@ -28,7 +28,11 @@
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
 {{ $version = "v1.23.0"}}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.24" }}
+{{ $version = "v1.23.0"}}
+{{ end }}
 
+{{ if not (eq $version "UNSUPPORTED") }}
 ---
 kind: DaemonSet
 apiVersion: apps/v1
@@ -158,5 +162,6 @@ spec:
         - name: ca-bundle
           configMap:
             name: ca-bundle
+{{ end }}
 {{ end }}
 {{ end }}

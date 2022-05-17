@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.23
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.24
     decorate: true
     always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -35,7 +35,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.23.5"
+              value: "v1.24.0"
             - name: PROVIDER
               value: "gcp"
             - name: DISTRIBUTIONS
@@ -57,7 +57,7 @@ presubmits:
             limits:
               memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.23-psp
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.24-psp
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -78,7 +78,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.23.5"
+              value: "v1.24.0"
             - name: PROVIDER
               value: "gcp"
             - name: DISTRIBUTIONS
