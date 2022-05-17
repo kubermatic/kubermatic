@@ -100,6 +100,9 @@ type DatacenterSpec struct {
 	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy"`
+
+	// IPv6Enabled is a flag to indicate if the ipv6 is enabled for the datacenter.
+	IPv6Enabled bool `json:"ipv6Enabled"`
 }
 
 // DatacenterList represents a list of datacenters
