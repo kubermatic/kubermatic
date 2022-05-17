@@ -85,8 +85,8 @@ spec:
                 type: object
               values:
                 description: Values describe overrides for manifest-rendering
-                format: byte
-                type: string
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
             required:
             - applicationRef
             - namespace

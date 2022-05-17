@@ -275,10 +275,14 @@ func TestReconcile(t *testing.T) {
 
 func generateApplication(name string) apiv1.Application {
 	var values json.RawMessage
-	_ = json.Unmarshal([]byte(`{
+	err := json.Unmarshal([]byte(`{
 		"key": "value",
-		"key2": "value2",
+		"key2": "value2"
 	}`), &values)
+
+	if err != nil {
+		panic(fmt.Sprintf("can not unmarshall values: %v", err))
+	}
 
 	return apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
