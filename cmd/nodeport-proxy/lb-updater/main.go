@@ -74,11 +74,6 @@ func main() {
 	// init logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	cli.Hello(log, "LoadBalancer Updater", logOpts.Debug, nil)
 

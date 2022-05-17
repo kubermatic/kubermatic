@@ -107,11 +107,6 @@ func main() {
 	}
 	rawLog := kubermaticlog.New(options.log.Debug, options.log.Format)
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 	kubermaticlog.Logger = log
 
 	// Set the logger used by sigs.k8s.io/controller-runtime

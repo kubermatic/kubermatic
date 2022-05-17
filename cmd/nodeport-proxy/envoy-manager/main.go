@@ -18,7 +18,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	"go.uber.org/zap"
 
@@ -32,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
-//nolint:gocritic
 func main() {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -55,11 +53,6 @@ func main() {
 	// init logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	cli.Hello(log, "Envoy-Manager", logOpts.Debug, nil)
 

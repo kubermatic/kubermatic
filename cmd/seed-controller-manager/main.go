@@ -58,7 +58,6 @@ const (
 	controllerName = "kkp-seed-controller-manager"
 )
 
-//nolint:gocritic
 func main() {
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
@@ -80,11 +79,6 @@ func main() {
 	if options.workerName != "" {
 		log = log.With("worker-name", options.workerName)
 	}
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))

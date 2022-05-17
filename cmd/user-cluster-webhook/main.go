@@ -55,11 +55,6 @@ func main() {
 
 	rawLog := kubermaticlog.New(options.log.Debug, options.log.Format)
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	// set the logger used by controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))

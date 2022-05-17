@@ -107,11 +107,6 @@ func main() {
 	ctrlruntimelog.SetLogger(ctrlruntimezaplog.New(ctrlruntimezaplog.UseDevMode(false)))
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 	kubermaticlog.Logger = log
 	ctrlCtx.log = log
 	ctrlCtx.workerName = runOpts.workerName
