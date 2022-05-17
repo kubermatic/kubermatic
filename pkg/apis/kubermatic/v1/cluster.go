@@ -37,11 +37,6 @@ const (
 	// ClusterKindName represents "Kind" defined in Kubernetes.
 	ClusterKindName = "Cluster"
 
-	// AnnotationNameClusterAutoscalerEnabled is the name of the annotation that is being
-	// used to determine if the cluster-autoscaler is enabled for this cluster. It is
-	// enabled when this Annotation is set with any value.
-	AnnotationNameClusterAutoscalerEnabled = "kubermatic.io/cluster-autoscaler-enabled"
-
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
 	CredentialPrefix = "credential"
 

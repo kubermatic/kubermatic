@@ -31,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
-	"k8c.io/kubermatic/v2/pkg/resources/clusterautoscaler"
 	"k8c.io/kubermatic/v2/pkg/resources/controllermanager"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
@@ -325,9 +324,6 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		)
 	}
 
-	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
-		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
-	}
 	// If CCM migration is ongoing defer the deployment of the CCM to the
 	// moment in which cloud controllers or the full in-tree cloud provider
 	// have been deactivated.
