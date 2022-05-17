@@ -22633,6 +22633,11 @@
         "hetzner": {
           "$ref": "#/definitions/DatacenterSpecHetzner"
         },
+        "ipv6Enabled": {
+          "description": "IPv6Enabled is a flag to indicate if the ipv6 is enabled for the datacenter.",
+          "type": "boolean",
+          "x-go-name": "IPv6Enabled"
+        },
         "kubevirt": {
           "$ref": "#/definitions/DatacenterSpecKubevirt"
         },
