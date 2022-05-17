@@ -504,7 +504,7 @@ type ClusterStatus struct {
 	Encryption *ClusterEncryptionStatus `json:"encryption,omitempty"`
 
 	// ResourceUsage shows the current usage of resources for the cluster.
-	ResourceUsage ResourceDetails `json:"resourceUsage,omitempty"`
+	ResourceUsage *ResourceDetails `json:"resourceUsage,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions

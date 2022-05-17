@@ -2324,6 +2324,35 @@ spec:
                 - Running
                 - Terminating
                 type: string
+              resourceUsage:
+                description: ResourceUsage shows the current usage of resources for
+                  the cluster.
+                properties:
+                  cpu:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: CPU holds the quantity of CPU. For the format, please
+                      check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  memory:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: Memory represents the quantity of RAM size. For the
+                      format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storage:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: Storage represents the disk size. For the format,
+                      please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
               userEmail:
                 description: UserEmail contains the email of the owner of this cluster.
                   During cluster creation only, this field will be used to bind the
