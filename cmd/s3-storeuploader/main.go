@@ -77,13 +77,6 @@ func main() {
 			uploader, err = getUploaderFromCtx(logger, opt)
 			return
 		},
-		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-			if logger != nil {
-				return logger.Sync()
-			}
-
-			return nil
-		},
 	}
 
 	pFlags := rootCmd.PersistentFlags()

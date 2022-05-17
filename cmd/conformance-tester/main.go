@@ -68,11 +68,6 @@ func main() {
 	}
 
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	// parse our CLI flags
 	if err := opts.ParseFlags(); err != nil {

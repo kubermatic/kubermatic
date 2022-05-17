@@ -80,7 +80,6 @@ type opts struct {
 	helmBinary        string
 }
 
-//nolint:gocritic
 func main() {
 	var err error
 

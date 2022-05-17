@@ -19,7 +19,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
@@ -48,7 +47,6 @@ type controllerRunOptions struct {
 	enableLeaderElection bool
 }
 
-//nolint:gocritic
 func main() {
 	ctx := context.Background()
 
@@ -71,11 +69,6 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format).Named(opt.workerName)
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	// update global logger instance
 	kubermaticlog.Logger = log

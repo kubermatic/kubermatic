@@ -19,7 +19,6 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -53,11 +52,6 @@ func main() {
 	// setup logging
 	rawLog := log.New(logOpts.Debug, logOpts.Format)
 	logger := rawLog.Sugar()
-	defer func() {
-		if err := logger.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	if *accessKeyID == "" {
 		*accessKeyID = os.Getenv("ACCESS_KEY_ID")
