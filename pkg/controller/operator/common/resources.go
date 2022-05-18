@@ -20,6 +20,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -105,12 +106,17 @@ func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcili
 	}
 }
 
-func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, versions kubermaticversion.Versions) reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			obj.Labels = crd.Labels
 			obj.Annotations = crd.Annotations
 			obj.Spec = crd.Spec
+
+			// inject the current KKP version, so the operator and other controllers
+			// can react to the changed CRDs (the KKP installer does the same when
+			// updating CRDs on the master cluster)
+			obj.Labels[resources.VersionLabel] = versions.Kubermatic
 
 			if crd.Spec.Conversion == nil {
 				// reconcile fails if conversion is not set as it's set by default to None

@@ -376,7 +376,7 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 		}
 
 		for i := range crds {
-			creators = append(creators, common.CRDCreator(&crds[i]))
+			creators = append(creators, common.CRDCreator(&crds[i], r.versions))
 		}
 	}
 

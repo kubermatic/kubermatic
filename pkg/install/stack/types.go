@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,6 +43,8 @@ type DeployOptions struct {
 
 	SeedsGetter      provider.SeedsGetter
 	SeedClientGetter provider.SeedClientGetter
+
+	Versions kubermaticversion.Versions
 
 	Logger                             *logrus.Entry
 	EnableCertManagerV2Migration       bool

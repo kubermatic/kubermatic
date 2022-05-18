@@ -98,7 +98,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		}
 	} else {
 		sublogger.Info("Deploying Custom Resource Definitions…")
-		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd")); err != nil {
+		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd"), nil); err != nil {
 			return fmt.Errorf("failed to deploy CRDs: %w", err)
 		}
 	}
@@ -243,7 +243,7 @@ func migrateCertManagerV2(
 
 	// step 6: install new CRDs
 	logger.Info("Deploying new Custom Resource Definitions…")
-	if err := util.DeployCRDs(ctx, kubeClient, logger, filepath.Join(chart.Directory, "crd")); err != nil {
+	if err := util.DeployCRDs(ctx, kubeClient, logger, filepath.Join(chart.Directory, "crd"), nil); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
