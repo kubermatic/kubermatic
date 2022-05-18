@@ -83,12 +83,6 @@ issues:
   - singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
 
 linters-settings:
-  tagliatelle:
-    case:
-      rules:
-        json: goCamel
-        yaml: goCamel
-
   depguard:
     include-go-root: true
     packages:

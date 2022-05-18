@@ -120,13 +120,11 @@ lint: lint-crds
 
 .PHONY: lint-crds
 lint-crds:
-	# we want tagliatelle to check only CRDs
+	@# we want tagliatelle to check only CRDs
 	golangci-lint run \
 		--verbose \
-		--print-resources-usage \
-		--disable-all \
-		--enable tagliatelle \
-		./pkg/apis/kubermatic/...
+		--config .golangci.apis.yml \
+		./pkg/apis/...
 
 .PHONY: shellcheck
 shellcheck:
