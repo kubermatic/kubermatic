@@ -259,38 +259,3 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 		}
 	}
 }
-
-// ClusterCRD returns the cluster crd definition.
-func ClusterCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
-		return resources.ClusterCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
-
-			crd.Spec.Group = clusterAPIGroup
-			crd.Spec.Scope = apiextensionsv1.NamespaceScoped
-			crd.Spec.Names.Kind = "Cluster"
-			crd.Spec.Names.ListKind = "ClusterList"
-			crd.Spec.Names.Plural = "clusters"
-			crd.Spec.Names.Singular = "cluster"
-			crd.Spec.Names.ShortNames = []string{"cl"}
-			crd.Spec.Versions = []apiextensionsv1.CustomResourceDefinitionVersion{
-				{
-					Name:    clusterAPIVersion,
-					Served:  true,
-					Storage: true,
-					Schema: &apiextensionsv1.CustomResourceValidation{
-						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-							XPreserveUnknownFields: resources.Bool(true),
-							Type:                   "object",
-						},
-					},
-					Subresources: &apiextensionsv1.CustomResourceSubresources{
-						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
-					},
-				},
-			}
-
-			return crd, nil
-		}
-	}
-}
