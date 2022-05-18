@@ -17,12 +17,11 @@ limitations under the License.
 package v1
 
 import (
-	"encoding/json"
-
 	semverlib "github.com/Masterminds/semver/v3"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // +kubebuilder:object:root=true
@@ -55,7 +54,8 @@ type ApplicationInstallationSpec struct {
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
 	// Values describe overrides for manifest-rendering
-	Values json.RawMessage `json:"values,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Values runtime.RawExtension `json:"values,omitempty"`
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
 }
 
