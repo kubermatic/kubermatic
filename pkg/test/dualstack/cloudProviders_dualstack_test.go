@@ -53,8 +53,10 @@ var operatingSystems = map[string]models.OperatingSystemSpec{
 	"ubuntu":  ubuntu(),
 }
 
-var cloudProviders = map[string]cloudProvider{
+var cloudProviders = map[string]clusterSpec{
 	"azure": azure{},
+	"gcp":   gcp{},
+	"aws":   aws{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -62,12 +64,11 @@ var cnis = map[string]models.CNIPluginSettings{
 	"canal":  canal(),
 }
 
+// TestCloudClusterIPFamily creates clusters and runs dualstack tests against them.
 func TestCloudClusterIPFamily(t *testing.T) {
 	// export KUBERMATIC_API_ENDPOINT=https://dev.kubermatic.io
 	// export KKP_API_TOKEN=<steal token>
 	token := os.Getenv("KKP_API_TOKEN")
-
-	_ = cnis
 
 	if token == "" {
 		var err error
@@ -148,7 +149,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	var mu sync.Mutex
 
 	for _, test := range tests {
-		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.osName, test.ipFamily)
+		name := fmt.Sprintf("c-%s-%s-%s-%s", test.cloudName, test.osName, test.cni, test.ipFamily)
 
 		if test.disabledReason != "" {
 			t.Logf("test %q disabled because: %s", name, test.disabledReason)
@@ -160,12 +161,22 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		nodeSpec := cloud.NodeSpec()
 		osSpec := operatingSystems[test.osName]
 		clusterSpec := defaultClusterRequest()
+		cniSpec := cnis[test.cni]
+		netConfig := defaultClusterNetworkingConfig()
+		switch test.cni {
+		case "canal":
+			netConfig = netConfig.WithProxyMode("ipvs")
+		case "cilium":
+			netConfig = netConfig.WithProxyMode("ebpf")
+		}
 
 		t.Run(name, func(t *testing.T) {
 			clusterSpec := clusterSpec.WithName(name).
 				WithCloud(cloudSpec).
 				WithNode(nodeSpec).
-				WithOS(osSpec)
+				WithOS(osSpec).
+				WithCNI(cniSpec).
+				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
 			spec := models.CreateClusterSpec(clusterSpec)
 
 			mu.Lock()
@@ -323,180 +334,6 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset) (string,
 	})
 
 	return nodeIP, err
-}
-
-type cloudProvider interface {
-	NodeSpec() models.NodeCloudSpec
-	CloudSpec() models.CloudSpec
-}
-
-type azure struct{}
-
-var _ cloudProvider = azure{}
-
-func (a azure) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Azure: &models.AzureNodeSpec{
-			AssignAvailabilitySet: true,
-			AssignPublicIP:        true,
-			DataDiskSize:          int32(30),
-			OSDiskSize:            70,
-			Size:                  pointer.String("Standard_B2s"),
-		},
-	}
-}
-
-func (a azure) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "azure-westeurope",
-		Azure: &models.AzureCloudSpec{
-			ClientID:        os.Getenv("AZURE_CLIENT_ID"),
-			ClientSecret:    os.Getenv("AZURE_CLIENT_SECRET"),
-			SubscriptionID:  os.Getenv("AZURE_SUBSCRIPTION_ID"),
-			TenantID:        os.Getenv("AZURE_TENANT_ID"),
-			LoadBalancerSKU: "standard",
-		},
-	}
-}
-
-func defaultClusterRequest() createClusterRequest {
-	clusterSpec := models.CreateClusterSpec{}
-	clusterSpec.Cluster = &models.Cluster{
-		Type: "kubernetes",
-		Name: "test-default-azure-cluster",
-		Spec: &models.ClusterSpec{
-			Cloud: &models.CloudSpec{
-				DatacenterName: "azure-westeurope",
-				Azure: &models.AzureCloudSpec{
-					ClientID:        os.Getenv("AZURE_CLIENT_ID"),
-					ClientSecret:    os.Getenv("AZURE_CLIENT_SECRET"),
-					SubscriptionID:  os.Getenv("AZURE_SUBSCRIPTION_ID"),
-					TenantID:        os.Getenv("AZURE_TENANT_ID"),
-					LoadBalancerSKU: "standard",
-				},
-			},
-			CniPlugin: &models.CNIPluginSettings{
-				Version: "v1.11",
-				Type:    "cilium",
-			},
-			ClusterNetwork: &models.ClusterNetworkingConfig{
-				NodeCIDRMaskSizeIPV4: 24,
-				NodeCIDRMaskSizeIPV6: 105,
-				ProxyMode:            "ebpf",
-				IPFamily:             "IPv4+IPv6",
-				Pods: &models.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16", "fd00::/104"},
-				},
-				Services: &models.NetworkRanges{
-					CIDRBlocks: []string{"10.240.16.0/20", "fd03::/120"},
-				},
-				KonnectivityEnabled: true,
-			},
-			Version: "1.22.7",
-		},
-	}
-
-	clusterSpec.NodeDeployment = &models.NodeDeployment{
-		Spec: &models.NodeDeploymentSpec{
-			Replicas: pointer.Int32(1),
-			Template: &models.NodeSpec{
-				SSHUserName: "root",
-				Cloud: &models.NodeCloudSpec{
-					Azure: &models.AzureNodeSpec{
-						AssignAvailabilitySet: true,
-						AssignPublicIP:        true,
-						DataDiskSize:          int32(30),
-						OSDiskSize:            70,
-						Size:                  pointer.String("Standard_B2s"),
-					},
-				},
-				OperatingSystem: &models.OperatingSystemSpec{
-					Ubuntu: &models.UbuntuSpec{
-						DistUpgradeOnBoot: false,
-					},
-				},
-			},
-		},
-		Status: nil,
-	}
-
-	return createClusterRequest(clusterSpec)
-}
-
-func (c createClusterRequest) WithCNI(cni models.CNIPluginSettings) createClusterRequest {
-	c.Cluster.Spec.CniPlugin = &cni
-	return c
-}
-
-func (c createClusterRequest) WithOS(os models.OperatingSystemSpec) createClusterRequest {
-	c.NodeDeployment.Spec.Template.OperatingSystem = &os
-	return c
-}
-
-func (c createClusterRequest) WithNode(node models.NodeCloudSpec) createClusterRequest {
-	c.NodeDeployment.Spec.Template.Cloud = &node
-	return c
-}
-
-func (c createClusterRequest) WithCloud(cloud models.CloudSpec) createClusterRequest {
-	c.Cluster.Spec.Cloud = &cloud
-	return c
-}
-
-func (c createClusterRequest) WithName(name string) createClusterRequest {
-	c.Cluster.Name = name
-	return c
-}
-
-func (c createClusterRequest) WithNetworkConfig(netConfig models.ClusterNetworkingConfig) createClusterRequest {
-	c.Cluster.Spec.ClusterNetwork = &netConfig
-	return c
-}
-
-type createClusterRequest models.CreateClusterSpec
-
-func ubuntu() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Ubuntu: &models.UbuntuSpec{},
-	}
-}
-
-func rhel() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Rhel: &models.RHELSpec{},
-	}
-}
-
-func sles() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Sles: &models.SLESSpec{},
-	}
-}
-
-func centos() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Centos: &models.CentOSSpec{},
-	}
-}
-
-func flatcar() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Flatcar: &models.FlatcarSpec{},
-	}
-}
-
-func cilium() models.CNIPluginSettings {
-	return models.CNIPluginSettings{
-		Version: "v1.11",
-		Type:    "cilium",
-	}
-}
-
-func canal() models.CNIPluginSettings {
-	return models.CNIPluginSettings{
-		Type:    "canal",
-		Version: "v3.22",
-	}
 }
 
 func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, func(), error) {

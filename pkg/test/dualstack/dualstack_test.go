@@ -54,6 +54,8 @@ func init() {
 	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", true, "Set false to test pods in host network")
 }
 
+// TestClusterIPFamily is used to run dualstack test against any cluster. Takes kubeconfig of the cluster as command line
+// argument.
 func TestClusterIPFamily(t *testing.T) {
 	// based on https://kubernetes.io/docs/tasks/network/validate-dual-stack/
 	if userconfig == "" {
