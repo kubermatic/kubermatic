@@ -43,7 +43,7 @@ import (
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -121,8 +121,8 @@ func main() {
 		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
 	}
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
-	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", autoscalingv1beta2.SchemeGroupVersion), zap.Error(err))
+	if err := autoscalingv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", autoscalingv1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
@@ -141,7 +141,7 @@ func main() {
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1beta2.VerticalPodAutoscalerList{}); err != nil {
+	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
 		if meta.IsNoMatchError(err) {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.

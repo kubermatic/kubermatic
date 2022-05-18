@@ -20,7 +20,7 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
@@ -437,7 +437,7 @@ func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodD
 }
 
 // VerticalPodAutoscalerCreator defines an interface to create/update VerticalPodAutoscalers
-type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error)
+type VerticalPodAutoscalerCreator = func(existing *autoscalingv1.VerticalPodAutoscaler) (*autoscalingv1.VerticalPodAutoscaler, error)
 
 // NamedVerticalPodAutoscalerCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedVerticalPodAutoscalerCreatorGetter = func() (name string, create VerticalPodAutoscalerCreator)
@@ -447,9 +447,9 @@ type NamedVerticalPodAutoscalerCreatorGetter = func() (name string, create Verti
 func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*autoscalingv1beta2.VerticalPodAutoscaler))
+			return create(existing.(*autoscalingv1.VerticalPodAutoscaler))
 		}
-		return create(&autoscalingv1beta2.VerticalPodAutoscaler{})
+		return create(&autoscalingv1.VerticalPodAutoscaler{})
 	}
 }
 
@@ -465,7 +465,7 @@ func ReconcileVerticalPodAutoscalers(ctx context.Context, namedGetters []NamedVe
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &autoscalingv1beta2.VerticalPodAutoscaler{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &autoscalingv1.VerticalPodAutoscaler{}, false); err != nil {
 			return fmt.Errorf("failed to ensure VerticalPodAutoscaler %s/%s: %w", namespace, name, err)
 		}
 	}

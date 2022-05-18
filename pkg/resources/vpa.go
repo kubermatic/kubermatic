@@ -27,40 +27,40 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	vpav1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef metav1.OwnerReference, enabled bool) reconciling.NamedVerticalPodAutoscalerCreatorGetter {
-	var containerPolicies []autoscalingv1beta2.ContainerResourcePolicy
+	var containerPolicies []vpav1.ContainerResourcePolicy
 	for _, container := range pod.Containers {
-		containerPolicies = append(containerPolicies, autoscalingv1beta2.ContainerResourcePolicy{
+		containerPolicies = append(containerPolicies, vpav1.ContainerResourcePolicy{
 			ContainerName: container.Name,
 			MaxAllowed:    container.Resources.Limits,
 			MinAllowed:    container.Resources.Requests,
 		})
 	}
 
-	updateMode := autoscalingv1beta2.UpdateModeAuto
+	updateMode := vpav1.UpdateModeAuto
 	if !enabled {
-		updateMode = autoscalingv1beta2.UpdateModeOff
+		updateMode = vpav1.UpdateModeOff
 	}
 
 	return func() (string, reconciling.VerticalPodAutoscalerCreator) {
-		return name, func(vpa *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
+		return name, func(vpa *vpav1.VerticalPodAutoscaler) (*vpav1.VerticalPodAutoscaler, error) {
 			// We're doing this as we don't want to use the Cluster object as owner.
 			// Instead we're using the actual target as owner - this way the VPA gets deleted when the Deployment/StatefulSet gets deleted as well
 			vpa.OwnerReferences = []metav1.OwnerReference{controllerRef}
-			vpa.Spec = autoscalingv1beta2.VerticalPodAutoscalerSpec{
+			vpa.Spec = vpav1.VerticalPodAutoscalerSpec{
 				TargetRef: &autoscalingv1.CrossVersionObjectReference{
 					Name:       controllerRef.Name,
 					Kind:       controllerRef.Kind,
 					APIVersion: controllerRef.APIVersion,
 				},
-				UpdatePolicy: &autoscalingv1beta2.PodUpdatePolicy{
+				UpdatePolicy: &vpav1.PodUpdatePolicy{
 					UpdateMode: &updateMode,
 				},
-				ResourcePolicy: &autoscalingv1beta2.PodResourcePolicy{
+				ResourcePolicy: &vpav1.PodResourcePolicy{
 					ContainerPolicies: containerPolicies,
 				},
 			}

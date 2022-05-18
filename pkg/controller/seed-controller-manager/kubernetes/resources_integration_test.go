@@ -34,7 +34,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -79,7 +79,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to construct manager: %v", err)
 	}
-	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := autoscalingv1.AddToScheme(mgr.GetScheme()); err != nil {
 		t.Fatalf("failed to register vertical pod autoscaler resources to scheme: %v", err)
 	}
 	crdInstallOpts := envtest.CRDInstallOptions{
