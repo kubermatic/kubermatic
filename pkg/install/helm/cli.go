@@ -76,16 +76,19 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 			repoName,
 		}
 
-		defer func() {
-			_, removeErr := c.run("default", repoRemoveFlags...)
-			if err != nil {
-				err = removeErr
-			}
-		}()
-
 		if _, err = c.run("default", repoAddFlags...); err != nil {
 			return err
 		}
+
+		defer func() {
+			_, removeErr := c.run("default", repoRemoveFlags...)
+			if err != nil && removeErr != nil {
+				err = fmt.Errorf("%w; error: clean up resources failed: can not remove remopository: %s", err, removeErr)
+			}
+			if err == nil && removeErr != nil {
+				err = fmt.Errorf("error: clean up resources failed: can not remove remopository: %w", removeErr)
+			}
+		}()
 	}
 
 	command := []string{
