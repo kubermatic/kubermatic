@@ -36,8 +36,8 @@ var (
 	defResourceRequirements = map[string]*corev1.ResourceRequirements{
 		resources.MetricsServerDeploymentName: {
 			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("100Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("200Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("512Mi"),
@@ -52,7 +52,7 @@ const (
 	servingCertMountFolder = "/etc/serving-cert"
 
 	imageName = "metrics-server/metrics-server"
-	imageTag  = "v0.5.0"
+	imageTag  = "v0.6.1"
 )
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics server.
@@ -102,12 +102,48 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,
 					},
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 443,
+							Name:          "https",
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						FailureThreshold:    3,
+						PeriodSeconds:       10,
+						InitialDelaySeconds: 20,
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/readyz",
+								Port:   intstr.FromString("https"),
+								Scheme: corev1.URISchemeHTTPS,
+							},
+						},
+					},
+					LivenessProbe: &corev1.Probe{
+						FailureThreshold: 3,
+						PeriodSeconds:    10,
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/livez",
+								Port:   intstr.FromString("https"),
+								Scheme: corev1.URISchemeHTTPS,
+							},
+						},
+					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      servingCertSecretName,
 							MountPath: servingCertMountFolder,
 							ReadOnly:  true,
 						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						RunAsNonRoot:             resources.Bool(true),
+						RunAsUser:                resources.Int64(1000),
 					},
 				},
 			}
@@ -117,6 +153,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.MetricsServerServiceAccountName
+			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			dep.Spec.Template.Spec.Affinity = &corev1.Affinity{
 				PodAntiAffinity: &corev1.PodAntiAffinity{

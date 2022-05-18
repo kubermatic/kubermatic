@@ -35,6 +35,7 @@ func RolebindingAuthReaderCreator(isKonnectivityEnabled bool) reconciling.NamedR
 				Kind:     "Role",
 				APIGroup: rbacv1.GroupName,
 			}
+
 			if isKonnectivityEnabled {
 				// metrics server running in the user cluster - ServiceAccount
 				rb.Subjects = []rbacv1.Subject{
@@ -54,6 +55,7 @@ func RolebindingAuthReaderCreator(isKonnectivityEnabled bool) reconciling.NamedR
 					},
 				}
 			}
+
 			return rb, nil
 		}
 	}

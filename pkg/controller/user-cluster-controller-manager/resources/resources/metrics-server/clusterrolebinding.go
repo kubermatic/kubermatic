@@ -35,6 +35,7 @@ func ClusterRoleBindingResourceReaderCreator(isKonnectivityEnabled bool) reconci
 				Kind:     "ClusterRole",
 				APIGroup: rbacv1.GroupName,
 			}
+
 			if isKonnectivityEnabled {
 				// metrics server running in the user cluster - ServiceAccount
 				crb.Subjects = []rbacv1.Subject{
@@ -54,6 +55,7 @@ func ClusterRoleBindingResourceReaderCreator(isKonnectivityEnabled bool) reconci
 					},
 				}
 			}
+
 			return crb, nil
 		}
 	}
@@ -65,6 +67,7 @@ func ClusterRoleBindingAuthDelegatorCreator(isKonnectivityEnabled bool) reconcil
 		// metrics server running in the seed cluster
 		return resources.ClusterRoleBindingAuthDelegatorCreator(resources.MetricsServerCertUsername)
 	}
+
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		// metrics server running in the user cluster
 		return "metrics-server:system:auth-delegator", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

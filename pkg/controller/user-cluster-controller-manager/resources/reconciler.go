@@ -517,6 +517,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		machinecontroller.ClusterRoleCreator(),
 		dnatcontroller.ClusterRoleCreator(),
 		metricsserver.ClusterRoleCreator(),
+		metricsserver.AggregatedClusterRoleCreator(),
 		clusterautoscaler.ClusterRoleCreator(),
 		coredns.ClusterRoleCreator(),
 	}
