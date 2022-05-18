@@ -44,8 +44,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
-	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/user-cluster-webhook"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
+	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/usercluster-webhook"
 	webterminal "k8c.io/kubermatic/v2/pkg/resources/web-terminal"
 
 	corev1 "k8s.io/api/core/v1"

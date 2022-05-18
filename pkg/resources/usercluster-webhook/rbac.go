@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	serviceAccountName = "user-cluster-webhook"
-	roleName           = "kubermatic:user-cluster-webhook"
-	roleBindingName    = "kubermatic:user-cluster-webhook"
+	serviceAccountName = "usercluster-webhook"
+	roleName           = "kubermatic:usercluster-webhook"
+	roleBindingName    = "kubermatic:usercluster-webhook"
 )
 
 func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
