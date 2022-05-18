@@ -19,6 +19,8 @@ package cloudcontroller
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -27,8 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/Masterminds/semver/v3"
 )
 
 const (
