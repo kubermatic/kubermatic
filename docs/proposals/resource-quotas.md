@@ -12,7 +12,7 @@ The idea is to allow KKP-Admins to control how many resources are projects using
 Resources that will be under quota:
 - vCPU
 - RAM
-- storage (node disk size) - TBD, we can remove this as it's not a strict requirement
+- storage (node disk size)
 
 ## Non-Goals
 - The quotas won't work for imported external clusters.
@@ -37,7 +37,7 @@ Rules:
 - The quotas are enforced(we should block creation of new Machines that would exceed the quota)
 - The resource quotas management will be admin-only.
 - By default, projects will not have a quota, meaning they can use as many resources they want
-- There will be a way to set a default resource quota for all projects
+- There will be a way to set a default resource quota for all projects(separate feature)
 - When a machine is deleted, the quota usage needs to decrease for the project
 - If the quota is exceeded(by lowering the quota under current capacity for example), it is not the responsibility of KKP to remove machines. Admins should fix that in communication with the project/user.
 - The storage quota targets just the disk size of the node. It will only affect node-local PV storage.
@@ -49,44 +49,68 @@ Rules:
 Add a new flexible ResourceQuota CRD which will hold the desired quota and current consumption of the quota.
 
 ```go
+
+// ResourceQuota specifies the amount of cluster resources a project can use.
 type ResourceQuota struct {
     metav1.TypeMeta   `json:",inline"`
     metav1.ObjectMeta `json:"metadata,omitempty"`
-
+	
     Spec   ResourceQuotaSpec   `json:"spec,omitempty"`
     Status ResourceQuotaStatus `json:"status,omitempty"`
 }
 
+// ResourceQuotaSpec describes the desired state of a resource quota.
 type ResourceQuotaSpec struct {
-    // QuotaSubject describes the object for which the quota is applied to.
-    QuotaSubject *QuotaSubject `json:"quotaSubject"`
-    // ResourceQuotas is a map of maximum resource quotas per resource
-    ResourceQuotas corev1.ResourceList `json:"resourceQuotas"`
+    // Subject specifies to which entity the quota applies to.
+    Subject Subject `json:"subject"`
+    
+    // Quota specifies the current maximum allowed usage of resources.
+    Quota ResourceDetails `json:"quota"`
 }
 
-type QuotaSubject struct {
-    // Name of the quota subject
-    Name string `json:"name"`
-}
-
+// ResourceQuotaStatus describes the current state of a resource quota.
 type ResourceQuotaStatus struct {
-    // ResourceConsumption is map which holds the current usage of resources for all seeds
-    ResourceConsumption corev1.ResourceList `json:"resourceConsumption"`
-    // LocalConsumption is a map of the current usage of resources for the local seed
-    LocalConsumption corev1.ResourceList `json:"localConsumption"`
+    // GlobalUsage is holds the current usage of resources for all seeds.
+    GlobalUsage ResourceDetails `json:"globalUsage,omitempty"`
+    
+    // LocalUsage is holds the current usage of resources for the local seed.
+    LocalUsage ResourceDetails `json:"localUsage,omitempty"`
+}
 
+// Subject describes the entity to which the quota applies to.
+type Subject struct {
+    // Name of the quota subject.
+    Name string `json:"name"`
+
+    // +kubebuilder:validation:Enum=project
+    // +kubebuilder:default=project
+
+    // Kind of the quota subject. For now the only possible kind is project.
+    Kind string `json:"kind"`
+}
+
+// ResourceDetails holds the CPU, Memory and Storage quantities.
+type ResourceDetails struct {
+    // CPU holds the quantity of CPU. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+    CPU *resource.Quantity `json:"cpu,omitempty"` 
+    
+    // Memory represents the quantity of RAM size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+    Memory *resource.Quantity `json:"memory,omitempty"`
+    
+    // Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+    Storage *resource.Quantity `json:"storage,omitempty"`
 }
 ```
 
 The ResourceQuota is a master-cluster resource. It will need to be synced to seed clusters to allow webhooks access.
-As we have a distributed platform over multiple seeds, each seed will have to report its usage in the status. Then the master quota controller
-can recalculate the total resource consumption and re-sync the quotas on the seeds.
+As we have a distributed platform over multiple seeds, each seed will have to report its local usage in the status. Then the master quota controller
+can recalculate the global resource consumption and re-sync the quotas on the seeds.
 
 ### How to sync quota info from seed clusters and master cluster and back
 
 We would need a controller for ResourceQuotas in the master cluster: `master-resource-quota-controller` - MRQC
 
-The MRQC would watch master cluster ResourceQuotas. These are the ones that are created through the API, and maybe one day through `kubectl`.
+The MRQC would watch master cluster ResourceQuotas.
 The role of the MRQC would be to reconcile the master ResourceQuotas to the seed clusters.
 It also needs to watch seed cluster ResourceQuotas for changes in LocalConsumption, and update the master ResourceQuota ResourceConsumption based on it.
 
@@ -134,16 +158,13 @@ To enforce the resource quotas, we can use a validating webhook for Machines on 
 itself would run on the control plane so that cluster users won't have access to it. 
 
 The webhook would be:
-- calculate requested Machine resource usage (needs to use user-cluster credentials to talk with providers)
+- calculate requested Machine resource usage (needs to use user-cluster credentials from machine spec to talk with providers)
 - get the latest project ResourceQuota
 - if it fits, allow
 - if it doesn't fit:
   - don't allow, with message that it's too big
   - create an event that could be visible for users 
   
-The problem could be that the MachineSet controller will try to create the Machine again and again, which won't work unless either
-the ResourceQuota or requested Machine changes. Maybe we should have a way to mark/flag this so that we control it. - TBD
-
 ### Default Project Quotas
 
 The idea here is to allow admins to set a default project resource quota, that will be applied to all projects which don't have a resource quota set.
@@ -157,9 +178,6 @@ the default resource quota, we could label all default resource quotas with `def
 custom resource quotas.
 
 ### Possible Issues
-
-1. How to deal with autoscalers?
-2. Possible race when updating quotas
 
 #### Race when updating quotas
 
@@ -176,7 +194,7 @@ and react according to their company policy.
 
 1. Investigate project and user quotas
 2. Implement ResourceQuotas CRD
-4. Implement MRQC
+4. Implement master ResourceQuota controller
 5. Implement controllers for calculating cluster quota usage
 6. Validating webhook for Machines based on resource quotas
 7. ResourceQuota API endpoints
