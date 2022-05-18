@@ -167,34 +167,46 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *kub
 
 	// when master==seed cluster, this is the same as seedInMaster
 	seedInSeed := &kubermaticv1.Seed{}
-
 	err := seedClient.Get(ctx, seedKey, seedInSeed)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for %s: %w", seedKey, err)
 	}
 
-	configInSeed := &kubermaticv1.KubermaticConfiguration{}
+	// if the copy still exists, attempt to delete it unless it has only our own finalizer
+	// (we have a master==seed situation) and deleting it again would be futile.
+	if err == nil && !kubernetes.HasOnlyFinalizer(seedInSeed, CleanupFinalizer) {
+		if seedInSeed.DeletionTimestamp == nil {
+			logger.Debug("Issuing DELETE call for Seed copy now")
+			if err := seedClient.Delete(ctx, seedInSeed); err != nil {
+				return nil, fmt.Errorf("failed to delete Seed %s in seed cluster: %w", seedKey, err)
+			}
+		} else {
+			logger.Debug("Seed copy does still exist, requeuing.")
+		}
 
+		return &reconcile.Result{
+			// cleanup in remote seed clusters can be slow over long distances
+			RequeueAfter: 3 * time.Second,
+		}, nil
+	}
+
+	configInSeed := &kubermaticv1.KubermaticConfiguration{}
 	err = seedClient.Get(ctx, configKey, configInSeed)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for %s: %w", configKey, err)
 	}
 
-	// if the copy still exists, attempt to delete it unless it has only our own finalizer
-	// (we have a master==seed situation) and deleting it again would be futile.
-	if err == nil && !kubernetes.HasOnlyFinalizer(seedInSeed, CleanupFinalizer) {
-		logger.Debug("Issuing DELETE call for Seed copy now")
-		if err := seedClient.Delete(ctx, seedInSeed); err != nil {
-			return nil, fmt.Errorf("failed to delete %s: %w", seedKey, err)
-		}
-
-		// older KKP setups do not yet sync the config into each seed, so it's fine
-		// and expected if the config doesn't yet exist
-		if configInSeed.Name != "" {
+	// older KKP setups do not yet sync the config into each seed, so it's fine
+	// and expected if the config doesn't yet exist; but if it does, we now can
+	// get rid of it
+	if err == nil {
+		if configInSeed.DeletionTimestamp == nil {
 			logger.Debug("Issuing DELETE call for KubermaticConfiguration copy now")
 			if err := seedClient.Delete(ctx, configInSeed); err != nil {
-				return nil, fmt.Errorf("failed to delete %s: %w", configKey, err)
+				return nil, fmt.Errorf("failed to delete KubermaticConfiguration %s in seed cluster: %w", configKey, err)
 			}
+		} else {
+			logger.Debug("KubermaticConfiguration copy does still exist, requeuing.")
 		}
 
 		return &reconcile.Result{
