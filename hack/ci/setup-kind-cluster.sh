@@ -56,11 +56,6 @@ source <(k completion bash )
 source <(k completion bash | sed s/kubectl/k/g)
 EOF
 
-# Load kind image
-echodate "Loading kindest image"
-docker load --input /kindest.tar
-echodate "Loaded kindest image"
-
 # Create kind cluster
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
