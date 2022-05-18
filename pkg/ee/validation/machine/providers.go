@@ -29,8 +29,6 @@ import (
 	"fmt"
 	"strconv"
 
-	kubevirtv1 "kubevirt.io/api/core/v1"
-
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
@@ -212,7 +210,7 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 			return nil, fmt.Errorf("error getting KubeVirt VMI Preset: %w", err)
 		}
 
-		cpuReq, memReq, err = getKubeVirtPresetResourceDetails(preset)
+		cpuReq, memReq, err = provider.GetKubeVirtPresetResourceDetails(preset.Spec)
 		if err != nil {
 			return nil, err
 		}
@@ -259,56 +257,6 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 	}
 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
-}
-
-// getKubeVirtPresetResourceDetails extracts cpu and mem resource requests from the kubevirt preset
-// for CPU, take the value by priority:
-// - if resource limit is set, use that
-// - check if resource request is set, use that
-// - check if spec.cpu is set, if socket and threads are set then do the calculation, use that
-// - if nothing from above, consider its 1
-// for memory, take the value by priority:
-// - if resource limit is set, use that
-// - if resource request is set, use that
-// - if nothing from above, consider it 1Gi.
-func getKubeVirtPresetResourceDetails(preset *kubevirtv1.VirtualMachineInstancePreset) (resource.Quantity, resource.Quantity, error) {
-	var err error
-	// Get CPU
-	cpuReq := resource.MustParse("1")
-	if preset.Spec.Domain.CPU != nil && preset.Spec.Domain.CPU.Cores != 0 {
-		cores := preset.Spec.Domain.CPU.Cores
-		// if threads and sockets are set, calculate VCPU
-		threads := preset.Spec.Domain.CPU.Threads
-		if threads == 0 {
-			threads = 1
-		}
-		sockets := preset.Spec.Domain.CPU.Sockets
-		if sockets == 0 {
-			sockets = 1
-		}
-
-		cpuReq, err = resource.ParseQuantity(strconv.Itoa(int(cores * threads * sockets)))
-		if err != nil {
-			return resource.Quantity{}, resource.Quantity{}, fmt.Errorf("error parsing calculated KubeVirt VCPU: %w", err)
-		}
-	}
-	if !preset.Spec.Domain.Resources.Requests.Cpu().IsZero() {
-		cpuReq = *preset.Spec.Domain.Resources.Requests.Cpu()
-	}
-	if !preset.Spec.Domain.Resources.Limits.Cpu().IsZero() {
-		cpuReq = *preset.Spec.Domain.Resources.Limits.Cpu()
-	}
-
-	// get MEM
-	memReq := resource.MustParse("1Gi")
-	if !preset.Spec.Domain.Resources.Requests.Memory().IsZero() {
-		memReq = *preset.Spec.Domain.Resources.Requests.Memory()
-	}
-	if !preset.Spec.Domain.Resources.Limits.Memory().IsZero() {
-		memReq = *preset.Spec.Domain.Resources.Limits.Memory()
-	}
-
-	return cpuReq, memReq, nil
 }
 
 func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, error) {
