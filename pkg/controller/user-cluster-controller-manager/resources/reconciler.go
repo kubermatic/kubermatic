@@ -610,7 +610,6 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 		machinecontroller.MachineCRDCreator(),
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
-		machinecontroller.ClusterCRDCreator(),
 		applications.CRDCreator(c),
 	}
 
