@@ -45,7 +45,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -190,7 +190,7 @@ func Add(
 		&appsv1.Deployment{},
 		&batchv1beta1.CronJob{},
 		&policyv1beta1.PodDisruptionBudget{},
-		&autoscalingv1beta2.VerticalPodAutoscaler{},
+		&autoscalingv1.VerticalPodAutoscaler{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},
 		&networkingv1.NetworkPolicy{},

@@ -34,7 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -137,7 +137,7 @@ func Add(
 		&corev1.ConfigMap{},
 		&appsv1.Deployment{},
 		&appsv1.StatefulSet{},
-		&autoscalingv1beta2.VerticalPodAutoscaler{},
+		&autoscalingv1.VerticalPodAutoscaler{},
 		&corev1.Service{},
 	}
 
