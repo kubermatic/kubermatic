@@ -305,24 +305,6 @@ var (
 				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
-			{
-				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
-				Condition: kubermaticv1.AlwaysCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
-				Condition: kubermaticv1.ExternalCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-			{
-				Provider:  kubermaticv1.VSphereCloudProvider,
-				Version:   "1.23.*",
-				Condition: kubermaticv1.ExternalCloudProviderCondition,
-				Operation: kubermaticv1.SupportOperation,
-			},
 		},
 	}
 )
