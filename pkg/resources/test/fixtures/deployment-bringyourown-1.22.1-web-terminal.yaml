@@ -39,6 +39,8 @@ spec:
           requests:
             cpu: 100m
             memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: web-terminal-kubeconfig
@@ -56,6 +58,12 @@ spec:
       dnsPolicy: None
       imagePullSecrets:
       - name: dockercfg
+      securityContext:
+        fsGroup: 2000
+        runAsGroup: 3000
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
       volumes:
       - name: web-terminal-kubeconfig
         secret:
