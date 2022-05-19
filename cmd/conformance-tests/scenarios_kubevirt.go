@@ -82,7 +82,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 
 func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	var sourceURL string
-	registryAddr := "http://http-server.kube-system.svc.cluster.local"
+	registryAddr := "http://10.244.1.19"
 
 	switch {
 	case s.nodeOsSpec.Ubuntu != nil:
@@ -100,10 +100,10 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Kubevirt: &apimodels.KubevirtNodeSpec{
-							Memory:           utilpointer.StringPtr("2Gi"),
+							Memory:           utilpointer.StringPtr("4Gi"),
 							Namespace:        utilpointer.StringPtr("kube-system"),
 							SourceURL:        utilpointer.StringPtr(sourceURL),
-							StorageClassName: utilpointer.StringPtr("local-path"),
+							StorageClassName: utilpointer.StringPtr("longhorn"),
 							PVCSize:          utilpointer.StringPtr("25Gi"),
 							CPUs:             utilpointer.StringPtr("2"),
 						},
