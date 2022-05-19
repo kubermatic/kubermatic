@@ -103,7 +103,7 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets
 							Memory:           utilpointer.StringPtr("2Gi"),
 							Namespace:        utilpointer.StringPtr("kube-system"),
 							SourceURL:        utilpointer.StringPtr(sourceURL),
-							StorageClassName: utilpointer.StringPtr("local-path"),
+							StorageClassName: utilpointer.StringPtr("longhorn"),
 							PVCSize:          utilpointer.StringPtr("25Gi"),
 							CPUs:             utilpointer.StringPtr("2"),
 						},
