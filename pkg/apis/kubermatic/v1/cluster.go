@@ -497,6 +497,9 @@ type ClusterStatus struct {
 	// Encryption describes the status of the encryption-at-rest feature for encrypted data in etcd.
 	// +optional
 	Encryption *ClusterEncryptionStatus `json:"encryption,omitempty"`
+
+	// ResourceUsage shows the current usage of resources for the cluster.
+	ResourceUsage *ResourceDetails `json:"resourceUsage,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
