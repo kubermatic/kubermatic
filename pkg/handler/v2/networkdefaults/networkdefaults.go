@@ -24,8 +24,14 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	clusterv2 "k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	kubermaticprovider "k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
@@ -39,7 +45,20 @@ type getNetworkDefaultsReq struct {
 	ProviderName string `json:"provider_name"`
 	// in: path
 	// required: true
+	DC string `json:"dc"`
+	// in: path
+	// required: true
 	CNIPluginType string `json:"cni_plugin_type"`
+
+	// private field for the seed name. Needed for the cluster provider.
+	seedName string
+}
+
+// GetSeedCluster returns the SeedCluster object.
+func (req getNetworkDefaultsReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.seedName,
+	}
 }
 
 // Validate validates getNetworkDefaultsReq request.
@@ -49,6 +68,9 @@ func (r getNetworkDefaultsReq) Validate() error {
 	}
 	if !kubermaticv1.IsProviderSupported(r.ProviderName) {
 		return fmt.Errorf("unsupported provider: %q", r.ProviderName)
+	}
+	if r.DC == "" {
+		return fmt.Errorf("the datacenter cannot be empty")
 	}
 	if r.CNIPluginType == "" {
 		return fmt.Errorf("CNI plugin type cannot be empty")
@@ -60,14 +82,26 @@ func (r getNetworkDefaultsReq) Validate() error {
 }
 
 func DecodeGetNetworkDefaultsReq(ctx context.Context, r *http.Request) (interface{}, error) {
-	return getNetworkDefaultsReq{
+	req := getNetworkDefaultsReq{
 		ProviderName:  mux.Vars(r)["provider_name"],
+		DC:            mux.Vars(r)["dc"],
 		CNIPluginType: mux.Vars(r)["cni_plugin_type"],
-	}, nil
+	}
+
+	seedName, err := clusterv2.FindSeedNameForDatacenter(ctx, req.DC)
+	if err != nil {
+		return nil, err
+	}
+	req.seedName = seedName
+
+	return req, nil
 }
 
 // GetNetworkDefaultsEndpoint returns the cluster networking defaults for the given provider.
-func GetNetworkDefaultsEndpoint() endpoint.Endpoint {
+func GetNetworkDefaultsEndpoint(
+	seedsGetter kubermaticprovider.SeedsGetter,
+	userInfoGetter kubermaticprovider.UserInfoGetter,
+) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(getNetworkDefaultsReq)
 		if !ok {
@@ -79,9 +113,10 @@ func GetNetworkDefaultsEndpoint() endpoint.Endpoint {
 		}
 
 		provider := kubermaticv1.ProviderType(req.ProviderName)
+		datacenter := req.DC
 		cni := kubermaticv1.CNIPluginType(req.CNIPluginType)
 
-		return apiv2.NetworkDefaults{
+		networkDefaults := apiv2.NetworkDefaults{
 			IPv4: &apiv2.NetworkDefaultsIPFamily{
 				PodsCIDR:                resources.GetDefaultPodCIDRIPv4(provider),
 				ServicesCIDR:            resources.GetDefaultServicesCIDRIPv4(provider),
@@ -96,6 +131,78 @@ func GetNetworkDefaultsEndpoint() endpoint.Endpoint {
 			},
 			ProxyMode:                resources.GetDefaultProxyMode(provider, cni),
 			NodeLocalDNSCacheEnabled: resources.DefaultNodeLocalDNSCacheEnabled,
-		}, nil
+		}
+
+		// Fetching the defaulting ClusterTemplate.
+
+		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(kubermaticprovider.PrivilegedClusterProvider)
+		seedClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		seed, _, err := kubermaticprovider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, datacenter)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		defaultingTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, seedClient, seed)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// Using network defaults from the template defaults when it's available
+		if defaultingTemplate != nil {
+			networkDefaults = overrideNetworkDefaultsByDefaultingTemplate(networkDefaults, defaultingTemplate.Spec.ClusterNetwork, provider, cni)
+		}
+
+		return networkDefaults, nil
 	}
+}
+
+func overrideNetworkDefaultsByDefaultingTemplate(networkDefaults apiv2.NetworkDefaults, templateClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, cni kubermaticv1.CNIPluginType) apiv2.NetworkDefaults {
+	defaultClusterNetwork := defaulting.DefaultClusterNetwork(templateClusterNetwork, provider, cni)
+
+	if defaultClusterNetwork.ProxyMode != "" {
+		networkDefaults.ProxyMode = defaultClusterNetwork.ProxyMode
+	}
+
+	if defaultClusterNetwork.NodeLocalDNSCacheEnabled != nil {
+		networkDefaults.NodeLocalDNSCacheEnabled = *defaultClusterNetwork.NodeLocalDNSCacheEnabled
+	}
+
+	// IPv4
+
+	podsIPv4CIDR := defaultClusterNetwork.Pods.GetIPv4CIDR()
+	if podsIPv4CIDR != "" {
+		networkDefaults.IPv4.PodsCIDR = podsIPv4CIDR
+	}
+
+	servicesIPv4CIDR := defaultClusterNetwork.Services.GetIPv4CIDR()
+	if servicesIPv4CIDR != "" {
+		networkDefaults.IPv4.ServicesCIDR = servicesIPv4CIDR
+	}
+
+	if defaultClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+		networkDefaults.IPv4.NodeCIDRMaskSize = *defaultClusterNetwork.NodeCIDRMaskSizeIPv4
+	}
+
+	// IPv6
+
+	podsIPv6CIDR := defaultClusterNetwork.Pods.GetIPv6CIDR()
+	if podsIPv6CIDR != "" {
+		networkDefaults.IPv6.PodsCIDR = podsIPv6CIDR
+	}
+
+	servicesIPv6CIDR := defaultClusterNetwork.Services.GetIPv6CIDR()
+	if servicesIPv6CIDR != "" {
+		networkDefaults.IPv6.ServicesCIDR = servicesIPv6CIDR
+	}
+
+	if defaultClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+		networkDefaults.IPv6.NodeCIDRMaskSize = *defaultClusterNetwork.NodeCIDRMaskSizeIPv6
+	}
+
+	return networkDefaults
 }
