@@ -124,7 +124,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	}
 
 	// default cluster networking parameters
-	defaultClusterNetwork(spec)
+	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.CNIPlugin.Type)
 
 	// Always enable external CCM
 	if spec.Cloud.Anexia != nil || spec.Cloud.Kubevirt != nil {
@@ -173,59 +173,59 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 	return nil, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name")
 }
 
-func defaultClusterNetwork(spec *kubermaticv1.ClusterSpec) {
-	provider := kubermaticv1.ProviderType(spec.Cloud.ProviderName)
-
-	if spec.ClusterNetwork.IPFamily == "" {
-		if len(spec.ClusterNetwork.Pods.CIDRBlocks) < 2 {
+func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, cni kubermaticv1.CNIPluginType) kubermaticv1.ClusterNetworkingConfig {
+	if specClusterNetwork.IPFamily == "" {
+		if len(specClusterNetwork.Pods.CIDRBlocks) < 2 {
 			// single / no pods CIDR means IPv4-only (IPv6-only is not supported yet and not allowed by cluster validation)
-			spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyIPv4
+			specClusterNetwork.IPFamily = kubermaticv1.IPFamilyIPv4
 		} else {
 			// more than one pods CIDR means dual-stack (multiple IPv4 CIDRs are not allowed by cluster validation)
-			spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
+			specClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 		}
 	}
 
-	if len(spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider), resources.DefaultClusterPodsCIDRIPv6}
+	if len(specClusterNetwork.Pods.CIDRBlocks) == 0 {
+		if specClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack {
+			specClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider), resources.DefaultClusterPodsCIDRIPv6}
 		} else {
-			spec.ClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider)}
+			specClusterNetwork.Pods.CIDRBlocks = []string{resources.GetDefaultPodCIDRIPv4(provider)}
 		}
 	}
-	if len(spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		if spec.ClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack {
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider), resources.DefaultClusterServicesCIDRIPv6}
+	if len(specClusterNetwork.Services.CIDRBlocks) == 0 {
+		if specClusterNetwork.IPFamily == kubermaticv1.IPFamilyDualStack {
+			specClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider), resources.DefaultClusterServicesCIDRIPv6}
 		} else {
-			spec.ClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider)}
+			specClusterNetwork.Services.CIDRBlocks = []string{resources.GetDefaultServicesCIDRIPv4(provider)}
 		}
 	}
 
-	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && spec.ClusterNetwork.Pods.HasIPv4CIDR() {
-		spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv4)
+	if specClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && specClusterNetwork.Pods.HasIPv4CIDR() {
+		specClusterNetwork.NodeCIDRMaskSizeIPv4 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv4)
 	}
-	if spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 == nil && spec.ClusterNetwork.Pods.HasIPv6CIDR() {
-		spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv6)
-	}
-
-	if spec.ClusterNetwork.ProxyMode == "" {
-		spec.ClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider, spec.CNIPlugin.Type)
+	if specClusterNetwork.NodeCIDRMaskSizeIPv6 == nil && specClusterNetwork.Pods.HasIPv6CIDR() {
+		specClusterNetwork.NodeCIDRMaskSizeIPv6 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv6)
 	}
 
-	if spec.ClusterNetwork.ProxyMode == resources.IPVSProxyMode {
-		if spec.ClusterNetwork.IPVS == nil {
-			spec.ClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{}
+	if specClusterNetwork.ProxyMode == "" {
+		specClusterNetwork.ProxyMode = resources.GetDefaultProxyMode(provider, cni)
+	}
+
+	if specClusterNetwork.ProxyMode == resources.IPVSProxyMode {
+		if specClusterNetwork.IPVS == nil {
+			specClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{}
 		}
-		if spec.ClusterNetwork.IPVS.StrictArp == nil {
-			spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
+		if specClusterNetwork.IPVS.StrictArp == nil {
+			specClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
 		}
 	}
 
-	if spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(resources.DefaultNodeLocalDNSCacheEnabled)
+	if specClusterNetwork.NodeLocalDNSCacheEnabled == nil {
+		specClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(resources.DefaultNodeLocalDNSCacheEnabled)
 	}
 
-	if spec.ClusterNetwork.DNSDomain == "" {
-		spec.ClusterNetwork.DNSDomain = "cluster.local"
+	if specClusterNetwork.DNSDomain == "" {
+		specClusterNetwork.DNSDomain = "cluster.local"
 	}
+
+	return specClusterNetwork
 }
