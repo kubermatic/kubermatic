@@ -61,6 +61,8 @@ spec:
             port: https
             scheme: HTTPS
           periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
         name: metrics-server
         ports:
         - containerPort: 4443

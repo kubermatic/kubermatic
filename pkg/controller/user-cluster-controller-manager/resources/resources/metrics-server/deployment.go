@@ -118,6 +118,8 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 3,
 						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   1,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/livez",
