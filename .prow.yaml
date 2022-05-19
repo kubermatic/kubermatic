@@ -700,7 +700,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-kkp-kubevirt: "true"
+      preset-kubevirt: "true"
       preset-vault: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
