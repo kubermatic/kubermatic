@@ -95,6 +95,18 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 					}},
 					VolumeMounts: getVolumeMounts(),
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+					},
+				},
+			}
+
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsUser:  resources.Int64(1000),
+				RunAsGroup: resources.Int64(3000),
+				FSGroup:    resources.Int64(2000),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
 			}
 
