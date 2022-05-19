@@ -96,6 +96,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 					Args: []string{
 						"--kubelet-insecure-tls",
 						"--kubelet-use-node-status-port",
+						"--secure-port", "4443",
 						"--metric-resolution", "15s",
 						"--kubelet-preferred-address-types", "InternalIP,ExternalIP,Hostname",
 						"--v", "1",
@@ -104,7 +105,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 					},
 					Ports: []corev1.ContainerPort{
 						{
-							ContainerPort: 443,
+							ContainerPort: 4443,
 							Name:          "https",
 							Protocol:      corev1.ProtocolTCP,
 						},

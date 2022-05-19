@@ -23,10 +23,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-const (
-	aggregatedMetricsReaderRoleName = "system:aggregated-metrics-reader"
-)
-
 // ClusterRole returns a cluster role for the metrics server.
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
@@ -45,36 +41,6 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				},
 				{
 					APIGroups: []string{""},
-					Resources: []string{
-						"pods",
-						"nodes",
-					},
-					Verbs: []string{
-						"get",
-						"list",
-						"watch",
-					},
-				},
-			}
-
-			return cr, nil
-		}
-	}
-}
-
-// AggregatedClusterRoleCreator returns a ClusterRole that can be aggregated by
-// other ClusterRoles, see the discussion in https://github.com/kubernetes-sigs/metrics-server/issues/411
-func AggregatedClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
-	return func() (string, reconciling.ClusterRoleCreator) {
-		return aggregatedMetricsReaderRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Labels = resources.BaseAppLabels(Name, nil)
-			cr.Labels["rbac.authorization.k8s.io/aggregate-to-admin"] = "true"
-			cr.Labels["rbac.authorization.k8s.io/aggregate-to-edit"] = "true"
-			cr.Labels["rbac.authorization.k8s.io/aggregate-to-view"] = "true"
-
-			cr.Rules = []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{"metrics.k8s.io"},
 					Resources: []string{
 						"pods",
 						"nodes",

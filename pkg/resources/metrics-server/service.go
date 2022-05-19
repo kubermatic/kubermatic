@@ -37,7 +37,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 				{
 					Port:       443,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(443),
+					TargetPort: intstr.FromString("https"),
 				},
 			}
 
