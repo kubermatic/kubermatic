@@ -84,82 +84,91 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 	tests := []struct {
 		cloudName           string
-		osName              string
+		osNames             []string
 		cni                 string
 		ipFamily            util.IPFamily
 		skipNodes           bool
 		skipHostNetworkPods bool
-		disabledReason      string
 	}{
 		{
-			cloudName:           "azure",
-			osName:              "centos",
+			cloudName: "azure",
+			osNames: []string{
+				//"centos", //  cilium agent crash
+				//"flatcar", // dhcpv6 bug
+				"rhel",
+				//"sles", // unsupported in kkp
+				"ubuntu",
+			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "fails due to https://github.com/kubermatic/kubermatic/issues/9222",
 		},
 		{
-			cloudName:           "azure",
-			osName:              "centos",
+			cloudName: "azure",
+			osNames: []string{
+				"centos",
+				//"flatcar", // dhcpv6 bug
+				//"rhel", // node local dns cache crashing
+				//"sles", // unsupported in kkp
+				"ubuntu",
+			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "fails -- needs debugging",
 		},
-		{
-			cloudName:           "azure",
-			osName:              "flatcar",
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-			disabledReason:      "fails due to https://github.com/kubermatic/kubermatic/issues/9798",
-		},
-		{
-			cloudName:           "azure",
-			osName:              "rhel",
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-			disabledReason:      "cilium-agent crashing fix in progress https://github.com/kubermatic/machine-controller/pull/1280",
-		},
-		{
-			cloudName:           "azure",
-			osName:              "sles",
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-			disabledReason:      "not supported",
-		},
-		{
-			cloudName:           "azure",
-			osName:              "ubuntu",
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-		},
+		//{
+		//	cloudName: "aws",
+		//	osNames: []string{
+		//		//"centos",
+		//		//"flatcar",
+		//		//"rhel",
+		//		//"sles",
+		//		"ubuntu",
+		//	},
+		//	cni:                 "canal",
+		//	ipFamily:            util.DualStack,
+		//	skipNodes:           false,
+		//	skipHostNetworkPods: false,
+		//},
+		//{
+		//	cloudName: "gcp",
+		//	osNames: []string{
+		//		//"centos",
+		//		//"flatcar",
+		//		//"rhel",
+		//		//"sles",
+		//		"ubuntu",
+		//	},
+		//	cni:                 "cilium",
+		//	ipFamily:            util.DualStack,
+		//	skipNodes:           false,
+		//	skipHostNetworkPods: false,
+		//},
+		//{
+		//	cloudName: "gcp",
+		//	osNames: []string{
+		//		//"centos",
+		//		//"flatcar",
+		//		//"rhel",
+		//		//"sles",
+		//		"ubuntu",
+		//	},
+		//	cni:                 "cilium",
+		//	ipFamily:            util.DualStack,
+		//	skipNodes:           false,
+		//	skipHostNetworkPods: false,
+		//},
 	}
 
 	var mu sync.Mutex
 
 	for _, test := range tests {
-		name := fmt.Sprintf("c-%s-%s-%s-%s", test.cloudName, test.osName, test.cni, test.ipFamily)
-
-		if test.disabledReason != "" {
-			t.Logf("test %q disabled because: %s", name, test.disabledReason)
-			continue
-		}
+		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
 
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
-		nodeSpec := cloud.NodeSpec()
-		osSpec := operatingSystems[test.osName]
 		clusterSpec := defaultClusterRequest()
 		cniSpec := cnis[test.cni]
 		netConfig := defaultClusterNetworkingConfig()
@@ -173,15 +182,13 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			clusterSpec := clusterSpec.WithName(name).
 				WithCloud(cloudSpec).
-				WithNode(nodeSpec).
-				WithOS(osSpec).
 				WithCNI(cniSpec).
 				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
 			spec := models.CreateClusterSpec(clusterSpec)
 
 			mu.Lock()
 			name := fmt.Sprintf("%s-%s", name, rand.String(4))
-			config, _, cleanup, err := createUsercluster(t, apicli, name, spec)
+			config, projectID, clusterID, cleanup, err := createUsercluster(t, apicli, name, spec)
 			mu.Unlock()
 			if err != nil {
 				respErr := new(project.CreateClusterV2Default)
@@ -200,19 +207,32 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				mu.Unlock()
 			}()
 
+			for _, osName := range test.osNames {
+				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
+					WithName(fmt.Sprintf("md-%s", osName)).
+					WithProjectID(projectID).
+					WithClusterID(clusterID).
+					WithOS(operatingSystems[osName]),
+				)
+				if err != nil {
+					t.Fatalf("failed to create machine deployment: %v", err)
+				}
+			}
+
 			userclusterClient, err := kubernetes.NewForConfig(config)
 			if err != nil {
 				t.Fatalf("failed to create usercluster client: %s", err)
 			}
 
 			t.Logf("waiting for nodes to come up")
-			_, err = checkNodeReadiness(t, userclusterClient)
+			err = checkNodeReadiness(t, userclusterClient, len(test.osNames))
 			if err != nil {
 				t.Fatalf("nodes never became ready: %v", err)
 			}
 
-			t.Logf("sleeping for 2m...")
-			time.Sleep(time.Minute * 2)
+			t.Logf("nodes ready")
+			t.Logf("sleeping for 4m...")
+			time.Sleep(time.Minute * 4)
 
 			err = waitForPods(t, userclusterClient, kubeSystem, "app", []string{
 				"coredns", "konnectivity-agent", "kube-proxy", "metrics-server",
@@ -294,11 +314,8 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) bool {
 	return allHealthy
 }
 
-func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset) (string, error) {
-	expectedNodes := 1
-	var nodeIP string
-
-	err := wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
+func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expectedNodes int) error {
+	return wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
 		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			t.Logf("failed to get nodes list: %s", err)
@@ -324,19 +341,11 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset) (string,
 			return false, nil
 		}
 
-		for _, addr := range nodes.Items[0].Status.Addresses {
-			if addr.Type == corev1.NodeExternalIP {
-				nodeIP = addr.Address
-				break
-			}
-		}
 		return true, nil
 	})
-
-	return nodeIP, err
 }
 
-func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, func(), error) {
+func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, string, func(), error) {
 	var teardowns []func()
 	cleanup := func() {
 		n := len(teardowns)
@@ -348,7 +357,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 	// create a project
 	proj, err := apicli.CreateProject(projectName)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", "", nil, err
 	}
 	teardowns = append(teardowns, func() {
 		err := apicli.DeleteProject(proj.ID)
@@ -365,7 +374,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 		HTTPClient: http.DefaultClient,
 	}, apicli.GetBearerToken())
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	cluster := resp.Payload
@@ -404,7 +413,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 		return true, nil
 	})
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(userconfig))
@@ -412,5 +421,27 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 		t.Fatalf("failed to build config: %s", err)
 	}
 
-	return config, cluster.ID, cleanup, nil
+	return config, proj.ID, cluster.ID, cleanup, nil
+}
+
+func createMachineDeployment(t *testing.T, apicli *utils.TestClient, params createMachineDeploymentParams) error {
+	mdParams := project.CreateMachineDeploymentParams(params)
+	return wait.Poll(30*time.Second, 2*time.Minute, func() (bool, error) {
+		_, err := apicli.GetKKPAPIClient().Project.CreateMachineDeployment(
+			&mdParams,
+			apicli.GetBearerToken())
+		if err != nil {
+			respErr := new(project.CreateMachineDeploymentDefault)
+			if errors.As(err, &respErr) {
+				errData, err := respErr.GetPayload().MarshalBinary()
+				if err != nil {
+					t.Log("failed to marshal error response")
+				}
+				t.Log(string(errData))
+			}
+			t.Logf("failed to create machine deployment: %v", err)
+			return false, nil
+		}
+		return true, nil
+	})
 }

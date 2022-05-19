@@ -1,8 +1,11 @@
 package dualstack
 
 import (
+	"context"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 	"k8s.io/utils/pointer"
+	"net/http"
 	"os"
 )
 
@@ -31,6 +34,66 @@ func (c clusterNetworkingConfig) WithProxyMode(proxyMode string) clusterNetworki
 	return c
 }
 
+type createMachineDeploymentParams project.CreateMachineDeploymentParams
+
+func defaultCreateMachineDeploymentParams() createMachineDeploymentParams {
+	md := project.CreateMachineDeploymentParams{
+		Body: &models.NodeDeployment{
+			Name: "name",
+			Spec: &models.NodeDeploymentSpec{
+				Replicas: pointer.Int32(1),
+				Template: &models.NodeSpec{
+					SSHUserName: "root",
+					Cloud: &models.NodeCloudSpec{
+						Azure: &models.AzureNodeSpec{
+							AssignAvailabilitySet: true,
+							AssignPublicIP:        true,
+							DataDiskSize:          int32(30),
+							OSDiskSize:            70,
+							Size:                  pointer.String("Standard_B2s"),
+						},
+					},
+					OperatingSystem: &models.OperatingSystemSpec{
+						Ubuntu: &models.UbuntuSpec{
+							DistUpgradeOnBoot: false,
+						},
+					},
+				},
+			},
+		},
+		ClusterID:  "clusterID",
+		ProjectID:  "projectID",
+		Context:    context.Background(),
+		HTTPClient: http.DefaultClient,
+	}
+	return createMachineDeploymentParams(md)
+}
+
+func (md createMachineDeploymentParams) WithName(name string) createMachineDeploymentParams {
+	md.Body.Name = name
+	return md
+}
+
+func (md createMachineDeploymentParams) WithClusterID(clusterID string) createMachineDeploymentParams {
+	md.ClusterID = clusterID
+	return md
+}
+
+func (md createMachineDeploymentParams) WithProjectID(projectID string) createMachineDeploymentParams {
+	md.ProjectID = projectID
+	return md
+}
+
+func (md createMachineDeploymentParams) WithOS(os models.OperatingSystemSpec) createMachineDeploymentParams {
+	md.Body.Spec.Template.OperatingSystem = &os
+	return md
+}
+
+func (md createMachineDeploymentParams) WithNodeSpec(nodeSpec models.NodeCloudSpec) createMachineDeploymentParams {
+	md.Body.Spec.Template.Cloud = &nodeSpec
+	return md
+}
+
 type createClusterRequest models.CreateClusterSpec
 
 func defaultClusterRequest() createClusterRequest {
@@ -57,30 +120,6 @@ func defaultClusterRequest() createClusterRequest {
 			ClusterNetwork: &netConfig,
 			Version:        "1.22.7",
 		},
-	}
-
-	clusterSpec.NodeDeployment = &models.NodeDeployment{
-		Spec: &models.NodeDeploymentSpec{
-			Replicas: pointer.Int32(1),
-			Template: &models.NodeSpec{
-				SSHUserName: "root",
-				Cloud: &models.NodeCloudSpec{
-					Azure: &models.AzureNodeSpec{
-						AssignAvailabilitySet: true,
-						AssignPublicIP:        true,
-						DataDiskSize:          int32(30),
-						OSDiskSize:            70,
-						Size:                  pointer.String("Standard_B2s"),
-					},
-				},
-				OperatingSystem: &models.OperatingSystemSpec{
-					Ubuntu: &models.UbuntuSpec{
-						DistUpgradeOnBoot: false,
-					},
-				},
-			},
-		},
-		Status: nil,
 	}
 
 	return createClusterRequest(clusterSpec)

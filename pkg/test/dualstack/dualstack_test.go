@@ -22,6 +22,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	v1 "k8s.io/api/apps/v1"
 	"strings"
 	"testing"
 	"time"
@@ -178,57 +179,35 @@ func validateEgressConnectivity(t *testing.T, userclusterClient *kubernetes.Clie
 	t.Log("validating", fmt.Sprintf("egress-validator-%d", ipVersion))
 	ns := "default"
 
-	pod, err := userclusterClient.CoreV1().Pods(ns).Create(context.Background(), egressValidatorPod(ipVersion), metav1.CreateOptions{})
+	ds, err := userclusterClient.AppsV1().DaemonSets(ns).Create(context.Background(), egressValidatorDaemonSet(ipVersion), metav1.CreateOptions{})
 	if err != nil {
-		t.Errorf("failed to create pod: %v", err)
+		t.Errorf("failed to create ds: %v", err)
 		return
 	}
 
 	defer func() {
-		err := userclusterClient.CoreV1().Pods(ns).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+		err := userclusterClient.AppsV1().DaemonSets(ns).Delete(context.Background(), ds.Name, metav1.DeleteOptions{})
 		if err != nil {
 			t.Errorf("failed to cleanup: %v", err)
 		}
 	}()
 
 	err = wait.Poll(10*time.Second, 2*time.Minute, func() (bool, error) {
-		p, err := userclusterClient.CoreV1().Pods(ns).Get(context.Background(), pod.Name, metav1.GetOptions{})
+		p, err := userclusterClient.AppsV1().DaemonSets(ns).Get(context.Background(), ds.Name, metav1.GetOptions{})
 		if err != nil {
-			t.Logf("failed to get pod: %v", err)
+			t.Logf("failed to get ds: %v", err)
 			return false, nil
 		}
-
-		if err := checkPodHealth(p); err != nil {
-			t.Logf("pod not healthy: %v", err)
+		if p.Status.NumberAvailable != p.Status.DesiredNumberScheduled {
+			t.Logf("ds not healthy")
 			return false, nil
 		}
-
 		return true, nil
 	})
 
 	if err != nil {
-		t.Errorf("pod never became healthy: %v", err)
+		t.Errorf("ds never became healthy: %v", err)
 	}
-}
-
-func checkPodHealth(pod *corev1.Pod) error {
-	if pod.Status.Phase != corev1.PodRunning {
-		return fmt.Errorf("pod %q has phase not running: %s", pod.Name, pod.Status.Phase)
-	}
-
-	for _, c := range pod.Status.Conditions {
-		if c.Type == corev1.PodReady {
-			if c.Status != corev1.ConditionTrue {
-				return fmt.Errorf("pod %q not ready", pod.Name)
-			}
-		} else if c.Type == corev1.ContainersReady {
-			if c.Status != corev1.ConditionTrue {
-				return fmt.Errorf("container not ready for pod %q", pod.Name)
-			}
-		}
-	}
-
-	return nil
 }
 
 func validate(t *testing.T, name string, ipFamily util.IPFamily, addrs []string) {
@@ -272,6 +251,30 @@ func all(ipFamily util.IPFamily, addrs []string) bool {
 	return true
 }
 
+func egressValidatorDaemonSet(ipVersion int) *v1.DaemonSet {
+	pod := egressValidatorPod(ipVersion)
+	return &v1.DaemonSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DaemonSet",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("egress-validator-%d", ipVersion),
+		},
+		Spec: v1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"name": fmt.Sprintf("egress-validator-%d", ipVersion),
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: pod.ObjectMeta,
+				Spec:       pod.Spec,
+			},
+		},
+	}
+}
+
 func egressValidatorPod(ipVersion int) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
@@ -280,10 +283,11 @@ func egressValidatorPod(ipVersion int) *corev1.Pod {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("egress-validator-%d", ipVersion),
+			Labels: map[string]string{
+				"name": fmt.Sprintf("egress-validator-%d", ipVersion),
+			},
 		},
 		Spec: corev1.PodSpec{
-			Volumes:        nil,
-			InitContainers: nil,
 			Containers: []corev1.Container{
 				{
 					Name:  fmt.Sprintf("egress-validator-%d-container", ipVersion),
