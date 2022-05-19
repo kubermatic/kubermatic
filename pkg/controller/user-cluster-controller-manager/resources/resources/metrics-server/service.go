@@ -36,9 +36,10 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 			se.Spec.Type = corev1.ServiceTypeClusterIP
 			se.Spec.Ports = []corev1.ServicePort{
 				{
+					Name:       "https",
 					Port:       443,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(443),
+					TargetPort: intstr.FromString("https"),
 				},
 			}
 

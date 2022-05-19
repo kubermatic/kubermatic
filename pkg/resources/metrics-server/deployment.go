@@ -31,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -54,7 +55,7 @@ const (
 	ServingCertSecretName  = "metrics-server-serving-cert"
 	servingCertMountFolder = "/etc/serving-cert"
 
-	tag = "v0.5.0"
+	tag = "v0.6.1"
 )
 
 // metricsServerData is the data needed to construct the metrics-server components.
@@ -119,12 +120,38 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 						"--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--kubelet-insecure-tls",
 						"--kubelet-use-node-status-port",
+						"--secure-port", "4443",
 						"--metric-resolution", "15s",
 						// We use the same as the API server as we use the same dnat-controller
 						"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 						"--v", "1",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,
+					},
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 4443,
+							Name:          "https",
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					// Do not define a readiness probe, as the metrics-server will only get ready
+					// when it has scraped a node or pod at least once, which might never happen in
+					// clusters without nodes. An unready metrics-server would prevent the
+					// SeedResourcesUpToDate condition to become true.
+					// ReadinessProbe: nil,
+					LivenessProbe: &corev1.Probe{
+						FailureThreshold: 3,
+						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   1,
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/livez",
+								Port:   intstr.FromString("https"),
+								Scheme: corev1.URISchemeHTTPS,
+							},
+						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -137,6 +164,12 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 							MountPath: servingCertMountFolder,
 							ReadOnly:  true,
 						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						RunAsNonRoot:             resources.Bool(true),
+						RunAsUser:                resources.Int64(1000),
 					},
 				},
 			}

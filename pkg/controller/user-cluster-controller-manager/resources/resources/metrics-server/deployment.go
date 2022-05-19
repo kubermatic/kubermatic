@@ -36,8 +36,8 @@ var (
 	defResourceRequirements = map[string]*corev1.ResourceRequirements{
 		resources.MetricsServerDeploymentName: {
 			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("100Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("200Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("512Mi"),
@@ -52,7 +52,7 @@ const (
 	servingCertMountFolder = "/etc/serving-cert"
 
 	imageName = "metrics-server/metrics-server"
-	imageTag  = "v0.5.0"
+	imageTag  = "v0.6.1"
 )
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics server.
@@ -96,11 +96,37 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 					Args: []string{
 						"--kubelet-insecure-tls",
 						"--kubelet-use-node-status-port",
+						"--secure-port", "4443",
 						"--metric-resolution", "15s",
 						"--kubelet-preferred-address-types", "InternalIP,ExternalIP,Hostname",
 						"--v", "1",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,
+					},
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 4443,
+							Name:          "https",
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					// Do not define a readiness probe, as the metrics-server will only get ready
+					// when it has scraped a node or pod at least once, which might never happen in
+					// clusters without nodes. An unready metrics-server would prevent the
+					// SeedResourcesUpToDate condition to become true.
+					// ReadinessProbe: nil,
+					LivenessProbe: &corev1.Probe{
+						FailureThreshold: 3,
+						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   1,
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/livez",
+								Port:   intstr.FromString("https"),
+								Scheme: corev1.URISchemeHTTPS,
+							},
+						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -108,6 +134,12 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 							MountPath: servingCertMountFolder,
 							ReadOnly:  true,
 						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						RunAsNonRoot:             resources.Bool(true),
+						RunAsUser:                resources.Int64(1000),
 					},
 				},
 			}
@@ -117,6 +149,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.MetricsServerServiceAccountName
+			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			dep.Spec.Template.Spec.Affinity = &corev1.Affinity{
 				PodAntiAffinity: &corev1.PodAntiAffinity{
