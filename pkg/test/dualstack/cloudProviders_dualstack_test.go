@@ -124,7 +124,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "aws",
 			osNames: []string{
 				// "centos",
-				// "flatcar",
+				// "flatcar", //
 				"rhel",
 				// "sles", // unsupported in kkp
 				"ubuntu",
@@ -137,9 +137,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				// "centos",
+				"centos",
 				// "flatcar",
-				// "rhel",
+				"rhel",
 				// "sles",
 				"ubuntu",
 			},
@@ -155,7 +155,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				// "flatcar",
 				// "rhel",
 				// "sles",
-				"ubuntu",
+				"ubuntu", //  others are unsupported in kkp
 			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
@@ -164,12 +164,12 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		},
 		{
 			cloudName: "gcp",
-			osNames:   []string{
+			osNames: []string{
 				// "centos",
 				// "flatcar",
 				// "rhel",
 				// "sles",
-				// "ubuntu",
+				"ubuntu", //  others are unsupported in kkp
 			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,

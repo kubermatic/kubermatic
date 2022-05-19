@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: egress-validator-4
+  labels:
+    name: egress-validator-4
+spec:
+  selector:
+    matchLabels:
+      name: egress-validator-4
+  template:
+    metadata:
+      labels:
+        name: egress-validator-4
+    spec:
+      hostNetwork: false
+      containers:
+        - name: egress-validator-4-container
+          image: docker.io/byrnedo/alpine-curl:0.1.8
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/ash
+            - -c
+            - sleep 1000000000
+          readinessProbe:
+            timeoutSeconds: 7
+            exec:
+              command:
+                - curl
+                - -sS
+                - --ipv4
+                - --fail
+                - --connect-timeout
+                - "5"
+                - -o
+                - /dev/null
+                - v4.ident.me
+          livenessProbe:
+            timeoutSeconds: 7
+            exec:
+              command:
+                - curl
+                - -sS
+                - --ipv4
+                - --fail
+                - --connect-timeout
+                - "5"
+                - -o
+                - /dev/null
+                - v4.ident.me
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: egress-validator-6
+  labels:
+    name: egress-validator-6
+spec:
+  selector:
+    matchLabels:
+      name: egress-validator-6
+  template:
+    metadata:
+      labels:
+        name: egress-validator-6
+    spec:
+      hostNetwork: false
+      containers:
+        - name: egress-validator-6-container
+          image: docker.io/byrnedo/alpine-curl:0.1.8
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/ash
+            - -c
+            - sleep 1000000000
+          readinessProbe:
+            timeoutSeconds: 7
+            exec:
+              command:
+                - curl
+                - -sS
+                - --ipv6
+                - --fail
+                - --connect-timeout
+                - "5"
+                - -o
+                - /dev/null
+                - v6.ident.me
+          livenessProbe:
+            timeoutSeconds: 7
+            exec:
+              command:
+                - curl
+                - -sS
+                - --ipv6
+                - --fail
+                - --connect-timeout
+                - "5"
+                - -o
+                - /dev/null
+                - v6.ident.me
