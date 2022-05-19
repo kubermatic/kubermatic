@@ -50,11 +50,22 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/metrics-server","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--kubelet-insecure-tls","--kubelet-use-node-status-port","--metric-resolution","15s","--kubelet-preferred-address-types","ExternalIP,InternalIP","--v","1","--tls-cert-file","/etc/serving-cert/serving.crt","--tls-private-key-file","/etc/serving-cert/serving.key"]}'
+        - '{"command":"/metrics-server","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--kubelet-insecure-tls","--kubelet-use-node-status-port","--secure-port","4443","--metric-resolution","15s","--kubelet-preferred-address-types","ExternalIP,InternalIP","--v","1","--tls-cert-file","/etc/serving-cert/serving.crt","--tls-private-key-file","/etc/serving-cert/serving.key"]}'
         command:
         - /http-prober-bin/http-prober
-        image: k8s.gcr.io/metrics-server/metrics-server:v0.5.0
+        image: k8s.gcr.io/metrics-server/metrics-server:v0.6.1
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /livez
+            port: https
+            scheme: HTTPS
+          periodSeconds: 10
         name: metrics-server
+        ports:
+        - containerPort: 4443
+          name: https
+          protocol: TCP
         resources:
           limits:
             cpu: "1"
@@ -62,6 +73,11 @@ spec:
           requests:
             cpu: 100m
             memory: 200Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: metrics-server
