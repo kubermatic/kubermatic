@@ -82,21 +82,23 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 	apicli := utils.NewTestClient(token, t)
 
-	tests := []struct {
+	type testCase struct {
 		cloudName           string
 		osNames             []string
 		cni                 string
 		ipFamily            util.IPFamily
 		skipNodes           bool
 		skipHostNetworkPods bool
-	}{
+	}
+
+	tests := []testCase{
 		{
 			cloudName: "azure",
 			osNames: []string{
-				//"centos", //  cilium agent crash
-				//"flatcar", // dhcpv6 bug
+				// "centos", // cilium agent crash
+				// "flatcar", // dhcpv6 bug
 				"rhel",
-				//"sles", // unsupported in kkp
+				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "cilium",
@@ -108,9 +110,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			cloudName: "azure",
 			osNames: []string{
 				"centos",
-				//"flatcar", // dhcpv6 bug
-				//"rhel", // node local dns cache crashing
-				//"sles", // unsupported in kkp
+				// "flatcar", // dhcpv6 bug
+				// "rhel", // node local dns cache crashing
+				// "sles", // unsupported in kkp
 				"ubuntu",
 			},
 			cni:                 "canal",
@@ -118,48 +120,62 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
-		//{
-		//	cloudName: "aws",
-		//	osNames: []string{
-		//		//"centos",
-		//		//"flatcar",
-		//		//"rhel",
-		//		//"sles",
-		//		"ubuntu",
-		//	},
-		//	cni:                 "canal",
-		//	ipFamily:            util.DualStack,
-		//	skipNodes:           false,
-		//	skipHostNetworkPods: false,
-		//},
-		//{
-		//	cloudName: "gcp",
-		//	osNames: []string{
-		//		//"centos",
-		//		//"flatcar",
-		//		//"rhel",
-		//		//"sles",
-		//		"ubuntu",
-		//	},
-		//	cni:                 "cilium",
-		//	ipFamily:            util.DualStack,
-		//	skipNodes:           false,
-		//	skipHostNetworkPods: false,
-		//},
-		//{
-		//	cloudName: "gcp",
-		//	osNames: []string{
-		//		//"centos",
-		//		//"flatcar",
-		//		//"rhel",
-		//		//"sles",
-		//		"ubuntu",
-		//	},
-		//	cni:                 "cilium",
-		//	ipFamily:            util.DualStack,
-		//	skipNodes:           false,
-		//	skipHostNetworkPods: false,
-		//},
+		{
+			cloudName: "aws",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				"rhel",
+				// "sles", // unsupported in kkp
+				"ubuntu",
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "aws",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "gcp",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu",
+			},
+			cni:                 "cilium",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "gcp",
+			osNames:   []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				// "ubuntu",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
 	}
 
 	var mu sync.Mutex
