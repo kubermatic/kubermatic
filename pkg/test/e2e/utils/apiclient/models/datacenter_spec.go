@@ -30,6 +30,9 @@ type DatacenterSpec struct {
 	// ignoring cluster-specific settings
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
 
+	// IPv6Enabled is a flag to indicate if the ipv6 is enabled for the datacenter.
+	IPV6Enabled bool `json:"ipv6Enabled,omitempty"`
+
 	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
 	// It is used for informational purposes.
 	Location string `json:"location,omitempty"`
