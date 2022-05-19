@@ -2,11 +2,13 @@ package dualstack
 
 import (
 	"context"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
-	"k8s.io/utils/pointer"
 	"net/http"
 	"os"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+
+	"k8s.io/utils/pointer"
 )
 
 type clusterNetworkingConfig models.ClusterNetworkingConfig
@@ -43,21 +45,9 @@ func defaultCreateMachineDeploymentParams() createMachineDeploymentParams {
 			Spec: &models.NodeDeploymentSpec{
 				Replicas: pointer.Int32(1),
 				Template: &models.NodeSpec{
-					SSHUserName: "root",
-					Cloud: &models.NodeCloudSpec{
-						Azure: &models.AzureNodeSpec{
-							AssignAvailabilitySet: true,
-							AssignPublicIP:        true,
-							DataDiskSize:          int32(30),
-							OSDiskSize:            70,
-							Size:                  pointer.String("Standard_B2s"),
-						},
-					},
-					OperatingSystem: &models.OperatingSystemSpec{
-						Ubuntu: &models.UbuntuSpec{
-							DistUpgradeOnBoot: false,
-						},
-					},
+					SSHUserName:     "root",
+					Cloud:           nil, // must fill in later
+					OperatingSystem: nil, // must fill in later
 				},
 			},
 		},

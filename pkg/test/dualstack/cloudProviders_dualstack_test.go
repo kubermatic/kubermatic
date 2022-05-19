@@ -212,7 +212,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithProjectID(projectID).
 					WithClusterID(clusterID).
-					WithOS(operatingSystems[osName]),
+					WithOS(operatingSystems[osName]).
+					WithNodeSpec(cloud.NodeSpec()),
 				)
 				if err != nil {
 					t.Fatalf("failed to create machine deployment: %v", err)

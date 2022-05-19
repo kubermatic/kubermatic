@@ -22,13 +22,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	v1 "k8s.io/api/apps/v1"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -251,9 +251,9 @@ func all(ipFamily util.IPFamily, addrs []string) bool {
 	return true
 }
 
-func egressValidatorDaemonSet(ipVersion int) *v1.DaemonSet {
+func egressValidatorDaemonSet(ipVersion int) *appsv1.DaemonSet {
 	pod := egressValidatorPod(ipVersion)
-	return &v1.DaemonSet{
+	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
@@ -261,7 +261,7 @@ func egressValidatorDaemonSet(ipVersion int) *v1.DaemonSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("egress-validator-%d", ipVersion),
 		},
-		Spec: v1.DaemonSetSpec{
+		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"name": fmt.Sprintf("egress-validator-%d", ipVersion),
