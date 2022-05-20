@@ -56,11 +56,6 @@ source <(k completion bash )
 source <(k completion bash | sed s/kubectl/k/g)
 EOF
 
-# Load kind image
-echodate "Loading kindest image"
-docker load --input /kindest.tar
-echodate "Loaded kindest image"
-
 # Create kind cluster
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
@@ -70,6 +65,19 @@ beforeKindCreate=$(nowms)
 export KIND_NODE_VERSION=v1.21.1
 kind create cluster --name "$KIND_CLUSTER_NAME" --image=kindest/node:$KIND_NODE_VERSION
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
+
+# This is required if the kindest version matches the user cluster version.
+# The kindest image comes with preloaded control plane images, however,
+# the preloaded kube-controller-manager image doesn't have cloud providers
+# built-in. This is done intentionally in order to reduce the kindest image
+# size because kind is used only for local clusters.
+# When the kindest version matches the user cluster version, KKP will use the
+# preloaded kube-controller-manager image instead of pulling the image from
+# k8s.gcr.io. This will cause the kube-controller-manager to crashloop because
+# there are no cloud providers in that preloaded image.
+# As a solution, we remove the preloaded image after starting the kind
+# cluster, which will force KKP to pull the correct image.
+docker exec "kubermatic-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi k8s.gcr.io/kube-controller-manager:{}" || true
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as

@@ -539,7 +539,7 @@ spec:
                           type: string
                         provider:
                           description: Provider to which to apply the compatibility
-                            check
+                            check. Empty string matches all providers
                           enum:
                           - digitalocean
                           - hetzner
