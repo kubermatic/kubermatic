@@ -22,12 +22,23 @@ import (
 
 // These variables get fed by ldflags during compilation.
 var (
-	// gitHash is a magic variable containing the git commit hash
-	// of the current (as in currently executing) kubermatic api.
-	gitHash string
+	// gitVersion is a magic variable containing the git commit identifier
+	// (usually the output of `git describe`, i.e. not necessarily a
+	// static tag name); for a tagged KKP release, this value is identical
+	// to kubermaticDockerTag, for untagged builds this is the `git describe`
+	// output.
+	// Importantly, this value will only ever go up, even for untagged builds,
+	// but is not monotone (gaps can occur, this can go from v2.20.0-1234-d6aef3
+	// to v2.34.0-912-dd79178e to v3.0.1).
+	// Also this value does not necessarily reflect the current release branch,
+	// as releases are taggedo on the release branch and on those tags are not
+	// visible from the master branch.
+	gitVersion string
 
 	// kubermaticDockerTag is a magic variable containing the tag / git commit hash
-	// of the kubermatic Docker image to deploy.
+	// of the kubermatic Docker image to deploy. For tagged releases this is
+	// identical to gitVersion, but for nightly builds, this is identical to the
+	// gitVersion.
 	kubermaticDockerTag string
 
 	// uiDockerTag is a magic variable containing the tag / git commit hash
@@ -46,7 +57,7 @@ type Versions struct {
 
 func NewDefaultVersions() Versions {
 	return Versions{
-		KubermaticCommit:  gitHash,
+		KubermaticCommit:  gitVersion,
 		Kubermatic:        kubermaticDockerTag,
 		UI:                uiDockerTag,
 		VPA:               "0.10.0",
@@ -57,7 +68,7 @@ func NewDefaultVersions() Versions {
 
 func NewFakeVersions() Versions {
 	return Versions{
-		KubermaticCommit:  "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		KubermaticCommit:  "v0.0.0-420-test",
 		Kubermatic:        "v0.0.0-test",
 		UI:                "v1.1.1-test",
 		VPA:               "0.5.0",

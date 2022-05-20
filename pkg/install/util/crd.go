@@ -48,7 +48,7 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 			// can react to the changed CRDs (the seed-operator will do the same when
 			// updating CRDs on seed clusters)
 			labels := crd.GetLabels()
-			labels[resources.VersionLabel] = versions.Kubermatic
+			labels[resources.VersionLabel] = versions.KubermaticCommit
 			crd.SetLabels(labels)
 		}
 

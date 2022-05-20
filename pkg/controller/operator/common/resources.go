@@ -116,7 +116,7 @@ func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, versions kubermat
 			// inject the current KKP version, so the operator and other controllers
 			// can react to the changed CRDs (the KKP installer does the same when
 			// updating CRDs on the master cluster)
-			obj.Labels[resources.VersionLabel] = versions.Kubermatic
+			obj.Labels[resources.VersionLabel] = versions.KubermaticCommit
 
 			if crd.Spec.Conversion == nil {
 				// reconcile fails if conversion is not set as it's set by default to None
