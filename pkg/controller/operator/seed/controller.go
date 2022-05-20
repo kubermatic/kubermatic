@@ -36,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -253,6 +254,11 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	// namespaces are not managed by the operator and so can use neither namespacePredicate
 	// nor ManagedByPredicate, but still need to get their labels reconciled
 	if err := watch(&corev1.Namespace{}, predicateutil.ByName(namespace)); err != nil {
+		return err
+	}
+
+	// CRDs are not owned by KKP, but still need to be updated accordingly
+	if err := watch(&apiextensionsv1.CustomResourceDefinition{}); err != nil {
 		return err
 	}
 
