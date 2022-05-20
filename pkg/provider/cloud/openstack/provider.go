@@ -754,7 +754,31 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
-func (os *Provider) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	if oldSpec.Openstack == nil || newSpec.Openstack == nil {
+		return errors.New("'openstack' spec is empty")
+	}
+
+	// we validate that a couple of resources are not changed.
+	// the exception being the provider itself updating it in case the field
+	// was left empty to dynamically generate resources.
+
+	if oldSpec.Openstack.Network != "" && oldSpec.Openstack.Network != newSpec.Openstack.Network {
+		return fmt.Errorf("updating OpenStack network is not supported (was %s, updated to %s)", oldSpec.Openstack.Network, newSpec.Openstack.Network)
+	}
+
+	if oldSpec.Openstack.SubnetID != "" && oldSpec.Openstack.SubnetID != newSpec.Openstack.SubnetID {
+		return fmt.Errorf("updating OpenStack subnet ID is not supported (was %s, updated to %s)", oldSpec.Openstack.SubnetID, newSpec.Openstack.SubnetID)
+	}
+
+	if oldSpec.Openstack.RouterID != "" && oldSpec.Openstack.RouterID != newSpec.Openstack.RouterID {
+		return fmt.Errorf("updating OpenStack router ID is not supported (was %s, updated to %s)", oldSpec.Openstack.RouterID, newSpec.Openstack.RouterID)
+	}
+
+	if oldSpec.Openstack.SecurityGroups != "" && oldSpec.Openstack.SecurityGroups != newSpec.Openstack.SecurityGroups {
+		return fmt.Errorf("updating OpenStack security groups is not supported (was %s, updated to %s)", oldSpec.Openstack.SecurityGroups, newSpec.Openstack.SecurityGroups)
+	}
+
 	return nil
 }
 
