@@ -31,13 +31,17 @@ type HelmCredentials struct {
 }
 
 type HelmSource struct {
-	// URl of the helm repository
+	// URl of the helm repository.
+	// It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
+	// +kubebuilder:validation:MinLength=1
 	URL string `json:"url"`
 
 	// Name of the Chart
+	// +kubebuilder:validation:MinLength=1
 	ChartName string `json:"chartName"`
 
 	// Version of the Chart
+	// +kubebuilder:validation:MinLength=1
 	ChartVersion string `json:"chartVersion"`
 
 	// Credentials hold the ref to the secret with helm credentials
@@ -70,12 +74,33 @@ type GitCredentials struct {
 	SSHKey *GlobalSecretKeySelector `json:"sshKey,omitempty"`
 }
 
+type GitReference struct {
+	// Branch to checkout. Only the last commit of the branch will be checkout in oder to reduce tha amount of data to downlod.
+	// +optional
+	Branch string `json:"branch,omitempty"`
+
+	// Commit SHA to check out.
+	//
+	// It can be used in conjunction with branch to to avoid to clone the all repository. The commit must blelong to this branch.
+	// +kubebuilder:validation:Pattern:=`^[a-f0-9]{40}$`
+	// +kubebuilder:validation:Type=string
+	// +optional
+	Commit string `json:"commit,omitempty"`
+
+	// Tag to check out.
+	// It can not be used in conjection with commit or branch.
+	// +kubebuilder:validation:Type=string
+	// +optional
+	Tag string `json:"tag,omitempty"`
+}
+
 type GitSource struct {
 	// URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
+	// +kubebuilder:validation:MinLength=1
 	Remote string `json:"remote"`
 
-	// Git reference to check out: can be a branch, tag, or sha1
-	Ref string `json:"ref"`
+	// Git reference to check out
+	Ref GitReference `json:"ref"`
 
 	// Path of the "source" in the repository. default is repository root
 	Path string `json:"path,omitempty"`
