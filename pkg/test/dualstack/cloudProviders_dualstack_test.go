@@ -137,9 +137,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				"centos",
+				//"centos", // works
 				// "flatcar",
-				"rhel",
+				//"rhel", // works
 				// "sles",
 				"ubuntu",
 			},
