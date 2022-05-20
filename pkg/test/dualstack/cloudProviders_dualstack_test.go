@@ -137,9 +137,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				// "centos", // works when instance is crated with ssh keypair
+				// "centos", // works when instance is created with ssh keypair
 				// "flatcar",
-				// "rhel", // works when instance is crated with ssh keypair
+				// "rhel", // works when instance is created with ssh keypair
 				// "sles",
 				"ubuntu",
 			},
