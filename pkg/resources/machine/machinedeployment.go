@@ -154,19 +154,19 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 	}
 
 	switch {
-	case nd.Spec.Template.Cloud.AWS != nil:
+	case nd.Spec.Template.Cloud.AWS != nil && dc.Spec.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
 		cloudExt, err = getAWSProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Azure != nil:
+	case nd.Spec.Template.Cloud.Azure != nil && dc.Spec.Azure != nil:
 		config.CloudProvider = providerconfig.CloudProviderAzure
 		cloudExt, err = getAzureProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.VSphere != nil:
+	case nd.Spec.Template.Cloud.VSphere != nil && dc.Spec.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
 
 		// We use OverwriteCloudConfig for VSphere to ensure we always use the credentials
@@ -181,7 +181,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Openstack != nil:
+	case nd.Spec.Template.Cloud.Openstack != nil && dc.Spec.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
 		if err := validation.ValidateCreateNodeSpec(c, &nd.Spec.Template, dc); err != nil {
 			return nil, err
@@ -191,56 +191,56 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Hetzner != nil:
+	case nd.Spec.Template.Cloud.Hetzner != nil && dc.Spec.Hetzner != nil:
 		config.CloudProvider = providerconfig.CloudProviderHetzner
 		cloudExt, err = getHetznerProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Digitalocean != nil:
+	case nd.Spec.Template.Cloud.Digitalocean != nil && dc.Spec.Digitalocean != nil:
 		config.CloudProvider = providerconfig.CloudProviderDigitalocean
 		cloudExt, err = getDigitaloceanProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Packet != nil:
+	case nd.Spec.Template.Cloud.Packet != nil && dc.Spec.Packet != nil:
 		config.CloudProvider = providerconfig.CloudProviderPacket
 		cloudExt, err = getPacketProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.GCP != nil:
+	case nd.Spec.Template.Cloud.GCP != nil && dc.Spec.GCP != nil:
 		config.CloudProvider = providerconfig.CloudProviderGoogle
 		cloudExt, err = getGCPProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Kubevirt != nil:
+	case nd.Spec.Template.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil:
 		config.CloudProvider = providerconfig.CloudProviderKubeVirt
 		cloudExt, err = getKubevirtProviderSpec(nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Alibaba != nil:
+	case nd.Spec.Template.Cloud.Alibaba != nil && dc.Spec.Alibaba != nil:
 		config.CloudProvider = providerconfig.CloudProviderAlibaba
 		cloudExt, err = getAlibabaProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Anexia != nil:
+	case nd.Spec.Template.Cloud.Anexia != nil && dc.Spec.Anexia != nil:
 		config.CloudProvider = providerconfig.CloudProviderAnexia
 		cloudExt, err = getAnexiaProviderSpec(nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Nutanix != nil:
+	case nd.Spec.Template.Cloud.Nutanix != nil && dc.Spec.Nutanix != nil:
 		config.CloudProvider = providerconfig.CloudProviderNutanix
 		cloudExt, err = getNutanixProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
 	default:
-		return nil, errors.New("unknown cloud provider")
+		return nil, errors.New("unknown cloud provider or cloud provider mismatch between node and datacenter")
 	}
 	config.CloudProviderSpec = *cloudExt
 
