@@ -137,9 +137,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		{
 			cloudName: "aws",
 			osNames: []string{
-				// "centos", // works
+				// "centos", // works when instance is crated with ssh keypair
 				// "flatcar",
-				// "rhel", // works
+				// "rhel", // works when instance is crated with ssh keypair
 				// "sles",
 				"ubuntu",
 			},
@@ -181,8 +181,8 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	var mu sync.Mutex
 
 	for _, test := range tests {
+		test := test
 		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
-
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
 		clusterSpec := defaultClusterRequest()
@@ -196,6 +196,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		}
 
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			clusterSpec := clusterSpec.WithName(name).
 				WithCloud(cloudSpec).
 				WithCNI(cniSpec).
