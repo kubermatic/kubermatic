@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	packetInstanceType = "t1.small.x86"
+	packetInstanceType = "c3.small.x86"
 	packetDatacenter   = "packet-ewr1"
 )
 
