@@ -53,8 +53,10 @@ var operatingSystems = map[string]models.OperatingSystemSpec{
 	"ubuntu":  ubuntu(),
 }
 
-var cloudProviders = map[string]cloudProvider{
+var cloudProviders = map[string]clusterSpec{
 	"azure": azure{},
+	"gcp":   gcp{},
+	"aws":   aws{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
@@ -62,12 +64,11 @@ var cnis = map[string]models.CNIPluginSettings{
 	"canal":  canal(),
 }
 
+// TestCloudClusterIPFamily creates clusters and runs dualstack tests against them.
 func TestCloudClusterIPFamily(t *testing.T) {
 	// export KUBERMATIC_API_ENDPOINT=https://dev.kubermatic.io
 	// export KKP_API_TOKEN=<steal token>
 	token := os.Getenv("KKP_API_TOKEN")
-
-	_ = cnis
 
 	if token == "" {
 		var err error
@@ -81,64 +82,96 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 	apicli := utils.NewTestClient(token, t)
 
-	tests := []struct {
+	type testCase struct {
 		cloudName           string
-		osName              string
+		osNames             []string
 		cni                 string
 		ipFamily            util.IPFamily
 		skipNodes           bool
 		skipHostNetworkPods bool
-		disabledReason      string
-	}{
+	}
+
+	tests := []testCase{
 		{
-			cloudName:           "azure",
-			osName:              "centos",
+			cloudName: "azure",
+			osNames: []string{
+				// "centos", // cilium agent crash
+				// "flatcar", // dhcpv6 bug
+				"rhel",
+				// "sles", // unsupported in kkp
+				"ubuntu",
+			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "fails due to https://github.com/kubermatic/kubermatic/issues/9222",
 		},
 		{
-			cloudName:           "azure",
-			osName:              "centos",
+			cloudName: "azure",
+			osNames: []string{
+				"centos",
+				// "flatcar", // dhcpv6 bug
+				// "rhel", // node local dns cache crashing
+				// "sles", // unsupported in kkp
+				"ubuntu",
+			},
 			cni:                 "canal",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "fails -- needs debugging",
 		},
 		{
-			cloudName:           "azure",
-			osName:              "flatcar",
+			cloudName: "aws",
+			osNames: []string{
+				// "centos",
+				// "flatcar", //
+				"rhel",
+				// "sles", // unsupported in kkp
+				"ubuntu",
+			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "fails due to https://github.com/kubermatic/kubermatic/issues/9798",
 		},
 		{
-			cloudName:           "azure",
-			osName:              "rhel",
+			cloudName: "aws",
+			osNames: []string{
+				// "centos", // works when instance is created with ssh keypair
+				// "flatcar",
+				// "rhel", // works when instance is created with ssh keypair
+				// "sles",
+				"ubuntu",
+			},
+			cni:                 "canal",
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudName: "gcp",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu", //  others are unsupported in kkp
+			},
 			cni:                 "cilium",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
-			disabledReason:      "cilium-agent crashing fix in progress https://github.com/kubermatic/machine-controller/pull/1280",
 		},
 		{
-			cloudName:           "azure",
-			osName:              "sles",
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-			disabledReason:      "not supported",
-		},
-		{
-			cloudName:           "azure",
-			osName:              "ubuntu",
-			cni:                 "cilium",
+			cloudName: "gcp",
+			osNames: []string{
+				// "centos",
+				// "flatcar",
+				// "rhel",
+				// "sles",
+				"ubuntu", //  others are unsupported in kkp
+			},
+			cni:                 "canal",
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
@@ -148,29 +181,31 @@ func TestCloudClusterIPFamily(t *testing.T) {
 	var mu sync.Mutex
 
 	for _, test := range tests {
-		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.osName, test.ipFamily)
-
-		if test.disabledReason != "" {
-			t.Logf("test %q disabled because: %s", name, test.disabledReason)
-			continue
-		}
-
+		test := test
+		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
 		cloud := cloudProviders[test.cloudName]
 		cloudSpec := cloud.CloudSpec()
-		nodeSpec := cloud.NodeSpec()
-		osSpec := operatingSystems[test.osName]
 		clusterSpec := defaultClusterRequest()
+		cniSpec := cnis[test.cni]
+		netConfig := defaultClusterNetworkingConfig()
+		switch test.cni {
+		case "canal":
+			netConfig = netConfig.WithProxyMode("ipvs")
+		case "cilium":
+			netConfig = netConfig.WithProxyMode("ebpf")
+		}
 
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			clusterSpec := clusterSpec.WithName(name).
 				WithCloud(cloudSpec).
-				WithNode(nodeSpec).
-				WithOS(osSpec)
+				WithCNI(cniSpec).
+				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
 			spec := models.CreateClusterSpec(clusterSpec)
 
 			mu.Lock()
 			name := fmt.Sprintf("%s-%s", name, rand.String(4))
-			config, _, cleanup, err := createUsercluster(t, apicli, name, spec)
+			config, projectID, clusterID, cleanup, err := createUsercluster(t, apicli, name, spec)
 			mu.Unlock()
 			if err != nil {
 				respErr := new(project.CreateClusterV2Default)
@@ -189,19 +224,33 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				mu.Unlock()
 			}()
 
+			for _, osName := range test.osNames {
+				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
+					WithName(fmt.Sprintf("md-%s", osName)).
+					WithProjectID(projectID).
+					WithClusterID(clusterID).
+					WithOS(operatingSystems[osName]).
+					WithNodeSpec(cloud.NodeSpec()),
+				)
+				if err != nil {
+					t.Fatalf("failed to create machine deployment: %v", err)
+				}
+			}
+
 			userclusterClient, err := kubernetes.NewForConfig(config)
 			if err != nil {
 				t.Fatalf("failed to create usercluster client: %s", err)
 			}
 
 			t.Logf("waiting for nodes to come up")
-			_, err = checkNodeReadiness(t, userclusterClient)
+			err = checkNodeReadiness(t, userclusterClient, len(test.osNames))
 			if err != nil {
 				t.Fatalf("nodes never became ready: %v", err)
 			}
 
-			t.Logf("sleeping for 2m...")
-			time.Sleep(time.Minute * 2)
+			t.Logf("nodes ready")
+			t.Logf("sleeping for 4m...")
+			time.Sleep(time.Minute * 4)
 
 			err = waitForPods(t, userclusterClient, kubeSystem, "app", []string{
 				"coredns", "konnectivity-agent", "kube-proxy", "metrics-server",
@@ -283,11 +332,8 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) bool {
 	return allHealthy
 }
 
-func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset) (string, error) {
-	expectedNodes := 1
-	var nodeIP string
-
-	err := wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
+func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expectedNodes int) error {
+	return wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
 		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			t.Logf("failed to get nodes list: %s", err)
@@ -313,193 +359,11 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset) (string,
 			return false, nil
 		}
 
-		for _, addr := range nodes.Items[0].Status.Addresses {
-			if addr.Type == corev1.NodeExternalIP {
-				nodeIP = addr.Address
-				break
-			}
-		}
 		return true, nil
 	})
-
-	return nodeIP, err
 }
 
-type cloudProvider interface {
-	NodeSpec() models.NodeCloudSpec
-	CloudSpec() models.CloudSpec
-}
-
-type azure struct{}
-
-var _ cloudProvider = azure{}
-
-func (a azure) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Azure: &models.AzureNodeSpec{
-			AssignAvailabilitySet: true,
-			AssignPublicIP:        true,
-			DataDiskSize:          int32(30),
-			OSDiskSize:            70,
-			Size:                  pointer.String("Standard_B2s"),
-		},
-	}
-}
-
-func (a azure) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "azure-westeurope",
-		Azure: &models.AzureCloudSpec{
-			ClientID:        os.Getenv("AZURE_CLIENT_ID"),
-			ClientSecret:    os.Getenv("AZURE_CLIENT_SECRET"),
-			SubscriptionID:  os.Getenv("AZURE_SUBSCRIPTION_ID"),
-			TenantID:        os.Getenv("AZURE_TENANT_ID"),
-			LoadBalancerSKU: "standard",
-		},
-	}
-}
-
-func defaultClusterRequest() createClusterRequest {
-	clusterSpec := models.CreateClusterSpec{}
-	clusterSpec.Cluster = &models.Cluster{
-		Type: "kubernetes",
-		Name: "test-default-azure-cluster",
-		Spec: &models.ClusterSpec{
-			Cloud: &models.CloudSpec{
-				DatacenterName: "azure-westeurope",
-				Azure: &models.AzureCloudSpec{
-					ClientID:        os.Getenv("AZURE_CLIENT_ID"),
-					ClientSecret:    os.Getenv("AZURE_CLIENT_SECRET"),
-					SubscriptionID:  os.Getenv("AZURE_SUBSCRIPTION_ID"),
-					TenantID:        os.Getenv("AZURE_TENANT_ID"),
-					LoadBalancerSKU: "standard",
-				},
-			},
-			CniPlugin: &models.CNIPluginSettings{
-				Version: "v1.11",
-				Type:    "cilium",
-			},
-			ClusterNetwork: &models.ClusterNetworkingConfig{
-				NodeCIDRMaskSizeIPV4: 24,
-				NodeCIDRMaskSizeIPV6: 105,
-				ProxyMode:            "ebpf",
-				IPFamily:             "IPv4+IPv6",
-				Pods: &models.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16", "fd00::/104"},
-				},
-				Services: &models.NetworkRanges{
-					CIDRBlocks: []string{"10.240.16.0/20", "fd03::/120"},
-				},
-				KonnectivityEnabled: true,
-			},
-			Version: "1.22.7",
-		},
-	}
-
-	clusterSpec.NodeDeployment = &models.NodeDeployment{
-		Spec: &models.NodeDeploymentSpec{
-			Replicas: pointer.Int32(1),
-			Template: &models.NodeSpec{
-				SSHUserName: "root",
-				Cloud: &models.NodeCloudSpec{
-					Azure: &models.AzureNodeSpec{
-						AssignAvailabilitySet: true,
-						AssignPublicIP:        true,
-						DataDiskSize:          int32(30),
-						OSDiskSize:            70,
-						Size:                  pointer.String("Standard_B2s"),
-					},
-				},
-				OperatingSystem: &models.OperatingSystemSpec{
-					Ubuntu: &models.UbuntuSpec{
-						DistUpgradeOnBoot: false,
-					},
-				},
-			},
-		},
-		Status: nil,
-	}
-
-	return createClusterRequest(clusterSpec)
-}
-
-func (c createClusterRequest) WithCNI(cni models.CNIPluginSettings) createClusterRequest {
-	c.Cluster.Spec.CniPlugin = &cni
-	return c
-}
-
-func (c createClusterRequest) WithOS(os models.OperatingSystemSpec) createClusterRequest {
-	c.NodeDeployment.Spec.Template.OperatingSystem = &os
-	return c
-}
-
-func (c createClusterRequest) WithNode(node models.NodeCloudSpec) createClusterRequest {
-	c.NodeDeployment.Spec.Template.Cloud = &node
-	return c
-}
-
-func (c createClusterRequest) WithCloud(cloud models.CloudSpec) createClusterRequest {
-	c.Cluster.Spec.Cloud = &cloud
-	return c
-}
-
-func (c createClusterRequest) WithName(name string) createClusterRequest {
-	c.Cluster.Name = name
-	return c
-}
-
-func (c createClusterRequest) WithNetworkConfig(netConfig models.ClusterNetworkingConfig) createClusterRequest {
-	c.Cluster.Spec.ClusterNetwork = &netConfig
-	return c
-}
-
-type createClusterRequest models.CreateClusterSpec
-
-func ubuntu() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Ubuntu: &models.UbuntuSpec{},
-	}
-}
-
-func rhel() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Rhel: &models.RHELSpec{},
-	}
-}
-
-func sles() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Sles: &models.SLESSpec{},
-	}
-}
-
-func centos() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Centos: &models.CentOSSpec{},
-	}
-}
-
-func flatcar() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Flatcar: &models.FlatcarSpec{},
-	}
-}
-
-func cilium() models.CNIPluginSettings {
-	return models.CNIPluginSettings{
-		Version: "v1.11",
-		Type:    "cilium",
-	}
-}
-
-func canal() models.CNIPluginSettings {
-	return models.CNIPluginSettings{
-		Type:    "canal",
-		Version: "v3.22",
-	}
-}
-
-func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, func(), error) {
+func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, string, func(), error) {
 	var teardowns []func()
 	cleanup := func() {
 		n := len(teardowns)
@@ -511,7 +375,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 	// create a project
 	proj, err := apicli.CreateProject(projectName)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", "", nil, err
 	}
 	teardowns = append(teardowns, func() {
 		err := apicli.DeleteProject(proj.ID)
@@ -528,7 +392,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 		HTTPClient: http.DefaultClient,
 	}, apicli.GetBearerToken())
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	cluster := resp.Payload
@@ -567,7 +431,7 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 		return true, nil
 	})
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(userconfig))
@@ -575,5 +439,27 @@ func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName strin
 		t.Fatalf("failed to build config: %s", err)
 	}
 
-	return config, cluster.ID, cleanup, nil
+	return config, proj.ID, cluster.ID, cleanup, nil
+}
+
+func createMachineDeployment(t *testing.T, apicli *utils.TestClient, params createMachineDeploymentParams) error {
+	mdParams := project.CreateMachineDeploymentParams(params)
+	return wait.Poll(30*time.Second, 2*time.Minute, func() (bool, error) {
+		_, err := apicli.GetKKPAPIClient().Project.CreateMachineDeployment(
+			&mdParams,
+			apicli.GetBearerToken())
+		if err != nil {
+			respErr := new(project.CreateMachineDeploymentDefault)
+			if errors.As(err, &respErr) {
+				errData, err := respErr.GetPayload().MarshalBinary()
+				if err != nil {
+					t.Log("failed to marshal error response")
+				}
+				t.Log(string(errData))
+			}
+			t.Logf("failed to create machine deployment: %v", err)
+			return false, nil
+		}
+		return true, nil
+	})
 }
