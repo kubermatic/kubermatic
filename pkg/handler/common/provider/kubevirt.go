@@ -20,8 +20,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
@@ -30,6 +32,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -37,6 +41,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -92,7 +97,7 @@ func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provide
 	return base64.StdEncoding.EncodeToString([]byte(kvKubeconfig)), nil
 }
 
-func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster) (apiv2.VirtualMachineInstancePresetList, error) {
+func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (apiv2.VirtualMachineInstancePresetList, error) {
 	client, err := NewKubeVirtClient(kubeconfig)
 	if err != nil {
 		return nil, err
@@ -126,8 +131,11 @@ func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kuberma
 			}
 		}
 	}
-
-	return res, nil
+	settings, err := settingsProvider.GetGlobalSettings(ctx)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return filterVMIPresets(res, settings.Spec.MachineDeploymentVMResourceQuota), nil
 }
 
 func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter {
@@ -141,7 +149,7 @@ func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.
 }
 
 func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string) (interface{}, error) {
+	projectID, clusterID string, settingsProvider provider.SettingsProvider) (interface{}, error) {
 	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, err
@@ -152,7 +160,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 		return nil, err
 	}
 
-	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster)
+	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster, settingsProvider)
 }
 
 func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
@@ -223,4 +231,88 @@ func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, u
 	}
 
 	return KubeVirtStorageClasses(ctx, kvKubeconfig)
+}
+
+func filterVMIPresets(vmiPresets apiv2.VirtualMachineInstancePresetList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv2.VirtualMachineInstancePresetList {
+	filteredVMIPresets := apiv2.VirtualMachineInstancePresetList{}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, vmiPreset := range vmiPresets {
+		presetSpec := kubevirtv1.VirtualMachineInstancePresetSpec{}
+		if err := json.Unmarshal([]byte(vmiPreset.Spec), &presetSpec); err != nil {
+			log.Logger.Errorf("skipping VMIPreset:%s, parsing preset.Spec failed:%v", vmiPreset.Name, err)
+			continue
+		}
+
+		cpu, memory, err := GetKubeVirtPresetResourceDetails(presetSpec)
+		if err != nil {
+			log.Logger.Errorf("skipping VMIPreset:%s, fetching presetResourceDetails failed:%v", vmiPreset.Name, err)
+			continue
+		}
+
+		if handlercommon.FilterCPU(int(cpu.AsApproximateFloat64()), quota.MinCPU, quota.MaxCPU) && handlercommon.FilterMemory(int(memory.Value()/(1<<30)), quota.MinRAM, quota.MaxRAM) {
+			filteredVMIPresets = append(filteredVMIPresets, vmiPreset)
+		}
+	}
+	return filteredVMIPresets
+}
+
+// GetKubeVirtPresetResourceDetails extracts cpu and mem resource requests from the kubevirt preset
+// for CPU, take the value by priority:
+// - check if spec.cpu is set, if socket and threads are set then do the calculation, use that
+// - if resource request is set, use that
+// - if resource limit is set, use that
+// for memory, take the value by priority:
+// - if resource request is set, use that
+// - if resource limit is set, use that.
+func GetKubeVirtPresetResourceDetails(presetSpec kubevirtv1.VirtualMachineInstancePresetSpec) (resource.Quantity, resource.Quantity, error) {
+	var err error
+	// Get CPU
+	cpuReq := resource.Quantity{}
+
+	if presetSpec.Domain.CPU != nil {
+		if !presetSpec.Domain.Resources.Requests.Cpu().IsZero() || !presetSpec.Domain.Resources.Limits.Cpu().IsZero() {
+			return resource.Quantity{}, resource.Quantity{}, errors.New("should not specify both spec.domain.cpu and spec.domain.resources.[requests/limits].cpu in VMIPreset")
+		}
+		cores := presetSpec.Domain.CPU.Cores
+		if cores == 0 {
+			cores = 1
+		}
+		// if threads and sockets are set, calculate VCPU
+		threads := presetSpec.Domain.CPU.Threads
+		if threads == 0 {
+			threads = 1
+		}
+		sockets := presetSpec.Domain.CPU.Sockets
+		if sockets == 0 {
+			sockets = 1
+		}
+
+		cpuReq, err = resource.ParseQuantity(strconv.Itoa(int(cores * threads * sockets)))
+		if err != nil {
+			return resource.Quantity{}, resource.Quantity{}, fmt.Errorf("error parsing calculated KubeVirt VCPU: %w", err)
+		}
+	} else {
+		if !presetSpec.Domain.Resources.Requests.Cpu().IsZero() {
+			cpuReq = *presetSpec.Domain.Resources.Requests.Cpu()
+		}
+		if !presetSpec.Domain.Resources.Limits.Cpu().IsZero() {
+			cpuReq = *presetSpec.Domain.Resources.Limits.Cpu()
+		}
+	}
+
+	// get MEM
+	memReq := resource.Quantity{}
+	if presetSpec.Domain.Resources.Requests.Memory().IsZero() && presetSpec.Domain.Resources.Limits.Memory().IsZero() {
+		return resource.Quantity{}, resource.Quantity{}, errors.New("spec.domain.resources.[requests/limits].memory must be set in VMIPreset")
+	}
+	if !presetSpec.Domain.Resources.Requests.Memory().IsZero() {
+		memReq = *presetSpec.Domain.Resources.Requests.Memory()
+	}
+	if !presetSpec.Domain.Resources.Limits.Memory().IsZero() {
+		memReq = *presetSpec.Domain.Resources.Limits.Memory()
+	}
+
+	return cpuReq, memReq, nil
 }

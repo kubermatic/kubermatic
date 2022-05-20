@@ -48,7 +48,7 @@ type KubeVirtGenericNoCredentialReq struct {
 }
 
 // KubeVirtVMIPresetsEndpoint handles the request to list available KubeVirtVMIPresets (provided credentials).
-func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(KubeVirtGenericReq)
 		kubeconfig := req.Kubeconfig
@@ -66,15 +66,15 @@ func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInf
 				kubeconfig = credentials.Kubeconfig
 			}
 		}
-		return providercommon.KubeVirtVMIPresets(ctx, kubeconfig, nil)
+		return providercommon.KubeVirtVMIPresets(ctx, kubeconfig, nil, settingsProvider)
 	}
 }
 
 // KubeVirtVMIPresetsWithClusterCredentialsEndpoint handles the request to list available KubeVirtVMIPresets (cluster credentials).
-func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(KubeVirtGenericNoCredentialReq)
-		return providercommon.KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
+		return providercommon.KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, settingsProvider)
 	}
 }
 

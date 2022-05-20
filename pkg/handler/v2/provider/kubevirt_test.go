@@ -54,7 +54,7 @@ var (
 			Namespace:         "default",
 			CreationTimestamp: metav1.Time{},
 		},
-		Spec: *NewKubevirtPresetSpec(123, 234, 345, 456),
+		Spec: *NewKubevirtPresetSpec(2, 2, 128, 2),
 	}
 
 	presetDefaultSmall2 = kvapiv1.VirtualMachineInstancePreset{
@@ -62,7 +62,7 @@ var (
 			Name:      "preset-default-small-2",
 			Namespace: "default",
 		},
-		Spec: *NewKubevirtPresetSpec(123, 234, 345, 456),
+		Spec: *NewKubevirtPresetSpec(2, 2, 128, 2),
 	}
 	// Should not be returned, not in "default" namespace.
 	presetOtherSmall = kvapiv1.VirtualMachineInstancePreset{
@@ -70,7 +70,25 @@ var (
 			Name:      "preset-default-small",
 			Namespace: "other",
 		},
-		Spec: *NewKubevirtPresetSpec(123, 234, 345, 456),
+		Spec: *NewKubevirtPresetSpec(2, 2, 128, 2),
+	}
+
+	// Should not be returned, more than default resource-quota.
+	presetNotInQuotaLimit = kvapiv1.VirtualMachineInstancePreset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "preset-not-in-quota-limit",
+			Namespace: "default",
+		},
+		Spec: *NewKubevirtPresetSpec(256, 2, 512, 2),
+	}
+
+	// Should not be returned, requests.cpu and limits.cpu are unequal.
+	presetWithInvalidCPU = kvapiv1.VirtualMachineInstancePreset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "preset-invalid-cpu",
+			Namespace: "default",
+		},
+		Spec: *NewKubevirtPresetSpec(256, 2, 512, 4),
 	}
 
 	// Cluster settings.
@@ -90,9 +108,6 @@ type KeyValue struct {
 func NewKubevirtPresetSpec(memoryReq, cpuReq, memoryLimit, cpuLimit int64) *kvapiv1.VirtualMachineInstancePresetSpec {
 	return &kvapiv1.VirtualMachineInstancePresetSpec{
 		Domain: &kvapiv1.DomainSpec{
-			CPU: &kvapiv1.CPU{
-				Cores: 2,
-			},
 			Devices: kvapiv1.Devices{
 				Disks: []kvapiv1.Disk{
 					{
@@ -107,11 +122,11 @@ func NewKubevirtPresetSpec(memoryReq, cpuReq, memoryLimit, cpuLimit int64) *kvap
 			},
 			Resources: kvapiv1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: *resource.NewQuantity(memoryReq, resource.Format("BinarySI")),
+					corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", memoryReq)),
 					corev1.ResourceCPU:    *resource.NewQuantity(cpuReq, resource.Format("BinarySI")),
 				},
 				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: *resource.NewQuantity(memoryLimit, resource.Format("BinarySI")),
+					corev1.ResourceMemory: resource.MustParse(fmt.Sprintf("%dGi", memoryLimit)),
 					corev1.ResourceCPU:    *resource.NewQuantity(cpuLimit, resource.Format("BinarySI")),
 				},
 			},
@@ -146,9 +161,8 @@ func GenKubeVirtKubermaticPreset() *kubermaticv1.Preset {
 }
 
 var (
-	presetListResponse = `[{"name":"preset-default-small-1","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},` +
-		`{"name":"preset-default-small-2","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"234\",\"memory\":\"123\"},\"limits\":{\"cpu\":\"456\",\"memory\":\"345\"}},\"cpu\":{\"cores\":2},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},` +
-		`{"name":"kubermatic-standard","spec":"{\"selector\":{\"matchLabels\":{\"kubevirt.io/flavor\":\"kubermatic-standard\"}},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"2\",\"memory\":\"8Gi\"},\"limits\":{\"cpu\":\"2\",\"memory\":\"8Gi\"}},\"devices\":{}}}"}]`
+	presetListResponse = `[{"name":"preset-default-small-1","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"2\",\"memory\":\"2Gi\"},\"limits\":{\"cpu\":\"2\",\"memory\":\"128Gi\"}},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},{"name":"preset-default-small-2","namespace":"default","spec":"{\"selector\":{},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"2\",\"memory\":\"2Gi\"},\"limits\":{\"cpu\":\"2\",\"memory\":\"128Gi\"}},\"devices\":{\"disks\":[{\"name\":\"datavolumedisk\",\"disk\":{\"bus\":\"virtio\"}},{\"name\":\"cloudinitdisk\",\"disk\":{\"bus\":\"virtio\"}}]}}}"},{"name":"kubermatic-standard","spec":"{\"selector\":{\"matchLabels\":{\"kubevirt.io/flavor\":\"kubermatic-standard\"}},\"domain\":{\"resources\":{\"requests\":{\"cpu\":\"2\",\"memory\":\"8Gi\"},\"limits\":{\"cpu\":\"2\",\"memory\":\"8Gi\"}},\"devices\":{}}}"}]
+`
 )
 
 func setFakeNewKubeVirtClient(objects []ctrlruntimeclient.Object) {
@@ -183,7 +197,7 @@ func TestListPresetEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: []ctrlruntimeclient.Object{
 				test.GenDefaultProject(),
 			},
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
+			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall, &presetNotInQuotaLimit, &presetWithInvalidCPU},
 			ExistingAPIUser:         *test.GenDefaultAPIUser(),
 			ExpectedResponse:        presetListResponse,
 		},
@@ -198,7 +212,7 @@ func TestListPresetEndpoint(t *testing.T) {
 				test.GenDefaultProject(),
 				GenKubeVirtKubermaticPreset(),
 			},
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
+			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall, &presetNotInQuotaLimit, &presetWithInvalidCPU},
 			ExistingAPIUser:         *test.GenDefaultAPIUser(),
 			ExpectedResponse:        presetListResponse,
 		},
@@ -265,7 +279,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 					return cluster
 				}(),
 			),
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
+			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall, &presetNotInQuotaLimit, &presetWithInvalidCPU},
 			ExistingAPIUser:         *test.GenDefaultAPIUser(),
 			ExpectedResponse:        presetListResponse,
 		},
@@ -291,7 +305,7 @@ func TestListPresetNoCredentialsEndpoint(t *testing.T) {
 				}(),
 			),
 			ExistingK8sObjects:      []ctrlruntimeclient.Object{NewCredentialSecret(credentialref, credentialns)},
-			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall},
+			ExistingKubevirtObjects: []ctrlruntimeclient.Object{&presetDefaultSmall1, &presetDefaultSmall2, &presetOtherSmall, &presetNotInQuotaLimit, &presetWithInvalidCPU},
 			ExistingAPIUser:         *test.GenDefaultAPIUser(),
 			ExpectedResponse:        presetListResponse,
 		},
