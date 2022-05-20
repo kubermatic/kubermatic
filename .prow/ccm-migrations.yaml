@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-ccm-migration-openstack-e2e
-    run_if_changed: "(pkg/|.prow.yaml)"
+    run_if_changed: "(pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -55,7 +55,7 @@ presubmits:
               memory: 4Gi
 
   - name: pre-kubermatic-ccm-migration-vsphere-e2e
-    run_if_changed: "(pkg/|.prow.yaml)"
+    run_if_changed: "(pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
