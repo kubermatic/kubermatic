@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-mla-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
@@ -52,7 +52,7 @@ presubmits:
               memory: 18Gi
 
   - name: pre-kubermatic-konnectivity-e2e
-    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow.yaml)"
+    run_if_changed: "(.*[kK]onnectivity.*|pkg/resources/apiserver|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -65,7 +65,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
@@ -89,7 +89,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-cilium-e2e
-    run_if_changed: ".*(cilium|apis|hubble|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow.yaml|go.mod).*"
+    run_if_changed: ".*(cilium|apis|hubble|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -102,7 +102,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
@@ -126,7 +126,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-dualstack-e2e
-    run_if_changed: ".*(cilium|canal|dualstack|api|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow.yaml|go.mod|proxy|network).*"
+    run_if_changed: ".*(cilium|canal|dualstack|api|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -139,7 +139,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-3
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
@@ -163,7 +163,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-etcd-launcher-e2e
-    run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow.yaml)"
+    run_if_changed: "(cmd/etcd-launcher/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -178,7 +178,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           command:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
@@ -201,7 +201,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-nodeport-proxy-e2e
-    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -212,7 +212,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           command:
             - ./hack/run-nodeport-proxy-e2e-test-in-kind.sh
           securityContext:
@@ -225,7 +225,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-opa-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -240,7 +240,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
@@ -263,7 +263,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-expose-strategy-e2e
-    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -274,7 +274,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           command:
             - ./hack/run-expose-strategy-e2e-test-in-kind.sh
           securityContext:

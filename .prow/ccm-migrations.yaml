@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-ccm-migration-openstack-e2e
-    run_if_changed: "(pkg/|.prow.yaml)"
+    run_if_changed: "(pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -55,7 +55,7 @@ presubmits:
               memory: 4Gi
 
   - name: pre-kubermatic-ccm-migration-vsphere-e2e
-    run_if_changed: "(pkg/|.prow.yaml)"
+    run_if_changed: "(pkg/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -70,7 +70,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: ee

@@ -15,7 +15,7 @@
 presubmits:
   - name: pre-kubermatic-e2e-aws-ubuntu-1.21
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -30,7 +30,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -57,7 +57,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.22
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -72,7 +72,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -99,7 +99,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.23
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -114,7 +114,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -141,7 +141,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.24
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -156,7 +156,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -184,7 +184,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.24-ce
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -199,7 +199,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: "ce"
@@ -228,7 +228,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.24-headless
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -243,7 +243,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.13-4
+        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-5
           env:
             - name: KUBERMATIC_EDITION
               value: "ee"
