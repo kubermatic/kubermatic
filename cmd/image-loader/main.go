@@ -38,12 +38,16 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/docker"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
+	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
@@ -58,6 +62,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -284,8 +289,16 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
 	deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
+	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
+
+	var daemonsetCreators []reconciling.NamedDaemonSetCreatorGetter
+	daemonsetCreators = append(daemonsetCreators, usersshkeys.DaemonSetCreator(
+		kubermaticVersions,
+		templateData.ImageRegistry,
+	))
+	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.ImageRegistry))
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()
@@ -312,6 +325,15 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 			return nil, err
 		}
 		images = append(images, getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec)...)
+	}
+
+	for _, createFunc := range daemonsetCreators {
+		_, creator := createFunc()
+		daemonset, err := creator(&appsv1.DaemonSet{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
 	}
 
 	return images, nil
@@ -449,6 +471,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kuberm
 		resources.UserSSHKeys,
 		resources.AdminKubeconfigSecretName,
 		resources.GatekeeperWebhookServerCertSecretName,
+		resources.OperatingSystemManagerKubeconfigSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
@@ -472,6 +495,17 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, cloudSpec kuberm
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Spec.CNIPlugin = cniPlugin
+
+	if fakeCluster.Spec.Cloud.Openstack != nil {
+		if fakeCluster.Spec.Features == nil {
+			fakeCluster.Spec.Features = make(map[string]bool)
+		}
+		fakeCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	}
+
+	fakeCluster.Spec.EnableUserSSHKeyAgent = pointer.Bool(true)
+	fakeCluster.Spec.EnableOperatingSystemManager = true
+
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 
 	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
