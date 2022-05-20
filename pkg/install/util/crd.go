@@ -47,9 +47,9 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 			// inject the current KKP version, so the operator and other controllers
 			// can react to the changed CRDs (the seed-operator will do the same when
 			// updating CRDs on seed clusters)
-			labels := crd.GetLabels()
-			labels[resources.VersionLabel] = versions.KubermaticCommit
-			crd.SetLabels(labels)
+			annotations := crd.GetAnnotations()
+			annotations[resources.VersionLabel] = versions.KubermaticCommit
+			crd.SetAnnotations(annotations)
 		}
 
 		if err := DeployCRD(ctx, kubeClient, crd); err != nil {

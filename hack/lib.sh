@@ -442,3 +442,20 @@ copy_crds_to_chart() {
   mkdir -p $chartCRDs
   cp $sourceCRDs/* $chartCRDs
 }
+
+# set_crds_version_annotation will inject a annotation label into all YAML files
+# of the given directory. This is important for GitOps installations that
+# do not use the KKP installer, so that the CRDs are still properly annotated,
+# as the KKP operator needs to determine the CRD versions.
+set_crds_version_annotation() {
+  local version="${1:-}"
+  local directory="${2:-charts/kubermatic-operator/crd/k8c.io}"
+
+  if [ -z "$version" ]; then
+    version="$(git describe)"
+  fi
+
+  while IFS= read -r -d '' filename; do
+    yq write --inplace --doc '*' "$filename" metadata.annotations.'"app.kubernetes.io/version"' "$version"
+  done < <(find "$directory" -name '*.yaml' -print0 | sort --zero-terminated)
+}

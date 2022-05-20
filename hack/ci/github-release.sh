@@ -229,6 +229,7 @@ mkdir -p _dist
 # anymore, but into pkg/ so they can be embedded. In our Github archives
 # we still want and need them to be part of the operator chart.
 copy_crds_to_chart
+set_crds_version_annotation "$GIT_TAG"
 
 for buildTarget in $RELEASE_PLATFORMS; do
   rm -rf _build
