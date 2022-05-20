@@ -938,7 +938,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	// Defines an endpoint to retrieve the cluster networking defaults for the given provider and CNI.
 	mux.Methods(http.MethodGet).
-		Path("/providers/{provider_name}/dc/{dc}/cni/{cni_plugin_type}/networkdefaults").
+		Path("/providers/{provider_name}/dc/{dc}/networkdefaults").
 		Handler(r.getNetworkDefaults())
 }
 
@@ -6433,9 +6433,9 @@ func (r Routing) listCNIPluginVersionsForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /providers/{provider_name}/dc/{dc}/cni/{cni_plugin_type}/networkdefaults networkdefaults getNetworkDefaults
+// swagger:route GET /providers/{provider_name}/dc/{dc}/networkdefaults networkdefaults getNetworkDefaults
 //
-//     Retrieves the cluster networking defaults for the given provider, datacenter and CNI.
+//     Retrieves the cluster networking defaults for the given provider and datacenter.
 //
 //     Produces:
 //     - application/json

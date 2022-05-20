@@ -34,7 +34,6 @@ import (
 	kubermaticprovider "k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-	"k8c.io/kubermatic/v2/pkg/version/cni"
 )
 
 // getNetworkDefaultsReq represents a request for retrieving the cluster networking defaults for the given provider.
@@ -46,9 +45,6 @@ type getNetworkDefaultsReq struct {
 	// in: path
 	// required: true
 	DC string `json:"dc"`
-	// in: path
-	// required: true
-	CNIPluginType string `json:"cni_plugin_type"`
 
 	// private field for the seed name. Needed for the cluster provider.
 	seedName string
@@ -72,20 +68,13 @@ func (r getNetworkDefaultsReq) Validate() error {
 	if r.DC == "" {
 		return fmt.Errorf("the datacenter cannot be empty")
 	}
-	if r.CNIPluginType == "" {
-		return fmt.Errorf("CNI plugin type cannot be empty")
-	}
-	if !cni.GetSupportedCNIPlugins().Has(r.CNIPluginType) {
-		return fmt.Errorf("CNI plugin type %q not supported. Supported types: %v", r.CNIPluginType, cni.GetSupportedCNIPlugins().List())
-	}
 	return nil
 }
 
 func DecodeGetNetworkDefaultsReq(ctx context.Context, r *http.Request) (interface{}, error) {
 	req := getNetworkDefaultsReq{
-		ProviderName:  mux.Vars(r)["provider_name"],
-		DC:            mux.Vars(r)["dc"],
-		CNIPluginType: mux.Vars(r)["cni_plugin_type"],
+		ProviderName: mux.Vars(r)["provider_name"],
+		DC:           mux.Vars(r)["dc"],
 	}
 
 	seedName, err := clusterv2.FindSeedNameForDatacenter(ctx, req.DC)
@@ -114,7 +103,6 @@ func GetNetworkDefaultsEndpoint(
 
 		provider := kubermaticv1.ProviderType(req.ProviderName)
 		datacenter := req.DC
-		cni := kubermaticv1.CNIPluginType(req.CNIPluginType)
 
 		networkDefaults := apiv2.NetworkDefaults{
 			IPv4: &apiv2.NetworkDefaultsIPFamily{
@@ -129,7 +117,7 @@ func GetNetworkDefaultsEndpoint(
 				NodeCIDRMaskSize:        resources.DefaultNodeCIDRMaskSizeIPv6,
 				NodePortsAllowedIPRange: resources.IPv6MatchAnyCIDR,
 			},
-			ProxyMode:                resources.GetDefaultProxyMode(provider, cni),
+			ProxyMode:                resources.GetDefaultProxyMode(provider),
 			NodeLocalDNSCacheEnabled: resources.DefaultNodeLocalDNSCacheEnabled,
 		}
 
@@ -154,15 +142,15 @@ func GetNetworkDefaultsEndpoint(
 
 		// Using network defaults from the template defaults when it's available
 		if defaultingTemplate != nil {
-			networkDefaults = overrideNetworkDefaultsByDefaultingTemplate(networkDefaults, defaultingTemplate.Spec.ClusterNetwork, provider, cni)
+			networkDefaults = overrideNetworkDefaultsByDefaultingTemplate(networkDefaults, defaultingTemplate.Spec.ClusterNetwork, provider)
 		}
 
 		return networkDefaults, nil
 	}
 }
 
-func overrideNetworkDefaultsByDefaultingTemplate(networkDefaults apiv2.NetworkDefaults, templateClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, cni kubermaticv1.CNIPluginType) apiv2.NetworkDefaults {
-	defaultClusterNetwork := defaulting.DefaultClusterNetwork(templateClusterNetwork, provider, cni)
+func overrideNetworkDefaultsByDefaultingTemplate(networkDefaults apiv2.NetworkDefaults, templateClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType) apiv2.NetworkDefaults {
+	defaultClusterNetwork := defaulting.DefaultClusterNetwork(templateClusterNetwork, provider)
 
 	if defaultClusterNetwork.ProxyMode != "" {
 		networkDefaults.ProxyMode = defaultClusterNetwork.ProxyMode
