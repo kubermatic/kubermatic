@@ -19598,7 +19598,7 @@
         }
       }
     },
-    "/providers/{provider_name}/cni/{cni_plugin_type}/networkdefaults": {
+    "/providers/{provider_name}/dc/{dc}/networkdefaults": {
       "get": {
         "produces": [
           "application/json"
@@ -19606,7 +19606,7 @@
         "tags": [
           "networkdefaults"
         ],
-        "summary": "Retrieves the cluster networking defaults for the given provider and CNI.",
+        "summary": "Retrieves the cluster networking defaults for the given provider and datacenter.",
         "operationId": "getNetworkDefaults",
         "parameters": [
           {
@@ -19618,8 +19618,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "CNIPluginType",
-            "name": "cni_plugin_type",
+            "x-go-name": "DC",
+            "name": "dc",
             "in": "path",
             "required": true
           }
